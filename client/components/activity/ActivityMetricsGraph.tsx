@@ -1,8 +1,3 @@
-/**
- * ActivityMetricsGraph.tsx
- * Fast and dumb UI component for displaying activity metrics as stacked line chart.
- * All data processing is handled externally via props.
- */
 "use client";
 
 import {
@@ -15,7 +10,7 @@ import {
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
   CartesianGrid,
@@ -28,33 +23,28 @@ import {
   YAxis,
 } from "recharts";
 
-type ActivityChartDataPoint = {
-  date: string;
-  activeProfiles: number;
-  feedbackEntries: number;
-  activityEntries: number;
-  errors: number;
-};
-
-type ActivityMetric = {
+type EventType = {
   id: string;
   name: string;
-  color: string;
-  formatter: (value: number) => string;
+  total_count: number;
 };
 
-// Custom tooltip component
+type ChartPoint = {
+  date: string;
+  event_id: string;
+  count: number;
+};
+
 function CustomLineTooltip({
   active,
   payload,
   label,
-  metricsWithFormatters,
+  eventNames,
 }: TooltipProps<number, string> & {
-  metricsWithFormatters: ActivityMetric[];
+  eventNames: Record<string, string>;
 }) {
   if (!active || !payload || !payload.length || !label) return null;
 
-  // Format date label
   const formatDate = (date: string) => {
     const parts = date.split("-");
     if (parts.length === 3) {
@@ -69,13 +59,10 @@ function CustomLineTooltip({
       <div className="mt-1 text-xs space-y-1">
         {payload.map((item, index) => {
           const dataKey = String(item.dataKey ?? "");
-          const metric = metricsWithFormatters.find((m) => m.id === dataKey);
-          const formattedValue = metric?.formatter
-            ? metric.formatter(Number(item.value))
-            : `${Math.round(Number(item.value))}`;
+          const name = eventNames[dataKey] || dataKey;
           return (
             <div key={index}>
-              {metric?.name ?? dataKey}: {formattedValue}
+              {name}: {Math.round(Number(item.value))}
             </div>
           );
         })}
@@ -85,107 +72,71 @@ function CustomLineTooltip({
 }
 
 export interface ActivityMetricsGraphProps {
-  chartData: ActivityChartDataPoint[];
+  chartPoints: ChartPoint[];
+  availableEvents: EventType[];
   hasDataAvailable: boolean;
 }
 
 export default function ActivityMetricsGraph({
-  chartData,
+  chartPoints,
+  availableEvents,
   hasDataAvailable,
 }: ActivityMetricsGraphProps) {
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
-    "activeProfiles",
-    "feedbackEntries",
-    "activityEntries",
-    "errors",
-  ]);
-  // Note: isMobile state removed as it was unused
-
-  // Get chart colors 1-5 from CSS variables
   const chartColors = useChartColors();
 
-  useEffect(() => {
-    const checkMobile = () => {
-      // Note: isMobile state removed as it was unused
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  // Default: top 3 events by total_count
+  const defaultSelected = useMemo(() => {
+    return availableEvents
+      .slice(0, 3)
+      .map((e) => e.id);
+  }, [availableEvents]);
 
-  // Define available metrics
-  const availableMetrics: ActivityMetric[] = useMemo(() => {
-    return [
-      {
-        id: "activeProfiles",
-        name: "Active Profiles",
-        color: chartColors[0] || "#8884d8",
-        formatter: (v: number) => `${Math.round(v)}`,
-      },
-      {
-        id: "feedbackEntries",
-        name: "Feedback Entries",
-        color: chartColors[1] || "#82ca9d",
-        formatter: (v: number) => `${Math.round(v)}`,
-      },
-      {
-        id: "activityEntries",
-        name: "Activity Entries",
-        color: chartColors[2] || "#ffc658",
-        formatter: (v: number) => `${Math.round(v)}`,
-      },
-      {
-        id: "errors",
-        name: "Errors",
-        color: chartColors[3] || "#ff7300",
-        formatter: (v: number) => `${Math.round(v)}`,
-      },
-    ];
-  }, [chartColors]);
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(defaultSelected);
 
-  // Build metric mapping for GenericPicker
-  const metricMapping = useMemo(() => {
+  // Pivot chart points into rows: { date, [event_id]: count, ... }
+  const pivotedData = useMemo(() => {
+    const dateMap: Record<string, Record<string, number>> = {};
+    for (const point of chartPoints) {
+      if (!point.date) continue;
+      if (!dateMap[point.date]) {
+        dateMap[point.date] = {};
+      }
+      dateMap[point.date]![point.event_id] = point.count;
+    }
+    return Object.entries(dateMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, counts]) => ({ date, ...counts }));
+  }, [chartPoints]);
+
+  // Build mapping for GenericPicker
+  const eventMapping = useMemo(() => {
     const mapping: Record<string, { name: string; description: string }> = {};
-    availableMetrics.forEach((metric) => {
-      mapping[metric.id] = {
-        name: metric.name,
-        description: metric.name,
+    availableEvents.forEach((event) => {
+      mapping[event.id] = {
+        name: event.name,
+        description: `${event.total_count} events`,
       };
     });
     return mapping;
-  }, [availableMetrics]);
+  }, [availableEvents]);
 
-  const validMetricIds = useMemo(() => {
-    return availableMetrics.map((m) => m.id);
-  }, [availableMetrics]);
+  const eventIds = useMemo(() => availableEvents.map((e) => e.id), [availableEvents]);
 
-  // Ensure at least one metric is always selected
-  useEffect(() => {
-    if (
-      selectedMetrics.length === 0 &&
-      availableMetrics.length > 0 &&
-      availableMetrics[0]
-    ) {
-      setSelectedMetrics([availableMetrics[0].id]);
-    }
-  }, [selectedMetrics.length, availableMetrics]);
+  // Event name lookup for tooltip
+  const eventNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    availableEvents.forEach((e) => { map[e.id] = e.name; });
+    return map;
+  }, [availableEvents]);
 
-  // Handle metric selection with validation (prevent deselecting all)
-  const handleMetricsSelect = (ids: string[]) => {
-    // If "Clear All" is clicked (empty array), reset to just the first metric
-    if (ids.length === 0 && availableMetrics.length > 0) {
-      setSelectedMetrics([availableMetrics[0]!.id]);
+  const handleEventsSelect = (ids: string[]) => {
+    if (ids.length === 0 && availableEvents.length > 0) {
+      setSelectedEvents([availableEvents[0]!.id]);
       return;
     }
-    setSelectedMetrics(ids);
+    // Limit to 5
+    setSelectedEvents(ids.slice(0, 5));
   };
-
-  // Get selected metric objects
-  const selectedMetricObjects = useMemo(() => {
-    return availableMetrics.filter((metric) =>
-      selectedMetrics.includes(metric.id),
-    );
-  }, [availableMetrics, selectedMetrics]);
 
   if (!hasDataAvailable) {
     return (
@@ -226,17 +177,17 @@ export default function ActivityMetricsGraph({
             </CardDescription>
           </div>
           <GenericPicker
-            items={metricMapping}
-            itemIds={validMetricIds}
-            selectedIds={selectedMetrics}
-            onSelect={handleMetricsSelect}
-            getId={(metric) => (metric as unknown as { id: string }).id}
-            getLabel={(metric) => metric.name || ""}
-            getSearchText={(metric) =>
-              `${metric.name} ${metric.description || ""}`
+            items={eventMapping}
+            itemIds={eventIds}
+            selectedIds={selectedEvents}
+            onSelect={handleEventsSelect}
+            getId={(item) => (item as unknown as { id: string }).id}
+            getLabel={(item) => item.name || ""}
+            getSearchText={(item) =>
+              `${item.name} ${item.description || ""}`
             }
             multiSelect={true}
-            placeholder="Select metrics..."
+            placeholder="Select events..."
             hideSelectedChips={true}
             buttonClassName="w-48"
           />
@@ -244,7 +195,6 @@ export default function ActivityMetricsGraph({
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 flex flex-col space-y-4">
-          {/* Multi-line Chart */}
           <div
             className="flex-1 min-h-0"
             style={
@@ -254,7 +204,7 @@ export default function ActivityMetricsGraph({
             }
           >
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ bottom: 20 }}>
+              <LineChart data={pivotedData} margin={{ bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="date"
@@ -263,7 +213,6 @@ export default function ActivityMetricsGraph({
                   textAnchor="end"
                   height={60}
                   tickFormatter={(value: string) => {
-                    // Format YYYY-MM-DD to MM-DD
                     const parts = value.split("-");
                     if (parts.length === 3) {
                       return `${parts[1]}-${parts[2]}`;
@@ -287,21 +236,21 @@ export default function ActivityMetricsGraph({
                           }>
                         }
                         label={props.label}
-                        metricsWithFormatters={availableMetrics}
+                        eventNames={eventNames}
                       />
                     );
                   }}
                 />
                 <Legend />
-                {selectedMetricObjects.map((metric) => (
+                {selectedEvents.map((eventId, index) => (
                   <Line
-                    key={metric.id}
+                    key={eventId}
                     type="monotone"
-                    dataKey={metric.id}
-                    stroke={metric.color}
+                    dataKey={eventId}
+                    stroke={chartColors[index % 5] || "#8884d8"}
                     strokeWidth={2}
                     dot={{ r: 4 }}
-                    name={metric.name}
+                    name={eventNames[eventId] || eventId}
                   />
                 ))}
               </LineChart>
@@ -312,4 +261,3 @@ export default function ActivityMetricsGraph({
     </Card>
   );
 }
-

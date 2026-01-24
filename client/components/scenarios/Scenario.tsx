@@ -21,7 +21,9 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Documents } from "@/components/resources/Documents";
-import { Fields } from "@/components/resources/Fields";
+import { DocumentFields } from "@/components/resources/DocumentFields";
+import { ParameterFields } from "@/components/resources/ParameterFields";
+import { PersonaFields } from "@/components/resources/PersonaFields";
 import { Flags } from "@/components/resources/Flags";
 import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
@@ -106,9 +108,19 @@ type CreateDraftParametersOut = OutputOf<
   "/api/v4/resources/parameters",
   "post"
 >;
-type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-type CreateDraftFieldsOut = OutputOf<
-  "/api/v4/resources/fields",
+type CreateDraftPersonaFieldsIn = InputOf<"/api/v4/resources/persona_fields", "post">;
+type CreateDraftPersonaFieldsOut = OutputOf<
+  "/api/v4/resources/persona_fields",
+  "post"
+>;
+type CreateDraftDocumentFieldsIn = InputOf<"/api/v4/resources/document_fields", "post">;
+type CreateDraftDocumentFieldsOut = OutputOf<
+  "/api/v4/resources/document_fields",
+  "post"
+>;
+type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields", "post">;
+type CreateDraftParameterFieldsOut = OutputOf<
+  "/api/v4/resources/parameter_fields",
   "post"
 >;
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
@@ -138,7 +150,9 @@ type ScenarioResourceType =
   | "documents"
   | "templates"
   | "parameters"
-  | "fields"
+  | "persona_fields"
+  | "document_fields"
+  | "parameter_fields"
   | "images"
   | "videos"
   | "questions";
@@ -159,7 +173,9 @@ type ScenarioFormState = {
   document_ids: string[];
   template_ids: string[];
   parameter_ids: string[];
-  field_ids: string[];
+  persona_field_ids: string[];
+  document_field_ids: string[];
+  parameter_field_ids: string[];
   image_ids: string[];
   objective_ids: string[];
   video_ids: string[];
@@ -207,9 +223,15 @@ export interface ScenarioProps {
   createParametersAction?: (
     input: CreateDraftParametersIn
   ) => Promise<CreateDraftParametersOut>;
-  createFieldsAction?: (
-    input: CreateDraftFieldsIn
-  ) => Promise<CreateDraftFieldsOut>;
+  createPersonaFieldsAction?: (
+    input: CreateDraftPersonaFieldsIn
+  ) => Promise<CreateDraftPersonaFieldsOut>;
+  createDocumentFieldsAction?: (
+    input: CreateDraftDocumentFieldsIn
+  ) => Promise<CreateDraftDocumentFieldsOut>;
+  createParameterFieldsAction?: (
+    input: CreateDraftParameterFieldsIn
+  ) => Promise<CreateDraftParameterFieldsOut>;
   createImagesAction?: (
     input: CreateDraftImagesIn
   ) => Promise<CreateDraftImagesOut>;
@@ -237,7 +259,9 @@ function ScenarioComponent({
   createDocumentsAction,
   createTemplatesAction,
   createParametersAction,
-  createFieldsAction,
+  createPersonaFieldsAction,
+  createDocumentFieldsAction,
+  createParameterFieldsAction,
   createImagesAction,
   createVideosAction,
   createQuestionsAction,
@@ -357,7 +381,9 @@ function ScenarioComponent({
         document_ids: [],
         template_ids: [],
         parameter_ids: [],
-        field_ids: [],
+        persona_field_ids: [],
+        document_field_ids: [],
+        parameter_field_ids: [],
         image_ids: [],
         objective_ids: [],
         video_ids: [],
@@ -382,7 +408,9 @@ function ScenarioComponent({
       document_ids: (scenarioData.document_ids ?? []).map(String),
       template_ids: (scenarioData.template_ids ?? []).map(String),
       parameter_ids: (scenarioData.parameter_ids ?? []).map(String),
-      field_ids: (scenarioData.field_ids ?? []).map(String),
+      persona_field_ids: (scenarioData.persona_field_ids ?? []).map(String),
+      document_field_ids: (scenarioData.document_field_ids ?? []).map(String),
+      parameter_field_ids: (scenarioData.parameter_field_ids ?? []).map(String),
       image_ids: (scenarioData.image_ids ?? []).map(String),
       objective_ids: (scenarioData.objective_ids ?? []).map(String),
       video_ids: (scenarioData.video_ids ?? []).map(String),
@@ -414,9 +442,17 @@ function ScenarioComponent({
     () => JSON.stringify(formState.parameter_ids),
     [formState.parameter_ids]
   );
-  const fieldIdsStr = useMemo(
-    () => JSON.stringify(formState.field_ids),
-    [formState.field_ids]
+  const personaFieldIdsStr = useMemo(
+    () => JSON.stringify(formState.persona_field_ids),
+    [formState.persona_field_ids]
+  );
+  const documentFieldIdsStr = useMemo(
+    () => JSON.stringify(formState.document_field_ids),
+    [formState.document_field_ids]
+  );
+  const parameterFieldIdsStr = useMemo(
+    () => JSON.stringify(formState.parameter_field_ids),
+    [formState.parameter_field_ids]
   );
   const imageIdsStr = useMemo(
     () => JSON.stringify(formState.image_ids),
@@ -460,7 +496,9 @@ function ScenarioComponent({
           JSON.stringify(newState.template_ids) ||
         JSON.stringify(prev.parameter_ids) !==
           JSON.stringify(newState.parameter_ids) ||
-        JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
+        JSON.stringify(prev.persona_field_ids) !== JSON.stringify(newState.persona_field_ids) ||
+        JSON.stringify(prev.document_field_ids) !== JSON.stringify(newState.document_field_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(newState.parameter_field_ids) ||
         JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
         JSON.stringify(prev.objective_ids) !==
           JSON.stringify(newState.objective_ids) ||
@@ -491,7 +529,9 @@ function ScenarioComponent({
     JSON.stringify(scenarioData?.document_ids),
     JSON.stringify(scenarioData?.template_ids),
     JSON.stringify(scenarioData?.parameter_ids),
-    JSON.stringify(scenarioData?.field_ids),
+    JSON.stringify(scenarioData?.persona_field_ids),
+    JSON.stringify(scenarioData?.document_field_ids),
+    JSON.stringify(scenarioData?.parameter_field_ids),
     JSON.stringify(scenarioData?.image_ids),
     JSON.stringify(scenarioData?.objective_ids),
     JSON.stringify(scenarioData?.video_ids),
@@ -547,7 +587,9 @@ function ScenarioComponent({
         document_ids: formState.document_ids,
         template_document_ids: formState.template_ids,
         parameter_ids: formState.parameter_ids,
-        field_ids: formState.field_ids,
+        persona_field_ids: formState.persona_field_ids,
+        document_field_ids: formState.document_field_ids,
+        parameter_field_ids: formState.parameter_field_ids,
         image_ids: formState.image_ids,
         objective_ids: formState.objective_ids,
         video_ids: formState.video_ids,
@@ -570,7 +612,9 @@ function ScenarioComponent({
       documentIdsStr,
       templateIdsStr,
       parameterIdsStr,
-      fieldIdsStr,
+      personaFieldIdsStr,
+      documentFieldIdsStr,
+      parameterFieldIdsStr,
       imageIdsStr,
       objectiveIdsStr,
       videoIdsStr,
@@ -603,7 +647,9 @@ function ScenarioComponent({
       formState.document_ids.length > 0 ||
       formState.template_ids.length > 0 ||
       formState.parameter_ids.length > 0 ||
-      formState.field_ids.length > 0 ||
+      formState.persona_field_ids.length > 0 ||
+      formState.document_field_ids.length > 0 ||
+      formState.parameter_field_ids.length > 0 ||
       formState.image_ids.length > 0 ||
       formState.objective_ids.length > 0 ||
       formState.video_ids.length > 0 ||
@@ -673,7 +719,9 @@ function ScenarioComponent({
             document_ids: formState.document_ids,
             template_document_ids: formState.template_ids,
             parameter_ids: formState.parameter_ids,
-            field_ids: formState.field_ids,
+            persona_field_ids: formState.persona_field_ids,
+            document_field_ids: formState.document_field_ids,
+            parameter_field_ids: formState.parameter_field_ids,
             image_ids: formState.image_ids,
             objective_ids: formState.objective_ids,
             video_ids: formState.video_ids,
@@ -837,12 +885,21 @@ function ScenarioComponent({
       parameters_required: scenarioData.parameters_required,
       parameter_suggestions: scenarioData.parameter_suggestions,
       parameters: scenarioData.parameters,
-      field_resources: scenarioData.field_resources,
-      show_fields: scenarioData.show_fields,
-      fields_agent_id: scenarioData.fields_agent_id,
-      fields_required: scenarioData.fields_required,
-      field_suggestions: scenarioData.field_suggestions,
-      fields: scenarioData.fields,
+      persona_field_resources: scenarioData.persona_field_resources,
+      show_persona_fields: scenarioData.show_persona_fields,
+      persona_fields_agent_id: scenarioData.persona_fields_agent_id,
+      persona_fields_required: scenarioData.persona_fields_required,
+      persona_fields: scenarioData.persona_fields,
+      document_field_resources: scenarioData.document_field_resources,
+      show_document_fields: scenarioData.show_document_fields,
+      document_fields_agent_id: scenarioData.document_fields_agent_id,
+      document_fields_required: scenarioData.document_fields_required,
+      document_fields: scenarioData.document_fields,
+      parameter_field_resources: scenarioData.parameter_field_resources,
+      show_parameter_fields: scenarioData.show_parameter_fields,
+      parameter_fields_agent_id: scenarioData.parameter_fields_agent_id,
+      parameter_fields_required: scenarioData.parameter_fields_required,
+      parameter_fields: scenarioData.parameter_fields,
       image_resources: scenarioData.image_resources,
       show_images: scenarioData.show_images,
       images_agent_id: scenarioData.images_agent_id,
@@ -963,10 +1020,23 @@ function ScenarioComponent({
               (p) => p.generated
             ) ?? false
           );
-        case "fields":
+        case "persona_fields":
           return (
-            stableScenarioDataFields.field_resources?.some((f) => f.generated) ??
-            false
+            stableScenarioDataFields.persona_field_resources?.some(
+              (f) => f.generated
+            ) ?? false
+          );
+        case "document_fields":
+          return (
+            stableScenarioDataFields.document_field_resources?.some(
+              (f) => f.generated
+            ) ?? false
+          );
+        case "parameter_fields":
+          return (
+            stableScenarioDataFields.parameter_field_resources?.some(
+              (f) => f.generated
+            ) ?? false
           );
         case "images":
           return (
@@ -1037,7 +1107,9 @@ function ScenarioComponent({
       document_ids?: string[];
       template_ids?: string[];
       parameter_ids?: string[];
-      field_ids?: string[];
+      persona_field_ids?: string[];
+      document_field_ids?: string[];
+      parameter_field_ids?: string[];
       image_ids?: string[];
       video_ids?: string[];
       question_ids?: string[];
@@ -1070,7 +1142,9 @@ function ScenarioComponent({
         "documents",
         "templates",
         "parameters",
-        "fields",
+        "persona_fields",
+        "document_fields",
+        "parameter_fields",
         "images",
         "videos",
         "questions",
@@ -1137,11 +1211,23 @@ function ScenarioComponent({
             );
             updates.parameter_ids = [...prev.parameter_ids, ...newIds];
           }
-          if (data.field_ids && data.field_ids.length > 0) {
-            const newIds = data.field_ids.filter(
-              (id) => !prev.field_ids.includes(id)
+          if (data.persona_field_ids && data.persona_field_ids.length > 0) {
+            const newIds = data.persona_field_ids.filter(
+              (id) => !prev.persona_field_ids.includes(id)
             );
-            updates.field_ids = [...prev.field_ids, ...newIds];
+            updates.persona_field_ids = [...prev.persona_field_ids, ...newIds];
+          }
+          if (data.document_field_ids && data.document_field_ids.length > 0) {
+            const newIds = data.document_field_ids.filter(
+              (id) => !prev.document_field_ids.includes(id)
+            );
+            updates.document_field_ids = [...prev.document_field_ids, ...newIds];
+          }
+          if (data.parameter_field_ids && data.parameter_field_ids.length > 0) {
+            const newIds = data.parameter_field_ids.filter(
+              (id) => !prev.parameter_field_ids.includes(id)
+            );
+            updates.parameter_field_ids = [...prev.parameter_field_ids, ...newIds];
           }
           if (data.image_ids && data.image_ids.length > 0) {
             const newIds = data.image_ids.filter(
@@ -1200,11 +1286,6 @@ function ScenarioComponent({
                 updates.parameter_ids = prev.parameter_ids.includes(resourceId)
                   ? prev.parameter_ids
                   : [...prev.parameter_ids, resourceId];
-                break;
-              case "fields":
-                updates.field_ids = prev.field_ids.includes(resourceId)
-                  ? prev.field_ids
-                  : [...prev.field_ids, resourceId];
                 break;
               case "images":
                 updates.image_ids = prev.image_ids.includes(resourceId)
@@ -1414,9 +1495,6 @@ function ScenarioComponent({
         filter_parameter_ids: formState.parameter_ids.length
           ? formState.parameter_ids
           : null,
-        filter_field_ids: formState.field_ids.length
-          ? formState.field_ids
-          : null,
         persona_search: personaSearch,
         document_search: documentSearch,
         parameter_search: parameterSearch,
@@ -1440,7 +1518,6 @@ function ScenarioComponent({
       formState.department_ids,
       formState.persona_ids,
       formState.parameter_ids,
-      formState.field_ids,
     ]
   );
 
@@ -1522,12 +1599,6 @@ function ScenarioComponent({
     [handleGenerateResources, determineAgentType]
   );
 
-  const handleGenerateFields = useCallback(
-    async () =>
-      handleGenerateResources(["fields"], determineAgentType(["fields"])),
-    [handleGenerateResources, determineAgentType]
-  );
-
   const handleGenerateImages = useCallback(
     async () =>
       handleGenerateResources(["images"], determineAgentType(["images"])),
@@ -1564,11 +1635,10 @@ function ScenarioComponent({
       configuration: ["scenario_flags"],
       problem_statement: ["problem_statements"],
       objectives: ["objectives"],
-      personas: ["personas"],
-      documents: ["documents"],
+      personas: ["personas", "persona_fields"],
+      documents: ["documents", "document_fields"],
       templates: ["templates"],
-      parameters: ["parameters"],
-      fields: ["fields"],
+      parameters: ["parameters", "parameter_fields"],
       images: ["images"],
       videos: ["videos"],
       questions: ["questions"],
@@ -1583,7 +1653,9 @@ function ScenarioComponent({
         "documents",
         "templates",
         "parameters",
-        "fields",
+        "persona_fields",
+        "document_fields",
+        "parameter_fields",
         "images",
         "videos",
         "questions",
@@ -1604,7 +1676,9 @@ function ScenarioComponent({
       documents: "Documents",
       templates: "Templates",
       parameters: "Parameters",
-      fields: "Fields",
+      persona_fields: "Persona Fields",
+      document_fields: "Document Fields",
+      parameter_fields: "Parameter Fields",
       images: "Images",
       videos: "Videos",
       questions: "Questions",
@@ -1728,15 +1802,6 @@ function ScenarioComponent({
         });
       }
 
-    if (stableScenarioDataFields?.show_fields) {
-      items.push({
-        id: "fields",
-        title: "Fields",
-        description: "Select fields for the scenario.",
-        resetFields: ["fields"],
-      });
-    }
-
     if (showImagesSection) {
       items.push({
         id: "images",
@@ -1772,7 +1837,6 @@ function ScenarioComponent({
     stableScenarioDataFields?.show_documents,
     showTemplatesSection,
     stableScenarioDataFields?.show_parameters,
-    stableScenarioDataFields?.show_fields,
     showImagesSection,
     showVideosSection,
     showQuestionsSection,
@@ -1819,8 +1883,6 @@ function ScenarioComponent({
         return "Templates reset";
       case "parameters":
         return "Parameters reset";
-      case "fields":
-        return "Fields reset";
       case "images":
         return "Images reset";
       case "videos":
@@ -1867,11 +1929,13 @@ function ScenarioComponent({
           return {
             ...prev,
             persona_ids: [],
+            persona_field_ids: [],
           };
         case "documents":
           return {
             ...prev,
             document_ids: [],
+            document_field_ids: [],
           };
         case "templates":
           return {
@@ -1882,11 +1946,7 @@ function ScenarioComponent({
           return {
             ...prev,
             parameter_ids: [],
-          };
-        case "fields":
-          return {
-            ...prev,
-            field_ids: [],
+            parameter_field_ids: [],
           };
         case "images":
           return {
@@ -1978,14 +2038,6 @@ function ScenarioComponent({
       }
 
       if (
-        scenarioData?.fields_required &&
-        formState.field_ids.length === 0
-      ) {
-        toast.error("Fields are required");
-        throw new Error("Fields are required");
-      }
-
-      if (
         scenarioData?.images_required &&
         formState.image_ids.length === 0
       ) {
@@ -2059,7 +2111,6 @@ function ScenarioComponent({
       scenarioData?.documents_required,
       scenarioData?.templates_required,
       scenarioData?.parameters_required,
-      scenarioData?.fields_required,
       scenarioData?.images_required,
       scenarioData?.videos_required,
       scenarioData?.questions_required,
@@ -2105,9 +2156,6 @@ function ScenarioComponent({
         case "parameters":
           if (!hasName || !hasDescription) return "pending";
           return formState.parameter_ids.length > 0 ? "completed" : "active";
-        case "fields":
-          if (!hasName || !hasDescription) return "pending";
-          return formState.field_ids.length > 0 ? "completed" : "active";
         case "images":
           if (!hasName || !hasDescription) return "pending";
           return formState.image_ids.length > 0 ? "completed" : "active";
@@ -2774,29 +2822,51 @@ function ScenarioComponent({
               }
               {...resetProps}
             >
-              <Personas
-                persona_ids={formState.persona_ids}
-                persona_resources={currentScenarioData?.persona_resources ?? []}
-                show_personas={currentScenarioData?.show_personas ?? false}
-                persona_suggestions={currentScenarioData?.persona_suggestions ?? []}
-                personas={currentScenarioData?.personas ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, persona_ids: ids }))
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                personas_agent_id={currentScenarioData?.personas_agent_id ?? null}
-                required={currentScenarioData?.personas_required ?? false}
-                createPersonasAction={
-                  createPersonasAction as
-                    | ((
-                        input: CreateDraftPersonasIn
-                      ) => Promise<CreateDraftPersonasOut>)
-                    | undefined
-                }
-                onGenerate={handleGeneratePersonas}
-                isGenerating={isGenerating("personas")}
-              />
+              <div className="space-y-6">
+                <Personas
+                  persona_ids={formState.persona_ids}
+                  persona_resources={currentScenarioData?.persona_resources ?? []}
+                  show_personas={currentScenarioData?.show_personas ?? false}
+                  persona_suggestions={currentScenarioData?.persona_suggestions ?? []}
+                  personas={currentScenarioData?.personas ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, persona_ids: ids }))
+                  }
+                  group_id={currentScenarioData?.group_id ?? null}
+                  personas_agent_id={currentScenarioData?.personas_agent_id ?? null}
+                  required={currentScenarioData?.personas_required ?? false}
+                  createPersonasAction={
+                    createPersonasAction as
+                      | ((
+                          input: CreateDraftPersonasIn
+                        ) => Promise<CreateDraftPersonasOut>)
+                      | undefined
+                  }
+                  onGenerate={handleGeneratePersonas}
+                  isGenerating={isGenerating("personas")}
+                />
+                <PersonaFields
+                  field_ids={formState.persona_field_ids}
+                  field_resources={currentScenarioData?.persona_field_resources ?? []}
+                  show_fields={currentScenarioData?.show_persona_fields ?? false}
+                  fields={currentScenarioData?.persona_fields ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, persona_field_ids: ids }))
+                  }
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.persona_fields_agent_id ?? null}
+                  required={currentScenarioData?.persona_fields_required ?? false}
+                  createPersonaFieldsAction={
+                    createPersonaFieldsAction as
+                      | ((
+                          input: CreateDraftPersonaFieldsIn
+                        ) => Promise<CreateDraftPersonaFieldsOut>)
+                      | undefined
+                  }
+                />
+              </div>
             </StepCard>
           );
         case "documents":
@@ -2849,29 +2919,51 @@ function ScenarioComponent({
               }
               {...resetProps}
             >
-              <Documents
-                document_ids={formState.document_ids}
-                document_resources={currentScenarioData?.document_resources ?? []}
-                show_documents={currentScenarioData?.show_documents ?? false}
-                document_suggestions={currentScenarioData?.document_suggestions ?? []}
-                documents={currentScenarioData?.documents ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, document_ids: ids }))
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                documents_agent_id={currentScenarioData?.documents_agent_id ?? null}
-                required={currentScenarioData?.documents_required ?? false}
-                createDocumentsAction={
-                  createDocumentsAction as
-                    | ((
-                        input: CreateDraftDocumentsIn
-                      ) => Promise<CreateDraftDocumentsOut>)
-                    | undefined
-                }
-                onGenerate={handleGenerateDocuments}
-                isGenerating={isGenerating("documents")}
-              />
+              <div className="space-y-6">
+                <Documents
+                  document_ids={formState.document_ids}
+                  document_resources={currentScenarioData?.document_resources ?? []}
+                  show_documents={currentScenarioData?.show_documents ?? false}
+                  document_suggestions={currentScenarioData?.document_suggestions ?? []}
+                  documents={currentScenarioData?.documents ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, document_ids: ids }))
+                  }
+                  group_id={currentScenarioData?.group_id ?? null}
+                  documents_agent_id={currentScenarioData?.documents_agent_id ?? null}
+                  required={currentScenarioData?.documents_required ?? false}
+                  createDocumentsAction={
+                    createDocumentsAction as
+                      | ((
+                          input: CreateDraftDocumentsIn
+                        ) => Promise<CreateDraftDocumentsOut>)
+                      | undefined
+                  }
+                  onGenerate={handleGenerateDocuments}
+                  isGenerating={isGenerating("documents")}
+                />
+                <DocumentFields
+                  field_ids={formState.document_field_ids}
+                  field_resources={currentScenarioData?.document_field_resources ?? []}
+                  show_fields={currentScenarioData?.show_document_fields ?? false}
+                  fields={currentScenarioData?.document_fields ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, document_field_ids: ids }))
+                  }
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.document_fields_agent_id ?? null}
+                  required={currentScenarioData?.document_fields_required ?? false}
+                  createDocumentFieldsAction={
+                    createDocumentFieldsAction as
+                      | ((
+                          input: CreateDraftDocumentFieldsIn
+                        ) => Promise<CreateDraftDocumentFieldsOut>)
+                      | undefined
+                  }
+                />
+              </div>
             </StepCard>
           );
         case "templates":
@@ -2996,93 +3088,57 @@ function ScenarioComponent({
               }
               {...resetProps}
             >
-              <Parameters
-                parameter_ids={formState.parameter_ids}
-                parameter_resources={
-                  currentScenarioData?.parameter_resources ?? []
-                }
-                show_parameters={currentScenarioData?.show_parameters ?? false}
-                parameter_suggestions={
-                  currentScenarioData?.parameter_suggestions ?? []
-                }
-                parameters={currentScenarioData?.parameters ?? []}
-                searchTerm={parameterSearch}
-                showSelectedFilter={parameterShowSelected}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, parameter_ids: ids }))
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.parameters_agent_id ?? null}
-                required={currentScenarioData?.parameters_required ?? false}
-                createParametersAction={
-                  createParametersAction as
-                    | ((
-                        input: CreateDraftParametersIn
-                      ) => Promise<CreateDraftParametersOut>)
-                    | undefined
-                }
-                onGenerate={handleGenerateParameters}
-                isGenerating={isGenerating("parameters")}
-              />
-            </StepCard>
-          );
-        case "fields":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["fields"]}
-              actions={
-                shouldShowGenerateAction(
-                  "fields",
-                  currentScenarioData?.general_agent_id
-                ) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            handleOpenStepCardModal("fields", "generate")
-                          }
-                          disabled={disabled}
-                        >
-                          <Sparkles className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Generate</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : null
-              }
-              {...resetProps}
-            >
-              <Fields
-                field_ids={formState.field_ids}
-                field_resources={currentScenarioData?.field_resources ?? []}
-                show_fields={currentScenarioData?.show_fields ?? false}
-                field_suggestions={currentScenarioData?.field_suggestions ?? []}
-                fields={currentScenarioData?.fields ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, field_ids: ids }))
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.fields_agent_id ?? null}
-                required={currentScenarioData?.fields_required ?? false}
-                createFieldsAction={
-                  createFieldsAction as
-                    | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
-                    | undefined
-                }
-              />
+              <div className="space-y-6">
+                <Parameters
+                  parameter_ids={formState.parameter_ids}
+                  parameter_resources={
+                    currentScenarioData?.parameter_resources ?? []
+                  }
+                  show_parameters={currentScenarioData?.show_parameters ?? false}
+                  parameter_suggestions={
+                    currentScenarioData?.parameter_suggestions ?? []
+                  }
+                  parameters={currentScenarioData?.parameters ?? []}
+                  searchTerm={parameterSearch}
+                  showSelectedFilter={parameterShowSelected}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, parameter_ids: ids }))
+                  }
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.parameters_agent_id ?? null}
+                  required={currentScenarioData?.parameters_required ?? false}
+                  createParametersAction={
+                    createParametersAction as
+                      | ((
+                          input: CreateDraftParametersIn
+                        ) => Promise<CreateDraftParametersOut>)
+                      | undefined
+                  }
+                  onGenerate={handleGenerateParameters}
+                  isGenerating={isGenerating("parameters")}
+                />
+                <ParameterFields
+                  field_ids={formState.parameter_field_ids}
+                  field_resources={currentScenarioData?.parameter_field_resources ?? []}
+                  show_fields={currentScenarioData?.show_parameter_fields ?? false}
+                  fields={currentScenarioData?.parameter_fields ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
+                  }
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.parameter_fields_agent_id ?? null}
+                  required={currentScenarioData?.parameter_fields_required ?? false}
+                  createParameterFieldsAction={
+                    createParameterFieldsAction as
+                      | ((
+                          input: CreateDraftParameterFieldsIn
+                        ) => Promise<CreateDraftParameterFieldsOut>)
+                      | undefined
+                  }
+                />
+              </div>
             </StepCard>
           );
         case "images":
@@ -3287,7 +3343,6 @@ function ScenarioComponent({
       handleGenerateDocuments,
       handleGenerateTemplates,
       handleGenerateParameters,
-      handleGenerateFields,
       handleGenerateImages,
       handleGenerateVideos,
       handleGenerateQuestions,
@@ -3304,7 +3359,9 @@ function ScenarioComponent({
       createDocumentsAction,
       createTemplatesAction,
       createParametersAction,
-      createFieldsAction,
+      createPersonaFieldsAction,
+      createDocumentFieldsAction,
+      createParameterFieldsAction,
       createImagesAction,
       createVideosAction,
       createQuestionsAction,
@@ -3390,7 +3447,9 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     document_ids: prevScenarioData?.document_ids,
     template_ids: prevScenarioData?.template_ids,
     parameter_ids: prevScenarioData?.parameter_ids,
-    field_ids: prevScenarioData?.field_ids,
+    persona_field_ids: prevScenarioData?.persona_field_ids,
+    document_field_ids: prevScenarioData?.document_field_ids,
+    parameter_field_ids: prevScenarioData?.parameter_field_ids,
     image_ids: prevScenarioData?.image_ids,
     objective_ids: prevScenarioData?.objective_ids,
     video_ids: prevScenarioData?.video_ids,
@@ -3413,7 +3472,9 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     document_ids: nextScenarioData?.document_ids,
     template_ids: nextScenarioData?.template_ids,
     parameter_ids: nextScenarioData?.parameter_ids,
-    field_ids: nextScenarioData?.field_ids,
+    persona_field_ids: nextScenarioData?.persona_field_ids,
+    document_field_ids: nextScenarioData?.document_field_ids,
+    parameter_field_ids: nextScenarioData?.parameter_field_ids,
     image_ids: nextScenarioData?.image_ids,
     objective_ids: nextScenarioData?.objective_ids,
     video_ids: nextScenarioData?.video_ids,

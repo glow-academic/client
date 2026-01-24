@@ -73,7 +73,6 @@ async def authorize_emulation(
         params = CreateEmulationGrantSqlParams(
             requester_profile_id=requester_profile_id,
             target_profile_id=request.target_profile_id,
-            full_emulation=request.full_emulation,
             ttl_minutes=request.ttl_minutes,
             signin_base_url=signin_base_url,
             callback_url=callback_url,

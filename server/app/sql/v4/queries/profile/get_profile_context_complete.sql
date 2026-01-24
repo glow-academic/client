@@ -1,17 +1,12 @@
--- Get profile context with emulation validation in a single transaction
+-- Get profile context in a single transaction
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Business Logic Overview:
--- 1. Profile Resolution: Uses provided profile IDs (no default-account resolution)
--- 2. Emulation Validation: Validates that actual profile can emulate effective profile based on role hierarchy
---    - superadmin can emulate anyone
---    - admin can emulate instructional/member/guest
---    - instructional can emulate member/guest
---    - member/guest cannot emulate others
--- 3. Scoped Roles: Computes roles that effective profile has scope to see (for UI filtering)
--- 4. Settings Resolution: Resolves settings with priority: department-specific → default → any active
--- 5. Collections: Returns arrays of composite types (departments, cohorts, simulations) - NO JSONB
+-- 1. Profile Resolution: Uses provided profile_id directly
+-- 2. Scoped Roles: Computes roles that profile has scope to see (for UI filtering)
+-- 3. Settings Resolution: Resolves settings with priority: department-specific → default → any active
+-- 4. Collections: Returns arrays of composite types (departments, cohorts, simulations) - NO JSONB
 --
 -- NOTE: Theme derivation (converting primitives to tokens) stays in Python because it requires
 -- complex color math utilities (hex_to_oklch, ensure_contrast, shade, tint) that are not available
@@ -149,26 +144,12 @@ CREATE TYPE types.q_get_profile_context_v4_theme_tokens AS (
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_profile_context_v4(
-    actual_profile_id uuid DEFAULT NULL,
-    effective_profile_id uuid DEFAULT NULL,
+    profile_id uuid DEFAULT NULL,
     department_id text DEFAULT NULL
 )
 RETURNS TABLE (
     is_authorized boolean,
-    -- Actual profile fields (prefixed with actual_)
-    actual_id uuid,
-    actual_name text,
-    actual_emails text[],
-    actual_primary_email text,
-    actual_role text,
-    actual_active boolean,
-    actual_req_per_day integer,
-    actual_last_login timestamptz,
-    actual_last_active timestamptz,
-    actual_created_at timestamptz,
-    actual_updated_at timestamptz,
-    actual_primary_department_id uuid,
-    -- Effective profile fields (unprefixed)
+    -- Profile fields
     id uuid,
     name text,
     emails text[],
@@ -232,85 +213,46 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT 
-        actual_profile_id AS actual_profile_id,
-        effective_profile_id AS effective_profile_id,
+    SELECT
+        profile_id AS profile_id,
         department_id AS department_id
 ),
-resolved_profile_ids AS (
-    SELECT 
-        (SELECT actual_profile_id FROM params) as actual_profile_id,
-        (SELECT effective_profile_id FROM params) as effective_profile_id
-),
-emulation_validation AS (
-    -- Validate emulation is authorized when profiles differ
-    SELECT 
-        (SELECT actual_profile_id FROM resolved_profile_ids) as resolved_actual_profile_id,
-        (SELECT effective_profile_id FROM resolved_profile_ids) as resolved_effective_profile_id,
-        CASE 
-            WHEN (SELECT actual_profile_id FROM resolved_profile_ids) = (SELECT effective_profile_id FROM resolved_profile_ids) THEN true  -- Same profile, always allowed
-            ELSE (
-                -- Check if effective profile is in simulatable list based on actual user's role
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM profile_artifact p_actual
-                    JOIN profile_artifact p_effective ON p_effective.id = (SELECT effective_profile_id FROM resolved_profile_ids)
-                    WHERE p_actual.id = (SELECT actual_profile_id FROM resolved_profile_ids)
-                      AND p_effective.id != p_actual.id
-                      AND CASE 
-                        WHEN (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'superadmin'::profile_type THEN true
-                        WHEN (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'admin'::profile_type THEN (SELECT r2.role FROM profile_roles_junction pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)
-                        WHEN (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'instructional'::profile_type THEN (SELECT r2.role FROM profile_roles_junction pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)
-                        ELSE false
-                      END
-                )
-            )
-        END as is_authorized
-),
-actual_profile_type AS (
-    -- Use actual (logged-in) user's role for emulation permissions
-    SELECT (SELECT r.role FROM profile_roles_junction pr_j 
-            JOIN roles_resource r ON pr_j.role_id = r.id 
-            WHERE pr_j.profile_id = p.id 
-            LIMIT 1) as role 
-    FROM profile_artifact p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
-),
-effective_profile_type AS (
-    -- Use effective profile's role for UI permissions filtering
+profile_type AS (
+    -- Use profile's role for UI permissions filtering
     -- Return NULL role when profile ID is NULL (for settings-only requests)
-    SELECT 
+    SELECT
         COALESCE(
-            (SELECT r.role FROM profile_roles_junction pr_j 
-             JOIN roles_resource r ON pr_j.role_id = r.id 
-             WHERE pr_j.profile_id = p.id 
+            (SELECT r.role FROM profile_roles_junction pr_j
+             JOIN roles_resource r ON pr_j.role_id = r.id
+             WHERE pr_j.profile_id = p.id
              LIMIT 1),
             NULL::profile_type
         ) as role
-    FROM profile_artifact p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    FROM profile_artifact p WHERE p.id = (SELECT profile_id FROM params)
 ),
 scoped_roles_computed AS (
-    -- Compute scoped roles based on effective profile's role
-    SELECT 
-        CASE 
-            WHEN epr.role = 'superadmin'::profile_type THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
-            WHEN epr.role = 'admin'::profile_type THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
-            WHEN epr.role = 'instructional'::profile_type THEN ARRAY['instructional', 'member', 'guest']::text[]
-            WHEN epr.role = 'member'::profile_type THEN ARRAY['member']::text[]
+    -- Compute scoped roles based on profile's role
+    SELECT
+        CASE
+            WHEN pt.role = 'superadmin'::profile_type THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            WHEN pt.role = 'admin'::profile_type THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            WHEN pt.role = 'instructional'::profile_type THEN ARRAY['instructional', 'member', 'guest']::text[]
+            WHEN pt.role = 'member'::profile_type THEN ARRAY['member']::text[]
             ELSE ARRAY['guest']::text[]
         END as scoped_roles
-    FROM effective_profile_type epr
+    FROM profile_type pt
 ),
-actual_profile_data AS (
-    -- Fetch the logged-in user's profile
+profile_data AS (
+    -- Fetch the profile
     -- Return NULL values when profile ID is NULL (for settings-only requests)
-    SELECT 
+    SELECT
         p.id,
         (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        (SELECT r.role FROM profile_roles_junction pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
-         WHERE pr_j.profile_id = p.id 
+        (SELECT r.role FROM profile_roles_junction pr_j
+         JOIN roles_resource r ON pr_j.role_id = r.id
+         WHERE pr_j.profile_id = p.id
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
@@ -333,13 +275,13 @@ actual_profile_data AS (
         ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true
-    WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
-    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
-             rl.requests_per_day, (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
+    WHERE p.id = (SELECT profile_id FROM params)
+    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE),
+             rl.requests_per_day, (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active,
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
-    SELECT 
+    SELECT
         NULL::uuid as id,
         NULL::text as name,
         NULL::text[] as emails,
@@ -352,61 +294,7 @@ actual_profile_data AS (
         NULL::timestamptz as created_at,
         NULL::timestamptz as updated_at,
         NULL::uuid as primary_department_id
-    WHERE (SELECT actual_profile_id FROM resolved_profile_ids) IS NULL
-),
-effective_profile_data AS (
-    -- Fetch the profile being viewed (could be same as actual or emulated)
-    -- Return NULL values when profile ID is NULL (for settings-only requests)
-    SELECT 
-        p.id,
-        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
-        ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        (SELECT r.role FROM profile_roles_junction pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
-         WHERE pr_j.profile_id = p.id 
-         LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
-        COALESCE(rl.requests_per_day, 0) as req_per_day,
-        (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
-        pa.last_active,
-        p.created_at,
-        p.updated_at,
-        pd.department_id as primary_department_id
-    FROM profile_artifact p
-    LEFT JOIN profile_emails_junction pe ON pe.profile_id = p.id AND pe.active = true
-    LEFT JOIN emails_resource e ON pe.email_id = e.id
-    LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    LEFT JOIN LATERAL (
-        SELECT ae.last_active
-        FROM profile_activity_junction pactj
-        JOIN activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profile_id = p.id
-        ORDER BY ae.created_at DESC
-        LIMIT 1
-    ) pa ON true
-    WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
-    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
-             rl.requests_per_day, (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
-             p.created_at, p.updated_at, pd.department_id
-    UNION ALL
-    -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
-    SELECT 
-        NULL::uuid as id,
-        NULL::text as name,
-        NULL::text[] as emails,
-        NULL::text as primary_email,
-        NULL::profile_type as role,
-        NULL::boolean as active,
-        NULL::integer as req_per_day,
-        NULL::timestamptz as last_login,
-        NULL::timestamptz as last_active,
-        NULL::timestamptz as created_at,
-        NULL::timestamptz as updated_at,
-        NULL::uuid as primary_department_id
-    WHERE (SELECT effective_profile_id FROM resolved_profile_ids) IS NULL
+    WHERE (SELECT profile_id FROM params) IS NULL
 ),
 dept_data AS (
     -- Departments for the effective profile
@@ -419,7 +307,7 @@ dept_data AS (
         pd.is_primary
     FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.department_id
-    WHERE pd.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    WHERE pd.profile_id = (SELECT profile_id FROM params)
       AND pd.active = true
       AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
 ),
@@ -441,7 +329,7 @@ cohort_data AS (
         WHERE cd.active = true
         GROUP BY cd.cohort_id
     ) cdd ON cdd.cohort_id = c.id
-    WHERE pc.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    WHERE pc.profile_id = (SELECT profile_id FROM params)
       AND pc.active = true
       AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
 ),
@@ -522,7 +410,7 @@ earliest_attempt AS (
     -- Get attempts for those profiles (via profile_attempts_junction)
     JOIN profile_attempts_junction patj ON patj.profile_id = pd_all.profile_id
     JOIN attempts_entry sa ON sa.id = patj.attempt_id
-    WHERE pd_effective.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    WHERE pd_effective.profile_id = (SELECT profile_id FROM params)
       AND pd_effective.active = true
 ),
 settings_resolution AS (
@@ -540,21 +428,20 @@ settings_resolution AS (
           )
         LIMIT 1
     ),
-    effective_profile_department AS (
-        -- Get effective profile's primary department (if profile exists)
+    profile_department AS (
+        -- Get profile's primary department (if profile exists)
         SELECT pd.department_id
-        FROM resolved_profile_ids rpi
-        JOIN profile_departments_junction pd ON pd.profile_id = rpi.effective_profile_id
-        WHERE rpi.effective_profile_id IS NOT NULL
-          AND pd.is_primary = TRUE 
+        FROM params p
+        JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
+        WHERE p.profile_id IS NOT NULL
+          AND pd.is_primary = TRUE
           AND pd.active = true
         LIMIT 1
     ),
     resolved_department_id AS (
         -- Use profile's department if available, otherwise use department_id parameter
-        -- Cast department_id from params to UUID to match effective_profile_department type
         SELECT COALESCE(
-            (SELECT department_id FROM effective_profile_department),
+            (SELECT department_id FROM profile_department),
             (SELECT CASE 
                 WHEN department_id IS NOT NULL AND department_id != '' THEN department_id::uuid
                 ELSE NULL::uuid
@@ -664,19 +551,12 @@ roles_data AS (
     WHERE r.active = true
 ),
 actor_name_computed AS (
-    -- Compute actor_name from effective_profile_id if available, else actual_profile_id
-    -- This is used for audit logging
-    -- Return NULL when both profile IDs are NULL (for settings-only requests)
-    SELECT 
-        COALESCE(
-            (SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
-             FROM profile_artifact p
-             WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
-            (SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
-             FROM profile_artifact p
-             WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids) LIMIT 1),
-            NULL::text
-        ) as actor_name
+    -- Compute actor_name from profile_id
+    -- Return NULL when profile ID is NULL (for settings-only requests)
+    SELECT
+        (SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
+         FROM profile_artifact p
+         WHERE p.id = (SELECT profile_id FROM params) LIMIT 1) as actor_name
 ),
 available_routes_data AS (
     -- Resolve available routes from profile_routes_junction for effective profile
@@ -687,7 +567,7 @@ available_routes_data AS (
         ) as available_routes
     FROM profile_routes_junction pr
     JOIN routes_resource rr ON rr.id = pr.route_id
-    WHERE pr.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    WHERE pr.profile_id = (SELECT profile_id FROM params)
       AND pr.active = true
 ),
 available_sections_computed AS (
@@ -706,17 +586,17 @@ available_sections_computed AS (
     ) routes
 ),
 redirect_path_computed AS (
-    -- Compute redirect path based on effective profile's role
+    -- Compute redirect path based on profile's role
     -- Replicates get_redirect_path_for_role logic
     -- Return NULL when role is NULL (for settings-only requests)
-    SELECT 
-        CASE 
-            WHEN epr.role IS NULL THEN NULL::text
-            WHEN epr.role = 'guest'::profile_type THEN '/practice'::text
-            WHEN epr.role = 'member'::profile_type THEN '/home'::text
-            WHEN epr.role = 'instructional'::profile_type THEN '/analytics/dashboard'::text
-            WHEN epr.role = 'admin'::profile_type THEN '/analytics/dashboard'::text
-            WHEN epr.role = 'superadmin'::profile_type THEN '/analytics/dashboard'::text
+    SELECT
+        CASE
+            WHEN pt.role IS NULL THEN NULL::text
+            WHEN pt.role = 'guest'::profile_type THEN '/practice'::text
+            WHEN pt.role = 'member'::profile_type THEN '/home'::text
+            WHEN pt.role = 'instructional'::profile_type THEN '/analytics/dashboard'::text
+            WHEN pt.role = 'admin'::profile_type THEN '/analytics/dashboard'::text
+            WHEN pt.role = 'superadmin'::profile_type THEN '/analytics/dashboard'::text
             ELSE COALESCE(
                 (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
                  WHERE route_path NOT LIKE '%[%'
@@ -728,7 +608,7 @@ redirect_path_computed AS (
                 '/home'::text
             )
         END as redirect_path
-    FROM effective_profile_type epr
+    FROM profile_type pt
 ),
 department_ids_computed AS (
     -- Extract department IDs from dept_data
@@ -768,7 +648,7 @@ drafts_data AS (
         d.updated_at
     FROM profile_drafts_junction pdj
     JOIN drafts_entry d ON d.id = pdj.draft_id
-    WHERE pdj.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    WHERE pdj.profile_id = (SELECT profile_id FROM params)
 ),
 drafts_aggregated AS (
     -- Aggregate drafts as array of composite types
@@ -785,40 +665,27 @@ drafts_aggregated AS (
 session_resolution AS (
     SELECT id as session_id
     FROM sessions_entry
-    WHERE profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    WHERE profile_id = (SELECT profile_id FROM params)
       AND active = true
     ORDER BY created_at DESC
     LIMIT 1
 )
-SELECT 
-    -- Emulation authorization flag
-    ev.is_authorized::boolean as is_authorized,
-    -- Actual profile fields (prefixed with actual_)
-    apd.id as actual_id,
-    apd.name as actual_name,
-    COALESCE(apd.emails, ARRAY[]::text[]) as actual_emails,
-    apd.primary_email as actual_primary_email,
-    apd.role as actual_role,
-    apd.active as actual_active,
-    apd.req_per_day as actual_req_per_day,
-    apd.last_login as actual_last_login,
-    apd.last_active as actual_last_active,
-    apd.created_at as actual_created_at,
-    apd.updated_at as actual_updated_at,
-    apd.primary_department_id as actual_primary_department_id,
-    -- Effective profile fields (unprefixed)
-    epd.id,
-    epd.name,
-    COALESCE(epd.emails, ARRAY[]::text[]) as emails,
-    epd.primary_email,
-    epd.role,
-    epd.active,
-    epd.req_per_day,
-    epd.last_login,
-    epd.last_active,
-    epd.created_at,
-    epd.updated_at,
-    epd.primary_department_id,
+SELECT
+    -- Authorization flag (always true when profile exists)
+    (pd.id IS NOT NULL)::boolean as is_authorized,
+    -- Profile fields
+    pd.id,
+    pd.name,
+    COALESCE(pd.emails, ARRAY[]::text[]) as emails,
+    pd.primary_email,
+    pd.role,
+    pd.active,
+    pd.req_per_day,
+    pd.last_login,
+    pd.last_active,
+    pd.created_at,
+    pd.updated_at,
+    pd.primary_department_id,
     -- Context data (based on effective profile) - using composite types
     da.departments as departments,
     ca.cohorts as cohorts,
@@ -868,10 +735,7 @@ SELECT
     (SELECT actor_name FROM actor_name_computed) as actor_name,
     (SELECT session_id FROM session_resolution) as session_id
 FROM params
-CROSS JOIN emulation_validation ev
-CROSS JOIN resolved_profile_ids rpi
-CROSS JOIN actual_profile_data apd
-CROSS JOIN effective_profile_data epd
+CROSS JOIN profile_data pd
 CROSS JOIN scoped_roles_computed src
 CROSS JOIN settings_resolution sr
 CROSS JOIN departments_aggregated da
@@ -885,16 +749,12 @@ CROSS JOIN cohort_ids_computed cic
 CROSS JOIN simulation_ids_computed sic
 CROSS JOIN drafts_aggregated da_drafts
 WHERE (
-    -- Standard case: require authorization and profile IDs
-    (ev.is_authorized = true 
-     AND rpi.actual_profile_id IS NOT NULL 
-     AND rpi.effective_profile_id IS NOT NULL)
+    -- Standard case: profile exists
+    (params.profile_id IS NOT NULL AND pd.id IS NOT NULL)
     OR
-    -- Settings-only case: allow NULL profile IDs when department_id is provided (for login page theme)
-    (rpi.actual_profile_id IS NULL 
-     AND rpi.effective_profile_id IS NULL
+    -- Settings-only case: allow NULL profile ID when department_id is provided (for login page theme)
+    (params.profile_id IS NULL
      AND params.department_id IS NOT NULL
      AND params.department_id != '')
-     -- Note: settings_id check happens in Python code, not here
 )
 $$;

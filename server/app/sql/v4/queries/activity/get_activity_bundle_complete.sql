@@ -1,4 +1,4 @@
--- Get activity_entry bundle with header metrics_entry and chart data
+-- Get activity bundle with header metrics, dynamic event chart data, and problems
 -- Converted to function with composite types (no JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -7,9 +7,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_get_activity_bundle_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -24,9 +24,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_get_activity_bundle_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -35,23 +35,38 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
-CREATE TYPE types.q_get_activity_bundle_v4_chart_data_point AS (
+CREATE TYPE types.q_get_activity_bundle_v4_event_type AS (
+    id text,
+    name text,
+    total_count integer
+);
+
+CREATE TYPE types.q_get_activity_bundle_v4_chart_point AS (
     date date,
-    active_profiles integer,
-    feedback_entries integer,
-    activity_entries integer,
-    errors integer
+    event_id text,
+    count integer
+);
+
+CREATE TYPE types.q_get_activity_bundle_v4_problem AS (
+    problem_id uuid,
+    type text,
+    message text,
+    resolved boolean,
+    created_at timestamptz,
+    profile_name text
 );
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_activity_bundle_v4(profile_id uuid)
 RETURNS TABLE (
     actor_name text,
+    sessions_count bigint,
     active_profiles_count bigint,
-    total_feedback_count bigint,
-    total_activity_entries bigint,
-    total_errors_count bigint,
-    chart_data types.q_get_activity_bundle_v4_chart_data_point[]
+    logins_count bigint,
+    content_created_count bigint,
+    available_events types.q_get_activity_bundle_v4_event_type[],
+    chart_data types.q_get_activity_bundle_v4_chart_point[],
+    problems types.q_get_activity_bundle_v4_problem[]
 )
 LANGUAGE sql
 STABLE
@@ -64,31 +79,35 @@ user_profile AS (
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
-daily_activity AS (
+-- Header stats
+sessions_total AS (
+    SELECT COUNT(*) as cnt FROM sessions_entry
+),
+active_profiles_total AS (
+    SELECT COUNT(DISTINCT profile_id) as cnt FROM profile_activity_junction
+),
+logins_total AS (
+    SELECT COUNT(*) as cnt FROM logins_entry
+),
+content_created_total AS (
+    SELECT COUNT(*) as cnt FROM audits_entry
+    WHERE endpoint LIKE '%.saved' OR endpoint LIKE '%.created' OR endpoint LIKE '%.duplicated' OR endpoint LIKE '%.uploaded'
+),
+-- Available events: distinct endpoints from last 90 days
+event_counts AS (
     SELECT
-        DATE(created_at) as date,
-        COUNT(*) as activity_count,
-        COUNT(*) FILTER (WHERE error = true) as error_count
+        endpoint as id,
+        INITCAP(REPLACE(endpoint, '.', ' ')) as name,
+        COUNT(*)::integer as total_count
     FROM audits_entry
     WHERE created_at >= NOW() - INTERVAL '90 days'
-    GROUP BY DATE(created_at)
+      AND endpoint IS NOT NULL
+      AND endpoint != ''
+    GROUP BY endpoint
+    ORDER BY COUNT(*) DESC
+    LIMIT 20
 ),
-daily_feedback AS (
-    SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as feedback_count
-    FROM problems_entry
-    WHERE created_at >= NOW() - INTERVAL '90 days'
-    GROUP BY DATE(created_at)
-),
-daily_active_profiles AS (
-    SELECT
-        DATE(last_active) as date,
-        COUNT(DISTINCT profile_id) as active_profiles_count
-    FROM activity_entry
-    WHERE last_active >= NOW() - INTERVAL '90 days'
-    GROUP BY DATE(last_active)
-),
+-- Chart data: daily counts per event over 90 days
 date_series AS (
     SELECT generate_series(
         DATE(NOW() - INTERVAL '90 days'),
@@ -96,33 +115,52 @@ date_series AS (
         '1 day'::interval
     )::date as date
 ),
-combined_daily AS (
-    SELECT 
+chart_points AS (
+    SELECT
         ds.date,
-        COALESCE(da.activity_count, 0) as activity_count,
-        COALESCE(da.error_count, 0) as error_count,
-        COALESCE(df.feedback_count, 0) as feedback_count,
-        COALESCE(dap.active_profiles_count, 0) as active_profiles_count
+        ec.id as event_id,
+        COALESCE(daily.cnt, 0)::integer as count
     FROM date_series ds
-    LEFT JOIN daily_activity da ON ds.date = da.date
-    LEFT JOIN daily_feedback df ON ds.date = df.date
-    LEFT JOIN daily_active_profiles dap ON ds.date = dap.date
-    ORDER BY ds.date
+    CROSS JOIN event_counts ec
+    LEFT JOIN (
+        SELECT DATE(created_at) as date, endpoint, COUNT(*)::integer as cnt
+        FROM audits_entry
+        WHERE created_at >= NOW() - INTERVAL '90 days'
+          AND endpoint IS NOT NULL
+        GROUP BY DATE(created_at), endpoint
+    ) daily ON daily.date = ds.date AND daily.endpoint = ec.id
+),
+-- Problems
+problems_list AS (
+    SELECT
+        pe.id as problem_id,
+        pe.type,
+        pe.message,
+        pe.resolved,
+        pe.created_at,
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = ppj.profile_id LIMIT 1), 'Anonymous') as profile_name
+    FROM problems_entry pe
+    LEFT JOIN profile_problems_junction ppj ON ppj.problem_id = pe.id
+    ORDER BY pe.created_at DESC
+    LIMIT 50
 )
 SELECT
     up.actor_name::text as actor_name,
-    (SELECT COUNT(DISTINCT profile_id) FROM activity_entry)::bigint as active_profiles_count,
-    (SELECT COUNT(*) FROM problems_entry)::bigint as total_feedback_count,
-    (SELECT COUNT(*) FROM audits_entry)::bigint as total_activity_entries,
-    (SELECT COUNT(*) FROM audits_entry WHERE error = true)::bigint as total_errors_count,
+    (SELECT cnt FROM sessions_total)::bigint as sessions_count,
+    (SELECT cnt FROM active_profiles_total)::bigint as active_profiles_count,
+    (SELECT cnt FROM logins_total)::bigint as logins_count,
+    (SELECT cnt FROM content_created_total)::bigint as content_created_count,
     COALESCE(
-        ARRAY_AGG(
-            (cd.date, cd.active_profiles_count::integer, cd.feedback_count::integer, cd.activity_count::integer, cd.error_count::integer)::types.q_get_activity_bundle_v4_chart_data_point
-            ORDER BY cd.date
-        ),
-        '{}'::types.q_get_activity_bundle_v4_chart_data_point[]
-    ) as chart_data
+        (SELECT ARRAY_AGG((ec.id, ec.name, ec.total_count)::types.q_get_activity_bundle_v4_event_type) FROM event_counts ec),
+        '{}'::types.q_get_activity_bundle_v4_event_type[]
+    ) as available_events,
+    COALESCE(
+        (SELECT ARRAY_AGG((cp.date, cp.event_id, cp.count)::types.q_get_activity_bundle_v4_chart_point ORDER BY cp.date, cp.event_id) FROM chart_points cp),
+        '{}'::types.q_get_activity_bundle_v4_chart_point[]
+    ) as chart_data,
+    COALESCE(
+        (SELECT ARRAY_AGG((pl.problem_id, pl.type, pl.message, pl.resolved, pl.created_at, pl.profile_name)::types.q_get_activity_bundle_v4_problem ORDER BY pl.created_at DESC) FROM problems_list pl),
+        '{}'::types.q_get_activity_bundle_v4_problem[]
+    ) as problems
 FROM user_profile up
-CROSS JOIN combined_daily cd
-GROUP BY up.actor_name
 $$;

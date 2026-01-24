@@ -24,7 +24,7 @@ export const ROLE_LABEL: Record<ProfileRole, string> = {
   superadmin: "Superadmin",
   admin: "Admin",
   instructional: "Instructional",
-  member: "Member",
+  member: "Teaching Assistant",
   guest: "Guest",
   custom: "Custom",
 };

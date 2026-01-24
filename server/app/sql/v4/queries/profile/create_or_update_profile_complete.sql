@@ -144,13 +144,14 @@ link_profile_group AS (
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
--- Insert/update role via profile_roles_junction junction
+-- Look up role from roles_resource by profile_type
 role_resource AS (
-    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
-    SELECT (SELECT role FROM params)::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
-    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (role) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as role_id
+    SELECT id as role_id
+    FROM roles_resource
+    WHERE role = (SELECT role FROM params)::profile_type
+      AND active = true
+    ORDER BY created_at
+    LIMIT 1
 ),
 profile_type_upsert AS (
     DELETE FROM profile_roles_junction WHERE profile_id IN (SELECT id FROM profile_upsert)

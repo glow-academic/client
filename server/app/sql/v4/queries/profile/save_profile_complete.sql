@@ -52,6 +52,7 @@ DECLARE
     v_department_ids uuid[];
     v_route_ids uuid[];
     v_requests_per_day integer;
+    v_role_id uuid;
     v_active_flag_id uuid;
     v_request_limit_id uuid;
 BEGIN
@@ -100,8 +101,8 @@ BEGIN
     WHERE de.draft_id = v_draft_id
       AND de.active = true;
 
-    SELECT r.role::text
-    INTO v_role
+    SELECT r.id, r.role::text
+    INTO v_role_id, v_role
     FROM roles_draft dr
     JOIN roles_resource r ON r.id = dr.roles_id
     WHERE dr.draft_id = v_draft_id
@@ -109,8 +110,8 @@ BEGIN
     LIMIT 1;
 
     IF v_role IS NULL AND input_profile_id IS NOT NULL THEN
-        SELECT r.role::text
-        INTO v_role
+        SELECT r.id, r.role::text
+        INTO v_role_id, v_role
         FROM profile_roles_junction pr
         JOIN roles_resource r ON pr.role_id = r.id
         WHERE pr.profile_id = input_profile_id
@@ -236,6 +237,7 @@ BEGIN
             v_name AS name,
             COALESCE(v_emails, ARRAY[]::text[]) AS emails,
             v_role AS role,
+            v_role_id AS role_id,
             COALESCE(v_active, true) AS active,
             COALESCE(v_cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
@@ -294,15 +296,16 @@ BEGIN
         ON CONFLICT (profile_id) DO UPDATE SET
             name_id = EXCLUDED.name_id
     ),
-    -- Insert/update role via profile_roles_junction junction if provided
-role_resource AS (
-    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
-    SELECT x.role::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
-    FROM params x
-    WHERE x.role IS NOT NULL
-    ON CONFLICT (role) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as role_id
-),
+    -- Look up role from roles_resource (use role_id if available, else first active match by profile_type)
+    role_resource AS (
+        SELECT id as role_id
+        FROM roles_resource
+        WHERE id = COALESCE(
+            (SELECT role_id FROM params),
+            (SELECT id FROM roles_resource WHERE role = (SELECT role FROM params)::profile_type AND active = true ORDER BY created_at LIMIT 1)
+        )
+        LIMIT 1
+    ),
     profile_type_upsert AS (
         -- Delete old role link if updating
         DELETE FROM profile_roles_junction 

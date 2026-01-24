@@ -202,14 +202,17 @@ link_profile_groups AS (
     WHERE pwi.will_create = true
     ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
--- Insert/update role via profile_roles_junction junction
+-- Look up roles from roles_resource by profile_type (first active match per type)
 role_resource_upsert AS (
-    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
-    SELECT DISTINCT pwi.role::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
-    FROM profile_upsert_with_idx pwi
-    WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
-    ON CONFLICT (role) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as role_id, role
+    SELECT DISTINCT ON (r.role) r.id as role_id, r.role
+    FROM roles_resource r
+    WHERE r.role IN (
+        SELECT DISTINCT pwi.role::profile_type
+        FROM profile_upsert_with_idx pwi
+        WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
+    )
+      AND r.active = true
+    ORDER BY r.role, r.created_at
 ),
 profile_type_delete_upsert AS (
     DELETE FROM profile_roles_junction WHERE profile_id IN (SELECT id FROM profile_upsert)

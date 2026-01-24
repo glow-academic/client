@@ -21,8 +21,7 @@ RETURNS TABLE (
     ok boolean,
     reason text,
     actor_profile_id uuid,
-    target_profile_id uuid,
-    full_emulation boolean
+    target_profile_id uuid
 )
 LANGUAGE sql
 VOLATILE
@@ -61,12 +60,11 @@ grant_consumed AS (
         updated_at = NOW()
     WHERE id = (SELECT grant_id FROM params)
       AND (SELECT ok FROM validity) = true
-    RETURNING id, full_emulation
+    RETURNING id
 )
 SELECT
     (SELECT ok FROM validity) as ok,
     (SELECT reason FROM reason_computed) as reason,
     (SELECT pgj.profile_id FROM profile_grants_junction pgj WHERE pgj.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as actor_profile_id,
-    (SELECT pej.profile_id FROM emulations_entry em JOIN profile_emulations_junction pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id,
-    (SELECT full_emulation FROM grant_consumed) as full_emulation
+    (SELECT pej.profile_id FROM emulations_entry em JOIN profile_emulations_junction pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id
 $$;

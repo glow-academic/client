@@ -37,6 +37,7 @@ export interface RoleSelectorProps extends PopoverProps {
   onSelect?: (roles: ProfileRole[]) => void;
   selectedRoles?: ProfileRole[];
   hideSelectedChips?: boolean;
+  roleLabels?: Partial<Record<ProfileRole, string>>;
 }
 
 export function RoleSelector({
@@ -45,8 +46,11 @@ export function RoleSelector({
   onSelect,
   selectedRoles = [],
   hideSelectedChips = true,
+  roleLabels,
   ...props
 }: RoleSelectorProps) {
+  const getLabel = (role: ProfileRole) =>
+    roleLabels?.[role] ?? ROLE_LABEL[role];
   const [open, setOpen] = React.useState(false);
 
   const handleSelect = (role: ProfileRole) => {
@@ -86,7 +90,7 @@ export function RoleSelector({
       return placeholder;
     }
     if (selectedRoles.length === 1) {
-      return ROLE_LABEL[selectedRoles[0]!];
+      return getLabel(selectedRoles[0]!);
     }
     return `${selectedRoles.length} roles selected`;
   };
@@ -105,7 +109,7 @@ export function RoleSelector({
               key={role}
               className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
             >
-              <span>{ROLE_LABEL[role]}</span>
+              <span>{getLabel(role)}</span>
               <button
                 type="button"
                 onClick={(e) => handleRemoveItem(role, e)}
@@ -152,6 +156,7 @@ export function RoleSelector({
                   <RoleItem
                     key={role}
                     role={role}
+                    label={getLabel(role)}
                     isSelected={selectedRoles.includes(role)}
                     onSelect={() => handleSelect(role)}
                   />
@@ -167,15 +172,16 @@ export function RoleSelector({
 
 interface RoleItemProps {
   role: ProfileRole;
+  label: string;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-function RoleItem({ role, isSelected, onSelect }: RoleItemProps) {
+function RoleItem({ role, label, isSelected, onSelect }: RoleItemProps) {
   return (
     <CommandItem key={role} onSelect={onSelect}>
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">{ROLE_LABEL[role]}</div>
+        <div className="flex items-center gap-2">{label}</div>
         <Check
           className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
         />

@@ -57,6 +57,18 @@ router.include_router(examples_router)
 from app.api.v4.resources.fields.create import router as fields_router
 
 router.include_router(fields_router)
+from app.api.v4.resources.persona_fields.create import \
+    router as persona_fields_router
+
+router.include_router(persona_fields_router)
+from app.api.v4.resources.document_fields.create import \
+    router as document_fields_router
+
+router.include_router(document_fields_router)
+from app.api.v4.resources.parameter_fields.create import \
+    router as parameter_fields_router
+
+router.include_router(parameter_fields_router)
 from app.api.v4.resources.flags.create import router as flags_router
 
 router.include_router(flags_router)

@@ -273,14 +273,27 @@ RETURNS TABLE (
     departments_required boolean,
     department_suggestions uuid[],
     departments types.q_get_scenario_v4_department[],
-    -- Multi-select resources: fields
-    field_ids uuid[],
-    field_resources types.q_get_scenario_v4_field[],
-    show_fields boolean,
-    fields_agent_id uuid,
-    fields_required boolean,
-    field_suggestions uuid[],
-    fields types.q_get_scenario_v4_field[],
+    -- Multi-select resources: persona_fields
+    persona_field_ids uuid[],
+    persona_field_resources types.q_get_scenario_v4_field[],
+    show_persona_fields boolean,
+    persona_fields_agent_id uuid,
+    persona_fields_required boolean,
+    persona_fields types.q_get_scenario_v4_field[],
+    -- Multi-select resources: document_fields
+    document_field_ids uuid[],
+    document_field_resources types.q_get_scenario_v4_field[],
+    show_document_fields boolean,
+    document_fields_agent_id uuid,
+    document_fields_required boolean,
+    document_fields types.q_get_scenario_v4_field[],
+    -- Multi-select resources: parameter_fields
+    parameter_field_ids uuid[],
+    parameter_field_resources types.q_get_scenario_v4_field[],
+    show_parameter_fields boolean,
+    parameter_fields_agent_id uuid,
+    parameter_fields_required boolean,
+    parameter_fields types.q_get_scenario_v4_field[],
     -- Multi-select resources: objectives
     objective_ids uuid[],
     objective_resources types.q_get_scenario_v4_objective_resource[],
@@ -479,13 +492,6 @@ draft_parameters_data AS (
     LEFT JOIN parameters_draft dp ON dp.draft_id = x.draft_id
     LIMIT 1
 ),
-draft_fields_data AS (
-    SELECT
-        COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as field_ids
-    FROM params x
-    LEFT JOIN fields_draft df ON df.draft_id = x.draft_id
-    LIMIT 1
-),
 draft_problem_statements_data AS (
     SELECT
         COALESCE((SELECT dps.problem_statements_id FROM problem_statements_draft dps WHERE dps.draft_id = (SELECT draft_id FROM params) LIMIT 1), NULL::uuid) as problem_statement_id
@@ -620,17 +626,45 @@ scenario_parameters_junction_data AS (
     FROM params
     LIMIT 1
 ),
-scenario_fields_junction_data AS (
+scenario_persona_fields_junction_data AS (
     SELECT
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sf.field_id ORDER BY sf.field_id)
-                 FROM scenario_fields_junction sf
-                 WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND sf.active = true),
+                (SELECT ARRAY_AGG(spf.persona_field_id ORDER BY spf.persona_field_id)
+                 FROM scenario_persona_fields spf
+                 WHERE spf.scenario_id = (SELECT scenario_id FROM params) AND spf.active = true),
                 ARRAY[]::uuid[]
             )
-        END as field_ids
+        END as persona_field_ids
+    FROM params
+    LIMIT 1
+),
+scenario_document_fields_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sdf.document_field_id ORDER BY sdf.document_field_id)
+                 FROM scenario_document_fields sdf
+                 WHERE sdf.scenario_id = (SELECT scenario_id FROM params) AND sdf.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as document_field_ids
+    FROM params
+    LIMIT 1
+),
+scenario_parameter_fields_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(spf.parameter_field_id ORDER BY spf.parameter_field_id)
+                 FROM scenario_parameter_fields spf
+                 WHERE spf.scenario_id = (SELECT scenario_id FROM params) AND spf.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as parameter_field_ids
     FROM params
     LIMIT 1
 ),
@@ -752,16 +786,30 @@ scenario_parameters_combined_data AS (
     FROM params
     LIMIT 1
 ),
-scenario_fields_combined_data AS (
+scenario_persona_fields_combined_data AS (
     SELECT
-        CASE
-            WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT field_ids FROM draft_fields_data), 1), 0) > 0
-                THEN (SELECT field_ids FROM draft_fields_data)
-            WHEN COALESCE(array_length((SELECT field_ids FROM scenario_fields_junction_data), 1), 0) > 0
-                THEN (SELECT field_ids FROM scenario_fields_junction_data)
-            ELSE ARRAY[]::uuid[]
-        END as field_ids
+        COALESCE(
+            (SELECT persona_field_ids FROM scenario_persona_fields_junction_data),
+            ARRAY[]::uuid[]
+        ) as persona_field_ids
+    FROM params
+    LIMIT 1
+),
+scenario_document_fields_combined_data AS (
+    SELECT
+        COALESCE(
+            (SELECT document_field_ids FROM scenario_document_fields_junction_data),
+            ARRAY[]::uuid[]
+        ) as document_field_ids
+    FROM params
+    LIMIT 1
+),
+scenario_parameter_fields_combined_data AS (
+    SELECT
+        COALESCE(
+            (SELECT parameter_field_ids FROM scenario_parameter_fields_junction_data),
+            ARRAY[]::uuid[]
+        ) as parameter_field_ids
     FROM params
     LIMIT 1
 ),
@@ -3113,9 +3161,54 @@ field_mapping_data AS (
     FROM fields_resource f
     WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'field_active' AND ff.value = true)
 ),
+-- Persona fields mapping data (fields whose parameter has persona_parameter flag)
+persona_field_mapping_data AS (
+    SELECT
+        pf.id as persona_field_id,
+        fmd.field_id,
+        fmd.name,
+        fmd.description,
+        fmd.parameter_id,
+        fmd.parameter_name,
+        fmd.conditional_parameter_ids,
+        fmd.generated
+    FROM persona_fields_resource pf
+    JOIN field_mapping_data fmd ON fmd.field_id = pf.field_id
+    WHERE pf.active = true
+),
+-- Document fields mapping data (fields whose parameter has document_parameter flag)
+document_field_mapping_data AS (
+    SELECT
+        df.id as document_field_id,
+        fmd.field_id,
+        fmd.name,
+        fmd.description,
+        fmd.parameter_id,
+        fmd.parameter_name,
+        fmd.conditional_parameter_ids,
+        fmd.generated
+    FROM document_fields_resource df
+    JOIN field_mapping_data fmd ON fmd.field_id = df.field_id
+    WHERE df.active = true
+),
+-- Parameter fields mapping data (fields whose parameter has neither persona_parameter nor document_parameter flag)
+parameter_field_mapping_data AS (
+    SELECT
+        pf.id as parameter_field_id,
+        fmd.field_id,
+        fmd.name,
+        fmd.description,
+        fmd.parameter_id,
+        fmd.parameter_name,
+        fmd.conditional_parameter_ids,
+        fmd.generated
+    FROM parameter_fields_resource pf
+    JOIN field_mapping_data fmd ON fmd.field_id = pf.field_id
+    WHERE pf.active = true
+),
 -- Objective mapping data (for objectives array)
 objective_mapping_data AS (
-    SELECT 
+    SELECT
         o.id,
         o.objective,
         false as generated  -- Objectives are not generated resources
@@ -3179,14 +3272,22 @@ ui_flags AS (
         true as show_description,  -- Always show description picker
         true as show_problem_statement,  -- Always show problem statement picker
         -- Multi-select resource flags (based on business logic)
-        CASE 
+        CASE
             WHEN EXISTS (SELECT 1 FROM department_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_departments,
-        CASE 
-            WHEN EXISTS (SELECT 1 FROM field_mapping_data LIMIT 1) THEN true
+        CASE
+            WHEN EXISTS (SELECT 1 FROM persona_field_mapping_data LIMIT 1) THEN true
             ELSE false
-        END as show_fields,
+        END as show_persona_fields,
+        CASE
+            WHEN EXISTS (SELECT 1 FROM document_field_mapping_data LIMIT 1) THEN true
+            ELSE false
+        END as show_document_fields,
+        CASE
+            WHEN EXISTS (SELECT 1 FROM parameter_field_mapping_data LIMIT 1) THEN true
+            ELSE false
+        END as show_parameter_fields,
         CASE 
             WHEN EXISTS (SELECT 1 FROM objective_mapping_data LIMIT 1) THEN true
             ELSE false
@@ -3417,7 +3518,7 @@ departments_agent_data AS (
     )
     SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
--- Agent selection for 'fields' resource (no MCP filter)
+-- Agent selection for typed fields resources (no MCP filter)
 fields_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
@@ -3426,7 +3527,7 @@ fields_agent_data AS (
         AND EXISTS (SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments_junction ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr ON tr.id = at.tool_id JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'fields'::resource_type)
+        AND EXISTS (SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr ON tr.id = at.tool_id JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource IN ('persona_fields'::resource_type, 'document_fields'::resource_type, 'parameter_fields'::resource_type))
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments_junction ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3781,10 +3882,10 @@ general_agent_data AS (
     ),
     agent_scores AS (
         SELECT atr.agent_id, atr.tool_resources,
-            ARRAY_LENGTH(ARRAY(SELECT unnest(atr.tool_resources) EXCEPT SELECT unnest(ARRAY['names', 'descriptions', 'problem_statements', 'scenario_flags', 'departments', 'personas', 'documents', 'parameters', 'fields', 'objectives', 'images', 'videos', 'questions', 'templates']::text[])), 1) as unmatched_count,
+            ARRAY_LENGTH(ARRAY(SELECT unnest(atr.tool_resources) EXCEPT SELECT unnest(ARRAY['names', 'descriptions', 'problem_statements', 'scenario_flags', 'departments', 'personas', 'documents', 'parameters', 'persona_fields', 'document_fields', 'parameter_fields', 'objectives', 'images', 'videos', 'questions', 'templates']::text[])), 1) as unmatched_count,
             atr.updated_at
         FROM agent_tool_resources atr
-        WHERE ARRAY['names', 'descriptions', 'problem_statements', 'scenario_flags', 'departments', 'personas', 'documents', 'parameters', 'fields', 'objectives', 'images', 'videos', 'questions', 'templates']::text[] <@ atr.tool_resources
+        WHERE ARRAY['names', 'descriptions', 'problem_statements', 'scenario_flags', 'departments', 'personas', 'documents', 'parameters', 'persona_fields', 'document_fields', 'parameter_fields', 'objectives', 'images', 'videos', 'questions', 'templates']::text[] <@ atr.tool_resources
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = atr.agent_id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3825,9 +3926,21 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'fields'::resource_type 
+            WHERE rt.resource = 'persona_fields'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-        ) as fields_has_tools,
+        ) as persona_fields_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools_relation rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'document_fields'::resource_type
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+        ) as document_fields_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools_relation rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'parameter_fields'::resource_type
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+        ) as parameter_fields_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
@@ -3892,7 +4005,9 @@ missing_tools_check AS (
             CASE WHEN NOT tec.descriptions_has_tools THEN 'description' ELSE NULL END,
             CASE WHEN NOT tec.problem_statements_has_tools THEN 'problem_statement' ELSE NULL END,
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
-            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END,
+            CASE WHEN NOT tec.persona_fields_has_tools AND uf.show_persona_fields THEN 'persona_fields' ELSE NULL END,
+            CASE WHEN NOT tec.document_fields_has_tools AND uf.show_document_fields THEN 'document_fields' ELSE NULL END,
+            CASE WHEN NOT tec.parameter_fields_has_tools AND uf.show_parameter_fields THEN 'parameter_fields' ELSE NULL END,
             CASE WHEN NOT tec.objectives_has_tools AND uf.show_objectives THEN 'objectives' ELSE NULL END,
             CASE WHEN NOT tec.images_has_tools AND uf.show_images THEN 'images' ELSE NULL END,
             CASE WHEN NOT tec.videos_has_tools AND uf.show_videos THEN 'videos' ELSE NULL END,
@@ -4106,33 +4221,75 @@ SELECT
         ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_scenario_v4_department[]
     ) as departments,
-    -- Multi-select resources: fields
-    (SELECT field_ids FROM scenario_fields_combined_data) as field_ids,
+    -- Multi-select resources: persona_fields
+    (SELECT persona_field_ids FROM scenario_persona_fields_combined_data) as persona_field_ids,
     COALESCE((
         SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name, fmd.conditional_parameter_ids, fmd.generated)::types.q_get_scenario_v4_field
-            ORDER BY fmd.parameter_name, fmd.name
+            (pfmd.field_id, pfmd.name, pfmd.description, pfmd.parameter_id, pfmd.parameter_name, pfmd.conditional_parameter_ids, pfmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY pfmd.parameter_name, pfmd.name
         )
-        FROM field_mapping_data fmd
-        WHERE fmd.field_id = ANY(COALESCE((SELECT field_ids FROM scenario_fields_combined_data), ARRAY[]::uuid[]))
-    ), '{}'::types.q_get_scenario_v4_field[]) as field_resources,
-    CASE 
-        WHEN NOT tec.fields_has_tools AND uf.show_fields THEN false
-        ELSE uf.show_fields
-    END as show_fields,
-    (SELECT agent_id FROM fields_agent_data) as fields_agent_id,
-    CASE 
-        WHEN uf.show_fields THEN true
-        ELSE false
-    END as fields_required,
-    ARRAY[]::uuid[] as field_suggestions,
+        FROM persona_field_mapping_data pfmd
+        WHERE pfmd.persona_field_id = ANY(COALESCE((SELECT persona_field_ids FROM scenario_persona_fields_combined_data), ARRAY[]::uuid[]))
+    ), '{}'::types.q_get_scenario_v4_field[]) as persona_field_resources,
+    CASE
+        WHEN NOT tec.persona_fields_has_tools AND uf.show_persona_fields THEN false
+        ELSE uf.show_persona_fields
+    END as show_persona_fields,
+    (SELECT agent_id FROM fields_agent_data) as persona_fields_agent_id,
+    false as persona_fields_required,
     COALESCE((
         SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name, fmd.conditional_parameter_ids, fmd.generated)::types.q_get_scenario_v4_field
-            ORDER BY fmd.parameter_name, fmd.name
-        ) FROM (SELECT DISTINCT field_id, name, description, parameter_id, parameter_name, conditional_parameter_ids, generated FROM field_mapping_data) fmd),
+            (pfmd.field_id, pfmd.name, pfmd.description, pfmd.parameter_id, pfmd.parameter_name, pfmd.conditional_parameter_ids, pfmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY pfmd.parameter_name, pfmd.name
+        ) FROM (SELECT DISTINCT field_id, name, description, parameter_id, parameter_name, conditional_parameter_ids, generated FROM persona_field_mapping_data) pfmd),
         '{}'::types.q_get_scenario_v4_field[]
-    ) as fields,
+    ) as persona_fields,
+    -- Multi-select resources: document_fields
+    (SELECT document_field_ids FROM scenario_document_fields_combined_data) as document_field_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (dfmd.field_id, dfmd.name, dfmd.description, dfmd.parameter_id, dfmd.parameter_name, dfmd.conditional_parameter_ids, dfmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY dfmd.parameter_name, dfmd.name
+        )
+        FROM document_field_mapping_data dfmd
+        WHERE dfmd.document_field_id = ANY(COALESCE((SELECT document_field_ids FROM scenario_document_fields_combined_data), ARRAY[]::uuid[]))
+    ), '{}'::types.q_get_scenario_v4_field[]) as document_field_resources,
+    CASE
+        WHEN NOT tec.document_fields_has_tools AND uf.show_document_fields THEN false
+        ELSE uf.show_document_fields
+    END as show_document_fields,
+    (SELECT agent_id FROM fields_agent_data) as document_fields_agent_id,
+    false as document_fields_required,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (dfmd.field_id, dfmd.name, dfmd.description, dfmd.parameter_id, dfmd.parameter_name, dfmd.conditional_parameter_ids, dfmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY dfmd.parameter_name, dfmd.name
+        ) FROM (SELECT DISTINCT field_id, name, description, parameter_id, parameter_name, conditional_parameter_ids, generated FROM document_field_mapping_data) dfmd),
+        '{}'::types.q_get_scenario_v4_field[]
+    ) as document_fields,
+    -- Multi-select resources: parameter_fields
+    (SELECT parameter_field_ids FROM scenario_parameter_fields_combined_data) as parameter_field_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (pfmd.field_id, pfmd.name, pfmd.description, pfmd.parameter_id, pfmd.parameter_name, pfmd.conditional_parameter_ids, pfmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY pfmd.parameter_name, pfmd.name
+        )
+        FROM parameter_field_mapping_data pfmd
+        WHERE pfmd.parameter_field_id = ANY(COALESCE((SELECT parameter_field_ids FROM scenario_parameter_fields_combined_data), ARRAY[]::uuid[]))
+    ), '{}'::types.q_get_scenario_v4_field[]) as parameter_field_resources,
+    CASE
+        WHEN NOT tec.parameter_fields_has_tools AND uf.show_parameter_fields THEN false
+        ELSE uf.show_parameter_fields
+    END as show_parameter_fields,
+    (SELECT agent_id FROM fields_agent_data) as parameter_fields_agent_id,
+    false as parameter_fields_required,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (pfmd2.field_id, pfmd2.name, pfmd2.description, pfmd2.parameter_id, pfmd2.parameter_name, pfmd2.conditional_parameter_ids, pfmd2.generated)::types.q_get_scenario_v4_field
+            ORDER BY pfmd2.parameter_name, pfmd2.name
+        ) FROM (SELECT DISTINCT field_id, name, description, parameter_id, parameter_name, conditional_parameter_ids, generated FROM parameter_field_mapping_data) pfmd2),
+        '{}'::types.q_get_scenario_v4_field[]
+    ) as parameter_fields,
     -- Multi-select resources: objectives (populated from CTEs, filtered by flag)
     CASE
         WHEN sc.objectives_enabled THEN (SELECT objective_ids FROM scenario_objectives_combined_data)

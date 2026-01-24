@@ -36,22 +36,43 @@ class GetActivityBundleSqlParams(BaseModel):
             self.profile_id,
         )
 
-class QGetActivityBundleV4ChartDataPoint(BaseModel):
+class QGetActivityBundleV4ChartPoint(BaseModel):
 
     date: str | None
-    active_profiles: int | None
-    feedback_entries: int | None
-    activity_entries: int | None
-    errors: int | None
+    event_id: str | None
+    count: int | None
+
+
+
+
+class QGetActivityBundleV4EventType(BaseModel):
+
+    id: str | None
+    name: str | None
+    total_count: int | None
+
+
+
+
+class QGetActivityBundleV4Problem(BaseModel):
+
+    problem_id: UUID | None
+    type: str | None
+    message: str | None
+    resolved: bool | None
+    created_at: str | None
+    profile_name: str | None
 
 class GetActivityBundleSqlRow(BaseModel):
 
     actor_name: str | None = None
+    sessions_count: int | None = None
     active_profiles_count: int | None = None
-    total_feedback_count: int | None = None
-    total_activity_entries: int | None = None
-    total_errors_count: int | None = None
-    chart_data: list[QGetActivityBundleV4ChartDataPoint] | None = None
+    logins_count: int | None = None
+    content_created_count: int | None = None
+    available_events: list[QGetActivityBundleV4EventType] | None = None
+    chart_data: list[QGetActivityBundleV4ChartPoint] | None = None
+    problems: list[QGetActivityBundleV4Problem] | None = None
 
 class GetActivityBundleApiRequest(BaseModel):
 
@@ -60,11 +81,13 @@ class GetActivityBundleApiRequest(BaseModel):
 class GetActivityBundleApiResponse(BaseModel):
 
     actor_name: str | None = None
+    sessions_count: int | None = None
     active_profiles_count: int | None = None
-    total_feedback_count: int | None = None
-    total_activity_entries: int | None = None
-    total_errors_count: int | None = None
-    chart_data: list[QGetActivityBundleV4ChartDataPoint] | None = None
+    logins_count: int | None = None
+    content_created_count: int | None = None
+    available_events: list[QGetActivityBundleV4EventType] | None = None
+    chart_data: list[QGetActivityBundleV4ChartPoint] | None = None
+    problems: list[QGetActivityBundleV4Problem] | None = None
 
 
 
@@ -85,19 +108,18 @@ class GetActivityListSqlParams(BaseModel):
             self.search,
         )
 
-class QGetActivityListV4Activity(BaseModel):
+class QGetActivityListV4Session(BaseModel):
 
-    activity_id: UUID | None
+    session_id: UUID | None
     created_at: str | None
-    message: str | None
-    error: bool | None
     profile_name: str | None
     profile_id: UUID | None
+    active: bool | None
 
 class GetActivityListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    activities: list[QGetActivityListV4Activity] | None = None
+    sessions: list[QGetActivityListV4Session] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -112,7 +134,7 @@ class GetActivityListApiRequest(BaseModel):
 class GetActivityListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    activities: list[QGetActivityListV4Activity] | None = None
+    sessions: list[QGetActivityListV4Session] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -1839,7 +1861,6 @@ class ConsumeEmulationGrantSqlRow(BaseModel):
     reason: str | None = None
     actor_profile_id: UUID | None = None
     target_profile_id: UUID | None = None
-    full_emulation: bool | None = None
 
 class ConsumeEmulationGrantApiRequest(BaseModel):
 
@@ -1851,7 +1872,6 @@ class ConsumeEmulationGrantApiResponse(BaseModel):
     reason: str | None = None
     actor_profile_id: UUID | None = None
     target_profile_id: UUID | None = None
-    full_emulation: bool | None = None
 
 
 
@@ -1861,7 +1881,6 @@ class CreateEmulationGrantSqlParams(BaseModel):
 
     requester_profile_id: UUID
     target_profile_id: UUID
-    full_emulation: bool | None = False
     ttl_minutes: int | None = 120
     signin_base_url: str | None = None
     callback_url: str | None = None
@@ -1876,7 +1895,6 @@ class CreateEmulationGrantSqlParams(BaseModel):
         return (
             self.requester_profile_id,
             self.target_profile_id,
-            self.full_emulation,
             self.ttl_minutes,
             self.signin_base_url,
             self.callback_url,
@@ -1904,7 +1922,6 @@ class CreateEmulationGrantApiRequest(BaseModel):
 
     requester_profile_id: UUID
     target_profile_id: UUID
-    full_emulation: bool | None = False
     ttl_minutes: int | None = 120
     signin_base_url: str | None = None
     callback_url: str | None = None
@@ -12343,14 +12360,12 @@ class GetProfileApiResponse(BaseModel):
 
 class GetProfileContextSqlParams(BaseModel):
 
-    actual_profile_id: UUID | None = None
-    effective_profile_id: UUID | None = None
+    profile_id: UUID | None = None
     department_id: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.actual_profile_id,
-            self.effective_profile_id,
+            self.profile_id,
             self.department_id,
         )
 
@@ -12474,18 +12489,6 @@ class QGetProfileContextV4ThemeTokens(BaseModel):
 class GetProfileContextSqlRow(BaseModel):
 
     is_authorized: bool | None = None
-    actual_id: UUID | None = None
-    actual_name: str | None = None
-    actual_emails: list[str] | None = None
-    actual_primary_email: str | None = None
-    actual_role: str | None = None
-    actual_active: bool | None = None
-    actual_req_per_day: int | None = None
-    actual_last_login: str | None = None
-    actual_last_active: str | None = None
-    actual_created_at: str | None = None
-    actual_updated_at: str | None = None
-    actual_primary_department_id: UUID | None = None
     id: UUID | None = None
     name: str | None = None
     emails: list[str] | None = None
@@ -12544,25 +12547,11 @@ class GetProfileContextSqlRow(BaseModel):
 
 class GetProfileContextApiRequest(BaseModel):
 
-    actual_profile_id: UUID | None = None
-    effective_profile_id: UUID | None = None
     department_id: str | None = None
 
 class GetProfileContextApiResponse(BaseModel):
 
     is_authorized: bool | None = None
-    actual_id: UUID | None = None
-    actual_name: str | None = None
-    actual_emails: list[str] | None = None
-    actual_primary_email: str | None = None
-    actual_role: str | None = None
-    actual_active: bool | None = None
-    actual_req_per_day: int | None = None
-    actual_last_login: str | None = None
-    actual_last_active: str | None = None
-    actual_created_at: str | None = None
-    actual_updated_at: str | None = None
-    actual_primary_department_id: UUID | None = None
     id: UUID | None = None
     name: str | None = None
     emails: list[str] | None = None
@@ -14553,6 +14542,40 @@ class DescriptionsApiResponse(BaseModel):
 
 
 
+# Generated from: document_fields
+
+class DocumentFieldsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.field_id,
+            self.mcp,
+        )
+
+class DocumentFieldsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class DocumentFieldsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+class DocumentFieldsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: documents
 
 class DocumentsSqlParams(BaseModel):
@@ -15242,6 +15265,40 @@ class OptionsApiResponse(BaseModel):
 
 
 
+# Generated from: parameter_fields
+
+class ParameterFieldsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.field_id,
+            self.mcp,
+        )
+
+class ParameterFieldsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ParameterFieldsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+class ParameterFieldsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: parameters
 
 class ParametersSqlParams(BaseModel):
@@ -15271,6 +15328,40 @@ class ParametersApiRequest(BaseModel):
     mcp: bool | None = False
 
 class ParametersApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
+# Generated from: persona_fields
+
+class PersonaFieldsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.field_id,
+            self.mcp,
+        )
+
+class PersonaFieldsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class PersonaFieldsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+class PersonaFieldsApiResponse(BaseModel):
 
     id: UUID | None = None
 
@@ -17771,13 +17862,24 @@ class GetScenarioSqlRow(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetScenarioV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetScenarioV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetScenarioV4Field] | None = None
+    persona_field_ids: list[UUID] | None = None
+    persona_field_resources: list[QGetScenarioV4Field] | None = None
+    show_persona_fields: bool | None = None
+    persona_fields_agent_id: UUID | None = None
+    persona_fields_required: bool | None = None
+    persona_fields: list[QGetScenarioV4Field] | None = None
+    document_field_ids: list[UUID] | None = None
+    document_field_resources: list[QGetScenarioV4Field] | None = None
+    show_document_fields: bool | None = None
+    document_fields_agent_id: UUID | None = None
+    document_fields_required: bool | None = None
+    document_fields: list[QGetScenarioV4Field] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_field_resources: list[QGetScenarioV4Field] | None = None
+    show_parameter_fields: bool | None = None
+    parameter_fields_agent_id: UUID | None = None
+    parameter_fields_required: bool | None = None
+    parameter_fields: list[QGetScenarioV4Field] | None = None
     objective_ids: list[UUID] | None = None
     objective_resources: list[QGetScenarioV4ObjectiveResource] | None = None
     show_objectives: bool | None = None
@@ -17934,13 +18036,24 @@ class GetScenarioApiResponse(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetScenarioV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetScenarioV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetScenarioV4Field] | None = None
+    persona_field_ids: list[UUID] | None = None
+    persona_field_resources: list[QGetScenarioV4Field] | None = None
+    show_persona_fields: bool | None = None
+    persona_fields_agent_id: UUID | None = None
+    persona_fields_required: bool | None = None
+    persona_fields: list[QGetScenarioV4Field] | None = None
+    document_field_ids: list[UUID] | None = None
+    document_field_resources: list[QGetScenarioV4Field] | None = None
+    show_document_fields: bool | None = None
+    document_fields_agent_id: UUID | None = None
+    document_fields_required: bool | None = None
+    document_fields: list[QGetScenarioV4Field] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_field_resources: list[QGetScenarioV4Field] | None = None
+    show_parameter_fields: bool | None = None
+    parameter_fields_agent_id: UUID | None = None
+    parameter_fields_required: bool | None = None
+    parameter_fields: list[QGetScenarioV4Field] | None = None
     objective_ids: list[UUID] | None = None
     objective_resources: list[QGetScenarioV4ObjectiveResource] | None = None
     show_objectives: bool | None = None
@@ -22550,6 +22663,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DescriptionsApiRequest",
         "DescriptionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/document_fields_complete.sql": (
+        "DocumentFieldsSqlParams",
+        "DocumentFieldsSqlRow",
+        "DocumentFieldsApiRequest",
+        "DocumentFieldsApiResponse",
+    ),
     "app/sql/v4/queries/resources/documents_complete.sql": (
         "DocumentsSqlParams",
         "DocumentsSqlRow",
@@ -22670,11 +22789,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "OptionsApiRequest",
         "OptionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/parameter_fields_complete.sql": (
+        "ParameterFieldsSqlParams",
+        "ParameterFieldsSqlRow",
+        "ParameterFieldsApiRequest",
+        "ParameterFieldsApiResponse",
+    ),
     "app/sql/v4/queries/resources/parameters_complete.sql": (
         "ParametersSqlParams",
         "ParametersSqlRow",
         "ParametersApiRequest",
         "ParametersApiResponse",
+    ),
+    "app/sql/v4/queries/resources/persona_fields_complete.sql": (
+        "PersonaFieldsSqlParams",
+        "PersonaFieldsSqlRow",
+        "PersonaFieldsApiRequest",
+        "PersonaFieldsApiResponse",
     ),
     "app/sql/v4/queries/resources/personas_complete.sql": (
         "PersonasSqlParams",
@@ -24458,6 +24589,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/document_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/documents_complete.sql"]
     ) -> SqlString: ...
 
@@ -24558,7 +24694,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/parameter_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameters_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/persona_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload

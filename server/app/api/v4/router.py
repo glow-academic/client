@@ -74,7 +74,6 @@ from app.api.v4.uploads import router as uploads_router
 # ============================================================================
 from fastapi import APIRouter, Depends
 from app.utils.mcp.get_mcp import get_mcp
-from app.utils.profile.get_effective_profile_id import get_effective_profile_id
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id
 
@@ -82,14 +81,12 @@ from app.utils.session.get_session_id import get_session_id
 # Main Router Configuration
 # ============================================================================
 # Apply router-level dependencies to automatically parse profile ID headers
-# This makes profile_id available via request.state.profile_id and
-# effective_profile_id available via request.state.effective_profile_id in all endpoints
+# This makes profile_id available via request.state.profile_id in all endpoints
 router: APIRouter = APIRouter(
     prefix="/api/v4",
     tags=["v4"],
     dependencies=[
         Depends(get_profile_id),
-        Depends(get_effective_profile_id),
         Depends(get_session_id),
         Depends(get_mcp),
     ],

@@ -102,26 +102,21 @@ link_profile_group AS (
     FROM profile_insert pi
     ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
--- Insert role (only if creating)
+-- Look up role (only if creating)
 role_resource AS (
-    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
-    SELECT (SELECT role FROM params)::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
-    WHERE EXISTS (SELECT 1 FROM profile_insert)
-    ON CONFLICT (role) DO NOTHING
-    RETURNING id as role_id
-),
-role_id_lookup AS (
-    SELECT COALESCE(
-        (SELECT role_id FROM role_resource),
-        (SELECT id FROM roles_resource WHERE role = (SELECT role FROM params)::profile_type)
-    ) as role_id
+    SELECT id as role_id
+    FROM roles_resource
+    WHERE role = (SELECT role FROM params)::profile_type
+      AND active = true
+    ORDER BY created_at
+    LIMIT 1
 ),
 profile_type_insert AS (
     INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
-    SELECT pi.id, rl.role_id, NOW(), false, false
+    SELECT pi.id, rr.role_id, NOW(), false, false
     FROM profile_insert pi
-    CROSS JOIN role_id_lookup rl
-    WHERE rl.role_id IS NOT NULL
+    CROSS JOIN role_resource rr
+    WHERE rr.role_id IS NOT NULL
     ON CONFLICT (profile_id, role_id) DO NOTHING
     RETURNING profile_id
 ),

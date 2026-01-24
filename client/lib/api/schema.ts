@@ -2398,6 +2398,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/persona_fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Persona Fields
+         * @description Create persona_fields resource (always INSERT).
+         */
+        post: operations["create_persona_fields_api_v4_resources_persona_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/document_fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Document Fields
+         * @description Create document_fields resource (always INSERT).
+         */
+        post: operations["create_document_fields_api_v4_resources_document_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/parameter_fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Parameter Fields
+         * @description Create parameter_fields resource (always INSERT).
+         */
+        post: operations["create_parameter_fields_api_v4_resources_parameter_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/flags": {
         parameters: {
             query?: never;
@@ -6344,11 +6404,6 @@ export interface components {
              */
             target_profile_id: string;
             /**
-             * Full Emulation
-             * @default false
-             */
-            full_emulation: boolean | null;
-            /**
              * Ttl Minutes
              * @default 120
              */
@@ -6822,6 +6877,34 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
+        };
+        /** DocumentFieldsApiRequest */
+        DocumentFieldsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** DocumentFieldsApiResponse */
+        DocumentFieldsApiResponse: {
+            /** Id */
+            id?: string | null;
         };
         /** DocumentsApiRequest */
         DocumentsApiRequest: {
@@ -7434,16 +7517,20 @@ export interface components {
         GetActivityBundleApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
+            /** Sessions Count */
+            sessions_count?: number | null;
             /** Active Profiles Count */
             active_profiles_count?: number | null;
-            /** Total Feedback Count */
-            total_feedback_count?: number | null;
-            /** Total Activity Entries */
-            total_activity_entries?: number | null;
-            /** Total Errors Count */
-            total_errors_count?: number | null;
+            /** Logins Count */
+            logins_count?: number | null;
+            /** Content Created Count */
+            content_created_count?: number | null;
+            /** Available Events */
+            available_events?: components["schemas"]["QGetActivityBundleV4EventType"][] | null;
             /** Chart Data */
-            chart_data?: components["schemas"]["QGetActivityBundleV4ChartDataPoint"][] | null;
+            chart_data?: components["schemas"]["QGetActivityBundleV4ChartPoint"][] | null;
+            /** Problems */
+            problems?: components["schemas"]["QGetActivityBundleV4Problem"][] | null;
         };
         /** GetActivityListApiRequest */
         GetActivityListApiRequest: {
@@ -7464,8 +7551,8 @@ export interface components {
         GetActivityListApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            /** Activities */
-            activities?: components["schemas"]["QGetActivityListV4Activity"][] | null;
+            /** Sessions */
+            sessions?: components["schemas"]["QGetActivityListV4Session"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -9911,10 +9998,6 @@ export interface components {
         };
         /** GetProfileContextApiRequest */
         GetProfileContextApiRequest: {
-            /** Actual Profile Id */
-            actual_profile_id?: string | null;
-            /** Effective Profile Id */
-            effective_profile_id?: string | null;
             /** Department Id */
             department_id?: string | null;
         };
@@ -9922,30 +10005,6 @@ export interface components {
         GetProfileContextApiResponse: {
             /** Is Authorized */
             is_authorized?: boolean | null;
-            /** Actual Id */
-            actual_id?: string | null;
-            /** Actual Name */
-            actual_name?: string | null;
-            /** Actual Emails */
-            actual_emails?: string[] | null;
-            /** Actual Primary Email */
-            actual_primary_email?: string | null;
-            /** Actual Role */
-            actual_role?: string | null;
-            /** Actual Active */
-            actual_active?: boolean | null;
-            /** Actual Req Per Day */
-            actual_req_per_day?: number | null;
-            /** Actual Last Login */
-            actual_last_login?: string | null;
-            /** Actual Last Active */
-            actual_last_active?: string | null;
-            /** Actual Created At */
-            actual_created_at?: string | null;
-            /** Actual Updated At */
-            actual_updated_at?: string | null;
-            /** Actual Primary Department Id */
-            actual_primary_department_id?: string | null;
             /** Id */
             id?: string | null;
             /** Name */
@@ -10586,20 +10645,42 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetScenarioV4Department"][] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Field Resources */
-            field_resources?: components["schemas"]["QGetScenarioV4Field"][] | null;
-            /** Show Fields */
-            show_fields?: boolean | null;
-            /** Fields Agent Id */
-            fields_agent_id?: string | null;
-            /** Fields Required */
-            fields_required?: boolean | null;
-            /** Field Suggestions */
-            field_suggestions?: string[] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Persona Field Ids */
+            persona_field_ids?: string[] | null;
+            /** Persona Field Resources */
+            persona_field_resources?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Show Persona Fields */
+            show_persona_fields?: boolean | null;
+            /** Persona Fields Agent Id */
+            persona_fields_agent_id?: string | null;
+            /** Persona Fields Required */
+            persona_fields_required?: boolean | null;
+            /** Persona Fields */
+            persona_fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Document Field Ids */
+            document_field_ids?: string[] | null;
+            /** Document Field Resources */
+            document_field_resources?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Show Document Fields */
+            show_document_fields?: boolean | null;
+            /** Document Fields Agent Id */
+            document_fields_agent_id?: string | null;
+            /** Document Fields Required */
+            document_fields_required?: boolean | null;
+            /** Document Fields */
+            document_fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Parameter Field Resources */
+            parameter_field_resources?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Show Parameter Fields */
+            show_parameter_fields?: boolean | null;
+            /** Parameter Fields Agent Id */
+            parameter_fields_agent_id?: string | null;
+            /** Parameter Fields Required */
+            parameter_fields_required?: boolean | null;
+            /** Parameter Fields */
+            parameter_fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
             /** Objective Ids */
             objective_ids?: string[] | null;
             /** Objective Resources */
@@ -11807,6 +11888,34 @@ export interface components {
             /** Option Id */
             option_id?: string | null;
         };
+        /** ParameterFieldsApiRequest */
+        ParameterFieldsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ParameterFieldsApiResponse */
+        ParameterFieldsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** ParametersApiRequest */
         ParametersApiRequest: {
             /**
@@ -12422,6 +12531,34 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
+        /** PersonaFieldsApiRequest */
+        PersonaFieldsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** PersonaFieldsApiResponse */
+        PersonaFieldsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** PersonasApiRequest */
         PersonasApiRequest: {
             /**
@@ -12659,33 +12796,51 @@ export interface components {
             /** Providers Id */
             providers_id?: string | null;
         };
-        /** QGetActivityBundleV4ChartDataPoint */
-        QGetActivityBundleV4ChartDataPoint: {
+        /** QGetActivityBundleV4ChartPoint */
+        QGetActivityBundleV4ChartPoint: {
             /** Date */
             date: string | null;
-            /** Active Profiles */
-            active_profiles: number | null;
-            /** Feedback Entries */
-            feedback_entries: number | null;
-            /** Activity Entries */
-            activity_entries: number | null;
-            /** Errors */
-            errors: number | null;
+            /** Event Id */
+            event_id: string | null;
+            /** Count */
+            count: number | null;
         };
-        /** QGetActivityListV4Activity */
-        QGetActivityListV4Activity: {
-            /** Activity Id */
-            activity_id: string | null;
-            /** Created At */
-            created_at: string | null;
+        /** QGetActivityBundleV4EventType */
+        QGetActivityBundleV4EventType: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Total Count */
+            total_count: number | null;
+        };
+        /** QGetActivityBundleV4Problem */
+        QGetActivityBundleV4Problem: {
+            /** Problem Id */
+            problem_id: string | null;
+            /** Type */
+            type: string | null;
             /** Message */
             message: string | null;
-            /** Error */
-            error: boolean | null;
+            /** Resolved */
+            resolved: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+        };
+        /** QGetActivityListV4Session */
+        QGetActivityListV4Session: {
+            /** Session Id */
+            session_id: string | null;
+            /** Created At */
+            created_at: string | null;
             /** Profile Name */
             profile_name: string | null;
             /** Profile Id */
             profile_id: string | null;
+            /** Active */
+            active: boolean | null;
         };
         /** QGetAgentV4Department */
         QGetAgentV4Department: {
@@ -20819,7 +20974,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -20857,7 +21011,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -20895,7 +21048,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -20933,7 +21085,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -20971,7 +21122,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21009,7 +21159,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21047,7 +21196,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21085,7 +21233,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21123,7 +21270,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21161,7 +21307,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21199,7 +21344,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21237,7 +21381,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21275,7 +21418,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21313,7 +21455,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21351,7 +21492,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21389,7 +21529,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21427,7 +21566,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21465,7 +21603,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21503,7 +21640,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21541,7 +21677,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21579,7 +21714,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21617,7 +21751,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21655,7 +21788,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21693,7 +21825,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21731,7 +21862,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21769,7 +21899,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21807,7 +21936,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21845,7 +21973,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21883,7 +22010,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21921,7 +22047,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21959,7 +22084,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -21997,7 +22121,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22035,7 +22158,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22073,7 +22195,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22111,7 +22232,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22149,7 +22269,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22187,7 +22306,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22225,7 +22343,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22263,7 +22380,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22301,7 +22417,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22339,7 +22454,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22377,7 +22491,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22415,7 +22528,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22453,7 +22565,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22491,7 +22602,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22529,7 +22639,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22567,7 +22676,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22605,7 +22713,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22643,7 +22750,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22681,7 +22787,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22719,7 +22824,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22757,7 +22861,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22795,7 +22898,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22833,7 +22935,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22871,7 +22972,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22909,7 +23009,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22947,7 +23046,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -22985,7 +23083,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23023,7 +23120,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23061,7 +23157,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23099,7 +23194,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23137,7 +23231,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23175,7 +23268,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23213,7 +23305,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23251,7 +23342,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23289,7 +23379,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23327,7 +23416,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23365,7 +23453,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23403,7 +23490,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23441,7 +23527,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23479,7 +23564,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23517,7 +23601,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23555,7 +23638,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23593,7 +23675,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23631,7 +23712,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23669,7 +23749,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23707,7 +23786,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23745,7 +23823,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23783,7 +23860,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23821,7 +23897,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23859,7 +23934,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23897,7 +23971,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23935,7 +24008,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -23973,7 +24045,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24011,7 +24082,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24049,7 +24119,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24087,7 +24156,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24125,7 +24193,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24163,7 +24230,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24201,7 +24267,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24239,7 +24304,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24277,7 +24341,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24315,7 +24378,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24353,7 +24415,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24391,7 +24452,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24429,7 +24489,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24467,7 +24526,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24505,7 +24563,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24543,7 +24600,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24581,7 +24637,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24619,7 +24674,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24657,7 +24711,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24695,7 +24748,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24733,7 +24785,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24771,7 +24822,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24809,7 +24859,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24847,7 +24896,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24885,7 +24933,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24923,7 +24970,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24961,7 +25007,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -24999,7 +25044,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25037,7 +25081,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25075,7 +25118,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25113,7 +25155,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25151,7 +25192,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25189,7 +25229,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25222,12 +25261,122 @@ export interface operations {
             };
         };
     };
+    create_persona_fields_api_v4_resources_persona_fields_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_fields_api_v4_resources_document_fields_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_parameter_fields_api_v4_resources_parameter_fields_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParameterFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParameterFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_flags_api_v4_resources_flags_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25265,7 +25414,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25303,7 +25451,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25341,7 +25488,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25379,7 +25525,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25417,7 +25562,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25455,7 +25599,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25493,7 +25636,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25531,7 +25673,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25569,7 +25710,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25607,7 +25747,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25645,7 +25784,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25683,7 +25821,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25721,7 +25858,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25759,7 +25895,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25797,7 +25932,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25835,7 +25969,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25873,7 +26006,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25911,7 +26043,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25949,7 +26080,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -25987,7 +26117,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26025,7 +26154,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26063,7 +26191,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26101,7 +26228,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26139,7 +26265,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26177,7 +26302,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26215,7 +26339,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26253,7 +26376,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26291,7 +26413,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26329,7 +26450,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26367,7 +26487,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26405,7 +26524,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26443,7 +26561,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26481,7 +26598,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26519,7 +26635,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26557,7 +26672,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26595,7 +26709,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26633,7 +26746,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26671,7 +26783,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26709,7 +26820,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26747,7 +26857,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26785,7 +26894,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26823,7 +26931,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26861,7 +26968,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26899,7 +27005,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26937,7 +27042,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -26975,7 +27079,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27013,7 +27116,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27051,7 +27153,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27089,7 +27190,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27127,7 +27227,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27165,7 +27264,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27203,7 +27301,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27241,7 +27338,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27279,7 +27375,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27317,7 +27412,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27355,7 +27449,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27393,7 +27486,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27431,7 +27523,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27469,7 +27560,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27507,7 +27597,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27545,7 +27634,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27583,7 +27671,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27621,7 +27708,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27659,7 +27745,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27697,7 +27782,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27735,7 +27819,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27773,7 +27856,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27811,7 +27893,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27849,7 +27930,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27887,7 +27967,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27925,7 +28004,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -27963,7 +28041,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28001,7 +28078,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28039,7 +28115,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28077,7 +28152,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28115,7 +28189,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28153,7 +28226,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28191,7 +28263,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28229,7 +28300,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28267,7 +28337,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28305,7 +28374,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28343,7 +28411,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28381,7 +28448,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28419,7 +28485,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28457,7 +28522,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28498,7 +28562,6 @@ export interface operations {
             };
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28534,7 +28597,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28568,7 +28630,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28602,7 +28663,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28638,7 +28698,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28674,7 +28733,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28710,7 +28768,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28746,7 +28803,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28784,7 +28840,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28822,7 +28877,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28860,7 +28914,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28898,7 +28951,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28936,7 +28988,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };
@@ -28974,7 +29025,6 @@ export interface operations {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
                 "X-Session-Id"?: string | null;
                 "X-MCP"?: string | null;
             };

@@ -1,20 +1,15 @@
-/**
- * Activity.tsx
- * Activity page component with header metrics, feedback entries, and activity table.
- */
 "use client";
 
 import { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
-import { MessageSquare } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
 import type { ActivityOut } from "@/app/(main)/analytics/activity/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,21 +22,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
   useReactTable,
 } from "@tanstack/react-table";
+import SessionsMetric from "./header/SessionsMetric";
 import ActiveProfilesMetric from "./header/ActiveProfilesMetric";
-import TotalActivityEntries from "./header/TotalActivityEntries";
-import TotalFeedbackCount from "./header/TotalFeedbackCount";
-import TotalErrorsMetric from "./header/TotalErrorsMetric";
+import LoginsMetric from "./header/LoginsMetric";
+import ContentCreatedMetric from "./header/ContentCreatedMetric";
 import ActivityMetricsGraph from "./ActivityMetricsGraph";
 
 interface ActivityProps {
@@ -49,25 +39,12 @@ interface ActivityProps {
   isLoading?: boolean;
 }
 
-type ActivityRow = {
-  activity_id: string;
+type SessionRow = {
+  session_id: string;
   created_at: string;
-  message: string;
-  error: boolean;
   profile_name: string;
   profile_id: string;
-};
-
-type FeedbackItem = {
-  feedback_id: string;
-  type: string;
-  message: string;
-  created_at: string;
-  resolved: boolean;
-  author_name: string;
-  author_email: string;
-  author_emails: string[];
-  author_profile_id: string;
+  active: boolean;
 };
 
 export default function Activity({
@@ -77,19 +54,11 @@ export default function Activity({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Extract data from flat fields (server returns flat structure, not nested metrics)
   const bundleData = activityData.bundleData;
-  // Feedback removed - should come from bundle or use static data
-  const feedback: Array<{
-    feedback_id: string;
-    type: string;
-    message: string;
-    resolved: boolean;
-  }> = [];
-  const activityList = useMemo(() => activityData.activityData?.activities || [], [activityData.activityData?.activities]);
-  const activityPage = activityData.activityData?.page || 0;
-  const activityPageSize = activityData.activityData?.page_size || 50;
-  const activityTotalPages = activityData.activityData?.total_pages || 0;
+  const sessionsList = useMemo(() => activityData.activityData?.sessions || [], [activityData.activityData?.sessions]);
+  const sessionsPage = activityData.activityData?.page || 0;
+  const sessionsPageSize = activityData.activityData?.page_size || 50;
+  const sessionsTotalPages = activityData.activityData?.total_pages || 0;
 
   // Search state
   const [searchTerm, setSearchTerm] = useState(
@@ -155,138 +124,36 @@ export default function Activity({
     [commitSearch]
   );
 
-  // Feedback resolve removed - no resolve functionality needed
-
-  // Helper function to compute status based on value and thresholds
-  const computeStatus = (
-    value: number,
-    thresholdWarning: number = 0,
-    thresholdDanger: number = 0
-  ): "success" | "warning" | "danger" | "neutral" => {
-    if (value >= thresholdWarning) {
-      return "success";
-    } else if (value >= thresholdDanger) {
-      return "warning";
-    } else {
-      return "neutral";
-    }
-  };
-
-  // Helper function to calculate trend data from chart_data for a specific metric
-  const calculateTrendData = (
-    chartData: Array<{
-      date: string | null;
-      active_profiles: number | null;
-      feedback_entries: number | null;
-      activity_entries: number | null;
-      errors: number | null;
-    }>,
-    metricKey: "active_profiles" | "feedback_entries" | "activity_entries" | "errors"
-  ): Array<{ date: string; value: number; count: number }> => {
-    if (!chartData || chartData.length === 0) return [];
-
-    // Get last 30 days of data
-    const recentData = chartData.slice(-30);
-
-    return recentData.map((point) => ({
-      date: point.date || "",
-      value: point[metricKey] || 0,
-      count: 1,
-    }));
-  };
-
-  // Build metrics structure from flat fields (client-side transformation)
-  const metrics = useMemo(() => {
-    if (!bundleData) return null;
-
-    const activeProfiles = bundleData.active_profiles_count || 0;
-    const totalFeedback = bundleData.total_feedback_count || 0;
-    const totalActivity = bundleData.total_activity_entries || 0;
-    const totalErrors = bundleData.total_errors_count || 0;
-    const chartData = bundleData.chart_data || [];
-
-    return {
-      active_profiles_count: {
-        currentValue: activeProfiles,
-        trendData: calculateTrendData(chartData, "active_profiles"),
-        hasData: activeProfiles > 0,
-        status: computeStatus(activeProfiles),
-      },
-      total_feedback_count: {
-        currentValue: totalFeedback,
-        trendData: calculateTrendData(chartData, "feedback_entries"),
-        hasData: totalFeedback > 0,
-        status: computeStatus(totalFeedback),
-      },
-      total_activity_entries: {
-        currentValue: totalActivity,
-        trendData: calculateTrendData(chartData, "activity_entries"),
-        hasData: totalActivity > 0,
-        status: computeStatus(totalActivity),
-      },
-      total_errors_count: {
-        currentValue: totalErrors,
-        trendData: calculateTrendData(chartData, "errors"),
-        hasData: totalErrors > 0,
-        status: computeStatus(totalErrors, 10, 50), // threshold_warning=10, threshold_danger=50
-      },
-    };
-  }, [bundleData]);
-
-  // Header metrics components
-  const headerComponents = useMemo(() => {
-    if (!metrics) return [];
-
-    return [
-      <ActiveProfilesMetric
-        key="active-profiles"
-        activeProfilesCount={metrics.active_profiles_count.currentValue}
-        trendData={metrics.active_profiles_count.trendData}
-        hasDataAvailable={metrics.active_profiles_count.hasData}
-        status={metrics.active_profiles_count.status}
-      />,
-      <TotalFeedbackCount
-        key="total-feedback"
-        totalFeedbackCount={metrics.total_feedback_count.currentValue}
-        trendData={metrics.total_feedback_count.trendData}
-        hasDataAvailable={metrics.total_feedback_count.hasData}
-        status={metrics.total_feedback_count.status}
-      />,
-      <TotalActivityEntries
-        key="total-activity"
-        totalActivityEntries={metrics.total_activity_entries.currentValue}
-        trendData={metrics.total_activity_entries.trendData}
-        hasDataAvailable={metrics.total_activity_entries.hasData}
-        status={metrics.total_activity_entries.status}
-      />,
-      <TotalErrorsMetric
-        key="total-errors"
-        totalErrorsCount={metrics.total_errors_count.currentValue}
-        trendData={metrics.total_errors_count.trendData}
-        hasDataAvailable={metrics.total_errors_count.hasData}
-        status={metrics.total_errors_count.status}
-      />,
-    ];
-  }, [metrics]);
-
-  // Extract chart data from bundle and transform to camelCase for ActivityMetricsGraph
-  const chartData = useMemo(() => {
-    const rawChartData = activityData.bundleData?.chart_data || [];
-    return rawChartData
-      .filter((point) => point.date !== null && point.date !== undefined)
-      .map((point) => ({
-        date: point.date!,
-        activeProfiles: point.active_profiles ?? 0,
-        feedbackEntries: point.feedback_entries ?? 0,
-        activityEntries: point.activity_entries ?? 0,
-        errors: point.errors ?? 0,
+  // Extract chart data and available events from bundle
+  const chartPoints = useMemo(() => {
+    const raw = bundleData?.chart_data || [];
+    return raw
+      .filter((p) => p.date && p.event_id)
+      .map((p) => ({
+        date: p.date!,
+        event_id: p.event_id!,
+        count: p.count ?? 0,
       }));
-  }, [activityData.bundleData?.chart_data]);
+  }, [bundleData?.chart_data]);
+
+  const availableEvents = useMemo(() => {
+    const raw = bundleData?.available_events || [];
+    return raw
+      .filter((e) => e.id && e.name)
+      .map((e) => ({
+        id: e.id!,
+        name: e.name!,
+        total_count: e.total_count ?? 0,
+      }));
+  }, [bundleData?.available_events]);
+
+  // Problems from bundle
+  const problems = useMemo(() => bundleData?.problems || [], [bundleData?.problems]);
 
   // Extract unique profiles for faceted filter
   const profileOptions = useMemo(() => {
     const profileMap = new Map<string, { label: string; value: string }>();
-    activityList.forEach((item) => {
+    sessionsList.forEach((item) => {
       if (item.profile_id && item.profile_name) {
         if (!profileMap.has(item.profile_id)) {
           profileMap.set(item.profile_id, {
@@ -297,13 +164,13 @@ export default function Activity({
       }
     });
     return Array.from(profileMap.values());
-  }, [activityList]);
+  }, [sessionsList]);
 
   // Column filters state
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  // Define activity table columns
-  const activityColumns: ColumnDef<ActivityRow>[] = useMemo(
+  // Define sessions table columns
+  const sessionsColumns: ColumnDef<SessionRow>[] = useMemo(
     () => [
       {
         accessorKey: "created_at",
@@ -326,34 +193,6 @@ export default function Activity({
         },
       },
       {
-        accessorKey: "message",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Message" />
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm max-w-md">{row.getValue("message")}</div>
-        ),
-        filterFn: (row, id, value) => {
-          const message = String(row.getValue(id)).toLowerCase();
-          const query = String(value).toLowerCase();
-          return message.includes(query);
-        },
-      },
-      // Hidden faceting column for Profile (IDs)
-      {
-        id: "profileId",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: ActivityRow) => row.profile_id || "",
-        filterFn: (row, _id, value: string[]) => {
-          if (!value || value.length === 0) return true;
-          const profileId = row.original.profile_id || "";
-          return value.includes(profileId);
-        },
-      },
-      {
         accessorKey: "profile_name",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Profile" />
@@ -362,23 +201,51 @@ export default function Activity({
           <div className="text-sm">{row.getValue("profile_name")}</div>
         ),
       },
+      // Hidden faceting column for Profile (IDs)
+      {
+        id: "profileId",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: SessionRow) => row.profile_id || "",
+        filterFn: (row, _id, value: string[]) => {
+          if (!value || value.length === 0) return true;
+          const profileId = row.original.profile_id || "";
+          return value.includes(profileId);
+        },
+      },
+      {
+        accessorKey: "active",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Status" />
+        ),
+        cell: ({ row }) => {
+          const active = row.getValue("active") as boolean;
+          return (
+            <Badge variant={active ? "default" : "secondary"}>
+              {active ? "Active" : "Inactive"}
+            </Badge>
+          );
+        },
+      },
     ],
     []
   );
 
-  // Activity table
-  const activityTable = useReactTable({
-    data: activityList as ActivityRow[],
-    columns: activityColumns as ColumnDef<ActivityRow>[],
+  // Sessions table
+  const sessionsTable = useReactTable({
+    data: sessionsList as SessionRow[],
+    columns: sessionsColumns as ColumnDef<SessionRow>[],
     getCoreRowModel: getCoreRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: true,
-    pageCount: activityTotalPages,
+    pageCount: sessionsTotalPages,
     state: {
       pagination: {
-        pageIndex: activityPage,
-        pageSize: activityPageSize,
+        pageIndex: sessionsPage,
+        pageSize: sessionsPageSize,
       },
       columnFilters,
     },
@@ -386,7 +253,7 @@ export default function Activity({
     onPaginationChange: (updater) => {
       const newPagination =
         typeof updater === "function"
-          ? updater({ pageIndex: activityPage, pageSize: activityPageSize })
+          ? updater({ pageIndex: sessionsPage, pageSize: sessionsPageSize })
           : updater;
       updateURLParams({
         activityPage: newPagination.pageIndex.toString(),
@@ -396,7 +263,7 @@ export default function Activity({
   });
 
   // Get profile column for faceted filter
-  const profileIdColumn = activityTable.getColumn("profileId");
+  const profileIdColumn = sessionsTable.getColumn("profileId");
 
   if (isLoading) {
     return (
@@ -418,46 +285,48 @@ export default function Activity({
   return (
     <div className="space-y-6" data-testid="activity-container">
       {/* Header Metrics */}
-      {headerComponents.length > 0 && (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-          {headerComponents.map((component) => component)}
-        </div>
-      )}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        <SessionsMetric sessionsCount={bundleData?.sessions_count ?? 0} />
+        <ActiveProfilesMetric activeProfilesCount={bundleData?.active_profiles_count ?? 0} />
+        <LoginsMetric loginsCount={bundleData?.logins_count ?? 0} />
+        <ContentCreatedMetric contentCreatedCount={bundleData?.content_created_count ?? 0} />
+      </div>
 
-      {/* Main Content: Graph (2/3) + Feedback List (1/3) */}
+      {/* Main Content: Graph (2/3) + Problems List (1/3) */}
       <div className="flex gap-4 min-h-[500px] max-h-[500px]">
         {/* Activity Metrics Graph - 2/3 width */}
         <div className="flex-[2]">
           <ActivityMetricsGraph
-            chartData={chartData}
-            hasDataAvailable={chartData.length > 0}
+            chartPoints={chartPoints}
+            availableEvents={availableEvents}
+            hasDataAvailable={chartPoints.length > 0}
           />
         </div>
 
-        {/* Feedback List - 1/3 width */}
+        {/* Problems List - 1/3 width */}
         <div className="flex-1">
           <Card className="h-full flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
+                <AlertTriangle className="h-5 w-5" />
                 <div className="flex-1">
-                  <CardTitle>Feedback Entries</CardTitle>
+                  <CardTitle>Problems</CardTitle>
                   <CardDescription>
-                    User feedback and feature requests
+                    Recent issues and warnings
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
               <div className="space-y-4">
-                {feedback.length === 0 ? (
+                {problems.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
-                    No feedback entries found.
+                    No problems found.
                   </div>
                 ) : (
-                  feedback.map((item: FeedbackItem) => (
+                  problems.map((item) => (
                     <div
-                      key={item.feedback_id}
+                      key={item.problem_id}
                       className={`p-4 border rounded-lg ${
                         item.resolved ? "opacity-60" : ""
                       }`}
@@ -465,12 +334,14 @@ export default function Activity({
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium">{item.type}</span>
+                            <Badge variant={item.resolved ? "secondary" : "destructive"}>
+                              {item.type}
+                            </Badge>
                             <span className="text-xs text-muted-foreground">
-                              by {item.author_name}
+                              {item.profile_name}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(item.created_at).toLocaleDateString()}
+                              {item.created_at ? new Date(item.created_at).toLocaleDateString() : ""}
                             </span>
                             {item.resolved && (
                               <span className="text-xs text-success">Resolved</span>
@@ -478,7 +349,6 @@ export default function Activity({
                           </div>
                           <p className="text-sm">{item.message}</p>
                         </div>
-                        {/* Resolve button removed - no resolve functionality */}
                       </div>
                     </div>
                   ))
@@ -489,13 +359,13 @@ export default function Activity({
         </div>
       </div>
 
-      {/* Activity Table Section */}
+      {/* Sessions Table Section */}
       <div className="space-y-4">
         {/* Search and Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           <Input
             ref={searchInputRef}
-            placeholder="Search activity..."
+            placeholder="Search sessions..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={(e) => {
@@ -518,7 +388,7 @@ export default function Activity({
         <div className="rounded-md border">
           <Table>
             <TableHeader>
-              {activityTable.getHeaderGroups().map((headerGroup) => (
+              {sessionsTable.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <TableHead key={header.id}>
@@ -534,8 +404,8 @@ export default function Activity({
               ))}
             </TableHeader>
             <TableBody>
-              {activityTable.getRowModel().rows?.length ? (
-                activityTable.getRowModel().rows.map((row) => (
+              {sessionsTable.getRowModel().rows?.length ? (
+                sessionsTable.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
@@ -553,10 +423,10 @@ export default function Activity({
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={activityColumns.length}
+                    colSpan={sessionsColumns.length}
                     className="h-24 text-center"
                   >
-                    No activity entries found.
+                    No sessions found.
                   </TableCell>
                 </TableRow>
               )}
@@ -565,9 +435,8 @@ export default function Activity({
         </div>
 
         {/* Pagination */}
-        <DataTablePagination table={activityTable} />
+        <DataTablePagination table={sessionsTable} />
       </div>
     </div>
   );
 }
-

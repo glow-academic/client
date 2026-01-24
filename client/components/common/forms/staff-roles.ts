@@ -59,8 +59,8 @@ export const STAFF_ROLES = [
   },
   {
     id: "member",
-    name: "Member",
-    description: "Graduate Teaching Assistant (GTA) trainee role",
+    name: "UTA",
+    description: "Undergraduate Teaching Assistant",
     icon: BookOpen,
     color: "#10b981", // green
   },

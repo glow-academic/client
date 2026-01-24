@@ -17,7 +17,6 @@ END $$;
 CREATE OR REPLACE FUNCTION api_create_emulation_grant_v4(
     requester_profile_id uuid,
     target_profile_id uuid,
-    full_emulation boolean DEFAULT false,
     ttl_minutes integer DEFAULT 120,
     signin_base_url text DEFAULT NULL,
     callback_url text DEFAULT NULL,
@@ -48,7 +47,6 @@ WITH params AS (
     SELECT
         requester_profile_id AS requester_profile_id,
         target_profile_id AS target_profile_id,
-        COALESCE(full_emulation, false) AS full_emulation,
         COALESCE(ttl_minutes, 120) AS ttl_minutes,
         signin_base_url AS signin_base_url,
         callback_url AS callback_url,
@@ -139,14 +137,12 @@ actor_name_computed AS (
 grant_insert AS (
     INSERT INTO grants_entry (
         id,
-        full_emulation,
         expires_at,
         created_at,
         updated_at
     )
     SELECT
         uuidv7(),
-        (SELECT full_emulation FROM params),
         NOW() + ((SELECT ttl_minutes FROM params) || ' minutes')::interval,
         NOW(),
         NOW()

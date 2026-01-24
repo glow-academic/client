@@ -48,22 +48,17 @@ async def get_profile_context(
 
         logger = get_logger(__name__)
 
-        # Read profile IDs from request.state (set by router-level dependencies)
-        # These can be None for unauthenticated requests (cookie-based auth)
+        # Read profile ID from request.state (set by router-level dependencies)
+        # Can be None for unauthenticated requests (cookie-based auth)
         try:
-            actual_profile_id = http_request.state.profile_id
+            profile_id = http_request.state.profile_id
         except AttributeError:
-            actual_profile_id = None
-
-        try:
-            effective_profile_id = http_request.state.effective_profile_id
-        except AttributeError:
-            effective_profile_id = None
+            profile_id = None
 
         # Get pathname from request URL
         pathname = http_request.url.path
         logger.info(
-            f"Request: pathname={pathname}, actualProfileId={actual_profile_id}, effectiveProfileId={effective_profile_id}"
+            f"Request: pathname={pathname}, profileId={profile_id}"
         )
 
         # Read department-id cookie for settings resolution
@@ -76,8 +71,7 @@ async def get_profile_context(
         from uuid import UUID
 
         params = GetProfileContextSqlParams(
-            actual_profile_id=cast(UUID | None, actual_profile_id),
-            effective_profile_id=cast(UUID | None, effective_profile_id),
+            profile_id=cast(UUID | None, profile_id),
             department_id=department_id_cookie if department_id_cookie else None,
         )
         sql_params = params.to_tuple()
@@ -93,71 +87,36 @@ async def get_profile_context(
         )
 
         # Handle case where we're fetching settings without a profile (e.g., login page)
-        # When no profile IDs, the SQL query may return a result but with is_authorized=NULL
-        # because it requires a profile to determine authorization. However, if we have a department_id,
-        # we should still be able to return settings for that department.
         # Only treat as settings-only request if we have a department_id (for login page theme)
         is_settings_only_request = (
-            not actual_profile_id
-            and not effective_profile_id
+            not profile_id
             and department_id_cookie is not None
         )
 
-        # For settings-only requests: if we have a department_id, allow returning settings even if is_authorized is NULL
-        # The SQL query returns settings data but can't determine authorization without a profile
-        # This is fine for settings-only requests - we just want the theme/settings, not authorization
         if is_settings_only_request:
             if result is None or result.settings_id is None:
-                # No result at all or no settings_id - can't get settings
                 raise HTTPException(
                     status_code=404,
                     detail="Settings not available for this department. Please select a different department.",
                 )
-            # If result exists and settings_id is not NULL, that's OK for settings-only requests
-            # We'll continue and return the settings data (the SQL query includes settings even without a profile)
-            # Skip the authorization check below by continuing past the is_authorized check
-            # Note: The SQL query may return settings data even when is_authorized is NULL
             pass
-        elif (
-            not actual_profile_id
-            and not effective_profile_id
-            and not department_id_cookie
-        ):
-            # No profile IDs, no department_id, and not a settings-only request
-            # This happens after login when session isn't fully established yet
-            # Return 404 with a helpful message
+        elif not profile_id and not department_id_cookie:
+            # No profile ID and no department_id
             raise HTTPException(
                 status_code=404,
                 detail="Profile context not found: Could not resolve profile. Please try logging in again.",
             )
 
-        # Only check authorization for non-settings-only requests (when we have profile IDs)
-        # Skip authorization check if we already handled settings-only or no-profile case above
+        # Check that we got a valid result for profile requests
         if (
             not is_settings_only_request
-            and (actual_profile_id or effective_profile_id)
+            and profile_id
             and (not result or not result.is_authorized)
         ):
-            # For actual profile resolution requests, require valid profile
-            resolved_actual = actual_profile_id
-            resolved_effective = effective_profile_id
-
-            if not resolved_actual or not resolved_effective:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Profile context not found: Could not resolve profile from department settings",
-                )
-
-            if resolved_actual != resolved_effective:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to view this profile's context",
-                )
-            else:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Profile context not found: {resolved_effective}",
-                )
+            raise HTTPException(
+                status_code=404,
+                detail=f"Profile context not found: {profile_id}",
+            )
 
         # Note: available_sections, redirect_path, department_ids, cohort_ids, simulation_ids
         # are now computed in SQL and returned in result
@@ -301,9 +260,7 @@ async def get_profile_context(
         theme_tokens = derive_theme_tokens(theme_primitives)
 
         # Set audit context
-        actor_profile_id = (
-            effective_profile_id if effective_profile_id else actual_profile_id
-        )
+        actor_profile_id = profile_id
         actor_name = result.actor_name
 
         if actor_name and actor_profile_id:

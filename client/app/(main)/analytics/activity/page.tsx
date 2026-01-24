@@ -20,7 +20,6 @@ type ActivityListOut = OutputOf<"/api/v4/analytics/activity/list", "post">;
 
 export type ActivityOut = {
   bundleData: ActivityBundleOut | null;
-  feedbackData: null; // Feedback removed - should come from bundle or use static data
   activityData: ActivityListOut | null;
 };
 
@@ -70,9 +69,6 @@ interface ActivityPageProps {
 export default async function ActivityPage({
   searchParams,
 }: ActivityPageProps) {
-  // Access control handled server-side in layout
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -86,7 +82,7 @@ export default async function ActivityPage({
     }
   });
 
-  // Extract pagination params for activity list
+  // Extract pagination params for sessions list
   const activityPage = searchParamsObj.get("activityPage")
     ? parseInt(searchParamsObj.get("activityPage") || "0", 10)
     : 0;
@@ -103,13 +99,11 @@ export default async function ActivityPage({
   ].join("|");
 
   // Fetch bundle data server-side (no pagination)
-  // Feedback removed - should come from bundle or use static data
   const bundleData = await getActivityBundle({ body: {} });
-  const feedbackData = null;
 
-  // Create empty activity data for loading state
+  // Create empty sessions data for loading state
   const emptyActivityData: ActivityListOut = {
-    activities: [],
+    sessions: [],
     total_count: 0,
     page: activityPage,
     page_size: activityPageSize,
@@ -118,14 +112,12 @@ export default async function ActivityPage({
 
   return (
     <div className="space-y-6" data-page="activity-index">
-      {/* Activity list section with Suspense for pagination */}
       <Suspense
         key={activityKey}
         fallback={
           <Activity
             activityData={{
               bundleData,
-              feedbackData,
               activityData: emptyActivityData,
             }}
             isLoading={true}
@@ -134,7 +126,6 @@ export default async function ActivityPage({
       >
         <ActivityListSection
           bundleData={bundleData}
-          feedbackData={feedbackData}
           activityPage={activityPage}
           activityPageSize={activityPageSize}
           activitySearch={activitySearch}
@@ -147,13 +138,11 @@ export default async function ActivityPage({
 /** ---- Inline activity list section component (only used here) ---- */
 async function ActivityListSection({
   bundleData,
-  feedbackData,
   activityPage,
   activityPageSize,
   activitySearch,
 }: {
   bundleData: ActivityBundleOut;
-  feedbackData: null;
   activityPage: number;
   activityPageSize: number;
   activitySearch?: string | undefined;
@@ -170,7 +159,6 @@ async function ActivityListSection({
     <Activity
       activityData={{
         bundleData,
-        feedbackData,
         activityData: activityListData,
       }}
       isLoading={false}
