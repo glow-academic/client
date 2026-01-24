@@ -6,9 +6,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_list_simulations_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -108,7 +108,18 @@ CREATE TYPE types.q_list_simulations_v4_option AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_list_simulations_v4(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_list_simulations_v4(
+    profile_id uuid,
+    search text DEFAULT NULL,
+    filter_scenario_ids uuid[] DEFAULT NULL,
+    filter_cohort_ids uuid[] DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    scenario_search text DEFAULT NULL,
+    cohort_search text DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    page_size int DEFAULT 12,
+    page_offset int DEFAULT 0
+)
 RETURNS TABLE (
     actor_name text,
     simulations types.q_list_simulations_v4_simulation[],
@@ -116,9 +127,10 @@ RETURNS TABLE (
     rubrics types.q_list_simulations_v4_rubric[],
     departments types.q_list_simulations_v4_department[],
     cohorts types.q_list_simulations_v4_cohort[],
-    rubric_options types.q_list_simulations_v4_option[],
+    scenario_options types.q_list_simulations_v4_option[],
     cohort_options types.q_list_simulations_v4_option[],
-    department_options types.q_list_simulations_v4_option[]
+    department_options types.q_list_simulations_v4_option[],
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -159,7 +171,7 @@ attempts_entry AS (
     GROUP BY saj.simulation_id
 ),
 simulation_active_cohort_links AS (
-    SELECT 
+    SELECT
         cs.simulation_id,
         COUNT(*) as active_cohort_count
     FROM cohort_simulations_junction cs
@@ -167,7 +179,7 @@ simulation_active_cohort_links AS (
     GROUP BY cs.simulation_id
 ),
 simulation_all_cohort_links AS (
-    SELECT 
+    SELECT
         cs.simulation_id,
         COUNT(*) as total_cohort_links,
         COUNT(DISTINCT cs.cohort_id) as num_cohorts
@@ -175,7 +187,7 @@ simulation_all_cohort_links AS (
     GROUP BY cs.simulation_id
 ),
 simulation_cohorts_data AS (
-    SELECT 
+    SELECT
         cs.simulation_id,
         ARRAY_AGG(cs.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM cohort_simulations_junction cs
@@ -184,7 +196,7 @@ simulation_cohorts_data AS (
     GROUP BY cs.simulation_id
 ),
 simulation_departments_data AS (
-    SELECT 
+    SELECT
         sd.simulation_id,
         ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
     FROM simulation_departments_junction sd
@@ -192,7 +204,7 @@ simulation_departments_data AS (
     GROUP BY sd.simulation_id
 ),
 simulation_data AS (
-    SELECT 
+    SELECT
         s.id as simulation_id,
         (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
         COALESCE(
@@ -256,14 +268,31 @@ simulation_data AS (
     GROUP BY s.id, (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1), EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE), EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE),
              s.updated_at, sdd.department_ids, ssd.scenario_ids, ssd.num_scenarios, sa.attempt_count,
              sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts, scd.cohort_ids
-    HAVING 
+    HAVING
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
 ),
+-- Server-side filtering
+filtered_simulations AS (
+    SELECT sd.*
+    FROM simulation_data sd
+    WHERE (search IS NULL OR LOWER(sd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.description) LIKE '%' || LOWER(search) || '%')
+      AND (filter_scenario_ids IS NULL OR sd.scenario_ids && filter_scenario_ids)
+      AND (filter_cohort_ids IS NULL OR sd.cohort_ids && filter_cohort_ids::text[])
+      AND (filter_department_ids IS NULL OR sd.department_ids && filter_department_ids::text[])
+),
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total FROM filtered_simulations
+),
+paginated_simulations AS (
+    SELECT * FROM filtered_simulations
+    ORDER BY updated_at DESC NULLS LAST
+    LIMIT page_size OFFSET page_offset
+),
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
-    FROM simulation_data
+    FROM paginated_simulations
 ),
 scenario_personas_agg AS (
     SELECT
@@ -282,17 +311,8 @@ all_persona_ids AS (
     FROM scenario_personas_agg
     WHERE persona_ids IS NOT NULL
 ),
-image_model_check AS (
-    SELECT 
-        mm.model_id,
-        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities_junction mm
-    JOIN modalities_resource mr ON mr.id = mm.modality_id
-    WHERE mr.modality = 'image' AND mm.type = 'output'::direction_type AND mm.active = true
-    GROUP BY mm.model_id
-),
 persona_data AS (
-    SELECT 
+    SELECT
         p.id as persona_id,
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
@@ -334,11 +354,11 @@ scenario_persona_mapping AS (
 ),
 all_rubric_ids AS (
     SELECT DISTINCT rubric_id
-    FROM simulation_data
+    FROM paginated_simulations
     WHERE rubric_id IS NOT NULL
 ),
 rubric_data AS (
-    SELECT 
+    SELECT
         r.id as rubric_id,
         (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
         COALESCE((SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
@@ -351,7 +371,7 @@ all_cohort_ids AS (
     WHERE cohort_ids IS NOT NULL
 ),
 cohort_data AS (
-    SELECT 
+    SELECT
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
@@ -359,43 +379,58 @@ cohort_data AS (
     JOIN cohort_artifact c ON c.id = aci.cohort_id::uuid
 ),
 department_data AS (
-    SELECT 
+    SELECT
         d.id as department_id,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM department_artifact d
     WHERE d.id IN (SELECT department_id FROM user_departments)
+),
+-- Options derived from ALL simulation_data (unfiltered) for filter dropdowns
+all_scenario_ids_options AS (
+    SELECT DISTINCT unnest(scenario_ids) as scenario_id
+    FROM simulation_data
+),
+all_cohort_ids_options AS (
+    SELECT DISTINCT unnest(cohort_ids) as cohort_id
+    FROM simulation_data
+    WHERE cohort_ids IS NOT NULL AND cohort_ids != ARRAY[]::text[]
+),
+all_department_ids_options AS (
+    SELECT DISTINCT unnest(department_ids) as department_id
+    FROM simulation_data
+    WHERE department_ids IS NOT NULL
 )
-SELECT 
+SELECT
     up.actor_name::text as actor_name,
-    -- Aggregate simulations
+    -- Aggregate simulations (from paginated set)
     COALESCE(
         (SELECT ARRAY_AGG(
             (simd.simulation_id, simd.name, simd.description, simd.department_ids, simd.time_limit,
              simd.active, simd.practice_simulation,
-             CASE 
+             CASE
                  WHEN COALESCE(simd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
                  WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
-             CASE 
+             CASE
                  WHEN COALESCE(simd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
                  WHEN simd.practice_simulation = true THEN false
                  WHEN simd.total_cohort_links > 0 THEN false
                  WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
-             CASE 
+             CASE
                  WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
              simd.scenario_ids, simd.rubric_id, simd.num_cohorts, simd.cohort_ids, simd.updated_at
             )::types.q_list_simulations_v4_simulation
             ORDER BY simd.updated_at DESC NULLS LAST
-        ) FROM simulation_data simd),
+        ) FROM paginated_simulations simd),
         '{}'::types.q_list_simulations_v4_simulation[]
     ) as simulations,
-    -- Aggregate scenarios
+    -- Aggregate scenarios (from paginated simulations' scenarios)
     COALESCE(
         (SELECT ARRAY_AGG(
             (sbd.scenario_id, sbd.name, sbd.description, sbd.active, sbd.persona_ids,
@@ -434,29 +469,34 @@ SELECT
         ) FROM cohort_data cd),
         '{}'::types.q_list_simulations_v4_cohort[]
     ) as cohorts,
-    -- Rubric options
+    -- Scenario options (from ALL simulations, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (rd.rubric_id::text, rd.name)::types.q_list_simulations_v4_option
-            ORDER BY rd.name
-        ) FROM rubric_data rd),
+        (SELECT ARRAY_AGG((s.id::text, sn_name.name)::types.q_list_simulations_v4_option ORDER BY sn_name.name)
+         FROM all_scenario_ids_options asio
+         JOIN scenarios_resource s ON s.id = asio.scenario_id
+         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = s.scenario_id
+         WHERE (scenario_search IS NULL OR LOWER(sn_name.name) LIKE '%' || LOWER(scenario_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
-    ) as rubric_options,
-    -- Cohort options
+    ) as scenario_options,
+    -- Cohort options (from ALL simulations, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (cd.cohort_id::text, cd.name)::types.q_list_simulations_v4_option
-            ORDER BY cd.name
-        ) FROM cohort_data cd),
+        (SELECT ARRAY_AGG((c.id::text, cn_name.name)::types.q_list_simulations_v4_option ORDER BY cn_name.name)
+         FROM all_cohort_ids_options acio
+         JOIN cohort_artifact c ON c.id = acio.cohort_id::uuid
+         JOIN (SELECT cn.cohort_id, n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id) cn_name ON cn_name.cohort_id = c.id
+         WHERE (cohort_search IS NULL OR LOWER(cn_name.name) LIKE '%' || LOWER(cohort_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
     ) as cohort_options,
-    -- Department options
+    -- Department options (from user's departments, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (dd.department_id::text, dd.name)::types.q_list_simulations_v4_option
-            ORDER BY dd.name
-        ) FROM department_data dd),
+        (SELECT ARRAY_AGG((d.id::text, dn_name.name)::types.q_list_simulations_v4_option ORDER BY dn_name.name)
+         FROM department_artifact d
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = d.id
+         WHERE d.id::text IN (SELECT department_id FROM all_department_ids_options)
+           AND d.id IN (SELECT department_id FROM user_departments)
+           AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
-    ) as department_options
+    ) as department_options,
+    (SELECT total FROM filtered_count) as total_count
 FROM user_profile up
 $$;

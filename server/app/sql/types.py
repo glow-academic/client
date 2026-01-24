@@ -19519,10 +19519,28 @@ class GetSimulationRunContextApiResponse(BaseModel):
 class GetSimulationsListSqlParams(BaseModel):
 
     profile_id: UUID
+    search: str | None = None
+    filter_scenario_ids: list[UUID] | None = None
+    filter_cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    scenario_search: str | None = None
+    cohort_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.search,
+            self.filter_scenario_ids,
+            self.filter_cohort_ids,
+            self.filter_department_ids,
+            self.scenario_search,
+            self.cohort_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
         )
 
 class QListSimulationsV4Cohort(BaseModel):
@@ -19631,13 +19649,22 @@ class GetSimulationsListSqlRow(BaseModel):
     rubrics: list[QListSimulationsV4Rubric] | None = None
     departments: list[QListSimulationsV4Department] | None = None
     cohorts: list[QListSimulationsV4Cohort] | None = None
-    rubric_options: list[QListSimulationsV4Option] | None = None
+    scenario_options: list[QListSimulationsV4Option] | None = None
     cohort_options: list[QListSimulationsV4Option] | None = None
     department_options: list[QListSimulationsV4Option] | None = None
+    total_count: int | None = None
 
 class GetSimulationsListApiRequest(BaseModel):
 
-    pass
+    search: str | None = None
+    filter_scenario_ids: list[UUID] | None = None
+    filter_cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    scenario_search: str | None = None
+    cohort_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
 
 class GetSimulationsListApiResponse(BaseModel):
 
@@ -19647,9 +19674,10 @@ class GetSimulationsListApiResponse(BaseModel):
     rubrics: list[QListSimulationsV4Rubric] | None = None
     departments: list[QListSimulationsV4Department] | None = None
     cohorts: list[QListSimulationsV4Cohort] | None = None
-    rubric_options: list[QListSimulationsV4Option] | None = None
+    scenario_options: list[QListSimulationsV4Option] | None = None
     cohort_options: list[QListSimulationsV4Option] | None = None
     department_options: list[QListSimulationsV4Option] | None = None
+    total_count: int | None = None
 
 
 

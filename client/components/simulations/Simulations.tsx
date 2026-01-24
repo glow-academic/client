@@ -1,13 +1,14 @@
 /**
  * Simulations.tsx
  * Used to display the simulations page with the new unified simulation playground.
+ * Server-side filtering with nuqs URL-backed state.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
 "use client";
 import { Copy, Edit, Eye, Search, Trash2, Users, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -45,10 +46,6 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -63,14 +60,29 @@ export interface SimulationsProps {
   deleteSimulationAction?: (
     input: DeleteSimulationIn,
   ) => Promise<DeleteSimulationOut>;
+  // Server-side pagination/filtering state
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  scenarioSearch: string;
+  cohortSearch: string;
+  departmentSearch: string;
 }
 
 export function Simulations({
   listData: serverListData,
   duplicateSimulationAction,
   deleteSimulationAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  scenarioSearch,
+  cohortSearch,
+  departmentSearch,
 }: SimulationsProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -79,10 +91,53 @@ export function Simulations({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
+  // Debounce refs
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scenarioSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cohortSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Local search state (for immediate UI feedback while debouncing)
+  const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
+
+  // URL parameter update helper
+  const updateSimulationsParams = useCallback(
+    (updates: Record<string, string | string[] | null | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
+          params.delete(key);
+        } else if (Array.isArray(value)) {
+          params.delete(key);
+          value.forEach((v) => params.append(key, v));
+        } else {
+          params.set(key, value);
+        }
+      }
+      // Reset page when filters change (unless page is explicitly set in updates)
+      if (!("page" in updates)) {
+        params.delete("page");
+      }
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
+    },
+    [searchParams, pathname, router],
+  );
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    // Initialize from URL params
+    const filters: ColumnFiltersState = [];
+    const scenarioIds = searchParams.getAll("scenarioIds");
+    if (scenarioIds.length > 0) filters.push({ id: "scenario_ids", value: scenarioIds });
+    const cohortIds = searchParams.getAll("cohortIds");
+    if (cohortIds.length > 0) filters.push({ id: "cohort_ids", value: cohortIds });
+    const departmentIds = searchParams.getAll("departmentIds");
+    if (departmentIds.length > 0) filters.push({ id: "departments", value: departmentIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
@@ -95,7 +150,7 @@ export function Simulations({
     () => simulationsData?.simulations || [],
     [simulationsData?.simulations],
   );
-  
+
   // Create scenario mapping dict client-side for lookups (from scenarios array)
   const scenarioMapping = useMemo(() => {
     const scenarios = simulationsData?.scenarios || [];
@@ -107,16 +162,16 @@ export function Simulations({
     }, {} as Record<string, typeof scenarios[0]>);
   }, [simulationsData?.scenarios]);
 
-  // Use server-provided facet options directly (no client-side computation)
-  const rubricOptions = useMemo(
+  // Use server-provided facet options directly (filtered by search term server-side)
+  const scenarioOptions = useMemo(
     () =>
-      (simulationsData?.rubric_options || [])
+      (simulationsData?.scenario_options || [])
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [simulationsData?.rubric_options],
+    [simulationsData?.scenario_options],
   );
   const cohortOptions = useMemo(
     () =>
@@ -146,14 +201,20 @@ export function Simulations({
         accessorKey: "name",
         header: "Name",
       },
-      // Hidden faceting column for Rubric (single ID)
+      // Hidden faceting column for Scenarios (array of IDs)
       {
-        id: "rubric_id",
+        id: "scenario_ids",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorKey: "rubric_id",
+        accessorFn: (row: (typeof simulations)[number]) => row.scenario_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenario_ids") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return false;
+          return value.some((v) => rowIds.includes(v));
+        },
       },
       // Hidden faceting column for Cohorts (array of IDs)
       {
@@ -166,7 +227,7 @@ export function Simulations({
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
           if (value.length === 0) return true;
-          if (rowIds.length === 0) return true;
+          if (rowIds.length === 0) return false;
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -182,7 +243,7 @@ export function Simulations({
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
-          if (rowIds.length === 0) return true;
+          if (rowIds.length === 0) return false;
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -203,7 +264,10 @@ export function Simulations({
     [],
   );
 
-  // Create table instance
+  // Page count for manual pagination
+  const pageCount = Math.ceil(totalCount / pageSize);
+
+  // Create table instance with manual pagination/filtering
   const table = useReactTable({
     data: simulations,
     columns,
@@ -212,47 +276,122 @@ export function Simulations({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
+    pageCount,
+    manualPagination: true,
+    manualFiltering: true,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
+    onColumnFiltersChange: (updater) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+      // Sync filter changes to URL
+      const scenarioFilter = newFilters.find((f) => f.id === "scenario_ids");
+      const cohortFilter = newFilters.find((f) => f.id === "cohort_ids");
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      updateSimulationsParams({
+        scenarioIds: (scenarioFilter?.value as string[] | undefined) ?? null,
+        cohortIds: (cohortFilter?.value as string[] | undefined) ?? null,
+        departmentIds: (departmentFilter?.value as string[] | undefined) ?? null,
+      });
     },
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const current = { pageIndex, pageSize };
+      const next = typeof updater === "function" ? updater(current) : updater;
+      updateSimulationsParams({
+        page: next.pageIndex > 0 ? String(next.pageIndex) : null,
+        pageSize: next.pageSize !== 12 ? String(next.pageSize) : null,
+      });
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
-  const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
-  const tableRows = useMemo(() => {
-    return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    simulations.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearch(value);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        updateSimulationsParams({ search: value || null });
+      }, 500);
+    },
+    [updateSimulationsParams],
+  );
 
-  // Permissions now come from server-side in V2 API
-  // No need for client-side permission logic
+  const handleSearchBlur = useCallback(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+    updateSimulationsParams({ search: localSearch || null });
+  }, [localSearch, updateSimulationsParams]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (searchDebounceRef.current) {
+          clearTimeout(searchDebounceRef.current);
+          searchDebounceRef.current = null;
+        }
+        updateSimulationsParams({ search: localSearch || null });
+      }
+    },
+    [localSearch, updateSimulationsParams],
+  );
+
+  // Filter option search handlers (300ms debounce)
+  const handleScenarioSearchChange = useCallback(
+    (term: string) => {
+      if (scenarioSearchDebounceRef.current) clearTimeout(scenarioSearchDebounceRef.current);
+      scenarioSearchDebounceRef.current = setTimeout(() => {
+        updateSimulationsParams({ scenarioSearch: term || null });
+      }, 300);
+    },
+    [updateSimulationsParams],
+  );
+
+  const handleCohortSearchChange = useCallback(
+    (term: string) => {
+      if (cohortSearchDebounceRef.current) clearTimeout(cohortSearchDebounceRef.current);
+      cohortSearchDebounceRef.current = setTimeout(() => {
+        updateSimulationsParams({ cohortSearch: term || null });
+      }, 300);
+    },
+    [updateSimulationsParams],
+  );
+
+  const handleDepartmentSearchChange = useCallback(
+    (term: string) => {
+      if (departmentSearchDebounceRef.current) clearTimeout(departmentSearchDebounceRef.current);
+      departmentSearchDebounceRef.current = setTimeout(() => {
+        updateSimulationsParams({ departmentSearch: term || null });
+      }, 300);
+    },
+    [updateSimulationsParams],
+  );
+
+  // Reset all filters
+  const handleResetFilters = useCallback(() => {
+    setColumnFilters([]);
+    setLocalSearch("");
+    updateSimulationsParams({
+      search: null,
+      scenarioIds: null,
+      cohortIds: null,
+      departmentIds: null,
+      scenarioSearch: null,
+      cohortSearch: null,
+      departmentSearch: null,
+      page: null,
+    });
+  }, [updateSimulationsParams]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteSimulationAction) return;
@@ -498,11 +637,10 @@ export function Simulations({
   };
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("name");
-  const rubricColumn = table.getColumn("rubric_id");
+  const scenarioColumn = table.getColumn("scenario_ids");
   const cohortColumn = table.getColumn("cohort_ids");
   const departmentsColumn = table.getColumn("departments");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered = columnFilters.length > 0 || localSearch.length > 0;
 
   return (
     <TooltipProvider>
@@ -520,10 +658,10 @@ export function Simulations({
                   <Input
                     data-testid="simulations-search"
                     placeholder="Search simulations..."
-                    value={(nameColumn?.getFilterValue() as string) ?? ""}
-                    onChange={(event) =>
-                      nameColumn?.setFilterValue(event.target.value)
-                    }
+                    value={localSearch}
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    onBlur={handleSearchBlur}
+                    onKeyDown={handleSearchKeyDown}
                     className="h-8 w-full md:w-[150px] lg:w-[250px] pl-8"
                     aria-label="Search simulations by name"
                     aria-controls="simulations-grid"
@@ -532,12 +670,15 @@ export function Simulations({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Rubric Filter */}
-                {rubricColumn && (
+                {/* Scenario Filter */}
+                {scenarioColumn && (
                   <DataTableFacetedFilter
-                    column={rubricColumn}
-                    title="Rubric"
-                    options={rubricOptions}
+                    column={scenarioColumn}
+                    title="Scenario"
+                    options={scenarioOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleScenarioSearchChange}
+                    searchValue={scenarioSearch}
                   />
                 )}
 
@@ -547,6 +688,9 @@ export function Simulations({
                     column={cohortColumn}
                     title="Cohort"
                     options={cohortOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleCohortSearchChange}
+                    searchValue={cohortSearch}
                   />
                 )}
 
@@ -556,13 +700,16 @@ export function Simulations({
                     column={departmentsColumn}
                     title="Department"
                     options={departmentOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleDepartmentSearchChange}
+                    searchValue={departmentSearch}
                   />
                 )}
 
                 {isFiltered && (
                   <Button
                     variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
+                    onClick={handleResetFilters}
                     className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
                     Reset
@@ -580,9 +727,9 @@ export function Simulations({
             aria-label="simulations grid"
             data-testid="simulations-grid"
           >
-            {tableRows.length ? (
-              tableRows.map((row) => (
-                <div key={row.id}>{renderSimulationCard(row.original)}</div>
+            {simulations.length ? (
+              simulations.map((simulation) => (
+                <div key={simulation.simulation_id}>{renderSimulationCard(simulation)}</div>
               ))
             ) : (
               <div className="col-span-full text-center py-8 text-muted-foreground">

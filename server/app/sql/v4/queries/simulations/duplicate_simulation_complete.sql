@@ -48,20 +48,26 @@ source_simulation AS (
     FROM params x
     JOIN simulation_artifact s ON s.id = x.simulation_id
 ),
+default_call AS (
+    SELECT id as call_id
+    FROM calls_entry
+    LIMIT 1
+),
 get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT ss.title || ' Copy', NOW()
+    INSERT INTO names_resource (name, created_at, call_id)
+    SELECT ss.title || ' Copy', NOW(), dc.call_id
     FROM source_simulation ss
+    CROSS JOIN default_call dc
     WHERE ss.title IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name as name_value
 ),
 get_or_create_description AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT ss.description, NOW()
+    INSERT INTO descriptions_resource (description, created_at, call_id)
+    SELECT ss.description, NOW(), dc.call_id
     FROM source_simulation ss
+    CROSS JOIN default_call dc
     WHERE ss.description IS NOT NULL AND ss.description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id
 ),
 get_flag_ids AS (

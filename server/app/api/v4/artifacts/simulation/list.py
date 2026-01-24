@@ -34,30 +34,34 @@ router = APIRouter()
 )
 async def get_simulation_list(
     filters: GetSimulationsListApiRequest,
-    request: Request,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSimulationsListApiResponse:
     """Get simulations list with permissions and relationships."""
     tags = ["simulations"]
 
-    # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    # Check for cache bypass header (for testing)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetSimulationsListApiResponse.model_validate(cached["data"])
+    # Generate cache key from path and parsed body (mode='json' to serialize UUIDs)
+    body_dict = filters.model_dump(mode="json")
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetSimulationsListApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header
-        profile_id = request.state.profile_id
+        profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -82,7 +86,7 @@ async def get_simulation_list(
 
         # Set audit context
         if result.actor_name:
-            audit_set(request, actor={"name": result.actor_name, "id": profile_id})
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
         api_response = GetSimulationsListApiResponse.model_validate(result.model_dump())
@@ -103,9 +107,9 @@ async def get_simulation_list(
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_simulation_list",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

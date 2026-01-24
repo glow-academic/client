@@ -11135,7 +11135,32 @@ export interface components {
             available_continuation_options?: components["schemas"]["QGetSimulationAttemptV4AvailableContinuationOptions"] | null;
         };
         /** GetSimulationsListApiRequest */
-        GetSimulationsListApiRequest: Record<string, never>;
+        GetSimulationsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Scenario Ids */
+            filter_scenario_ids?: string[] | null;
+            /** Filter Cohort Ids */
+            filter_cohort_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Cohort Search */
+            cohort_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetSimulationsListApiResponse */
         GetSimulationsListApiResponse: {
             /** Actor Name */
@@ -11150,12 +11175,14 @@ export interface components {
             departments?: components["schemas"]["QListSimulationsV4Department"][] | null;
             /** Cohorts */
             cohorts?: components["schemas"]["QListSimulationsV4Cohort"][] | null;
-            /** Rubric Options */
-            rubric_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Cohort Options */
             cohort_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Department Options */
             department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
+            /** Total Count */
+            total_count?: number | null;
         };
         /** GetStaffListApiRequest */
         GetStaffListApiRequest: Record<string, never>;
@@ -17765,6 +17792,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Count */
+            count: number | null;
         };
         /** QListPersonasV4Field */
         QListPersonasV4Field: {
@@ -17774,6 +17803,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Count */
+            count: number | null;
         };
         /** QListPersonasV4Persona */
         QListPersonasV4Persona: {
@@ -17838,6 +17869,8 @@ export interface components {
             document_ids: string[] | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
+            /** Count */
+            count: number | null;
         };
         /** QListProvidersV4Provider */
         QListProvidersV4Provider: {

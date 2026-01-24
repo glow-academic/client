@@ -54065,7 +54065,121 @@
         "title": "GetSimulationAttemptApiResponse"
       },
       "GetSimulationsListApiRequest": {
-        "properties": {},
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "filter_scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Scenario Ids"
+          },
+          "filter_cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Cohort Ids"
+          },
+          "filter_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Department Ids"
+          },
+          "scenario_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Search"
+          },
+          "cohort_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Search"
+          },
+          "department_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Search"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 12
+          },
+          "page_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
         "type": "object",
         "title": "GetSimulationsListApiRequest"
       },
@@ -54152,7 +54266,7 @@
             ],
             "title": "Cohorts"
           },
-          "rubric_options": {
+          "scenario_options": {
             "anyOf": [
               {
                 "items": {
@@ -54164,7 +54278,7 @@
                 "type": "null"
               }
             ],
-            "title": "Rubric Options"
+            "title": "Scenario Options"
           },
           "cohort_options": {
             "anyOf": [
@@ -54193,6 +54307,17 @@
               }
             ],
             "title": "Department Options"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
           }
         },
         "type": "object",
@@ -88123,13 +88248,25 @@
               }
             ],
             "title": "Description"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
           }
         },
         "type": "object",
         "required": [
           "department_id",
           "name",
-          "description"
+          "description",
+          "count"
         ],
         "title": "QListPersonasV4Department"
       },
@@ -88168,13 +88305,25 @@
               }
             ],
             "title": "Description"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
           }
         },
         "type": "object",
         "required": [
           "field_id",
           "name",
-          "description"
+          "description",
+          "count"
         ],
         "title": "QListPersonasV4Field"
       },
@@ -88555,6 +88704,17 @@
               }
             ],
             "title": "Parameter Item Ids"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
           }
         },
         "type": "object",
@@ -88565,7 +88725,8 @@
           "active",
           "persona_ids",
           "document_ids",
-          "parameter_item_ids"
+          "parameter_item_ids",
+          "count"
         ],
         "title": "QListPersonasV4Scenario"
       },

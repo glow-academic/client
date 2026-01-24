@@ -53,40 +53,46 @@ original_departments AS (
     FROM params x
     JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id AND pd.active = true
 ),
+default_call AS (
+    SELECT id as call_id
+    FROM calls_entry
+    LIMIT 1
+),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at)
-    SELECT name || ' Copy', NOW()
+    INSERT INTO names_resource (name, created_at, call_id)
+    SELECT name || ' Copy', NOW(), dc.call_id
     FROM original_persona
+    CROSS JOIN default_call dc
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description, NOW()
+    INSERT INTO descriptions_resource (description, created_at, call_id)
+    SELECT description, NOW(), dc.call_id
     FROM original_persona
+    CROSS JOIN default_call dc
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 -- Insert color INTO colors_resource table (if exists)
 new_color_resource AS (
-    INSERT INTO colors_resource (name, description, hex_code, created_at)
-    SELECT 'persona_color', 'Persona color', color, NOW()
+    INSERT INTO colors_resource (name, description, hex_code, created_at, call_id)
+    SELECT 'persona_color', 'Persona color', color, NOW(), dc.call_id
     FROM original_persona
+    CROSS JOIN default_call dc
     WHERE color IS NOT NULL AND color != ''
-    ON CONFLICT (hex_code) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as color_id, hex_code
 ),
 -- Insert icon INTO icons_resource table (if exists)
 new_icon_resource AS (
-    INSERT INTO icons_resource (name, description, value, created_at)
-    SELECT 'persona_icon', 'Persona icon', icon, NOW()
+    INSERT INTO icons_resource (name, description, value, created_at, call_id)
+    SELECT 'persona_icon', 'Persona icon', icon, NOW(), dc.call_id
     FROM original_persona
+    CROSS JOIN default_call dc
     WHERE icon IS NOT NULL AND icon != ''
-    ON CONFLICT (value) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as icon_id, value
 ),
 new_persona AS (
@@ -102,13 +108,15 @@ new_persona AS (
 ),
 -- Copy instruction if original persona has one
 copy_persona_instruction AS (
-    INSERT INTO instructions_resource (template, active, created_at)
-    SELECT 
+    INSERT INTO instructions_resource (template, active, created_at, call_id)
+    SELECT
         COALESCE(pi_orig.template, ''),
         true,
-        NOW()
+        NOW(),
+        dc.call_id
     FROM new_persona np
     CROSS JOIN original_persona op
+    CROSS JOIN default_call dc
     LEFT JOIN persona_instructions_junction pi_orig_link ON pi_orig_link.persona_id = op.id
     LEFT JOIN instructions_resource pi_orig ON pi_orig.id = pi_orig_link.instruction_id
     WHERE pi_orig.template IS NOT NULL AND pi_orig.template != ''
