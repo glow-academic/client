@@ -60,7 +60,7 @@ source_scenario AS (
         ps.id as problem_statement_id,
         ps.name as problem_statement_name
     FROM params x
-    JOIN scenarios_resource s ON s.id = x.scenario_id
+    JOIN scenario_artifact s ON s.id = x.scenario_id
     LEFT JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
 ),
@@ -132,7 +132,6 @@ link_scenario_group AS (
     SELECT ns.id, gt.group_id
     FROM new_scenario ns
     CROSS JOIN group_target gt
-    ON CONFLICT (scenario_id, group_id) DO NOTHING
 ),
 link_name AS (
     -- Link name to new scenario

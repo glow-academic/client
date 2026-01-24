@@ -47,7 +47,7 @@ persona_info AS (
     SELECT 
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
     FROM params x
-    JOIN personas_resource p ON p.id = x.persona_id
+    JOIN persona_artifact p ON p.id = x.persona_id
 ),
 delete_result AS (
     DELETE FROM persona_artifact 

@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Copy, Edit, Eye, Search, Timer, Trash2, Users, X } from "lucide-react";
+import { Copy, Edit, Eye, Search, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -315,24 +315,14 @@ export function Simulations({
             <CardTitle className="text-lg truncate">
               {simulation.name}
             </CardTitle>
-            <div className="mt-1 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">
-                  <Timer className="h-3 w-3 mr-1" />
-                  {simulation.time_limit
-                    ? `${simulation.time_limit} minutes`
-                    : "No time limit"}
-                </Badge>
-                {simulation.practice_simulation && (
-                  <Badge variant="default" className="text-xs">
-                    Practice
-                  </Badge>
-                )}
-              </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               {!simulation.active && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Inactive</Badge>
-                </div>
+                <Badge variant="secondary">Inactive</Badge>
+              )}
+              {simulation.practice_simulation && (
+                <Badge variant="default" className="text-xs">
+                  Practice
+                </Badge>
               )}
             </div>
           </div>
@@ -533,7 +523,7 @@ export function Simulations({
 
               <div className="flex items-center space-x-2 flex-wrap">
                 {/* Rubric Filter */}
-                {rubricColumn && rubricOptions.length > 0 && (
+                {rubricColumn && (
                   <DataTableFacetedFilter
                     column={rubricColumn}
                     title="Rubric"
@@ -542,7 +532,7 @@ export function Simulations({
                 )}
 
                 {/* Cohort Filter */}
-                {cohortColumn && cohortOptions.length > 0 && (
+                {cohortColumn && (
                   <DataTableFacetedFilter
                     column={cohortColumn}
                     title="Cohort"
@@ -551,7 +541,7 @@ export function Simulations({
                 )}
 
                 {/* Department Filter */}
-                {departmentsColumn && departmentOptions.length > 0 && (
+                {departmentsColumn && (
                   <DataTableFacetedFilter
                     column={departmentsColumn}
                     title="Department"

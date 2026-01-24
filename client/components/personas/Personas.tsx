@@ -352,8 +352,13 @@ export default function Personas({
       toast.success("Persona deleted successfully");
       // Refresh page to get updated data
       router.refresh();
-    } catch {
-      toast.error("Failed to delete persona");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete persona";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete persona");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -381,8 +386,13 @@ export default function Personas({
       toast.success(`Persona "${personaName}" duplicated successfully`);
       // Refresh page to get updated data
       router.refresh();
-    } catch {
-      toast.error("Failed to duplicate persona");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to duplicate persona";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to duplicate persona");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDuplicating(null);
     }
@@ -622,7 +632,7 @@ export default function Personas({
 
             <div className="flex items-center space-x-2 flex-wrap">
               {/* Scenario Filter */}
-              {scenarioColumn && scenarioOptions.length > 0 && (
+              {scenarioColumn && (
                 <DataTableFacetedFilter
                   column={scenarioColumn}
                   title="Scenario"
@@ -631,7 +641,7 @@ export default function Personas({
               )}
 
               {/* Agent Filter */}
-              {agentColumn && agentOptions.length > 0 && (
+              {agentColumn && (
                 <DataTableFacetedFilter
                   column={agentColumn}
                   title="Agent"
@@ -640,15 +650,13 @@ export default function Personas({
               )}
 
               {/* Department Filter */}
-              {departmentsColumn &&
-                departmentOptions.length > 0 &&
-                departmentIds.length > 1 && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
+              {departmentsColumn && (
+                <DataTableFacetedFilter
+                  column={departmentsColumn}
+                  title="Department"
+                  options={departmentOptions}
+                />
+              )}
 
               {isFiltered && (
                 <Button

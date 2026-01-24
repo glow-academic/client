@@ -72,7 +72,8 @@ usage_check AS (
     ) + (
         SELECT COUNT(*)
         FROM scenario_tree_junction st
-        WHERE st.parent_id = x.scenario_id OR st.child_id = x.scenario_id
+        WHERE (st.parent_id = x.scenario_id OR st.child_id = x.scenario_id)
+          AND st.parent_id != st.child_id
     ) as usage_count
     FROM params x
 ),

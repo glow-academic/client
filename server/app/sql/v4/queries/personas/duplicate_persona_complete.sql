@@ -45,7 +45,7 @@ original_persona AS (
         (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
         (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon
     FROM params x
-    JOIN personas_resource p ON p.id = x.persona_id
+    JOIN persona_artifact p ON p.id = x.persona_id
 ),
 original_departments AS (
     -- Get department IDs from original persona
@@ -122,7 +122,6 @@ link_persona_instruction AS (
         NOW()
     FROM new_persona np
     CROSS JOIN copy_persona_instruction cpi
-    ON CONFLICT (persona_id, instruction_id) DO NOTHING
 ),
 -- Link persona to name
 link_persona_name AS (
@@ -133,7 +132,6 @@ link_persona_name AS (
         NOW()
     FROM new_persona np
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (persona_id, name_id) DO NOTHING
 ),
 -- Link persona to description
 link_persona_description AS (
@@ -144,7 +142,6 @@ link_persona_description AS (
         NOW()
     FROM new_persona np
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (persona_id, description_id) DO NOTHING
 ),
 -- Link persona to color
 link_persona_color AS (
@@ -155,7 +152,6 @@ link_persona_color AS (
         NOW()
     FROM new_persona np
     CROSS JOIN new_color_resource ncr
-    ON CONFLICT (persona_id, color_id) DO NOTHING
 ),
 -- Link persona to icon
 link_persona_icon AS (
@@ -166,7 +162,6 @@ link_persona_icon AS (
         NOW()
     FROM new_persona np
     CROSS JOIN new_icon_resource nir
-    ON CONFLICT (persona_id, icon_id) DO NOTHING
 ),
 -- Link persona active flag (set to false for duplicate)
 link_persona_active_flag AS (
@@ -177,8 +172,6 @@ link_persona_active_flag AS (
     FROM new_persona np
     CROSS JOIN flags_resource f
     WHERE f.name = 'persona_active'
-    ON CONFLICT (persona_id, flag_id) DO UPDATE SET 
-        value = FALSE
 ),
 copy_departments AS (
     -- Copy department links from original persona

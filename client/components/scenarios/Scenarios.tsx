@@ -131,6 +131,26 @@ export function Scenarios({
     [scenariosData],
   );
 
+  const fieldMapping = useMemo(
+    () => {
+      const data = scenariosData;
+      const map: Record<string, { name: string; description: string; parameter_name: string }> = {};
+      if (data?.fields && Array.isArray(data.fields)) {
+        data.fields.forEach((f) => {
+          if (typeof f === "object" && f !== null && "field_id" in f && f.field_id) {
+            map[String(f.field_id)] = {
+              name: (typeof f.name === "string" ? f.name : "") || "",
+              description: (typeof f.description === "string" ? f.description : "") || "",
+              parameter_name: (typeof f.parameter_name === "string" ? f.parameter_name : "") || "",
+            };
+          }
+        });
+      }
+      return map;
+    },
+    [scenariosData],
+  );
+
   // Define GroupedScenario type based on scenarios
   type GroupedScenario = {
     parent: (typeof scenarios)[number];
@@ -462,8 +482,13 @@ export function Scenarios({
       await deleteScenarioAction({ body: { scenario_id: deleteItem.id } });
       toast.success("Scenario deleted successfully");
       router.refresh();
-    } catch {
-      toast.error("Failed to delete scenario");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete scenario";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete scenario");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -479,8 +504,13 @@ export function Scenarios({
       await duplicateScenarioAction({ body: { scenario_id: scenarioId } });
       toast.success(`Scenario "${scenarioName}" duplicated successfully`);
       router.refresh();
-    } catch {
-      toast.error("Failed to duplicate scenario");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to duplicate scenario";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to duplicate scenario");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDuplicating(null);
     }
@@ -840,7 +870,7 @@ export function Scenarios({
 
               <div className="flex items-center space-x-2 flex-wrap">
                 {/* Simulation Filter */}
-                {simulationColumn && simulationOptions.length > 0 && (
+                {simulationColumn && (
                   <DataTableFacetedFilter
                     column={simulationColumn}
                     title="Simulation"
@@ -849,7 +879,7 @@ export function Scenarios({
                 )}
 
                 {/* Persona Filter */}
-                {personaColumn && personaOptions.length > 0 && (
+                {personaColumn && (
                   <DataTableFacetedFilter
                     column={personaColumn}
                     title="Persona"
@@ -858,15 +888,13 @@ export function Scenarios({
                 )}
 
                 {/* Department Filter */}
-                {departmentsColumn &&
-                  departmentOptions.length > 0 &&
-                  departmentIds.length > 1 && (
-                    <DataTableFacetedFilter
-                      column={departmentsColumn}
-                      title="Department"
-                      options={departmentOptions}
-                    />
-                  )}
+                {departmentsColumn && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
 
                 {isFiltered && (
                   <Button

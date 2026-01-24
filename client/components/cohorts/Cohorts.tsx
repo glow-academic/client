@@ -573,7 +573,7 @@ export default function Cohorts({
 
               <div className="flex items-center space-x-2 flex-wrap">
                 {/* Profile Filter */}
-                {profileColumn && profileOptions.length > 0 && (
+                {profileColumn && (
                   <DataTableFacetedFilter
                     column={profileColumn}
                     title="Profile"
@@ -582,7 +582,7 @@ export default function Cohorts({
                 )}
 
                 {/* Simulation Filter */}
-                {simulationColumn && simulationOptions.length > 0 && (
+                {simulationColumn && (
                   <DataTableFacetedFilter
                     column={simulationColumn}
                     title="Simulation"
@@ -591,7 +591,7 @@ export default function Cohorts({
                 )}
 
                 {/* Department Filter */}
-                {departmentsColumn && departmentOptions.length > 0 && (
+                {departmentsColumn && (
                   <DataTableFacetedFilter
                     column={departmentsColumn}
                     title="Department"
