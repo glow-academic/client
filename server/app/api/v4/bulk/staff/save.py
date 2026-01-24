@@ -101,7 +101,7 @@ async def save_staff(
         api_response = UpsertStaffApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
-        tags = ["staff"]
+        tags = ["staff", "profile"]
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

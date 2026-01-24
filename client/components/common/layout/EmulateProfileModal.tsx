@@ -24,8 +24,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -68,7 +66,6 @@ export function EmulateProfileModal({
     useState<SearchSimulatableProfilesOut | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEmulating, setIsEmulating] = useState(false);
-  const [fullEmulation, setFullEmulation] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const roleResourceMap = useMemo(() => {
     if (!roleResources || roleResources.length === 0) return null;
@@ -120,9 +117,6 @@ export function EmulateProfileModal({
     },
     [roleResourceMap],
   );
-
-  // Check if user is superadmin
-  const isSuperadmin = activeProfile?.role === "superadmin";
 
   // Search when user types (debounced)
   const handleSearch = useCallback(
@@ -185,7 +179,6 @@ export function EmulateProfileModal({
       setSearchQuery("");
       setSelectedProfileId(null);
       setSearchData(null);
-      setFullEmulation(false);
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
@@ -209,7 +202,7 @@ export function EmulateProfileModal({
       // Pass current URL as returnUrl so server can construct proper redirect URLs
       const result = await switchEffectiveProfile({
         targetProfileId: selectedProfileId,
-        fullEmulation: fullEmulation && isSuperadmin,
+        fullEmulation: true,
         returnUrl: window.location.href,
       });
 
@@ -218,11 +211,7 @@ export function EmulateProfileModal({
         return;
       }
 
-      toast.success(
-        fullEmulation && isSuperadmin
-          ? "Full emulation enabled. Redirecting..."
-          : "Emulation enabled. Redirecting...",
-      );
+      toast.success("Emulation enabled. Redirecting...");
 
       onOpenChange(false);
 
@@ -250,8 +239,6 @@ export function EmulateProfileModal({
   }, [
     selectedProfileId,
     activeProfile?.id,
-    fullEmulation,
-    isSuperadmin,
     switchEffectiveProfile,
     onOpenChange,
     normalizedPrefix,
@@ -376,23 +363,13 @@ export function EmulateProfileModal({
             )}
           </div>
 
-          {/* Full Emulation Switch (Superadmin only) */}
-          {isSuperadmin && (
-            <div className="flex items-center justify-between p-4 border rounded-md bg-muted/50">
-              <div className="space-y-0.5">
-                <Label htmlFor="full-emulation" className="text-sm font-medium">
-                  Full Emulation
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  When enabled, you must log out to exit emulation. This mode
-                  prevents accidental exits.
-                </p>
-              </div>
-              <Switch
-                id="full-emulation"
-                checked={fullEmulation}
-                onCheckedChange={setFullEmulation}
-              />
+          {/* Emulation Warning */}
+          {selectedProfileId && (
+            <div className="p-4 border border-yellow-500/50 rounded-md bg-yellow-50 dark:bg-yellow-950/20">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                Emulation can be destructive if you take actions on behalf of
+                this user. The only way to exit emulation is to log out.
+              </p>
             </div>
           )}
 
