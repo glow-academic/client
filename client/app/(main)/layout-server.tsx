@@ -147,21 +147,6 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
   return { profileId };
 }
 
-/** ---- Helper to get validated session ID (reusable for API calls) ----
- * Returns the session_id from the cached layout context response.
- * @returns Object with sessionId (can be null)
- */
-export const getValidatedSessionId = cache(
-  async (): Promise<{ sessionId: string | null }> => {
-    try {
-      const result = await getLayoutContext({ body: {} });
-      return { sessionId: result?.session_id ?? null };
-    } catch {
-      return { sessionId: null };
-    }
-  }
-);
-
 // Export ProfileItem type derived from server response
 // Extracts profile fields from LayoutContextOut (effective profile fields: id, name, etc.)
 // Uses inferred types to ensure type safety
