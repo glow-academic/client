@@ -169,6 +169,7 @@ export function Simulations({
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [simulationsData?.scenario_options],
@@ -179,6 +180,7 @@ export function Simulations({
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [simulationsData?.cohort_options],
@@ -189,6 +191,7 @@ export function Simulations({
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [simulationsData?.department_options],

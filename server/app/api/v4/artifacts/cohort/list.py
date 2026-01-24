@@ -39,16 +39,20 @@ async def get_cohort_list(
     """Get cohorts list with permissions and relationships."""
     tags = ["cohorts"]  # From router tags
 
-    # Generate cache key from path and parsed body
+    # Check for cache bypass header (for testing)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    # Generate cache key from path and parsed body (mode='json' to serialize UUIDs)
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetCohortsListApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetCohortsListApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -63,7 +67,9 @@ async def get_cohort_list(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetCohortsListSqlParams(profile_id=uuid.UUID(profile_id))
+        params = GetCohortsListSqlParams(
+            **request.model_dump(), profile_id=uuid.UUID(profile_id)
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present

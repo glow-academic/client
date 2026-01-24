@@ -224,9 +224,9 @@ filtered_personas AS (
         -- Search filter: match name or description (case-insensitive)
         (search IS NULL OR LOWER(pd.persona_name) LIKE '%' || LOWER(search) || '%' OR LOWER(pd.description) LIKE '%' || LOWER(search) || '%')
         -- Scenario filter: persona must be linked to at least one selected scenario
-        AND (scenario_ids IS NULL OR pd.scenario_ids && scenario_ids)
+        AND (api_list_personas_v4.scenario_ids IS NULL OR pd.scenario_ids && api_list_personas_v4.scenario_ids)
         -- Field filter: persona must have at least one of the selected fields
-        AND (field_ids IS NULL OR pd.field_ids && field_ids)
+        AND (api_list_personas_v4.field_ids IS NULL OR pd.field_ids && api_list_personas_v4.field_ids)
         -- Department filter: persona must belong to at least one selected department
         AND (filter_department_ids IS NULL OR pd.department_ids && filter_department_ids::text[])
 ),

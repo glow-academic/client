@@ -440,6 +440,13 @@ function MainLayoutContent({
               </div>
             )}
 
+            {/* Generate button on list pages (self-gates via GenerationCapability context) */}
+            {!isCreateOrEditPage && (
+              <div className="pr-4 flex items-center">
+                <FullPageGenerateButton />
+              </div>
+            )}
+
             {/* Add Staff Button - Show in top right for staff management pages */}
             {isStaffManagementPage && (
               <div className="pr-4">

@@ -7955,7 +7955,32 @@ export interface components {
             general_agent_id?: string | null;
         };
         /** GetCohortsListApiRequest */
-        GetCohortsListApiRequest: Record<string, never>;
+        GetCohortsListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Simulation Ids */
+            filter_simulation_ids?: string[] | null;
+            /** Filter Profile Ids */
+            filter_profile_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /** Profile Search */
+            profile_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetCohortsListApiResponse */
         GetCohortsListApiResponse: {
             /** Actor Name */
@@ -7972,6 +7997,14 @@ export interface components {
             simulation_scenario_mapping?: unknown | null;
             /** Departments */
             departments?: components["schemas"]["QListCohortsV4Department"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["QListCohortsV4Option"][] | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["QListCohortsV4Option"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QListCohortsV4Option"][] | null;
+            /** Total Count */
+            total_count?: number | null;
         };
         /** GetDashboardBundleApiRequest */
         GetDashboardBundleApiRequest: {
@@ -10735,6 +10768,8 @@ export interface components {
             department_options?: components["schemas"]["QListScenariosV4Option"][] | null;
             /** Total Count */
             total_count?: number | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetSettingApiRequest */
         GetSettingApiRequest: {
@@ -17319,6 +17354,13 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QListCohortsV4Option */
+        QListCohortsV4Option: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
         /** QListCohortsV4Profile */
         QListCohortsV4Profile: {
             /** Profile Id */
@@ -17957,6 +17999,8 @@ export interface components {
             value: string | null;
             /** Label */
             label: string | null;
+            /** Count */
+            count: number | null;
         };
         /** QListScenariosV4Persona */
         QListScenariosV4Persona: {
@@ -18069,6 +18113,8 @@ export interface components {
             value: string | null;
             /** Label */
             label: string | null;
+            /** Count */
+            count: number | null;
         };
         /** QListSimulationsV4Persona */
         QListSimulationsV4Persona: {

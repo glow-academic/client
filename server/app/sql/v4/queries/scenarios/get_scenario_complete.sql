@@ -3550,34 +3550,37 @@ missing_tools_check AS (
     CROSS JOIN ui_flags uf
     CROSS JOIN tools_existence_check tec
 ),
+scenario_edit_state AS (
+    SELECT * FROM view_scenario_edit_state WHERE scenario_id = (SELECT scenario_id FROM params)
+),
 permissions_data_with_tools AS (
-    SELECT 
+    SELECT
         sdd.department_ids,
-        CASE 
+        CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN
                 -- New mode permissions
-                CASE 
+                CASE
                     WHEN up.role = 'superadmin' THEN true
                     WHEN EXISTS (SELECT 1 FROM user_departments) THEN true
                     ELSE false
                 END
             ELSE
                 -- Detail mode permissions
-                CASE 
-                    WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN false
+                CASE
+                    WHEN COALESCE((SELECT active_usage_count FROM scenario_edit_state), 0) > 0 THEN false
                     WHEN (COALESCE(array_length(sdd.department_ids, 1), 0) = 0 AND up.role != 'superadmin') THEN false
                     WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
-        CASE 
+        CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN
                 -- New mode: always editable if can_edit is true
                 NULL::text
             ELSE
                 -- Detail mode: compute disabled_reason
-                CASE 
-                    WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN 'Scenario is currently in use and cannot be edited.'
+                CASE
+                    WHEN COALESCE((SELECT active_usage_count FROM scenario_edit_state), 0) > 0 THEN 'Scenario is currently in use and cannot be edited.'
                     WHEN (COALESCE(array_length(sdd.department_ids, 1), 0) = 0 AND up.role != 'superadmin') THEN 'You do not have access to edit this scenario.'
                     WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN NULL::text
                     ELSE 'This scenario cannot be edited. You can view the details but cannot make changes.'::text
@@ -3586,7 +3589,6 @@ permissions_data_with_tools AS (
     FROM params x
     LEFT JOIN scenario_departments_data sdd ON true
     CROSS JOIN user_profile up
-    LEFT JOIN scenario_simulations_agg ssa ON true
 ),
 permissions_final AS (
     SELECT 
@@ -4182,5 +4184,4 @@ CROSS JOIN video_enabled_flag_resource_data vefrd
 CROSS JOIN questions_enabled_flag_resource_data qefrd
 CROSS JOIN problem_statement_enabled_flag_resource_data psefrd
 CROSS JOIN use_templates_flag_resource_data utefrd
-LEFT JOIN scenario_simulations_agg ssa ON true
 $$;

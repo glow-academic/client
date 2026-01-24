@@ -100,7 +100,8 @@ CREATE TYPE types.q_list_scenarios_v4_department AS (
 
 CREATE TYPE types.q_list_scenarios_v4_option AS (
     value text,
-    label text
+    label text,
+    count bigint
 );
 
 -- 4) Recreate function
@@ -128,7 +129,8 @@ RETURNS TABLE (
     persona_options types.q_list_scenarios_v4_option[],
     simulation_options types.q_list_scenarios_v4_option[],
     department_options types.q_list_scenarios_v4_option[],
-    total_count bigint
+    total_count bigint,
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -165,14 +167,6 @@ scenario_simulations AS (
     FROM simulation_scenarios_junction ss
     JOIN scenarios_resource sr ON sr.id = ss.scenario_id
     WHERE ss.active = true
-    GROUP BY sr.scenario_id
-),
-scenario_all_simulation_links AS (
-    SELECT
-        sr.scenario_id,
-        COUNT(*) as total_links
-    FROM simulation_scenarios_junction ss
-    JOIN scenarios_resource sr ON sr.id = ss.scenario_id
     GROUP BY sr.scenario_id
 ),
 scenario_cohorts AS (
@@ -241,18 +235,16 @@ scenario_data AS (
         COALESCE(sa.image_input_enabled, false) as image_input_enabled,
         CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
         CASE
-            WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type)
-                 AND COALESCE(ss.num_simulations, 0) = 0
-            THEN true
+            WHEN COALESCE(ses.active_usage_count, 0) > 0 THEN false
+            WHEN ses.department_ids IS NULL AND up.role != 'superadmin' THEN false
+            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE
-            -- Can't delete if can't edit (stricter than can_edit)
-            WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
+            WHEN COALESCE(ses.active_usage_count, 0) > 0 THEN false
+            WHEN ses.department_ids IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type)
-                 AND COALESCE(sal.total_links, 0) = 0
-            THEN true
+                 AND COALESCE(ses.total_links, 0) = 0 THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate
@@ -261,20 +253,20 @@ scenario_data AS (
     JOIN scenario_tree_junction root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
     LEFT JOIN scenario_departments_junction sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
+    LEFT JOIN view_scenario_edit_state ses ON ses.scenario_id = s.id
     LEFT JOIN scenario_tree_junction st ON st.child_id = s.id AND st.parent_id != st.child_id
     LEFT JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
     LEFT JOIN scenario_objectives_junction so ON so.scenario_id = s.id
     LEFT JOIN scenario_parameters_junction spar ON spar.scenario_id = s.id
     LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
-    LEFT JOIN scenario_all_simulation_links sal ON sal.scenario_id = s.id
     LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     LEFT JOIN scenario_attributes sa ON sa.scenario_id = s.id
     CROSS JOIN user_profile up
     GROUP BY s.id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE), s.updated_at, st.parent_id,
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations,
-             sc.cohort_ids, sdd.department_ids, sal.total_links, up.role,
+             sc.cohort_ids, sdd.department_ids, ses.active_usage_count, ses.total_links, ses.department_ids, up.role,
              sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled
     HAVING
         -- Include if has matching department link OR has no department links at all (cross-dept)
@@ -287,8 +279,8 @@ filtered_roots AS (
     FROM scenario_data sd
     WHERE sd.parent_scenario_id IS NULL
       AND (search IS NULL OR LOWER(sd.title) LIKE '%' || LOWER(search) || '%' OR LOWER(sd.problem_statement) LIKE '%' || LOWER(search) || '%')
-      AND (persona_ids IS NULL OR sd.persona_ids && persona_ids::text[])
-      AND (simulation_ids IS NULL OR sd.simulation_ids && simulation_ids::text[])
+      AND (api_list_scenarios_v4.persona_ids IS NULL OR sd.persona_ids && api_list_scenarios_v4.persona_ids::text[])
+      AND (api_list_scenarios_v4.simulation_ids IS NULL OR sd.simulation_ids && api_list_scenarios_v4.simulation_ids::text[])
       AND (filter_department_ids IS NULL OR sd.department_ids && filter_department_ids::text[])
 ),
 filtered_count AS (
@@ -344,6 +336,42 @@ all_department_ids_options AS (
     SELECT DISTINCT unnest(department_ids) as department_id
     FROM scenario_data
     WHERE department_ids IS NOT NULL AND parent_scenario_id IS NULL
+),
+general_agent_for_user AS (
+    SELECT a.id as agent_id
+    FROM agent_artifact a
+    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
+                  WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
+        JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+        JOIN artifact_resources_relation ar ON ar.resource = rt.resource
+        WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
+    AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
+                 JOIN user_departments ud ON ad.department_id = ud.department_id
+                 WHERE ad.agent_id = a.id AND ad.active = true)
+         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    AND ARRAY['names','descriptions','problem_statements','scenario_flags','departments',
+              'personas','documents','parameters','fields','objectives','images','videos',
+              'questions','templates']::text[]
+        <@ COALESCE(
+            (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
+             FROM agent_tools_junction at3
+             JOIN tools_resource tr2 ON tr2.id = at3.tool_id
+             JOIN tool_artifact t ON t.id = tr2.tool_id
+                  AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
+                              WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
+             JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
+             WHERE at3.agent_id = a.id AND at3.active = true),
+            ARRAY[]::text[]
+        )
+    ORDER BY
+        CASE WHEN EXISTS (
+            SELECT 1 FROM agent_departments_junction ad
+            JOIN user_departments ud ON ad.department_id = ud.department_id
+            WHERE ad.agent_id = a.id AND ad.active = true
+        ) THEN 0 ELSE 1 END ASC,
+        a.updated_at DESC, a.id ASC
+    LIMIT 1
 )
 SELECT
     up.actor_name::text as actor_name,
@@ -417,7 +445,7 @@ SELECT
     ) as departments,
     -- Options arrays for UI filter dropdowns (from ALL scenarios, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG((pr.id::text, pn_name.name)::types.q_list_scenarios_v4_option ORDER BY pn_name.name)
+        (SELECT ARRAY_AGG((pr.id::text, pn_name.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sd.parent_scenario_id IS NULL AND pr.id::text = ANY(sd.persona_ids)))::types.q_list_scenarios_v4_option ORDER BY pn_name.name)
          FROM personas_resource pr
          JOIN (SELECT pn.persona_id, n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.persona_id = pr.persona_id
          WHERE pr.id IN (SELECT persona_id FROM all_persona_ids_options)
@@ -425,7 +453,7 @@ SELECT
         '{}'::types.q_list_scenarios_v4_option[]
     ) as persona_options,
     COALESCE(
-        (SELECT ARRAY_AGG((s.id::text, sn_name.name)::types.q_list_scenarios_v4_option ORDER BY sn_name.name)
+        (SELECT ARRAY_AGG((s.id::text, sn_name.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sd.parent_scenario_id IS NULL AND s.id::text = ANY(sd.simulation_ids)))::types.q_list_scenarios_v4_option ORDER BY sn_name.name)
          FROM all_simulation_ids_options asi
          JOIN simulation_artifact s ON s.id::text = asi.simulation_id
          JOIN (SELECT sn.simulation_id, n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.simulation_id = s.id
@@ -433,14 +461,16 @@ SELECT
         '{}'::types.q_list_scenarios_v4_option[]
     ) as simulation_options,
     COALESCE(
-        (SELECT ARRAY_AGG((dr.id::text, dn_name.name)::types.q_list_scenarios_v4_option ORDER BY dn_name.name)
+        (SELECT ARRAY_AGG((dr.id::text, dn_name.name, (SELECT COUNT(*) FROM scenario_data sd WHERE sd.parent_scenario_id IS NULL AND dr.id::text = ANY(sd.department_ids)))::types.q_list_scenarios_v4_option ORDER BY dn_name.name)
          FROM departments_resource dr
          JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = dr.department_id
          WHERE dr.id IN (SELECT department_id FROM user_departments)
+           AND dr.id::text IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_scenarios_v4_option[]
     ) as department_options,
-    (SELECT total FROM filtered_count) as total_count
+    (SELECT total FROM filtered_count) as total_count,
+    (SELECT agent_id FROM general_agent_for_user) as general_agent_id
 FROM page_scenarios sd
 CROSS JOIN user_profile up
 GROUP BY up.actor_name

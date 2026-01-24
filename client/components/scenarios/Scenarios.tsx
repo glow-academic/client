@@ -17,8 +17,12 @@ import {
   X,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { useGenerationContext } from "@/contexts/generation-context";
+import { useProfile } from "@/contexts/profile-context";
 
 import type {
   DeleteScenarioIn,
@@ -102,6 +106,14 @@ export function Scenarios({
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(),
   );
+
+  // Generation modal state
+  const { socket, isConnected } = useProfile();
+  const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Debounce refs
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -216,6 +228,7 @@ export function Scenarios({
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [scenariosData?.persona_options],
@@ -226,6 +239,7 @@ export function Scenarios({
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [scenariosData?.simulation_options],
@@ -236,6 +250,7 @@ export function Scenarios({
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
         }))
         .filter((opt) => opt.value && opt.label),
     [scenariosData?.department_options],
@@ -569,6 +584,72 @@ export function Scenarios({
       page: null,
     });
   }, [updateScenariosParams]);
+
+  // Set GenerationCapability from list response
+  useEffect(() => {
+    if (serverListData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "scenario",
+        canGenerate: true,
+        agentId: serverListData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "scenario",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [serverListData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
+
+  // Listen for full-page-generate event
+  const handleOpenGenerateModal = useCallback(() => {
+    if (!serverListData?.general_agent_id) return;
+    const resources: GenerateRegenerateModalResource[] = [
+      { id: "names", label: "Name", active: true },
+      { id: "descriptions", label: "Description", active: true },
+      { id: "problem_statements", label: "Problem Statement", active: true },
+      { id: "objectives", label: "Objectives", active: true },
+      { id: "scenario_flags", label: "Configuration", active: true },
+      { id: "departments", label: "Departments", active: true },
+      { id: "personas", label: "Personas", active: true },
+      { id: "documents", label: "Documents", active: true },
+      { id: "parameters", label: "Parameters", active: true },
+      { id: "fields", label: "Fields", active: true },
+      { id: "templates", label: "Templates", active: true },
+      { id: "images", label: "Images", active: true },
+      { id: "videos", label: "Videos", active: true },
+      { id: "questions", label: "Questions", active: true },
+    ];
+    setModalResources(resources);
+    setModalInstructions("");
+    setShowGenerateModal(true);
+  }, [serverListData?.general_agent_id]);
+
+  useEffect(() => {
+    window.addEventListener("full-page-generate", handleOpenGenerateModal);
+    return () => window.removeEventListener("full-page-generate", handleOpenGenerateModal);
+  }, [handleOpenGenerateModal]);
+
+  // Handle modal generate (create new scenario + generate)
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      if (!socket || !isConnected) return;
+      setIsGenerating(true);
+      socket.emit("scenario_generate", {
+        resource_types: selectedResources,
+        agent_type: "general",
+        user_instructions: instructions.trim() ? [instructions.trim()] : null,
+        scenario_id: null,
+        mcp: false,
+      });
+      setShowGenerateModal(false);
+      setIsGenerating(false);
+      toast.success("Generation started for new scenario");
+    },
+    [socket, isConnected]
+  );
 
   const renderScenarioCard = (
     scenario: (typeof scenarios)[number],
@@ -1025,6 +1106,18 @@ export function Scenarios({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <GenerateRegenerateModal
+          open={showGenerateModal}
+          onOpenChange={setShowGenerateModal}
+          resources={modalResources}
+          onResourcesChange={setModalResources}
+          instructions={modalInstructions}
+          onInstructionsChange={setModalInstructions}
+          onGenerate={handleModalGenerate}
+          isGenerating={isGenerating}
+          mode="generate"
+        />
       </div>
     </TooltipProvider>
   );

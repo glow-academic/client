@@ -104,7 +104,8 @@ CREATE TYPE types.q_list_simulations_v4_cohort AS (
 
 CREATE TYPE types.q_list_simulations_v4_option AS (
     value text,
-    label text
+    label text,
+    count bigint
 );
 
 -- 4) Recreate function
@@ -314,10 +315,10 @@ all_persona_ids AS (
 persona_data AS (
     SELECT
         p.id as persona_id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
-        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
-        (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.persona_id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.persona_id LIMIT 1), '') as description,
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.persona_id LIMIT 1) as color,
+        (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.persona_id LIMIT 1) as icon,
         false as image_model
     FROM all_persona_ids api
     JOIN personas_resource p ON p.id = api.persona_id
@@ -363,7 +364,7 @@ rubric_data AS (
         (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
         COALESCE((SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
     FROM all_rubric_ids ari
-    JOIN rubrics_resource r ON r.id = ari.rubric_id
+    JOIN rubric_artifact r ON r.id = ari.rubric_id
 ),
 all_cohort_ids AS (
     SELECT DISTINCT unnest(cohort_ids) as cohort_id
@@ -380,11 +381,11 @@ cohort_data AS (
 ),
 department_data AS (
     SELECT
-        d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department_artifact d
-    WHERE d.id IN (SELECT department_id FROM user_departments)
+        dr.id as department_id,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = dr.department_id LIMIT 1), '') as description
+    FROM departments_resource dr
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
 ),
 -- Options derived from ALL simulation_data (unfiltered) for filter dropdowns
 all_scenario_ids_options AS (
@@ -471,7 +472,7 @@ SELECT
     ) as cohorts,
     -- Scenario options (from ALL simulations, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG((s.id::text, sn_name.name)::types.q_list_simulations_v4_option ORDER BY sn_name.name)
+        (SELECT ARRAY_AGG((s.id::text, sn_name.name, (SELECT COUNT(*) FROM simulation_data sd WHERE s.id = ANY(sd.scenario_ids)))::types.q_list_simulations_v4_option ORDER BY sn_name.name)
          FROM all_scenario_ids_options asio
          JOIN scenarios_resource s ON s.id = asio.scenario_id
          JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = s.scenario_id
@@ -480,20 +481,20 @@ SELECT
     ) as scenario_options,
     -- Cohort options (from ALL simulations, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG((c.id::text, cn_name.name)::types.q_list_simulations_v4_option ORDER BY cn_name.name)
+        (SELECT ARRAY_AGG((c.id::text, cn_name.name, (SELECT COUNT(*) FROM simulation_data sd WHERE c.id::text = ANY(sd.cohort_ids)))::types.q_list_simulations_v4_option ORDER BY cn_name.name)
          FROM all_cohort_ids_options acio
          JOIN cohort_artifact c ON c.id = acio.cohort_id::uuid
          JOIN (SELECT cn.cohort_id, n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id) cn_name ON cn_name.cohort_id = c.id
          WHERE (cohort_search IS NULL OR LOWER(cn_name.name) LIKE '%' || LOWER(cohort_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
     ) as cohort_options,
-    -- Department options (from user's departments, filtered by search term)
+    -- Department options (from user's departments, filtered by search term, only with count > 0)
     COALESCE(
-        (SELECT ARRAY_AGG((d.id::text, dn_name.name)::types.q_list_simulations_v4_option ORDER BY dn_name.name)
-         FROM department_artifact d
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = d.id
-         WHERE d.id::text IN (SELECT department_id FROM all_department_ids_options)
-           AND d.id IN (SELECT department_id FROM user_departments)
+        (SELECT ARRAY_AGG((dr.id::text, dn_name.name, (SELECT COUNT(*) FROM simulation_data sd WHERE dr.id::text = ANY(sd.department_ids)))::types.q_list_simulations_v4_option ORDER BY dn_name.name)
+         FROM departments_resource dr
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = dr.department_id
+         WHERE dr.id IN (SELECT department_id FROM user_departments)
+           AND dr.id::text IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
     ) as department_options,

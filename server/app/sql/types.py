@@ -3697,10 +3697,28 @@ class GetCohortResourceIdsByGroupIdApiResponse(BaseModel):
 class GetCohortsListSqlParams(BaseModel):
 
     profile_id: UUID
+    search: str | None = None
+    filter_simulation_ids: list[UUID] | None = None
+    filter_profile_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    simulation_search: str | None = None
+    profile_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.search,
+            self.filter_simulation_ids,
+            self.filter_profile_ids,
+            self.filter_department_ids,
+            self.simulation_search,
+            self.profile_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
         )
 
 class QListCohortsV4Cohort(BaseModel):
@@ -3728,6 +3746,14 @@ class QListCohortsV4Department(BaseModel):
     department_id: UUID | None
     name: str | None
     description: str | None
+
+
+
+
+class QListCohortsV4Option(BaseModel):
+
+    value: str | None
+    label: str | None
 
 
 
@@ -3771,10 +3797,22 @@ class GetCohortsListSqlRow(BaseModel):
     scenarios: list[QListCohortsV4Scenario] | None = None
     simulation_scenario_mapping: Any | None = None
     departments: list[QListCohortsV4Department] | None = None
+    simulation_options: list[QListCohortsV4Option] | None = None
+    profile_options: list[QListCohortsV4Option] | None = None
+    department_options: list[QListCohortsV4Option] | None = None
+    total_count: int | None = None
 
 class GetCohortsListApiRequest(BaseModel):
 
-    pass
+    search: str | None = None
+    filter_simulation_ids: list[UUID] | None = None
+    filter_profile_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    simulation_search: str | None = None
+    profile_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
 
 class GetCohortsListApiResponse(BaseModel):
 
@@ -3785,6 +3823,10 @@ class GetCohortsListApiResponse(BaseModel):
     scenarios: list[QListCohortsV4Scenario] | None = None
     simulation_scenario_mapping: Any | None = None
     departments: list[QListCohortsV4Department] | None = None
+    simulation_options: list[QListCohortsV4Option] | None = None
+    profile_options: list[QListCohortsV4Option] | None = None
+    department_options: list[QListCohortsV4Option] | None = None
+    total_count: int | None = None
 
 
 
@@ -17237,6 +17279,7 @@ class QListScenariosV4Option(BaseModel):
 
     value: str | None
     label: str | None
+    count: int | None
 
 
 
@@ -17298,6 +17341,7 @@ class GetScenariosListSqlRow(BaseModel):
     simulation_options: list[QListScenariosV4Option] | None = None
     department_options: list[QListScenariosV4Option] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 class GetScenariosListApiRequest(BaseModel):
 
@@ -17325,6 +17369,7 @@ class GetScenariosListApiResponse(BaseModel):
     simulation_options: list[QListScenariosV4Option] | None = None
     department_options: list[QListScenariosV4Option] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 
 
@@ -19565,6 +19610,7 @@ class QListSimulationsV4Option(BaseModel):
 
     value: str | None
     label: str | None
+    count: int | None
 
 
 
