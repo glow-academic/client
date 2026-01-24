@@ -166,6 +166,10 @@ from app.api.v4.resources.scenario_flags.create import \
     router as scenario_flags_router
 
 router.include_router(scenario_flags_router)
+from app.api.v4.resources.setting_role_routes.create import \
+    router as setting_role_routes_router
+
+router.include_router(setting_role_routes_router)
 from app.api.v4.resources.scenario_positions.create import \
     router as scenario_positions_router
 

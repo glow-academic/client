@@ -29,6 +29,9 @@ CREATE OR REPLACE FUNCTION api_patch_setting_draft_v4(
     auth_ids uuid[] DEFAULT NULL,
     provider_ids uuid[] DEFAULT NULL,
     key_ids uuid[] DEFAULT NULL,
+    role_ids uuid[] DEFAULT NULL,
+    route_ids uuid[] DEFAULT NULL,
+    role_route_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -168,7 +171,34 @@ BEGIN
                 ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
-            
+
+            IF role_ids IS NOT NULL THEN
+                DELETE FROM roles_draft WHERE roles_draft.draft_id = v_draft_id;
+                INSERT INTO roles_draft (draft_id, roles_id, version)
+                SELECT v_draft_id, role_id, v_new_version
+                FROM UNNEST(role_ids) as role_id
+                ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
+            IF route_ids IS NOT NULL THEN
+                DELETE FROM routes_draft WHERE routes_draft.draft_id = v_draft_id;
+                INSERT INTO routes_draft (draft_id, routes_id, version)
+                SELECT v_draft_id, route_id, v_new_version
+                FROM UNNEST(route_ids) as route_id
+                ON CONFLICT ON CONSTRAINT routes_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
+            IF role_route_ids IS NOT NULL THEN
+                DELETE FROM role_routes_draft WHERE role_routes_draft.draft_id = v_draft_id;
+                INSERT INTO role_routes_draft (draft_id, role_routes_id, version)
+                SELECT v_draft_id, rr_id, v_new_version
+                FROM UNNEST(role_route_ids) as rr_id
+                ON CONFLICT ON CONSTRAINT role_routes_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
             RETURN;
         END IF;
@@ -247,7 +277,31 @@ BEGIN
         ON CONFLICT ON CONSTRAINT keys_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
-    
+
+    IF role_ids IS NOT NULL THEN
+        INSERT INTO roles_draft (draft_id, roles_id, version)
+        SELECT v_draft_id, role_id, v_new_version
+        FROM UNNEST(role_ids) as role_id
+        ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
+    IF route_ids IS NOT NULL THEN
+        INSERT INTO routes_draft (draft_id, routes_id, version)
+        SELECT v_draft_id, route_id, v_new_version
+        FROM UNNEST(route_ids) as route_id
+        ON CONFLICT ON CONSTRAINT routes_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
+    IF role_route_ids IS NOT NULL THEN
+        INSERT INTO role_routes_draft (draft_id, role_routes_id, version)
+        SELECT v_draft_id, rr_id, v_new_version
+        FROM UNNEST(role_route_ids) as rr_id
+        ON CONFLICT ON CONSTRAINT role_routes_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
     RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;

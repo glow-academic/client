@@ -32,7 +32,10 @@ DECLARE
         'q_get_setting_v4_color_resource',
         'q_get_setting_v4_flag_resource',
         'q_get_setting_v4_description_resource',
-        'q_get_setting_v4_color_option'
+        'q_get_setting_v4_color_option',
+        'q_get_setting_v4_role_resource',
+        'q_get_setting_v4_route_resource',
+        'q_get_setting_v4_role_route'
     ];
     type_name text;
 BEGIN
@@ -148,6 +151,30 @@ CREATE TYPE types.q_get_setting_v4_color_option AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_setting_v4_role_resource AS (
+    role_id uuid,
+    role text,
+    name text,
+    description text,
+    icon_value text,
+    color_hex text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_setting_v4_route_resource AS (
+    route_id uuid,
+    route text,
+    role_id uuid,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_setting_v4_role_route AS (
+    id uuid,
+    role_id uuid,
+    route_id uuid,
+    generated boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_setting_v4(
     profile_id uuid,
@@ -235,7 +262,24 @@ RETURNS TABLE (
     keys_agent_id uuid,
     keys_required boolean,
     key_suggestions uuid[],
-    keys types.q_get_setting_v4_key[]
+    keys types.q_get_setting_v4_key[],
+    -- Multi-select resources: roles
+    role_ids uuid[],
+    role_resources types.q_get_setting_v4_role_resource[],
+    show_roles boolean,
+    roles_required boolean,
+    roles types.q_get_setting_v4_role_resource[],
+    -- Multi-select resources: routes
+    route_ids uuid[],
+    route_resources types.q_get_setting_v4_route_resource[],
+    show_routes boolean,
+    routes_required boolean,
+    routes types.q_get_setting_v4_route_resource[],
+    -- Role-route junction resources
+    role_route_ids uuid[],
+    role_route_resources types.q_get_setting_v4_role_route[],
+    show_role_routes boolean,
+    role_routes types.q_get_setting_v4_role_route[]
 )
 LANGUAGE sql
 STABLE
@@ -1015,6 +1059,147 @@ key_mapping_data AS (
             WHERE spk2.key_id = kr.id AND spk2.active = true
         )
         OR up.role = 'superadmin'
+),
+-- Role IDs (selected role IDs for setting)
+setting_role_ids_data AS (
+    SELECT
+        COALESCE(
+            (SELECT ARRAY_AGG(rd.roles_id ORDER BY rd.created_at)
+             FROM roles_draft rd
+             WHERE rd.draft_id = (SELECT draft_id FROM params)),
+            CASE
+                WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+                ELSE COALESCE(
+                    (SELECT ARRAY_AGG(sr.role_id ORDER BY sr.created_at)
+                     FROM setting_roles_junction sr
+                     WHERE sr.setting_id = (SELECT setting_id FROM params)
+                       AND sr.active = true),
+                    ARRAY[]::uuid[]
+                )
+            END
+        ) as role_ids
+    FROM params
+    LIMIT 1
+),
+-- Role resources (details for selected roles)
+role_resources_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (r.id, r.role::text, COALESCE(r.name, r.role::text), COALESCE(r.description, ''), COALESCE(i.value, 'User'), COALESCE(c.hex_code, '#64748b'), COALESCE(r.generated, false))::types.q_get_setting_v4_role_resource
+                ORDER BY r.name
+            ),
+            '{}'::types.q_get_setting_v4_role_resource[]
+        ) as role_resources
+    FROM roles_resource r
+    LEFT JOIN icons_resource i ON i.id = r.icon_id
+    LEFT JOIN colors_resource c ON c.id = r.color_id
+    WHERE r.id = ANY(COALESCE((SELECT role_ids FROM setting_role_ids_data), ARRAY[]::uuid[]))
+),
+-- All available roles
+roles_all_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (r.id, r.role::text, COALESCE(r.name, r.role::text), COALESCE(r.description, ''), COALESCE(i.value, 'User'), COALESCE(c.hex_code, '#64748b'), COALESCE(r.generated, false))::types.q_get_setting_v4_role_resource
+                ORDER BY r.name
+            ),
+            '{}'::types.q_get_setting_v4_role_resource[]
+        ) as roles
+    FROM roles_resource r
+    LEFT JOIN icons_resource i ON i.id = r.icon_id
+    LEFT JOIN colors_resource c ON c.id = r.color_id
+),
+-- Route IDs (selected route IDs for setting)
+setting_route_ids_data AS (
+    SELECT
+        COALESCE(
+            (SELECT ARRAY_AGG(rd.routes_id ORDER BY rd.created_at)
+             FROM routes_draft rd
+             WHERE rd.draft_id = (SELECT draft_id FROM params)),
+            CASE
+                WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+                ELSE COALESCE(
+                    (SELECT ARRAY_AGG(sr.route_id ORDER BY sr.created_at)
+                     FROM setting_routes_junction sr
+                     WHERE sr.setting_id = (SELECT setting_id FROM params)
+                       AND sr.active = true),
+                    ARRAY[]::uuid[]
+                )
+            END
+        ) as route_ids
+    FROM params
+    LIMIT 1
+),
+-- Route resources (details for selected routes)
+route_resources_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (r.id, r.route::text, r.role_id, COALESCE(r.generated, false))::types.q_get_setting_v4_route_resource
+                ORDER BY r.route
+            ),
+            '{}'::types.q_get_setting_v4_route_resource[]
+        ) as route_resources
+    FROM routes_resource r
+    WHERE r.id = ANY(COALESCE((SELECT route_ids FROM setting_route_ids_data), ARRAY[]::uuid[]))
+),
+-- All available routes
+routes_all_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (r.id, r.route::text, r.role_id, COALESCE(r.generated, false))::types.q_get_setting_v4_route_resource
+                ORDER BY r.route
+            ),
+            '{}'::types.q_get_setting_v4_route_resource[]
+        ) as routes
+    FROM routes_resource r
+),
+-- Role-route IDs (selected role_routes for setting)
+setting_role_route_ids_data AS (
+    SELECT
+        COALESCE(
+            (SELECT ARRAY_AGG(rrd.role_routes_id ORDER BY rrd.created_at)
+             FROM role_routes_draft rrd
+             WHERE rrd.draft_id = (SELECT draft_id FROM params)),
+            COALESCE(
+                (SELECT ARRAY_AGG(rr.id ORDER BY rr.created_at)
+                 FROM role_routes_resource rr
+                 WHERE rr.role_id = ANY(COALESCE((SELECT role_ids FROM setting_role_ids_data), ARRAY[]::uuid[]))
+                   AND rr.route_id = ANY(COALESCE((SELECT route_ids FROM setting_route_ids_data), ARRAY[]::uuid[]))
+                   AND rr.active = true),
+                ARRAY[]::uuid[]
+            )
+        ) as role_route_ids
+    FROM params
+    LIMIT 1
+),
+-- Role-route resources (details)
+role_route_resources_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (rr.id, rr.role_id, rr.route_id, COALESCE(rr.generated, false))::types.q_get_setting_v4_role_route
+                ORDER BY rr.created_at
+            ),
+            '{}'::types.q_get_setting_v4_role_route[]
+        ) as role_route_resources
+    FROM role_routes_resource rr
+    WHERE rr.id = ANY(COALESCE((SELECT role_route_ids FROM setting_role_route_ids_data), ARRAY[]::uuid[]))
+),
+-- All role_routes (within setting's roles/routes)
+role_routes_all_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (rr.id, rr.role_id, rr.route_id, COALESCE(rr.generated, false))::types.q_get_setting_v4_role_route
+                ORDER BY rr.created_at
+            ),
+            '{}'::types.q_get_setting_v4_role_route[]
+        ) as role_routes
+    FROM role_routes_resource rr
+    WHERE rr.active = true
 ),
 -- Tools existence check
 tools_existence_check AS (
@@ -2122,7 +2307,24 @@ SELECT
             ORDER BY kmd.name
         ) FROM (SELECT DISTINCT key_id, name, masked_key, description, active, department_ids FROM key_mapping_data) kmd),
         '{}'::types.q_get_setting_v4_key[]
-    ) as keys
+    ) as keys,
+    -- Multi-select resources: roles
+    (SELECT role_ids FROM setting_role_ids_data) as role_ids,
+    (SELECT role_resources FROM role_resources_data) as role_resources,
+    true as show_roles,
+    false as roles_required,
+    (SELECT roles FROM roles_all_data) as roles,
+    -- Multi-select resources: routes
+    (SELECT route_ids FROM setting_route_ids_data) as route_ids,
+    (SELECT route_resources FROM route_resources_data) as route_resources,
+    true as show_routes,
+    false as routes_required,
+    (SELECT routes FROM routes_all_data) as routes,
+    -- Role-route junction resources
+    (SELECT role_route_ids FROM setting_role_route_ids_data) as role_route_ids,
+    (SELECT role_route_resources FROM role_route_resources_data) as role_route_resources,
+    true as show_role_routes,
+    (SELECT role_routes FROM role_routes_all_data) as role_routes
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf

@@ -12144,23 +12144,6 @@ class QGetProfileV4RoleResource(BaseModel):
     icon_value: str | None
     color_hex: str | None
 
-
-
-
-class QGetProfileV4RoleRoute(BaseModel):
-
-    role: str | None
-    route_id: UUID | None
-
-
-
-
-class QGetProfileV4RouteResource(BaseModel):
-
-    route_id: UUID | None
-    route: str | None
-    generated: bool | None
-
 class GetProfileSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -12173,12 +12156,6 @@ class GetProfileSqlRow(BaseModel):
     role: str | None = None
     role_options: list[str] | None = None
     roles: list[QGetProfileV4RoleResource] | None = None
-    role_routes: list[QGetProfileV4RoleRoute] | None = None
-    route_ids: list[UUID] | None = None
-    route_resources: list[QGetProfileV4RouteResource] | None = None
-    show_routes: bool | None = None
-    route_suggestions: list[UUID] | None = None
-    routes: list[QGetProfileV4RouteResource] | None = None
     name_id: UUID | None = None
     name_resource: QGetProfileV4NameResource | None = None
     show_name: bool | None = None
@@ -12239,12 +12216,6 @@ class GetProfileApiResponse(BaseModel):
     role: str | None = None
     role_options: list[str] | None = None
     roles: list[QGetProfileV4RoleResource] | None = None
-    role_routes: list[QGetProfileV4RoleRoute] | None = None
-    route_ids: list[UUID] | None = None
-    route_resources: list[QGetProfileV4RouteResource] | None = None
-    show_routes: bool | None = None
-    route_suggestions: list[UUID] | None = None
-    routes: list[QGetProfileV4RouteResource] | None = None
     name_id: UUID | None = None
     name_resource: QGetProfileV4NameResource | None = None
     show_name: bool | None = None
@@ -12633,7 +12604,6 @@ class PatchProfileDraftSqlParams(BaseModel):
     email_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     role: str | None = None
-    route_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12647,7 +12617,6 @@ class PatchProfileDraftSqlParams(BaseModel):
             self.email_ids,
             self.cohort_ids,
             self.role,
-            self.route_ids,
             self.expected_version,
         )
 
@@ -12667,7 +12636,6 @@ class PatchProfileDraftApiRequest(BaseModel):
     email_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     role: str | None = None
-    route_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchProfileDraftApiResponse(BaseModel):
@@ -15637,6 +15605,43 @@ class RequestLimitsApiResponse(BaseModel):
 
 
 
+# Generated from: role_routes
+
+class RoleRoutesSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    role_id: UUID
+    route_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.role_id,
+            self.route_id,
+            self.mcp,
+        )
+
+class RoleRoutesSqlRow(BaseModel):
+
+    role_routes_id: UUID | None = None
+
+class RoleRoutesApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    role_id: UUID
+    route_id: UUID
+    mcp: bool | None = False
+
+class RoleRoutesApiResponse(BaseModel):
+
+    role_routes_id: UUID | None = None
+
+
+
 # Generated from: rubrics
 
 class RubricsSqlParams(BaseModel):
@@ -18447,6 +18452,39 @@ class QGetSettingV4Provider(BaseModel):
     value: str | None
     active: bool | None
 
+
+
+
+class QGetSettingV4RoleResource(BaseModel):
+
+    role_id: UUID | None
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4RoleRoute(BaseModel):
+
+    id: UUID | None
+    role_id: UUID | None
+    route_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4RouteResource(BaseModel):
+
+    route_id: UUID | None
+    route: str | None
+    role_id: UUID | None
+    generated: bool | None
+
 class GetSettingSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -18517,6 +18555,20 @@ class GetSettingSqlRow(BaseModel):
     keys_required: bool | None = None
     key_suggestions: list[UUID] | None = None
     keys: list[QGetSettingV4Key] | None = None
+    role_ids: list[UUID] | None = None
+    role_resources: list[QGetSettingV4RoleResource] | None = None
+    show_roles: bool | None = None
+    roles_required: bool | None = None
+    roles: list[QGetSettingV4RoleResource] | None = None
+    route_ids: list[UUID] | None = None
+    route_resources: list[QGetSettingV4RouteResource] | None = None
+    show_routes: bool | None = None
+    routes_required: bool | None = None
+    routes: list[QGetSettingV4RouteResource] | None = None
+    role_route_ids: list[UUID] | None = None
+    role_route_resources: list[QGetSettingV4RoleRoute] | None = None
+    show_role_routes: bool | None = None
+    role_routes: list[QGetSettingV4RoleRoute] | None = None
 
 class GetSettingApiRequest(BaseModel):
 
@@ -18595,6 +18647,20 @@ class GetSettingApiResponse(BaseModel):
     keys_required: bool | None = None
     key_suggestions: list[UUID] | None = None
     keys: list[QGetSettingV4Key] | None = None
+    role_ids: list[UUID] | None = None
+    role_resources: list[QGetSettingV4RoleResource] | None = None
+    show_roles: bool | None = None
+    roles_required: bool | None = None
+    roles: list[QGetSettingV4RoleResource] | None = None
+    route_ids: list[UUID] | None = None
+    route_resources: list[QGetSettingV4RouteResource] | None = None
+    show_routes: bool | None = None
+    routes_required: bool | None = None
+    routes: list[QGetSettingV4RouteResource] | None = None
+    role_route_ids: list[UUID] | None = None
+    role_route_resources: list[QGetSettingV4RoleRoute] | None = None
+    show_role_routes: bool | None = None
+    role_routes: list[QGetSettingV4RoleRoute] | None = None
 
 
 
@@ -18663,6 +18729,9 @@ class PatchSettingDraftSqlParams(BaseModel):
     auth_ids: list[UUID] | None = None
     provider_ids: list[UUID] | None = None
     key_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
+    role_route_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -18678,6 +18747,9 @@ class PatchSettingDraftSqlParams(BaseModel):
             self.auth_ids,
             self.provider_ids,
             self.key_ids,
+            self.role_ids,
+            self.route_ids,
+            self.role_route_ids,
             self.expected_version,
         )
 
@@ -18699,6 +18771,9 @@ class PatchSettingDraftApiRequest(BaseModel):
     auth_ids: list[UUID] | None = None
     provider_ids: list[UUID] | None = None
     key_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
+    role_route_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchSettingDraftApiResponse(BaseModel):
@@ -18724,6 +18799,8 @@ class SaveSettingSqlParams(BaseModel):
     profile_ids: list[UUID] | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    role_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18738,6 +18815,8 @@ class SaveSettingSqlParams(BaseModel):
             self.profile_ids,
             self.description_id,
             self.active_flag_id,
+            self.role_ids,
+            self.route_ids,
         )
 
 class SaveSettingSqlRow(BaseModel):
@@ -18757,6 +18836,8 @@ class SaveSettingApiRequest(BaseModel):
     profile_ids: list[UUID] | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    role_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
 
 class SaveSettingApiResponse(BaseModel):
 
@@ -22527,6 +22608,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RequestLimitsApiRequest",
         "RequestLimitsApiResponse",
     ),
+    "app/sql/v4/queries/resources/role_routes_complete.sql": (
+        "RoleRoutesSqlParams",
+        "RoleRoutesSqlRow",
+        "RoleRoutesApiRequest",
+        "RoleRoutesApiResponse",
+    ),
     "app/sql/v4/queries/resources/rubrics_complete.sql": (
         "RubricsSqlParams",
         "RubricsSqlRow",
@@ -24392,6 +24479,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/request_limits_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/role_routes_complete.sql"]
     ) -> SqlString: ...
 
     @overload

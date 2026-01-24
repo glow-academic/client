@@ -31,6 +31,7 @@ export interface RolesProps {
   role_options?: string[];
   roles?: Array<{
     role: string | null;
+    role_id?: string | null;
     name: string | null;
     description: string | null;
     icon_value?: string | null;
@@ -38,7 +39,11 @@ export interface RolesProps {
   }>;
   show_roles?: boolean;
   disabled?: boolean;
+  editable?: boolean;
+  multiSelect?: boolean;
+  role_ids?: string[];
   onRoleChange: (roleId: string) => void;
+  onRolesChange?: (ids: string[]) => void;
   label?: string;
   id?: string;
   required?: boolean;
@@ -211,7 +216,11 @@ export function Roles({
   roles,
   show_roles = true,
   disabled = false,
+  editable = true,
+  multiSelect = false,
+  role_ids,
   onRoleChange,
+  onRolesChange,
   label = "Role",
   id = "role",
   required = true,
@@ -237,13 +246,13 @@ export function Roles({
   const baseRoles = useMemo(() => {
     const roleResources =
       roles
-        ?.filter((r) => r.role)
+        ?.filter((r) => r.role || r.role_id)
         .map((r) => {
           const iconKey = r.icon_value ?? "User";
           const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
 
           return {
-            id: r.role as string,
+            id: (multiSelect && r.role_id ? r.role_id : r.role) as string,
             name: r.name ?? r.role ?? "Role",
             description: r.description ?? "",
             iconValue: iconKey,
@@ -264,7 +273,7 @@ export function Roles({
       icon: r.icon,
       color: r.color,
     }));
-  }, [roles]);
+  }, [roles, multiSelect]);
 
   const availableRoles = useMemo(() => {
     const roleSet = new Set<string>();
@@ -371,8 +380,20 @@ export function Roles({
       )}
       <SelectableGrid
         items={filteredRoles}
-        selectedId={role ?? null}
-        onSelect={(roleId) => onRoleChange(roleId)}
+        selectedId={multiSelect ? null : (role ?? null)}
+        {...(multiSelect ? { selectedIds: role_ids ?? [] } : {})}
+        onSelect={(roleId) => {
+          if (multiSelect && onRolesChange) {
+            const currentIds = role_ids ?? [];
+            if (currentIds.includes(roleId)) {
+              onRolesChange(currentIds.filter((id) => id !== roleId));
+            } else {
+              onRolesChange([...currentIds, roleId]);
+            }
+          } else {
+            onRoleChange(roleId);
+          }
+        }}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
           const IconComponent = item.icon;
@@ -388,7 +409,7 @@ export function Roles({
                 isSelected && "ring-2 ring-primary bg-accent"
               )}
             >
-              {!disabled && (
+              {!disabled && editable && (
                 <Popover
                   open={isEditing}
                   onOpenChange={(open) => {
@@ -511,7 +532,7 @@ export function Roles({
         emptyMessage={emptyMessage}
         disabled={disabled}
       />
-      {!disabled && canAddCustomRole && !hasCustomRole && (
+      {!disabled && editable && canAddCustomRole && !hasCustomRole && (
         <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">
           {isAddingCustomRole ? (
             <div className="space-y-3">

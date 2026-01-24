@@ -27,7 +27,9 @@ CREATE OR REPLACE FUNCTION api_save_setting_v4(
     input_setting_id uuid DEFAULT NULL,
     profile_ids uuid[] DEFAULT NULL,
     description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL
+    active_flag_id uuid DEFAULT NULL,
+    role_ids uuid[] DEFAULT NULL,
+    route_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     setting_id uuid,
@@ -80,6 +82,8 @@ BEGIN
         DELETE FROM setting_profiles_junction WHERE setting_id = v_setting_id;
         DELETE FROM setting_auths_junction WHERE settings_id = v_setting_id;
         DELETE FROM setting_providers_junction WHERE settings_id = v_setting_id;
+        DELETE FROM setting_roles_junction WHERE setting_id = v_setting_id;
+        DELETE FROM setting_routes_junction WHERE setting_id = v_setting_id;
         -- Update existing active flag if it exists
         UPDATE setting_flags_junction SET
             flag_id = COALESCE(api_save_setting_v4.active_flag_id, setting_flags_junction.flag_id),
@@ -102,7 +106,9 @@ BEGIN
             profile_id,
             COALESCE(auth_ids, ARRAY[]::uuid[]) AS auth_ids,
             COALESCE(provider_ids, ARRAY[]::uuid[]) AS provider_ids,
-            COALESCE(key_ids, ARRAY[]::uuid[]) AS key_ids
+            COALESCE(key_ids, ARRAY[]::uuid[]) AS key_ids,
+            COALESCE(role_ids, ARRAY[]::uuid[]) AS role_ids,
+            COALESCE(route_ids, ARRAY[]::uuid[]) AS route_ids
     ),
     user_profile AS (
         SELECT role, actor_name
@@ -249,6 +255,34 @@ BEGIN
         CROSS JOIN UNNEST(x.provider_ids) as provider_id
         WHERE COALESCE(array_length(x.provider_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_providers_pkey DO UPDATE SET
+            active = true
+    ),
+    -- Link roles (old ones already deleted above if update)
+    link_roles AS (
+        INSERT INTO setting_roles_junction (setting_id, role_id, active, created_at)
+        SELECT
+            x.setting_id,
+            role_id,
+            true,
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.role_ids) as role_id
+        WHERE COALESCE(array_length(x.role_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT setting_roles_junction_pkey DO UPDATE SET
+            active = true
+    ),
+    -- Link routes (old ones already deleted above if update)
+    link_routes AS (
+        INSERT INTO setting_routes_junction (setting_id, route_id, active, created_at)
+        SELECT
+            x.setting_id,
+            route_id,
+            true,
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.route_ids) as route_id
+        WHERE COALESCE(array_length(x.route_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT setting_routes_junction_pkey DO UPDATE SET
             active = true
     )
     -- Note: Keys are handled separately via setting_provider_keys_junction (ternary relationship with providers)

@@ -27,7 +27,6 @@ CREATE OR REPLACE FUNCTION api_patch_profile_draft_v4(
     email_ids uuid[] DEFAULT NULL,
     cohort_ids uuid[] DEFAULT NULL,
     role text DEFAULT NULL,
-    route_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -116,14 +115,6 @@ BEGIN
         END IF;
     END IF;
 
-    IF route_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(route_ids) AS route_id
-        WHERE NOT EXISTS (SELECT 1 FROM routes_resource WHERE id = route_id)
-    ) THEN
-        RAISE EXCEPTION 'Route resource not found';
-    END IF;
-
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
@@ -156,7 +147,6 @@ BEGIN
             DELETE FROM emails_draft WHERE emails_draft.draft_id = v_draft_id;
             DELETE FROM cohorts_draft WHERE cohorts_draft.draft_id = v_draft_id;
             DELETE FROM roles_draft WHERE roles_draft.draft_id = v_draft_id;
-            DELETE FROM routes_draft WHERE routes_draft.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
@@ -208,14 +198,6 @@ BEGIN
                 INSERT INTO roles_draft (draft_id, roles_id, version)
                 VALUES (v_draft_id, v_role_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
-
-            IF route_ids IS NOT NULL THEN
-                INSERT INTO routes_draft (draft_id, routes_id, version)
-                SELECT v_draft_id, route_id, v_new_version
-                FROM UNNEST(route_ids) as route_id
-                ON CONFLICT ON CONSTRAINT routes_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -283,14 +265,6 @@ BEGIN
         INSERT INTO roles_draft (draft_id, roles_id, version)
         VALUES (v_draft_id, v_role_id, v_new_version)
         ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
-    IF route_ids IS NOT NULL THEN
-        INSERT INTO routes_draft (draft_id, routes_id, version)
-        SELECT v_draft_id, route_id, v_new_version
-        FROM UNNEST(route_ids) as route_id
-        ON CONFLICT ON CONSTRAINT routes_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 

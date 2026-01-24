@@ -83,17 +83,6 @@ CREATE TYPE types.q_get_profile_v4_role_resource AS (
     color_hex text
 );
 
-CREATE TYPE types.q_get_profile_v4_route_resource AS (
-    route_id uuid,
-    route text,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_profile_v4_role_route AS (
-    role text,
-    route_id uuid
-);
-
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_profile_v4(
     profile_id uuid,
@@ -115,13 +104,6 @@ RETURNS TABLE (
     -- Role options
     role_options text[],
     roles types.q_get_profile_v4_role_resource[],
-    role_routes types.q_get_profile_v4_role_route[],
-    -- Multi-select resources: routes
-    route_ids uuid[],
-    route_resources types.q_get_profile_v4_route_resource[],
-    show_routes boolean,
-    route_suggestions uuid[],
-    routes types.q_get_profile_v4_route_resource[],
     -- Single-select resources: name
     name_id uuid,
     name_resource types.q_get_profile_v4_name_resource,
@@ -288,79 +270,6 @@ roles_data AS (
     LEFT JOIN icons_resource i ON i.id = r.icon_id
     LEFT JOIN colors_resource c ON c.id = r.color_id
     WHERE r.active = true
-),
-role_routes_data AS (
-    SELECT
-        COALESCE(
-            ARRAY_AGG(
-                (ar.role::text, rr_route.id)::types.q_get_profile_v4_role_route
-                ORDER BY ar.role::text, rr_route.route
-            ),
-            '{}'::types.q_get_profile_v4_role_route[]
-        ) as role_routes
-    FROM artifact_roles_relation ar
-    JOIN artifact_routes_relation art ON art.artifact = ar.artifact
-    JOIN routes_resource rr_route ON rr_route.route = art.route
-),
-route_ids_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(dr.routes_id ORDER BY dr.created_at)
-             FROM routes_draft dr
-             WHERE dr.draft_id = (SELECT draft_id FROM params)
-               AND dr.active = true),
-            (SELECT ARRAY_AGG(pr.route_id ORDER BY rr.route)
-             FROM profile_routes_junction pr
-             JOIN routes_resource rr ON rr.id = pr.route_id
-             WHERE pr.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-               AND pr.active = true),
-            ARRAY[]::uuid[]
-        ) as route_ids
-    FROM params
-    LIMIT 1
-),
-route_resources_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (rr.id, rr.route::text, COALESCE(rr.generated, false))::types.q_get_profile_v4_route_resource
-                ORDER BY rr.route
-            )
-            FROM routes_resource rr
-            CROSS JOIN route_ids_data rid
-            WHERE rr.id = ANY(rid.route_ids)),
-            ARRAY[]::types.q_get_profile_v4_route_resource[]
-        ) as route_resources
-    FROM params
-    LIMIT 1
-),
-route_suggestions_data AS (
-    SELECT
-        COALESCE(
-            (SELECT ARRAY_AGG(rr_route.id ORDER BY rr_route.route)
-             FROM artifact_roles_relation ar
-             JOIN artifact_routes_relation art ON art.artifact = ar.artifact
-             JOIN routes_resource rr_route ON rr_route.route = art.route
-             WHERE ar.role = COALESCE(
-                 (SELECT role::profile_type FROM target_profile_type_data),
-                 NULL::profile_type
-             )),
-            ARRAY[]::uuid[]
-        ) as route_suggestions
-    FROM params
-    LIMIT 1
-),
-routes_data AS (
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (rr.id, rr.route::text, COALESCE(rr.generated, false))::types.q_get_profile_v4_route_resource
-                ORDER BY rr.route
-            ),
-            '{}'::types.q_get_profile_v4_route_resource[]
-        ) as routes
-    FROM routes_resource rr
-    WHERE rr.active = true
 ),
 -- Get group_id from target profile or current profile
 group_id_data AS (
@@ -856,11 +765,7 @@ ui_flags AS (
         CASE 
             WHEN (SELECT COUNT(*) FROM cohort_mapping_data) > 0 THEN true
             ELSE false
-        END as show_cohorts,
-        CASE
-            WHEN (SELECT COUNT(*) FROM routes_resource WHERE active = true) > 0 THEN true
-            ELSE false
-        END as show_routes
+        END as show_cohorts
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -1609,13 +1514,6 @@ SELECT
     (SELECT role FROM target_profile_type_data) as role,
     COALESCE((SELECT role_options FROM role_options_data), ARRAY[]::text[]) as role_options,
     COALESCE((SELECT roles FROM roles_data), ARRAY[]::types.q_get_profile_v4_role_resource[]) as roles,
-    COALESCE((SELECT role_routes FROM role_routes_data), ARRAY[]::types.q_get_profile_v4_role_route[]) as role_routes,
-    -- Multi-select resources: routes
-    COALESCE((SELECT route_ids FROM route_ids_data), ARRAY[]::uuid[]) as route_ids,
-    COALESCE((SELECT route_resources FROM route_resources_data), ARRAY[]::types.q_get_profile_v4_route_resource[]) as route_resources,
-    uf.show_routes,
-    COALESCE((SELECT route_suggestions FROM route_suggestions_data), ARRAY[]::uuid[]) as route_suggestions,
-    COALESCE((SELECT routes FROM routes_data), ARRAY[]::types.q_get_profile_v4_route_resource[]) as routes,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
     (SELECT name_resource FROM name_resource_data) as name_resource,
