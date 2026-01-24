@@ -410,10 +410,9 @@ SELECT
         '{}'::types.q_list_scenarios_v4_simulation[]
     ) as simulations,
     COALESCE(
-        (SELECT ARRAY_AGG((d.id::text, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), ''))::types.q_list_scenarios_v4_department)
-         FROM department_artifact d
-         WHERE d.id::text IN (SELECT department_id FROM all_department_ids)
-           AND d.id IN (SELECT department_id FROM user_departments)),
+        (SELECT ARRAY_AGG((dr.id::text, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.department_id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = dr.department_id LIMIT 1), ''))::types.q_list_scenarios_v4_department)
+         FROM departments_resource dr
+         WHERE dr.id IN (SELECT department_id FROM user_departments)),
         '{}'::types.q_list_scenarios_v4_department[]
     ) as departments,
     -- Options arrays for UI filter dropdowns (from ALL scenarios, filtered by search term)
@@ -434,11 +433,10 @@ SELECT
         '{}'::types.q_list_scenarios_v4_option[]
     ) as simulation_options,
     COALESCE(
-        (SELECT ARRAY_AGG((d.id::text, dn_name.name)::types.q_list_scenarios_v4_option ORDER BY dn_name.name)
-         FROM department_artifact d
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = d.id
-         WHERE d.id::text IN (SELECT department_id FROM all_department_ids_options)
-           AND d.id IN (SELECT department_id FROM user_departments)
+        (SELECT ARRAY_AGG((dr.id::text, dn_name.name)::types.q_list_scenarios_v4_option ORDER BY dn_name.name)
+         FROM departments_resource dr
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = dr.department_id
+         WHERE dr.id IN (SELECT department_id FROM user_departments)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_scenarios_v4_option[]
     ) as department_options,

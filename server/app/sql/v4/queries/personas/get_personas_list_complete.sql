@@ -266,20 +266,14 @@ filtered_scenario_options AS (
     FROM scenario_mapping_data smd
     WHERE scenario_search IS NULL OR smd.name ILIKE '%' || scenario_search || '%'
 ),
--- Get all unique department resource IDs from persona data
-all_persona_department_ids AS (
-    SELECT DISTINCT unnest(department_ids) as department_id
-    FROM persona_data
-    WHERE department_ids IS NOT NULL
-),
 department_mapping_data AS (
     SELECT
         dr.id as department_id,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.department_id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = dr.department_id LIMIT 1), '') as description,
-        (SELECT COUNT(*) FROM persona_data pd WHERE pd.department_ids IS NOT NULL AND dr.id::text = ANY(pd.department_ids)) as count
+        (SELECT COUNT(*) FROM persona_data) as count
     FROM departments_resource dr
-    WHERE dr.id::text IN (SELECT department_id FROM all_persona_department_ids)
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
 ),
 -- Filter department options by search term
 filtered_department_options AS (

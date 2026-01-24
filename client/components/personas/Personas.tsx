@@ -153,6 +153,7 @@ export default function Personas({
       .map((item) => ({
         value: String(item.scenario_id || ""),
         label: item.name || "",
+        count: typeof item.count === "number" ? item.count : undefined,
       }))
       .filter((opt) => opt.value && opt.label);
   }, [personasData?.scenarios]);
@@ -163,6 +164,7 @@ export default function Personas({
       .map((item) => ({
         value: String(item.field_id || ""),
         label: item.name || "",
+        count: typeof item.count === "number" ? item.count : undefined,
       }))
       .filter((opt) => opt.value && opt.label);
   }, [personasData?.fields]);
@@ -173,6 +175,7 @@ export default function Personas({
       .map((item) => ({
         value: String(item.department_id || ""),
         label: item.name || "",
+        count: typeof item.count === "number" ? item.count : undefined,
       }))
       .filter((opt) => opt.value && opt.label);
   }, [personasData?.departments]);
