@@ -134,6 +134,14 @@ chat_first_attempt AS (
     CASE WHEN paj.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
     sa.created_at DESC -- then most recent
 ),
+-- Pick one scenario per chat to avoid duplicate chat_id rows
+chat_first_scenario AS (
+  SELECT DISTINCT ON (chat_id)
+    chat_id,
+    scenario_id
+  FROM scenario_chats_junction
+  ORDER BY chat_id, created_at DESC
+),
 -- Message counts per chat (using messages_entry.chat_id directly)
 message_counts AS (
   SELECT
@@ -228,7 +236,7 @@ scenario_first_persona AS (
     WHERE active = TRUE
     ORDER BY scenario_id, persona_id
 )
-SELECT
+SELECT DISTINCT ON (sc.id)
   sc.id                         AS chat_id,
   sa.id                         AS attempt_id,
   paj.profile_id                AS profile_id,
@@ -310,8 +318,8 @@ JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
 JOIN active_sims sim ON sim.id = saj.simulation_id
 LEFT JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id
 LEFT JOIN profile_artifact pr ON pr.id = paj.profile_id
-JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
-JOIN active_scenarios s ON s.id = scj.scenario_id
+JOIN chat_first_scenario cfs ON cfs.chat_id = sc.id
+JOIN active_scenarios s ON s.id = cfs.scenario_id
 JOIN root_map rm ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
 LEFT JOIN personas_resource p ON p.id = sfp.persona_id
@@ -327,6 +335,7 @@ LEFT JOIN simulation_first_dept sfd ON sfd.simulation_id = sim.id
 LEFT JOIN rubric_first_dept rfd ON rfd.rubric_id = r.rubric_id
 LEFT JOIN scenario_first_dept scfd ON scfd.scenario_id = s.id
 LEFT JOIN persona_first_dept pfd ON pfd.persona_id = p.id
+ORDER BY sc.id, paj.profile_id NULLS LAST, lg.created_at DESC NULLS LAST
 WITH NO DATA;
 
 -- ============================================================================
