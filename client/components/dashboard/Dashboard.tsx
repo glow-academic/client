@@ -129,6 +129,7 @@ export default function Dashboard({
     return [
       <AverageScore
         key="average-score"
+        colorIndex={0}
         averageScore={bundle.header_metrics.average_score?.current_value ?? 0}
         scoreTrend={(bundle.header_metrics.average_score?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.average_score?.has_data ?? false}
@@ -137,6 +138,7 @@ export default function Dashboard({
       />,
       <CompletionPercentage
         key="completion-percentage"
+        colorIndex={1}
         completionPercentage={bundle.header_metrics.completion_percentage?.current_value ?? 0}
         completionTrend={(bundle.header_metrics.completion_percentage?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.completion_percentage?.has_data ?? false}
@@ -145,6 +147,7 @@ export default function Dashboard({
       />,
       <FirstAttemptPassRate
         key="first-attempt-pass-rate"
+        colorIndex={2}
         firstAttemptPassRate={bundle.header_metrics.first_attempt_pass_rate?.current_value ?? 0}
         passRateTrend={(bundle.header_metrics.first_attempt_pass_rate?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.first_attempt_pass_rate?.has_data ?? false}
@@ -153,6 +156,7 @@ export default function Dashboard({
       />,
       <HighestScore
         key="highest-score"
+        colorIndex={3}
         highestScore={bundle.header_metrics.highest_score?.current_value ?? 0}
         scoreTrend={(bundle.header_metrics.highest_score?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.highest_score?.has_data ?? false}
@@ -161,6 +165,7 @@ export default function Dashboard({
       />,
       <MessagesPerSession
         key="messages-per-session"
+        colorIndex={4}
         averageMessagesPerSession={
           bundle.header_metrics.messages_per_session?.current_value ?? 0
         }
@@ -171,6 +176,7 @@ export default function Dashboard({
       />,
       <PersonaResponseTimes
         key="persona-response-times"
+        colorIndex={5}
         averageResponseTime={bundle.header_metrics.persona_response_times?.current_value ?? 0}
         responseTimeTrend={(bundle.header_metrics.persona_response_times?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.persona_response_times?.has_data ?? false}
@@ -179,6 +185,7 @@ export default function Dashboard({
       />,
       <SessionEfficiency
         key="session-efficiency"
+        colorIndex={6}
         sessionEfficiency={bundle.header_metrics.session_efficiency?.current_value ?? 0}
         efficiencyTrend={(bundle.header_metrics.session_efficiency?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.session_efficiency?.has_data ?? false}
@@ -187,6 +194,7 @@ export default function Dashboard({
       />,
       <StagnationRate
         key="stagnation-rate"
+        colorIndex={7}
         stagnationRate={bundle.header_metrics.stagnation_rate?.current_value ?? 0}
         stagnationTrend={(bundle.header_metrics.stagnation_rate?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.stagnation_rate?.has_data ?? false}
@@ -195,6 +203,7 @@ export default function Dashboard({
       />,
       <TimeSpent
         key="time-spent"
+        colorIndex={8}
         totalTimeSpent={(bundle.header_metrics.time_spent?.current_value ?? 0) * 60}
         timeSpentTrend={(bundle.header_metrics.time_spent?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: Math.round(t.value! * 60), count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.time_spent?.has_data ?? false}
@@ -203,6 +212,7 @@ export default function Dashboard({
       />,
       <TotalAttempts
         key="total-attempts"
+        colorIndex={9}
         totalAttempts={bundle.header_metrics.total_attempts?.current_value ?? 0}
         attemptsTrend={(bundle.header_metrics.total_attempts?.trend_data || []).filter((t): t is { date: string; value: number; count: number } => t.date !== null && t.value !== null && t.count !== null).map(t => ({ date: t.date!, value: t.value!, count: t.count! }))}
         hasDataAvailable={bundle.header_metrics.total_attempts?.has_data ?? false}

@@ -73,15 +73,19 @@ async def get_dashboard_history(
         )
         sql_params = params.to_tuple()
 
-        # Execute query with typed helper - automatically detects and calls function if present
-        result = cast(
-            GetDashboardHistorySqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        # Disable JIT and nested loops for this complex query - nested loops cause
+        # O(n²) re-evaluation of views; hash/merge joins are 60x faster here
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            await conn.execute("SET LOCAL enable_nestloop = off;")
+            result = cast(
+                GetDashboardHistorySqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
         # Convert SQL result to API response (no manual parsing needed - SQL handles it)
         api_response = GetDashboardHistoryApiResponse.model_validate(

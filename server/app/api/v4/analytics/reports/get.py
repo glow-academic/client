@@ -83,9 +83,11 @@ async def get_reports(
         )
         sql_params = overview_params.to_tuple()
 
-        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        # Disable JIT and nested loops for this complex query - nested loops cause
+        # O(n²) re-evaluation of views; hash/merge joins are 60x faster here
         async with conn.transaction():
             await conn.execute("SET LOCAL jit = off;")
+            await conn.execute("SET LOCAL enable_nestloop = off;")
             # Execute overview query
             overview_result = cast(
                 GetReportsOverviewSqlRow,

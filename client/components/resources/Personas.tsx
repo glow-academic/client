@@ -1,13 +1,13 @@
 /**
  * Personas.tsx
  * Resource component for persona selection
- * Uses GenericPicker to select existing persona artifacts
+ * Uses SelectableGrid to select existing persona artifacts
  * Manages persona_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -73,7 +73,7 @@ export function Personas({
   label = "Personas",
   id = "personas",
   required = false,
-  placeholder = "Select personas...",
+  placeholder: _placeholder = "Select personas...",
   description,
   group_id,
   personas_agent_id,
@@ -115,43 +115,42 @@ export function Personas({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdPersonaIdsRef.current.has(id)
-      );
+    async (personaId: string) => {
+      // Toggle selection
+      const isCurrentlySelected = ids.includes(personaId);
+      const newIds = isCurrentlySelected
+        ? ids.filter((id) => id !== personaId)
+        : [...ids, personaId];
 
-      // Create resources for newly selected personas
+      // Create resource if newly selected
       if (
-        newlySelected.length > 0 &&
+        !isCurrentlySelected &&
+        !createdPersonaIdsRef.current.has(personaId) &&
         createPersonasAction &&
         personas_agent_id &&
         group_id
       ) {
-        for (const personaId of newlySelected) {
-          try {
-            await createPersonasAction({
-              body: {
-                agent_id: personas_agent_id,
-                group_id: group_id,
-                persona_id: personaId,
-                mcp: false,
-              },
-            });
-            createdPersonaIdsRef.current.add(personaId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create persona resource for ${personaId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
+        try {
+          await createPersonasAction({
+            body: {
+              agent_id: personas_agent_id,
+              group_id: group_id,
+              persona_id: personaId,
+              mcp: false,
+            },
+          });
+          createdPersonaIdsRef.current.add(personaId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(
+            `Failed to create persona resource for ${personaId}:`,
+            error
+          );
         }
       }
 
       // Update parent state
-      onChange(selectedIds);
+      onChange(newIds);
     },
     [ids, onChange, createPersonasAction, personas_agent_id, group_id]
   );
@@ -167,7 +166,7 @@ export function Personas({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">
@@ -206,46 +205,54 @@ export function Personas({
           )}
         </div>
       )}
-      <GenericPicker<PersonaItem>
+
+      <SelectableGrid<PersonaItem>
         items={personaItems}
-        itemIds={allPersonas
-          .map((p) => p.persona_id)
-          .filter((id): id is string => id !== null)} // All persona IDs from array, filter nulls
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
+        renderItem={(item, isSelected) => {
+          const suggested = isSuggested(item.id);
+
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent"
               )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* Suggested badge - top right */}
+              {suggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
               <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
+                <h3 className="font-medium text-sm leading-tight">
+                  {item.name}
+                </h3>
                 {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {item.description}
-                  </div>
+                  </p>
                 )}
               </div>
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
-        placeholder={placeholder}
+          );
+        }}
+        emptyMessage="No personas found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

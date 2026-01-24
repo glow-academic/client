@@ -774,14 +774,14 @@ icon_suggestions_data AS (
 ),
 -- Icons (all available icon options)
 icons_data AS (
-    SELECT DISTINCT
+    SELECT DISTINCT ON (i.value)
         i.id,
         i.name,
         i.description,
         i.value,
         COALESCE(i.generated, false) as generated,
         -- Add sort priority: suggested icons first (1), then others (2)
-        CASE 
+        CASE
             WHEN i.id = ANY(isd.icon_suggestions) THEN 1
             ELSE 2
         END as sort_priority
@@ -804,7 +804,7 @@ icons_data AS (
             )
         )
       )
-    ORDER BY sort_priority, i.name
+    ORDER BY i.value, sort_priority, i.name
     LIMIT 189  -- Multiple of 3 for nice grid layout (63 rows x 3 columns)
 ),
 icons_agg AS (

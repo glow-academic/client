@@ -24,7 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useChartColors, useStatusColor } from "@/lib/utils/chartColors";
+import { chartColorBackground, useChartColors, useStatusColor } from "@/lib/utils/chartColors";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
@@ -248,12 +248,6 @@ export default function PersonaPerformance({
     );
   };
 
-  // Background color by thresholds using shadcn colors
-  const getBackgroundColor = (score: number) => {
-    if (score >= thresholds.success) return "bg-success/10 dark:bg-success/20";
-    if (score >= thresholds.warning) return "bg-warning/10 dark:bg-warning/20";
-    return "bg-destructive/10 dark:bg-destructive/20";
-  };
 
   if (!hasDataAvailable) {
     return (
@@ -388,14 +382,12 @@ export default function PersonaPerformance({
 
           {/* Persona Cards */}
           <div className="space-y-4 overflow-y-auto">
-            {filteredChartData.map((persona) => (
+            {filteredChartData.map((persona, index) => (
               <Dialog key={persona.name}>
                 <DialogTrigger asChild>
                   <div
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      getBackgroundColor(persona.score),
-                    )}
+                    className="flex items-center justify-between p-4 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    style={chartColorBackground(chartColors[index % chartColors.length])}
                   >
                     <div className="flex items-center gap-3">
                       <div

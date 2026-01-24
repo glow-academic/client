@@ -69,15 +69,19 @@ async def get_pricing(
         )
         sql_params = params.to_tuple()
 
-        # Execute query with typed helper - automatically detects and calls function if present
-        result = cast(
-            GetPricingAnalyticsSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        # Disable JIT and increase work_mem for this complex query to avoid
+        # disk-spilling sorts on the 100K+ run pricing aggregations
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            await conn.execute("SET LOCAL work_mem = '32MB';")
+            result = cast(
+                GetPricingAnalyticsSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
         # Set audit context
         if result.actor_name:

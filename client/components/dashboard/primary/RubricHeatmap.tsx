@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useStatusColor } from "@/lib/utils/chartColors";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { TruncatedInsight } from "../TruncatedInsight";
 
 type RubricHeatmapCell = {
@@ -145,19 +145,22 @@ export default function RubricHeatmap({
   // Use status from server
   const thresholdStatus = status;
 
-  // Get status colors for correlation-based coloring
-  const successColor = useStatusColor("success");
-  const dangerColor = useStatusColor("danger");
-  const neutralColor = useStatusColor("neutral");
+  // Get chart colors for correlation-based coloring
+  const chartColors = useChartColors();
+  // Use chart-2 for positive correlations, chart-1 for negative
+  const positiveColor = chartColors[1]; // chart-2
+  const negativeColor = chartColors[0]; // chart-1
 
-  // Helper function to get color based on correlation
+  // Helper function to get color with opacity based on correlation strength
   const getCorrelationColor = (correlation: number): string => {
-    // Positive correlation = success (green)
-    // Negative correlation = danger (red)
-    // Near zero = neutral (grey)
-    if (correlation > 0.1) return successColor;
-    if (correlation < -0.1) return dangerColor;
-    return neutralColor;
+    const absCorr = Math.abs(correlation);
+    // Scale opacity from 0.1 (weak) to 0.8 (strong)
+    const opacity = Math.max(0.1, Math.min(0.8, absCorr));
+    const opacityHex = Math.round(opacity * 255).toString(16).padStart(2, "0");
+    if (correlation > 0.1) return `${positiveColor}${opacityHex}`;
+    if (correlation < -0.1) return `${negativeColor}${opacityHex}`;
+    // Near zero: use a very faint neutral tint
+    return `${chartColors[2]}15`;
   };
 
   // Show no data state

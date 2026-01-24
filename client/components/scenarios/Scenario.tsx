@@ -261,7 +261,6 @@ function ScenarioComponent({
   const isEditMode = !!scenarioId;
   const {
     effectiveProfile,
-    selectedDraftId,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -340,20 +339,20 @@ function ScenarioComponent({
   >(null);
   const formDataRef = useRef<Record<string, unknown>>({});
 
+  // Track last synced draftId to prevent redundant profile context updates
+  const lastSyncedDraftIdRef = useRef<string | null>(null);
+
   const onFormDataChange = useCallback((fd: Record<string, unknown>) => {
     formDataRef.current = fd;
     const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => {
-      return prev === nextDraftId ? prev : nextDraftId;
-    });
-  }, []);
+    setDraftId((prev) => (prev === nextDraftId ? prev : nextDraftId));
 
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
+    // One-way sync to profile context (no effect dependency on selectedDraftId)
+    if (nextDraftId !== lastSyncedDraftIdRef.current) {
+      lastSyncedDraftIdRef.current = nextDraftId;
+      setSelectedDraftId(nextDraftId);
     }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
+  }, [setSelectedDraftId]);
 
   const getInitialFormState = useCallback((): ScenarioFormState => {
     if (!scenarioData) {
@@ -2257,95 +2256,97 @@ function ScenarioComponent({
               }
               {...resetProps}
             >
-              <Descriptions
-                description_id={formState.description_id ?? null}
-                description_resource={
-                  currentScenarioData?.description_resource ?? null
-                }
-                show_description={currentScenarioData?.show_description ?? true}
-                description_suggestions={
-                  currentScenarioData?.description_suggestions ?? []
-                }
-                descriptions={currentScenarioData?.descriptions ?? []}
-                searchTerm={descriptionSearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ descriptionSearch: term || null })
-                }
-                disabled={disabled}
-                onDescriptionIdChange={(descriptionId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    description_id: descriptionId,
-                  }))
-                }
-                onGenerate={handleGenerateDescription}
-                isGenerating={isGenerating("descriptions")}
-                label="Description"
-                placeholder="Describe the scenario"
-                required={currentScenarioData?.description_required ?? false}
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.description_agent_id ?? null}
-                createDescriptionsAction={
-                  createDescriptionsAction as
-                    | ((
-                        input: CreateDraftDescriptionsIn
-                      ) => Promise<CreateDraftDescriptionsOut>)
-                    | undefined
-                }
-              />
+              <div className="space-y-4">
+                <Descriptions
+                  description_id={formState.description_id ?? null}
+                  description_resource={
+                    currentScenarioData?.description_resource ?? null
+                  }
+                  show_description={currentScenarioData?.show_description ?? true}
+                  description_suggestions={
+                    currentScenarioData?.description_suggestions ?? []
+                  }
+                  descriptions={currentScenarioData?.descriptions ?? []}
+                  searchTerm={descriptionSearch}
+                  onSearchChange={(term: string) =>
+                    setFormData({ descriptionSearch: term || null })
+                  }
+                  disabled={disabled}
+                  onDescriptionIdChange={(descriptionId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description_id: descriptionId,
+                    }))
+                  }
+                  onGenerate={handleGenerateDescription}
+                  isGenerating={isGenerating("descriptions")}
+                  label="Description"
+                  placeholder="Describe the scenario"
+                  required={currentScenarioData?.description_required ?? false}
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.description_agent_id ?? null}
+                  createDescriptionsAction={
+                    createDescriptionsAction as
+                      | ((
+                          input: CreateDraftDescriptionsIn
+                        ) => Promise<CreateDraftDescriptionsOut>)
+                      | undefined
+                  }
+                />
 
-              <Flags
-                flag_id={formState.active_flag_id ?? null}
-                flag_resource={currentScenarioData?.active_flag_resource ?? null}
-                show_flag={currentScenarioData?.show_active_flag ?? false}
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
-                }
-                label="Active"
-                flagName="active"
-                flagDescription="Inactive scenarios will not be available for selection."
-                helpText={
-                  currentScenarioData?.active_flag_resource?.description ||
-                  "Inactive scenarios will not be available for selection."
-                }
-                iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.active_flag_agent_id ?? null}
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={currentScenarioData?.active_flag_required ?? false}
-              />
+                <Departments
+                  department_ids={formState.department_ids}
+                  department_resources={
+                    currentScenarioData?.department_resources ?? []
+                  }
+                  show_departments={currentScenarioData?.show_departments ?? false}
+                  department_suggestions={
+                    currentScenarioData?.department_suggestions ?? []
+                  }
+                  departments={currentScenarioData?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  label="Departments"
+                  required={currentScenarioData?.departments_required ?? false}
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.departments_agent_id ?? null}
+                  createDepartmentsAction={
+                    createDepartmentsAction as
+                      | ((
+                          input: CreateDraftDepartmentsIn
+                        ) => Promise<CreateDraftDepartmentsOut>)
+                      | undefined
+                  }
+                  onGenerate={handleGenerateDepartments}
+                  isGenerating={isGenerating("departments")}
+                />
 
-              <Departments
-                department_ids={formState.department_ids}
-                department_resources={
-                  currentScenarioData?.department_resources ?? []
-                }
-                show_departments={currentScenarioData?.show_departments ?? false}
-                department_suggestions={
-                  currentScenarioData?.department_suggestions ?? []
-                }
-                departments={currentScenarioData?.departments ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, department_ids: ids }))
-                }
-                label="Departments"
-                required={currentScenarioData?.departments_required ?? false}
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.departments_agent_id ?? null}
-                createDepartmentsAction={
-                  createDepartmentsAction as
-                    | ((
-                        input: CreateDraftDepartmentsIn
-                      ) => Promise<CreateDraftDepartmentsOut>)
-                    | undefined
-                }
-                onGenerate={handleGenerateDepartments}
-                isGenerating={isGenerating("departments")}
-              />
+                <Flags
+                  flag_id={formState.active_flag_id ?? null}
+                  flag_resource={currentScenarioData?.active_flag_resource ?? null}
+                  show_flag={currentScenarioData?.show_active_flag ?? false}
+                  disabled={disabled}
+                  onFlagIdChange={(flagId) =>
+                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
+                  }
+                  label="Active"
+                  flagName="active"
+                  flagDescription="Inactive scenarios will not be available for selection."
+                  helpText={
+                    currentScenarioData?.active_flag_resource?.description ||
+                    "Inactive scenarios will not be available for selection."
+                  }
+                  iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
+                  group_id={currentScenarioData?.group_id ?? null}
+                  agent_id={currentScenarioData?.active_flag_agent_id ?? null}
+                  createFlagsAction={createScenarioFlagsAction}
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("scenario_flags")}
+                  required={currentScenarioData?.active_flag_required ?? false}
+                />
+              </div>
             </StepCard>
           );
         case "configuration":

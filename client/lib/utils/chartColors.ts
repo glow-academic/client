@@ -137,6 +137,33 @@ export function getChartColors(): string[] {
 }
 
 /**
+ * Returns inline style for a subtle chart-color background gradient.
+ * Useful for applying chart colors to card backgrounds at runtime.
+ *
+ * @param color - Chart color in rgb/hex/oklch format
+ * @param intensity - Opacity intensity from 0 to 1 (default 0.08)
+ * @returns React CSSProperties with background and border
+ */
+export function chartColorBackground(
+  color: string,
+  intensity: number = 0.08,
+): { background: string; border: string } {
+  const hex = Math.round(intensity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const halfHex = Math.round(intensity * 0.5 * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const borderHex = Math.round(intensity * 2.5 * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return {
+    background: `linear-gradient(to bottom right, ${color}${hex}, ${color}${halfHex})`,
+    border: `1px solid ${color}${borderHex}`,
+  };
+}
+
+/**
  * Non-hook version for use in non-component contexts.
  * Gets the computed CSS variable value directly from the DOM.
  *

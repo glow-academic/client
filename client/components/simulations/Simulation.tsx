@@ -166,7 +166,6 @@ function SimulationComponent({
   const isEditMode = !!simulationId;
   const {
     effectiveProfile,
-    selectedDraftId,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -567,20 +566,22 @@ function SimulationComponent({
   // Store formData from GenericForm to access search params
   const formDataRef = React.useRef<Record<string, unknown>>({});
 
+  // Track last synced draftId to prevent redundant profile context updates
+  const lastSyncedDraftIdRef = React.useRef<string | null>(null);
+
   // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
     // Store formData for access in handleGenerateResources
     formDataRef.current = fd;
     const next = (fd["draftId"] as string | undefined) ?? null;
     setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
 
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
+    // One-way sync to profile context (no effect dependency on selectedDraftId)
+    if (next !== lastSyncedDraftIdRef.current) {
+      lastSyncedDraftIdRef.current = next;
+      setSelectedDraftId(next);
     }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
+  }, [setSelectedDraftId]);
 
   // Use ref to stabilize patchSimulationDraftAction to prevent effect recreation when prop reference changes
   const patchSimulationDraftActionRef = React.useRef(
@@ -1683,7 +1684,7 @@ function SimulationComponent({
                 ) : undefined
               }
             >
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={

@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useStatusColor } from "@/lib/utils/chartColors";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -180,37 +180,8 @@ export default function CohortPerformance({
   // Use status from server
   const thresholdStatus = status;
 
-  // Get status colors for all status types
-  const successColor = useStatusColor("success");
-  const warningColor = useStatusColor("warning");
-  const dangerColor = useStatusColor("danger");
-  const neutralColor = useStatusColor("neutral");
-
-  // Helper function to calculate status for a cohort based on pass rate
-  const getCohortStatus = (
-    passRate: number,
-  ): "success" | "warning" | "danger" | "neutral" => {
-    if (passRate === 0) return "neutral";
-    if (passRate >= 85) return "success";
-    if (passRate >= 80) return "warning";
-    return "danger";
-  };
-
-  // Helper function to get color for a cohort status
-  const getCohortColor = (
-    cohortStatus: "success" | "warning" | "danger" | "neutral",
-  ): string => {
-    switch (cohortStatus) {
-      case "success":
-        return successColor;
-      case "warning":
-        return warningColor;
-      case "danger":
-        return dangerColor;
-      default:
-        return neutralColor;
-    }
-  };
+  // Get chart colors for cohort styling
+  const chartColors = useChartColors();
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -288,14 +259,12 @@ export default function CohortPerformance({
               gridTemplateRows: `repeat(${Math.min(displayCohorts.length || 1, 5)}, minmax(0, 1fr))`,
             }}
           >
-            {displayCohorts.map((cohort) => {
+            {displayCohorts.map((cohort, index) => {
               // Use the passRate from backend instead of recalculating
               const passRatePct = cohort.passRate;
 
-              // Use status from server (already computed), fallback to calculation if not present
-              const cohortStatus =
-                cohort.status || getCohortStatus(passRatePct);
-              const cohortColor = getCohortColor(cohortStatus);
+              // Use chart color by index for visual consistency
+              const cohortColor = chartColors[index % chartColors.length];
 
               return (
                 <Dialog key={cohort.id}>

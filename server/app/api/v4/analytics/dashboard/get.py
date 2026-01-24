@@ -73,15 +73,19 @@ async def get_dashboard(
         )
         sql_params = params.to_tuple()
 
-        # Execute query with typed helper - automatically detects and calls function if present
-        result = cast(
-            GetDashboardBundleSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
+        # Disable JIT and nested loops for this complex query - nested loops cause
+        # O(n²) re-evaluation of views; hash/merge joins are 60x faster here
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            await conn.execute("SET LOCAL enable_nestloop = off;")
+            result = cast(
+                GetDashboardBundleSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
         # Set audit context
         if result.actor_name:

@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useStatusColor } from "@/lib/utils/chartColors";
+import { chartColorBackground, useChartColors } from "@/lib/utils/chartColors";
 import { Clock } from "lucide-react";
 import { useState } from "react";
 import {
@@ -33,6 +33,7 @@ type TrendData = {
 };
 
 export interface PersonaResponseTimesProps {
+  colorIndex: number;
   averageResponseTime: number;
   responseTimeTrend: TrendData[];
   hasDataAvailable: boolean;
@@ -41,6 +42,7 @@ export interface PersonaResponseTimesProps {
 }
 
 export default function PersonaResponseTimes({
+  colorIndex,
   averageResponseTime,
   responseTimeTrend,
   hasDataAvailable,
@@ -49,38 +51,18 @@ export default function PersonaResponseTimes({
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Use status from server
-  const currentStatus = status;
+  // Get chart colors and pick one based on colorIndex
+  const chartColors = useChartColors();
+  const chartColor = chartColors[colorIndex % 5];
 
-  // Get color values for Recharts using computed CSS variables
-  const chartColor = useStatusColor(currentStatus);
-
-  const gradientClasses =
-    currentStatus === "success"
-      ? "bg-gradient-to-br from-success/10 to-success/5 dark:from-success/20 dark:to-success/10 border-success/30"
-      : currentStatus === "warning"
-        ? "bg-gradient-to-br from-warning/10 to-warning/5 dark:from-warning/20 dark:to-warning/10 border-warning/30"
-        : currentStatus === "danger"
-          ? "bg-gradient-to-br from-destructive/10 to-destructive/5 dark:from-destructive/20 dark:to-destructive/10 border-destructive/30"
-          : "bg-gradient-to-br from-muted to-muted/50 dark:from-muted dark:to-muted/50 border-border";
-
-  const textClasses =
-    currentStatus === "success"
-      ? "text-success"
-      : currentStatus === "warning"
-        ? "text-warning"
-        : currentStatus === "danger"
-          ? "text-destructive"
-          : "text-muted-foreground";
-
-  const iconClasses =
-    currentStatus === "success"
-      ? "text-success"
-      : currentStatus === "warning"
-        ? "text-warning"
-        : currentStatus === "danger"
-          ? "text-destructive"
-          : "text-muted-foreground";
+  const statusDotClass =
+    status === "success"
+      ? "bg-success"
+      : status === "warning"
+        ? "bg-warning"
+        : status === "danger"
+          ? "bg-destructive"
+          : "bg-muted-foreground";
 
   // Format response time for display
   const formatResponseTime = (seconds: number) => {
@@ -94,17 +76,19 @@ export default function PersonaResponseTimes({
   return (
     <>
       <Card
-        className={`${gradientClasses} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
+        className="relative cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col"
+        style={chartColorBackground(chartColor)}
         onClick={() => setIsDialogOpen(true)}
       >
+        <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${statusDotClass}`} />
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Persona Response Times
           </CardTitle>
-          <Clock className={`h-4 w-4 ${iconClasses}`} />
+          <Clock className="h-4 w-4" style={{ color: chartColor }} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
-          <div className={`text-2xl font-bold ${textClasses}`}>
+          <div className="text-2xl font-bold" style={{ color: chartColor }}>
             {hasDataAvailable ? formatResponseTime(averageResponseTime) : "0s"}
           </div>
         </CardContent>

@@ -1,13 +1,13 @@
 /**
  * Documents.tsx
  * Resource component for document selection
- * Uses GenericPicker to select existing document artifacts
+ * Uses SelectableGrid to select existing document artifacts
  * Manages document_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -73,7 +73,7 @@ export function Documents({
   label = "Documents",
   id = "documents",
   required = false,
-  placeholder = "Select documents...",
+  placeholder: _placeholder = "Select documents...",
   description,
   group_id,
   documents_agent_id,
@@ -115,43 +115,42 @@ export function Documents({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdDocumentIdsRef.current.has(id)
-      );
+    async (documentId: string) => {
+      // Toggle selection
+      const isCurrentlySelected = ids.includes(documentId);
+      const newIds = isCurrentlySelected
+        ? ids.filter((id) => id !== documentId)
+        : [...ids, documentId];
 
-      // Create resources for newly selected documents
+      // Create resource if newly selected
       if (
-        newlySelected.length > 0 &&
+        !isCurrentlySelected &&
+        !createdDocumentIdsRef.current.has(documentId) &&
         createDocumentsAction &&
         documents_agent_id &&
         group_id
       ) {
-        for (const documentId of newlySelected) {
-          try {
-            await createDocumentsAction({
-              body: {
-                agent_id: documents_agent_id,
-                group_id: group_id,
-                document_id: documentId,
-                mcp: false,
-              },
-            });
-            createdDocumentIdsRef.current.add(documentId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create document resource for ${documentId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
+        try {
+          await createDocumentsAction({
+            body: {
+              agent_id: documents_agent_id,
+              group_id: group_id,
+              document_id: documentId,
+              mcp: false,
+            },
+          });
+          createdDocumentIdsRef.current.add(documentId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(
+            `Failed to create document resource for ${documentId}:`,
+            error
+          );
         }
       }
 
       // Update parent state
-      onChange(selectedIds);
+      onChange(newIds);
     },
     [ids, onChange, createDocumentsAction, documents_agent_id, group_id]
   );
@@ -167,7 +166,7 @@ export function Documents({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">
@@ -206,46 +205,54 @@ export function Documents({
           )}
         </div>
       )}
-      <GenericPicker<DocumentItem>
+
+      <SelectableGrid<DocumentItem>
         items={documentItems}
-        itemIds={allDocuments
-          .map((d) => d.document_id)
-          .filter((id): id is string => id !== null)} // All document IDs from array, filter nulls
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
+        renderItem={(item, isSelected) => {
+          const suggested = isSuggested(item.id);
+
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent"
               )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* Suggested badge - top right */}
+              {suggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
               <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
+                <h3 className="font-medium text-sm leading-tight">
+                  {item.name}
+                </h3>
                 {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {item.description}
-                  </div>
+                  </p>
                 )}
               </div>
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
-          </div>
-        )}
-        placeholder={placeholder}
+          );
+        }}
+        emptyMessage="No documents found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );
