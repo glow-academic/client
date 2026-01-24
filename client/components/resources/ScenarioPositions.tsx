@@ -52,6 +52,16 @@ export interface ScenarioPositionsProps {
     value: number | null;
     generated?: boolean | null;
   }>; // All available scenario positions from API
+  scenarios?: Array<{
+    scenario_id: string | null;
+    name: string | null;
+    description?: string | null;
+  }>; // Full scenario list for label lookup
+  scenario_resources?: Array<{
+    scenario_id: string | null;
+    name: string | null;
+    description?: string | null;
+  }>; // Server-confirmed scenario resources for label lookup
   disabled?: boolean; // Based on can_edit flag
   onChange: (positions: ScenarioPositionItem[]) => void; // Update scenario positions in form state
   simulation_id?: string | null; // Current simulation ID (required for creating positions)
@@ -78,6 +88,8 @@ export function ScenarioPositions({
   show_scenario_positions = false,
   scenario_position_suggestions,
   scenario_positions,
+  scenarios,
+  scenario_resources,
   disabled = false,
   onChange,
   simulation_id,
@@ -103,6 +115,28 @@ export function ScenarioPositions({
     () => scenario_position_ids ?? [],
     [scenario_position_ids]
   );
+  const scenarioLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    // Use full scenarios list as base (available immediately on selection)
+    (scenarios ?? []).forEach((scenario) => {
+      if (scenario.scenario_id) {
+        const name = scenario.name?.trim() || null;
+        const desc = scenario.description?.trim() || null;
+        if (name || desc) {
+          map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+        }
+      }
+    });
+    // Override with scenario_resources (server-confirmed data takes priority)
+    (scenario_resources ?? []).forEach((scenario) => {
+      if (scenario.scenario_id) {
+        const name = scenario.name?.trim() || null;
+        const desc = scenario.description?.trim() || null;
+        map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+      }
+    });
+    return map;
+  }, [scenarios, scenario_resources]);
   const [positionIdsByScenario, setPositionIdsByScenario] = useState<
     Map<string, string>
   >(new Map());
@@ -389,6 +423,9 @@ export function ScenarioPositions({
               className="flex items-center gap-2 p-2 border rounded-md"
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm w-56 truncate" title={scenarioLabelMap.get(scenarioId) ?? "Untitled scenario"}>
+                {scenarioLabelMap.get(scenarioId) ?? "Untitled scenario"}
+              </Label>
               <Label className="text-sm w-20">Position:</Label>
               <Input
                 type="number"

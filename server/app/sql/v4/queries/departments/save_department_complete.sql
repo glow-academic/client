@@ -82,10 +82,14 @@ BEGIN
     
     -- Create or UPDATE department_artifact first (outside CTE)
     IF is_create THEN
-        -- CREATE path: Create group first, then department
-        INSERT INTO department_artifact (group_id, created_at, updated_at)
-        VALUES (v_group_id, NOW(), NOW())
+        -- CREATE path
+        INSERT INTO department_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
         RETURNING id INTO v_department_id;
+        -- Link group via junction table
+        INSERT INTO department_groups_junction (department_id, group_id)
+        VALUES (v_department_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_department_id := v_input_department_id;

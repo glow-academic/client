@@ -21,11 +21,11 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = InputOf<
-  "/api/v4/resources/simulation_scenario_flags",
+  "/api/v4/resources/scenario_flags",
   "post"
 >;
 type CreateDraftSimulationScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/simulation_scenario_flags",
+  "/api/v4/resources/scenario_flags",
   "post"
 >;
 
@@ -48,6 +48,11 @@ export interface ScenarioFlagsProps {
     generated?: boolean | null;
   }>;
   scenario_ids?: string[];
+  scenarios?: Array<{
+    scenario_id: string | null;
+    name: string | null;
+    description?: string | null;
+  }>;
   scenario_resources?: Array<{
     id: string | null;
     scenario_id: string | null;
@@ -87,6 +92,7 @@ export function ScenarioFlags({
   show_scenario_flags = false,
   scenario_flags,
   scenario_ids = [],
+  scenarios,
   scenario_resources,
   disabled = false,
   onChange,
@@ -106,8 +112,30 @@ export function ScenarioFlags({
     () => scenario_flag_resources ?? [],
     [scenario_flag_resources]
   );
+  // Map from scenarios_resource.id (resource ID) to scenario_artifact.id (artifact ID)
+  const resourceToArtifactMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (scenario_resources ?? []).forEach((scenario) => {
+      if (scenario.id && scenario.scenario_id) {
+        map.set(scenario.id, scenario.scenario_id);
+      }
+    });
+    return map;
+  }, [scenario_resources]);
+
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
+    // Use full scenarios list as base (keyed by artifact ID)
+    (scenarios ?? []).forEach((scenario) => {
+      if (scenario.scenario_id) {
+        const name = scenario.name?.trim() || null;
+        const desc = scenario.description?.trim() || null;
+        if (name || desc) {
+          map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+        }
+      }
+    });
+    // Override with scenario_resources (server-confirmed data takes priority)
     (scenario_resources ?? []).forEach((scenario) => {
       if (scenario.scenario_id) {
         const name = scenario.name?.trim() || "";
@@ -119,7 +147,7 @@ export function ScenarioFlags({
       }
     });
     return map;
-  }, [scenario_resources]);
+  }, [scenarios, scenario_resources]);
 
   const [flagIdByScenario, setFlagIdByScenario] = useState<
     Map<string, string | null>
@@ -173,12 +201,15 @@ export function ScenarioFlags({
       }
       createdFlagKeysRef.current.add(key);
 
+      // Resolve resource ID to artifact ID for the API
+      const artifactScenarioId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
+
       try {
         const result = await createScenarioFlagsAction({
           body: {
             agent_id: agent_id,
             group_id: group_id,
-            scenario_id: scenarioId,
+            scenario_id: artifactScenarioId,
             flag_id: flagId,
             mcp: false,
           },
@@ -203,6 +234,7 @@ export function ScenarioFlags({
       agent_id,
       group_id,
       emitIds,
+      resourceToArtifactMap,
     ]
   );
 
@@ -300,8 +332,9 @@ export function ScenarioFlags({
       )}
       <div className="space-y-2">
         {scenario_ids.map((scenarioId) => {
+          const artifactId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
           const labelText =
-            scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
+            scenarioLabelMap.get(artifactId) ?? scenarioId.slice(0, 8);
           const selectedFlagId = flagIdByScenario.get(scenarioId) ?? null;
           return (
             <div

@@ -1161,55 +1161,84 @@ default_member_agent AS (
 -- Note: department_mapping_data will be defined after department_scenario_ids, etc. CTEs
 -- Name resource data
 name_resource_data AS (
-    SELECT 
+    SELECT
         COALESCE(
-            (SELECT sn.name_id FROM simulation_names_junction sn WHERE sn.simulation_id = (SELECT simulation_id FROM params) LIMIT 1),
-            NULL::uuid
+            (SELECT n.id FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT sn.name_id FROM simulation_names_junction sn WHERE sn.simulation_id = (SELECT simulation_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false)
             )::types.q_get_simulation_v4_name_resource
-            FROM simulation_names_junction sn
-            JOIN names_resource n ON sn.name_id = n.id
-            WHERE sn.simulation_id = (SELECT simulation_id FROM params)
+            FROM (
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
+                FROM names_draft dn
+                JOIN names_resource n ON dn.names_id = n.id
+                WHERE dn.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
+                FROM simulation_names_junction sn
+                JOIN names_resource n ON sn.name_id = n.id
+                WHERE sn.simulation_id = (SELECT simulation_id FROM params)
+            ) n
+            ORDER BY priority
             LIMIT 1
         ) as name_resource
     FROM params
+    LIMIT 1
 ),
 -- Description resource data
 description_resource_data AS (
-    SELECT 
+    SELECT
         COALESCE(
-            (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = (SELECT simulation_id FROM params) LIMIT 1),
-            NULL::uuid
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = (SELECT simulation_id FROM params) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false)
             )::types.q_get_simulation_v4_description_resource
-            FROM simulation_descriptions_junction sd
-            JOIN descriptions_resource d ON sd.description_id = d.id
-            WHERE sd.simulation_id = (SELECT simulation_id FROM params)
+            FROM (
+                SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
+                FROM descriptions_draft dd
+                JOIN descriptions_resource d ON dd.descriptions_id = d.id
+                WHERE dd.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 2 as priority
+                FROM simulation_descriptions_junction sd
+                JOIN descriptions_resource d ON sd.description_id = d.id
+                WHERE sd.simulation_id = (SELECT simulation_id FROM params)
+            ) d
+            ORDER BY priority
             LIMIT 1
         ) as description_resource
     FROM params
+    LIMIT 1
 ),
 -- Flag resource data (active flag)
 flag_resource_data AS (
-    SELECT 
+    SELECT
         COALESCE(
-            (SELECT sf.flag_id FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE LIMIT 1),
-            NULL::uuid
+            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT sf.flag_id FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
             )::types.q_get_simulation_v4_flag_resource
-            FROM simulation_flags_junction sf
-            JOIN flags_resource f ON sf.flag_id = f.id
-            JOIN flags_resource fl ON sf.flag_id = fl.id
-            WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND fl.name = 'active' AND f.name = 'simulation_active' AND sf.value = TRUE
+            FROM (
+                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
+                FROM flags_draft df
+                JOIN flags_resource f ON df.flags_id = f.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
+                FROM simulation_flags_junction sf
+                JOIN flags_resource f ON sf.flag_id = f.id
+                WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE
+            ) f
+            ORDER BY priority
             LIMIT 1
         ) as flag_resource
     FROM params
+    LIMIT 1
 ),
 -- Name suggestions: linked to simulations OR same group with generated=true
 name_suggestions_data AS (
@@ -2241,7 +2270,7 @@ scenario_flag_suggestions_data AS (
     LIMIT 1
 ),
 scenario_flags_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT ARRAY_AGG(
                 (f.id, NULL::uuid, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
@@ -2251,7 +2280,8 @@ scenario_flags_data AS (
             FROM flags_resource f
             JOIN artifact_flags_relation aft ON f.type = aft.flag_type
             WHERE f.active = true
-              AND aft.artifact = 'scenario'::artifact_type),
+              AND aft.artifact = 'scenario'::artifact_type
+              AND (f.type != 'active' OR f.name = 'scenario_active')),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
         ) as scenario_flags
     FROM params
@@ -2803,7 +2833,7 @@ SELECT
         ELSE false
     END as show_scenario_rubrics,
     (SELECT agent_id FROM scenario_rubrics_agent_data) as scenario_rubrics_agent_id,
-    false as scenario_rubrics_required,
+    true as scenario_rubrics_required,
     COALESCE((SELECT scenario_rubric_suggestions FROM scenario_rubric_suggestions_data), ARRAY[]::uuid[]) as scenario_rubric_suggestions,
     COALESCE((SELECT scenario_rubrics FROM scenario_rubrics_data), '{}'::types.q_get_simulation_v4_scenario_rubric_resource[]) as scenario_rubrics,
     COALESCE((SELECT rubrics FROM rubrics_data), '{}'::types.q_get_simulation_v4_rubric[]) as rubrics,

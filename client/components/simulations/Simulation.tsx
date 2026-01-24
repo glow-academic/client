@@ -69,11 +69,11 @@ type CreateDraftDepartmentsOut = OutputOf<
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/simulation_scenario_flags",
+  "/api/v4/resources/scenario_flags",
   "post"
 >;
 type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/simulation_scenario_flags",
+  "/api/v4/resources/scenario_flags",
   "post"
 >;
 type CreateDraftScenarioPositionsIn = InputOf<
@@ -700,6 +700,9 @@ function SimulationComponent({
           toast.success("Draft created", {
             description: "Your changes are being auto-saved",
           });
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        } else if (result.draft_id && result.draft_id !== draftId) {
+          // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
@@ -1892,6 +1895,7 @@ function SimulationComponent({
                   }
                   scenario_flags={currentSimulationData.scenario_flags ?? []}
                   scenario_ids={formState.scenario_ids ?? []}
+                  scenarios={currentSimulationData.scenarios ?? []}
                   scenario_resources={
                     currentSimulationData.scenario_resources ?? []
                   }
@@ -1926,6 +1930,10 @@ function SimulationComponent({
                   }
                   scenario_positions={
                     currentSimulationData.scenario_positions ?? []
+                  }
+                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenario_resources={
+                    currentSimulationData.scenario_resources ?? []
                   }
                   disabled={disabled}
                   onChange={() => {}}
@@ -1968,6 +1976,7 @@ function SimulationComponent({
                   }
                   rubrics={currentSimulationData.rubrics ?? []}
                   scenario_ids={formState.scenario_ids ?? []}
+                  scenarios={currentSimulationData.scenarios ?? []}
                   scenario_resources={
                     currentSimulationData.scenario_resources ?? []
                   }
@@ -2002,6 +2011,7 @@ function SimulationComponent({
                   }
                   show_scenario_time_limits={showScenarioTimeLimits}
                   scenario_ids={formState.scenario_ids ?? []}
+                  scenarios={currentSimulationData.scenarios ?? []}
                   scenario_resources={currentSimulationData.scenario_resources ?? []}
                   disabled={disabled}
                   onTimeLimitIdsChange={(ids) =>

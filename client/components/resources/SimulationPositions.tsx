@@ -32,6 +32,11 @@ export interface SimulationPositionsProps {
     time_limit: number | null;
     generated?: boolean | null;
   }>;
+  simulations?: Array<{
+    simulation_id: string | null;
+    name: string | null;
+    description?: string | null;
+  }>;
   show_simulation_positions?: boolean;
   simulation_positions?: Array<{
     simulation_id: string | null;
@@ -59,6 +64,7 @@ export interface SimulationPositionsProps {
 export function SimulationPositions({
   simulation_ids,
   simulation_resources,
+  simulations,
   show_simulation_positions = false,
   simulation_positions,
   disabled = false,
@@ -89,13 +95,24 @@ export function SimulationPositions({
       if (trimmed === "0") return null;
       if (/^\d+$/.test(trimmed)) return null;
       const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
-      if (trailingZeroMatch && !/\d/.test(trailingZeroMatch[1])) {
+      if (trailingZeroMatch && trailingZeroMatch[1] && !/\d/.test(trailingZeroMatch[1])) {
         const withoutTrailingZero = trailingZeroMatch[1].trim();
         return withoutTrailingZero || null;
       }
       return trimmed;
     };
     const map = new Map<string, string>();
+    // Use full simulations list as base (available immediately on selection)
+    (simulations ?? []).forEach((sim) => {
+      if (sim.simulation_id) {
+        const name = sim.name?.trim() || null;
+        const description = normalizeDescription(sim.description);
+        if (name || description) {
+          map.set(sim.simulation_id, name || description || "Untitled simulation");
+        }
+      }
+    });
+    // Override with simulation_resources (server-confirmed data takes priority)
     (simulation_resources ?? []).forEach((sim) => {
       if (sim.simulation_id) {
         const name = sim.name?.trim() || null;
@@ -107,7 +124,7 @@ export function SimulationPositions({
       }
     });
     return map;
-  }, [simulation_resources]);
+  }, [simulation_resources, simulations]);
 
   const positionMap = useMemo(() => {
     const map = new Map<string, number>();

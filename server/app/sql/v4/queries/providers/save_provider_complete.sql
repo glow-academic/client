@@ -75,17 +75,24 @@ BEGIN
     
     -- Create or UPDATE provider_artifact first (outside CTE)
     IF is_create THEN
-        -- CREATE path - use draft group_id
-        INSERT INTO provider_artifact (group_id, created_at, updated_at)
-        VALUES (v_group_id, NOW(), NOW())
+        -- CREATE path
+        INSERT INTO provider_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
         RETURNING id INTO v_provider_id;
+        -- Link group via junction table
+        INSERT INTO provider_groups_junction (provider_id, group_id)
+        VALUES (v_provider_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     ELSE
         -- UPDATE path
         v_provider_id := v_input_provider_id;
         UPDATE provider_artifact
-        SET updated_at = NOW(),
-            group_id = v_group_id
+        SET updated_at = NOW()
         WHERE id = v_provider_id;
+        -- Upsert group via junction table
+        INSERT INTO provider_groups_junction (provider_id, group_id)
+        VALUES (v_provider_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     END IF;
     
     -- Validate required resource IDs exist (same for both)

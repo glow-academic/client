@@ -211,15 +211,22 @@ BEGIN
 
     -- Create or update scenario_artifact
     IF is_create THEN
-        INSERT INTO scenario_artifact (group_id, created_at, updated_at)
-        VALUES (v_group_id, NOW(), NOW())
+        INSERT INTO scenario_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
         RETURNING id INTO v_scenario_id;
+        -- Link group via junction table
+        INSERT INTO scenario_groups_junction (scenario_id, group_id)
+        VALUES (v_scenario_id, v_group_id)
+        ON CONFLICT DO NOTHING;
     ELSE
         v_scenario_id := v_input_scenario_id;
         UPDATE scenario_artifact
-        SET updated_at = NOW(),
-            group_id = v_group_id
+        SET updated_at = NOW()
         WHERE id = v_scenario_id;
+        -- Upsert group via junction table
+        INSERT INTO scenario_groups_junction (scenario_id, group_id)
+        VALUES (v_scenario_id, v_group_id)
+        ON CONFLICT DO NOTHING;
 
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Scenario not found: %', v_input_scenario_id;

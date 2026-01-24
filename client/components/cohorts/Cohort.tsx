@@ -1078,6 +1078,7 @@ function CohortComponent({
       formState,
       isEditMode,
       cohortId,
+      draftId,
       effectiveProfile?.id,
       saveCohortAction,
       router,
@@ -1598,6 +1599,7 @@ function CohortComponent({
                 simulation_resources={
                   currentCohortData?.simulation_resources ?? []
                 }
+                simulations={currentCohortData?.simulations ?? []}
                 show_simulation_positions={
                   currentCohortData?.show_simulation_positions ?? false
                 }

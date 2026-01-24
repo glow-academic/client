@@ -42,11 +42,11 @@ type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/simulation_scenario_flags",
+  "/api/v4/resources/scenario_flags",
   "post"
 >;
 type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/simulation_scenario_flags",
+  "/api/v4/resources/scenario_flags",
   "post"
 >;
 type CreateDraftScenarioPositionsIn = InputOf<
@@ -166,7 +166,7 @@ async function createDraftScenarioFlags(
 ): Promise<CreateDraftScenarioFlagsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/simulation_scenario_flags", input);
+  return api.post("/resources/scenario_flags", input);
 }
 
 async function createDraftScenarioPositions(

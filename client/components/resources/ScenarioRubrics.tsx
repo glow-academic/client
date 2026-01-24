@@ -51,6 +51,11 @@ export interface ScenarioRubricsProps {
     description?: string | null;
   }>;
   scenario_ids?: string[];
+  scenarios?: Array<{
+    scenario_id: string | null;
+    name: string | null;
+    description?: string | null;
+  }>;
   scenario_resources?: Array<{
     id: string | null;
     scenario_id: string | null;
@@ -92,6 +97,7 @@ export function ScenarioRubrics({
   scenario_rubrics: _scenario_rubrics,
   rubrics,
   scenario_ids = [],
+  scenarios,
   scenario_resources,
   disabled = false,
   onChange,
@@ -111,8 +117,30 @@ export function ScenarioRubrics({
     [scenario_rubric_resources]
   );
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
+  // Map from scenarios_resource.id (resource ID) to scenario_artifact.id (artifact ID)
+  const resourceToArtifactMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (scenario_resources ?? []).forEach((scenario) => {
+      if (scenario.id && scenario.scenario_id) {
+        map.set(scenario.id, scenario.scenario_id);
+      }
+    });
+    return map;
+  }, [scenario_resources]);
+
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
+    // Use full scenarios list as base (keyed by artifact ID)
+    (scenarios ?? []).forEach((scenario) => {
+      if (scenario.scenario_id) {
+        const name = scenario.name?.trim() || null;
+        const desc = scenario.description?.trim() || null;
+        if (name || desc) {
+          map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+        }
+      }
+    });
+    // Override with scenario_resources (server-confirmed data takes priority)
     (scenario_resources ?? []).forEach((scenario) => {
       if (scenario.scenario_id) {
         const name = scenario.name?.trim() || "";
@@ -124,7 +152,7 @@ export function ScenarioRubrics({
       }
     });
     return map;
-  }, [scenario_resources]);
+  }, [scenarios, scenario_resources]);
 
   const [rubricIdByScenario, setRubricIdByScenario] = useState<
     Map<string, string | null>
@@ -178,12 +206,15 @@ export function ScenarioRubrics({
       }
       createdRubricKeysRef.current.add(key);
 
+      // Resolve resource ID to artifact ID for the API
+      const artifactScenarioId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
+
       try {
         const result = await createScenarioRubricsAction({
           body: {
             agent_id: agent_id,
             group_id: group_id,
-            scenario_id: scenarioId,
+            scenario_id: artifactScenarioId,
             rubric_id: rubricId,
             mcp: false,
           },
@@ -208,6 +239,7 @@ export function ScenarioRubrics({
       agent_id,
       group_id,
       emitIds,
+      resourceToArtifactMap,
     ]
   );
 
@@ -320,8 +352,9 @@ export function ScenarioRubrics({
       )}
       <div className="space-y-2">
         {scenario_ids.map((scenarioId) => {
+          const artifactId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
           const labelText =
-            scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
+            scenarioLabelMap.get(artifactId) ?? scenarioId.slice(0, 8);
           const selectedRubricId = rubricIdByScenario.get(scenarioId) ?? null;
           const selectedValue =
             selectedRubricId ?? (required ? "" : NONE_OPTION);
