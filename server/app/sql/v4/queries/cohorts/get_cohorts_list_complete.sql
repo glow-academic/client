@@ -83,7 +83,8 @@ CREATE TYPE types.q_list_cohorts_v4_department AS (
 
 CREATE TYPE types.q_list_cohorts_v4_option AS (
     value text,
-    label text
+    label text,
+    count bigint
 );
 
 -- 4) Recreate function
@@ -460,7 +461,7 @@ SELECT
     ) as departments,
     -- Simulation options (from ALL cohorts, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG((s.id::text, sn_name.name)::types.q_list_cohorts_v4_option ORDER BY sn_name.name)
+        (SELECT ARRAY_AGG((s.id::text, sn_name.name, (SELECT COUNT(*) FROM cohorts_data cd WHERE s.id = ANY(cd.simulation_ids)))::types.q_list_cohorts_v4_option ORDER BY sn_name.name)
          FROM all_simulation_ids_options asio
          JOIN simulation_artifact s ON s.id = asio.simulation_id
          JOIN (SELECT sn.simulation_id, n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.simulation_id = s.id
@@ -469,21 +470,20 @@ SELECT
     ) as simulation_options,
     -- Profile options (from ALL cohorts, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG((p.id::text, pn_name.name)::types.q_list_cohorts_v4_option ORDER BY pn_name.name)
+        (SELECT ARRAY_AGG((p.id::text, pn_name.name, (SELECT COUNT(*) FROM cohorts_data cd WHERE p.id = ANY(cd.profile_ids)))::types.q_list_cohorts_v4_option ORDER BY pn_name.name)
          FROM all_profile_ids_options apio
          JOIN profile_artifact p ON p.id = apio.profile_id
          JOIN (SELECT pn.profile_id, n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.profile_id = p.id
          WHERE (profile_search IS NULL OR LOWER(pn_name.name) LIKE '%' || LOWER(profile_search) || '%')),
         '{}'::types.q_list_cohorts_v4_option[]
     ) as profile_options,
-    -- Department options (from user's departments, filtered by search term)
+    -- Department options (from user's departments with cohort links, filtered by search term)
     COALESCE(
-        (SELECT ARRAY_AGG((d.id::text, dn_name.name)::types.q_list_cohorts_v4_option ORDER BY dn_name.name)
-         FROM department_mapping_data dmd2
-         JOIN departments_resource d ON d.id = dmd2.department_id
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = d.department_id
-         WHERE d.id::text IN (SELECT department_id FROM all_department_ids_options)
-           AND d.id IN (SELECT department_id FROM user_departments)
+        (SELECT ARRAY_AGG((dr.id::text, dn_name.name, (SELECT COUNT(*) FROM cohorts_data cd WHERE dr.id::text = ANY(cd.department_ids)))::types.q_list_cohorts_v4_option ORDER BY dn_name.name)
+         FROM departments_resource dr
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = dr.department_id
+         WHERE dr.id IN (SELECT department_id FROM user_departments)
+           AND dr.id::text IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_cohorts_v4_option[]
     ) as department_options,

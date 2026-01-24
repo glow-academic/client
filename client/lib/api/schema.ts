@@ -9556,6 +9556,8 @@ export interface components {
             departments?: components["schemas"]["QListPersonasV4Department"][] | null;
             /** Total Count */
             total_count?: number | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetPracticeHistoryApiRequest */
         GetPracticeHistoryApiRequest: {
@@ -17360,6 +17362,8 @@ export interface components {
             value: string | null;
             /** Label */
             label: string | null;
+            /** Count */
+            count: number | null;
         };
         /** QListCohortsV4Profile */
         QListCohortsV4Profile: {

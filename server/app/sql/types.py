@@ -3754,6 +3754,7 @@ class QListCohortsV4Option(BaseModel):
 
     value: str | None
     label: str | None
+    count: int | None
 
 
 
@@ -11060,6 +11061,7 @@ class GetPersonasListSqlRow(BaseModel):
     fields: list[QListPersonasV4Field] | None = None
     departments: list[QListPersonasV4Department] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 class GetPersonasListApiRequest(BaseModel):
 
@@ -11081,6 +11083,7 @@ class GetPersonasListApiResponse(BaseModel):
     fields: list[QListPersonasV4Field] | None = None
     departments: list[QListPersonasV4Department] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 
 

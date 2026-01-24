@@ -7,7 +7,7 @@
 "use client";
 import { Brain, Copy, Edit, Eye, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { getPersonaIconComponent } from "@/utils/persona-icons";
@@ -50,6 +50,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 
 // Utility function to generate gradient from hex color
@@ -102,7 +104,8 @@ export default function Personas({
   fieldSearch,
   departmentSearch,
 }: PersonasProps) {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, socket, isConnected } = useProfile();
+  const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -113,6 +116,74 @@ export default function Personas({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+
+  // Generation modal state
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Set GenerationCapability from list response
+  useEffect(() => {
+    if (serverListData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "persona",
+        canGenerate: true,
+        agentId: serverListData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "persona",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [serverListData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
+
+  // Handle opening the generate modal
+  const handleOpenGenerateModal = useCallback(() => {
+    if (!serverListData?.general_agent_id) return;
+    const resources: GenerateRegenerateModalResource[] = [
+      { id: "names", label: "Name", active: true },
+      { id: "descriptions", label: "Description", active: true },
+      { id: "colors", label: "Color", active: true },
+      { id: "icons", label: "Icon", active: true },
+      { id: "instructions", label: "Instructions", active: true },
+      { id: "flags", label: "Configuration", active: true },
+      { id: "examples", label: "Examples", active: true },
+      { id: "fields", label: "Fields", active: true },
+      { id: "departments", label: "Departments", active: true },
+    ];
+    setModalResources(resources);
+    setModalInstructions("");
+    setShowGenerateModal(true);
+  }, [serverListData?.general_agent_id]);
+
+  // Listen for full-page-generate event
+  useEffect(() => {
+    window.addEventListener("full-page-generate", handleOpenGenerateModal);
+    return () => window.removeEventListener("full-page-generate", handleOpenGenerateModal);
+  }, [handleOpenGenerateModal]);
+
+  // Handle modal generate (create new persona + generate)
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      if (!socket || !isConnected) return;
+      setIsGenerating(true);
+      socket.emit("persona_generate", {
+        resource_types: selectedResources,
+        agent_type: "general",
+        user_instructions: instructions.trim() ? [instructions.trim()] : null,
+        persona_id: null,
+        mcp: false,
+      });
+      setShowGenerateModal(false);
+      setIsGenerating(false);
+      toast.success("Generation started for new persona");
+    },
+    [socket, isConnected]
+  );
 
   // Local search state for debouncing
   const [searchTerm, setSearchTerm] = useState(
@@ -971,6 +1042,18 @@ export default function Personas({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <GenerateRegenerateModal
+        open={showGenerateModal}
+        onOpenChange={setShowGenerateModal}
+        resources={modalResources}
+        onResourcesChange={setModalResources}
+        instructions={modalInstructions}
+        onInstructionsChange={setModalInstructions}
+        onGenerate={handleModalGenerate}
+        isGenerating={isGenerating}
+        mode="generate"
+      />
       </div>
     </TooltipProvider>
   );

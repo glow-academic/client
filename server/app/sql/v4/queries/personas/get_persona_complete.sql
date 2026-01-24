@@ -2317,40 +2317,43 @@ missing_tools_check AS (
     CROSS JOIN ui_flags uf
     CROSS JOIN tools_existence_check tec
 ),
+persona_edit_state AS (
+    SELECT * FROM view_persona_edit_state WHERE persona_id = (SELECT persona_id FROM params)
+),
 permissions_data_with_tools AS (
-    SELECT 
+    SELECT
         pdd.department_ids,
-        CASE 
+        CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN
                 -- New mode permissions
-                CASE 
+                CASE
                     WHEN up.role = 'superadmin' THEN true
                     WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
                     ELSE false
                 END
             ELSE
-                -- Detail mode permissions
-                CASE 
-                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-                    WHEN EXISTS (SELECT 1 FROM scenario_personas_junction sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN false
+                -- Detail mode permissions (uses shared view for consistency with list page)
+                CASE
+                    WHEN COALESCE((SELECT department_ids FROM persona_edit_state), NULL) IS NULL AND up.role != 'superadmin' THEN false
+                    WHEN COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0) > 0 THEN false
                     WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
-        CASE 
+        CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN
                 -- New mode: always editable if can_edit is true
                 NULL::text
             ELSE
                 -- Detail mode: compute disabled_reason
-                CASE 
-                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
+                CASE
+                    WHEN COALESCE((SELECT department_ids FROM persona_edit_state), NULL) IS NULL AND up.role != 'superadmin' THEN
                         'This is a default persona that cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN EXISTS (SELECT 1 FROM scenario_personas_junction sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN 
+                    WHEN COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0) > 0 THEN
                         'This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN 
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN
                         NULL::text
-                    ELSE 
+                    ELSE
                         'This persona cannot be edited. You can view the details but cannot make changes.'::text
                 END
         END as base_disabled_reason

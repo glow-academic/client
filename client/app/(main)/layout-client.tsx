@@ -432,18 +432,13 @@ function MainLayoutContent({
               </div>
             )}
 
-            {/* DraftPicker and Generate Button - Show on create/edit pages */}
-            {isCreateOrEditPage && artifactType && (
-              <div className="pr-4 flex items-center gap-2">
-                <FullPageGenerateButton />
-                <DraftPicker artifactType={artifactType} />
-              </div>
-            )}
+            {/* Generate Button - self-gates via GenerationCapability context (works on both create/edit and list pages) */}
+            <FullPageGenerateButton />
 
-            {/* Generate button on list pages (self-gates via GenerationCapability context) */}
-            {!isCreateOrEditPage && (
+            {/* DraftPicker - Show on create/edit pages */}
+            {isCreateOrEditPage && artifactType && (
               <div className="pr-4 flex items-center">
-                <FullPageGenerateButton />
+                <DraftPicker artifactType={artifactType} />
               </div>
             )}
 

@@ -103,7 +103,8 @@ RETURNS TABLE (
     scenarios types.q_list_personas_v4_scenario[],
     fields types.q_list_personas_v4_field[],
     departments types.q_list_personas_v4_department[],
-    total_count bigint
+    total_count bigint,
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -120,23 +121,6 @@ user_profile AS (
     SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
-),
-persona_active_scenario_links AS (
-    SELECT
-        pr.persona_id,
-        COUNT(*) as active_scenario_count
-    FROM scenario_personas_junction sp
-    JOIN personas_resource pr ON pr.id = sp.persona_id
-    WHERE sp.active = true
-    GROUP BY pr.persona_id
-),
-persona_all_scenario_links AS (
-    SELECT
-        pr.persona_id,
-        COUNT(*) as total_scenario_links
-    FROM scenario_personas_junction sp
-    JOIN personas_resource pr ON pr.id = sp.persona_id
-    GROUP BY pr.persona_id
 ),
 persona_scenarios AS (
     SELECT
@@ -182,18 +166,17 @@ persona_data_base AS (
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
-        COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
-        COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
-        CASE WHEN COUNT(pd.persona_id) > 0 THEN true ELSE false END as has_dept_links
+        COALESCE(pes.active_scenario_count, 0) as active_scenario_count,
+        COALESCE(pes.total_scenario_links, 0) as total_scenario_links,
+        pes.department_ids as perm_dept_ids
     FROM persona_artifact p
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
-    LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
-    LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
+    LEFT JOIN view_persona_edit_state pes ON pes.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY p.id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE), p.updated_at,
-             pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, pasl.active_scenario_count, pasl_all.total_scenario_links
+             pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, pes.active_scenario_count, pes.total_scenario_links, pes.department_ids
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = p.id
     )
@@ -203,12 +186,12 @@ persona_data AS (
         pdb.*,
         CASE
             WHEN pdb.active_scenario_count > 0 THEN false
-            WHEN NOT pdb.has_dept_links AND up.role != 'superadmin' THEN false
+            WHEN pdb.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE
-            WHEN NOT pdb.has_dept_links AND up.role != 'superadmin' THEN false
+            WHEN pdb.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
             WHEN pdb.total_scenario_links > 0 THEN false
             WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
@@ -302,6 +285,42 @@ filtered_field_options AS (
     SELECT fmd.*
     FROM field_mapping_data fmd
     WHERE field_search IS NULL OR fmd.name ILIKE '%' || field_search || '%'
+),
+-- Find the general agent that can generate personas for this user
+general_agent_for_user AS (
+    SELECT a.id as agent_id
+    FROM agent_artifact a
+    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
+                  WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
+        JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+        JOIN artifact_resources_relation ar ON ar.resource = rt.resource
+        WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'persona'::artifact_type)
+    AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
+                 JOIN user_departments ud ON ad.department_id = ud.department_id
+                 WHERE ad.agent_id = a.id AND ad.active = true)
+         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    AND ARRAY['names','descriptions','colors','icons','instructions',
+              'flags','examples','fields','departments']::text[]
+        <@ COALESCE(
+            (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
+             FROM agent_tools_junction at3
+             JOIN tools_resource tr2 ON tr2.id = at3.tool_id
+             JOIN tool_artifact t ON t.id = tr2.tool_id
+                  AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
+                              WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
+             JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
+             WHERE at3.agent_id = a.id AND at3.active = true),
+            ARRAY[]::text[]
+        )
+    ORDER BY
+        CASE WHEN EXISTS (
+            SELECT 1 FROM agent_departments_junction ad
+            JOIN user_departments ud ON ad.department_id = ud.department_id
+            WHERE ad.agent_id = a.id AND ad.active = true
+        ) THEN 0 ELSE 1 END ASC,
+        a.updated_at DESC, a.id ASC
+    LIMIT 1
 )
 SELECT
     up.actor_name::text as actor_name,
@@ -349,6 +368,8 @@ SELECT
         '{}'::types.q_list_personas_v4_department[]
     ) as departments,
     -- Total count of filtered personas (before pagination)
-    (SELECT total_count FROM filtered_count) as total_count
+    (SELECT total_count FROM filtered_count) as total_count,
+    -- General agent ID for generation capability
+    (SELECT agent_id FROM general_agent_for_user) as general_agent_id
 FROM user_profile up
 $$;

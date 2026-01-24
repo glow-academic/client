@@ -1,13 +1,14 @@
 /**
  * Cohorts.tsx
  * Used to display the cohorts page with table-based filtering and card layout.
+ * Server-side filtering with nuqs URL-backed state.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
 "use client";
-import { Copy, Edit, Eye, Play, Trash2, Users, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Copy, Edit, Eye, Play, Search, Trash2, Users, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -26,10 +27,6 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -47,7 +44,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -60,19 +56,32 @@ export interface CohortsProps {
   listData: CohortsListOut;
   // Server actions (replaces useMutation)
   duplicateCohortAction?: (
-    input: DuplicateCohortIn
+    input: DuplicateCohortIn,
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
+  // Server-side pagination/filtering state
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  simulationSearch: string;
+  profileSearch: string;
+  departmentSearch: string;
 }
 
 export default function Cohorts({
   listData: serverListData,
   duplicateCohortAction,
   deleteCohortAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  simulationSearch,
+  profileSearch,
+  departmentSearch,
 }: CohortsProps) {
   const router = useRouter();
-  // effectiveProfile not used in this component
-  // const { effectiveProfile } = useProfile();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -81,109 +90,100 @@ export default function Cohorts({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
+  // Debounce refs
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const simulationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Local search state (for immediate UI feedback while debouncing)
+  const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
+
+  // URL parameter update helper
+  const updateCohortsParams = useCallback(
+    (updates: Record<string, string | string[] | null | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
+          params.delete(key);
+        } else if (Array.isArray(value)) {
+          params.delete(key);
+          value.forEach((v) => params.append(key, v));
+        } else {
+          params.set(key, value);
+        }
+      }
+      // Reset page when filters change (unless page is explicitly set in updates)
+      if (!("page" in updates)) {
+        params.delete("page");
+      }
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
+    },
+    [searchParams, pathname, router],
+  );
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    // Initialize from URL params
+    const filters: ColumnFiltersState = [];
+    const simulationIds = searchParams.getAll("simulationIds");
+    if (simulationIds.length > 0) filters.push({ id: "simulation_ids", value: simulationIds });
+    const profileIds = searchParams.getAll("profileIds");
+    if (profileIds.length > 0) filters.push({ id: "profile_ids", value: profileIds });
+    const departmentIds = searchParams.getAll("departmentIds");
+    if (departmentIds.length > 0) filters.push({ id: "departments", value: departmentIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
 
   // Use server-provided data directly
   const cohortsData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from response
   const cohorts = useMemo(
     () => cohortsData?.cohorts || [],
-    [cohortsData?.cohorts]
+    [cohortsData?.cohorts],
   );
 
-  // Convert full object arrays to options arrays for faceted filters
-  // Backend returns full objects as arrays (composite types), frontend needs options format
-  const profileOptions = useMemo(() => {
-    const profiles = cohortsData?.profiles || [];
-    // Handle both array (new format) and legacy format
-    const profilesArray = Array.isArray(profiles)
-      ? profiles
-      : Object.values(profiles);
-    return profilesArray
-      .map((item) => {
-        // Type guard for profile item
-        if (
-          item &&
-          typeof item === "object" &&
-          "profile_id" in item &&
-          "name" in item
-        ) {
-          return {
-            value: String(item.profile_id || ""),
-            label: String(item.name || ""),
-          };
-        }
-        return null;
-      })
-      .filter(
-        (opt): opt is { value: string; label: string } =>
-          opt !== null && !!opt.value && !!opt.label
-      );
-  }, [cohortsData?.profiles]);
-
-  const simulationOptions = useMemo(() => {
-    const simulations = cohortsData?.simulations || [];
-    // Handle both array (new format) and legacy format
-    const simulationsArray = Array.isArray(simulations)
-      ? simulations
-      : Object.values(simulations);
-    return simulationsArray
-      .map((item) => {
-        // Type guard for simulation item
-        if (
-          item &&
-          typeof item === "object" &&
-          "simulation_id" in item &&
-          "name" in item
-        ) {
-          return {
-            value: String(item.simulation_id || ""),
-            label: String(item.name || ""),
-          };
-        }
-        return null;
-      })
-      .filter(
-        (opt): opt is { value: string; label: string } =>
-          opt !== null && !!opt.value && !!opt.label
-      );
-  }, [cohortsData?.simulations]);
-
-  const departmentOptions = useMemo(() => {
-    const departments = cohortsData?.departments || [];
-    // Handle both array (new format) and legacy format
-    const departmentsArray = Array.isArray(departments)
-      ? departments
-      : Object.values(departments);
-    return departmentsArray
-      .map((item) => {
-        // Type guard for department item
-        if (
-          item &&
-          typeof item === "object" &&
-          "department_id" in item &&
-          "name" in item
-        ) {
-          return {
-            value: String(item.department_id || ""),
-            label: String(item.name || ""),
-          };
-        }
-        return null;
-      })
-      .filter(
-        (opt): opt is { value: string; label: string } =>
-          opt !== null && !!opt.value && !!opt.label
-      );
-  }, [cohortsData?.departments]);
+  // Use server-provided facet options directly (filtered by search term server-side)
+  const simulationOptions = useMemo(
+    () =>
+      (cohortsData?.simulation_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [cohortsData?.simulation_options],
+  );
+  const profileOptions = useMemo(
+    () =>
+      (cohortsData?.profile_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [cohortsData?.profile_options],
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (cohortsData?.department_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+          count: typeof opt["count"] === "number" ? opt["count"] : undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [cohortsData?.department_options],
+  );
 
   // Define table columns inline
   const columns: ColumnDef<(typeof cohorts)[number]>[] = useMemo(
@@ -192,13 +192,35 @@ export default function Cohorts({
         accessorKey: "name",
         header: "Name",
       },
+      // Hidden faceting column for Profiles (array of IDs)
       {
-        accessorKey: "profile_ids",
-        header: "Profiles",
+        id: "profile_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.profile_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("profile_ids") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return false;
+          return value.some((v) => rowIds.includes(v));
+        },
       },
+      // Hidden faceting column for Simulations (array of IDs)
       {
-        accessorKey: "simulation_ids",
-        header: "Simulations",
+        id: "simulation_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.simulation_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("simulation_ids") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return false;
+          return value.some((v) => rowIds.includes(v));
+        },
       },
       // Hidden faceting column for Departments (array of IDs)
       {
@@ -211,7 +233,7 @@ export default function Cohorts({
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
-          if (rowIds.length === 0) return true;
+          if (rowIds.length === 0) return false;
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -231,10 +253,13 @@ export default function Cohorts({
         },
       },
     ],
-    []
+    [],
   );
 
-  // Create table instance
+  // Page count for manual pagination
+  const pageCount = Math.ceil(totalCount / pageSize);
+
+  // Create table instance with manual pagination/filtering
   const table = useReactTable({
     data: cohorts,
     columns,
@@ -243,101 +268,122 @@ export default function Cohorts({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
+    pageCount,
+    manualPagination: true,
+    manualFiltering: true,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 12,
-      },
+    onColumnFiltersChange: (updater) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+      // Sync filter changes to URL
+      const simulationFilter = newFilters.find((f) => f.id === "simulation_ids");
+      const profileFilter = newFilters.find((f) => f.id === "profile_ids");
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      updateCohortsParams({
+        simulationIds: (simulationFilter?.value as string[] | undefined) ?? null,
+        profileIds: (profileFilter?.value as string[] | undefined) ?? null,
+        departmentIds: (departmentFilter?.value as string[] | undefined) ?? null,
+      });
     },
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const current = { pageIndex, pageSize };
+      const next = typeof updater === "function" ? updater(current) : updater;
+      updateCohortsParams({
+        page: next.pageIndex > 0 ? String(next.pageIndex) : null,
+        pageSize: next.pageSize !== 12 ? String(next.pageSize) : null,
+      });
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
-  const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
-  const tableRows = useMemo(() => {
-    return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    cohorts.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearch(value);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        updateCohortsParams({ search: value || null });
+      }, 500);
+    },
+    [updateCohortsParams],
+  );
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
+  const handleSearchBlur = useCallback(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+    updateCohortsParams({ search: localSearch || null });
+  }, [localSearch, updateCohortsParams]);
 
-        {/* Toolbar skeleton */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-            <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
-            <div className="flex items-center space-x-2">
-              <Skeleton className="h-8 w-[100px]" />
-              <Skeleton className="h-8 w-[120px]" />
-              <Skeleton className="h-8 w-[110px]" />
-            </div>
-          </div>
-        </div>
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (searchDebounceRef.current) {
+          clearTimeout(searchDebounceRef.current);
+          searchDebounceRef.current = null;
+        }
+        updateCohortsParams({ search: localSearch || null });
+      }
+    },
+    [localSearch, updateCohortsParams],
+  );
 
-        {/* Cohorts grid skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <div className="flex space-x-2">
-                    <Skeleton className="h-8 w-8 rounded" />
-                    <Skeleton className="h-8 w-8 rounded" />
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4 mb-3" />
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Filter option search handlers (300ms debounce)
+  const handleSimulationSearchChange = useCallback(
+    (term: string) => {
+      if (simulationSearchDebounceRef.current) clearTimeout(simulationSearchDebounceRef.current);
+      simulationSearchDebounceRef.current = setTimeout(() => {
+        updateCohortsParams({ simulationSearch: term || null });
+      }, 300);
+    },
+    [updateCohortsParams],
+  );
 
-  // Permissions now come from server-side in V3 API
-  // Cohorts are pre-filtered by role on the server
-  // No need for client-side permission or filtering logic
+  const handleProfileSearchChange = useCallback(
+    (term: string) => {
+      if (profileSearchDebounceRef.current) clearTimeout(profileSearchDebounceRef.current);
+      profileSearchDebounceRef.current = setTimeout(() => {
+        updateCohortsParams({ profileSearch: term || null });
+      }, 300);
+    },
+    [updateCohortsParams],
+  );
+
+  const handleDepartmentSearchChange = useCallback(
+    (term: string) => {
+      if (departmentSearchDebounceRef.current) clearTimeout(departmentSearchDebounceRef.current);
+      departmentSearchDebounceRef.current = setTimeout(() => {
+        updateCohortsParams({ departmentSearch: term || null });
+      }, 300);
+    },
+    [updateCohortsParams],
+  );
+
+  // Reset all filters
+  const handleResetFilters = useCallback(() => {
+    setColumnFilters([]);
+    setLocalSearch("");
+    updateCohortsParams({
+      search: null,
+      simulationIds: null,
+      profileIds: null,
+      departmentIds: null,
+      simulationSearch: null,
+      profileSearch: null,
+      departmentSearch: null,
+      page: null,
+    });
+  }, [updateCohortsParams]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteCohortAction) return;
@@ -360,7 +406,6 @@ export default function Cohorts({
       setDeleteItem(null);
     }
   };
-
 
   const handleDuplicate = async (cohortId: string, cohortName: string) => {
     if (!duplicateCohortAction) return;
@@ -466,8 +511,7 @@ export default function Cohorts({
                     }
                     disabled={
                       !cohort.cohort_id ||
-                      isDuplicating === cohort.cohort_id ||
-                      false // No pending state for server action
+                      isDuplicating === cohort.cohort_id
                     }
                     {...(cohort.name
                       ? { "aria-label": `Duplicate ${cohort.name}` }
@@ -538,20 +582,14 @@ export default function Cohorts({
   );
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("name");
   const profileColumn = table.getColumn("profile_ids");
   const simulationColumn = table.getColumn("simulation_ids");
   const departmentsColumn = table.getColumn("departments");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered = columnFilters.length > 0 || localSearch.length > 0;
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
-      {cohorts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">No cohorts found</p>
-        </div>
-      ) : (
         <div className="space-y-4">
           {/* Toolbar */}
           <div
@@ -560,35 +598,44 @@ export default function Cohorts({
           >
             <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
               <div className="w-full md:w-auto">
-                <Input
-                  data-testid="cohorts-search"
-                  placeholder="Search cohorts..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search cohorts by name"
-                  aria-controls="cohorts-grid"
-                />
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    data-testid="cohorts-search"
+                    placeholder="Search cohorts..."
+                    value={localSearch}
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    onBlur={handleSearchBlur}
+                    onKeyDown={handleSearchKeyDown}
+                    className="h-8 w-full md:w-[150px] lg:w-[250px] pl-8"
+                    aria-label="Search cohorts by name"
+                    aria-controls="cohorts-grid"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Profile Filter */}
-                {profileColumn && (
-                  <DataTableFacetedFilter
-                    column={profileColumn}
-                    title="Profile"
-                    options={profileOptions}
-                  />
-                )}
-
                 {/* Simulation Filter */}
                 {simulationColumn && (
                   <DataTableFacetedFilter
                     column={simulationColumn}
                     title="Simulation"
                     options={simulationOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleSimulationSearchChange}
+                    searchValue={simulationSearch}
+                  />
+                )}
+
+                {/* Profile Filter */}
+                {profileColumn && (
+                  <DataTableFacetedFilter
+                    column={profileColumn}
+                    title="Profile"
+                    options={profileOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleProfileSearchChange}
+                    searchValue={profileSearch}
                   />
                 )}
 
@@ -598,13 +645,16 @@ export default function Cohorts({
                     column={departmentsColumn}
                     title="Department"
                     options={departmentOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleDepartmentSearchChange}
+                    searchValue={departmentSearch}
                   />
                 )}
 
                 {isFiltered && (
                   <Button
                     variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
+                    onClick={handleResetFilters}
                     className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
                     Reset
@@ -622,8 +672,10 @@ export default function Cohorts({
             aria-label="cohorts grid"
             data-testid="cohorts-grid"
           >
-            {tableRows.length ? (
-              tableRows.map((row) => renderCohortCard(row.original))
+            {cohorts.length ? (
+              cohorts.map((cohort) => (
+                <div key={cohort.cohort_id}>{renderCohortCard(cohort)}</div>
+              ))
             ) : (
               <div className="col-span-full text-center py-8 text-muted-foreground">
                 No cohorts match the current filters.
@@ -634,43 +686,40 @@ export default function Cohorts({
           {/* Pagination */}
           <DataTablePagination table={table} card={true} />
         </div>
-      )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent
-          aria-labelledby="delete-cohort-title"
-          data-testid="dialog-delete-cohort"
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle id="delete-cohort-title">
-              Delete Cohort
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <p>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent
+            aria-labelledby="delete-cohort-title"
+            data-testid="dialog-delete-cohort"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle id="delete-cohort-title">
+                Delete Cohort
+              </AlertDialogTitle>
+              <AlertDialogDescription>
                 Are you sure you want to delete the cohort "{deleteItem?.name}"?
                 This action cannot be undone.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting}
-              data-testid="btn-cancel-delete"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              variant="destructive"
-              data-testid="btn-confirm-delete"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={isDeleting}
+                data-testid="btn-cancel-delete"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                variant="destructive"
+                data-testid="btn-confirm-delete"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );
