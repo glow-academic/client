@@ -218,6 +218,9 @@ BEGIN
         INSERT INTO scenario_groups_junction (scenario_id, group_id)
         VALUES (v_scenario_id, v_group_id)
         ON CONFLICT DO NOTHING;
+        -- Insert root tree edge so scenario appears in the list
+        INSERT INTO scenario_tree_junction (parent_id, child_id, active, created_at)
+        VALUES (v_scenario_id, v_scenario_id, true, NOW());
     ELSE
         v_scenario_id := v_input_scenario_id;
         UPDATE scenario_artifact

@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Thermometer, Trash2, X } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -459,17 +459,6 @@ export default function Personas({
                       </TooltipContent>
                     </Tooltip>
                   )}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="outline" className="text-xs cursor-help">
-                        <Thermometer className="h-3 w-3 mr-1" />
-                        {persona.temperature_display}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Randomness Level</p>
-                    </TooltipContent>
-                  </Tooltip>
                 </div>
                 {persona.is_inactive && (
                   <div className="flex items-center gap-2">

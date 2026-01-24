@@ -107,29 +107,32 @@ user_profile AS (
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
 persona_active_scenario_links AS (
-    SELECT 
-        sp.persona_id,
+    SELECT
+        pr.persona_id,
         COUNT(*) as active_scenario_count
     FROM scenario_personas_junction sp
+    JOIN personas_resource pr ON pr.id = sp.persona_id
     WHERE sp.active = true
-    GROUP BY sp.persona_id
+    GROUP BY pr.persona_id
 ),
 persona_all_scenario_links AS (
-    SELECT 
-        sp.persona_id,
+    SELECT
+        pr.persona_id,
         COUNT(*) as total_scenario_links
     FROM scenario_personas_junction sp
-    GROUP BY sp.persona_id
+    JOIN personas_resource pr ON pr.id = sp.persona_id
+    GROUP BY pr.persona_id
 ),
 persona_scenarios AS (
-    SELECT 
-        sp.persona_id,
+    SELECT
+        pr.persona_id,
         ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
     FROM scenario_personas_junction sp
+    JOIN personas_resource pr ON pr.id = sp.persona_id
     JOIN scenario_tree_junction st ON st.child_id = sp.scenario_id
     WHERE sp.active = true AND st.parent_id = st.child_id
-    GROUP BY sp.persona_id
+    GROUP BY pr.persona_id
 ),
 persona_departments_data AS (
     SELECT 
