@@ -2247,17 +2247,20 @@ scenario_flag_ids_data AS (
     LIMIT 1
 ),
 scenario_flag_resources_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT ARRAY_AGG(
-                (sfr.id, sfr.scenario_id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false)
+                (sfr.id, sr.id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
             FROM scenario_flags_resource sfr
             JOIN flags_resource f ON f.id = sfr.flag_id
+            JOIN scenarios_resource sr ON sr.scenario_id = sfr.scenario_id AND sr.active = true
             CROSS JOIN scenario_flag_ids_data sfid
-            WHERE sfr.id = ANY(sfid.scenario_flag_ids)),
+            CROSS JOIN scenario_ids_data sid
+            WHERE sfr.id = ANY(sfid.scenario_flag_ids)
+              AND sr.id = ANY(sid.scenario_ids)),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
         ) as scenario_flag_resources
     FROM params
@@ -2273,15 +2276,14 @@ scenario_flags_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(
-                (f.id, NULL::uuid, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
+                (f.id, rfr.resource_id, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
                 )::types.q_get_simulation_v4_scenario_flag_resource
-                ORDER BY f.name
+                ORDER BY rfr.resource_id, f.name
             )
-            FROM flags_resource f
-            JOIN artifact_flags_relation aft ON f.type = aft.flag_type
-            WHERE f.active = true
-              AND aft.artifact = 'scenario'::artifact_type
-              AND (f.type != 'active' OR f.name = 'scenario_active')),
+            FROM resource_flags_relation rfr
+            JOIN flags_resource f ON f.name = rfr.flag_type::text AND f.active = true
+            CROSS JOIN scenario_ids_data sid
+            WHERE rfr.resource_id = ANY(sid.scenario_ids)),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
         ) as scenario_flags
     FROM params

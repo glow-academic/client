@@ -39,6 +39,7 @@ export interface ScenarioTimeLimitsProps {
   show_scenario_time_limits?: boolean;
   scenario_ids?: string[];
   scenarios?: Array<{
+    id: string | null;
     scenario_id: string | null;
     name: string | null;
     description?: string | null;
@@ -91,39 +92,39 @@ export function ScenarioTimeLimits({
     () => scenario_time_limit_resources ?? [],
     [scenario_time_limit_resources]
   );
-  // Map from scenarios_resource.id (resource ID) to scenario_artifact.id (artifact ID)
-  const resourceToArtifactMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (scenario_resources ?? []).forEach((scenario) => {
-      if (scenario.id && scenario.scenario_id) {
-        map.set(scenario.id, scenario.scenario_id);
-      }
-    });
-    return map;
-  }, [scenario_resources]);
-
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
-    // Use full scenarios list as base (keyed by artifact ID)
+    // Use full scenarios list as base (keyed by resource ID to match scenario_ids)
     (scenarios ?? []).forEach((scenario) => {
-      if (scenario.scenario_id) {
+      if (scenario.id) {
         const name = scenario.name?.trim() || null;
         const desc = scenario.description?.trim() || null;
         if (name || desc) {
-          map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+          map.set(scenario.id, name || desc || "Untitled scenario");
         }
       }
     });
     // Override with scenario_resources (server-confirmed data takes priority)
     (scenario_resources ?? []).forEach((scenario) => {
-      if (scenario.scenario_id) {
+      if (scenario.id) {
         const name = scenario.name?.trim() || "";
         const descriptionText = scenario.description?.trim() || "";
         map.set(
-          scenario.scenario_id,
+          scenario.id,
           name || descriptionText || "Untitled scenario"
         );
       }
+    });
+    return map;
+  }, [scenarios, scenario_resources]);
+  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
+  const artifactIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (scenarios ?? []).forEach((s) => {
+      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
+    });
+    (scenario_resources ?? []).forEach((s) => {
+      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
     });
     return map;
   }, [scenarios, scenario_resources]);
@@ -182,7 +183,7 @@ export function ScenarioTimeLimits({
       createdTimeLimitKeysRef.current.add(key);
 
       // Resolve resource ID to artifact ID for the API
-      const artifactScenarioId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
+      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
 
       try {
         const result = await createScenarioTimeLimitsAction({
@@ -214,7 +215,7 @@ export function ScenarioTimeLimits({
       agent_id,
       group_id,
       emitIds,
-      resourceToArtifactMap,
+      artifactIdMap,
     ]
   );
 
@@ -290,9 +291,8 @@ export function ScenarioTimeLimits({
       <div className="space-y-2">
         {scenario_ids.map((scenarioId) => {
           const currentValue = timeLimitByScenario.get(scenarioId);
-          const artifactId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
           const labelText =
-            scenarioLabelMap.get(artifactId) ?? scenarioId.slice(0, 8);
+            scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
           return (
             <div
               key={scenarioId}

@@ -53,14 +53,17 @@ export interface ScenarioPositionsProps {
     generated?: boolean | null;
   }>; // All available scenario positions from API
   scenarios?: Array<{
+    id: string | null;
     scenario_id: string | null;
     name: string | null;
     description?: string | null;
   }>; // Full scenario list for label lookup
   scenario_resources?: Array<{
+    id: string | null;
     scenario_id: string | null;
     name: string | null;
     description?: string | null;
+    generated?: boolean | null;
   }>; // Server-confirmed scenario resources for label lookup
   disabled?: boolean; // Based on can_edit flag
   onChange: (positions: ScenarioPositionItem[]) => void; // Update scenario positions in form state
@@ -117,23 +120,34 @@ export function ScenarioPositions({
   );
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
-    // Use full scenarios list as base (available immediately on selection)
+    // Use full scenarios list as base (keyed by resource ID to match scenario_ids)
     (scenarios ?? []).forEach((scenario) => {
-      if (scenario.scenario_id) {
+      if (scenario.id) {
         const name = scenario.name?.trim() || null;
         const desc = scenario.description?.trim() || null;
         if (name || desc) {
-          map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+          map.set(scenario.id, name || desc || "Untitled scenario");
         }
       }
     });
     // Override with scenario_resources (server-confirmed data takes priority)
     (scenario_resources ?? []).forEach((scenario) => {
-      if (scenario.scenario_id) {
+      if (scenario.id) {
         const name = scenario.name?.trim() || null;
         const desc = scenario.description?.trim() || null;
-        map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+        map.set(scenario.id, name || desc || "Untitled scenario");
       }
+    });
+    return map;
+  }, [scenarios, scenario_resources]);
+  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
+  const artifactIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (scenarios ?? []).forEach((s) => {
+      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
+    });
+    (scenario_resources ?? []).forEach((s) => {
+      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
     });
     return map;
   }, [scenarios, scenario_resources]);
@@ -211,6 +225,9 @@ export function ScenarioPositions({
       }
       createdPositionKeysRef.current.add(key);
 
+      // Resolve resource ID to artifact ID for the API
+      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
+
       void (async () => {
         try {
           const result = await createScenarioPositionsAction({
@@ -218,7 +235,7 @@ export function ScenarioPositions({
               agent_id: agent_id,
               group_id: group_id,
               simulation_id: simulation_id,
-              scenario_id: scenarioId,
+              scenario_id: artifactScenarioId,
               value: value,
               mcp: false,
             },
@@ -254,6 +271,7 @@ export function ScenarioPositions({
     group_id,
     simulation_id,
     onPositionIdsChange,
+    artifactIdMap,
   ]);
 
   const handlePositionChange = useCallback(
@@ -283,6 +301,9 @@ export function ScenarioPositions({
         return;
       }
 
+      // Resolve resource ID to artifact ID for the API
+      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
+
       void (async () => {
         try {
           const result = await createScenarioPositionsAction({
@@ -290,7 +311,7 @@ export function ScenarioPositions({
               agent_id: agent_id,
               group_id: group_id,
               simulation_id: simulation_id,
-              scenario_id: scenarioId,
+              scenario_id: artifactScenarioId,
               value: newValue,
               mcp: false,
             },
@@ -325,6 +346,7 @@ export function ScenarioPositions({
       group_id,
       onPositionIdsChange,
       scenario_ids,
+      artifactIdMap,
     ]
   );
 
@@ -417,14 +439,15 @@ export function ScenarioPositions({
         {sortedScenarios.map((scenarioId) => {
           const position = localPositions.get(scenarioId) || 1;
           const maxPos = Math.max(...Array.from(localPositions.values()));
+          const labelText = scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
           return (
             <div
               key={scenarioId}
               className="flex items-center gap-2 p-2 border rounded-md"
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-sm w-56 truncate" title={scenarioLabelMap.get(scenarioId) ?? "Untitled scenario"}>
-                {scenarioLabelMap.get(scenarioId) ?? "Untitled scenario"}
+              <Label className="text-sm w-56 truncate" title={labelText}>
+                {labelText}
               </Label>
               <Label className="text-sm w-20">Position:</Label>
               <Input

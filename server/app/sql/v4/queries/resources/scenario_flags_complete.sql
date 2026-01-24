@@ -29,6 +29,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_scenario_flags_id uuid;
     v_call_id uuid;
@@ -146,8 +147,7 @@ BEGIN
         active = true,
         generated = EXCLUDED.generated,
         mcp = EXCLUDED.mcp,
-        call_id = EXCLUDED.call_id,
-        updated_at = NOW()
+        call_id = EXCLUDED.call_id
     RETURNING id INTO v_scenario_flags_id;
     
     -- Create message record (assistant role, not completed)

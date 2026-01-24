@@ -29,6 +29,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_option_id uuid;
     v_call_id uuid;

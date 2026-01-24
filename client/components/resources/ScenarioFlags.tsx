@@ -49,6 +49,7 @@ export interface ScenarioFlagsProps {
   }>;
   scenario_ids?: string[];
   scenarios?: Array<{
+    id: string | null;
     scenario_id: string | null;
     name: string | null;
     description?: string | null;
@@ -77,13 +78,10 @@ export interface ScenarioFlagsProps {
   isGenerating?: boolean;
 }
 
-const NONE_OPTION = "__none__";
-
 type ScenarioFlagOption = {
   id: string;
   name: string;
   description?: string;
-  isNone?: boolean;
 };
 
 export function ScenarioFlags({
@@ -112,82 +110,88 @@ export function ScenarioFlags({
     () => scenario_flag_resources ?? [],
     [scenario_flag_resources]
   );
-  // Map from scenarios_resource.id (resource ID) to scenario_artifact.id (artifact ID)
-  const resourceToArtifactMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (scenario_resources ?? []).forEach((scenario) => {
-      if (scenario.id && scenario.scenario_id) {
-        map.set(scenario.id, scenario.scenario_id);
-      }
-    });
-    return map;
-  }, [scenario_resources]);
-
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
-    // Use full scenarios list as base (keyed by artifact ID)
+    // Use full scenarios list as base (keyed by resource ID to match scenario_ids)
     (scenarios ?? []).forEach((scenario) => {
-      if (scenario.scenario_id) {
+      if (scenario.id) {
         const name = scenario.name?.trim() || null;
         const desc = scenario.description?.trim() || null;
         if (name || desc) {
-          map.set(scenario.scenario_id, name || desc || "Untitled scenario");
+          map.set(scenario.id, name || desc || "Untitled scenario");
         }
       }
     });
     // Override with scenario_resources (server-confirmed data takes priority)
     (scenario_resources ?? []).forEach((scenario) => {
-      if (scenario.scenario_id) {
+      if (scenario.id) {
         const name = scenario.name?.trim() || "";
         const descriptionText = scenario.description?.trim() || "";
         map.set(
-          scenario.scenario_id,
+          scenario.id,
           name || descriptionText || "Untitled scenario"
         );
       }
     });
     return map;
   }, [scenarios, scenario_resources]);
+  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
+  const artifactIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (scenarios ?? []).forEach((s) => {
+      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
+    });
+    (scenario_resources ?? []).forEach((s) => {
+      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
+    });
+    return map;
+  }, [scenarios, scenario_resources]);
 
-  const [flagIdByScenario, setFlagIdByScenario] = useState<
-    Map<string, string | null>
+  // Multi-select: maps scenarioId → Set of selected flagIds
+  const [selectedFlagsByScenario, setSelectedFlagsByScenario] = useState<
+    Map<string, Set<string>>
   >(new Map());
-  const [scenarioFlagIdsByScenario, setScenarioFlagIdsByScenario] = useState<
+  // Maps "scenarioId:flagId" → scenario_flags_resource ID (for emitting)
+  const [scenarioFlagResourceIds, setScenarioFlagResourceIds] = useState<
     Map<string, string>
   >(new Map());
   const createdFlagKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const nextFlags = new Map<string, string | null>();
-    const nextIds = new Map<string, string>();
+    const nextSelected = new Map<string, Set<string>>();
+    const nextResourceIds = new Map<string, string>();
 
     currentResources.forEach((resource) => {
-      if (resource.scenario_id) {
-        nextFlags.set(resource.scenario_id, resource.flag_id ?? null);
+      if (resource.scenario_id && resource.flag_id) {
+        if (!nextSelected.has(resource.scenario_id)) {
+          nextSelected.set(resource.scenario_id, new Set());
+        }
+        nextSelected.get(resource.scenario_id)!.add(resource.flag_id);
         if (resource.id) {
-          nextIds.set(resource.scenario_id, resource.id);
+          nextResourceIds.set(
+            `${resource.scenario_id}:${resource.flag_id}`,
+            resource.id
+          );
         }
       }
     });
 
     scenario_ids.forEach((scenarioId) => {
-      if (!nextFlags.has(scenarioId)) {
-        nextFlags.set(scenarioId, null);
+      if (!nextSelected.has(scenarioId)) {
+        nextSelected.set(scenarioId, new Set());
       }
     });
 
-    setFlagIdByScenario(nextFlags);
-    setScenarioFlagIdsByScenario(nextIds);
+    setSelectedFlagsByScenario(nextSelected);
+    setScenarioFlagResourceIds(nextResourceIds);
   }, [currentResources, scenario_ids]);
 
-  const emitIds = useCallback(
-    (next: Map<string, string>) => {
-      const ids = scenario_ids
-        .map((scenarioId) => next.get(scenarioId))
-        .filter((value): value is string => Boolean(value));
+  const emitAllIds = useCallback(
+    (resourceIds: Map<string, string>) => {
+      const ids = Array.from(resourceIds.values());
       onChange(ids);
     },
-    [onChange, scenario_ids]
+    [onChange]
   );
 
   const createScenarioFlag = useCallback(
@@ -202,7 +206,7 @@ export function ScenarioFlags({
       createdFlagKeysRef.current.add(key);
 
       // Resolve resource ID to artifact ID for the API
-      const artifactScenarioId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
+      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
 
       try {
         const result = await createScenarioFlagsAction({
@@ -215,14 +219,16 @@ export function ScenarioFlags({
           },
         });
 
-        if (!result?.id) {
+        if (!result?.scenario_flags_id) {
           return;
         }
 
-        setScenarioFlagIdsByScenario((prev) => {
+        const resultId = result.scenario_flags_id as string;
+        setScenarioFlagResourceIds((prev) => {
           const next = new Map(prev);
-          next.set(scenarioId, result.id as string);
-          emitIds(next);
+          next.set(key, resultId);
+          // Emit after building the updated map
+          emitAllIds(next);
           return next;
         });
       } catch {
@@ -233,53 +239,61 @@ export function ScenarioFlags({
       createScenarioFlagsAction,
       agent_id,
       group_id,
-      emitIds,
-      resourceToArtifactMap,
+      emitAllIds,
+      artifactIdMap,
     ]
   );
 
-  const handleSelect = useCallback(
-    (scenarioId: string, value: string) => {
-      const nextFlagId = value === NONE_OPTION ? null : value;
+  const handleToggle = useCallback(
+    (scenarioId: string, flagId: string, checked: boolean) => {
+      const key = `${scenarioId}:${flagId}`;
 
-      setFlagIdByScenario((prev) => {
+      setSelectedFlagsByScenario((prev) => {
         const next = new Map(prev);
-        next.set(scenarioId, nextFlagId);
+        const flags = new Set(prev.get(scenarioId) ?? []);
+        if (checked) {
+          flags.add(flagId);
+        } else {
+          flags.delete(flagId);
+        }
+        next.set(scenarioId, flags);
         return next;
       });
 
-      if (nextFlagId === null) {
-        setScenarioFlagIdsByScenario((prev) => {
+      if (checked) {
+        void createScenarioFlag(scenarioId, flagId);
+      } else {
+        setScenarioFlagResourceIds((prev) => {
           const next = new Map(prev);
-          next.delete(scenarioId);
-          emitIds(next);
+          next.delete(key);
+          emitAllIds(next);
           return next;
         });
-        return;
       }
-
-      setScenarioFlagIdsByScenario((prev) => {
-        const next = new Map(prev);
-        if (next.has(scenarioId)) {
-          next.delete(scenarioId);
-          emitIds(next);
-        }
-        return next;
-      });
-
-      void createScenarioFlag(scenarioId, nextFlagId);
     },
-    [createScenarioFlag, emitIds]
+    [createScenarioFlag, emitAllIds]
   );
 
-  const flagOptions = useMemo<ScenarioFlagOption[]>(() => {
-    return allFlags
-      .filter((flag) => flag.flag_id && flag.name)
-      .map((flag) => ({
-        id: flag.flag_id as string,
-        name: flag.name as string,
-        description: flag.description ?? "",
-      }));
+  // Group flags by scenario_id (resource ID) from the SQL query
+  // The SQL now returns flags per-scenario via resource_flags_relation
+  const flagOptionsByScenario = useMemo(() => {
+    const map = new Map<string, ScenarioFlagOption[]>();
+
+    allFlags
+      .filter((flag) => flag.flag_id && flag.name && flag.scenario_id)
+      .forEach((flag) => {
+        const scenarioId = flag.scenario_id as string;
+        if (!map.has(scenarioId)) {
+          map.set(scenarioId, []);
+        }
+        map.get(scenarioId)!.push({
+          id: flag.flag_id as string,
+          name: flag.name as string,
+          description: flag.description ?? "",
+        });
+      });
+
+    return map;
   }, [allFlags]);
 
   const hasGenerated = useMemo(() => {
@@ -332,10 +346,11 @@ export function ScenarioFlags({
       )}
       <div className="space-y-2">
         {scenario_ids.map((scenarioId) => {
-          const artifactId = resourceToArtifactMap.get(scenarioId) ?? scenarioId;
           const labelText =
-            scenarioLabelMap.get(artifactId) ?? scenarioId.slice(0, 8);
-          const selectedFlagId = flagIdByScenario.get(scenarioId) ?? null;
+            scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
+          const selectedFlags =
+            selectedFlagsByScenario.get(scenarioId) ?? new Set<string>();
+          const scenarioOptions = flagOptionsByScenario.get(scenarioId) ?? [];
           return (
             <div
               key={scenarioId}
@@ -345,8 +360,8 @@ export function ScenarioFlags({
                 {labelText}
               </Label>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-                {flagOptions.map((option) => {
-                  const isSelected = selectedFlagId === option.id;
+                {scenarioOptions.map((option) => {
+                  const isSelected = selectedFlags.has(option.id);
                   return (
                     <div
                       key={option.id}
@@ -366,13 +381,7 @@ export function ScenarioFlags({
                       <Switch
                         checked={isSelected}
                         onCheckedChange={(checked) => {
-                          if (checked) {
-                            handleSelect(scenarioId, option.id);
-                            return;
-                          }
-                          if (!required) {
-                            handleSelect(scenarioId, NONE_OPTION);
-                          }
+                          handleToggle(scenarioId, option.id, checked);
                         }}
                         disabled={disabled}
                         className="shrink-0"
@@ -380,7 +389,7 @@ export function ScenarioFlags({
                     </div>
                   );
                 })}
-                {flagOptions.length === 0 && (
+                {scenarioOptions.length === 0 && (
                   <div className="col-span-full text-sm text-muted-foreground">
                     No scenario flags available.
                   </div>
