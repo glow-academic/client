@@ -61,7 +61,7 @@ BEGIN
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
+            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
         
@@ -70,7 +70,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND drafts_entry.profile_id = v_profile_id
+          AND EXISTS (SELECT 1 FROM profile_drafts_junction pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profile_id = v_profile_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -110,12 +110,11 @@ BEGIN
     IF v_draft_id IS NULL THEN
         -- Create group first
         INSERT INTO groups_entry (created_at, updated_at, session_id)
-        VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
+        VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
         
         -- Create draft
         INSERT INTO drafts_entry (
-            profile_id,
             artifact,
             version,
             group_id,
@@ -123,7 +122,6 @@ BEGIN
             updated_at
         )
         VALUES (
-            v_profile_id,
             'provider'::artifact_type,
             1,
             v_group_id,

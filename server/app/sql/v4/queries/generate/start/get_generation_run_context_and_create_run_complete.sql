@@ -117,7 +117,7 @@ existing_group_from_param AS (
 create_group_if_needed AS (
     -- Create new group if needed (only if group_id not provided)
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = socket_get_generation_run_context_and_create_run_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id as group_id, trace_id

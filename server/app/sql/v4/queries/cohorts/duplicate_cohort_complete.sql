@@ -90,7 +90,7 @@ description_resource AS (
 ),
 new_group AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
+    VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = api_duplicate_cohort_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
     RETURNING id
 ),
 new_cohort AS (

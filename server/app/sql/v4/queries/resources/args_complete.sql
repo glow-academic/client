@@ -134,15 +134,18 @@ BEGIN
     v_message_id := uuidv7();
     INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
-    
-    -- Link message to call
-    UPDATE calls_entry SET message_id = v_message_id WHERE id = v_call_id;
-    
+
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO runs_entry (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
-    VALUES (v_run_id, api_create_args_v4.agent_id, 0, 0, 0, NOW(), NOW());
+    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    VALUES (v_run_id, 0, 0, 0, NOW(), NOW());
+
+    -- Link agent to run
+    INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_args_v4.agent_id, v_run_id);
     
+    -- Link call to run
+    UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
+
     -- Link message to run
     UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
     

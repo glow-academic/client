@@ -101,18 +101,20 @@ BEGIN
     -- Create call record
     v_call_id := uuidv7();
     INSERT INTO calls_entry (
-        id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at
+        id, external_call_id, template_id, arguments_raw, completed, created_at, updated_at
     )
     VALUES (
         v_call_id,
         'run_rubrics_' || v_call_id::text,
-        v_tool_id,
         v_template_id,
         v_arguments_raw,
         true,
         NOW(),
         NOW()
     );
+
+    -- Link tool to call
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
 
     -- INSERT INTO run_rubrics_resource table (always insert, never update)
     INSERT INTO run_rubrics_resource (
@@ -146,17 +148,19 @@ BEGIN
     INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
 
-    -- Link message to call
-    UPDATE calls_entry SET message_id = v_message_id WHERE id = v_call_id;
-
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO runs_entry (id, agent_id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
-    VALUES (v_run_id, agent_id, 0, 0, 0, api_create_run_rubrics_v4.group_id, NOW(), NOW());
+    INSERT INTO runs_entry (id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+    VALUES (v_run_id, 0, 0, 0, api_create_run_rubrics_v4.group_id, NOW(), NOW());
+
+    -- Link agent to run
+    INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_run_rubrics_v4.agent_id, v_run_id);
+
+    -- Link call to run
+    UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
 
     -- Link message to run
     UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
-
 
     RETURN QUERY SELECT v_resource_id;
 END;
