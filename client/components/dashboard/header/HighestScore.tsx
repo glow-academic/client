@@ -73,9 +73,11 @@ export default function HighestScore({
         onClick={() => setIsDialogOpen(true)}
       >
         <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${statusDotClass}`} />
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Highest Score</CardTitle>
-          <Trophy className="h-4 w-4" style={{ color: chartColor }} />
+        <CardHeader className="pb-2 space-y-0">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Trophy className="h-4 w-4 shrink-0" style={{ color: chartColor }} />
+            Highest Score
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className="text-2xl font-bold" style={{ color: chartColor }}>

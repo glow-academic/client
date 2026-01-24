@@ -137,6 +137,43 @@ export function getChartColors(): string[] {
 }
 
 /**
+ * Applies alpha/opacity to a color string in any format (rgb, hex, oklch).
+ * Returns an rgba() color string.
+ *
+ * @param color - Color in rgb()/hex/oklch format (as returned by useChartColors)
+ * @param alpha - Alpha value from 0 to 1
+ * @returns Color string with alpha applied
+ */
+export function colorWithAlpha(color: string, alpha: number): string {
+  // Handle rgb(r, g, b) or rgb(r g b) format
+  const rgbMatch = color.match(
+    /rgb\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)\s*\)/,
+  );
+  if (rgbMatch) {
+    return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
+  }
+
+  // Handle hex format
+  if (color.startsWith("#")) {
+    const hex = color.slice(1);
+    let r: number, g: number, b: number;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  // For oklch or other formats, use color-mix as fallback
+  return `color-mix(in srgb, ${color} ${Math.round(alpha * 100)}%, transparent)`;
+}
+
+/**
  * Returns inline style for a subtle chart-color background gradient.
  * Useful for applying chart colors to card backgrounds at runtime.
  *
@@ -148,18 +185,9 @@ export function chartColorBackground(
   color: string,
   intensity: number = 0.08,
 ): { background: string; border: string } {
-  const hex = Math.round(intensity * 255)
-    .toString(16)
-    .padStart(2, "0");
-  const halfHex = Math.round(intensity * 0.5 * 255)
-    .toString(16)
-    .padStart(2, "0");
-  const borderHex = Math.round(intensity * 2.5 * 255)
-    .toString(16)
-    .padStart(2, "0");
   return {
-    background: `linear-gradient(to bottom right, ${color}${hex}, ${color}${halfHex})`,
-    border: `1px solid ${color}${borderHex}`,
+    background: `linear-gradient(to bottom right, ${colorWithAlpha(color, intensity)}, ${colorWithAlpha(color, intensity * 0.5)})`,
+    border: `1px solid ${colorWithAlpha(color, intensity * 2.5)}`,
   };
 }
 

@@ -1,8 +1,9 @@
 -- Dashboard history query with pagination, search, filters, and sorting
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- EARLY PAGINATION: filters + search first, then LIMIT/OFFSET, then expensive aggregations only for page
 --
--- Parameters: start_date, end_date, cohort_ids, department_ids, roles, simulation_filters, search, 
+-- Parameters: start_date, end_date, cohort_ids, department_ids, roles, simulation_filters, search,
 --            profile_ids, simulation_ids, scenario_ids, infinite_mode, sort_by, sort_order, page_size, offset, profile_id
 -- Returns: Paginated history data with options arrays
 -- 1) Drop function first (breaks dependency on types)
@@ -11,9 +12,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_get_dashboard_history_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -27,9 +28,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_get_dashboard_history_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -122,7 +123,7 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT 
+    SELECT
         start_date::timestamptz AS start_date,
         end_date::timestamptz AS end_date,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
@@ -140,6 +141,11 @@ WITH params AS (
         COALESCE("offset", 0) AS offset_val,
         COALESCE(profile_id, NULL::uuid) AS profile_id
 ),
+
+-- ═══════════════════════════════════════════════════════════════
+-- PHASE 1: Filter chain (unchanged)
+-- ═══════════════════════════════════════════════════════════════
+
 -- Expanded cohort list: union of provided cohortIds (dashboard never filters by profile)
 expanded_history_cohort_ids AS (
     SELECT DISTINCT cohort_id
@@ -166,7 +172,7 @@ history_attempts AS (
     JOIN simulation_artifact sim ON sim.id = saj.simulation_id
     JOIN profile_artifact p_attempt ON p_attempt.id = paj.profile_id
     LEFT JOIN (
-        SELECT 
+        SELECT
             sd.simulation_id,
             ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
         FROM simulation_departments_junction sd
@@ -232,7 +238,7 @@ history_attempts_filtered AS (
 ),
 -- Get all unique profile options from filtered attempts (before history-specific filters)
 profile_options_cte AS (
-    SELECT 
+    SELECT
         haf.profile_id,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') AS profile_name,
         COUNT(DISTINCT haf.attempt_id) AS count
@@ -243,7 +249,7 @@ profile_options_cte AS (
 ),
 -- Get all unique simulation options from filtered attempts (before history-specific filters)
 simulation_options_cte AS (
-    SELECT 
+    SELECT
         haf.simulation_id,
         (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_name,
         COUNT(DISTINCT haf.attempt_id) AS count
@@ -270,7 +276,7 @@ scenario_options_cte AS (
 history_attempts_with_filters AS (
     SELECT haf.*
     FROM history_attempts_filtered haf
-    WHERE 
+    WHERE
         -- Profile filter
         (cardinality((SELECT profile_ids FROM params)::uuid[]) = 0 OR haf.profile_id = ANY((SELECT profile_ids FROM params)::uuid[]))
         -- Simulation filter
@@ -293,10 +299,148 @@ history_attempts_final AS (
     SELECT haf.*
     FROM history_attempts_with_filters haf
     LEFT JOIN attempt_scenario_ids asi ON asi.attempt_id = haf.attempt_id
-    WHERE 
+    WHERE
         -- Scenario filter (if any scenario matches, include the attempt)
         (cardinality((SELECT scenario_ids FROM params)) = 0 OR asi.scenario_ids IS NULL OR asi.scenario_ids && (SELECT scenario_ids FROM params))
 ),
+
+-- ═══════════════════════════════════════════════════════════════
+-- PHASE 2: Lightweight score for sort (only computed when sort_by = 'score')
+-- ═══════════════════════════════════════════════════════════════
+
+score_for_sort AS (
+    SELECT
+        sc.attempt_id,
+        CASE
+            WHEN haf.infinite_mode THEN
+                CASE GREATEST(COUNT(DISTINCT scj.scenario_id), 0)
+                    WHEN 0 THEN NULL
+                    ELSE ROUND(
+                        SUM(CASE WHEN hcg.score IS NOT NULL AND rp_total.value > 0
+                            THEN TRUNC(hcg.score / rp_total.value::numeric * 100.0, 2)
+                            ELSE 0 END)
+                        / GREATEST(COUNT(DISTINCT scj.scenario_id), 1)
+                    )::int
+                END
+            ELSE
+                CASE (SELECT COUNT(*) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = haf.simulation_id)
+                    WHEN 0 THEN NULL
+                    ELSE CASE
+                        WHEN COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) = 0 THEN NULL
+                        ELSE ROUND(
+                            SUM(CASE WHEN hcg.score IS NOT NULL AND rp_total.value > 0
+                                THEN TRUNC(hcg.score / rp_total.value::numeric * 100.0, 2)
+                                ELSE 0 END)
+                            / NULLIF((SELECT COUNT(*) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = haf.simulation_id), 0)
+                        )::int
+                    END
+                END
+        END AS score_percent
+    FROM history_attempts_final haf
+    JOIN chats_entry sc ON sc.attempt_id = haf.attempt_id
+    JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
+    LEFT JOIN LATERAL (
+        SELECT scg.score FROM grades_entry scg
+        WHERE scg.chat_id = sc.id
+        ORDER BY scg.created_at DESC LIMIT 1
+    ) hcg ON TRUE
+    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = scj.scenario_id
+    LEFT JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type
+    LEFT JOIN points_resource rp_total ON rp_total.id = rp.point_id
+    WHERE (SELECT sort_by FROM params) = 'score'
+    GROUP BY sc.attempt_id, haf.infinite_mode, haf.simulation_id
+),
+
+-- ═══════════════════════════════════════════════════════════════
+-- PHASE 3: Search + lightweight sortable rows
+-- ═══════════════════════════════════════════════════════════════
+
+-- Profile name lookup (needed for search + display)
+profile_name_lookup AS (
+    SELECT DISTINCT ON (pn.profile_id) pn.profile_id, n.name
+    FROM profile_names_junction pn
+    JOIN names_resource n ON pn.name_id = n.id
+    WHERE pn.profile_id IN (SELECT profile_id FROM history_attempts_final)
+),
+-- Combine filter results with sort key and searchable fields
+searchable_rows AS (
+    SELECT
+        haf.attempt_id,
+        haf.attempt_date,
+        haf.simulation_name,
+        haf.simulation_id,
+        haf.profile_id,
+        haf.is_archived,
+        haf.infinite_mode,
+        haf.practice_simulation,
+        haf.department_ids,
+        COALESCE(pnl.name, '') AS profile_name,
+        sfs.score_percent
+    FROM history_attempts_final haf
+    LEFT JOIN profile_name_lookup pnl ON pnl.profile_id = haf.profile_id
+    LEFT JOIN score_for_sort sfs ON sfs.attempt_id = haf.attempt_id
+    WHERE
+        (SELECT search FROM params) IS NULL
+        OR (SELECT search FROM params) = ''
+        OR LOWER(COALESCE(pnl.name, '')) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
+        OR LOWER(haf.simulation_name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
+        -- Persona name search via EXISTS (no pre-materialization needed)
+        OR EXISTS (
+            SELECT 1
+            FROM chats_entry sc
+            JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
+            JOIN scenario_personas_junction sp ON sp.scenario_id = scj.scenario_id AND sp.active = TRUE
+            JOIN persona_names_junction pn ON pn.persona_id = sp.persona_id
+            JOIN names_resource n ON n.id = pn.name_id
+            WHERE sc.attempt_id = haf.attempt_id
+              AND LOWER(n.name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
+        )
+),
+
+-- ═══════════════════════════════════════════════════════════════
+-- PHASE 4: Count + Paginate on IDs
+-- ═══════════════════════════════════════════════════════════════
+
+total_count_cte AS (
+    SELECT COUNT(*)::bigint AS total_count FROM searchable_rows
+),
+archive_counts_cte AS (
+    SELECT
+        COUNT(*) FILTER (WHERE is_archived = true)::bigint AS archived_count,
+        COUNT(*) FILTER (WHERE is_archived = false)::bigint AS unarchived_count
+    FROM searchable_rows
+),
+paginated_ids AS (
+    SELECT attempt_id
+    FROM searchable_rows
+    ORDER BY
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'desc' THEN attempt_date
+        END DESC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'asc' THEN attempt_date
+        END ASC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'desc' THEN simulation_name
+        END DESC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'asc' THEN simulation_name
+        END ASC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(score_percent, -1)
+        END DESC,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(score_percent, 999999)
+        END ASC,
+        attempt_id DESC
+    LIMIT (SELECT page_size FROM params)
+    OFFSET (SELECT offset_val FROM params)
+),
+
+-- ═══════════════════════════════════════════════════════════════
+-- PHASE 5: Expensive aggregations — ONLY for paginated set (~20 rows)
+-- ═══════════════════════════════════════════════════════════════
+
 -- Aggregate chats_entry per attempt
 history_chat_rollup AS (
     SELECT
@@ -308,7 +452,7 @@ history_chat_rollup AS (
         array_agg(DISTINCT scj3.scenario_id) FILTER (WHERE scj3.scenario_id IS NOT NULL) AS scenario_ids_seen
     FROM chats_entry sc
     JOIN scenario_chats_junction scj3 ON scj3.chat_id = sc.id
-    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     GROUP BY sc.attempt_id
 ),
 -- Get latest grade per chat
@@ -319,7 +463,7 @@ history_chat_grades AS (
     FROM grades_entry scg
     WHERE scg.chat_id IN (
         SELECT sc.id FROM chats_entry sc
-        WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+        WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     )
     ORDER BY scg.chat_id, scg.created_at DESC
 ),
@@ -335,7 +479,7 @@ history_grade_rollup AS (
     FROM chats_entry sc
     JOIN scenario_chats_junction scj4 ON scj4.chat_id = sc.id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
-    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     GROUP BY sc.attempt_id
 ),
 -- Calculate elapsed time per attempt (for infinite mode time limit checks)
@@ -363,7 +507,7 @@ history_elapsed_time AS (
         ) AS elapsed_seconds
     FROM chats_entry sc
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
-    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     GROUP BY sc.attempt_id
 ),
 -- Get personas for each attempt
@@ -375,7 +519,7 @@ history_personas AS (
     JOIN scenario_chats_junction scj5 ON scj5.chat_id = sc.id
     JOIN scenarios_resource scn ON scn.id = scj5.scenario_id
     LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = scn.id AND sp.active = TRUE
-    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     GROUP BY sc.attempt_id
 ),
 -- Count scenarios per simulation
@@ -385,7 +529,7 @@ history_sim_scenario_count AS (
         COUNT(ss.scenario_id)::int AS scenario_count
     FROM simulation_artifact s
     LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = s.id
-    WHERE s.id IN (SELECT simulation_id FROM history_attempts_final)
+    WHERE s.id IN (SELECT DISTINCT simulation_id FROM history_attempts_final WHERE attempt_id IN (SELECT attempt_id FROM paginated_ids))
     GROUP BY s.id
 ),
 -- Get scenario info
@@ -395,7 +539,7 @@ history_scenario_ids AS (
         ARRAY_AGG(ss.scenario_id ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1))::uuid[] AS scenario_ids_assigned
     FROM simulation_artifact s
     LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = s.id
-    WHERE s.id IN (SELECT simulation_id FROM history_attempts_final)
+    WHERE s.id IN (SELECT DISTINCT simulation_id FROM history_attempts_final WHERE attempt_id IN (SELECT attempt_id FROM paginated_ids))
     GROUP BY s.id
 ),
 -- Get first scenario_id from each attempt's first chat (for practice scenario retry)
@@ -405,7 +549,7 @@ history_first_scenario AS (
         scj6.scenario_id AS practice_scenario_id
     FROM chats_entry sc
     JOIN scenario_chats_junction scj6 ON scj6.chat_id = sc.id
-    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     ORDER BY sc.attempt_id, sc.created_at ASC
 ),
 -- Join all history data
@@ -437,13 +581,7 @@ attempt_rollup AS (
     LEFT JOIN history_sim_scenario_count hssc ON hssc.simulation_id = haf.simulation_id
     LEFT JOIN history_elapsed_time het ON het.attempt_id = haf.attempt_id
     LEFT JOIN history_first_scenario hfs ON hfs.attempt_id = haf.attempt_id
-),
-attempt_cohort_ids AS (
-    SELECT
-        attempt_id,
-        cohort_ids AS profile_cohort_ids
-    FROM history_attempt_cohorts
-    WHERE attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE haf.attempt_id IN (SELECT attempt_id FROM paginated_ids)
 ),
 -- Get rubric data per simulation (one row per simulation)
 simulation_rubrics AS (
@@ -490,7 +628,7 @@ attempt_cohort_names AS (
         attempt_id,
         cohort_names_junction
     FROM history_attempt_cohorts
-    WHERE attempt_id IN (SELECT attempt_id FROM history_attempts_final)
+    WHERE attempt_id IN (SELECT attempt_id FROM paginated_ids)
 ),
 final_rows AS (
     SELECT
@@ -564,30 +702,17 @@ final_rows AS (
         aj.persona_ids_distinct
     FROM attempt_joined aj
 ),
--- Apply search filter (searches profile name, simulation name, persona names)
-final_rows_with_search AS (
-    SELECT fr.*
-    FROM final_rows fr
-    WHERE 
-        -- Search filter: if search term provided, search in profile name, simulation name, or persona names
-        ((SELECT search FROM params) IS NULL OR (SELECT search FROM params) = '' OR
-         LOWER(fr.profile_name) LIKE '%' || LOWER((SELECT search FROM params)) || '%' OR
-         LOWER(fr.simulation_name) LIKE '%' || LOWER((SELECT search FROM params)) || '%' OR
-         EXISTS (
-             SELECT 1
-             FROM unnest(fr.persona_ids_distinct) AS pid
-             JOIN personas_resource per ON per.id = pid
-             JOIN persona_names_junction pn ON pn.persona_id = per.id
-             JOIN names_resource n ON n.id = pn.name_id
-             WHERE LOWER(n.name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
-         ))
-),
+
+-- ═══════════════════════════════════════════════════════════════
+-- PHASE 6: Build response (persona/scenario labels only for page)
+-- ═══════════════════════════════════════════════════════════════
+
 persona_labels AS (
     SELECT
         fr.attempt_id,
         COALESCE(ARRAY_AGG(per.name ORDER BY per.name) FILTER (WHERE per.name IS NOT NULL), ARRAY[]::text[]) AS persona_names_junction,
         COALESCE(ARRAY_AGG(per.color ORDER BY per.name) FILTER (WHERE per.color IS NOT NULL), ARRAY[]::text[]) AS persona_colors_junction
-    FROM final_rows_with_search fr
+    FROM final_rows fr
     LEFT JOIN LATERAL (
         SELECT DISTINCT n.name AS name, c.hex_code AS color
         FROM unnest(fr.persona_ids_distinct) AS pid
@@ -603,136 +728,77 @@ scenario_names_junction AS (
     SELECT
         fr.attempt_id,
         COALESCE(sn.names, ARRAY[]::text[]) AS names
-    FROM final_rows_with_search fr
+    FROM final_rows fr
     LEFT JOIN LATERAL (
         SELECT ARRAY_AGG((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)) AS names
         FROM unnest(fr.scenario_ids_assigned) sid
         JOIN scenarios_resource s ON s.id = sid
     ) sn ON TRUE
 ),
--- Get total count before pagination
-total_count_cte AS (
-    SELECT COUNT(*)::bigint AS total_count
-    FROM final_rows_with_search
-),
--- Get archived and unarchived counts for filtered set
-archive_counts_cte AS (
-    SELECT 
-        COUNT(*) FILTER (WHERE is_archived = true)::bigint AS archived_count,
-        COUNT(*) FILTER (WHERE is_archived = false)::bigint AS unarchived_count
-    FROM final_rows_with_search
-),
--- Paginated and sorted results
-paginated_rows AS (
-    SELECT
-        fr.attempt_id,
-        fr.attempt_date,
-        fr.profile_id,
-        fr.profile_name,
-        fr.simulation_name,
-        fr.num_scenarios,
-        fr.num_scenarios_completed,
-        fr.infinite_mode,
-        fr.score_percent,
-        fr.score_status,
-        fr.simulation_id,
-        fr.scenario_ids_assigned,
-        fr.is_archived,
-        fr.show_view,
-        fr.show_continue,
-        fr.practice_simulation,
-        fr.pass_pct,
-        fr.department_ids,
-        fr.practice_scenario_id,
-        fr.persona_ids_distinct
-    FROM final_rows_with_search fr
-    ORDER BY 
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'desc' THEN fr.attempt_date
-        END DESC NULLS LAST,
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'asc' THEN fr.attempt_date
-        END ASC NULLS LAST,
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'desc' THEN fr.simulation_name
-        END DESC NULLS LAST,
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'asc' THEN fr.simulation_name
-        END ASC NULLS LAST,
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(fr.score_percent, -1)
-        END DESC,
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(fr.score_percent, 999999)
-        END ASC,
-        fr.attempt_id DESC
-    LIMIT (SELECT page_size FROM params)
-    OFFSET (SELECT offset_val FROM params)
-),
 -- Convert paginated rows to composite types
 data_agg AS (
     SELECT COALESCE(
         ARRAY_AGG(
             (
-                pr.attempt_id,
-                pr.attempt_date,
-                pr.profile_id,
-                pr.profile_name,
-                pr.simulation_name,
-                pr.num_scenarios,
-                pr.num_scenarios_completed,
-                pr.infinite_mode,
+                fr.attempt_id,
+                fr.attempt_date,
+                fr.profile_id,
+                fr.profile_name,
+                fr.simulation_name,
+                fr.num_scenarios,
+                fr.num_scenarios_completed,
+                fr.infinite_mode,
                 COALESCE(
                     (SELECT SUM(stlr.time_limit_seconds)
                      FROM simulation_scenario_time_limits_junction sstl
                      JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
                      JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-                     WHERE sstl.simulation_id = pr.simulation_id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)),
+                     WHERE sstl.simulation_id = fr.simulation_id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)),
                     0
                 ),
                 COALESCE(pl.persona_names_junction, ARRAY[]::text[]),
                 COALESCE(pl.persona_colors_junction, ARRAY[]::text[]),
-                pr.score_percent,
-                pr.score_status,
-                pr.simulation_id,
-                COALESCE(pr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
+                fr.score_percent,
+                fr.score_status,
+                fr.simulation_id,
+                COALESCE(fr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
                 COALESCE(sn.names, ARRAY[]::text[]),
-                pr.is_archived,
-                pr.show_view,
-                pr.show_continue,
-                COALESCE(pr.practice_simulation, false),
-                pr.pass_pct,
-                pr.department_ids,
+                fr.is_archived,
+                fr.show_view,
+                fr.show_continue,
+                COALESCE(fr.practice_simulation, false),
+                fr.pass_pct,
+                fr.department_ids,
                 COALESCE(acn.cohort_names_junction, ARRAY[]::text[]),
-                pr.practice_scenario_id
+                fr.practice_scenario_id
             )::types.q_get_dashboard_history_v4_attempt_history_row
-            ORDER BY 
-                CASE 
-                    WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'desc' THEN pr.attempt_date
+            ORDER BY
+                CASE
+                    WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'desc' THEN fr.attempt_date
                 END DESC NULLS LAST,
-                CASE 
-                    WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'asc' THEN pr.attempt_date
+                CASE
+                    WHEN (SELECT sort_by FROM params) = 'date' AND (SELECT sort_order FROM params) = 'asc' THEN fr.attempt_date
                 END ASC NULLS LAST,
-                CASE 
-                    WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'desc' THEN pr.simulation_name
+                CASE
+                    WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'desc' THEN fr.simulation_name
                 END DESC NULLS LAST,
-                CASE 
-                    WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'asc' THEN pr.simulation_name
+                CASE
+                    WHEN (SELECT sort_by FROM params) = 'simulationName' AND (SELECT sort_order FROM params) = 'asc' THEN fr.simulation_name
                 END ASC NULLS LAST,
-                CASE 
-                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(pr.score_percent, -1)
+                CASE
+                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'desc' THEN COALESCE(fr.score_percent, -1)
                 END DESC,
-                CASE 
-                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(pr.score_percent, 999999)
+                CASE
+                    WHEN (SELECT sort_by FROM params) = 'score' AND (SELECT sort_order FROM params) = 'asc' THEN COALESCE(fr.score_percent, 999999)
                 END ASC,
-                pr.attempt_id DESC
+                fr.attempt_id DESC
         ),
         '{}'::types.q_get_dashboard_history_v4_attempt_history_row[]
     ) AS data
-    FROM paginated_rows pr
-    LEFT JOIN persona_labels pl ON pl.attempt_id = pr.attempt_id
-    LEFT JOIN scenario_names_junction sn ON sn.attempt_id = pr.attempt_id
-    LEFT JOIN attempt_cohort_names acn ON acn.attempt_id = pr.attempt_id
+    FROM final_rows fr
+    LEFT JOIN persona_labels pl ON pl.attempt_id = fr.attempt_id
+    LEFT JOIN scenario_names_junction sn ON sn.attempt_id = fr.attempt_id
+    LEFT JOIN attempt_cohort_names acn ON acn.attempt_id = fr.attempt_id
 ),
 -- Convert options to composite types
 profile_options_agg AS (

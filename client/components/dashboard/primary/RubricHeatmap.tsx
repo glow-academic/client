@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useChartColors } from "@/lib/utils/chartColors";
+import { colorWithAlpha, useChartColors } from "@/lib/utils/chartColors";
 import { TruncatedInsight } from "../TruncatedInsight";
 
 type RubricHeatmapCell = {
@@ -156,11 +156,10 @@ export default function RubricHeatmap({
     const absCorr = Math.abs(correlation);
     // Scale opacity from 0.1 (weak) to 0.8 (strong)
     const opacity = Math.max(0.1, Math.min(0.8, absCorr));
-    const opacityHex = Math.round(opacity * 255).toString(16).padStart(2, "0");
-    if (correlation > 0.1) return `${positiveColor}${opacityHex}`;
-    if (correlation < -0.1) return `${negativeColor}${opacityHex}`;
+    if (correlation > 0.1) return colorWithAlpha(positiveColor, opacity);
+    if (correlation < -0.1) return colorWithAlpha(negativeColor, opacity);
     // Near zero: use a very faint neutral tint
-    return `${chartColors[2]}15`;
+    return colorWithAlpha(chartColors[2], 0.08);
   };
 
   // Show no data state
@@ -341,10 +340,7 @@ export default function RubricHeatmap({
                                       >
                                         <span
                                           className={cn(
-                                            "font-semibold",
-                                            Math.abs(cell.correlation) >= 0.7
-                                              ? "text-white"
-                                              : "text-gray-800",
+                                            "font-semibold text-foreground",
                                           )}
                                         >
                                           {cell.correlation.toFixed(2)}
@@ -376,10 +372,7 @@ export default function RubricHeatmap({
                                   >
                                     <span
                                       className={cn(
-                                        "font-semibold",
-                                        Math.abs(cell.correlation) >= 0.7
-                                          ? "text-white"
-                                          : "text-gray-800",
+                                        "font-semibold text-foreground",
                                       )}
                                     >
                                       {cell.correlation.toFixed(2)}

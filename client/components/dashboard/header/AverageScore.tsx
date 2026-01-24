@@ -72,9 +72,11 @@ export default function AverageScore({
         onClick={() => setIsDialogOpen(true)}
       >
         <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${statusDotClass}`} />
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-          <TrendingUp className="h-4 w-4" style={{ color: chartColor }} />
+        <CardHeader className="pb-2 space-y-0">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 shrink-0" style={{ color: chartColor }} />
+            Average Score
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className="text-2xl font-bold" style={{ color: chartColor }}>

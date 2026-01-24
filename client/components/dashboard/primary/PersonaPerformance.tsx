@@ -24,7 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { chartColorBackground, useChartColors, useStatusColor } from "@/lib/utils/chartColors";
+import { chartColorBackground, colorWithAlpha, useChartColors } from "@/lib/utils/chartColors";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
@@ -63,14 +63,12 @@ function CustomBarTooltip({
 
 // Helper component for persona trend chart to use hooks properly
 function PersonaTrendChart({
-  persona,
   trendData,
+  chartColor,
 }: {
-  persona: PersonaPerformanceData;
   trendData: PersonaTrendData[];
+  chartColor: string;
 }) {
-  const personaStatusColor = useStatusColor(persona.status);
-
   return (
     <div
       className="h-64"
@@ -118,9 +116,9 @@ function PersonaTrendChart({
           <Line
             type="monotone"
             dataKey="score"
-            stroke={personaStatusColor}
+            stroke={chartColor}
             strokeWidth={2}
-            dot={{ r: 4, fill: personaStatusColor }}
+            dot={{ r: 4, fill: chartColor }}
             name="Score"
           />
         </LineChart>
@@ -387,7 +385,10 @@ export default function PersonaPerformance({
                 <DialogTrigger asChild>
                   <div
                     className="flex items-center justify-between p-4 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                    style={chartColorBackground(chartColors[index % chartColors.length])}
+                    style={{
+                      ...chartColorBackground(chartColors[index % chartColors.length]),
+                      borderLeft: `3px solid ${colorWithAlpha(chartColors[index % chartColors.length], 0.7)}`,
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -428,8 +429,8 @@ export default function PersonaPerformance({
                   <div className="space-y-6">
                     {/* Performance Trend Chart */}
                     <PersonaTrendChart
-                      persona={persona}
                       trendData={getFilteredTrendData(persona)}
+                      chartColor={chartColors[index % chartColors.length]}
                     />
 
                     {/* Actionable Insights */}
