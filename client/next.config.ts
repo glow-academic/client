@@ -2,6 +2,7 @@
 import type { NextConfig } from "next";
 import type { WebpackConfigContext } from "next/dist/server/config-shared";
 import type { Configuration as WebpackConfig } from "webpack";
+import path from "path";
 
 module.exports = {
   basePath: process.env["APP_PREFIX"] || "",
@@ -20,6 +21,18 @@ module.exports = {
     config: WebpackConfig,
     { isServer, webpack }: WebpackConfigContext
   ): WebpackConfig => {
+    // Fix @radix-ui/react-compose-refs unstable useComposedRefs with React 19
+    config.resolve = {
+      ...config.resolve,
+      alias: {
+        ...(config.resolve?.alias as Record<string, string>),
+        "@radix-ui/react-compose-refs": path.resolve(
+          __dirname,
+          "lib/patches/react-compose-refs.ts"
+        ),
+      },
+    };
+
     if (!isServer) {
       config.resolve = {
         ...config.resolve,

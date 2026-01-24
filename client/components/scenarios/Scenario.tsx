@@ -275,36 +275,6 @@ function ScenarioComponent({
     ? serverScenarioDetail
     : serverScenarioDetailDefault;
 
-  // === DEBUG: Render tracking ===
-  const renderCountRef = useRef(0);
-  renderCountRef.current += 1;
-  const prevStateRef = useRef<Record<string, unknown>>({});
-  useEffect(() => {
-    const currentState: Record<string, unknown> = {
-      selectedDraftId,
-      isEditMode,
-      scenarioDataId: (scenarioData as Record<string, unknown> | undefined)?.scenario_id,
-      scenarioDataDraftVersion: (scenarioData as Record<string, unknown> | undefined)?.draft_version,
-    };
-    const changes: Record<string, { from: unknown; to: unknown }> = {};
-    for (const key of Object.keys(currentState)) {
-      if (prevStateRef.current[key] !== currentState[key]) {
-        changes[key] = { from: prevStateRef.current[key], to: currentState[key] };
-      }
-    }
-    if (Object.keys(changes).length > 0) {
-      console.warn(`[Scenario DEBUG] Render #${renderCountRef.current} - context/prop changes:`, changes);
-    }
-    prevStateRef.current = currentState;
-  });
-  if (renderCountRef.current <= 5 || renderCountRef.current % 10 === 0) {
-    console.warn(`[Scenario DEBUG] Render #${renderCountRef.current}, selectedDraftId=${selectedDraftId}`);
-  }
-  if (renderCountRef.current > 50) {
-    console.error(`[Scenario DEBUG] EXCESSIVE RENDERS: ${renderCountRef.current}. Possible infinite loop!`);
-  }
-  // === END DEBUG ===
-
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
     Set<ScenarioResourceType>
@@ -373,21 +343,14 @@ function ScenarioComponent({
   const onFormDataChange = useCallback((fd: Record<string, unknown>) => {
     formDataRef.current = fd;
     const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
-    console.warn("[Scenario DEBUG] onFormDataChange called, nextDraftId:", nextDraftId);
     setDraftId((prev) => {
-      if (prev !== nextDraftId) {
-        console.warn("[Scenario DEBUG] draftId changing:", prev, "→", nextDraftId);
-      }
       return prev === nextDraftId ? prev : nextDraftId;
     });
   }, []);
 
   // Sync URL draftId to profile context
   useEffect(() => {
-    console.warn("[Scenario DEBUG] draftId sync effect running. draftId:", draftId, "selectedDraftId:", selectedDraftId);
     if (draftId !== selectedDraftId) {
-      console.warn("[Scenario DEBUG] CALLING setSelectedDraftId:", draftId);
-      console.trace("[Scenario DEBUG] setSelectedDraftId call stack");
       setSelectedDraftId(draftId);
     }
   }, [draftId, selectedDraftId, setSelectedDraftId]);
@@ -489,7 +452,6 @@ function ScenarioComponent({
   );
 
   useEffect(() => {
-    console.warn("[Scenario DEBUG] formState sync effect running");
     const newState = getInitialFormState();
     setFormState((prev) => {
       if (
@@ -522,7 +484,6 @@ function ScenarioComponent({
         JSON.stringify(prev.question_ids) !==
           JSON.stringify(newState.question_ids)
       ) {
-        console.warn("[Scenario DEBUG] formState CHANGED by sync effect");
         return newState;
       }
       return prev;
@@ -567,12 +528,10 @@ function ScenarioComponent({
   // Track if version has been synced from server to prevent patching before sync
   const versionSyncedRef = useRef(false);
   useEffect(() => {
-    console.warn("[Scenario DEBUG] draftVersion sync effect, draftVersion:", draftVersion, "lastSaved:", lastSavedVersionRef.current);
     if (
       typeof draftVersion === "number" &&
       draftVersion !== lastSavedVersionRef.current
     ) {
-      console.warn("[Scenario DEBUG] Updating lastSavedVersion:", lastSavedVersionRef.current, "→", draftVersion);
       setLastSavedVersion(draftVersion);
       lastSavedVersionRef.current = draftVersion;
     }
