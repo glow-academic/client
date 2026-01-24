@@ -87,7 +87,7 @@ function ToolComponent({
   const router = useRouter();
   const isEditMode = !!toolId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -676,7 +676,7 @@ function ToolComponent({
         throw new Error("Args outputs are required");
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -719,7 +719,7 @@ function ToolComponent({
       formState,
       isEditMode,
       toolId,
-      effectiveProfile?.id,
+      profile?.id,
       saveToolAction,
       router,
       toolData?.args_required,

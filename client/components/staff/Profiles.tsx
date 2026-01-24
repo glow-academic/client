@@ -407,7 +407,7 @@ export default function Staff({
 }: ProfilesProps) {
   const router = useRouter();
   const {
-    effectiveProfile,
+    profile,
     departmentIds: profileDepartmentIds,
     roleResources,
   } = useProfile();
@@ -736,19 +736,33 @@ export default function Staff({
     (
       csvText: string
     ): { headers: string[]; rows: Record<string, string>[] } => {
-      const lines = csvText.split("\n").filter((line) => line.trim());
+      // Strip BOM character that Excel adds to CSV exports
+      const cleanText = csvText.replace(/^\ufeff/, "");
+      const lines = cleanText.split("\n").filter((line) => line.trim());
       if (lines.length < 2) {
         throw new Error("CSV must have at least a header row and one data row");
       }
 
-      const headers = lines[0]!.split(",").map((h) => h.trim());
+      const stripQuotes = (val: string): string => {
+        const trimmed = val.trim();
+        if (
+          trimmed.length >= 2 &&
+          trimmed.startsWith('"') &&
+          trimmed.endsWith('"')
+        ) {
+          return trimmed.slice(1, -1).replace(/""/g, '"');
+        }
+        return trimmed;
+      };
+
+      const headers = lines[0]!.split(",").map((h) => stripQuotes(h));
       const rows: Record<string, string>[] = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
         if (!line?.trim()) continue;
 
-        const values = line.split(",").map((v) => v.trim());
+        const values = line.split(",").map((v) => stripQuotes(v));
         const row: Record<string, string> = {};
         headers.forEach((header, index) => {
           row[header] = values[index] || "";
@@ -1092,7 +1106,7 @@ export default function Staff({
         return;
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile ID is required");
         return;
       }
@@ -1100,7 +1114,7 @@ export default function Staff({
       const response = await bulkCreateOrUpdateStaffAction({
         body: {
           profiles,
-          current_profile_id: effectiveProfile.id,
+          current_profile_id: profile.id,
         },
       });
 
@@ -1129,7 +1143,7 @@ export default function Staff({
     validRoles,
     bulkCreateOrUpdateStaffAction,
     router,
-    effectiveProfile?.id,
+    profile?.id,
   ]);
 
   const validRowCount = processedRows.filter(
@@ -1636,7 +1650,7 @@ export default function Staff({
           />
           <AdminUsersKPI
             currentValue={
-              effectiveProfile?.role === "superadmin"
+              profile?.role === "superadmin"
                 ? (counts.superadmin || 0) + (counts.admin || 0)
                 : counts.admin
             }
@@ -2548,7 +2562,7 @@ export default function Staff({
                                   ? s.emails[0]
                                   : "")}
                               )
-                              {s.profile_id === effectiveProfile?.id
+                              {s.profile_id === profile?.id
                                 ? " – your account"
                                 : " – cannot delete"}
                             </li>
@@ -2638,7 +2652,7 @@ export default function Staff({
                                 ? staffMember.emails[0]
                                 : "")}
                             )
-                            {staffMember.profile_id === effectiveProfile?.id
+                            {staffMember.profile_id === profile?.id
                               ? " – your account"
                               : " – cannot delete"}
                           </p>
@@ -2708,14 +2722,14 @@ export default function Staff({
 
                   try {
                     if (!deleteStaffAction) return;
-                    if (!effectiveProfile?.id) {
+                    if (!profile?.id) {
                       toast.error("Profile ID is required");
                       return;
                     }
                     await deleteStaffAction({
                       body: {
                         target_profile_id: deleteStaffMember.profile_id,
-                        current_profile_id: effectiveProfile.id,
+                        current_profile_id: profile.id,
                       },
                     });
                     router.refresh();

@@ -63,7 +63,7 @@ export default function Agents({
   duplicateAgentAction,
   deleteAgentAction,
 }: AgentsProps) {
-  const { effectiveProfile } = useProfile();
+  const { profile } = useProfile();
   const router = useRouter();
 
   // Delete dialog state
@@ -281,7 +281,7 @@ export default function Agents({
   };
 
   const handleDuplicate = async (id: string) => {
-    if (!duplicateAgentAction || !effectiveProfile?.id) return;
+    if (!duplicateAgentAction || !profile?.id) return;
 
     try {
       await duplicateAgentAction({
@@ -295,7 +295,7 @@ export default function Agents({
   };
 
   const handleDelete = async () => {
-    if (!deleteItem || !deleteAgentAction || !effectiveProfile?.id) return;
+    if (!deleteItem || !deleteAgentAction || !profile?.id) return;
 
     setIsDeleting(true);
     try {

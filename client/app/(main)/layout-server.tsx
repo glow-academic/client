@@ -220,13 +220,11 @@ export async function getLayoutContextData(session?: Session | null) {
 
   // Early return if no valid profile context (user not logged in or invalid session)
   // Only return null if we truly don't have valid profile data
-  if (!initial || !initial.id || !initial.actual_id) {
+  if (!initial || !initial.id) {
     // eslint-disable-next-line no-console
     console.log("Returning null initial:", {
       hasInitial: !!initial,
       profileId,
-      initialEffectiveId: initial?.id,
-      initialActualId: initial?.actual_id,
     });
     return {
       initial: null,
@@ -308,7 +306,6 @@ export async function getLayoutContextData(session?: Session | null) {
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
 type SwitchEffectiveProfileParams = {
   targetProfileId: string;
-  fullEmulation?: boolean;
   returnUrl?: string;
 };
 
@@ -349,7 +346,6 @@ export async function switchEffectiveProfile(
       body: {
         requester_profile_id: session.user.profileId,
         target_profile_id: input.targetProfileId,
-        full_emulation: !!input.fullEmulation,
         ttl_minutes: null, // Use server default (120 minutes)
         return_url: input.returnUrl ?? null,
       },

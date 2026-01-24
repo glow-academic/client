@@ -97,7 +97,7 @@ export default async function MainLayout({
   // 1. Cookies are invalid (guest/default-account users)
   // 2. Session has invalid profile ID (profile doesn't exist in database)
   // 3. Database was reset but session still has old profile IDs
-  if (!initial || !initial.id || !initial.actual_id) {
+  if (!initial || !initial.id) {
     // If we have a session but profile resolution failed, the session is invalid
     // Show access denied with "not-logged-in" reason to prompt re-authentication
     const reason = session?.user?.profileId

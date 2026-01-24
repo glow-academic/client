@@ -29,18 +29,13 @@ export default function Practice({
 }: PracticeProps) {
   const router = useRouter();
 
-  const {
-    effectiveProfile,
-    activeProfile,
-    isConnected,
-    emitStartSimulation,
-    startingSimulationId,
-  } = useProfile();
+  const { profile, isConnected, emitStartSimulation, startingSimulationId } =
+    useProfile();
 
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null,
+    null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -63,7 +58,10 @@ export default function Practice({
   // API now returns arrays (standard_groups, standards) instead of mappings
   const standardGroupsMapping = useMemo(() => {
     if (!practiceOverview?.standard_groups) return {};
-    const mapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
+    const mapping: Record<
+      string,
+      { name: string; description: string; points: number; passPoints: number }
+    > = {};
     for (const sg of practiceOverview.standard_groups) {
       if (sg.standard_group_id) {
         mapping[String(sg.standard_group_id)] = {
@@ -79,7 +77,10 @@ export default function Practice({
 
   const standardsMapping = useMemo(() => {
     if (!practiceOverview?.standards) return {};
-    const mapping: Record<string, { name: string; description: string; points: number }> = {};
+    const mapping: Record<
+      string,
+      { name: string; description: string; points: number }
+    > = {};
     for (const st of practiceOverview.standards) {
       if (st.standard_id) {
         mapping[String(st.standard_id)] = {
@@ -123,14 +124,14 @@ export default function Practice({
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as unknown as EventListener,
+      handleSimulationStarted as unknown as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as unknown as EventListener,
+        handleSimulationStarted as unknown as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -143,14 +144,14 @@ export default function Practice({
     async (simulationId: string) => {
       try {
         // Only enforce profile for non-guests
-        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
+        if (profile?.role !== "guest" && !profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           return;
         }
@@ -161,7 +162,7 @@ export default function Practice({
         setLoadingToastId(toastId);
 
         const profileIdForEmit =
-          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
+          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
 
         emitStartSimulation({
           simulation_id: simulationId,
@@ -181,27 +182,21 @@ export default function Practice({
         setLoadingToastId(null);
       }
     },
-    [
-      effectiveProfile,
-      isConnected,
-      emitStartSimulation,
-      loadingToastId,
-      activeProfile,
-    ],
+    [profile, isConnected, emitStartSimulation, loadingToastId]
   );
 
   const handleStartInfiniteMode = useCallback(
     async (simulationId: string) => {
       try {
         // Only enforce profile for non-guests
-        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
+        if (profile?.role !== "guest" && !profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           return;
         }
@@ -212,7 +207,7 @@ export default function Practice({
         setLoadingToastId(toastId);
 
         const profileIdForEmit =
-          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
+          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
 
         emitStartSimulation({
           simulation_id: simulationId,
@@ -233,16 +228,10 @@ export default function Practice({
         setLoadingToastId(null);
       }
     },
-    [
-      effectiveProfile,
-      isConnected,
-      emitStartSimulation,
-      loadingToastId,
-      activeProfile,
-    ],
+    [profile, isConnected, emitStartSimulation, loadingToastId]
   );
 
-  if (!effectiveProfile) {
+  if (!profile) {
     return null;
   }
 
@@ -271,8 +260,8 @@ export default function Practice({
             >
           }
           profile={{
-            ...effectiveProfile,
-            role: effectiveProfile.role as
+            ...profile,
+            role: profile.role as
               | "member"
               | "instructional"
               | "superadmin"

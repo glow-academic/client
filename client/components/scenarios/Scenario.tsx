@@ -269,7 +269,7 @@ function ScenarioComponent({
   const router = useRouter();
   const isEditMode = !!scenarioId;
   const {
-    effectiveProfile,
+    profile,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -2061,7 +2061,7 @@ function ScenarioComponent({
         throw new Error("Questions are required");
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -2114,7 +2114,7 @@ function ScenarioComponent({
       scenarioData?.images_required,
       scenarioData?.videos_required,
       scenarioData?.questions_required,
-      effectiveProfile?.id,
+      profile?.id,
       saveScenarioAction,
       draftId,
       isEditMode,

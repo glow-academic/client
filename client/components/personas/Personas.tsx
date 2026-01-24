@@ -104,7 +104,7 @@ export default function Personas({
   fieldSearch,
   departmentSearch,
 }: PersonasProps) {
-  const { effectiveProfile, socket, isConnected } = useProfile();
+  const { profile, socket, isConnected } = useProfile();
   const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
   const router = useRouter();
   const pathname = usePathname();
@@ -632,7 +632,7 @@ export default function Personas({
   const handleDelete = async () => {
     if (!deleteItem || !deletePersonaAction) return;
 
-    if (!effectiveProfile?.id) {
+    if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }
@@ -663,7 +663,7 @@ export default function Personas({
   const handleDuplicate = async (personaId: string, personaName: string) => {
     if (!duplicatePersonaAction) return;
 
-    if (!effectiveProfile?.id) {
+    if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }

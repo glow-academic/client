@@ -84,7 +84,7 @@ interface AnalyticsProviderProps {
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
   const {
-    effectiveProfile,
+    profile,
     earliestAttemptDate,
     cohortIds,
     departmentIds,
@@ -365,13 +365,13 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   // Resolve effective roles: force member-only for member users, default to all when empty
   const effectiveRoles = useMemo<ProfileRole[]>(() => {
-    if (effectiveProfile?.role === "member") return ["member"] as ProfileRole[];
+    if (profile?.role === "member") return ["member"] as ProfileRole[];
     // Empty selection means all roles
     if (selectedRoles.length === 0) {
       return ["superadmin", "admin", "instructional", "member", "guest"];
     }
     return selectedRoles;
-  }, [effectiveProfile?.role, selectedRoles]);
+  }, [profile?.role, selectedRoles]);
 
   // Resolve effective simulation filters: route-aware overrides, default to all when empty
   const effectiveSimulationFilters = useMemo<SimulationFilter[]>(() => {

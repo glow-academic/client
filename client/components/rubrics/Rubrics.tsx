@@ -68,7 +68,7 @@ export default function Rubrics({
   deleteRubricAction,
 }: RubricsProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { profile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -275,7 +275,7 @@ export default function Rubrics({
     if (!deleteItem || !deleteRubricAction) return;
 
     // Ensure profileId exists - required for API calls
-    if (!effectiveProfile?.id) {
+    if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }
@@ -305,7 +305,7 @@ export default function Rubrics({
     }
 
     // Ensure profileId exists - required for API calls
-    if (!effectiveProfile?.id) {
+    if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }

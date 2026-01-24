@@ -17,14 +17,14 @@ export default function Error({
   const router = useRouter();
   // Use useContext directly instead of useProfile() to avoid throwing and masking real errors
   const profileContext = useContext(ProfileContext);
-  const effectiveProfile = profileContext?.effectiveProfile ?? null;
+  const profile = profileContext?.profile ?? null;
 
   const handleBackToGlow = () => {
     // Navigate based on effective role if available, otherwise default to home
     if (
-      effectiveProfile?.role &&
-      effectiveProfile.role !== "member" &&
-      effectiveProfile.role !== "guest"
+      profile?.role &&
+      profile.role !== "member" &&
+      profile.role !== "guest"
     ) {
       router.push("/analytics");
     } else {

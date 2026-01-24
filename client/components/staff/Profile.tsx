@@ -118,7 +118,7 @@ function ProfileComponent({
   const router = useRouter();
   const isEditMode = !!staffId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -919,7 +919,7 @@ function ProfileComponent({
         throw new Error("Emails are required");
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -961,7 +961,7 @@ function ProfileComponent({
       formState,
       isEditMode,
       staffId,
-      effectiveProfile?.id,
+      profile?.id,
       saveStaffAction,
       router,
       staffData?.name_required,

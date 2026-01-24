@@ -122,7 +122,7 @@ function DocumentComponent({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -907,7 +907,7 @@ function DocumentComponent({
       }
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -951,7 +951,7 @@ function DocumentComponent({
       formState,
       isEditMode,
       documentId,
-      effectiveProfile?.id,
+      profile?.id,
       saveDocumentAction,
       router,
       documentDetail?.name_required,

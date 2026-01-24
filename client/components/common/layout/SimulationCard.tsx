@@ -27,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
@@ -85,7 +84,7 @@ export interface SimulationCardProps {
   onStartSimulation: (id: string) => void;
   onStartInfiniteMode?: (id: string) => void;
   loadingSimulation: string | null;
-  effectiveProfile: ProfileItem;
+  profile: ProfileItem;
 }
 
 export default function SimulationCard({
@@ -106,14 +105,8 @@ export default function SimulationCard({
   onStartSimulation,
   onStartInfiniteMode,
   loadingSimulation,
-  effectiveProfile,
+  profile,
 }: SimulationCardProps) {
-  const { activeProfile } = useProfile();
-  const isEmulatingAnother = Boolean(
-    effectiveProfile?.id &&
-      activeProfile?.id &&
-      effectiveProfile.id !== activeProfile.id,
-  );
 
   // Get persona configuration and icon based on persona data
   const IconComponent =
@@ -221,7 +214,7 @@ export default function SimulationCard({
             )}
             <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
               {/* Rubric Icon */}
-              {effectiveProfile?.role !== "guest" && (
+              {profile?.role !== "guest" && (
                 <Dialog>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -270,7 +263,7 @@ export default function SimulationCard({
                   </DialogContent>
                 </Dialog>
               )}
-              {effectiveProfile?.role === "guest" && (
+              {profile?.role === "guest" && (
                 <div className="text-right">
                   <div
                     className="text-xs font-medium text-gray-500 dark:text-gray-400"
@@ -325,7 +318,7 @@ export default function SimulationCard({
                   : `${numSessions} session${numSessions !== 1 ? "s" : ""}`}
               </span>
             </div>
-            {effectiveProfile?.role !== "guest" &&
+            {profile?.role !== "guest" &&
               highestScore !== undefined &&
               highestScore !== null &&
               highestScore > 0 && (
@@ -347,45 +340,9 @@ export default function SimulationCard({
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
-          {isEmulatingAnother ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full">
-                  <button
-                    onClick={() => {
-                      window.dispatchEvent(
-                        new CustomEvent("simulationButtonPressed", {
-                          detail: { simulationId: id },
-                        }),
-                      );
-                      onStartSimulation(id);
-                    }}
-                    disabled
-                    data-testid={`start-simulation-${id}`}
-                    className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 cursor-not-allowed opacity-70 ${
-                      typeof gradientClass === "string" &&
-                      !gradientClass.startsWith("linear-gradient")
-                        ? `bg-gradient-to-r ${gradientClass}`
-                        : ""
-                    }`}
-                    style={{
-                      ...(typeof gradientClass === "string" &&
-                        gradientClass.startsWith("linear-gradient") && {
-                          background: gradientClass,
-                        }),
-                    }}
-                  >
-                    Unavailable
-                  </button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>You cannot start simulations on behalf of another user.</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : type === "default" &&
+          {type === "default" &&
             onStartInfiniteMode &&
-            effectiveProfile?.role !== "guest" ? (
+            profile?.role !== "guest" ? (
             <div className="flex gap-2 w-full">
               <Button
                 onClick={() => {

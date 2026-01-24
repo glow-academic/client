@@ -120,7 +120,7 @@ function RubricComponent({
   const router = useRouter();
   const isEditMode = !!rubricId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -790,7 +790,7 @@ function RubricComponent({
         throw new Error("Standards are required");
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -836,7 +836,7 @@ function RubricComponent({
       formState,
       isEditMode,
       rubricId,
-      effectiveProfile?.id,
+      profile?.id,
       saveRubricAction,
       router,
       rubricData?.name_required,

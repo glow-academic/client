@@ -46,7 +46,7 @@ export interface AgentPromptSectionProps {
   editorMode: "editor" | "preview" | "debug";
   isEditMode: boolean;
   agentDetail?: AgentDetailOut;
-  effectiveProfile?: {
+  profile?: {
     role?: string;
   };
 
@@ -77,7 +77,7 @@ export function AgentPromptSection({
   editorMode,
   isEditMode,
   agentDetail,
-  effectiveProfile,
+  profile,
   onPromptChange,
   onPromptIdChange,
   onResetPrompt,
@@ -287,7 +287,7 @@ export function AgentPromptSection({
                 debugContent={
                   isEditMode &&
                   agentDetail &&
-                  effectiveProfile?.role === "superadmin" &&
+                  profile?.role === "superadmin" &&
                   agentDetail.debug_info &&
                   Array.isArray(agentDetail.debug_info) ? (
                     <AgentDebugInfo

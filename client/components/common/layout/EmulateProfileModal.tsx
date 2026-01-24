@@ -57,7 +57,7 @@ export function EmulateProfileModal({
     ? `/${appPrefix.replace(/^\/+|\/+$/g, "")}`
     : "";
   const { data: session } = useSession();
-  const { activeProfile, roleResources } = useProfile();
+  const { profile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
     null,
@@ -121,7 +121,7 @@ export function EmulateProfileModal({
   // Search when user types (debounced)
   const handleSearch = useCallback(
     async (query: string) => {
-      if (!activeProfile?.id) return;
+      if (!profile?.id) return;
       setIsLoading(true);
       try {
         const data = await searchSimulatableProfiles({
@@ -138,7 +138,7 @@ export function EmulateProfileModal({
         setIsLoading(false);
       }
     },
-    [activeProfile?.id, searchSimulatableProfiles],
+    [profile?.id, searchSimulatableProfiles],
   );
 
   // Handle search input change with debounce
@@ -192,7 +192,7 @@ export function EmulateProfileModal({
 
   // Handle emulation
   const handleEmulate = useCallback(async () => {
-    if (!selectedProfileId || !activeProfile?.id) {
+    if (!selectedProfileId || !profile?.id) {
       toast.error("Please select a profile to emulate");
       return;
     }
@@ -238,7 +238,7 @@ export function EmulateProfileModal({
     }
   }, [
     selectedProfileId,
-    activeProfile?.id,
+    profile?.id,
     switchEffectiveProfile,
     onOpenChange,
     normalizedPrefix,

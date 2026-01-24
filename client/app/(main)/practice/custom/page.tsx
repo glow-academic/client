@@ -116,7 +116,7 @@ export default async function PracticeCustomPage({
   // Extract ProfileItem objects from LayoutContextOut
   // LayoutContextOut has effective profile fields directly (id, name, etc.)
   // and actual profile fields prefixed with actual_ (actual_id, actual_name, etc.)
-  const effectiveProfile: ProfileItem | null = profileContext.id
+  const profile: ProfileItem | null = profileContext.id
     ? {
         id: profileContext.id,
         name: profileContext.name || null,
@@ -133,36 +133,17 @@ export default async function PracticeCustomPage({
       }
     : null;
 
-  const actualProfile: ProfileItem | null = profileContext.actual_id
-    ? {
-        id: profileContext.actual_id,
-        name: profileContext.actual_name || null,
-        emails: profileContext.actual_emails || [],
-        primary_email: profileContext.actual_primary_email || null,
-        role: profileContext.actual_role || null,
-        active: profileContext.actual_active ?? null,
-        req_per_day: profileContext.actual_req_per_day ?? null,
-        last_login: profileContext.actual_last_login || null,
-        last_active: profileContext.actual_last_active || null,
-        created_at: profileContext.actual_created_at || null,
-        updated_at: profileContext.actual_updated_at || null,
-        primary_department_id:
-          profileContext.actual_primary_department_id || null,
-      }
-    : null;
-
   // Get profileId from profile context
-  const profileId = effectiveProfile?.id;
+  const profileId = profile?.id;
 
   // Check if user is a guest
-  const isGuest = !profileId || effectiveProfile?.role === "guest";
+  const isGuest = !profileId || profile?.role === "guest";
 
   return (
     <div className="space-y-6">
       <PracticeCustomize
         practiceData={practiceData}
-        effectiveProfile={effectiveProfile}
-        activeProfile={actualProfile}
+        profile={profile}
         isGuest={isGuest}
       />
     </div>

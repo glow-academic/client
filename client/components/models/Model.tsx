@@ -181,7 +181,7 @@ function ModelComponent({
   const router = useRouter();
   const isEditMode = !!modelId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -233,14 +233,14 @@ function ModelComponent({
     modelDataRef.current = modelData;
   }, [modelData]);
 
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const isSuperadmin = profile?.role === "superadmin";
   const defaultDepartmentIds = useMemo(
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primary_department_id || null
+        profile?.primary_department_id || null
       ),
-    [isSuperadmin, effectiveProfile?.primary_department_id]
+    [isSuperadmin, profile?.primary_department_id]
   );
 
   const getInitialFormState = useCallback(() => {
@@ -1080,7 +1080,7 @@ function ModelComponent({
       }
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -1150,7 +1150,7 @@ function ModelComponent({
       formState,
       isEditMode,
       modelId,
-      effectiveProfile?.id,
+      profile?.id,
       saveModelAction,
       router,
       modelData?.name_required,

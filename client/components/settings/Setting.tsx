@@ -129,7 +129,7 @@ function SettingComponent({
   const router = useRouter();
   const isEditMode = !!settingId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -784,7 +784,7 @@ function SettingComponent({
       }
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -826,7 +826,7 @@ function SettingComponent({
       formState,
       isEditMode,
       settingId,
-      effectiveProfile?.id,
+      profile?.id,
       saveSettingAction,
       router,
       settingData?.name_required,

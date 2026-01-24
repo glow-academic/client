@@ -156,7 +156,7 @@ export default function PracticeZone({
                 onStartSimulation={onStartSimulation}
                 {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingSimulation={loadingSimulation}
-                effectiveProfile={profile}
+                profile={profile}
               />
             );
           },

@@ -28,8 +28,7 @@ export interface HomeProps {
 
 export default function Home({ homeData }: HomeProps) {
   const {
-    effectiveProfile,
-    activeProfile,
+    profile,
     isConnected,
     emitStartSimulation,
     startingSimulationId,
@@ -153,7 +152,7 @@ export default function Home({ homeData }: HomeProps) {
     async (simulationId: string) => {
       try {
         // Only enforce profile for non-guests
-        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
+        if (profile?.role !== "guest" && !profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
@@ -171,7 +170,7 @@ export default function Home({ homeData }: HomeProps) {
         setLoadingToastId(toastId);
 
         const profileIdForEmit =
-          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
+          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
 
         emitStartSimulation({
           simulation_id: simulationId,
@@ -192,8 +191,7 @@ export default function Home({ homeData }: HomeProps) {
       }
     },
     [
-      effectiveProfile,
-      activeProfile,
+      profile,
       isConnected,
       emitStartSimulation,
       loadingToastId,
@@ -304,7 +302,7 @@ export default function Home({ homeData }: HomeProps) {
 
   // Access control is handled by AccessControl component in layout
   // If we reach here, user has access
-  if (!effectiveProfile) {
+  if (!profile) {
     return null;
   }
 
@@ -313,7 +311,7 @@ export default function Home({ homeData }: HomeProps) {
       {/* Header with title */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
-          Welcome back, {effectiveProfile?.name}!
+          Welcome back, {profile?.name}!
         </h2>
       </div>
 
@@ -460,9 +458,9 @@ export default function Home({ homeData }: HomeProps) {
                       type="cohort"
                       onStartSimulation={handleStartSimulation}
                       loadingSimulation={loadingSimulation}
-                      effectiveProfile={{
-                        ...effectiveProfile,
-                        role: effectiveProfile.role as
+                      profile={{
+                        ...profile,
+                        role: profile.role as
                           | "member"
                           | "instructional"
                           | "superadmin"

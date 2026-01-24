@@ -14,13 +14,13 @@ export default function NotFound() {
   // (not-found.tsx can render outside the layout hierarchy)
   // useContext returns null if context is not provided, which is safe
   const profileContext = useContext(ProfileContext);
-  const effectiveProfile = profileContext?.effectiveProfile ?? null;
+  const profile = profileContext?.profile ?? null;
 
   const handleBackToGlow = () => {
     // Navigate based on effective role, default to /home if context unavailable
     if (
-      effectiveProfile?.role !== "member" &&
-      effectiveProfile?.role !== "guest"
+      profile?.role !== "member" &&
+      profile?.role !== "guest"
     ) {
       router.push("/analytics");
     } else {

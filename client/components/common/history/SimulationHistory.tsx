@@ -83,14 +83,14 @@ export type HistoryDataItem =
 
 // Inlined row actions component (from DataTableRowActions)
 function HistoryRowActions({ item }: { item: HistoryDataItem }) {
-  const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
+  const { profile, isConnected, emitStartSimulation } =
     useProfile();
   const router = useRouter();
   const [isRetrying, setIsRetrying] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const loadingToastIdRef = React.useRef<string | number | null>(null);
 
-  const isCurrentUser = effectiveProfile?.id === item.profile_id;
+  const isCurrentUser = profile?.id === item.profile_id;
 
   // Infinite-mode window check (owner-only)
   // Parse date from string (server returns ISO string)
@@ -127,20 +127,15 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
     (!item.infinite_mode || isInfiniteWindowOpen);
 
   const buttonText = wantContinue ? "Continue" : "View";
-  const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id;
   const linkHref = `/${item.practice_simulation ? "practice" : "home"}/a/${item.attempt_id}`;
 
-  // Determine if we should show Retry or Try button
-  // Only show if not emulating (effectiveProfile.id === activeProfile.id)
-  const isNotEmulating = effectiveProfile?.id === activeProfile?.id;
-  const isOwnAttempt = activeProfile?.id === item.profile_id;
+  const isOwnAttempt = profile?.id === item.profile_id;
   const shouldShowRetry =
-    isNotEmulating &&
     isOwnAttempt &&
     (item.simulation_id ?? "") !== "" &&
     !item.show_continue;
   const shouldShowTry =
-    isNotEmulating && !isOwnAttempt && (item.simulation_id ?? "") !== "";
+    !isOwnAttempt && (item.simulation_id ?? "") !== "";
 
   // Set up redirect listener for simulation started events
   React.useEffect(() => {
@@ -194,7 +189,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
   const handleStartSimulation = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (disabledForEmulation || !isConnected) return;
+    if (!isConnected) return;
     setIsRetrying(true);
 
     // Show loading toast for redirect flow
@@ -214,9 +209,9 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
 
     try {
       const profileIdForEmit =
-        effectiveProfile?.role === "guest"
+        profile?.role === "guest"
           ? ""
-          : String(effectiveProfile?.id || "");
+          : String(profile?.id || "");
       emitStartSimulation({
         simulation_id: String(item.simulation_id),
         profile_id: profileIdForEmit,
@@ -248,7 +243,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
         </Button>
       </Link>
 
-      {/* Retry: show when attempt belongs to activeProfile and not emulating */}
+      {/* Retry: show when attempt belongs to current profile */}
       {shouldShowRetry && (
         <Tooltip>
           <TooltipTrigger asChild>

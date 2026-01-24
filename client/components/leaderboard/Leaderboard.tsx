@@ -81,7 +81,7 @@ export default function Leaderboard({
   cohortId,
   leaderboardData,
 }: LeaderboardProps) {
-  const { effectiveProfile } = useProfile();
+  const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -123,7 +123,7 @@ export default function Leaderboard({
 
   const handleViewReport = (profileId: string) => {
     // Disable navigation for TAs when viewing a specific cohort
-    if (cohortId && effectiveProfile?.role === "member") {
+    if (cohortId && profile?.role === "member") {
       return;
     }
     router.push(`/analytics/reports/p/${profileId}`);
@@ -131,13 +131,13 @@ export default function Leaderboard({
 
   // Check if navigation should be disabled for TAs viewing a specific cohort
   const shouldDisableNavigation =
-    cohortId && effectiveProfile?.role === "member";
+    cohortId && profile?.role === "member";
 
   // Check if user has permission to view reports (instructional and above)
   const canViewReports =
-    effectiveProfile?.role === "superadmin" ||
-    effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "instructional";
+    profile?.role === "superadmin" ||
+    profile?.role === "admin" ||
+    profile?.role === "instructional";
 
   // Compute accolade winners from hydrated rows using current_value from server
   const computedAccolades = useMemo(() => {
@@ -797,7 +797,7 @@ export default function Leaderboard({
         <div>
           <LeaderboardTable
             data={processedLeaderboardData}
-            currentUserId={effectiveProfile?.id || ""}
+            currentUserId={profile?.id || ""}
             {...(leaderboardData?.simulations && {
               simulations: leaderboardData.simulations
                 .filter(

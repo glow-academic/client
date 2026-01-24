@@ -88,15 +88,15 @@ export function UploadClassificationDialog({
   parameterMapping,
   validParameterItemIds,
 }: UploadClassificationDialogProps) {
-  const { effectiveProfile } = useProfile();
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const { profile } = useProfile();
+  const isSuperadmin = profile?.role === "superadmin";
   const defaultDepartmentIds = useMemo(
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primary_department_id ?? null,
+        profile?.primary_department_id ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primary_department_id],
+    [isSuperadmin, profile?.primary_department_id],
   );
 
   // Per-file classification state (keyed by file.name)

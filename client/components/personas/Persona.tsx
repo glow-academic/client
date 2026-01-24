@@ -149,7 +149,7 @@ function PersonaComponent({
   const router = useRouter();
   const isEditMode = !!personaId;
   const {
-    effectiveProfile,
+    profile,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -1152,7 +1152,7 @@ function PersonaComponent({
       // Pass department_ids directly - SQL handles validation via validate_department_create_permissions/validate_department_update_permissions
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -1200,7 +1200,7 @@ function PersonaComponent({
       formState,
       isEditMode,
       personaId,
-      effectiveProfile?.id,
+      profile?.id,
       savePersonaAction,
       draftId,
       router,

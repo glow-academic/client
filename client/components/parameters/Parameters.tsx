@@ -79,7 +79,7 @@ export default function Parameters({
   deleteParameterAction,
 }: ParametersProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { profile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -269,7 +269,7 @@ export default function Parameters({
     }
 
     // Ensure profileId exists - required for API calls
-    if (!effectiveProfile?.id) {
+    if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }
@@ -303,7 +303,7 @@ export default function Parameters({
     if (!deleteItem || !deleteParameterAction) return;
 
     // Ensure profileId exists - required for API calls
-    if (!effectiveProfile?.id) {
+    if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }

@@ -27,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import {
   Loader2,
@@ -52,7 +51,7 @@ export interface EvalCardProps {
   onStartEval: (evalId: string) => void;
   onStartInfiniteMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
-  effectiveProfile: ProfileItem;
+  profile: ProfileItem;
   // Rubric data for dialog
   standard_groups?: Record<string, string[]>;
   standardGroupsMapping?: Record<
@@ -78,20 +77,13 @@ export default function EvalCard({
   onStartEval,
   onStartInfiniteMode,
   loadingEval,
-  effectiveProfile,
+  profile,
   standard_groups,
   standardGroupsMapping,
   standardsMapping,
 }: EvalCardProps) {
-  const { activeProfile } = useProfile();
-  const isEmulatingAnother = Boolean(
-    effectiveProfile?.id &&
-      activeProfile?.id &&
-      effectiveProfile.id !== activeProfile.id,
-  );
-
   const isLoading = loadingEval === evalId;
-  const isDisabled = isLoading || isEmulatingAnother;
+  const isDisabled = isLoading;
 
   // Use default User icon
   const IconComponent = User;
@@ -139,7 +131,7 @@ export default function EvalCard({
             </Button>
             <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
               {/* Rubric Icon */}
-              {effectiveProfile?.role !== "guest" &&
+              {profile?.role !== "guest" &&
                 standard_groups &&
                 Object.keys(standard_groups).length > 0 && (
                   <Dialog>
@@ -208,32 +200,6 @@ export default function EvalCard({
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
-          {isEmulatingAnother ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full">
-                  <button
-                    onClick={() => {
-                      window.dispatchEvent(
-                        new CustomEvent("evalButtonPressed", {
-                          detail: { evalId },
-                        }),
-                      );
-                      onStartEval(evalId);
-                    }}
-                    disabled
-                    data-testid={`start-eval-${evalId}`}
-                    className="w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 cursor-not-allowed opacity-70 bg-gradient-to-r from-gray-500 to-gray-600"
-                  >
-                    Unavailable
-                  </button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>You cannot start evals on behalf of another user.</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
             <div className="flex items-center gap-2 w-full">
               <Button
                 onClick={() => onStartEval(evalId)}
@@ -273,7 +239,6 @@ export default function EvalCard({
                 </Tooltip>
               )}
             </div>
-          )}
         </CardFooter>
       </Card>
     </div>

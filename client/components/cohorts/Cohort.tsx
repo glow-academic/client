@@ -133,7 +133,7 @@ function CohortComponent({
   const router = useRouter();
   const isEditMode = !!cohortId;
   const {
-    effectiveProfile,
+    profile,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -1046,7 +1046,7 @@ function CohortComponent({
       // Pass department_ids and simulation_ids directly - SQL handles validation
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -1090,7 +1090,7 @@ function CohortComponent({
       isEditMode,
       cohortId,
       draftId,
-      effectiveProfile?.id,
+      profile?.id,
       saveCohortAction,
       router,
       cohortData?.name_required,

@@ -113,7 +113,7 @@ function ParameterComponent({
   const router = useRouter();
   const isEditMode = !!parameterId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -883,7 +883,7 @@ function ParameterComponent({
       }
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -956,7 +956,7 @@ function ParameterComponent({
       formState,
       isEditMode,
       parameterId,
-      effectiveProfile?.id,
+      profile?.id,
       saveParameterAction,
       router,
       parameterData?.name_required,

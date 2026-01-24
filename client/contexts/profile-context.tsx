@@ -64,11 +64,7 @@ export type RoleResourceItem = NonNullable<
 
 interface ProfileContextType {
   // Profile data
-  activeProfile: ProfileItem | null;
-  simulatedProfile: ProfileItem | null;
-  effectiveProfile: ProfileItem | null;
-  isSimulating: boolean;
-  isFullEmulation: boolean;
+  profile: ProfileItem | null;
   isLoading: boolean;
   isAuthenticated: boolean; // true if user has real NextAuth session
 
@@ -171,7 +167,7 @@ export function ProfileProviderClient({
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
   // However, we handle null gracefully for edge cases and loading states.
   // Construct profile objects from flat fields in LayoutContextResponse
-  const effectiveProfile = useMemo<ProfileItem | null>(() => {
+  const profile = useMemo<ProfileItem | null>(() => {
     if (!initial) return null;
     return {
       id: initial.id ?? "",
@@ -201,7 +197,7 @@ export function ProfileProviderClient({
   const currentRoomsRef = useRef<Set<string>>(new Set());
 
   // Get profile ID and session ID for socket connection
-  const profileId = effectiveProfile?.id ?? null;
+  const profileId = profile?.id ?? null;
   const sessionId = initial?.session_id ?? null;
 
   // Initialize WebSocket connection when profileId is resolved
@@ -332,10 +328,6 @@ export function ProfileProviderClient({
       : allDepartmentIds;
   }, [selectedDepartmentIds, initial?.department_ids]);
 
-  const isFullEmulation = false;
-  const resolvedActiveProfile = effectiveProfile;
-  const simulatedProfile: ProfileItem | null = null;
-
   const navigateToDefault = useCallback(
     (role: ProfileRole) => {
       const availableSections = initial?.available_sections ?? [];
@@ -356,11 +348,11 @@ export function ProfileProviderClient({
         return availableSections.includes(section);
       }
       const targetRole = (role ||
-        effectiveProfile?.role ||
+        profile?.role ||
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role, initial?.available_sections]
+    [profile?.role, initial?.available_sections]
   );
 
   // WebSocket helper methods
@@ -436,11 +428,7 @@ export function ProfileProviderClient({
 
   const value: ProfileContextType = {
     // Profile data
-    activeProfile: resolvedActiveProfile,
-    simulatedProfile,
-    effectiveProfile: effectiveProfile ?? resolvedActiveProfile ?? null,
-    isSimulating: false,
-    isFullEmulation,
+    profile,
     isLoading: false, // Data comes from server, always available
     isAuthenticated: sessionSnapshot.isAuthenticated,
 

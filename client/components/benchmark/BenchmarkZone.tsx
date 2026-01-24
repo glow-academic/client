@@ -129,7 +129,7 @@ export default function BenchmarkZone({
                 onStartEval={onStartEval}
                 {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingEval={loadingEval}
-                effectiveProfile={profile}
+                profile={profile}
                 {...(rubricMapping?.standard_groups && { standard_groups: rubricMapping.standard_groups })}
                 {...(rubricMapping?.standardGroupsMapping && { standardGroupsMapping: rubricMapping.standardGroupsMapping })}
                 {...(rubricMapping?.standardsMapping && { standardsMapping: rubricMapping.standardsMapping })}

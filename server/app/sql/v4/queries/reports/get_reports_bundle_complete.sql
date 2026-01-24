@@ -319,6 +319,9 @@ filt AS (
       )
       AND ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE)
 ),
+-- ============================================================
+-- Phase 2: Lightweight sort metrics for ALL profiles
+-- ============================================================
 profile_metrics AS (
     SELECT
         fp.id AS profile_id,
@@ -345,12 +348,10 @@ total_time_per_profile AS (
 ),
 completion_per_profile AS (
     SELECT
-        fp.id AS profile_id,
+        f.profile_id,
         (100.0 * AVG((f.completed)::int))::float AS completion_pct
-    FROM filtered_profiles fp
-    LEFT JOIN filt f ON f.profile_id = fp.id
-    GROUP BY fp.id
-    HAVING COUNT(f.attempt_id) > 0
+    FROM filt f
+    GROUP BY f.profile_id
 ),
 earliest_attempts_all_time AS (
     SELECT DISTINCT ON (a.profile_id, a.simulation_id)
@@ -365,7 +366,7 @@ earliest_attempts_all_time AS (
     ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
 ),
 filt_date_range AS (
-    SELECT 
+    SELECT
         MIN(attempt_created_at) AS min_date,
         MAX(attempt_created_at) AS max_date
     FROM filt
@@ -374,6 +375,8 @@ filt_date_range AS (
 first_attempts AS (
     SELECT
         ea.profile_id,
+        ea.simulation_id,
+        ea.attempt_created_at,
         ea.grade_percent >= (ea.rubric_pass_points * 100.0 / NULLIF(ea.rubric_points_junction, 0)) AS passed
     FROM earliest_attempts_all_time ea
     CROSS JOIN filt_date_range fdr
@@ -415,30 +418,17 @@ efficiency_metrics_per_profile AS (
 efficiency_per_profile AS (
     SELECT
         profile_id,
-        GREATEST(0, LEAST(100, 
+        GREATEST(0, LEAST(100,
             avg_score * (1.0 - LEAST(1.0, (total_minutes / NULLIF(total_sessions, 0)) / 120.0))
         ))::float AS efficiency
     FROM efficiency_metrics_per_profile
     WHERE total_sessions > 0
 ),
 profile_chats AS (
-    SELECT DISTINCT profile_id, chat_id 
-    FROM filt 
+    SELECT DISTINCT profile_id, chat_id
+    FROM filt
     WHERE chat_id IS NOT NULL
 ),
--- Get chat scenario and simulation info for bundle fallback
-chat_scenario_info_bundle AS (
-    SELECT DISTINCT
-        c.id AS chat_id,
-        scj.scenario_id,
-        saj.simulation_id
-    FROM chats_entry c
-    JOIN scenario_chats_junction scj ON scj.chat_id = c.id
-    JOIN attempts_entry sa ON sa.id = c.attempt_id
-    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-    WHERE c.id IN (SELECT chat_id FROM profile_chats)
-),
--- Score normalization: each grade has 5 feedbacks scored 1-5, max = 25
 grade_stream_per_profile AS (
     SELECT
         pc.profile_id,
@@ -460,8 +450,8 @@ stagnation_flags_per_profile AS (
     SELECT
         profile_id,
         CASE WHEN prev_norm IS NULL THEN NULL
-             WHEN norm <= prev_norm + 0.1 THEN 1 
-             ELSE 0 
+             WHEN norm <= prev_norm + 0.1 THEN 1
+             ELSE 0
         END AS stagnated
     FROM ordered_grades_per_profile
     WHERE prev_norm IS NOT NULL
@@ -473,13 +463,89 @@ stagnation_per_profile AS (
     FROM stagnation_flags_per_profile
     GROUP BY profile_id
 ),
--- Convert data points from JSONB to composite types
+-- ============================================================
+-- Phase 3: Sort + Paginate on profile IDs
+-- ============================================================
+sort_metrics AS (
+    SELECT
+        pm.profile_id,
+        pm.name,
+        pm.emails,
+        pm.primary_email,
+        pm.role,
+        pm.avg_score,
+        pm.highest_score,
+        pm.total_attempts,
+        pm.avg_messages,
+        COALESCE(tt.total_time_minutes, 0)::numeric AS total_time_minutes,
+        COALESCE(cp.completion_pct, 0)::numeric AS completion_pct,
+        COALESCE(fa.pass_rate, 0)::numeric AS first_attempt_pass_rate,
+        COALESCE(pp.avg_response_time, 0)::numeric AS persona_response_time,
+        COALESCE(ep.efficiency, 0)::numeric AS session_efficiency,
+        COALESCE(sp.stagnation_rate, 0)::numeric AS stagnation_rate
+    FROM profile_metrics pm
+    LEFT JOIN total_time_per_profile tt ON pm.profile_id = tt.profile_id
+    LEFT JOIN completion_per_profile cp ON pm.profile_id = cp.profile_id
+    LEFT JOIN first_attempt_per_profile fa ON pm.profile_id = fa.profile_id
+    LEFT JOIN persona_per_profile pp ON pm.profile_id = pp.profile_id
+    LEFT JOIN efficiency_per_profile ep ON pm.profile_id = ep.profile_id
+    LEFT JOIN stagnation_per_profile sp ON pm.profile_id = sp.profile_id
+),
+total_count_before_pagination AS (
+    SELECT COUNT(*)::bigint AS total_count
+    FROM sort_metrics
+),
+paginated_profile_ids AS (
+    SELECT sm.profile_id
+    FROM sort_metrics sm
+    ORDER BY
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'averageScore' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.avg_score::numeric
+            WHEN (SELECT sort_by FROM params) = 'highestScore' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.highest_score::numeric
+            WHEN (SELECT sort_by FROM params) = 'completionPercentage' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.completion_pct
+            WHEN (SELECT sort_by FROM params) = 'firstAttemptPassRate' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.first_attempt_pass_rate
+            WHEN (SELECT sort_by FROM params) = 'messagesPerSession' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.avg_messages::numeric
+            WHEN (SELECT sort_by FROM params) = 'personaResponseTimes' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.persona_response_time
+            WHEN (SELECT sort_by FROM params) = 'sessionEfficiency' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.session_efficiency
+            WHEN (SELECT sort_by FROM params) = 'stagnationRate' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.stagnation_rate
+            WHEN (SELECT sort_by FROM params) = 'timeSpent' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.total_time_minutes
+            WHEN (SELECT sort_by FROM params) = 'totalAttempts' AND (SELECT sort_order FROM params) = 'DESC' THEN sm.total_attempts::numeric
+        END DESC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'averageScore' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.avg_score::numeric
+            WHEN (SELECT sort_by FROM params) = 'highestScore' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.highest_score::numeric
+            WHEN (SELECT sort_by FROM params) = 'completionPercentage' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.completion_pct
+            WHEN (SELECT sort_by FROM params) = 'firstAttemptPassRate' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.first_attempt_pass_rate
+            WHEN (SELECT sort_by FROM params) = 'messagesPerSession' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.avg_messages::numeric
+            WHEN (SELECT sort_by FROM params) = 'personaResponseTimes' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.persona_response_time
+            WHEN (SELECT sort_by FROM params) = 'sessionEfficiency' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.session_efficiency
+            WHEN (SELECT sort_by FROM params) = 'stagnationRate' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.stagnation_rate
+            WHEN (SELECT sort_by FROM params) = 'timeSpent' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.total_time_minutes
+            WHEN (SELECT sort_by FROM params) = 'totalAttempts' AND (SELECT sort_order FROM params) = 'ASC' THEN sm.total_attempts::numeric
+        END ASC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'DESC' THEN LOWER(COALESCE(sm.name, ''))
+        END DESC NULLS LAST,
+        CASE
+            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'ASC' THEN LOWER(COALESCE(sm.name, ''))
+        END ASC NULLS LAST,
+        sm.profile_id
+    LIMIT (SELECT page_size FROM params)
+    OFFSET (SELECT page * page_size FROM params)
+),
+-- ============================================================
+-- Phase 4: Expensive data_points ONLY for paginated profiles
+-- ============================================================
+filt_page AS (
+    SELECT f.* FROM filt f
+    WHERE f.profile_id IN (SELECT profile_id FROM paginated_profile_ids)
+),
 avg_score_data_points AS (
     SELECT
         f.profile_id,
         COALESCE(
             ARRAY_AGG(
-                (f.profile_id::text, 
+                (f.profile_id::text,
                  to_char(f.attempt_created_at, 'YYYY-MM-DD'),
                  f.grade_percent,
                  f.simulation_id::text,
@@ -490,7 +556,7 @@ avg_score_data_points AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
-    FROM filt f
+    FROM filt_page f
     WHERE f.grade_percent IS NOT NULL
     GROUP BY f.profile_id
 ),
@@ -510,7 +576,7 @@ completion_data_points AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
-    FROM filt f
+    FROM filt_page f
     GROUP BY f.profile_id
 ),
 first_attempt_data_points AS (
@@ -519,18 +585,18 @@ first_attempt_data_points AS (
         COALESCE(
             ARRAY_AGG(
                 (fa.profile_id::text,
-                 to_char(ea.attempt_created_at, 'YYYY-MM-DD'),
+                 to_char(fa.attempt_created_at, 'YYYY-MM-DD'),
                  (fa.passed)::int::numeric,
-                 ea.simulation_id::text,
+                 fa.simulation_id::text,
                  NULL::text,
                  NULL::text
                 )::types.q_reports_bundle_v4_data_point
-                ORDER BY ea.attempt_created_at
+                ORDER BY fa.attempt_created_at
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
     FROM first_attempts fa
-    JOIN earliest_attempts_all_time ea ON ea.profile_id = fa.profile_id
+    WHERE fa.profile_id IN (SELECT profile_id FROM paginated_profile_ids)
     GROUP BY fa.profile_id
 ),
 highest_score_data_points AS (
@@ -549,7 +615,7 @@ highest_score_data_points AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
-    FROM filt f
+    FROM filt_page f
     WHERE f.grade_percent IS NOT NULL
     GROUP BY f.profile_id
 ),
@@ -569,7 +635,7 @@ messages_data_points AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
-    FROM filt f
+    FROM filt_page f
     WHERE f.num_messages_total IS NOT NULL
     GROUP BY f.profile_id
 ),
@@ -589,6 +655,7 @@ persona_time_data_points AS (
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
     FROM persona_times pt
+    WHERE pt.profile_id IN (SELECT profile_id FROM paginated_profile_ids)
     GROUP BY pt.profile_id
 ),
 time_spent_data_points AS (
@@ -607,7 +674,7 @@ time_spent_data_points AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
-    FROM filt f
+    FROM filt_page f
     WHERE f.time_taken_seconds IS NOT NULL
     GROUP BY f.profile_id
 ),
@@ -628,19 +695,19 @@ total_attempts_data_points AS (
         ) AS data_points
     FROM (
         SELECT DISTINCT profile_id, attempt_id, simulation_id
-        FROM filt
+        FROM filt_page
     ) sub
     GROUP BY profile_id
 ),
 efficiency_data_points AS (
     SELECT
-        profile_id,
+        emp.profile_id,
         COALESCE(
             ARRAY_AGG(
-                (profile_id::text,
+                (emp.profile_id::text,
                  NULL::text,
-                 ROUND(GREATEST(0, LEAST(100, 
-                     avg_score * (1.0 - LEAST(1.0, (total_minutes / NULLIF(total_sessions, 0)) / 120.0))
+                 ROUND(GREATEST(0, LEAST(100,
+                     emp.avg_score * (1.0 - LEAST(1.0, (emp.total_minutes / NULLIF(emp.total_sessions, 0)) / 120.0))
                  )))::numeric,
                  NULL::text,
                  NULL::text,
@@ -649,8 +716,9 @@ efficiency_data_points AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
-    FROM efficiency_metrics_per_profile
-    GROUP BY profile_id
+    FROM efficiency_metrics_per_profile emp
+    WHERE emp.profile_id IN (SELECT profile_id FROM paginated_profile_ids)
+    GROUP BY emp.profile_id
 ),
 stagnation_data_points AS (
     SELECT
@@ -668,76 +736,44 @@ stagnation_data_points AS (
             ARRAY[]::types.q_reports_bundle_v4_data_point[]
         ) AS data_points
     FROM stagnation_flags_per_profile sf
+    WHERE sf.profile_id IN (SELECT profile_id FROM paginated_profile_ids)
     GROUP BY sf.profile_id
 ),
 profile_simulation_ids AS (
     SELECT
         f.profile_id,
         ARRAY_AGG(DISTINCT f.simulation_id::text) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids
-    FROM filt f
+    FROM filt_page f
     GROUP BY f.profile_id
 ),
-scenario_root_mapping AS (
-    WITH RECURSIVE scenario_ancestors AS (
-        SELECT DISTINCT
-            f.scenario_id as child_scenario_id,
-            f.scenario_id as ancestor_id,
-            0 as depth
-        FROM filt f
-        WHERE f.scenario_id IS NOT NULL
-        
-        UNION ALL
-        
-        SELECT 
-            sa.child_scenario_id,
-            COALESCE(
-                (SELECT st.parent_id 
-                 FROM scenario_tree_junction st 
-                 WHERE st.child_id = sa.ancestor_id 
-                   AND st.parent_id != st.child_id 
-                 LIMIT 1),
-                sa.ancestor_id
-            ) as ancestor_id,
-            sa.depth + 1 as depth
-        FROM scenario_ancestors sa
-        WHERE sa.depth < 100
-          AND EXISTS (
-              SELECT 1 FROM scenario_tree_junction st 
-              WHERE st.child_id = sa.ancestor_id 
-                AND st.parent_id != st.child_id
-          )
-    )
-    SELECT DISTINCT
-        child_scenario_id,
-        ancestor_id as root_scenario_id
-    FROM scenario_ancestors
-    WHERE depth = (
-        SELECT MAX(depth) 
-        FROM scenario_ancestors sa2 
-        WHERE sa2.child_scenario_id = scenario_ancestors.child_scenario_id
-    )
-),
+-- scenario_id in analytics is already the root scenario, no recursive mapping needed
 profile_scenario_ids AS (
     SELECT
         f.profile_id,
-        ARRAY_AGG(DISTINCT COALESCE(
-            (SELECT srm.root_scenario_id::text 
-             FROM scenario_root_mapping srm 
-             WHERE srm.child_scenario_id = f.scenario_id),
-            f.scenario_id::text
-        )) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
-    FROM filt f
+        ARRAY_AGG(DISTINCT f.scenario_id::text) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
+    FROM filt_page f
     GROUP BY f.profile_id
 ),
+-- ============================================================
+-- Phase 5: Build paginated metrics with data_points
+-- ============================================================
 all_metrics AS (
     SELECT
-        pm.*,
-        COALESCE(tt.total_time_minutes, 0) AS total_time_minutes,
-        COALESCE(cp.completion_pct, 0) AS completion_pct,
-        COALESCE(fa.pass_rate, 0) AS first_attempt_pass_rate,
-        COALESCE(pp.avg_response_time, 0) AS persona_response_time,
-        COALESCE(ep.efficiency, 0) AS session_efficiency,
-        COALESCE(sp.stagnation_rate, 0) AS stagnation_rate,
+        sm.profile_id,
+        sm.name,
+        sm.emails,
+        sm.primary_email,
+        sm.role,
+        sm.avg_score,
+        sm.highest_score,
+        sm.total_attempts,
+        sm.avg_messages,
+        sm.total_time_minutes::float AS total_time_minutes,
+        sm.completion_pct::float AS completion_pct,
+        sm.first_attempt_pass_rate::float AS first_attempt_pass_rate,
+        sm.persona_response_time::float AS persona_response_time,
+        sm.session_efficiency::float AS session_efficiency,
+        sm.stagnation_rate::float AS stagnation_rate,
         COALESCE(asdp.data_points, ARRAY[]::types.q_reports_bundle_v4_data_point[]) AS avg_score_points,
         COALESCE(cdp.data_points, ARRAY[]::types.q_reports_bundle_v4_data_point[]) AS completion_points,
         COALESCE(fadp.data_points, ARRAY[]::types.q_reports_bundle_v4_data_point[]) AS first_attempt_points,
@@ -750,109 +786,59 @@ all_metrics AS (
         COALESCE(sdp.data_points, ARRAY[]::types.q_reports_bundle_v4_data_point[]) AS stagnation_points,
         COALESCE(psi.simulation_ids, ARRAY[]::text[]) AS simulation_ids,
         COALESCE(psc.scenario_ids, ARRAY[]::text[]) AS scenario_ids
-    FROM profile_metrics pm
-    LEFT JOIN total_time_per_profile tt ON pm.profile_id = tt.profile_id
-    LEFT JOIN completion_per_profile cp ON pm.profile_id = cp.profile_id
-    LEFT JOIN first_attempt_per_profile fa ON pm.profile_id = fa.profile_id
-    LEFT JOIN persona_per_profile pp ON pm.profile_id = pp.profile_id
-    LEFT JOIN efficiency_per_profile ep ON pm.profile_id = ep.profile_id
-    LEFT JOIN stagnation_per_profile sp ON pm.profile_id = sp.profile_id
-    LEFT JOIN avg_score_data_points asdp ON pm.profile_id = asdp.profile_id
-    LEFT JOIN completion_data_points cdp ON pm.profile_id = cdp.profile_id
-    LEFT JOIN first_attempt_data_points fadp ON pm.profile_id = fadp.profile_id
-    LEFT JOIN highest_score_data_points hsdp ON pm.profile_id = hsdp.profile_id
-    LEFT JOIN messages_data_points mdp ON pm.profile_id = mdp.profile_id
-    LEFT JOIN persona_time_data_points ptdp ON pm.profile_id = ptdp.profile_id
-    LEFT JOIN time_spent_data_points tsdp ON pm.profile_id = tsdp.profile_id
-    LEFT JOIN total_attempts_data_points tadp ON pm.profile_id = tadp.profile_id
-    LEFT JOIN efficiency_data_points edp ON pm.profile_id = edp.profile_id
-    LEFT JOIN stagnation_data_points sdp ON pm.profile_id = sdp.profile_id
-    LEFT JOIN profile_simulation_ids psi ON pm.profile_id = psi.profile_id
-    LEFT JOIN profile_scenario_ids psc ON pm.profile_id = psc.profile_id
+    FROM sort_metrics sm
+    JOIN paginated_profile_ids ppi ON sm.profile_id = ppi.profile_id
+    LEFT JOIN avg_score_data_points asdp ON sm.profile_id = asdp.profile_id
+    LEFT JOIN completion_data_points cdp ON sm.profile_id = cdp.profile_id
+    LEFT JOIN first_attempt_data_points fadp ON sm.profile_id = fadp.profile_id
+    LEFT JOIN highest_score_data_points hsdp ON sm.profile_id = hsdp.profile_id
+    LEFT JOIN messages_data_points mdp ON sm.profile_id = mdp.profile_id
+    LEFT JOIN persona_time_data_points ptdp ON sm.profile_id = ptdp.profile_id
+    LEFT JOIN time_spent_data_points tsdp ON sm.profile_id = tsdp.profile_id
+    LEFT JOIN total_attempts_data_points tadp ON sm.profile_id = tadp.profile_id
+    LEFT JOIN efficiency_data_points edp ON sm.profile_id = edp.profile_id
+    LEFT JOIN stagnation_data_points sdp ON sm.profile_id = sdp.profile_id
+    LEFT JOIN profile_simulation_ids psi ON sm.profile_id = psi.profile_id
+    LEFT JOIN profile_scenario_ids psc ON sm.profile_id = psc.profile_id
 ),
+-- ============================================================
+-- Phase 6: Options (from filt, not all_metrics - avoids data_point materialization)
+-- ============================================================
 profile_options_cte AS (
-    SELECT 
-        am.profile_id,
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id LIMIT 1),
-            'Unknown'
-        ) AS profile_name,
-        COUNT(*) AS count
-    FROM all_metrics am
-    GROUP BY am.profile_id, am.name
-    ORDER BY profile_name
+    SELECT
+        sm.profile_id,
+        COALESCE(sm.name, 'Unknown') AS profile_name,
+        1::bigint AS count
+    FROM sort_metrics sm
+    ORDER BY COALESCE(sm.name, 'Unknown')
 ),
 simulation_options_cte AS (
-    SELECT 
-        sim.id AS simulation_id,
-        (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
-        COUNT(DISTINCT am.profile_id) AS count
-    FROM all_metrics am
-    CROSS JOIN LATERAL UNNEST(am.simulation_ids) AS sim_id
-    JOIN simulation_artifact sim ON sim.id::text = sim_id
-    WHERE EXISTS (SELECT 1 FROM simulation_flags_junction simf JOIN flags_resource f ON simf.flag_id = f.id WHERE simf.simulation_id = sim.id AND f.name = 'simulation_active' AND simf.value = true)
-    GROUP BY sim.id, (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1)
-    ORDER BY simulation_name
+    SELECT
+        f.simulation_id,
+        (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = f.simulation_id LIMIT 1) AS simulation_name,
+        COUNT(DISTINCT f.profile_id) AS count
+    FROM filt f
+    WHERE f.simulation_id IS NOT NULL
+      AND EXISTS (SELECT 1 FROM simulation_flags_junction simf JOIN flags_resource f2 ON simf.flag_id = f2.id WHERE simf.simulation_id = f.simulation_id AND f2.name = 'simulation_active' AND simf.value = true)
+    GROUP BY f.simulation_id
+    ORDER BY (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = f.simulation_id LIMIT 1)
 ),
 scenario_options_cte AS (
-    SELECT 
-        s.id AS scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) AS scenario_title,
-        COUNT(DISTINCT am.profile_id) AS count
-    FROM all_metrics am
-    CROSS JOIN LATERAL UNNEST(am.scenario_ids) AS scen_id
-    JOIN scenarios_resource s ON s.id::text = scen_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
-    GROUP BY s.id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
-    ORDER BY scenario_title
-),
--- Calculate total count before pagination
-total_count_before_pagination AS (
-    SELECT COUNT(*)::bigint AS total_count
-    FROM all_metrics
+    SELECT
+        f.scenario_id,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = f.scenario_id LIMIT 1) AS scenario_title,
+        COUNT(DISTINCT f.profile_id) AS count
+    FROM filt f
+    WHERE f.scenario_id IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f2 ON sf.flag_id = f2.id WHERE sf.scenario_id = f.scenario_id AND f2.name = 'scenario_active' AND sf.value = true)
+    GROUP BY f.scenario_id
+    ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = f.scenario_id LIMIT 1)
 ),
 paginated_metrics AS (
     SELECT
         am.*,
         (SELECT total_count FROM total_count_before_pagination) AS total_count
     FROM all_metrics am
-    ORDER BY 
-        -- Numeric sorting (DESC)
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'averageScore' AND (SELECT sort_order FROM params) = 'DESC' THEN am.avg_score::numeric
-            WHEN (SELECT sort_by FROM params) = 'highestScore' AND (SELECT sort_order FROM params) = 'DESC' THEN am.highest_score::numeric
-            WHEN (SELECT sort_by FROM params) = 'completionPercentage' AND (SELECT sort_order FROM params) = 'DESC' THEN am.completion_pct::numeric
-            WHEN (SELECT sort_by FROM params) = 'firstAttemptPassRate' AND (SELECT sort_order FROM params) = 'DESC' THEN am.first_attempt_pass_rate::numeric
-            WHEN (SELECT sort_by FROM params) = 'messagesPerSession' AND (SELECT sort_order FROM params) = 'DESC' THEN am.avg_messages::numeric
-            WHEN (SELECT sort_by FROM params) = 'personaResponseTimes' AND (SELECT sort_order FROM params) = 'DESC' THEN am.persona_response_time::numeric
-            WHEN (SELECT sort_by FROM params) = 'sessionEfficiency' AND (SELECT sort_order FROM params) = 'DESC' THEN am.session_efficiency::numeric
-            WHEN (SELECT sort_by FROM params) = 'stagnationRate' AND (SELECT sort_order FROM params) = 'DESC' THEN am.stagnation_rate::numeric
-            WHEN (SELECT sort_by FROM params) = 'timeSpent' AND (SELECT sort_order FROM params) = 'DESC' THEN am.total_time_minutes::numeric
-            WHEN (SELECT sort_by FROM params) = 'totalAttempts' AND (SELECT sort_order FROM params) = 'DESC' THEN am.total_attempts::numeric
-        END DESC NULLS LAST,
-        -- Numeric sorting (ASC)
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'averageScore' AND (SELECT sort_order FROM params) = 'ASC' THEN am.avg_score::numeric
-            WHEN (SELECT sort_by FROM params) = 'highestScore' AND (SELECT sort_order FROM params) = 'ASC' THEN am.highest_score::numeric
-            WHEN (SELECT sort_by FROM params) = 'completionPercentage' AND (SELECT sort_order FROM params) = 'ASC' THEN am.completion_pct::numeric
-            WHEN (SELECT sort_by FROM params) = 'firstAttemptPassRate' AND (SELECT sort_order FROM params) = 'ASC' THEN am.first_attempt_pass_rate::numeric
-            WHEN (SELECT sort_by FROM params) = 'messagesPerSession' AND (SELECT sort_order FROM params) = 'ASC' THEN am.avg_messages::numeric
-            WHEN (SELECT sort_by FROM params) = 'personaResponseTimes' AND (SELECT sort_order FROM params) = 'ASC' THEN am.persona_response_time::numeric
-            WHEN (SELECT sort_by FROM params) = 'sessionEfficiency' AND (SELECT sort_order FROM params) = 'ASC' THEN am.session_efficiency::numeric
-            WHEN (SELECT sort_by FROM params) = 'stagnationRate' AND (SELECT sort_order FROM params) = 'ASC' THEN am.stagnation_rate::numeric
-            WHEN (SELECT sort_by FROM params) = 'timeSpent' AND (SELECT sort_order FROM params) = 'ASC' THEN am.total_time_minutes::numeric
-            WHEN (SELECT sort_by FROM params) = 'totalAttempts' AND (SELECT sort_order FROM params) = 'ASC' THEN am.total_attempts::numeric
-        END ASC NULLS LAST,
-        -- Text sorting (profileName)
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'DESC' THEN LOWER(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id LIMIT 1), am.name, ''))
-        END DESC NULLS LAST,
-        CASE 
-            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'ASC' THEN LOWER(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id LIMIT 1), am.name, ''))
-        END ASC NULLS LAST,
-        am.profile_id
-    LIMIT (SELECT page_size FROM params)
-    OFFSET (SELECT page * page_size FROM params)
 ),
 -- Build metrics_entry with composite types
 profiles_with_metrics AS (
@@ -1320,7 +1306,7 @@ scenario_options_final AS (
         ) AS scenario_options_array
     FROM scenario_options_cte scoc
 ),
--- Build scenario and simulation arrays (not mappings)
+-- Build scenario and simulation reference data
 scenarios_final AS (
     SELECT
         COALESCE(

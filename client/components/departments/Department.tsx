@@ -88,7 +88,7 @@ function DepartmentComponent({
   const router = useRouter();
   const isEditMode = !!departmentId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -641,7 +641,7 @@ function DepartmentComponent({
       }
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -686,7 +686,7 @@ function DepartmentComponent({
       formState,
       isEditMode,
       departmentId,
-      effectiveProfile?.id,
+      profile?.id,
       saveDepartmentAction,
       router,
       departmentData?.name_required,

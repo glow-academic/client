@@ -195,7 +195,7 @@ function EvalComponent({
   const router = useRouter();
   const isEditMode = !!evalId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -1011,7 +1011,7 @@ function EvalComponent({
         }
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -1057,7 +1057,7 @@ function EvalComponent({
       formState,
       isEditMode,
       evalId,
-      effectiveProfile?.id,
+      profile?.id,
       updateEvalAction,
       createEvalAction,
       router,

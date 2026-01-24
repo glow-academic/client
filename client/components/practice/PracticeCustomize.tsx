@@ -43,15 +43,13 @@ import {
 
 export interface PracticeCustomizeProps {
   practiceData: PracticeOut;
-  effectiveProfile: ProfileItem | null;
-  activeProfile: ProfileItem | null;
+  profile: ProfileItem | null;
   isGuest?: boolean;
 }
 
 function PracticeCustomizeComponent({
   practiceData,
-  effectiveProfile,
-  activeProfile,
+  profile,
   isGuest: _isGuest = false,
 }: PracticeCustomizeProps) {
   const router = useRouter();
@@ -596,9 +594,9 @@ function PracticeCustomizeComponent({
 
       setIsStartingAttempt(true);
       const profileIdForEmit =
-        effectiveProfile?.role === "guest"
+        profile?.role === "guest"
           ? ""
-          : String(effectiveProfile?.id || "");
+          : String(profile?.id || "");
 
       // Store toast ID so it can be dismissed when simulation starts
       const practiceToastId = toast.loading("Creating practice scenario...", {
@@ -636,7 +634,7 @@ function PracticeCustomizeComponent({
       personasArray,
       scenarios,
       validSimulationIds,
-      effectiveProfile,
+      profile,
       emitCreatePracticeScenario,
     ]
   );
@@ -724,9 +722,8 @@ function PracticeCustomizeComponent({
       backLabel: "Cancel",
       createLabel: "Start Practice",
       updateLabel: "Start Practice",
-      disabled: effectiveProfile?.id !== activeProfile?.id,
     }),
-    [effectiveProfile?.id, activeProfile?.id]
+    []
   );
 
   // Create filter onChange callbacks
@@ -1002,7 +999,7 @@ function PracticeCustomizeComponent({
   );
 
 
-  if (!effectiveProfile) {
+  if (!profile) {
     return null;
   }
 
@@ -1051,8 +1048,7 @@ export default React.memo(PracticeCustomizeComponent, (prevProps, nextProps) => 
   // Compare primitive props
   if (
     prevProps.isGuest !== nextProps.isGuest ||
-    prevProps.effectiveProfile?.id !== nextProps.effectiveProfile?.id ||
-    prevProps.activeProfile?.id !== nextProps.activeProfile?.id
+    prevProps.profile?.id !== nextProps.profile?.id
   ) {
     return false; // Props changed, re-render
   }

@@ -39,8 +39,7 @@ export default function Benchmark({
   const router = useRouter();
 
   const {
-    effectiveProfile,
-    activeProfile,
+    profile,
     isConnected,
     socket,
     startingEvalId,
@@ -168,7 +167,7 @@ export default function Benchmark({
     async (evalId: string, infiniteMode: boolean = false) => {
       try {
         // Only enforce profile for non-guests
-        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
+        if (profile?.role !== "guest" && !profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
@@ -200,7 +199,7 @@ export default function Benchmark({
         }
 
         const profileIdForEmit =
-          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
+          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
 
         socket.emit("benchmark_start", {
           eval_id: evalId,
@@ -228,11 +227,10 @@ export default function Benchmark({
       }
     },
     [
-      effectiveProfile,
+      profile,
       isConnected,
       socket,
       loadingToastId,
-      activeProfile,
       setStartingEvalId,
     ]
   );
@@ -244,7 +242,7 @@ export default function Benchmark({
     [handleStartEval]
   );
 
-  if (!effectiveProfile) {
+  if (!profile) {
     return null;
   }
 
@@ -254,8 +252,8 @@ export default function Benchmark({
         <BenchmarkZone
           evals={evalsList}
           profile={{
-            ...effectiveProfile,
-            role: effectiveProfile.role as
+            ...profile,
+            role: profile.role as
               | "member"
               | "instructional"
               | "superadmin"

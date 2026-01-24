@@ -16,10 +16,10 @@ import type { ProfileItem } from "@/app/(main)/layout-server";
 
 export function PracticeCustomizeButton() {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { profile } = useProfile();
 
   // Determine if button should be shown based on role
-  const role = effectiveProfile?.role;
+  const role = profile?.role;
   if (role === "guest") {
     return null;
   }

@@ -19,19 +19,19 @@ export function SingleProfileCertificateButton<TData>({
 }: SingleProfileCertificateButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [isGenerating, setIsGenerating] = useState(false);
-  const { effectiveProfile } = useProfile();
+  const { profile } = useProfile();
   // Function to generate certificate
   const handleCertificateGeneration = async () => {
     try {
       setIsGenerating(true);
 
       // Get the current user's profile from context
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast?.error("No user profile available");
         return;
       }
 
-      const profileId = effectiveProfile.id;
+      const profileId = profile.id;
 
       // Call the certificate generation API
       const response = await fetch("/api/documents/certificate", {

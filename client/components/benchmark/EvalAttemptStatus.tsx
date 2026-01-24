@@ -44,7 +44,7 @@ export default function EvalAttemptStatus({
   agentsList,
   patchAttemptDraftAction,
 }: EvalAttemptStatusProps) {
-  const { socket, isConnected, effectiveProfile, activeProfile } = useProfile();
+  const { socket, isConnected, profile } = useProfile();
   const [runs, setRuns] = useState(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());
@@ -252,7 +252,7 @@ export default function EvalAttemptStatus({
       setStartingRunIds((prev) => new Set(prev).add(runId));
 
       const profileIdForEmit =
-        effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id);
+        profile?.role === "guest" ? "" : String(profile!.id);
 
       // TODO: These individual run start/stop events may need to be removed
       // The new benchmark architecture orchestrates runs via benchmark_start/next/end
@@ -263,7 +263,7 @@ export default function EvalAttemptStatus({
         profile_id: profileIdForEmit || null,
       });
     },
-    [socket, isConnected, attemptId, effectiveProfile, activeProfile]
+    [socket, isConnected, attemptId, profile]
   );
 
   const handleStopRun = useCallback(
@@ -290,13 +290,13 @@ export default function EvalAttemptStatus({
     }
 
     const profileIdForEmit =
-      effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id);
+      profile?.role === "guest" ? "" : String(profile!.id);
 
     socket.emit("benchmark_runs_start_all", {
       attempt_id: attemptId,
       profile_id: profileIdForEmit || null,
     });
-  }, [socket, isConnected, attemptId, effectiveProfile, activeProfile]);
+  }, [socket, isConnected, attemptId, profile]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

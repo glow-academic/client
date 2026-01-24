@@ -148,17 +148,15 @@ export function UnifiedSidebar({
 
   // Use the profile context
   const {
-    activeProfile,
-    effectiveProfile,
+    profile,
     isLoading,
     availableSections,
-    isFullEmulation,
     isAuthenticated,
   } = useProfile();
 
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
-    if (!effectiveProfile) return [];
+    if (!profile) return [];
 
     const menu: NavSection[] = [];
     // Use server-provided available sections from profile context
@@ -196,9 +194,9 @@ export function UnifiedSidebar({
     // Analytics - Available from instructional level and up
     // Check for parent section "analytics" - if present, show all subsections
     if (
-      effectiveProfile.role &&
+      profile.role &&
       ["instructional", "admin", "superadmin"].includes(
-        effectiveProfile.role
+        profile.role
       ) &&
       availableSections.includes("analytics")
     ) {
@@ -307,8 +305,8 @@ export function UnifiedSidebar({
     // Engine - Available for admin and superadmin
     // Check for parent section "engine" - if present, show all subsections
     if (
-      (effectiveProfile.role === "admin" ||
-        effectiveProfile.role === "superadmin") &&
+      (profile.role === "admin" ||
+        profile.role === "superadmin") &&
       availableSections.includes("engine")
     ) {
       const engineItems: MenuItem[] = [];
@@ -346,7 +344,7 @@ export function UnifiedSidebar({
     // System - Available for superadmin only
     // Check for parent section "system" - if present, show all subsections
     if (
-      effectiveProfile.role === "superadmin" &&
+      profile.role === "superadmin" &&
       availableSections.includes("system")
     ) {
       const systemItems: MenuItem[] = [];
@@ -383,7 +381,7 @@ export function UnifiedSidebar({
 
     // Health - Available for superadmin only, top-level
     if (
-      effectiveProfile.role === "superadmin" &&
+      profile.role === "superadmin" &&
       availableSections.includes("health")
     ) {
       menu.push({
@@ -396,7 +394,7 @@ export function UnifiedSidebar({
 
     // Benchmark - Available for superadmin only, top-level
     if (
-      effectiveProfile.role === "superadmin" &&
+      profile.role === "superadmin" &&
       availableSections.includes("benchmark")
     ) {
       menu.push({
@@ -409,8 +407,8 @@ export function UnifiedSidebar({
 
     // Settings - Available for admin and superadmin, root level (bottom)
     if (
-      (effectiveProfile.role === "admin" ||
-        effectiveProfile.role === "superadmin") &&
+      (profile.role === "admin" ||
+        profile.role === "superadmin") &&
       availableSections.includes("settings")
     ) {
       menu.push({
@@ -464,7 +462,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveProfile, searchTerm, availableSections]);
+  }, [profile, searchTerm, availableSections]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
@@ -527,28 +525,28 @@ export function UnifiedSidebar({
   // Guest/default account users can't emulate even if they have the right role
   const canEmulate =
     isAuthenticated &&
-    activeProfile &&
-    activeProfile.role &&
-    ["instructional", "admin", "superadmin"].includes(activeProfile.role);
+    profile &&
+    profile.role &&
+    ["instructional", "admin", "superadmin"].includes(profile.role);
 
   // Watch for profile changes and redirect if current page is not accessible
   // TEMPORARILY DISABLED: Let users manually navigate from access denied screen for debugging
   /*
   React.useEffect(() => {
     // Don't redirect if still loading or if we don't have a profile yet
-    if (isLoading || !effectiveProfile) {
+    if (isLoading || !profile) {
       return;
     }
 
     // Only redirect if current page is not accessible
-    if (!hasRouteAccess(pathname, effectiveProfile.role)) {
+    if (!hasRouteAccess(pathname, profile.role)) {
       // Only redirect if we're not already on a redirect path
-      const redirectPath = getRedirectPathForRole(effectiveProfile.role);
+      const redirectPath = getRedirectPathForRole(profile.role);
       if (pathname !== redirectPath) {
         router.push(redirectPath);
       }
     }
-  }, [effectiveProfile, pathname, router, isLoading]);
+  }, [profile, pathname, router, isLoading]);
   */
 
   // Restore scroll position synchronously before paint to prevent flash
@@ -604,7 +602,7 @@ export function UnifiedSidebar({
   };
 
   // Show skeleton while profile is loading or while we don't have a complete profile yet
-  const shouldShowSkeleton = isLoading || !effectiveProfile;
+  const shouldShowSkeleton = isLoading || !profile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
@@ -628,20 +626,20 @@ export function UnifiedSidebar({
                       style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                     >
                       <AvatarFallback>
-                        {!effectiveProfile
+                        {!profile
                           ? "GU"
                           : getInitials(
-                              effectiveProfile?.name || ""
+                              profile?.name || ""
                             )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5 leading-none text-left">
                       <span className="font-medium truncate">
-                        {effectiveProfile?.name || "Guest User"}
+                        {profile?.name || "Guest User"}
                       </span>
                       {/* Capitalize the role for display */}
                       <span className="text-xs capitalize">
-                        {effectiveProfile?.role || "guest"}
+                        {profile?.role || "guest"}
                       </span>
                     </div>
                     <ChevronsUpDown className="ml-auto" />
@@ -651,22 +649,17 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Emulate - Hidden in full emulation mode */}
-                  {!isFullEmulation && (
+                  {canEmulate ? (
                     <>
-                      {canEmulate ? (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => setIsEmulateModalOpen(true)}
-                          >
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Emulate
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </>
-                      ) : null}
+                      <DropdownMenuItem
+                        onClick={() => setIsEmulateModalOpen(true)}
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Emulate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                     </>
-                  )}
+                  ) : null}
                   <DropdownMenuItem
                     onClick={handleLoginOrLogout}
                     disabled={isLoggingOut}

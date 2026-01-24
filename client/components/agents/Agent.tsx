@@ -138,7 +138,7 @@ export default function Agent({
   const router = useRouter();
   const isEditMode = !!agentId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -147,7 +147,7 @@ export default function Agent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const isSuperadmin = profile?.role === "superadmin";
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -325,9 +325,9 @@ export default function Agent({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primary_department_id ?? null
+        profile?.primary_department_id ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primary_department_id]
+    [isSuperadmin, profile?.primary_department_id]
   );
 
   // Initialize draft state from server data or draft payload
@@ -753,7 +753,7 @@ export default function Agent({
 
         // Save agent using unified v4 API (handles both create and update)
         // Ensure profileId exists - required for API calls
-        if (!effectiveProfile?.id) {
+        if (!profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           throw new Error("Profile not loaded");
         }
@@ -805,7 +805,7 @@ export default function Agent({
       agentId,
       agentData,
       isSuperadmin,
-      effectiveProfile,
+      profile,
       handleSaveAgent,
       resetFormAndState,
       router,

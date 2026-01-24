@@ -45,7 +45,7 @@ async function getProfileReportsFilters(searchParams?: URLSearchParams) {
   const profileContext = await getLayoutContext({
     body: {},
   });
-  const actorProfileId = profileContext.actual_id || profileContext.id || null;
+  const actorProfileId = profileContext.id || null;
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
@@ -146,7 +146,7 @@ export async function generateMetadata(
         roles: profileContext.scoped_roles || [],
         simulation_filters: ["general"],
         actor_profile_id:
-          profileContext.actual_id || profileContext.id || profileId,
+          profileContext.id || profileId,
         target_profile_id: profileId,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,

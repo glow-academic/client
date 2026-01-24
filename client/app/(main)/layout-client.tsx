@@ -75,7 +75,7 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const { effectiveProfile, activeProfile } = useProfile();
+  const { profile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff management pages (but not on /new page)
@@ -131,19 +131,19 @@ function MainLayoutContent({
     if (pathname === "/leaderboard") {
       const allowedRoles = ["member", "instructional", "admin", "superadmin"];
       return (
-        effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
+        profile?.role && allowedRoles.includes(profile.role)
       );
     }
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
-      effectiveProfile?.role &&
-      allowedRoles.includes(effectiveProfile.role) &&
+      profile?.role &&
+      allowedRoles.includes(profile.role) &&
       (isAnalyticsPage || isHomePage || isPracticePage) &&
       !pathname.includes("/edit") &&
       !isPricingGroupPage
     );
   }, [
-    effectiveProfile?.role,
+    profile?.role,
     isAnalyticsPage,
     pathname,
     isHomePage,
@@ -358,11 +358,11 @@ function MainLayoutContent({
   // Check if we should show SimulationControls
   // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
   const shouldShowSimulationControls = useMemo(() => {
-    if (!attemptData || !attemptId || !activeProfile || !attemptData.attempt) {
+    if (!attemptData || !attemptId || !profile || !attemptData.attempt) {
       return false;
     }
-    return attemptData.attempt.profile_id === activeProfile.id;
-  }, [attemptData, attemptId, activeProfile]);
+    return attemptData.attempt.profile_id === profile.id;
+  }, [attemptData, attemptId, profile]);
 
   // Determine if we're on a create/edit page and get resource type
   const isCreateOrEditPage = useMemo(() => {

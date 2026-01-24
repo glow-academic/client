@@ -95,7 +95,7 @@ function AuthComponent({
 }: AuthProps) {
   const router = useRouter();
   const isEditMode = !!authId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+  const { profile, selectedDraftId, setSelectedDraftId } =
     useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
@@ -504,7 +504,7 @@ function AuthComponent({
       }
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -547,7 +547,7 @@ function AuthComponent({
       formState,
       isEditMode,
       authId,
-      effectiveProfile?.id,
+      profile?.id,
       saveAuthAction,
       router,
       authData?.name_required,

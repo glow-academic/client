@@ -118,7 +118,7 @@ function FieldComponent({
   const router = useRouter();
   const isEditMode = !!fieldId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
@@ -864,7 +864,7 @@ function FieldComponent({
         throw new Error("Parameters are required");
       }
 
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -905,7 +905,7 @@ function FieldComponent({
       formState,
       isEditMode,
       fieldId,
-      effectiveProfile?.id,
+      profile?.id,
       saveFieldAction,
       router,
       fieldData?.name_required,

@@ -165,7 +165,7 @@ function SimulationComponent({
   const router = useRouter();
   const isEditMode = !!simulationId;
   const {
-    effectiveProfile,
+    profile,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -1275,7 +1275,7 @@ function SimulationComponent({
       // Pass department_ids directly - SQL handles validation via validate_department_create_permissions/validate_department_update_permissions
 
       // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
+      if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
@@ -1319,7 +1319,7 @@ function SimulationComponent({
       formState,
       isEditMode,
       simulationId,
-      effectiveProfile?.id,
+      profile?.id,
       saveSimulationAction,
       draftId,
       router,

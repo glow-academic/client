@@ -86,7 +86,7 @@ function ProviderComponent({
   const router = useRouter();
   const isEditMode = !!providerId;
   const {
-    effectiveProfile,
+    profile,
     selectedDraftId,
     setSelectedDraftId,
     socket,
