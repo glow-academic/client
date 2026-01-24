@@ -311,10 +311,9 @@ SELECT
         '{}'::types.q_list_scenarios_v4_objective[]
     ) as objectives,
     COALESCE(
-         (SELECT ARRAY_AGG((f.id::text, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''), (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)::text, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1))::types.q_list_scenarios_v4_field)
-         FROM field_artifact f
-         JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
-         WHERE f.id::text IN (SELECT parameter_item_id FROM all_parameter_item_ids)),
+         (SELECT ARRAY_AGG((fr.id::text, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = fr.field_id LIMIT 1), COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = fr.field_id LIMIT 1), ''), (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = fr.field_id LIMIT 1)::text, (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = fr.field_id LIMIT 1) LIMIT 1))::types.q_list_scenarios_v4_field)
+         FROM fields_resource fr
+         WHERE fr.id::text IN (SELECT parameter_item_id FROM all_parameter_item_ids)),
         '{}'::types.q_list_scenarios_v4_field[]
     ) as fields,
     COALESCE(

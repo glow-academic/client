@@ -9483,7 +9483,32 @@ export interface components {
             general_agent_id?: string | null;
         };
         /** GetPersonasListApiRequest */
-        GetPersonasListApiRequest: Record<string, never>;
+        GetPersonasListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Field Search */
+            field_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 12
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetPersonasListApiResponse */
         GetPersonasListApiResponse: {
             /** Actor Name */
@@ -9492,10 +9517,12 @@ export interface components {
             personas?: components["schemas"]["QListPersonasV4Persona"][] | null;
             /** Scenarios */
             scenarios?: components["schemas"]["QListPersonasV4Scenario"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QListPersonasV4Agent"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QListPersonasV4Field"][] | null;
             /** Departments */
             departments?: components["schemas"]["QListPersonasV4Department"][] | null;
+            /** Total Count */
+            total_count?: number | null;
         };
         /** GetPracticeHistoryApiRequest */
         GetPracticeHistoryApiRequest: {
@@ -17703,21 +17730,19 @@ export interface components {
             /** Label */
             label: string | null;
         };
-        /** QListPersonasV4Agent */
-        QListPersonasV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
         /** QListPersonasV4Department */
         QListPersonasV4Department: {
             /** Department Id */
             department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListPersonasV4Field */
+        QListPersonasV4Field: {
+            /** Field Id */
+            field_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
@@ -17739,6 +17764,8 @@ export interface components {
             department_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
             /** Agent Id */
             agent_id: string | null;
             /** Agent Name */

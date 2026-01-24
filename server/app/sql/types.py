@@ -10927,25 +10927,42 @@ class GetPersonaResourceIdsByGroupIdApiResponse(BaseModel):
 class GetPersonasListSqlParams(BaseModel):
 
     profile_id: UUID
+    search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    scenario_search: str | None = None
+    field_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.search,
+            self.scenario_ids,
+            self.field_ids,
+            self.filter_department_ids,
+            self.scenario_search,
+            self.field_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
         )
-
-class QListPersonasV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
 
 class QListPersonasV4Department(BaseModel):
 
     department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListPersonasV4Field(BaseModel):
+
+    field_id: UUID | None
     name: str | None
     description: str | None
 
@@ -10961,6 +10978,7 @@ class QListPersonasV4Persona(BaseModel):
     icon: str | None
     department_ids: list[str] | None
     scenario_ids: list[UUID] | None
+    field_ids: list[UUID] | None
     agent_id: UUID | None
     agent_name: str | None
     model_id: UUID | None
@@ -10994,20 +11012,30 @@ class GetPersonasListSqlRow(BaseModel):
     actor_name: str | None = None
     personas: list[QListPersonasV4Persona] | None = None
     scenarios: list[QListPersonasV4Scenario] | None = None
-    agents: list[QListPersonasV4Agent] | None = None
+    fields: list[QListPersonasV4Field] | None = None
     departments: list[QListPersonasV4Department] | None = None
+    total_count: int | None = None
 
 class GetPersonasListApiRequest(BaseModel):
 
-    pass
+    search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    scenario_search: str | None = None
+    field_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
 
 class GetPersonasListApiResponse(BaseModel):
 
     actor_name: str | None = None
     personas: list[QListPersonasV4Persona] | None = None
     scenarios: list[QListPersonasV4Scenario] | None = None
-    agents: list[QListPersonasV4Agent] | None = None
+    fields: list[QListPersonasV4Field] | None = None
     departments: list[QListPersonasV4Department] | None = None
+    total_count: int | None = None
 
 
 

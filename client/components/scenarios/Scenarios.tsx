@@ -755,7 +755,7 @@ export function Scenarios({
           {scenario.problem_statement ||
             "Scenario will be dynamically generated."}
         </p>
-        {/* Compact info row: Simulations • Persona • Parameter Items */}
+        {/* Compact info row: Simulations • Persona • Fields */}
         {!isChild && (
           <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
             {/* Simulations count - shown first */}
@@ -798,8 +798,35 @@ export function Scenarios({
                 </div>
               </>
             )}
-            {/* Parameter item badges - removed since parameter_items not in schema type */}
-            {/* TODO: Add parameter_items display if needed, using fields array or parameter_item_ids */}
+            {/* Field badges */}
+            {scenario.parameter_item_ids && scenario.parameter_item_ids.length > 0 && (
+              <>
+                <span className="text-muted-foreground">•</span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {scenario.parameter_item_ids.slice(0, 4).map((fieldId) => {
+                    const field = fieldMapping[fieldId];
+                    if (!field) return null;
+                    return (
+                      <Tooltip key={fieldId}>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs">
+                            {field.name}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{field.description || field.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                  {scenario.parameter_item_ids.length > 4 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{scenario.parameter_item_ids.length - 4} more
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
       </CardContent>

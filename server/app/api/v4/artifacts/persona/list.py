@@ -66,8 +66,19 @@ async def get_persona_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = GetPersonasListSqlParams(profile_id=profile_id)
+        # Convert API request to SQL params (add profile_id from header + request body fields)
+        params = GetPersonasListSqlParams(
+            profile_id=profile_id,
+            search=request.search,
+            scenario_ids=request.scenario_ids,
+            field_ids=request.field_ids,
+            filter_department_ids=request.filter_department_ids,
+            scenario_search=request.scenario_search,
+            field_search=request.field_search,
+            department_search=request.department_search,
+            page_size=request.page_size,
+            page_offset=request.page_offset,
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present

@@ -397,19 +397,11 @@ export default function Cohorts({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{cohort.name}</CardTitle>
-            <div className="mt-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">
-                  <Users className="h-3 w-3 mr-1" />
-                  {cohort.num_members} members
-                </Badge>
+            {!cohort.active && (
+              <div className="mt-1 flex items-center gap-2">
+                <Badge variant="secondary">Inactive</Badge>
               </div>
-              {!cohort.active && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Inactive</Badge>
-                </div>
-              )}
-            </div>
+            )}
           </div>
           <div className="flex items-center gap-1">
             {cohort.can_edit ? (

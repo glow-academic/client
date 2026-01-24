@@ -44572,7 +44572,121 @@
         "title": "GetPersonaApiResponse"
       },
       "GetPersonasListApiRequest": {
-        "properties": {},
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "filter_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Department Ids"
+          },
+          "scenario_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Search"
+          },
+          "field_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Search"
+          },
+          "department_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Search"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 12
+          },
+          "page_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
         "type": "object",
         "title": "GetPersonasListApiRequest"
       },
@@ -44617,11 +44731,11 @@
             ],
             "title": "Scenarios"
           },
-          "agents": {
+          "fields": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QListPersonasV4Agent"
+                  "$ref": "#/components/schemas/QListPersonasV4Field"
                 },
                 "type": "array"
               },
@@ -44629,7 +44743,7 @@
                 "type": "null"
               }
             ],
-            "title": "Agents"
+            "title": "Fields"
           },
           "departments": {
             "anyOf": [
@@ -44644,6 +44758,17 @@
               }
             ],
             "title": "Departments"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
           }
         },
         "type": "object",
@@ -87838,66 +87963,6 @@
         ],
         "title": "QListParametersV4ScenarioOption"
       },
-      "QListPersonasV4Agent": {
-        "properties": {
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "QListPersonasV4Agent"
-      },
       "QListPersonasV4Department": {
         "properties": {
           "department_id": {
@@ -87942,6 +88007,51 @@
           "description"
         ],
         "title": "QListPersonasV4Department"
+      },
+      "QListPersonasV4Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description"
+        ],
+        "title": "QListPersonasV4Field"
       },
       "QListPersonasV4Persona": {
         "properties": {
@@ -88029,6 +88139,21 @@
               }
             ],
             "title": "Scenario Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
           },
           "agent_id": {
             "anyOf": [
@@ -88196,6 +88321,7 @@
           "icon",
           "department_ids",
           "scenario_ids",
+          "field_ids",
           "agent_id",
           "agent_name",
           "model_id",

@@ -115,7 +115,6 @@ link_cohort_title AS (
         NOW()
     FROM new_cohort nc
     CROSS JOIN new_title_resource ntr
-    ON CONFLICT (cohort_id, name_id) DO NOTHING
 ),
 -- Link cohort to description
 link_cohort_description AS (
@@ -126,7 +125,6 @@ link_cohort_description AS (
         NOW()
     FROM new_cohort nc
     CROSS JOIN description_resource dr
-    ON CONFLICT (cohort_id, description_id) DO NOTHING
 ),
 -- Link cohort active flag (set to false for duplicate)
 link_cohort_active_flag AS (
@@ -137,8 +135,6 @@ link_cohort_active_flag AS (
     FROM new_cohort nc
     CROSS JOIN flags_resource f
     WHERE f.name = 'cohort_active'
-    ON CONFLICT (cohort_id, flag_id) DO UPDATE SET 
-        value = FALSE
 ),
 cohort_with_title AS (
     -- Get cohort with title for return
@@ -147,17 +143,6 @@ cohort_with_title AS (
         ntr.name as title
     FROM new_cohort nc
     LEFT JOIN new_title_resource ntr ON true
-),
-copy_profiles AS (
-    -- Copy profile relationships
-    INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-    SELECT 
-        cp.profile_id,
-        nc.id,
-        cp.active
-    FROM new_cohort nc
-    CROSS JOIN original_cohort oc
-    JOIN profile_cohorts_junction cp ON cp.cohort_id = oc.id
 ),
 copy_simulations AS (
     -- Copy simulation relationships (positions linked via cohort_simulation_positions_junction)
@@ -189,8 +174,6 @@ copy_simulation_positions AS (
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
     JOIN cohort_simulation_positions_junction csp ON csp.cohort_id = oc.id
-    ON CONFLICT (cohort_id, simulation_position_id) DO UPDATE SET
-        active = EXCLUDED.active
 ),
 copy_departments AS (
     -- Copy department relationships
