@@ -195,11 +195,19 @@ runs_base AS (
         mr.input_tokens,
         mr.output_tokens,
         am.model_id,
-        mr.profile_id,
-        mr.agent_id,
+        prj.profile_id,
+        arj.agent_id,
         mr.group_id
     FROM runs_entry mr
-    LEFT JOIN agent_models_junction am ON am.agent_id = mr.agent_id AND am.active = true
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = mr.id
+    LEFT JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
+    LEFT JOIN profile_runs_junction prj ON prj.run_id = mr.id
+    -- Join to simulations via messages_entry.chat_id -> chats_entry.attempt_id -> simulation_attempts_junction
+    LEFT JOIN messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
+    LEFT JOIN chats_entry c ON c.id = msg.chat_id
+    LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
+    LEFT JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
+    LEFT JOIN simulation_artifact sim ON sim.id = saj.simulation_id
     CROSS JOIN params p
     WHERE
         -- Date filters (always required)
@@ -211,21 +219,21 @@ runs_base AS (
             OR COALESCE(array_length(p.department_ids, 1), 0) = 0
             OR EXISTS (
                 SELECT 1 FROM profile_departments_junction pd
-                WHERE pd.profile_id = mr.profile_id
+                WHERE pd.profile_id = prj.profile_id
                   AND pd.department_id = ANY(p.department_ids)
             )
         )
         -- Profile filter (specific user) - only if role is not admin/superadmin/instructional
         AND (
             (SELECT effective_profile_id FROM profile_type_check) IS NULL
-            OR mr.profile_id = (SELECT effective_profile_id FROM profile_type_check)
+            OR prj.profile_id = (SELECT effective_profile_id FROM profile_type_check)
         )
         -- Role filter (only if no effective profile_id)
         AND (
             (SELECT effective_profile_id FROM profile_type_check) IS NOT NULL
             OR (SELECT roles FROM params) IS NULL
             OR COALESCE(array_length((SELECT roles FROM params), 1), 0) = 0
-            OR mr.profile_id IN (
+            OR prj.profile_id IN (
                 SELECT DISTINCT p.id
                 FROM profile_artifact p
                 LEFT JOIN profile_roles_junction pr_j ON pr_j.profile_id = p.id
@@ -237,36 +245,24 @@ runs_base AS (
         AND (
             p.cohort_ids IS NULL
             OR COALESCE(array_length(p.cohort_ids, 1), 0) = 0
-            OR mr.profile_id IN (
+            OR prj.profile_id IN (
                 SELECT cp.profile_id FROM profile_cohorts_junction cp
                 WHERE cp.cohort_id = ANY(p.cohort_ids) AND cp.active = true
             )
         )
-        -- Simulation type filter: EXISTS via group_id linkage
+        -- Simulation type filtering
         AND (
             p.simulation_filters IS NULL
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
-            -- Runs not linked to any chat/attempt: always include (treat as "general")
-            OR mr.group_id IS NULL
-            OR NOT EXISTS (
-                SELECT 1 FROM chats_entry c
-                WHERE c.group_id = mr.group_id AND c.attempt_id IS NOT NULL
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM chats_entry c
-                JOIN attempts_entry sa ON sa.id = c.attempt_id
-                JOIN simulation_artifact sim ON sim.id = sa.simulation_id
-                WHERE c.group_id = mr.group_id
-                  AND (
-                    ('general' = ANY(p.simulation_filters)
-                      AND NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE)
-                      AND COALESCE(sa.archived, FALSE) = FALSE)
-                    OR ('practice' = ANY(p.simulation_filters)
-                      AND EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE)
-                      AND COALESCE(sa.archived, FALSE) = FALSE)
-                    OR ('archived' = ANY(p.simulation_filters) AND COALESCE(sa.archived, FALSE) = TRUE)
-                  )
+            OR sim.id IS NULL  -- Runs not linked to simulations are always included
+            OR (
+                ('general' = ANY(p.simulation_filters)
+                  AND NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE)
+                  AND COALESCE(sa.archived, FALSE) = FALSE)
+                OR ('practice' = ANY(p.simulation_filters)
+                  AND EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE)
+                  AND COALESCE(sa.archived, FALSE) = FALSE)
+                OR ('archived' = ANY(p.simulation_filters) AND COALESCE(sa.archived, FALSE) = TRUE)
             )
         )
         -- Exclude archived attempts unless 'archived' is explicitly in the filter list
@@ -274,12 +270,7 @@ runs_base AS (
             p.simulation_filters IS NULL
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
             OR 'archived' = ANY(p.simulation_filters)
-            OR mr.group_id IS NULL
-            OR NOT EXISTS (
-                SELECT 1 FROM chats_entry c
-                JOIN attempts_entry sa ON sa.id = c.attempt_id
-                WHERE c.group_id = mr.group_id AND COALESCE(sa.archived, FALSE) = TRUE
-            )
+            OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
 
@@ -457,7 +448,8 @@ run_costs AS (
         ), 0) as run_cost
     FROM run_pricing_entry rpu
     JOIN runs_entry r ON r.id = rpu.run_id
-    JOIN agent_models_junction am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN agent_runs_junction arj ON arj.run_id = r.id
+    JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type

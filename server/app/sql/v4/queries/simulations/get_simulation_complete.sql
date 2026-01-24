@@ -2760,7 +2760,7 @@ SELECT
         )
         FROM scenarios_resource s
         WHERE s.active = true
-          AND s.id = ANY((SELECT scenario_ids FROM scenario_ids_data))
+          AND s.id = ANY(COALESCE((SELECT scenario_ids FROM scenario_ids_data), ARRAY[]::uuid[]))
         ),
         '{}'::types.q_get_simulation_v4_scenario_resource[]
     ) as scenario_resources,

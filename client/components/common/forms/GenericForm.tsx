@@ -488,8 +488,8 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
 
   // Submit handler
   const handleSubmit = React.useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    async (e?: React.SyntheticEvent) => {
+      e?.preventDefault();
       if (!onSubmit || isSubmitting) return;
 
       setIsSubmitting(true);
@@ -607,7 +607,8 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
             </Button>
           )}
           <Button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={isSubmitting || submitButton.disabled || _isReadonly}
             className="min-w-[120px]"
           >

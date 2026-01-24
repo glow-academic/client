@@ -2563,7 +2563,7 @@ SELECT
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
-        WHERE dmd.department_id = ANY((SELECT department_ids FROM persona_departments_combined_data))
+        WHERE dmd.department_id = ANY(COALESCE((SELECT department_ids FROM persona_departments_combined_data), ARRAY[]::uuid[]))
         ),
         '{}'::types.q_get_persona_v4_department[]
     ) as department_resources,
@@ -2626,7 +2626,7 @@ SELECT
                         -- Show selected filter: if enabled, only show selected fields
                         AND (
                             NOT p.field_show_selected OR
-                            vfd.field_id = ANY((SELECT field_ids FROM persona_fields_combined_data))
+                            vfd.field_id = ANY(COALESCE((SELECT field_ids FROM persona_fields_combined_data), ARRAY[]::uuid[]))
                         )
                 ) vfd)
             ELSE
@@ -2647,7 +2647,7 @@ SELECT
                         -- Show selected filter: if enabled, only show selected fields
                         AND (
                             NOT p.field_show_selected OR
-                            fmd.field_id = ANY((SELECT field_ids FROM persona_fields_combined_data))
+                            fmd.field_id = ANY(COALESCE((SELECT field_ids FROM persona_fields_combined_data), ARRAY[]::uuid[]))
                         )
                 ) fmd)
         END,

@@ -4084,7 +4084,7 @@ SELECT
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
-        WHERE dmd.department_id = ANY((SELECT department_ids FROM scenario_departments_combined_data))
+        WHERE dmd.department_id = ANY(COALESCE((SELECT department_ids FROM scenario_departments_combined_data), ARRAY[]::uuid[]))
         ),
         '{}'::types.q_get_scenario_v4_department[]
     ) as department_resources,
@@ -4114,7 +4114,7 @@ SELECT
             ORDER BY fmd.parameter_name, fmd.name
         )
         FROM field_mapping_data fmd
-        WHERE fmd.field_id = ANY((SELECT field_ids FROM scenario_fields_combined_data))
+        WHERE fmd.field_id = ANY(COALESCE((SELECT field_ids FROM scenario_fields_combined_data), ARRAY[]::uuid[]))
     ), '{}'::types.q_get_scenario_v4_field[]) as field_resources,
     CASE 
         WHEN NOT tec.fields_has_tools AND uf.show_fields THEN false
@@ -4142,7 +4142,7 @@ SELECT
         WHEN sc.objectives_enabled THEN COALESCE((
             SELECT ARRAY_AGG((o.id, o.objective, false)::types.q_get_scenario_v4_objective_resource ORDER BY array_position((SELECT objective_ids FROM scenario_objectives_combined_data), o.id))
             FROM objectives_resource o
-            WHERE o.id = ANY((SELECT objective_ids FROM scenario_objectives_combined_data))
+            WHERE o.id = ANY(COALESCE((SELECT objective_ids FROM scenario_objectives_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_objective_resource[])
         ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
     END as objective_resources,
@@ -4161,7 +4161,7 @@ SELECT
         WHEN sc.objectives_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (omd.id, omd.objective, omd.generated)::types.q_get_scenario_v4_objective_resource
-                ORDER BY CASE WHEN omd.id = ANY((SELECT objective_ids FROM scenario_objectives_combined_data)) THEN 0 ELSE 1 END, omd.id
+                ORDER BY CASE WHEN omd.id = ANY(COALESCE((SELECT objective_ids FROM scenario_objectives_combined_data), ARRAY[]::uuid[])) THEN 0 ELSE 1 END, omd.id
             )
             FROM objective_mapping_data omd
             LIMIT 100
@@ -4178,7 +4178,7 @@ SELECT
             SELECT ARRAY_AGG((i.id, i.name, COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(i.upload_id, i.id), false)::types.q_get_scenario_v4_image_resource ORDER BY array_position((SELECT image_ids FROM scenario_images_combined_data), i.id))
             FROM images_resource i
             LEFT JOIN uploads_entry u ON u.id = i.upload_id
-            WHERE i.id = ANY((SELECT image_ids FROM scenario_images_combined_data))
+            WHERE i.id = ANY(COALESCE((SELECT image_ids FROM scenario_images_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
     END as image_resources,
@@ -4197,7 +4197,7 @@ SELECT
         WHEN sc.images_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (imd.id, imd.name, imd.file_path, imd.mime_type, imd.upload_id, imd.generated)::types.q_get_scenario_v4_image_resource
-                ORDER BY CASE WHEN imd.id = ANY((SELECT image_ids FROM scenario_images_combined_data)) THEN 0 ELSE 1 END, imd.id
+                ORDER BY CASE WHEN imd.id = ANY(COALESCE((SELECT image_ids FROM scenario_images_combined_data), ARRAY[]::uuid[])) THEN 0 ELSE 1 END, imd.id
             )
             FROM image_mapping_data imd
             WHERE (
@@ -4218,7 +4218,7 @@ SELECT
             SELECT ARRAY_AGG((v.id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(v.upload_id, v.id), false)::types.q_get_scenario_v4_video_resource ORDER BY array_position((SELECT video_ids FROM scenario_videos_combined_data), v.id))
             FROM videos_resource v
             LEFT JOIN uploads_entry u ON u.id = v.upload_id
-            WHERE v.id = ANY((SELECT video_ids FROM scenario_videos_combined_data))
+            WHERE v.id = ANY(COALESCE((SELECT video_ids FROM scenario_videos_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]
     END as video_resources,
@@ -4237,7 +4237,7 @@ SELECT
         WHEN sc.video_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (vmd.id, vmd.name, vmd.length_seconds, vmd.completed, vmd.file_path, vmd.mime_type, vmd.upload_id, vmd.generated)::types.q_get_scenario_v4_video_resource
-                ORDER BY CASE WHEN vmd.id = ANY((SELECT video_ids FROM scenario_videos_combined_data)) THEN 0 ELSE 1 END, vmd.id
+                ORDER BY CASE WHEN vmd.id = ANY(COALESCE((SELECT video_ids FROM scenario_videos_combined_data), ARRAY[]::uuid[])) THEN 0 ELSE 1 END, vmd.id
             )
             FROM video_mapping_data vmd
             WHERE (
@@ -4257,7 +4257,7 @@ SELECT
         WHEN sc.questions_enabled THEN COALESCE((
             SELECT ARRAY_AGG((q.id, q.question_text, COALESCE(q.allow_multiple, false), false)::types.q_get_scenario_v4_question_resource ORDER BY array_position((SELECT question_ids FROM scenario_questions_combined_data), q.id))
             FROM questions_resource q
-            WHERE q.id = ANY((SELECT question_ids FROM scenario_questions_combined_data))
+            WHERE q.id = ANY(COALESCE((SELECT question_ids FROM scenario_questions_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_question_resource[])
         ELSE '{}'::types.q_get_scenario_v4_question_resource[]
     END as question_resources,
@@ -4276,7 +4276,7 @@ SELECT
         WHEN sc.questions_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (qmd.id, qmd.question_text, qmd.allow_multiple, qmd.generated)::types.q_get_scenario_v4_question_resource
-                ORDER BY CASE WHEN qmd.id = ANY((SELECT question_ids FROM scenario_questions_combined_data)) THEN 0 ELSE 1 END, qmd.id
+                ORDER BY CASE WHEN qmd.id = ANY(COALESCE((SELECT question_ids FROM scenario_questions_combined_data), ARRAY[]::uuid[])) THEN 0 ELSE 1 END, qmd.id
             )
             FROM question_mapping_data qmd
         ), '{}'::types.q_get_scenario_v4_question_resource[])
@@ -4294,7 +4294,7 @@ SELECT
                 ORDER BY tmd.name
             )
             FROM template_mapping_data tmd
-            WHERE tmd.id = ANY((SELECT template_ids FROM scenario_templates_combined_data))
+            WHERE tmd.id = ANY(COALESCE((SELECT template_ids FROM scenario_templates_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_template_resource[])
         ELSE '{}'::types.q_get_scenario_v4_template_resource[]
     END as template_resources,
@@ -4333,7 +4333,7 @@ SELECT
             ORDER BY pmd.name
         )
         FROM persona_mapping_data pmd
-        WHERE pmd.persona_id = ANY((SELECT persona_ids FROM scenario_personas_combined_data))
+        WHERE pmd.persona_id = ANY(COALESCE((SELECT persona_ids FROM scenario_personas_combined_data), ARRAY[]::uuid[]))
     ), '{}'::types.q_get_scenario_v4_persona[]) as persona_resources,
     CASE 
         WHEN NOT tec.personas_has_tools AND uf.show_personas THEN false
@@ -4360,7 +4360,7 @@ SELECT
             ORDER BY dmd.name
         )
         FROM document_mapping_data dmd
-        WHERE dmd.document_id = ANY((SELECT document_ids FROM scenario_documents_combined_data))
+        WHERE dmd.document_id = ANY(COALESCE((SELECT document_ids FROM scenario_documents_combined_data), ARRAY[]::uuid[]))
     ), '{}'::types.q_get_scenario_v4_document[]) as document_resources,
     CASE 
         WHEN NOT tec.documents_has_tools AND uf.show_documents THEN false
@@ -4387,7 +4387,7 @@ SELECT
             ORDER BY pmd.name
         )
         FROM parameter_mapping_data pmd
-        WHERE pmd.parameter_id = ANY((SELECT parameter_ids FROM scenario_parameters_combined_data))
+        WHERE pmd.parameter_id = ANY(COALESCE((SELECT parameter_ids FROM scenario_parameters_combined_data), ARRAY[]::uuid[]))
     ), '{}'::types.q_get_scenario_v4_parameter[]) as parameter_resources,
     CASE 
         WHEN NOT tec.parameters_has_tools AND uf.show_parameters THEN false
