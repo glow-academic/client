@@ -101,17 +101,6 @@ type CreateDraftTemplatesOut = OutputOf<
   "/api/v4/resources/templates",
   "post"
 >;
-type UpdateTemplatesIn = {
-  body: {
-    template_id: string;
-    html: string;
-    name?: string | null;
-    description?: string | null;
-  };
-};
-type UpdateTemplatesOut = {
-  template_id: string | null;
-};
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
 type CreateDraftParametersOut = OutputOf<
   "/api/v4/resources/parameters",
@@ -215,9 +204,6 @@ export interface ScenarioProps {
   createTemplatesAction?: (
     input: CreateDraftTemplatesIn
   ) => Promise<CreateDraftTemplatesOut>;
-  updateTemplatesAction?: (
-    input: UpdateTemplatesIn
-  ) => Promise<UpdateTemplatesOut>;
   createParametersAction?: (
     input: CreateDraftParametersIn
   ) => Promise<CreateDraftParametersOut>;
@@ -250,7 +236,6 @@ function ScenarioComponent({
   createPersonasAction,
   createDocumentsAction,
   createTemplatesAction,
-  updateTemplatesAction,
   createParametersAction,
   createFieldsAction,
   createImagesAction,
@@ -594,6 +579,7 @@ function ScenarioComponent({
   );
 
   const lastPatchedKeyRef = useRef<string | null>(null);
+  const isFirstPatchRef = useRef(true);
 
   // Track if there are pending changes for beforeunload warning
   const hasPendingChangesRef = useRef(false);
@@ -638,6 +624,14 @@ function ScenarioComponent({
     // Only block if there's an actual numeric version to sync (not null for new scenarios)
     if (typeof scenarioData?.draft_version === "number" && !versionSyncedRef.current) {
       console.debug("[Scenario Draft] Waiting for version sync");
+      return;
+    }
+
+    // Skip the first effect run - treat initial server state as the baseline
+    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
+    if (isFirstPatchRef.current) {
+      isFirstPatchRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
       return;
     }
 
@@ -894,21 +888,12 @@ function ScenarioComponent({
     ]
   );
 
-  const showProblemStatementSection =
-    (stableScenarioDataFields?.show_problem_statement ?? false) &&
-    flagsEnabled.problemStatement;
-  const showObjectivesSection =
-    (stableScenarioDataFields?.show_objectives ?? false) &&
-    flagsEnabled.objectives;
-  const showImagesSection =
-    (stableScenarioDataFields?.show_images ?? false) && flagsEnabled.images;
-  const showVideosSection =
-    (stableScenarioDataFields?.show_videos ?? false) && flagsEnabled.videos;
-  const showQuestionsSection =
-    (stableScenarioDataFields?.show_questions ?? false) && flagsEnabled.questions;
-  const showTemplatesSection =
-    (stableScenarioDataFields?.show_templates ?? false) &&
-    flagsEnabled.templates;
+  const showProblemStatementSection = flagsEnabled.problemStatement;
+  const showObjectivesSection = flagsEnabled.objectives;
+  const showImagesSection = flagsEnabled.images;
+  const showVideosSection = flagsEnabled.videos;
+  const showQuestionsSection = flagsEnabled.questions;
+  const showTemplatesSection = flagsEnabled.templates;
 
   const canRegenerate = useCallback(
     (resourceType: ScenarioResourceType): boolean => {
@@ -1012,7 +997,7 @@ function ScenarioComponent({
   }, [scenarioData]);
 
   useEffect(() => {
-    if (scenarioData?.general_agent_id) {
+    if (scenarioData?.general_agent_id && scenarioData?.can_edit !== false) {
       setGenerationCapability({
         artifactType: "scenario",
         canGenerate: true,
@@ -1028,6 +1013,7 @@ function ScenarioComponent({
     return () => clearGenerationCapability();
   }, [
     scenarioData?.general_agent_id,
+    scenarioData?.can_edit,
     setGenerationCapability,
     clearGenerationCapability,
   ]);
@@ -2952,13 +2938,6 @@ function ScenarioComponent({
                       ) => Promise<CreateDraftTemplatesOut>)
                     | undefined
                 }
-                updateTemplatesAction={
-                  updateTemplatesAction as
-                    | ((
-                        input: UpdateTemplatesIn
-                      ) => Promise<UpdateTemplatesOut>)
-                    | undefined
-                }
                 onGenerate={handleGenerateTemplates}
                 isGenerating={isGenerating("templates")}
               />
@@ -3324,7 +3303,6 @@ function ScenarioComponent({
       createPersonasAction,
       createDocumentsAction,
       createTemplatesAction,
-      updateTemplatesAction,
       createParametersAction,
       createFieldsAction,
       createImagesAction,

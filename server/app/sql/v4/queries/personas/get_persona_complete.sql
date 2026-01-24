@@ -270,6 +270,112 @@ draft_version_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+-- Draft multi-select resource CTEs (from *_draft tables)
+draft_departments_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
+    FROM params x
+    LEFT JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_fields_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as field_ids
+    FROM params x
+    LEFT JOIN fields_draft df ON df.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_examples_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), NULL), ARRAY[]::uuid[]) as example_ids
+    FROM params x
+    LEFT JOIN examples_draft de ON de.draft_id = x.draft_id
+    LIMIT 1
+),
+-- Persona junction data CTEs (from persona_*_junction tables)
+persona_departments_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
+                 FROM persona_departments_junction pd
+                 WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as department_ids
+    FROM params
+    LIMIT 1
+),
+persona_fields_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
+                 FROM persona_fields_junction pf
+                 WHERE pf.persona_id = (SELECT persona_id FROM params) AND pf.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as field_ids
+    FROM params
+    LIMIT 1
+),
+persona_examples_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(e.id ORDER BY pe.idx)
+                 FROM persona_examples_junction pe
+                 JOIN examples_resource e ON e.id = pe.example_id
+                 WHERE pe.persona_id = (SELECT persona_id FROM params) AND pe.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as example_ids
+    FROM params
+    LIMIT 1
+),
+-- Combined CTEs: prefer draft if available, otherwise use persona junction
+persona_departments_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT department_ids FROM draft_departments_data), 1), 0) > 0
+                THEN (SELECT department_ids FROM draft_departments_data)
+            WHEN COALESCE(array_length((SELECT department_ids FROM persona_departments_junction_data), 1), 0) > 0
+                THEN (SELECT department_ids FROM persona_departments_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as department_ids
+    FROM params
+    LIMIT 1
+),
+persona_fields_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT field_ids FROM draft_fields_data), 1), 0) > 0
+                THEN (SELECT field_ids FROM draft_fields_data)
+            WHEN COALESCE(array_length((SELECT field_ids FROM persona_fields_junction_data), 1), 0) > 0
+                THEN (SELECT field_ids FROM persona_fields_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as field_ids
+    FROM params
+    LIMIT 1
+),
+persona_examples_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT example_ids FROM draft_examples_data), 1), 0) > 0
+                THEN (SELECT example_ids FROM draft_examples_data)
+            WHEN COALESCE(array_length((SELECT example_ids FROM persona_examples_junction_data), 1), 0) > 0
+                THEN (SELECT example_ids FROM persona_examples_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as example_ids
+    FROM params
+    LIMIT 1
+),
 user_profile AS (
     SELECT role, actor_name
     FROM view_user_profile_context
@@ -411,8 +517,6 @@ field_mapping_data AS (
     FROM parameter_mapping_data pmd
     CROSS JOIN field_suggestions_data fsd_for_map
     JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'field_active' AND ff.value = true)
-    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1)
-    WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = true)
 ),
 -- Valid fields data for new personas (based on departments, similar to documents endpoint)
 valid_fields_data AS (
@@ -502,39 +606,16 @@ ui_flags AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
--- Field IDs (selected field IDs for persona)
+-- Field IDs (selected field IDs for persona - draft-aware)
 field_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
-                 FROM persona_fields_junction pf
-                 WHERE pf.persona_id = (SELECT persona_id FROM params)
-                   AND pf.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as field_ids
+    SELECT (SELECT field_ids FROM persona_fields_combined_data) as field_ids
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Example IDs (selected example IDs for persona)
+-- Example IDs (selected example IDs for persona - draft-aware)
 persona_examples_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(e.id ORDER BY pe.idx)
-                 FROM persona_examples_junction pe
-                 JOIN examples_resource e ON e.id = pe.example_id
-                 WHERE pe.persona_id = (SELECT persona_id FROM params)
-                   AND pe.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as example_ids
+    SELECT (SELECT example_ids FROM persona_examples_combined_data) as example_ids
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
 -- Example mapping (for examples array - persona-scoped, includes id)
@@ -2474,21 +2555,7 @@ SELECT
         '{}'::types.q_get_persona_v4_flag_resource[]
     ) as flags,
     -- Multi-select resources: departments
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        CASE 
-            WHEN (SELECT persona_id FROM params) IS NULL THEN
-                -- For new personas, leave department_ids empty (no auto-selection)
-                ARRAY[]::uuid[]
-            ELSE pdd.department_ids
-        END
-    ) as department_ids,
+    (SELECT department_ids FROM persona_departments_combined_data) as department_ids,
     -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -2496,23 +2563,8 @@ SELECT
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
-        WHERE dmd.department_id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                CASE 
-                    WHEN (SELECT persona_id FROM params) IS NULL THEN
-                        -- For new personas, leave department_ids empty (no auto-selection)
-                        ARRAY[]::uuid[]
-                    ELSE pdd.department_ids
-                END
-            )
-        )),
+        WHERE dmd.department_id = ANY((SELECT department_ids FROM persona_departments_combined_data))
+        ),
         '{}'::types.q_get_persona_v4_department[]
     ) as department_resources,
     CASE 
@@ -2574,11 +2626,7 @@ SELECT
                         -- Show selected filter: if enabled, only show selected fields
                         AND (
                             NOT p.field_show_selected OR
-                            vfd.field_id IN (
-                                SELECT jsonb_array_elements_text(payload->'field_ids')::uuid
-                                FROM draft_payload_data
-                                WHERE payload->'field_ids' IS NOT NULL
-                            )
+                            vfd.field_id = ANY((SELECT field_ids FROM persona_fields_combined_data))
                         )
                 ) vfd)
             ELSE
@@ -2599,12 +2647,7 @@ SELECT
                         -- Show selected filter: if enabled, only show selected fields
                         AND (
                             NOT p.field_show_selected OR
-                            fmd.field_id IN (
-                                SELECT pf.field_id
-                                FROM persona_fields_junction pf
-                                WHERE pf.persona_id = (SELECT persona_id FROM params)
-                                  AND pf.field_id IS NOT NULL
-                            )
+                            fmd.field_id = ANY((SELECT field_ids FROM persona_fields_combined_data))
                         )
                 ) fmd)
         END,

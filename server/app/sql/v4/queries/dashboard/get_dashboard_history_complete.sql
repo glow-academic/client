@@ -158,19 +158,17 @@ expanded_history_cohort_ids AS (
 history_attempts AS (
     SELECT DISTINCT
         sa.id AS attempt_id,
-        saj.simulation_id,
+        sa.simulation_id,
         sa.created_at AS attempt_date,
         sa.archived AS is_archived,
         sa.infinite_mode,
-        paj.profile_id,
+        sa.profile_id,
         (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         COALESCE(sdd.department_ids, NULL) as department_ids
     FROM attempts_entry sa
-    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-    JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id
-    JOIN simulation_artifact sim ON sim.id = saj.simulation_id
-    JOIN profile_artifact p_attempt ON p_attempt.id = paj.profile_id
+    JOIN simulation_artifact sim ON sim.id = sa.simulation_id
+    JOIN profile_artifact p_attempt ON p_attempt.id = sa.profile_id
     LEFT JOIN (
         SELECT
             sd.simulation_id,
@@ -261,15 +259,14 @@ simulation_options_cte AS (
 -- Get all unique scenario options from filtered attempts (before history-specific filters)
 scenario_options_cte AS (
     SELECT
-        scj.scenario_id,
+        sc.scenario_id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) AS scenario_title,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN chats_entry sc ON sc.attempt_id = haf.attempt_id
-    JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
-    JOIN scenarios_resource s ON s.id = scj.scenario_id
-    WHERE scj.scenario_id IS NOT NULL
-    GROUP BY scj.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
+    JOIN scenarios_resource s ON s.id = sc.scenario_id
+    WHERE sc.scenario_id IS NOT NULL
+    GROUP BY sc.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
     ORDER BY scenario_title
 ),
 -- Apply additional filters (profileIds, simulationIds, scenarioIds, infiniteMode)
@@ -288,10 +285,10 @@ history_attempts_with_filters AS (
 attempt_scenario_ids AS (
     SELECT DISTINCT
         sc.attempt_id,
-        ARRAY_AGG(DISTINCT scj2.scenario_id) FILTER (WHERE scj2.scenario_id IS NOT NULL) AS scenario_ids
+        ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
     FROM chats_entry sc
-    JOIN scenario_chats_junction scj2 ON scj2.chat_id = sc.id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
+      AND sc.scenario_id IS NOT NULL
     GROUP BY sc.attempt_id
 ),
 -- Apply scenario filter
@@ -313,13 +310,13 @@ score_for_sort AS (
         sc.attempt_id,
         CASE
             WHEN haf.infinite_mode THEN
-                CASE GREATEST(COUNT(DISTINCT scj.scenario_id), 0)
+                CASE GREATEST(COUNT(DISTINCT sc.scenario_id), 0)
                     WHEN 0 THEN NULL
                     ELSE ROUND(
                         SUM(CASE WHEN hcg.score IS NOT NULL AND rp_total.value > 0
                             THEN TRUNC(hcg.score / rp_total.value::numeric * 100.0, 2)
                             ELSE 0 END)
-                        / GREATEST(COUNT(DISTINCT scj.scenario_id), 1)
+                        / GREATEST(COUNT(DISTINCT sc.scenario_id), 1)
                     )::int
                 END
             ELSE
@@ -337,14 +334,13 @@ score_for_sort AS (
                 END
         END AS score_percent
     FROM history_attempts_final haf
-    JOIN chats_entry sc ON sc.attempt_id = haf.attempt_id
-    JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
+    JOIN chats_entry sc ON sc.attempt_id = haf.attempt_id AND sc.scenario_id IS NOT NULL
     LEFT JOIN LATERAL (
         SELECT scg.score FROM grades_entry scg
         WHERE scg.chat_id = sc.id
         ORDER BY scg.created_at DESC LIMIT 1
     ) hcg ON TRUE
-    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = scj.scenario_id
+    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = sc.scenario_id
     LEFT JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type
     LEFT JOIN points_resource rp_total ON rp_total.id = rp.point_id
     WHERE (SELECT sort_by FROM params) = 'score'
@@ -388,11 +384,11 @@ searchable_rows AS (
         OR EXISTS (
             SELECT 1
             FROM chats_entry sc
-            JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
-            JOIN scenario_personas_junction sp ON sp.scenario_id = scj.scenario_id AND sp.active = TRUE
+            JOIN scenario_personas_junction sp ON sp.scenario_id = sc.scenario_id AND sp.active = TRUE
             JOIN persona_names_junction pn ON pn.persona_id = sp.persona_id
             JOIN names_resource n ON n.id = pn.name_id
             WHERE sc.attempt_id = haf.attempt_id
+              AND sc.scenario_id IS NOT NULL
               AND LOWER(n.name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
         )
 ),
@@ -449,9 +445,8 @@ history_chat_rollup AS (
         COUNT(*) FILTER (WHERE sc.completed = FALSE) AS incomplete_chats,
         MIN(sc.created_at) AS first_chat_at,
         MAX(sc.created_at) AS last_activity_at,
-        array_agg(DISTINCT scj3.scenario_id) FILTER (WHERE scj3.scenario_id IS NOT NULL) AS scenario_ids_seen
+        array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
     FROM chats_entry sc
-    JOIN scenario_chats_junction scj3 ON scj3.chat_id = sc.id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
     GROUP BY sc.attempt_id
 ),
@@ -473,13 +468,13 @@ history_grade_rollup AS (
     SELECT
         sc.attempt_id,
         COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
-        SUM(CASE WHEN hcg.score IS NOT NULL AND (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj4.scenario_id LIMIT 1) > 0
-            THEN TRUNC(hcg.score / (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj4.scenario_id LIMIT 1)::numeric * 100.0, 2)
+        SUM(CASE WHEN hcg.score IS NOT NULL AND (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1) > 0
+            THEN TRUNC(hcg.score / (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1)::numeric * 100.0, 2)
             ELSE 0 END) AS sum_grade_percent
     FROM chats_entry sc
-    JOIN scenario_chats_junction scj4 ON scj4.chat_id = sc.id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
+      AND sc.scenario_id IS NOT NULL
     GROUP BY sc.attempt_id
 ),
 -- Calculate elapsed time per attempt (for infinite mode time limit checks)
@@ -516,10 +511,9 @@ history_personas AS (
         sc.attempt_id,
         array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
     FROM chats_entry sc
-    JOIN scenario_chats_junction scj5 ON scj5.chat_id = sc.id
-    JOIN scenarios_resource scn ON scn.id = scj5.scenario_id
-    LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = scn.id AND sp.active = TRUE
+    LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = sc.scenario_id AND sp.active = TRUE
     WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
+      AND sc.scenario_id IS NOT NULL
     GROUP BY sc.attempt_id
 ),
 -- Count scenarios per simulation
@@ -546,10 +540,10 @@ history_scenario_ids AS (
 history_first_scenario AS (
     SELECT DISTINCT ON (sc.attempt_id)
         sc.attempt_id,
-        scj6.scenario_id AS practice_scenario_id
+        sc.scenario_id AS practice_scenario_id
     FROM chats_entry sc
-    JOIN scenario_chats_junction scj6 ON scj6.chat_id = sc.id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM paginated_ids)
+      AND sc.scenario_id IS NOT NULL
     ORDER BY sc.attempt_id, sc.created_at ASC
 ),
 -- Join all history data

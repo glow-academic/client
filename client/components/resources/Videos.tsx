@@ -194,7 +194,9 @@ export function Videos({
                 body: {
                   agent_id: effectiveAgentId,
                   group_id: group_id,
-                  video_id: videoId,
+                  name: selectedVideoItem.name ?? "",
+                  length_seconds: selectedVideoItem.length_seconds ?? 0,
+                  description: selectedVideoItem.description ?? "",
                   mcp: false,
                 },
               });

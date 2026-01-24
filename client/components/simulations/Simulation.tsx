@@ -622,6 +622,7 @@ function SimulationComponent({
 
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
+  const isFirstPatchRef = React.useRef(true);
 
   // Track if there are pending changes for beforeunload warning
   const hasPendingChangesRef = React.useRef(false);
@@ -655,6 +656,14 @@ function SimulationComponent({
     // Only block if there's an actual numeric version to sync (not null for new simulations)
     if (typeof simulationData?.draft_version === "number" && !versionSyncedRef.current) {
       console.debug("[Simulation Draft] Waiting for version sync");
+      return;
+    }
+
+    // Skip the first effect run - treat initial server state as the baseline
+    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
+    if (isFirstPatchRef.current) {
+      isFirstPatchRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
       return;
     }
 
@@ -1171,7 +1180,7 @@ function SimulationComponent({
 
   // Set generation capability when simulation data is loaded
   useEffect(() => {
-    if (simulationData?.general_agent_id) {
+    if (simulationData?.general_agent_id && simulationData?.can_edit !== false) {
       setGenerationCapability({
         artifactType: "simulation",
         canGenerate: true,
@@ -1187,6 +1196,7 @@ function SimulationComponent({
     return () => clearGenerationCapability();
   }, [
     simulationData?.general_agent_id,
+    simulationData?.can_edit,
     setGenerationCapability,
     clearGenerationCapability,
   ]);

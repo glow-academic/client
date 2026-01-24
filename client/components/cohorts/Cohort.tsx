@@ -134,7 +134,6 @@ function CohortComponent({
   const isEditMode = !!cohortId;
   const {
     effectiveProfile,
-    selectedDraftId,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -432,20 +431,22 @@ function CohortComponent({
   // Store formData from GenericForm to access search params
   const formDataRef = React.useRef<Record<string, unknown>>({});
 
+  // Track last synced draftId to prevent redundant profile context updates
+  const lastSyncedDraftIdRef = React.useRef<string | null>(null);
+
   // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
     // Store formData for access in handleGenerateResources
     formDataRef.current = fd;
     const next = (fd["draftId"] as string | undefined) ?? null;
     setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
 
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
+    // One-way sync to profile context (no effect dependency on selectedDraftId)
+    if (next !== lastSyncedDraftIdRef.current) {
+      lastSyncedDraftIdRef.current = next;
+      setSelectedDraftId(next);
     }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
+  }, [setSelectedDraftId]);
 
   // Use ref to stabilize patchCohortDraftAction to prevent effect recreation when prop reference changes
   const patchCohortDraftActionRef = React.useRef(patchCohortDraftAction);
@@ -478,6 +479,7 @@ function CohortComponent({
 
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
+  const isFirstPatchRef = React.useRef(true);
 
   // Track if there are pending changes for beforeunload warning
   const hasPendingChangesRef = React.useRef(false);
@@ -507,6 +509,14 @@ function CohortComponent({
     // Only block if there's an actual numeric version to sync (not null for new cohorts)
     if (typeof cohortData?.draft_version === "number" && !versionSyncedRef.current) {
       console.debug("[Cohort Draft] Waiting for version sync");
+      return;
+    }
+
+    // Skip the first effect run - treat initial server state as the baseline
+    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
+    if (isFirstPatchRef.current) {
+      isFirstPatchRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
       return;
     }
 
@@ -995,7 +1005,7 @@ function CohortComponent({
 
   // Set generation capability when cohort data is loaded
   useEffect(() => {
-    if (cohortData?.general_agent_id) {
+    if (cohortData?.general_agent_id && cohortData?.can_edit !== false) {
       setGenerationCapability({
         artifactType: "cohort",
         canGenerate: true,
@@ -1011,6 +1021,7 @@ function CohortComponent({
     return () => clearGenerationCapability();
   }, [
     cohortData?.general_agent_id,
+    cohortData?.can_edit,
     setGenerationCapability,
     clearGenerationCapability,
   ]);

@@ -2759,28 +2759,9 @@ SELECT
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
         )
         FROM scenarios_resource s
-        JOIN simulation_scenarios_junction ss ON ss.scenario_id = s.scenario_id
-        WHERE ss.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
-          AND s.active = true
-          AND s.id = ANY(
-            COALESCE(
-                (SELECT ARRAY_AGG(s2.id)
-                 FROM scenarios_resource s2
-                 JOIN simulation_scenarios_junction ss2 ON ss2.scenario_id = s2.scenario_id
-                 WHERE ss2.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
-                   AND s2.active = true),
-                (SELECT 
-                    CASE 
-                        WHEN payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(payload->'scenarioIds') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'scenarioIds'))::uuid[]
-                        WHEN payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(payload->'scenario_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'scenario_ids'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                ARRAY[]::uuid[]
-            )
-          )),
+        WHERE s.active = true
+          AND s.id = ANY((SELECT scenario_ids FROM scenario_ids_data))
+        ),
         '{}'::types.q_get_simulation_v4_scenario_resource[]
     ) as scenario_resources,
     CASE 

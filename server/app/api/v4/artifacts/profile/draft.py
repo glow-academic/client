@@ -33,7 +33,7 @@ async def patch_profile_draft(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PatchProfileDraftApiResponse:
     """Patch profile draft - accepts resource IDs and creates/updates draft."""
-    tags = ["profiles", "drafts"]
+    tags = ["profile", "drafts"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None

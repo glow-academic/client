@@ -448,10 +448,6 @@ run_migrations() {
     else
     echo "📝 No migration files found in migrate/ folder - database is up to date"
   fi
-  
-  # Keep audit triggers in sync with any new tables
-  psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -v ON_ERROR_STOP=1 -c "SELECT audit.install_row_triggers();" >/dev/null 2>&1 || true
 }
 
 # --- MAIN LOGIC ------------------------------------------------------

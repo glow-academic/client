@@ -415,6 +415,365 @@ draft_group_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+-- Draft multi-select resource CTEs (from *_draft tables)
+draft_objectives_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(od.objectives_id ORDER BY od.created_at), NULL), ARRAY[]::uuid[]) as objective_ids
+    FROM params x
+    LEFT JOIN objectives_draft od ON od.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_departments_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
+    FROM params x
+    LEFT JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_personas_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.personas_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as persona_ids
+    FROM params x
+    LEFT JOIN personas_draft dp ON dp.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_documents_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.documents_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as document_ids
+    FROM params x
+    LEFT JOIN documents_draft dd ON dd.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_templates_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dt.templates_id ORDER BY dt.created_at), NULL), ARRAY[]::uuid[]) as template_ids
+    FROM params x
+    LEFT JOIN templates_draft dt ON dt.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_images_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(di.images_id ORDER BY di.created_at), NULL), ARRAY[]::uuid[]) as image_ids
+    FROM params x
+    LEFT JOIN images_draft di ON di.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_videos_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dv.videos_id ORDER BY dv.created_at), NULL), ARRAY[]::uuid[]) as video_ids
+    FROM params x
+    LEFT JOIN videos_draft dv ON dv.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_questions_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dq.questions_id ORDER BY dq.created_at), NULL), ARRAY[]::uuid[]) as question_ids
+    FROM params x
+    LEFT JOIN questions_draft dq ON dq.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_parameters_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as parameter_ids
+    FROM params x
+    LEFT JOIN parameters_draft dp ON dp.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_fields_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as field_ids
+    FROM params x
+    LEFT JOIN fields_draft df ON df.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_problem_statements_data AS (
+    SELECT
+        COALESCE((SELECT dps.problem_statements_id FROM problem_statements_draft dps WHERE dps.draft_id = (SELECT draft_id FROM params) LIMIT 1), NULL::uuid) as problem_statement_id
+    FROM params
+    LIMIT 1
+),
+-- Scenario junction data CTEs (from scenario_*_junction tables)
+scenario_objectives_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(so.objective_id ORDER BY so.idx, so.objective_id)
+                 FROM scenario_objectives_junction so
+                 WHERE so.scenario_id = (SELECT scenario_id FROM params)),
+                ARRAY[]::uuid[]
+            )
+        END as objective_ids
+    FROM params
+    LIMIT 1
+),
+scenario_departments_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sd.department_id ORDER BY sd.created_at)
+                 FROM scenario_departments_junction sd
+                 WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as department_ids
+    FROM params
+    LIMIT 1
+),
+scenario_personas_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sp.persona_id ORDER BY sp.persona_id)
+                 FROM scenario_personas_junction sp
+                 WHERE sp.scenario_id = (SELECT scenario_id FROM params) AND sp.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as persona_ids
+    FROM params
+    LIMIT 1
+),
+scenario_documents_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sd.document_id ORDER BY sd.document_id)
+                 FROM scenario_documents_junction sd
+                 WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as document_ids
+    FROM params
+    LIMIT 1
+),
+scenario_templates_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
+                 FROM scenario_templates_junction st
+                 WHERE st.scenario_id = (SELECT scenario_id FROM params) AND st.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as template_ids
+    FROM params
+    LIMIT 1
+),
+scenario_images_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(si.image_id ORDER BY si.created_at)
+                 FROM scenario_images_junction si
+                 WHERE si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as image_ids
+    FROM params
+    LIMIT 1
+),
+scenario_videos_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sv.video_id ORDER BY sv.created_at)
+                 FROM scenario_videos_junction sv
+                 WHERE sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as video_ids
+    FROM params
+    LIMIT 1
+),
+scenario_questions_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sq.question_id ORDER BY sq.created_at)
+                 FROM scenario_questions_junction sq
+                 WHERE sq.scenario_id = (SELECT scenario_id FROM params) AND sq.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as question_ids
+    FROM params
+    LIMIT 1
+),
+scenario_parameters_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(DISTINCT (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1) ORDER BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1))
+                 FROM scenario_fields_junction sf
+                 WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND sf.active = true
+                   AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1) IS NOT NULL),
+                ARRAY[]::uuid[]
+            )
+        END as parameter_ids
+    FROM params
+    LIMIT 1
+),
+scenario_fields_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(sf.field_id ORDER BY sf.field_id)
+                 FROM scenario_fields_junction sf
+                 WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND sf.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as field_ids
+    FROM params
+    LIMIT 1
+),
+-- Combined CTEs: prefer draft if available, otherwise use scenario junction
+scenario_objectives_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT objective_ids FROM draft_objectives_data), 1), 0) > 0
+                THEN (SELECT objective_ids FROM draft_objectives_data)
+            WHEN COALESCE(array_length((SELECT objective_ids FROM scenario_objectives_junction_data), 1), 0) > 0
+                THEN (SELECT objective_ids FROM scenario_objectives_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as objective_ids
+    FROM params
+    LIMIT 1
+),
+scenario_departments_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT department_ids FROM draft_departments_data), 1), 0) > 0
+                THEN (SELECT department_ids FROM draft_departments_data)
+            WHEN COALESCE(array_length((SELECT department_ids FROM scenario_departments_junction_data), 1), 0) > 0
+                THEN (SELECT department_ids FROM scenario_departments_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as department_ids
+    FROM params
+    LIMIT 1
+),
+scenario_personas_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT persona_ids FROM draft_personas_data), 1), 0) > 0
+                THEN (SELECT persona_ids FROM draft_personas_data)
+            WHEN COALESCE(array_length((SELECT persona_ids FROM scenario_personas_junction_data), 1), 0) > 0
+                THEN (SELECT persona_ids FROM scenario_personas_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as persona_ids
+    FROM params
+    LIMIT 1
+),
+scenario_documents_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT document_ids FROM draft_documents_data), 1), 0) > 0
+                THEN (SELECT document_ids FROM draft_documents_data)
+            WHEN COALESCE(array_length((SELECT document_ids FROM scenario_documents_junction_data), 1), 0) > 0
+                THEN (SELECT document_ids FROM scenario_documents_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as document_ids
+    FROM params
+    LIMIT 1
+),
+scenario_templates_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT template_ids FROM draft_templates_data), 1), 0) > 0
+                THEN (SELECT template_ids FROM draft_templates_data)
+            WHEN COALESCE(array_length((SELECT template_ids FROM scenario_templates_junction_data), 1), 0) > 0
+                THEN (SELECT template_ids FROM scenario_templates_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as template_ids
+    FROM params
+    LIMIT 1
+),
+scenario_images_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT image_ids FROM draft_images_data), 1), 0) > 0
+                THEN (SELECT image_ids FROM draft_images_data)
+            WHEN COALESCE(array_length((SELECT image_ids FROM scenario_images_junction_data), 1), 0) > 0
+                THEN (SELECT image_ids FROM scenario_images_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as image_ids
+    FROM params
+    LIMIT 1
+),
+scenario_videos_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT video_ids FROM draft_videos_data), 1), 0) > 0
+                THEN (SELECT video_ids FROM draft_videos_data)
+            WHEN COALESCE(array_length((SELECT video_ids FROM scenario_videos_junction_data), 1), 0) > 0
+                THEN (SELECT video_ids FROM scenario_videos_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as video_ids
+    FROM params
+    LIMIT 1
+),
+scenario_questions_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT question_ids FROM draft_questions_data), 1), 0) > 0
+                THEN (SELECT question_ids FROM draft_questions_data)
+            WHEN COALESCE(array_length((SELECT question_ids FROM scenario_questions_junction_data), 1), 0) > 0
+                THEN (SELECT question_ids FROM scenario_questions_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as question_ids
+    FROM params
+    LIMIT 1
+),
+scenario_parameters_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT parameter_ids FROM draft_parameters_data), 1), 0) > 0
+                THEN (SELECT parameter_ids FROM draft_parameters_data)
+            WHEN COALESCE(array_length((SELECT parameter_ids FROM scenario_parameters_junction_data), 1), 0) > 0
+                THEN (SELECT parameter_ids FROM scenario_parameters_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as parameter_ids
+    FROM params
+    LIMIT 1
+),
+scenario_fields_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT field_ids FROM draft_fields_data), 1), 0) > 0
+                THEN (SELECT field_ids FROM draft_fields_data)
+            WHEN COALESCE(array_length((SELECT field_ids FROM scenario_fields_junction_data), 1), 0) > 0
+                THEN (SELECT field_ids FROM scenario_fields_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as field_ids
+    FROM params
+    LIMIT 1
+),
+scenario_problem_statement_combined_data AS (
+    SELECT
+        COALESCE(
+            (SELECT problem_statement_id FROM draft_problem_statements_data),
+            (SELECT sps.problem_statement_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = (SELECT scenario_id FROM params) AND sps.active = true LIMIT 1)
+        ) as problem_statement_id
+    FROM params
+    LIMIT 1
+),
 resolve_profile_id AS (
     -- Resolve profile ID FROM parameter_artifact
     SELECT 
@@ -735,16 +1094,12 @@ description_resource_data AS (
 ),
 -- Problem statement resource data
 problem_statement_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT sps.problem_statement_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = (SELECT scenario_id FROM params) AND sps.active = true LIMIT 1),
-            NULL::uuid
-        ) as problem_statement_id,
+    SELECT
+        (SELECT problem_statement_id FROM scenario_problem_statement_combined_data) as problem_statement_id,
         (
-            SELECT ROW(ps.id, ps.name, ps.problem_statement, COALESCE(ps.generated, false))::types.q_get_scenario_v4_problem_statement_resource 
-            FROM scenario_problem_statements_junction sps
-            JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-            WHERE sps.scenario_id = (SELECT scenario_id FROM params) AND sps.active = true
+            SELECT ROW(ps.id, ps.name, ps.problem_statement, COALESCE(ps.generated, false))::types.q_get_scenario_v4_problem_statement_resource
+            FROM problem_statements_resource ps
+            WHERE ps.id = (SELECT problem_statement_id FROM scenario_problem_statement_combined_data)
             LIMIT 1
         ) as problem_statement_resource
     FROM params
@@ -3721,25 +4076,7 @@ SELECT
     (SELECT agent_id FROM use_templates_flag_agent_data) as use_templates_flag_agent_id,
     false as use_templates_flag_required,
     -- Multi-select resources: departments
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        CASE 
-            WHEN (SELECT scenario_id FROM params) IS NULL THEN
-                ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(department_id::uuid ORDER BY created_at)
-                 FROM scenario_departments_junction sd
-                 WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
-                ARRAY[]::uuid[]
-            )
-        END
-    ) as department_ids,
+    (SELECT department_ids FROM scenario_departments_combined_data) as department_ids,
     -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -3747,27 +4084,8 @@ SELECT
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
-        WHERE dmd.department_id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                CASE 
-                    WHEN (SELECT scenario_id FROM params) IS NULL THEN
-                        ARRAY[]::uuid[]
-                    ELSE COALESCE(
-                        (SELECT ARRAY_AGG(department_id::uuid ORDER BY created_at)
-                         FROM scenario_departments_junction sd
-                         WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
-                        ARRAY[]::uuid[]
-                    )
-                END
-            )
-        )),
+        WHERE dmd.department_id = ANY((SELECT department_ids FROM scenario_departments_combined_data))
+        ),
         '{}'::types.q_get_scenario_v4_department[]
     ) as department_resources,
     CASE 
@@ -3789,24 +4107,14 @@ SELECT
         '{}'::types.q_get_scenario_v4_department[]
     ) as departments,
     -- Multi-select resources: fields
-    COALESCE((
-        SELECT ARRAY_AGG(sf.field_id ORDER BY sf.field_id)
-        FROM scenario_fields_junction sf
-        WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
-    ), ARRAY[]::uuid[]) as field_ids,
+    (SELECT field_ids FROM scenario_fields_combined_data) as field_ids,
     COALESCE((
         SELECT ARRAY_AGG(
             (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name, fmd.conditional_parameter_ids, fmd.generated)::types.q_get_scenario_v4_field
             ORDER BY fmd.parameter_name, fmd.name
         )
         FROM field_mapping_data fmd
-        WHERE fmd.field_id = ANY(
-            COALESCE((
-                SELECT ARRAY_AGG(sf.field_id ORDER BY sf.field_id)
-                FROM scenario_fields_junction sf
-                WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
-            ), ARRAY[]::uuid[])
-        )
+        WHERE fmd.field_id = ANY((SELECT field_ids FROM scenario_fields_combined_data))
     ), '{}'::types.q_get_scenario_v4_field[]) as field_resources,
     CASE 
         WHEN NOT tec.fields_has_tools AND uf.show_fields THEN false
@@ -3826,20 +4134,15 @@ SELECT
         '{}'::types.q_get_scenario_v4_field[]
     ) as fields,
     -- Multi-select resources: objectives (populated from CTEs, filtered by flag)
-    CASE 
-        WHEN sc.objectives_enabled THEN COALESCE((
-            SELECT ARRAY_AGG(so.objective_id ORDER BY so.idx, so.objective_id)
-            FROM scenario_objectives_junction so
-            WHERE so.scenario_id = (SELECT scenario_id FROM params LIMIT 1)
-        ), ARRAY[]::uuid[])
+    CASE
+        WHEN sc.objectives_enabled THEN (SELECT objective_ids FROM scenario_objectives_combined_data)
         ELSE ARRAY[]::uuid[]
     END as objective_ids,
-    CASE 
+    CASE
         WHEN sc.objectives_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((so.objective_id, o.objective, false)::types.q_get_scenario_v4_objective_resource ORDER BY so.idx, so.objective_id)
-            FROM scenario_objectives_junction so
-            JOIN objectives_resource o ON o.id = so.objective_id
-            WHERE so.scenario_id = (SELECT scenario_id FROM params LIMIT 1)
+            SELECT ARRAY_AGG((o.id, o.objective, false)::types.q_get_scenario_v4_objective_resource ORDER BY array_position((SELECT objective_ids FROM scenario_objectives_combined_data), o.id))
+            FROM objectives_resource o
+            WHERE o.id = ANY((SELECT objective_ids FROM scenario_objectives_combined_data))
         ), '{}'::types.q_get_scenario_v4_objective_resource[])
         ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
     END as objective_resources,
@@ -3858,30 +4161,24 @@ SELECT
         WHEN sc.objectives_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (omd.id, omd.objective, omd.generated)::types.q_get_scenario_v4_objective_resource
-                ORDER BY CASE WHEN so2.scenario_id IS NOT NULL THEN 0 ELSE 1 END, COALESCE(so2.idx, 999999), omd.id
+                ORDER BY CASE WHEN omd.id = ANY((SELECT objective_ids FROM scenario_objectives_combined_data)) THEN 0 ELSE 1 END, omd.id
             )
             FROM objective_mapping_data omd
-            LEFT JOIN scenario_objectives_junction so2 ON so2.objective_id = omd.id AND so2.scenario_id = (SELECT scenario_id FROM params)
             LIMIT 100
         ), '{}'::types.q_get_scenario_v4_objective_resource[])
         ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
     END as objectives,
     -- Multi-select resources: images (populated from CTEs, filtered by flag)
-    CASE 
-        WHEN sc.images_enabled THEN COALESCE((
-            SELECT ARRAY_AGG(si.image_id ORDER BY si.created_at)
-            FROM scenario_images_junction si
-            WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
-        ), ARRAY[]::uuid[])
+    CASE
+        WHEN sc.images_enabled THEN (SELECT image_ids FROM scenario_images_combined_data)
         ELSE ARRAY[]::uuid[]
     END as image_ids,
-    CASE 
+    CASE
         WHEN sc.images_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((si.image_id, i.name, u.file_path, u.mime_type, COALESCE(i.upload_id, si.image_id), false)::types.q_get_scenario_v4_image_resource ORDER BY si.created_at)
-            FROM scenario_images_junction si
-            JOIN images_resource i ON i.id = si.image_id
+            SELECT ARRAY_AGG((i.id, i.name, COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(i.upload_id, i.id), false)::types.q_get_scenario_v4_image_resource ORDER BY array_position((SELECT image_ids FROM scenario_images_combined_data), i.id))
+            FROM images_resource i
             LEFT JOIN uploads_entry u ON u.id = i.upload_id
-            WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
+            WHERE i.id = ANY((SELECT image_ids FROM scenario_images_combined_data))
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
     END as image_resources,
@@ -3900,10 +4197,9 @@ SELECT
         WHEN sc.images_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (imd.id, imd.name, imd.file_path, imd.mime_type, imd.upload_id, imd.generated)::types.q_get_scenario_v4_image_resource
-                ORDER BY CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END, imd.id
+                ORDER BY CASE WHEN imd.id = ANY((SELECT image_ids FROM scenario_images_combined_data)) THEN 0 ELSE 1 END, imd.id
             )
             FROM image_mapping_data imd
-            LEFT JOIN scenario_images_junction si ON si.image_id = imd.id AND si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true
             WHERE (
                 (SELECT image_search FROM params LIMIT 1) IS NULL
                 OR LOWER(imd.name) LIKE '%' || LOWER((SELECT image_search FROM params LIMIT 1)) || '%'
@@ -3913,21 +4209,16 @@ SELECT
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
     END as images,
     -- Multi-select resources: videos (populated from CTEs, filtered by flag)
-    CASE 
-        WHEN sc.video_enabled THEN COALESCE((
-            SELECT ARRAY_AGG(sv.video_id ORDER BY sv.created_at)
-            FROM scenario_videos_junction sv
-            WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
-        ), ARRAY[]::uuid[])
+    CASE
+        WHEN sc.video_enabled THEN (SELECT video_ids FROM scenario_videos_combined_data)
         ELSE ARRAY[]::uuid[]
     END as video_ids,
-    CASE 
+    CASE
         WHEN sc.video_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((sv.video_id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(v.upload_id, sv.video_id), false)::types.q_get_scenario_v4_video_resource ORDER BY sv.created_at)
-            FROM scenario_videos_junction sv
-            JOIN videos_resource v ON v.id = sv.video_id
+            SELECT ARRAY_AGG((v.id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(v.upload_id, v.id), false)::types.q_get_scenario_v4_video_resource ORDER BY array_position((SELECT video_ids FROM scenario_videos_combined_data), v.id))
+            FROM videos_resource v
             LEFT JOIN uploads_entry u ON u.id = v.upload_id
-            WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
+            WHERE v.id = ANY((SELECT video_ids FROM scenario_videos_combined_data))
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]
     END as video_resources,
@@ -3946,10 +4237,9 @@ SELECT
         WHEN sc.video_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (vmd.id, vmd.name, vmd.length_seconds, vmd.completed, vmd.file_path, vmd.mime_type, vmd.upload_id, vmd.generated)::types.q_get_scenario_v4_video_resource
-                ORDER BY CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END, vmd.id
+                ORDER BY CASE WHEN vmd.id = ANY((SELECT video_ids FROM scenario_videos_combined_data)) THEN 0 ELSE 1 END, vmd.id
             )
             FROM video_mapping_data vmd
-            LEFT JOIN scenario_videos_junction sv ON sv.video_id = vmd.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
             WHERE (
                 (SELECT video_search FROM params LIMIT 1) IS NULL
                 OR LOWER(vmd.name) LIKE '%' || LOWER((SELECT video_search FROM params LIMIT 1)) || '%'
@@ -3959,20 +4249,15 @@ SELECT
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]
     END as videos,
     -- Multi-select resources: questions (populated from CTEs, filtered by flag)
-    CASE 
-        WHEN sc.questions_enabled THEN COALESCE((
-            SELECT ARRAY_AGG(sq.question_id ORDER BY sq.created_at)
-            FROM scenario_questions_junction sq
-            WHERE sq.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sq.active = true
-        ), ARRAY[]::uuid[])
+    CASE
+        WHEN sc.questions_enabled THEN (SELECT question_ids FROM scenario_questions_combined_data)
         ELSE ARRAY[]::uuid[]
     END as question_ids,
-    CASE 
+    CASE
         WHEN sc.questions_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((sq.question_id, q.question_text, COALESCE(q.allow_multiple, false), false)::types.q_get_scenario_v4_question_resource ORDER BY sq.created_at)
-            FROM scenario_questions_junction sq
-            JOIN questions_resource q ON q.id = sq.question_id
-            WHERE sq.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sq.active = true
+            SELECT ARRAY_AGG((q.id, q.question_text, COALESCE(q.allow_multiple, false), false)::types.q_get_scenario_v4_question_resource ORDER BY array_position((SELECT question_ids FROM scenario_questions_combined_data), q.id))
+            FROM questions_resource q
+            WHERE q.id = ANY((SELECT question_ids FROM scenario_questions_combined_data))
         ), '{}'::types.q_get_scenario_v4_question_resource[])
         ELSE '{}'::types.q_get_scenario_v4_question_resource[]
     END as question_resources,
@@ -3991,36 +4276,25 @@ SELECT
         WHEN sc.questions_enabled THEN COALESCE((
             SELECT ARRAY_AGG(
                 (qmd.id, qmd.question_text, qmd.allow_multiple, qmd.generated)::types.q_get_scenario_v4_question_resource
-                ORDER BY CASE WHEN sq.scenario_id IS NOT NULL THEN 0 ELSE 1 END, qmd.id
+                ORDER BY CASE WHEN qmd.id = ANY((SELECT question_ids FROM scenario_questions_combined_data)) THEN 0 ELSE 1 END, qmd.id
             )
             FROM question_mapping_data qmd
-            LEFT JOIN scenario_questions_junction sq ON sq.question_id = qmd.id AND sq.scenario_id = (SELECT scenario_id FROM params) AND sq.active = true
         ), '{}'::types.q_get_scenario_v4_question_resource[])
         ELSE '{}'::types.q_get_scenario_v4_question_resource[]
     END as questions,
     -- Multi-select resources: templates
-    CASE 
-        WHEN sc.use_templates THEN COALESCE((
-            SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
-            FROM scenario_templates_junction st
-            WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
-        ), ARRAY[]::uuid[])
+    CASE
+        WHEN sc.use_templates THEN (SELECT template_ids FROM scenario_templates_combined_data)
         ELSE ARRAY[]::uuid[]
     END as template_ids,
-    CASE 
+    CASE
         WHEN sc.use_templates THEN COALESCE((
             SELECT ARRAY_AGG(
                 (tmd.id, tmd.name, tmd.description, tmd.html, tmd.generated)::types.q_get_scenario_v4_template_resource
                 ORDER BY tmd.name
             )
             FROM template_mapping_data tmd
-            WHERE tmd.id = ANY(
-                COALESCE((
-                    SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
-                    FROM scenario_templates_junction st
-                    WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
-                ), ARRAY[]::uuid[])
-            )
+            WHERE tmd.id = ANY((SELECT template_ids FROM scenario_templates_combined_data))
         ), '{}'::types.q_get_scenario_v4_template_resource[])
         ELSE '{}'::types.q_get_scenario_v4_template_resource[]
     END as template_resources,
@@ -4052,26 +4326,14 @@ SELECT
         ELSE '{}'::types.q_get_scenario_v4_template_resource[]
     END as templates,
     -- Multi-select resources: personas
-    COALESCE((
-        SELECT ARRAY_AGG(pr.persona_id ORDER BY pr.persona_id)
-        FROM scenario_personas_junction sp
-        JOIN personas_resource pr ON pr.id = sp.persona_id
-        WHERE sp.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sp.active = true
-    ), ARRAY[]::uuid[]) as persona_ids,
+    (SELECT persona_ids FROM scenario_personas_combined_data) as persona_ids,
     COALESCE((
         SELECT ARRAY_AGG(
             (pmd.persona_id, pmd.name, pmd.description, pmd.color, pmd.icon, pmd.image_model, pmd.parameter_ids, pmd.field_ids, pmd.example)::types.q_get_scenario_v4_persona
             ORDER BY pmd.name
         )
         FROM persona_mapping_data pmd
-        WHERE pmd.persona_id = ANY(
-            COALESCE((
-                SELECT ARRAY_AGG(pr.persona_id ORDER BY pr.persona_id)
-                FROM scenario_personas_junction sp
-                JOIN personas_resource pr ON pr.id = sp.persona_id
-                WHERE sp.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sp.active = true
-            ), ARRAY[]::uuid[])
-        )
+        WHERE pmd.persona_id = ANY((SELECT persona_ids FROM scenario_personas_combined_data))
     ), '{}'::types.q_get_scenario_v4_persona[]) as persona_resources,
     CASE 
         WHEN NOT tec.personas_has_tools AND uf.show_personas THEN false
@@ -4091,24 +4353,14 @@ SELECT
         '{}'::types.q_get_scenario_v4_persona[]
     ) as personas,
     -- Multi-select resources: documents
-    COALESCE((
-        SELECT ARRAY_AGG(sd.document_id ORDER BY sd.document_id)
-        FROM scenario_documents_junction sd
-        WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true
-    ), ARRAY[]::uuid[]) as document_ids,
+    (SELECT document_ids FROM scenario_documents_combined_data) as document_ids,
     COALESCE((
         SELECT ARRAY_AGG(
             (dmd.document_id, dmd.name, dmd.description, dmd.file_path, dmd.mime_type, dmd.parameter_ids, dmd.field_ids, dmd.parent_document_id)::types.q_get_scenario_v4_document
             ORDER BY dmd.name
         )
         FROM document_mapping_data dmd
-        WHERE dmd.document_id = ANY(
-            COALESCE((
-                SELECT ARRAY_AGG(sd.document_id ORDER BY sd.document_id)
-                FROM scenario_documents_junction sd
-                WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true
-            ), ARRAY[]::uuid[])
-        )
+        WHERE dmd.document_id = ANY((SELECT document_ids FROM scenario_documents_combined_data))
     ), '{}'::types.q_get_scenario_v4_document[]) as document_resources,
     CASE 
         WHEN NOT tec.documents_has_tools AND uf.show_documents THEN false
@@ -4128,26 +4380,14 @@ SELECT
         '{}'::types.q_get_scenario_v4_document[]
     ) as documents,
     -- Multi-select resources: parameters
-    COALESCE((
-        SELECT ARRAY_AGG(DISTINCT (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1) ORDER BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1))
-        FROM scenario_fields_junction sf
-        WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
-          AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1) IS NOT NULL
-    ), ARRAY[]::uuid[]) as parameter_ids,
+    (SELECT parameter_ids FROM scenario_parameters_combined_data) as parameter_ids,
     COALESCE((
         SELECT ARRAY_AGG(
             (pmd.parameter_id, pmd.name, pmd.description, pmd.document_parameter, pmd.persona_parameter, pmd.scenario_parameter, pmd.video_parameter)::types.q_get_scenario_v4_parameter
             ORDER BY pmd.name
         )
         FROM parameter_mapping_data pmd
-        WHERE pmd.parameter_id = ANY(
-            COALESCE((
-                SELECT ARRAY_AGG(DISTINCT (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1) ORDER BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1))
-                FROM scenario_fields_junction sf
-                WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
-                  AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = sf.field_id LIMIT 1) IS NOT NULL
-            ), ARRAY[]::uuid[])
-        )
+        WHERE pmd.parameter_id = ANY((SELECT parameter_ids FROM scenario_parameters_combined_data))
     ), '{}'::types.q_get_scenario_v4_parameter[]) as parameter_resources,
     CASE 
         WHEN NOT tec.parameters_has_tools AND uf.show_parameters THEN false

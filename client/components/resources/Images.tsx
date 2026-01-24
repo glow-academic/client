@@ -217,11 +217,13 @@ export function Images({
       ) {
         for (const imageId of newlySelected) {
           try {
+            const imageItem = imageMapping[imageId];
             await createImagesAction({
               body: {
                 agent_id: effectiveAgentId,
                 group_id: group_id,
-                image_id: imageId,
+                name: imageItem?.name ?? "",
+                description: imageItem?.description ?? "",
                 mcp: false,
               },
             });
@@ -240,7 +242,7 @@ export function Images({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createImagesAction, images_agent_id, agent_id, group_id]
+    [ids, onChange, createImagesAction, images_agent_id, agent_id, group_id, imageMapping]
   );
 
   const handleImageRemove = useCallback(

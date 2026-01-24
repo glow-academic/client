@@ -264,7 +264,7 @@ export function Objectives({
         .map((id) => effectiveObjectiveMapping[id] || "")
         .filter((text) => text.trim() !== "");
     }
-    return [];
+    return [""];
   });
 
   const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());

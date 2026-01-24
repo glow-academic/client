@@ -8,8 +8,6 @@
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
-import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
-import { doRequest } from "@/lib/api/request-core";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 import {
@@ -52,17 +50,14 @@ type CreateDraftObjectivesOut = OutputOf<
 >;
 type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type UpdateTemplatesIn = {
-  body: {
-    template_id: string;
-    html: string;
-    name?: string | null;
-    description?: string | null;
-  };
-};
-type UpdateTemplatesOut = {
-  template_id: string | null;
-};
+type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
+type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
+type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
+type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
+type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -235,16 +230,25 @@ async function patchScenarioDraft(
   return api.patch("/scenarios/draft", input);
 }
 
-async function updateTemplates(
-  input: UpdateTemplatesIn
-): Promise<UpdateTemplatesOut> {
+async function createDraftTemplates(
+  input: CreateDraftTemplatesIn
+): Promise<CreateDraftTemplatesOut> {
   "use server";
-  return doRequest<UpdateTemplatesOut>(
-    INTERNAL_HTTP_BASE,
-    "POST",
-    "/api/v4/resources/templates/update",
-    input
-  );
+  return api.post("/resources/templates", input);
+}
+
+async function createDraftImages(
+  input: CreateDraftImagesIn
+): Promise<CreateDraftImagesOut> {
+  "use server";
+  return api.post("/resources/images", input);
+}
+
+async function createDraftVideos(
+  input: CreateDraftVideosIn
+): Promise<CreateDraftVideosOut> {
+  "use server";
+  return api.post("/resources/videos", input);
 }
 
 async function createDraftNames(
@@ -285,6 +289,14 @@ async function createDraftScenarioFlags(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/flags", input);
+}
+
+async function createDraftQuestions(
+  input: CreateDraftQuestionsIn
+): Promise<CreateDraftQuestionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/questions", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -446,7 +458,10 @@ export default async function EditScenarioPage({
           createProblemStatementsAction={createDraftProblemStatements}
           createObjectivesAction={createDraftObjectives}
           createScenarioFlagsAction={createDraftScenarioFlags}
-          updateTemplatesAction={updateTemplates}
+          createQuestionsAction={createDraftQuestions}
+          createTemplatesAction={createDraftTemplates}
+          createImagesAction={createDraftImages}
+          createVideosAction={createDraftVideos}
         />
       </div>
     );

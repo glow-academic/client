@@ -2,6 +2,33 @@
 (function () {
   "use strict";
 
+  function resetAllLoadingStates() {
+    var actionButtons = document.querySelectorAll(".action-button");
+    actionButtons.forEach(function (button) {
+      button.classList.remove("action-button-loading");
+      button.style.pointerEvents = "";
+
+      var icon = button.querySelector(".action-button-icon");
+      var text = button.querySelector(".action-button-text");
+      var spinner = button.querySelector(".action-button-spinner");
+      var loadingTextSpan = button.querySelector(
+        ".action-button-loading-text"
+      );
+
+      if (icon) icon.style.display = "";
+      if (text) text.style.display = "";
+      if (spinner) spinner.style.display = "none";
+      if (loadingTextSpan) loadingTextSpan.style.display = "none";
+    });
+  }
+
+  // Reset loading states when page is restored from bfcache (back button)
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) {
+      resetAllLoadingStates();
+    }
+  });
+
   // Wait for DOM to be ready
   function init() {
     var actionButtons = document.querySelectorAll(".action-button");

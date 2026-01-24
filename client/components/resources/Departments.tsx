@@ -234,7 +234,7 @@ export function Departments({
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                <span className="px-1.5 py-0.5 bg-primary/10 text-primary group-data-[selected=true]:bg-primary-foreground/20 group-data-[selected=true]:text-primary-foreground text-xs rounded shrink-0">
                   Suggested
                 </span>
               )}

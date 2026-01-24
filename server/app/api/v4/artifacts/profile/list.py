@@ -40,7 +40,7 @@ async def get_profile_list(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetStaffListApiResponse:
     """Get profile/staff list with permissions and relationships."""
-    tags = ["staff"]  # From router tags
+    tags = ["profile"]  # Profile operations
 
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()

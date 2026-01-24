@@ -147,6 +147,7 @@ export function ProblemStatements({
             body: {
               agent_id: agent_id,
               group_id: group_id,
+              name: "",
               problem_statement: internalValue,
               mcp: false,
             },

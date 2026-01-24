@@ -32,17 +32,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
-type UpdateTemplatesIn = {
-  body: {
-    template_id: string;
-    html: string;
-    name?: string | null;
-    description?: string | null;
-  };
-};
-type UpdateTemplatesOut = {
-  template_id: string | null;
-};
 
 export interface TemplateItem {
   id: string;
@@ -78,9 +67,6 @@ export interface TemplatesProps {
   createTemplatesAction?:
     | ((input: CreateDraftTemplatesIn) => Promise<CreateDraftTemplatesOut>)
     | undefined;
-  updateTemplatesAction?:
-    | ((input: UpdateTemplatesIn) => Promise<UpdateTemplatesOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering templates
@@ -103,7 +89,6 @@ export function Templates({
   group_id,
   templates_agent_id,
   createTemplatesAction,
-  updateTemplatesAction,
   onGenerate,
   isGenerating = false,
   searchTerm = "",
@@ -194,11 +179,12 @@ export function Templates({
       ) {
         for (const templateId of newlySelected) {
           try {
+            const templateItem = mergedTemplates.find((t) => t.id === templateId);
             await createTemplatesAction({
               body: {
                 agent_id: templates_agent_id,
                 group_id: group_id,
-                template_id: templateId,
+                name: templateItem?.name ?? "",
                 mcp: false,
               },
             });
@@ -217,7 +203,7 @@ export function Templates({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createTemplatesAction, templates_agent_id, group_id]
+    [ids, onChange, createTemplatesAction, templates_agent_id, group_id, mergedTemplates]
   );
 
   const templatesById = useMemo(() => {
@@ -282,103 +268,73 @@ export function Templates({
   }, []);
 
   const commitTemplateEdit = useCallback(async () => {
-    if (isNewTemplate) {
-      if (!createTemplatesAction || !templates_agent_id || !group_id) {
-        return;
-      }
-      const hasContent =
-        editorValue.trim() ||
-        editorName.trim() ||
-        editorDescription.trim();
-      if (!hasContent) {
-        return;
-      }
-      setIsSaving(true);
-      try {
-        const createResult = await createTemplatesAction({
-          body: {
-            agent_id: templates_agent_id,
-            group_id: group_id,
-            name: editorName.trim() || "Untitled Template",
-            mcp: false,
-          },
-        });
-        if (createResult?.template_id) {
-          const templateId = createResult.template_id;
-          if (updateTemplatesAction) {
-            await updateTemplatesAction({
-              body: {
-                template_id: templateId,
-                html: editorValue,
-                name: editorName.trim() || "Untitled Template",
-                description: editorDescription.trim() || null,
-              },
-            });
-          }
-          createdTemplateIdsRef.current.add(templateId);
-          setCreatedTemplates((prev) => [
-            ...prev,
-            {
-              id: templateId,
-              name: editorName.trim() || "Untitled Template",
-              description: editorDescription.trim() || null,
-              html: editorValue,
-            },
-          ]);
-          setHtmlOverrides((prev) => ({
-            ...prev,
-            [templateId]: editorValue,
-          }));
-          onChange([...ids, templateId]);
-          setIsNewTemplate(false);
-          setEditorTemplateId(templateId);
-          editorOriginalValueRef.current = editorValue;
-          editorOriginalNameRef.current = editorName.trim() || "Untitled Template";
-          editorOriginalDescriptionRef.current = editorDescription.trim() || "";
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create template:", error);
-      } finally {
-        setIsSaving(false);
-      }
+    if (!createTemplatesAction || !templates_agent_id || !group_id) {
       return;
     }
 
-    if (!editorTemplateId) return;
-    if (!updateTemplatesAction) return;
-    const nextName = editorName.trim();
+    const nextName = editorName.trim() || "Untitled Template";
     const nextDescription = editorDescription.trim();
-    const hasChanges =
-      editorValue !== editorOriginalValueRef.current ||
-      nextName !== editorOriginalNameRef.current ||
-      nextDescription !== editorOriginalDescriptionRef.current;
-    if (!hasChanges) return;
+    const hasContent =
+      editorValue.trim() || nextName || nextDescription;
+
+    if (!hasContent) return;
+
+    // For existing templates, check if there are actual changes
+    if (!isNewTemplate && editorTemplateId) {
+      const hasChanges =
+        editorValue !== editorOriginalValueRef.current ||
+        nextName !== editorOriginalNameRef.current ||
+        nextDescription !== editorOriginalDescriptionRef.current;
+      if (!hasChanges) return;
+    }
 
     setIsSaving(true);
     try {
-      await updateTemplatesAction({
+      // Always create a new template resource
+      const createResult = await createTemplatesAction({
         body: {
-          template_id: editorTemplateId,
-          html: editorValue,
-          name: nextName || null,
-          description: nextDescription || null,
+          agent_id: templates_agent_id,
+          group_id: group_id,
+          name: nextName,
+          mcp: false,
         },
       });
-      setHtmlOverrides((prev) => ({
-        ...prev,
-        [editorTemplateId]: editorValue,
-      }));
-      editorOriginalValueRef.current = editorValue;
-      editorOriginalNameRef.current = nextName;
-      editorOriginalDescriptionRef.current = nextDescription;
+      if (createResult?.template_id) {
+        const newTemplateId = createResult.template_id;
+        createdTemplateIdsRef.current.add(newTemplateId);
+        setCreatedTemplates((prev) => [
+          ...prev,
+          {
+            id: newTemplateId,
+            name: nextName,
+            description: nextDescription || null,
+            html: editorValue,
+          },
+        ]);
+        setHtmlOverrides((prev) => ({
+          ...prev,
+          [newTemplateId]: editorValue,
+        }));
+
+        // Replace old template ID with new one in selection
+        const newIds = isNewTemplate
+          ? [...ids, newTemplateId]
+          : ids.map((id) => (id === editorTemplateId ? newTemplateId : id));
+        onChange(newIds);
+
+        setIsNewTemplate(false);
+        setEditorTemplateId(newTemplateId);
+        editorOriginalValueRef.current = editorValue;
+        editorOriginalNameRef.current = nextName;
+        editorOriginalDescriptionRef.current = nextDescription;
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error("Failed to update template HTML:", error);
+      console.error("Failed to create template:", error);
     } finally {
       setIsSaving(false);
     }
-  }, [editorTemplateId, editorValue, updateTemplatesAction]);
+  }, [editorTemplateId, editorValue, editorName, editorDescription, isNewTemplate, createTemplatesAction, templates_agent_id, group_id, ids, onChange]);
 
   const handleEditorOpenChange = useCallback(
     (open: boolean) => {

@@ -150,7 +150,6 @@ function PersonaComponent({
   const isEditMode = !!personaId;
   const {
     effectiveProfile,
-    selectedDraftId,
     setSelectedDraftId,
     socket,
     isConnected,
@@ -513,20 +512,22 @@ function PersonaComponent({
   // Store formData from GenericForm to access search params
   const formDataRef = React.useRef<Record<string, unknown>>({});
 
+  // Track last synced draftId to prevent redundant profile context updates
+  const lastSyncedDraftIdRef = React.useRef<string | null>(null);
+
   // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
     // Store formData for access in handleGenerateResources
     formDataRef.current = fd;
     const next = (fd["draftId"] as string | undefined) ?? null;
     setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
 
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
+    // One-way sync to profile context (no effect dependency on selectedDraftId)
+    if (next !== lastSyncedDraftIdRef.current) {
+      lastSyncedDraftIdRef.current = next;
+      setSelectedDraftId(next);
     }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
+  }, [setSelectedDraftId]);
 
   // Use ref to stabilize patchPersonaDraftAction to prevent effect recreation when prop reference changes
   const patchPersonaDraftActionRef = React.useRef(patchPersonaDraftAction);
@@ -565,6 +566,7 @@ function PersonaComponent({
 
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
+  const isFirstPatchRef = React.useRef(true);
 
   // Track if there are pending changes for beforeunload warning
   const hasPendingChangesRef = React.useRef(false);
@@ -598,6 +600,14 @@ function PersonaComponent({
     // Only block if there's an actual numeric version to sync (not null for new personas)
     if (typeof personaData?.draft_version === "number" && !versionSyncedRef.current) {
       console.debug("[Persona Draft] Waiting for version sync");
+      return;
+    }
+
+    // Skip the first effect run - treat initial server state as the baseline
+    // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
+    if (isFirstPatchRef.current) {
+      isFirstPatchRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
       return;
     }
 
@@ -1070,7 +1080,7 @@ function PersonaComponent({
 
   // Set generation capability when persona data is loaded
   useEffect(() => {
-    if (personaData?.general_agent_id) {
+    if (personaData?.general_agent_id && personaData?.can_edit !== false) {
       setGenerationCapability({
         artifactType: "persona",
         canGenerate: true,
@@ -1086,6 +1096,7 @@ function PersonaComponent({
     return () => clearGenerationCapability();
   }, [
     personaData?.general_agent_id,
+    personaData?.can_edit,
     setGenerationCapability,
     clearGenerationCapability,
   ]);

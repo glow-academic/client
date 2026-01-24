@@ -174,7 +174,28 @@ export function Questions({
           times: [],
         }));
       }
-      return [];
+      return [
+        {
+          id: "",
+          question_text: "",
+          allow_multiple: false,
+          options: [
+            {
+              id: "",
+              option_text: "",
+              type: "discrete" as const,
+              is_correct: false,
+            },
+            {
+              id: "",
+              option_text: "",
+              type: "discrete" as const,
+              is_correct: false,
+            },
+          ],
+          times: [],
+        },
+      ];
     }
   );
 
@@ -309,6 +330,8 @@ export function Questions({
                 agent_id: effectiveAgentId,
                 group_id: group_id,
                 question_text: question.question_text,
+                allow_multiple: question.allow_multiple,
+                time_value: question.times?.[0] ?? 0,
                 mcp: false,
               },
             });

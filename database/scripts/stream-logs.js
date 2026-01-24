@@ -8,7 +8,7 @@ const cfg = {
   user: process.env.DB_USER || "myuser",
   password: process.env.DB_PASSWORD || "mypassword",
   database: process.env.DB_NAME || "mydb",
-  application_name: "audit-listener",
+  application_name: "db-monitor",
 };
 const READS = (process.env.READS || "0") === "1";
 const SAMPLE_MS = Number(process.env.SAMPLE_MS || 500);
@@ -21,24 +21,10 @@ const client = new Client(cfg);
 (async () => {
   try {
     await client.connect();
-    console.log(`[audit] connected as ${cfg.user} to ${cfg.database}`);
-
-    // --- DML via LISTEN/NOTIFY
-    await client.query("LISTEN audit_events");
-    console.log(`[audit] listening on channel "audit_events" …`);
-    client.on("notification", (msg) => {
-      try {
-        const p = JSON.parse(msg.payload);
-        console.log(
-          `row_change ts=${p.ts} op=${p.op} table=${p.table} pk=${p.pk}`
-        );
-      } catch {
-        console.log(`row_change ${msg.payload}`);
-      }
-    });
+    console.log(`[db-monitor] connected as ${cfg.user} to ${cfg.database}`);
 
     client.on("error", (e) => {
-      console.error("[audit] client error:", e.message);
+      console.error("[db-monitor] client error:", e.message);
     });
 
     // --- Optional: sample SELECTs (no superuser)
@@ -93,7 +79,7 @@ const client = new Client(cfg);
       setInterval(sample, SAMPLE_MS);
     }
   } catch (e) {
-    console.error(`[audit] listener error:`, e.message);
+    console.error(`[db-monitor] error:`, e.message);
     process.exit(1);
   }
 })();
