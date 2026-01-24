@@ -1,6 +1,7 @@
 /**
  * Scenarios.tsx
  * Used to display the scenarios page with table-based filtering and card layout.
+ * Server-side filtering with nuqs URL-backed state.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
@@ -15,8 +16,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -48,17 +49,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -73,15 +69,29 @@ export interface ScenariosProps {
   deleteScenarioAction?: (
     input: DeleteScenarioIn,
   ) => Promise<DeleteScenarioOut>;
+  // Server-side pagination/filtering state
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  personaSearch: string;
+  simulationSearch: string;
+  departmentSearch: string;
 }
 
 export function Scenarios({
   listData: serverListData,
   duplicateScenarioAction,
   deleteScenarioAction,
+  pageIndex,
+  pageSize,
+  totalCount,
+  personaSearch,
+  simulationSearch,
+  departmentSearch,
 }: ScenariosProps) {
-  const { departmentIds } = useProfile();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -93,10 +103,53 @@ export function Scenarios({
     new Set(),
   );
 
+  // Debounce refs
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const personaSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const simulationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Local search state (for immediate UI feedback while debouncing)
+  const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
+
+  // URL parameter update helper
+  const updateScenariosParams = useCallback(
+    (updates: Record<string, string | string[] | null | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
+          params.delete(key);
+        } else if (Array.isArray(value)) {
+          params.delete(key);
+          value.forEach((v) => params.append(key, v));
+        } else {
+          params.set(key, value);
+        }
+      }
+      // Reset page when filters change (unless page is explicitly set in updates)
+      if (!("page" in updates)) {
+        params.delete("page");
+      }
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
+    },
+    [searchParams, pathname, router],
+  );
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+    // Initialize from URL params
+    const filters: ColumnFiltersState = [];
+    const personaIds = searchParams.getAll("personaIds");
+    if (personaIds.length > 0) filters.push({ id: "persona_id", value: personaIds });
+    const simulationIds = searchParams.getAll("simulationIds");
+    if (simulationIds.length > 0) filters.push({ id: "simulation_ids", value: simulationIds });
+    const departmentIds = searchParams.getAll("departmentIds");
+    if (departmentIds.length > 0) filters.push({ id: "departments", value: departmentIds });
+    return filters;
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
   ]);
@@ -104,14 +157,13 @@ export function Scenarios({
   // Use server-provided data directly
   const scenariosData = serverListData;
 
-  // Extract data from response
+  // Extract data from response - scenarios from paginated page
   const scenarios = useMemo(
     () => scenariosData?.scenarios || [],
     [scenariosData?.scenarios],
   );
   const personaMapping = useMemo(
     () => {
-      // Build mapping from arrays (arrays are now the source of truth)
       const data = scenariosData;
       const map: Record<string, { name: string; description: string; color: string; icon: string }> = {};
       if (data?.personas && Array.isArray(data.personas)) {
@@ -157,24 +209,7 @@ export function Scenarios({
     children: (typeof scenarios)[number][];
   };
 
-  // Group scenarios using parent_scenario_id from V2 API
-  const groupedScenarios = useMemo(() => {
-    const groups: GroupedScenario[] = [];
-
-    // Find root scenarios (no parent)
-    const roots = scenarios.filter((s) => !s.parent_scenario_id);
-
-    roots.forEach((parent) => {
-      const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parent.scenario_id,
-      );
-      groups.push({ parent, children });
-    });
-
-    return groups;
-  }, [scenarios]);
-
-  // Use server-provided facet options directly (no client-side computation)
+  // Use server-provided facet options directly (filtered by search term server-side)
   const personaOptions = useMemo(
     () =>
       (scenariosData?.persona_options || [])
@@ -318,84 +353,28 @@ export function Scenarios({
     ];
   }, [personaMapping]);
 
-  const filterValues = useMemo(() => {
-    return columnFilters.reduce<Record<string, unknown>>((acc, filter) => {
-      acc[filter.id] = filter.value;
-      return acc;
-    }, {});
-  }, [columnFilters]);
-
-  const scenarioMatchesFilters = useMemo(() => {
-    return (scenario: (typeof scenarios)[number]) => {
-      const titleFilter = filterValues["title"];
-      if (typeof titleFilter === "string" && titleFilter.length > 0) {
-        const title = scenario.title || "";
-        if (!title.toLowerCase().includes(titleFilter.toLowerCase())) {
-          return false;
-        }
-      }
-
-      const personaFilter = filterValues["persona_id"] as string[] | undefined;
-      if (personaFilter && personaFilter.length > 0) {
-        const personaIds = scenario.persona_ids ?? [];
-        if (
-          personaIds.length === 0 ||
-          !personaIds.some((id) => personaFilter.includes(id))
-        ) {
-          return false;
-        }
-      }
-
-      const simulationFilter = filterValues["simulation_ids"] as
-        | string[]
-        | undefined;
-      if (simulationFilter && simulationFilter.length > 0) {
-        const simulationIds = scenario.simulation_ids ?? [];
-        if (
-          simulationIds.length === 0 ||
-          !simulationIds.some((id) => simulationFilter.includes(id))
-        ) {
-          return false;
-        }
-      }
-
-      const departmentFilter = filterValues["departments"] as
-        | string[]
-        | undefined;
-      if (departmentFilter && departmentFilter.length > 0) {
-        const departmentIds = scenario.department_ids ?? [];
-        if (
-          departmentIds.length === 0 ||
-          !departmentIds.some((id) => departmentFilter.includes(id))
-        ) {
-          return false;
-        }
-      }
-
-      return true;
-    };
-  }, [filterValues]);
-
-  // Create parent scenarios for table (root scenarios only)
-  const parentScenarios = useMemo(() => {
-    const parents = scenarios.filter((scenario) => !scenario.parent_scenario_id);
-    if (columnFilters.length === 0) {
-      return parents;
-    }
-
-    return parents.filter((parent) => {
-      if (scenarioMatchesFilters(parent)) {
-        return true;
-      }
-      return scenarios.some(
-        (scenario) =>
-          scenario.parent_scenario_id === parent.scenario_id &&
-          scenarioMatchesFilters(scenario),
+  // Group scenarios: roots and their children (server already returns only current page)
+  const currentPageGroupedScenarios = useMemo(() => {
+    const groups: GroupedScenario[] = [];
+    const roots = scenarios.filter((s) => !s.parent_scenario_id);
+    roots.forEach((parent) => {
+      const children = scenarios.filter(
+        (s) => s.parent_scenario_id === parent.scenario_id,
       );
+      groups.push({ parent, children });
     });
-  }, [scenarios, scenarioMatchesFilters, columnFilters.length]);
+    return groups;
+  }, [scenarios]);
 
-  // Create table instance
+  // Create parent scenarios for table (root scenarios only - for pagination display)
+  const parentScenarios = useMemo(() => {
+    return scenarios.filter((scenario) => !scenario.parent_scenario_id);
+  }, [scenarios]);
+
+  // Page count for manual pagination
+  const pageCount = Math.ceil(totalCount / pageSize);
+
+  // Create table instance with manual pagination/filtering
   const table = useReactTable({
     data: parentScenarios,
     columns,
@@ -404,72 +383,42 @@ export function Scenarios({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
+    pageCount,
+    manualPagination: true,
+    manualFiltering: true,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
+    onColumnFiltersChange: (updater) => {
+      const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+      // Sync filter changes to URL
+      const personaFilter = newFilters.find((f) => f.id === "persona_id");
+      const simulationFilter = newFilters.find((f) => f.id === "simulation_ids");
+      const departmentFilter = newFilters.find((f) => f.id === "departments");
+      updateScenariosParams({
+        personaIds: (personaFilter?.value as string[] | undefined) ?? null,
+        simulationIds: (simulationFilter?.value as string[] | undefined) ?? null,
+        departmentIds: (departmentFilter?.value as string[] | undefined) ?? null,
+      });
     },
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const current = { pageIndex, pageSize };
+      const next = typeof updater === "function" ? updater(current) : updater;
+      updateScenariosParams({
+        page: next.pageIndex > 0 ? String(next.pageIndex) : null,
+        pageSize: next.pageSize !== 10 ? String(next.pageSize) : null,
+      });
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
-
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
-  const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
-  const tableRows = useMemo(() => {
-    return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    parentScenarios,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
-
-  // Get the current page's parent scenario IDs
-  // Extract IDs directly in useMemo with stable dependencies to avoid infinite re-renders
-  const orderedParentIds = useMemo(() => {
-    return tableRows.map((row) => row.original.scenario_id);
-  }, [tableRows]);
-
-  // Group the current page scenarios in the exact order of the table's sorting
-  const currentPageGroupedScenarios = useMemo(() => {
-    const groups: GroupedScenario[] = [];
-
-    for (const parentId of orderedParentIds) {
-      const parent = scenarios.find(
-        (scenario) =>
-          !scenario.parent_scenario_id && scenario.scenario_id === parentId,
-      );
-      if (!parent) continue;
-
-      // Find children using parent_scenario_id from V2 API
-      const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parentId,
-      );
-
-      groups.push({ parent, children });
-    }
-
-    return groups;
-  }, [scenarios, orderedParentIds]);
 
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
@@ -540,6 +489,86 @@ export function Scenarios({
       return newSet;
     });
   };
+
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearch(value);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        updateScenariosParams({ search: value || null });
+      }, 500);
+    },
+    [updateScenariosParams],
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+    updateScenariosParams({ search: localSearch || null });
+  }, [localSearch, updateScenariosParams]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (searchDebounceRef.current) {
+          clearTimeout(searchDebounceRef.current);
+          searchDebounceRef.current = null;
+        }
+        updateScenariosParams({ search: localSearch || null });
+      }
+    },
+    [localSearch, updateScenariosParams],
+  );
+
+  // Filter option search handlers (300ms debounce)
+  const handlePersonaSearchChange = useCallback(
+    (term: string) => {
+      if (personaSearchDebounceRef.current) clearTimeout(personaSearchDebounceRef.current);
+      personaSearchDebounceRef.current = setTimeout(() => {
+        updateScenariosParams({ personaSearch: term || null });
+      }, 300);
+    },
+    [updateScenariosParams],
+  );
+
+  const handleSimulationSearchChange = useCallback(
+    (term: string) => {
+      if (simulationSearchDebounceRef.current) clearTimeout(simulationSearchDebounceRef.current);
+      simulationSearchDebounceRef.current = setTimeout(() => {
+        updateScenariosParams({ simulationSearch: term || null });
+      }, 300);
+    },
+    [updateScenariosParams],
+  );
+
+  const handleDepartmentSearchChange = useCallback(
+    (term: string) => {
+      if (departmentSearchDebounceRef.current) clearTimeout(departmentSearchDebounceRef.current);
+      departmentSearchDebounceRef.current = setTimeout(() => {
+        updateScenariosParams({ departmentSearch: term || null });
+      }, 300);
+    },
+    [updateScenariosParams],
+  );
+
+  // Reset all filters
+  const handleResetFilters = useCallback(() => {
+    setColumnFilters([]);
+    setLocalSearch("");
+    updateScenariosParams({
+      search: null,
+      personaIds: null,
+      simulationIds: null,
+      departmentIds: null,
+      personaSearch: null,
+      simulationSearch: null,
+      departmentSearch: null,
+      page: null,
+    });
+  }, [updateScenariosParams]);
 
   const renderScenarioCard = (
     scenario: (typeof scenarios)[number],
@@ -833,10 +862,8 @@ export function Scenarios({
     </Card>
   );
 
-  const renderGroupedScenarios = (filteredGroups?: GroupedScenario[]) => {
-    const groupsToRender = filteredGroups || groupedScenarios;
-
-    return groupsToRender.map((group) => {
+  const renderGroupedScenarios = () => {
+    return currentPageGroupedScenarios.map((group) => {
       const parentId = group.parent.scenario_id;
       if (!parentId) return null;
       const isCollapsed = collapsedGroups.has(parentId);
@@ -865,11 +892,10 @@ export function Scenarios({
   };
 
   // Get column references for toolbar
-  const titleColumn = table.getColumn("title");
   const personaColumn = table.getColumn("persona_id");
   const simulationColumn = table.getColumn("simulation_ids");
   const departmentsColumn = table.getColumn("departments");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered = columnFilters.length > 0 || localSearch.length > 0;
 
   return (
     <TooltipProvider>
@@ -885,10 +911,10 @@ export function Scenarios({
                 <Input
                   data-testid="scenarios-search"
                   placeholder="Search scenarios..."
-                  value={(titleColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    titleColumn?.setFilterValue(event.target.value)
-                  }
+                  value={localSearch}
+                  onChange={(event) => handleSearchChange(event.target.value)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={handleSearchKeyDown}
                   className="h-8 w-full md:w-[150px] lg:w-[250px]"
                   aria-label="Search scenarios by name"
                   aria-controls="scenarios-grid"
@@ -902,6 +928,9 @@ export function Scenarios({
                     column={simulationColumn}
                     title="Simulation"
                     options={simulationOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleSimulationSearchChange}
+                    searchValue={simulationSearch}
                   />
                 )}
 
@@ -911,6 +940,9 @@ export function Scenarios({
                     column={personaColumn}
                     title="Persona"
                     options={personaOptions}
+                    isServerDriven={true}
+                    onSearchChange={handlePersonaSearchChange}
+                    searchValue={personaSearch}
                   />
                 )}
 
@@ -920,13 +952,16 @@ export function Scenarios({
                     column={departmentsColumn}
                     title="Department"
                     options={departmentOptions}
+                    isServerDriven={true}
+                    onSearchChange={handleDepartmentSearchChange}
+                    searchValue={departmentSearch}
                   />
                 )}
 
                 {isFiltered && (
                   <Button
                     variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
+                    onClick={handleResetFilters}
                     className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
                     Reset
@@ -944,8 +979,8 @@ export function Scenarios({
             aria-label="scenarios grid"
             data-testid="scenarios-grid"
           >
-            {tableRows.length ? (
-              renderGroupedScenarios(currentPageGroupedScenarios)
+            {currentPageGroupedScenarios.length > 0 ? (
+              renderGroupedScenarios()
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 No scenarios match the current filters.

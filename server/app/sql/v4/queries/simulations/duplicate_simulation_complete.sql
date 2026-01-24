@@ -135,7 +135,6 @@ copy_scenario_flags AS (
     FROM source_simulation ssim
     JOIN simulation_scenario_flags_junction ssf ON ssf.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
-    ON CONFLICT (simulation_id, scenario_flag_id) DO NOTHING
 ),
 copy_rubric_links AS (
     INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, active, created_at)
@@ -147,7 +146,6 @@ copy_rubric_links AS (
     FROM source_simulation ssim
     JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
-    ON CONFLICT (simulation_id, scenario_rubric_id) DO NOTHING
 ),
 copy_departments AS (
     INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at)

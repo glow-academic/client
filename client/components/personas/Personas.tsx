@@ -319,7 +319,7 @@ export default function Personas({
   const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [localScenarioSearch, setLocalScenarioSearch] = useState(scenarioSearch);
-  const [localAgentSearch, setLocalAgentSearch] = useState(agentSearch);
+  const [localFieldSearch, setLocalFieldSearch] = useState(fieldSearch);
   const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
 
   const handleScenarioSearchChange = useCallback(
@@ -335,14 +335,14 @@ export default function Personas({
     [updatePersonasParams]
   );
 
-  const handleAgentSearchChange = useCallback(
+  const handleFieldSearchChange = useCallback(
     (value: string) => {
-      setLocalAgentSearch(value);
-      if (agentSearchTimeoutRef.current) {
-        clearTimeout(agentSearchTimeoutRef.current);
+      setLocalFieldSearch(value);
+      if (fieldSearchTimeoutRef.current) {
+        clearTimeout(fieldSearchTimeoutRef.current);
       }
-      agentSearchTimeoutRef.current = setTimeout(() => {
-        updatePersonasParams({ agentSearch: value });
+      fieldSearchTimeoutRef.current = setTimeout(() => {
+        updatePersonasParams({ fieldSearch: value });
       }, 300);
     },
     [updatePersonasParams]
@@ -369,13 +369,13 @@ export default function Personas({
 
       // Extract filter values
       const scenarioFilter = newFilters.find((f) => f.id === "scenarios");
-      const agentFilter = newFilters.find((f) => f.id === "agentId");
+      const fieldFilter = newFilters.find((f) => f.id === "fieldIds");
       const departmentFilter = newFilters.find((f) => f.id === "departments");
 
       updatePersonasParams({
         page: 0,
         scenarioIds: (scenarioFilter?.value as string[]) || [],
-        agentIds: (agentFilter?.value as string[]) || [],
+        fieldIds: (fieldFilter?.value as string[]) || [],
         departmentIds: (departmentFilter?.value as string[]) || [],
       });
     },
@@ -473,29 +473,17 @@ export default function Personas({
           return <div className="text-sm">{persona.temperature_display}</div>;
         },
       },
-      // Hidden faceting column for Model (single ID) with correct ID
+      // Hidden faceting column for Fields (array of IDs)
       {
-        id: "agentId",
+        id: "fieldIds",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorKey: "agent_id",
-      },
-      {
-        accessorKey: "agent_id",
-        header: "Agent",
-        cell: ({ row }) => {
-          const persona = row.original;
-          return (
-            <div className="text-sm">
-              {persona.agent_name ? (
-                <span className="text-sm">{persona.agent_name}</span>
-              ) : (
-                <span className="text-muted-foreground">No agent</span>
-              )}
-            </div>
-          );
+        accessorFn: (row: (typeof personas)[number]) => row.field_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("fieldIds") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
         },
       },
       // Hidden faceting column for Departments (array of IDs)
@@ -830,7 +818,7 @@ export default function Personas({
 
   // Get column references for toolbar
   const scenarioColumn = table.getColumn("scenarios");
-  const agentColumn = table.getColumn("agentId");
+  const fieldColumn = table.getColumn("fieldIds");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
@@ -871,14 +859,14 @@ export default function Personas({
                 searchValue={localScenarioSearch}
               />
 
-              {/* Agent Filter */}
+              {/* Field Filter */}
               <DataTableFacetedFilter
-                column={agentColumn}
-                title="Agent"
-                options={agentOptions}
+                column={fieldColumn}
+                title="Field"
+                options={fieldOptions}
                 isServerDriven={true}
-                onSearchChange={handleAgentSearchChange}
-                searchValue={localAgentSearch}
+                onSearchChange={handleFieldSearchChange}
+                searchValue={localFieldSearch}
               />
 
               {/* Department Filter */}
@@ -897,17 +885,17 @@ export default function Personas({
                   onClick={() => {
                     setSearchTerm("");
                     setLocalScenarioSearch("");
-                    setLocalAgentSearch("");
+                    setLocalFieldSearch("");
                     setLocalDepartmentSearch("");
                     table.resetColumnFilters();
                     updatePersonasParams({
                       page: 0,
                       search: "",
                       scenarioIds: [],
-                      agentIds: [],
+                      fieldIds: [],
                       departmentIds: [],
                       scenarioSearch: "",
-                      agentSearch: "",
+                      fieldSearch: "",
                       departmentSearch: "",
                     });
                   }}

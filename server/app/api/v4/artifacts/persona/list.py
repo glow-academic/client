@@ -43,7 +43,7 @@ async def get_persona_list(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)

@@ -42,8 +42,8 @@ async def get_scenario_list(
     # Check for cache bypass header (for testing)
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    # Generate cache key from path and parsed body (mode='json' to serialize UUIDs)
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache (unless bypassed)

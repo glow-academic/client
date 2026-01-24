@@ -347,8 +347,13 @@ export default function Cohorts({
       await deleteCohortAction({ body: { cohort_id: deleteItem.id } });
       toast.success("Cohort deleted successfully");
       router.refresh();
-    } catch {
-      toast.error("Failed to delete cohort");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete cohort";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete cohort");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -365,8 +370,13 @@ export default function Cohorts({
       await duplicateCohortAction({ body: { cohort_id: cohortId } });
       toast.success(`Cohort "${cohortName}" duplicated successfully`);
       router.refresh();
-    } catch {
-      toast.error("Failed to duplicate cohort");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to duplicate cohort";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to duplicate cohort");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDuplicating(null);
     }

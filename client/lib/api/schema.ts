@@ -10683,7 +10683,32 @@ export interface components {
             general_agent_id?: string | null;
         };
         /** GetScenariosListApiRequest */
-        GetScenariosListApiRequest: Record<string, never>;
+        GetScenariosListApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
+            /**
+             * Page Size
+             * @default 10
+             */
+            page_size: number | null;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number | null;
+        };
         /** GetScenariosListApiResponse */
         GetScenariosListApiResponse: {
             /** Actor Name */
@@ -10708,6 +10733,8 @@ export interface components {
             simulation_options?: components["schemas"]["QListScenariosV4Option"][] | null;
             /** Department Options */
             department_options?: components["schemas"]["QListScenariosV4Option"][] | null;
+            /** Total Count */
+            total_count?: number | null;
         };
         /** GetSettingApiRequest */
         GetSettingApiRequest: {

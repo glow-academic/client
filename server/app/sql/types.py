@@ -10956,6 +10956,7 @@ class QListPersonasV4Department(BaseModel):
     department_id: UUID | None
     name: str | None
     description: str | None
+    count: int | None
 
 
 
@@ -10965,6 +10966,7 @@ class QListPersonasV4Field(BaseModel):
     field_id: UUID | None
     name: str | None
     description: str | None
+    count: int | None
 
 
 
@@ -11006,6 +11008,7 @@ class QListPersonasV4Scenario(BaseModel):
     persona_ids: list[UUID] | None
     document_ids: list[UUID] | None
     parameter_item_ids: list[UUID] | None
+    count: int | None
 
 class GetPersonasListSqlRow(BaseModel):
 
@@ -17168,10 +17171,28 @@ class GetScenarioByIdApiResponse(BaseModel):
 class GetScenariosListSqlParams(BaseModel):
 
     profile_id: UUID
+    search: str | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    simulation_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 10
+    page_offset: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
+            self.search,
+            self.persona_ids,
+            self.simulation_ids,
+            self.filter_department_ids,
+            self.persona_search,
+            self.simulation_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
         )
 
 class QListScenariosV4Cohort(BaseModel):
@@ -17276,10 +17297,19 @@ class GetScenariosListSqlRow(BaseModel):
     persona_options: list[QListScenariosV4Option] | None = None
     simulation_options: list[QListScenariosV4Option] | None = None
     department_options: list[QListScenariosV4Option] | None = None
+    total_count: int | None = None
 
 class GetScenariosListApiRequest(BaseModel):
 
-    pass
+    search: str | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    simulation_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 10
+    page_offset: int | None = 0
 
 class GetScenariosListApiResponse(BaseModel):
 
@@ -17294,6 +17324,7 @@ class GetScenariosListApiResponse(BaseModel):
     persona_options: list[QListScenariosV4Option] | None = None
     simulation_options: list[QListScenariosV4Option] | None = None
     department_options: list[QListScenariosV4Option] | None = None
+    total_count: int | None = None
 
 
 

@@ -262,8 +262,13 @@ export function Simulations({
       await deleteSimulationAction({ body: { simulation_id: deleteItem.id } });
       toast.success("Simulation deleted successfully");
       router.refresh();
-    } catch {
-      toast.error("Failed to delete simulation");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete simulation";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete simulation");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -291,8 +296,13 @@ export function Simulations({
       await duplicateSimulationAction({ body: { simulation_id: simulationId } });
       toast.success("Simulation duplicated successfully");
       router.refresh();
-    } catch {
-      toast.error("Failed to duplicate simulation");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to duplicate simulation";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to duplicate simulation");
+      if (msg.startsWith("404")) {
+        router.refresh();
+      }
     } finally {
       setIsDuplicating(null);
     }

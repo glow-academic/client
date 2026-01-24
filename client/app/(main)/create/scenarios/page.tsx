@@ -1,6 +1,6 @@
 /**
  * app/(main)/create/scenarios/page.tsx
- * Scenario list page - redirects to home with scenarios section
+ * Scenario list page - server-side filtering with nuqs URL-backed state
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
@@ -10,6 +10,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
+import { loadScenariosListSearchParams } from "./listSearchParams";
+
 /** ---- Strong types from OpenAPI ---- */
 type ScenariosListOut = OutputOf<"/api/v4/scenarios/list", "post">;
 type DuplicateScenarioIn = InputOf<"/api/v4/scenarios/duplicate", "post">;
@@ -17,15 +19,28 @@ type DuplicateScenarioOut = OutputOf<"/api/v4/scenarios/duplicate", "post">;
 type DeleteScenarioIn = InputOf<"/api/v4/scenarios/delete", "post">;
 type DeleteScenarioOut = OutputOf<"/api/v4/scenarios/delete", "post">;
 
+/** ---- Body type for scenarios list request ---- */
+type ScenariosListBody = {
+  search?: string | null;
+  persona_ids?: string[] | null;
+  simulation_ids?: string[] | null;
+  filter_department_ids?: string[] | null;
+  persona_search?: string | null;
+  simulation_search?: string | null;
+  department_search?: string | null;
+  page_size: number | null;
+  page_offset: number | null;
+};
+
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getScenariosList = async (): Promise<ScenariosListOut> => {
+const getScenariosList = async (body: ScenariosListBody): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/scenarios/list",
-    { body: {} },
+    { body },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -62,11 +77,49 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function ScenariosPage() {
+interface ScenariosPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function ScenariosPage({ searchParams }: ScenariosPageProps) {
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Fetch list data server-side
-  const listData = await getScenariosList();
+
+  // Parse search params using nuqs
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  const q = loadScenariosListSearchParams(searchParamsObj);
+
+  // Compute pagination
+  const pageIndex = q.page ?? 0;
+  const pageSize = q.pageSize ?? 10;
+  const offset = pageIndex * pageSize;
+
+  // Build request body with filter values from URL
+  const body: ScenariosListBody = {
+    search: q.search || null,
+    persona_ids: q.personaIds && q.personaIds.length > 0 ? q.personaIds : null,
+    simulation_ids: q.simulationIds && q.simulationIds.length > 0 ? q.simulationIds : null,
+    filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
+    persona_search: q.personaSearch || null,
+    simulation_search: q.simulationSearch || null,
+    department_search: q.departmentSearch || null,
+    page_size: pageSize,
+    page_offset: offset,
+  };
+
+  // Fetch list data server-side with filters
+  const listData = await getScenariosList(body);
 
   return (
     <div className="space-y-6" data-page="scenarios-index">
@@ -74,6 +127,12 @@ export default async function ScenariosPage() {
         listData={listData}
         duplicateScenarioAction={duplicateScenario}
         deleteScenarioAction={deleteScenario}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        totalCount={listData.total_count ?? 0}
+        personaSearch={q.personaSearch ?? ""}
+        simulationSearch={q.simulationSearch ?? ""}
+        departmentSearch={q.departmentSearch ?? ""}
       />
     </div>
   );
