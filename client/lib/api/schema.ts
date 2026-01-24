@@ -8005,6 +8005,8 @@ export interface components {
             department_options?: components["schemas"]["QListCohortsV4Option"][] | null;
             /** Total Count */
             total_count?: number | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetDashboardBundleApiRequest */
         GetDashboardBundleApiRequest: {
@@ -11220,6 +11222,8 @@ export interface components {
             department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Total Count */
             total_count?: number | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetStaffListApiRequest */
         GetStaffListApiRequest: Record<string, never>;

@@ -131,7 +131,8 @@ RETURNS TABLE (
     scenario_options types.q_list_simulations_v4_option[],
     cohort_options types.q_list_simulations_v4_option[],
     department_options types.q_list_simulations_v4_option[],
-    total_count bigint
+    total_count bigint,
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -170,22 +171,6 @@ attempts_entry AS (
     FROM attempts_entry sa
     JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
     GROUP BY saj.simulation_id
-),
-simulation_active_cohort_links AS (
-    SELECT
-        cs.simulation_id,
-        COUNT(*) as active_cohort_count
-    FROM cohort_simulations_junction cs
-    WHERE cs.active = true
-    GROUP BY cs.simulation_id
-),
-simulation_all_cohort_links AS (
-    SELECT
-        cs.simulation_id,
-        COUNT(*) as total_cohort_links,
-        COUNT(DISTINCT cs.cohort_id) as num_cohorts
-    FROM cohort_simulations_junction cs
-    GROUP BY cs.simulation_id
 ),
 simulation_cohorts_data AS (
     SELECT
@@ -254,21 +239,21 @@ simulation_data AS (
         COALESCE(ssd.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(ssd.num_scenarios, 0) as num_scenarios,
         COALESCE(sa.attempt_count, 0) as attempt_count,
-        COALESCE(sacl.active_cohort_count, 0) as active_cohort_count,
-        COALESCE(salcl.total_cohort_links, 0) as total_cohort_links,
-        COALESCE(salcl.num_cohorts, 0) as num_cohorts,
-        COALESCE(scd.cohort_ids, ARRAY[]::text[]) as cohort_ids
+        COALESCE(ses.active_cohort_count, 0) as active_cohort_count,
+        COALESCE(ses.total_cohort_links, 0) as total_cohort_links,
+        COALESCE(ses.num_cohorts, 0) as num_cohorts,
+        COALESCE(scd.cohort_ids, ARRAY[]::text[]) as cohort_ids,
+        ses.department_ids as perm_dept_ids
     FROM simulation_artifact s
     LEFT JOIN simulation_departments_junction sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
     LEFT JOIN simulation_scenarios_data ssd ON ssd.simulation_id = s.id
     LEFT JOIN attempts_entry sa ON sa.simulation_id = s.id
-    LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
-    LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
+    LEFT JOIN view_simulation_edit_state ses ON ses.simulation_id = s.id
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
     GROUP BY s.id, (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1), EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE), EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE),
              s.updated_at, sdd.department_ids, ssd.scenario_ids, ssd.num_scenarios, sa.attempt_count,
-             sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts, scd.cohort_ids
+             ses.active_cohort_count, ses.total_cohort_links, ses.num_cohorts, scd.cohort_ids, ses.department_ids
     HAVING
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -401,6 +386,43 @@ all_department_ids_options AS (
     SELECT DISTINCT unnest(department_ids) as department_id
     FROM simulation_data
     WHERE department_ids IS NOT NULL
+),
+-- Find the general agent that can generate simulations for this user
+general_agent_for_user AS (
+    SELECT a.id as agent_id
+    FROM agent_artifact a
+    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
+                  WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
+        JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+        JOIN artifact_resources_relation ar ON ar.resource = rt.resource
+        WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'simulation'::artifact_type)
+    AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
+                 JOIN user_departments ud ON ad.department_id = ud.department_id
+                 WHERE ad.agent_id = a.id AND ad.active = true)
+         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    AND ARRAY['names','descriptions','flags','departments','scenarios',
+              'scenario_flags','scenario_positions','scenario_rubrics',
+              'scenario_time_limits']::text[]
+        <@ COALESCE(
+            (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
+             FROM agent_tools_junction at3
+             JOIN tools_resource tr2 ON tr2.id = at3.tool_id
+             JOIN tool_artifact t ON t.id = tr2.tool_id
+                  AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
+                              WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
+             JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
+             WHERE at3.agent_id = a.id AND at3.active = true),
+            ARRAY[]::text[]
+        )
+    ORDER BY
+        CASE WHEN EXISTS (
+            SELECT 1 FROM agent_departments_junction ad
+            JOIN user_departments ud ON ad.department_id = ud.department_id
+            WHERE ad.agent_id = a.id AND ad.active = true
+        ) THEN 0 ELSE 1 END ASC,
+        a.updated_at DESC, a.id ASC
+    LIMIT 1
 )
 SELECT
     up.actor_name::text as actor_name,
@@ -410,12 +432,12 @@ SELECT
             (simd.simulation_id, simd.name, simd.description, simd.department_ids, simd.time_limit,
              simd.active, simd.practice_simulation,
              CASE
-                 WHEN COALESCE(simd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
+                 WHEN simd.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
                  WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
              CASE
-                 WHEN COALESCE(simd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
+                 WHEN simd.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
                  WHEN simd.practice_simulation = true THEN false
                  WHEN simd.total_cohort_links > 0 THEN false
                  WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
@@ -498,6 +520,8 @@ SELECT
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
     ) as department_options,
-    (SELECT total FROM filtered_count) as total_count
+    (SELECT total FROM filtered_count) as total_count,
+    -- General agent ID for generation capability
+    (SELECT agent_id FROM general_agent_for_user) as general_agent_id
 FROM user_profile up
 $$;

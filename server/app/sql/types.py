@@ -3802,6 +3802,7 @@ class GetCohortsListSqlRow(BaseModel):
     profile_options: list[QListCohortsV4Option] | None = None
     department_options: list[QListCohortsV4Option] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 class GetCohortsListApiRequest(BaseModel):
 
@@ -3828,6 +3829,7 @@ class GetCohortsListApiResponse(BaseModel):
     profile_options: list[QListCohortsV4Option] | None = None
     department_options: list[QListCohortsV4Option] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 
 
@@ -19702,6 +19704,7 @@ class GetSimulationsListSqlRow(BaseModel):
     cohort_options: list[QListSimulationsV4Option] | None = None
     department_options: list[QListSimulationsV4Option] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 class GetSimulationsListApiRequest(BaseModel):
 
@@ -19727,6 +19730,7 @@ class GetSimulationsListApiResponse(BaseModel):
     cohort_options: list[QListSimulationsV4Option] | None = None
     department_options: list[QListSimulationsV4Option] | None = None
     total_count: int | None = None
+    general_agent_id: UUID | None = None
 
 
 

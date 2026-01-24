@@ -8,7 +8,7 @@
 "use client";
 import { Copy, Edit, Eye, Play, Search, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -50,6 +50,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { useGenerationContext } from "@/contexts/generation-context";
+import { useProfile } from "@/contexts/profile-context";
 
 export interface CohortsProps {
   // Server-provided data (for server-side rendering)
@@ -79,6 +82,8 @@ export default function Cohorts({
   profileSearch,
   departmentSearch,
 }: CohortsProps) {
+  const { socket, isConnected } = useProfile();
+  const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -89,6 +94,71 @@ export default function Cohorts({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+
+  // Generation modal state
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Set GenerationCapability from list response
+  useEffect(() => {
+    if (serverListData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "cohort",
+        canGenerate: true,
+        agentId: serverListData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "cohort",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [serverListData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
+
+  // Handle opening the generate modal
+  const handleOpenGenerateModal = useCallback(() => {
+    if (!serverListData?.general_agent_id) return;
+    const resources: GenerateRegenerateModalResource[] = [
+      { id: "names", label: "Name", active: true },
+      { id: "descriptions", label: "Description", active: true },
+      { id: "flags", label: "Configuration", active: true },
+      { id: "departments", label: "Departments", active: true },
+      { id: "simulations", label: "Simulations", active: true },
+      { id: "simulation_positions", label: "Simulation Positions", active: true },
+    ];
+    setModalResources(resources);
+    setModalInstructions("");
+    setShowGenerateModal(true);
+  }, [serverListData?.general_agent_id]);
+
+  // Listen for full-page-generate event
+  useEffect(() => {
+    window.addEventListener("full-page-generate", handleOpenGenerateModal);
+    return () => window.removeEventListener("full-page-generate", handleOpenGenerateModal);
+  }, [handleOpenGenerateModal]);
+
+  // Handle modal generate (create new cohort + generate)
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      if (!socket || !isConnected) return;
+      setIsGenerating(true);
+      socket.emit("cohort_generate", {
+        resource_types: selectedResources,
+        agent_type: "general",
+        user_instructions: instructions.trim() ? [instructions.trim()] : null,
+        cohort_id: null,
+        mcp: false,
+      });
+      setShowGenerateModal(false);
+      setIsGenerating(false);
+      toast.success("Generation started for new cohort");
+    },
+    [socket, isConnected]
+  );
 
   // Debounce refs
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -720,6 +790,18 @@ export default function Cohorts({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <GenerateRegenerateModal
+          open={showGenerateModal}
+          onOpenChange={setShowGenerateModal}
+          resources={modalResources}
+          onResourcesChange={setModalResources}
+          instructions={modalInstructions}
+          onInstructionsChange={setModalInstructions}
+          onGenerate={handleModalGenerate}
+          isGenerating={isGenerating}
+          mode="generate"
+        />
       </div>
     </TooltipProvider>
   );

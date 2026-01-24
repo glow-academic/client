@@ -111,7 +111,8 @@ RETURNS TABLE (
     simulation_options types.q_list_cohorts_v4_option[],
     profile_options types.q_list_cohorts_v4_option[],
     department_options types.q_list_cohorts_v4_option[],
-    total_count bigint
+    total_count bigint,
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -164,22 +165,6 @@ cohort_simulations_agg AS (
     WHERE cs.active = true
     GROUP BY cs.cohort_id
 ),
-cohort_usage AS (
-    SELECT DISTINCT cp.cohort_id, COUNT(DISTINCT sa.id) as usage_count
-    FROM profile_cohorts_junction cp
-    JOIN profile_attempts_junction paj ON paj.profile_id = cp.profile_id
-    JOIN attempts_entry sa ON sa.id = paj.attempt_id
-    WHERE cp.active = true
-    GROUP BY cp.cohort_id
-),
-cohort_departments_data AS (
-    SELECT
-        cd.cohort_id,
-        ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
-    FROM cohort_departments_junction cd
-    WHERE cd.active = true
-    GROUP BY cd.cohort_id
-),
 user_in_cohort AS (
     SELECT cohort_id
     FROM params x
@@ -192,19 +177,19 @@ cohorts_data AS (
         COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE) as active,
         c.updated_at,
-        COALESCE(cdd.department_ids, NULL) as department_ids,
+        ces.department_ids as department_ids,
         COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
         COALESCE(cs.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
-        COALESCE(cu.usage_count, 0) as usage_count,
+        COALESCE(ces.usage_count, 0) as usage_count,
         COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
         CASE
-            WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
+            WHEN ces.department_ids IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE
-            WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) AND COALESCE(cu.usage_count, 0) = 0 THEN true
+            WHEN ces.department_ids IS NULL AND up.role != 'superadmin' THEN false
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) AND COALESCE(ces.usage_count, 0) = 0 THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate,
@@ -215,11 +200,10 @@ cohorts_data AS (
     FROM params x
     JOIN cohort_artifact c ON true
     LEFT JOIN cohort_departments_junction cd ON cd.cohort_id = c.id AND cd.active = true
-    LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
+    LEFT JOIN view_cohort_edit_state ces ON ces.cohort_id = c.id
     LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
     LEFT JOIN cohort_profiles_role_filtered cprf ON cprf.cohort_id = c.id
     LEFT JOIN cohort_simulations_agg cs ON cs.cohort_id = c.id
-    LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
     LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
     CROSS JOIN user_profile up
     WHERE (
@@ -228,7 +212,7 @@ cohorts_data AS (
         up.role != 'instructional'
     )
     GROUP BY c.id, (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE), c.updated_at,
-             cdd.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
+             ces.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, ces.usage_count, up.role, uic.cohort_id
     HAVING
         COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM cohort_departments_junction cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
@@ -330,7 +314,7 @@ scenario_mapping_data AS (
 ),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM cohort_departments_data
+    FROM view_cohort_edit_state
     WHERE department_ids IS NOT NULL
     UNION
     SELECT department_id FROM user_departments
@@ -405,6 +389,41 @@ all_department_ids_options AS (
     SELECT DISTINCT unnest(department_ids) as department_id
     FROM cohorts_data
     WHERE department_ids IS NOT NULL
+),
+general_agent_for_user AS (
+    SELECT a.id as agent_id
+    FROM agent_artifact a
+    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
+                  WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
+        JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+        JOIN artifact_resources_relation ar ON ar.resource = rt.resource
+        WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'cohort'::artifact_type)
+    AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
+                 JOIN user_departments ud ON ad.department_id = ud.department_id
+                 WHERE ad.agent_id = a.id AND ad.active = true)
+         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    AND ARRAY['names','descriptions','flags','departments',
+              'simulations','simulation_positions']::text[]
+        <@ COALESCE(
+            (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
+             FROM agent_tools_junction at3
+             JOIN tools_resource tr2 ON tr2.id = at3.tool_id
+             JOIN tool_artifact t ON t.id = tr2.tool_id
+                  AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
+                              WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
+             JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
+             WHERE at3.agent_id = a.id AND at3.active = true),
+            ARRAY[]::text[]
+        )
+    ORDER BY
+        CASE WHEN EXISTS (
+            SELECT 1 FROM agent_departments_junction ad
+            JOIN user_departments ud ON ad.department_id = ud.department_id
+            WHERE ad.agent_id = a.id AND ad.active = true
+        ) THEN 0 ELSE 1 END ASC,
+        a.updated_at DESC, a.id ASC
+    LIMIT 1
 )
 SELECT
     up.actor_name,
@@ -487,6 +506,7 @@ SELECT
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_cohorts_v4_option[]
     ) as department_options,
-    (SELECT total FROM filtered_count) as total_count
+    (SELECT total FROM filtered_count) as total_count,
+    (SELECT agent_id FROM general_agent_for_user) as general_agent_id
 FROM user_profile up
 $$;

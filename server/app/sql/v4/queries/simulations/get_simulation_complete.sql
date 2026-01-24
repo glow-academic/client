@@ -2596,37 +2596,40 @@ missing_tools_check AS (
     CROSS JOIN ui_flags uf
     CROSS JOIN tools_existence_check tec
 ),
+simulation_edit_state AS (
+    SELECT * FROM view_simulation_edit_state WHERE simulation_id = (SELECT simulation_id FROM params)
+),
 -- Calculate can_edit and disabled_reason (following ARTIFACT.md)
 permissions_data_with_tools AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
-                CASE 
+                CASE
                     WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN true
                     WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
                     ELSE false
                 END
-            -- Detail mode: check department access and role
+            -- Detail mode: check department access and role (uses shared view for consistency with list page)
             ELSE
-                CASE 
-                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_type) != 'superadmin' THEN false
+                CASE
+                    WHEN COALESCE((SELECT department_ids FROM simulation_edit_state), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_type) != 'superadmin' THEN false
                     WHEN COALESCE(uc.role, 'guest'::profile_type) IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
-        CASE 
+        CASE
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
-                CASE 
+                CASE
                     WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN NULL::text
                     WHEN (SELECT COUNT(*) FROM department_mapping_data) = 0 THEN 'No accessible departments found for user'::text
                     ELSE NULL::text
                 END
             -- Detail mode: check department access and role
             ELSE
-                CASE 
-                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_type) != 'superadmin' THEN 'No departments assigned to this simulation'::text
+                CASE
+                    WHEN COALESCE((SELECT department_ids FROM simulation_edit_state), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_type) != 'superadmin' THEN 'No departments assigned to this simulation'::text
                     WHEN COALESCE(uc.role, 'guest'::profile_type) NOT IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN 'Insufficient permissions to edit simulation'::text
                     ELSE NULL::text
                 END

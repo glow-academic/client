@@ -1645,55 +1645,58 @@ general_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Cohort edit state from shared view (user-independent permission data)
+cohort_edit_state AS (
+    SELECT * FROM view_cohort_edit_state WHERE cohort_id = (SELECT cohort_id FROM params)
+),
 -- Permissions with tool checks
 permissions_final AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN
                 -- New mode: check for missing tools on required resources
-                CASE 
+                CASE
                     WHEN up.role = 'superadmin' THEN true
                     WHEN array_length(mtc.missing_resources, 1) > 0 THEN false
                     ELSE true
                 END
             ELSE
                 -- Edit mode: check permissions and missing tools
-                CASE 
-                    WHEN cdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
+                CASE
+                    WHEN (SELECT department_ids FROM cohort_edit_state) IS NULL AND up.role != 'superadmin' THEN false
                     WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN
-                        CASE 
+                        CASE
                             WHEN array_length(mtc.missing_resources, 1) > 0 THEN false
                             ELSE true
                         END
                     ELSE false
                 END
         END as can_edit,
-        CASE 
+        CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN
                 -- New mode: disabled_reason based on missing tools
-                CASE 
+                CASE
                     WHEN array_length(mtc.missing_resources, 1) > 0 THEN
                         'No tool configured for ' || array_to_string(mtc.missing_resources, ', ') || '. Therefore we cannot proceed ahead.'::text
                     ELSE NULL::text
                 END
             ELSE
                 -- Edit mode: disabled_reason based on permissions and missing tools
-                CASE 
-                    WHEN cdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
+                CASE
+                    WHEN (SELECT department_ids FROM cohort_edit_state) IS NULL AND up.role != 'superadmin' THEN
                         'This is a default cohort that cannot be edited.'::text
                     WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN
-                        CASE 
+                        CASE
                             WHEN array_length(mtc.missing_resources, 1) > 0 THEN
                                 'No tool configured for ' || array_to_string(mtc.missing_resources, ', ') || '. Therefore we cannot proceed ahead.'::text
                             ELSE NULL::text
                         END
-                    ELSE 
+                    ELSE
                         'This cohort cannot be edited.'::text
                 END
         END as disabled_reason
     FROM params x
     CROSS JOIN user_profile up
-    LEFT JOIN cohort_departments_data cdd ON true
     CROSS JOIN missing_tools_check mtc
     -- Always return at least one row
     LIMIT 1

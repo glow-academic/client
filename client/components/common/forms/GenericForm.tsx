@@ -345,6 +345,7 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
 
   // Notify parent whenever URL-backed state changes (keyed on stable key, not object identity)
   React.useEffect(() => {
+    console.warn("[GenericForm DEBUG] onFormDataChange effect firing, formDataKey:", formDataKey);
     onFormDataChangeRef.current?.(formDataLatestRef.current);
   }, [formDataKey]); // Only depend on formDataKey, not formData object identity
 
