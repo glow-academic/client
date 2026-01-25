@@ -492,7 +492,7 @@ export function Colors({
 
   // Single-select mode (existing logic)
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       <Label htmlFor={id} className="flex items-center gap-1">
         {label}
         {required && <span className="text-destructive">*</span>}
@@ -546,7 +546,7 @@ export function Colors({
           renderItem={(color, isSelected) => (
             <div
               className={cn(
-                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent"
@@ -554,29 +554,29 @@ export function Colors({
             >
               {/* Check icon - top right */}
               {isSelected && (
-                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
 
               {/* Suggested badge - top right */}
               {!isSelected &&
                 suggestedHexCodes.has(color.hex.toLowerCase()) && (
-                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                     Suggested
                   </div>
                 )}
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-1 overflow-hidden">
                 <div
-                  className="w-10 h-10 rounded-lg border-2 border-border shrink-0"
+                  className="w-8 h-8 rounded-lg border-2 border-border shrink-0"
                   style={{ backgroundColor: color.hex }}
                 />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm leading-tight">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <h3 className="font-medium text-sm leading-tight truncate">
                     {color.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {color.hex}
                   </p>
                 </div>
@@ -585,6 +585,7 @@ export function Colors({
           )}
           emptyMessage="No colors found. Try adjusting your search."
           disabled={disabled}
+          horizontal
         />
       )}
 

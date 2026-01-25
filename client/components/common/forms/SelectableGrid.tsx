@@ -17,6 +17,7 @@ export interface SelectableGridProps<T> {
   maxHeight?: string;
   className?: string;
   disabled?: boolean;
+  horizontal?: boolean; // Enable horizontal scrolling with 5 items visible
 }
 
 export function SelectableGrid<T>({
@@ -30,6 +31,7 @@ export function SelectableGrid<T>({
   maxHeight = "max-h-[272px]",
   className,
   disabled = false,
+  horizontal = false,
 }: SelectableGridProps<T>) {
   const handleSelect = (item: T) => {
     if (disabled) return;
@@ -37,12 +39,50 @@ export function SelectableGrid<T>({
     onSelect(id);
   };
 
+  if (horizontal) {
+    return (
+      <div
+        className={cn(
+          "flex gap-3 overflow-x-auto py-2 pb-3 w-0 min-w-full",
+          className
+        )}
+      >
+        {items.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground w-full">
+            {emptyMessage}
+          </div>
+        ) : (
+          items.map((item) => {
+            const id = getId(item);
+            const isSelected =
+              selectedId === id || (selectedIds?.includes(id) ?? false);
+
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleSelect(item)}
+                disabled={disabled ?? false}
+                className={cn(
+                  "relative text-left flex-shrink-0 w-[200px]",
+                  disabled && "pointer-events-none opacity-50"
+                )}
+              >
+                {renderItem(item, isSelected)}
+              </button>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
         "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto py-2 px-2",
         maxHeight,
-        className,
+        className
       )}
     >
       {items.length === 0 ? (
@@ -62,8 +102,8 @@ export function SelectableGrid<T>({
               onClick={() => handleSelect(item)}
               disabled={disabled ?? false}
               className={cn(
-                "relative w-full text-left",
-                disabled && "pointer-events-none opacity-50",
+                "relative text-left w-full",
+                disabled && "pointer-events-none opacity-50"
               )}
             >
               {renderItem(item, isSelected)}
@@ -74,4 +114,3 @@ export function SelectableGrid<T>({
     </div>
   );
 }
-

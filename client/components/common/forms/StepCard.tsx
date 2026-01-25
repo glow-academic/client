@@ -214,7 +214,7 @@ export function StepCard({
   return (
     <Card
       className={cn(
-        "transition-all",
+        "transition-all min-w-0 max-w-full",
         !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
         !isEditMode && stepStatus === "pending" && "opacity-50",
         className
@@ -293,7 +293,7 @@ export function StepCard({
           <div className="flex items-center gap-2">{finalActions}</div>
         )}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 min-w-0">
         {/* Search bar with optional filter */}
         {(searchTerm !== undefined || filters) && (
           <div className="flex h-9 items-center gap-2 border-b px-0 w-full">

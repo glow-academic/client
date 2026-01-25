@@ -250,7 +250,7 @@ export function Icons({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       <Label htmlFor={id} className="flex items-center gap-1">
         {label}
         {required && <span className="text-destructive">*</span>}
@@ -273,7 +273,7 @@ export function Icons({
           return (
             <div
               className={cn(
-                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent"
@@ -281,21 +281,21 @@ export function Icons({
             >
               {/* Check icon - top right */}
               {isSelected && (
-                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
 
               {/* Suggested badge - top right */}
               {isSuggested && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                   Suggested
                 </div>
               )}
 
-              <div className="flex flex-col items-center gap-2">
-                <IconComponent className="h-8 w-8 text-foreground" />
-                <span className="text-sm font-medium text-center">
+              <div className="flex flex-col items-center justify-center gap-1 flex-1 overflow-hidden">
+                <IconComponent className="h-7 w-7 text-foreground shrink-0" />
+                <span className="text-xs font-medium text-center truncate w-full">
                   {iconName}
                 </span>
               </div>
@@ -304,6 +304,7 @@ export function Icons({
         }}
         emptyMessage="No icons found. Try adjusting your search."
         disabled={disabled}
+        horizontal
       />
     </div>
   );

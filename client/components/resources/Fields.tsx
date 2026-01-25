@@ -186,7 +186,7 @@ export function Fields({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-w-0 w-full">
       {label && (
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}
@@ -207,7 +207,7 @@ export function Fields({
         renderItem={(item, isSelected) => (
           <div
             className={cn(
-              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
               "hover:shadow-md hover:bg-accent/50",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               isSelected && "ring-2 ring-primary bg-accent"
@@ -215,22 +215,22 @@ export function Fields({
           >
             {/* Check icon - top right */}
             {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+              <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
 
             {/* Suggested badge - top right */}
             {isSuggested(item.id) && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                 Suggested
               </div>
             )}
 
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <h3 className="font-medium text-sm leading-tight truncate pr-16">{item.name}</h3>
               {item.description && (
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                   {item.description}
                 </p>
               )}
@@ -239,6 +239,7 @@ export function Fields({
         )}
         emptyMessage="No fields found."
         disabled={disabled}
+        horizontal
       />
     </div>
   );
