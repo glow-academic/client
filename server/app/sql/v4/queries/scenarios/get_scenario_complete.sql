@@ -402,7 +402,7 @@ draft_payload_data AS (
         d.version as draft_version
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
-    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
+    JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
 
     LIMIT 1
@@ -433,68 +433,68 @@ draft_objectives_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(od.objectives_id ORDER BY od.created_at), NULL), ARRAY[]::uuid[]) as objective_ids
     FROM params x
-    LEFT JOIN objectives_draft od ON od.draft_id = x.draft_id
+    LEFT JOIN objectives_drafts_connection od ON od.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_departments_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
     FROM params x
-    LEFT JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    LEFT JOIN departments_drafts_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_personas_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.personas_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as persona_ids
     FROM params x
-    LEFT JOIN personas_draft dp ON dp.draft_id = x.draft_id
+    LEFT JOIN personas_drafts_connection dp ON dp.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_documents_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.documents_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as document_ids
     FROM params x
-    LEFT JOIN documents_draft dd ON dd.draft_id = x.draft_id
+    LEFT JOIN documents_drafts_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_templates_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dt.templates_id ORDER BY dt.created_at), NULL), ARRAY[]::uuid[]) as template_ids
     FROM params x
-    LEFT JOIN templates_draft dt ON dt.draft_id = x.draft_id
+    LEFT JOIN templates_drafts_connection dt ON dt.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_images_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(di.images_id ORDER BY di.created_at), NULL), ARRAY[]::uuid[]) as image_ids
     FROM params x
-    LEFT JOIN images_draft di ON di.draft_id = x.draft_id
+    LEFT JOIN images_drafts_connection di ON di.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_videos_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dv.videos_id ORDER BY dv.created_at), NULL), ARRAY[]::uuid[]) as video_ids
     FROM params x
-    LEFT JOIN videos_draft dv ON dv.draft_id = x.draft_id
+    LEFT JOIN videos_drafts_connection dv ON dv.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_questions_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dq.questions_id ORDER BY dq.created_at), NULL), ARRAY[]::uuid[]) as question_ids
     FROM params x
-    LEFT JOIN questions_draft dq ON dq.draft_id = x.draft_id
+    LEFT JOIN questions_drafts_connection dq ON dq.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_parameters_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as parameter_ids
     FROM params x
-    LEFT JOIN parameters_draft dp ON dp.draft_id = x.draft_id
+    LEFT JOIN parameters_drafts_connection dp ON dp.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_problem_statements_data AS (
     SELECT
-        COALESCE((SELECT dps.problem_statements_id FROM problem_statements_draft dps WHERE dps.draft_id = (SELECT draft_id FROM params) LIMIT 1), NULL::uuid) as problem_statement_id
+        COALESCE((SELECT dps.problem_statements_id FROM problem_statements_drafts_connection dps WHERE dps.draft_id = (SELECT draft_id FROM params) LIMIT 1), NULL::uuid) as problem_statement_id
     FROM params
     LIMIT 1
 ),
@@ -632,7 +632,7 @@ scenario_persona_fields_junction_data AS (
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(spf.persona_field_id ORDER BY spf.persona_field_id)
-                 FROM scenario_persona_fields spf
+                 FROM scenario_persona_fields_junction spf
                  WHERE spf.scenario_id = (SELECT scenario_id FROM params) AND spf.active = true),
                 ARRAY[]::uuid[]
             )
@@ -646,7 +646,7 @@ scenario_document_fields_junction_data AS (
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(sdf.document_field_id ORDER BY sdf.document_field_id)
-                 FROM scenario_document_fields sdf
+                 FROM scenario_document_fields_junction sdf
                  WHERE sdf.scenario_id = (SELECT scenario_id FROM params) AND sdf.active = true),
                 ARRAY[]::uuid[]
             )
@@ -660,7 +660,7 @@ scenario_parameter_fields_junction_data AS (
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(spf.parameter_field_id ORDER BY spf.parameter_field_id)
-                 FROM scenario_parameter_fields spf
+                 FROM scenario_parameter_fields_junction spf
                  WHERE spf.scenario_id = (SELECT scenario_id FROM params) AND spf.active = true),
                 ARRAY[]::uuid[]
             )
@@ -948,7 +948,7 @@ scenario_core AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'active'
@@ -969,7 +969,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'objectives_enabled'
@@ -988,7 +988,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'images_enabled'
@@ -1007,7 +1007,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'video_enabled'
@@ -1026,7 +1026,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'questions_enabled'
@@ -1045,7 +1045,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'problem_statement_enabled'
@@ -1064,7 +1064,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'use_templates'
@@ -1094,14 +1094,14 @@ scenario_core AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sn.name_id FROM scenario_names_junction sn WHERE sn.scenario_id = (SELECT scenario_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_scenario_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM names_draft dn 
+                FROM names_drafts_connection dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -1119,14 +1119,14 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sd.description_id FROM scenario_descriptions_junction sd WHERE sd.scenario_id = (SELECT scenario_id FROM params) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_scenario_v4_description_resource 
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
-                FROM descriptions_draft dd 
+                FROM descriptions_drafts_connection dd 
                 JOIN descriptions_resource d ON dd.descriptions_id = d.id 
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -1157,7 +1157,7 @@ active_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'active'
@@ -1176,7 +1176,7 @@ active_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1206,7 +1206,7 @@ objectives_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'objectives_enabled'
@@ -1225,7 +1225,7 @@ objectives_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1255,7 +1255,7 @@ images_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'images_enabled'
@@ -1274,7 +1274,7 @@ images_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1304,7 +1304,7 @@ video_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'video_enabled'
@@ -1323,7 +1323,7 @@ video_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1353,7 +1353,7 @@ questions_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'questions_enabled'
@@ -1372,7 +1372,7 @@ questions_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1402,7 +1402,7 @@ problem_statement_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'problem_statement_enabled'
@@ -1421,7 +1421,7 @@ problem_statement_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1451,7 +1451,7 @@ use_templates_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM flags_draft df
+             FROM flags_drafts_connection df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'use_templates'
@@ -1470,7 +1470,7 @@ use_templates_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1521,7 +1521,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -1563,7 +1563,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -1606,7 +1606,7 @@ problem_statement_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = ps.call_id
+                               WHERE c.id IN (SELECT call_id FROM problem_statements_calls_connection WHERE problem_statements_id = ps.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -1724,7 +1724,8 @@ scenario_videos_array AS (
         CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order,
         v.created_at
     FROM videos_resource v
-    LEFT JOIN uploads_entry u ON u.id = v.upload_id
+    LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
+    LEFT JOIN uploads_entry u ON u.id = vuc.upload_id
     LEFT JOIN scenario_videos_junction sv ON sv.video_id = v.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
     WHERE v.active = true
 ),
@@ -1761,8 +1762,8 @@ question_times_array AS (
     AND q.active = true
 ),
 scenario_images_array AS (
-    SELECT 
-        COALESCE(i.upload_id, i.id) as upload_id,
+    SELECT
+        COALESCE(iuc.upload_id, i.id) as upload_id,
         i.name,
         u.file_path,
         u.mime_type,
@@ -1771,7 +1772,8 @@ scenario_images_array AS (
         i.created_at as updated_at,
         CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order
     FROM images_resource i
-    LEFT JOIN uploads_entry u ON u.id = i.upload_id
+    LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
+    LEFT JOIN uploads_entry u ON u.id = iuc.upload_id
     LEFT JOIN scenario_images_junction si ON si.image_id = i.id AND si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true
     WHERE i.active = true
 ),
@@ -2150,7 +2152,8 @@ valid_documents_filtered AS (
     FROM document_artifact d
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads_entry u ON u.id = ur.upload_id
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+    LEFT JOIN uploads_entry u ON u.id = uuc.upload_id
     LEFT JOIN document_departments_junction dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_departments ud
     WHERE EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)
@@ -2289,7 +2292,8 @@ document_data_base AS (
     JOIN document_artifact d2 ON d2.id = doc_id::uuid
     LEFT JOIN document_uploads_resource dur2 ON dur2.document_id = d2.id AND dur2.active = true
     LEFT JOIN uploads_resource ur2 ON ur2.id = dur2.uploads_id
-    LEFT JOIN uploads_entry u2 ON u2.id = ur2.upload_id
+    LEFT JOIN uploads_uploads_connection uuc2 ON uuc2.uploads_id = ur2.id
+    LEFT JOIN uploads_entry u2 ON u2.id = uuc2.upload_id
     WHERE EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d2.id AND f.name = 'document_active' AND df.value = TRUE)
     UNION
     SELECT DISTINCT
@@ -2301,7 +2305,8 @@ document_data_base AS (
     FROM document_artifact d3
     LEFT JOIN document_uploads_resource dur3 ON dur3.document_id = d3.id AND dur3.active = true
     LEFT JOIN uploads_resource ur3 ON ur3.id = dur3.uploads_id
-    LEFT JOIN uploads_entry u3 ON u3.id = ur3.upload_id
+    LEFT JOIN uploads_uploads_connection uuc3 ON uuc3.uploads_id = ur3.id
+    LEFT JOIN uploads_entry u3 ON u3.id = uuc3.upload_id
     WHERE EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d3.id AND f.name = 'document_active' AND df.value = TRUE)
     AND (SELECT document_ids FROM params LIMIT 1) IS NOT NULL
     AND array_length((SELECT document_ids FROM params LIMIT 1), 1) > 0
@@ -2502,7 +2507,8 @@ scenario_documents_array AS (
     JOIN documents_resource d ON d.id = sd.document_id
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads_entry u ON u.id = ur.upload_id
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+    LEFT JOIN uploads_entry u ON u.id = uuc.upload_id
     WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)
 ),
 all_documents_array AS (
@@ -2531,7 +2537,7 @@ document_details_array AS (
         ), NULL::uuid[]) as department_ids,
         dd.file_path,
         dd.mime_type,
-        (SELECT ur.upload_id FROM document_uploads_resource dur JOIN uploads_resource ur ON ur.id = dur.uploads_id WHERE dur.document_id = dd.id AND dur.active = true ORDER BY dur.created_at DESC LIMIT 1) as upload_id,
+        (SELECT uuc.upload_id FROM document_uploads_resource dur JOIN uploads_resource ur ON ur.id = dur.uploads_id JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id WHERE dur.document_id = dd.id AND dur.active = true ORDER BY dur.created_at DESC LIMIT 1) as upload_id,
         COALESCE((
             SELECT ARRAY_AGG(df.field_id ORDER BY df.field_id)
             FROM document_fields_junction df
@@ -3231,30 +3237,32 @@ objective_mapping_data AS (
 ),
 -- Image mapping data (for images array)
 image_mapping_data AS (
-    SELECT 
+    SELECT
         i.id,
         i.name,
         COALESCE(u.file_path, '') as file_path,
         COALESCE(u.mime_type, '') as mime_type,
-        COALESCE(i.upload_id, i.id) as upload_id,
+        COALESCE(iuc.upload_id, i.id) as upload_id,
         COALESCE(i.generated, false) as generated
     FROM images_resource i
-    LEFT JOIN uploads_entry u ON u.id = i.upload_id
+    LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
+    LEFT JOIN uploads_entry u ON u.id = iuc.upload_id
     WHERE i.active = true
 ),
 -- Video mapping data (for videos array)
 video_mapping_data AS (
-    SELECT 
+    SELECT
         v.id,
         v.name,
         v.length_seconds,
         COALESCE(v.completed, false) as completed,
         COALESCE(u.file_path, '') as file_path,
         COALESCE(u.mime_type, '') as mime_type,
-        COALESCE(v.upload_id, v.id) as upload_id,
+        COALESCE(vuc.upload_id, v.id) as upload_id,
         false as generated  -- Videos are not generated resources
     FROM videos_resource v
-    LEFT JOIN uploads_entry u ON u.id = v.upload_id
+    LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
+    LEFT JOIN uploads_entry u ON u.id = vuc.upload_id
     WHERE v.active = true
 ),
 -- Question mapping data (for questions array)
@@ -3359,7 +3367,7 @@ department_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -4353,9 +4361,10 @@ SELECT
     END as image_ids,
     CASE
         WHEN sc.images_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((i.id, i.name, COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(i.upload_id, i.id), false)::types.q_get_scenario_v4_image_resource ORDER BY array_position((SELECT image_ids FROM scenario_images_combined_data), i.id))
+            SELECT ARRAY_AGG((i.id, i.name, COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(iuc.upload_id, i.id), false)::types.q_get_scenario_v4_image_resource ORDER BY array_position((SELECT image_ids FROM scenario_images_combined_data), i.id))
             FROM images_resource i
-            LEFT JOIN uploads_entry u ON u.id = i.upload_id
+            LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
+            LEFT JOIN uploads_entry u ON u.id = iuc.upload_id
             WHERE i.id = ANY(COALESCE((SELECT image_ids FROM scenario_images_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
@@ -4393,9 +4402,10 @@ SELECT
     END as video_ids,
     CASE
         WHEN sc.video_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((v.id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(v.upload_id, v.id), false)::types.q_get_scenario_v4_video_resource ORDER BY array_position((SELECT video_ids FROM scenario_videos_combined_data), v.id))
+            SELECT ARRAY_AGG((v.id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(vuc.upload_id, v.id), false)::types.q_get_scenario_v4_video_resource ORDER BY array_position((SELECT video_ids FROM scenario_videos_combined_data), v.id))
             FROM videos_resource v
-            LEFT JOIN uploads_entry u ON u.id = v.upload_id
+            LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
+            LEFT JOIN uploads_entry u ON u.id = vuc.upload_id
             WHERE v.id = ANY(COALESCE((SELECT video_ids FROM scenario_videos_combined_data), ARRAY[]::uuid[]))
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]

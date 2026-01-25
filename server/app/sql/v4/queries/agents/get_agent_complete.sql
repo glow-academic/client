@@ -500,40 +500,40 @@ ui_flags AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT an.name_id FROM agent_names_junction an WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1)
         ) as name_id,
-        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_agent_v4_name_resource FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
+        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_agent_v4_name_resource FROM names_drafts_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_agent_v4_name_resource FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_name_resource
     FROM params
 ),
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ad.description_id FROM agent_descriptions_junction ad WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM descriptions_drafts_connection dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_description_resource
     FROM params
 ),
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT af.flag_id FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = (SELECT agent_id FROM params) AND f.name = 'agent_active' AND af.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_agent_v4_flag_resource FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_agent_v4_flag_resource FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_agent_v4_flag_resource FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = (SELECT agent_id FROM params) AND f.name = 'agent_active' AND af.value = TRUE LIMIT 1) as agent_flag_resource
     FROM params
 ),
 instructions_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dinst.instructions_id FROM instructions_draft dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dinst.instructions_id FROM instructions_drafts_connection dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ai.instruction_id FROM agent_instructions_junction ai WHERE ai.agent_id = (SELECT agent_id FROM params) LIMIT 1)
         ) as instructions_id,
-        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_agent_v4_instructions_resource FROM instructions_draft dinst JOIN instructions_resource inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as instructions_draft_resource,
+        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_agent_v4_instructions_resource FROM instructions_drafts_connection dinst JOIN instructions_resource inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as instructions_draft_resource,
         (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_agent_v4_instructions_resource FROM agent_instructions_junction ai JOIN instructions_resource inst ON ai.instruction_id = inst.id WHERE ai.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_instructions_resource
     FROM params
 ),
@@ -622,7 +622,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -661,7 +661,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -701,7 +701,7 @@ instructions_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = i.call_id
+                               WHERE c.id IN (SELECT call_id FROM icons_calls_connection WHERE icons_id = i.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -741,7 +741,7 @@ department_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -929,7 +929,7 @@ names_data AS (
                     AND EXISTS (
                         SELECT 1 FROM calls_entry c
                         JOIN runs_entry r ON r.id = c.run_id
-                        WHERE c.id = n.call_id
+                        WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                           AND r.group_id = dgd.group_id
                     )
                 )
@@ -965,7 +965,7 @@ descriptions_data AS (
                     AND EXISTS (
                         SELECT 1 FROM calls_entry c
                         JOIN runs_entry r ON r.id = c.run_id
-                        WHERE c.id = d.call_id
+                        WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                           AND r.group_id = dgd.group_id
                     )
                 )
@@ -1006,7 +1006,7 @@ instructions_data AS (
                         AND EXISTS (
                             SELECT 1 FROM calls_entry c
                             JOIN runs_entry r ON r.id = c.run_id
-                            WHERE c.id = i.call_id
+                            WHERE c.id IN (SELECT call_id FROM icons_calls_connection WHERE icons_id = i.id)
                               AND r.group_id = dgd.group_id
                         )
                     )
@@ -2193,7 +2193,7 @@ reasoning_level_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = rl.call_id
+                               WHERE c.id IN (SELECT call_id FROM reasoning_levels_calls_connection WHERE reasoning_levels_id = rl.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -2232,7 +2232,7 @@ temperature_level_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = tl.call_id
+                               WHERE c.id IN (SELECT call_id FROM temperature_levels_calls_connection WHERE temperature_levels_id = tl.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -2272,7 +2272,7 @@ voice_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = v.call_id
+                               WHERE c.id IN (SELECT call_id FROM values_calls_connection WHERE values_id = v.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )

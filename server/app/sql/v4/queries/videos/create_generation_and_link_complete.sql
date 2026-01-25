@@ -51,9 +51,16 @@ final_upload_id AS (
 ),
 mark_video AS (
     UPDATE videos_resource
-    SET completed = TRUE,
-        upload_id = (SELECT upload_id FROM final_upload_id)
+    SET completed = TRUE
     WHERE id = (SELECT video_id FROM params)
+    RETURNING id
+),
+link_video_upload AS (
+    INSERT INTO videos_uploads_connection (videos_id, upload_id, active, created_at, updated_at)
+    SELECT (SELECT video_id FROM params), fi.upload_id, true, NOW(), NOW()
+    FROM final_upload_id fi
+    ON CONFLICT (videos_id, upload_id) DO UPDATE SET active = true, updated_at = NOW()
+    RETURNING videos_id
 )
 SELECT fi.upload_id as generation_id
 FROM final_upload_id fi

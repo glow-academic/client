@@ -87,28 +87,28 @@ BEGIN
     END IF;
 
     SELECT dn.names_id INTO v_name_id
-    FROM names_draft dn
+    FROM names_drafts_connection dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_draft dd
+    FROM descriptions_drafts_connection dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_draft df
+    FROM flags_drafts_connection df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dp.protocols_id ORDER BY dp.created_at), ARRAY[]::uuid[])
     INTO v_protocol_ids
-    FROM protocols_draft dp
+    FROM protocols_drafts_connection dp
     WHERE dp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.slugs_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_slug_ids
-    FROM slugs_draft ds
+    FROM slugs_drafts_connection ds
     WHERE ds.draft_id = v_draft_id;
 
     -- Determine if create or update
@@ -117,7 +117,7 @@ BEGIN
     -- Create or UPDATE auth_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO auths_resource (id, group_id)
+        INSERT INTO auths_resource (id)
         VALUES (uuidv7(), v_group_id)
         RETURNING id INTO v_auth_id;
     ELSE

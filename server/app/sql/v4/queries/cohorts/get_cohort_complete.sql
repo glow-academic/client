@@ -204,12 +204,12 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
--- Draft departments (from departments_draft table)
+-- Draft departments (from departments_drafts_connection table)
 draft_departments_data AS (
     SELECT
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
     FROM params x
-    LEFT JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    LEFT JOIN departments_drafts_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
 ),
 -- Cohort departments (from cohort_departments_junction)
@@ -269,14 +269,14 @@ cohort_department_access_check AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT n.id FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM names_drafts_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cn.name_id FROM cohort_names_junction cn WHERE cn.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_cohort_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM names_draft dn 
+                FROM names_drafts_connection dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -295,10 +295,10 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cd.description_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM descriptions_drafts_connection dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1) as cohort_description_resource
     FROM params
     -- Always return at least one row
@@ -307,10 +307,10 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cf.flag_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.name = 'cohort_active' AND cf.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.name = 'cohort_active' AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
     FROM params
     -- Always return at least one row
@@ -338,7 +338,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -375,7 +375,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -452,7 +452,7 @@ descriptions_data AS (
                     AND EXISTS (
                         SELECT 1 FROM calls_entry c
                         JOIN runs_entry r ON r.id = c.run_id
-                        WHERE c.id = d.call_id
+                        WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                           AND r.group_id = dgd.group_id
                     )
                 )
@@ -517,7 +517,7 @@ department_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -570,7 +570,7 @@ draft_simulation_ids_data AS (
     SELECT 
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
     FROM params x
-    LEFT JOIN simulations_draft ds ON ds.draft_id = x.draft_id
+    LEFT JOIN simulations_drafts_connection ds ON ds.draft_id = x.draft_id
     LIMIT 1
 ),
 cohort_simulation_ids_data AS (
@@ -606,13 +606,14 @@ simulation_positions_draft_data AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                (dsp.simulation_id, dsp.value, dsp.generated, dsp.mcp)::types.q_get_cohort_v4_simulation_position
-                ORDER BY dsp.value, dsp.simulation_id
+                (spr.simulation_id, dsp.value, dsp.generated, dsp.mcp)::types.q_get_cohort_v4_simulation_position
+                ORDER BY dsp.value, spr.simulation_id
             ),
             '{}'::types.q_get_cohort_v4_simulation_position[]
         ) as simulation_positions
     FROM params x
-    LEFT JOIN simulation_positions_draft dsp ON dsp.draft_id = x.draft_id
+    LEFT JOIN simulation_positions_drafts_connection dsp ON dsp.draft_id = x.draft_id
+    LEFT JOIN simulation_positions_resource spr ON spr.id = dsp.simulation_positions_id
     LIMIT 1
 ),
 cohort_simulation_positions_data AS (
@@ -669,7 +670,7 @@ simulation_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM simulations_resource sr
                                JOIN simulation_simulations_junction ssj ON ssj.simulations_id = sr.id
-                               JOIN calls_entry c ON c.id = sr.call_id
+                               JOIN simulations_calls_connection srcc ON srcc.simulations_id = sr.id JOIN calls_entry c ON c.id = srcc.call_id
                                JOIN runs_entry r ON r.id = c.run_id
                                WHERE ssj.simulation_id = cs.simulation_id
                                  AND sr.generated = true

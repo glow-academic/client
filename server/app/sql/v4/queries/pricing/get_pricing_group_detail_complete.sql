@@ -157,13 +157,14 @@ runs_metadata AS (
         r.input_tokens,
         r.output_tokens,
         r.cached_input_tokens,
-        r.key_id,
+        rkc.key_id,
         arj.agent_id,
         (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj.agent_id AND am.active = true LIMIT 1) as model_id,
         prj_rm.profile_id,
         NULL::uuid as persona_id
     FROM group_runs_list grl
     JOIN runs_entry r ON r.id = grl.run_id
+    LEFT JOIN runs_keys_connection rkc ON rkc.runs_id = r.id
     LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
     LEFT JOIN profile_runs_junction prj_rm ON prj_rm.run_id = r.id
 ),

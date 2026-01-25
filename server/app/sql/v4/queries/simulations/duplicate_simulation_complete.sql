@@ -54,8 +54,8 @@ default_call AS (
     LIMIT 1
 ),
 get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT ss.title || ' Copy', NOW(), dc.call_id
+    INSERT INTO names_resource (name, created_at)
+    SELECT ss.title || ' Copy', NOW()
     FROM source_simulation ss
     CROSS JOIN default_call dc
     WHERE ss.title IS NOT NULL
@@ -63,8 +63,8 @@ get_or_create_name AS (
     RETURNING id as name_id, name as name_value
 ),
 get_or_create_description AS (
-    INSERT INTO descriptions_resource (description, created_at, call_id)
-    SELECT ss.description, NOW(), dc.call_id
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT ss.description, NOW()
     FROM source_simulation ss
     CROSS JOIN default_call dc
     WHERE ss.description IS NOT NULL AND ss.description != ''

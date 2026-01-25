@@ -353,7 +353,7 @@ draft_scenario_ids_data AS (
     SELECT 
         COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[]) as scenario_ids
     FROM params x
-    LEFT JOIN scenarios_draft ds ON ds.draft_id = x.draft_id
+    LEFT JOIN scenarios_drafts_connection ds ON ds.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
@@ -364,7 +364,7 @@ draft_payload_data AS (
         (SELECT scenario_ids FROM draft_scenario_ids_data) as draft_scenario_ids
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
-    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
+    JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
     LIMIT 1
 ),
@@ -987,7 +987,7 @@ department_cohort_ids AS (
 -- Uses department_artifact as base (consistent with user_departments_for_mapping)
 department_mapping_data AS (
     SELECT
-        dr.id as department_id,  -- Use resource ID (departments_draft FK expects departments_resource.id)
+        dr.id as department_id,  -- Use resource ID (departments_drafts_connection FK expects departments_resource.id)
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(dr.generated, false) as generated,
@@ -1164,7 +1164,7 @@ default_member_agent AS (
 name_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT n.id FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM names_drafts_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sn.name_id FROM simulation_names_junction sn WHERE sn.simulation_id = (SELECT simulation_id FROM params) LIMIT 1)
         ) as name_id,
         (
@@ -1172,7 +1172,7 @@ name_resource_data AS (
             )::types.q_get_simulation_v4_name_resource
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM names_draft dn
+                FROM names_drafts_connection dn
                 JOIN names_resource n ON dn.names_id = n.id
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -1191,7 +1191,7 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = (SELECT simulation_id FROM params) LIMIT 1)
         ) as description_id,
         (
@@ -1199,7 +1199,7 @@ description_resource_data AS (
             )::types.q_get_simulation_v4_description_resource
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
-                FROM descriptions_draft dd
+                FROM descriptions_drafts_connection dd
                 JOIN descriptions_resource d ON dd.descriptions_id = d.id
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -1218,7 +1218,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sf.flag_id FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
@@ -1226,7 +1226,7 @@ flag_resource_data AS (
             )::types.q_get_simulation_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM flags_draft df
+                FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -1265,7 +1265,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -1303,7 +1303,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -1340,7 +1340,7 @@ department_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -2190,7 +2190,7 @@ scenario_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = s.call_id
+                               WHERE c.id IN (SELECT call_id FROM slugs_calls_connection WHERE slugs_id = s.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -2208,35 +2208,35 @@ draft_departments_data AS (
     SELECT
         ARRAY_AGG(dd.departments_id) as department_ids
     FROM params x
-    JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    JOIN departments_drafts_connection dd ON dd.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_flag_ids_data AS (
     SELECT
         ARRAY_AGG(dsf.scenario_flags_id) as scenario_flag_ids
     FROM params x
-    JOIN scenario_flags_draft dsf ON dsf.draft_id = x.draft_id
+    JOIN scenario_flags_drafts_connection dsf ON dsf.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_position_ids_data AS (
     SELECT 
-        ARRAY_AGG(dsp.scenario_position_id) as scenario_position_ids
+        ARRAY_AGG(dsp.scenario_positions_id) as scenario_position_ids
     FROM params x
-    JOIN scenario_positions_draft dsp ON dsp.draft_id = x.draft_id
+    JOIN scenario_positions_drafts_connection dsp ON dsp.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_rubric_ids_data AS (
     SELECT 
-        ARRAY_AGG(dsr.scenario_rubric_id) as scenario_rubric_ids
+        ARRAY_AGG(dsr.scenario_rubrics_id) as scenario_rubric_ids
     FROM params x
-    JOIN scenario_rubrics_draft dsr ON dsr.draft_id = x.draft_id
+    JOIN scenario_rubrics_drafts_connection dsr ON dsr.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_time_limit_ids_data AS (
     SELECT 
-        ARRAY_AGG(dstl.scenario_time_limit_id) as scenario_time_limit_ids
+        ARRAY_AGG(dstl.scenario_time_limits_id) as scenario_time_limit_ids
     FROM params x
-    JOIN scenario_time_limits_draft dstl ON dstl.draft_id = x.draft_id
+    JOIN scenario_time_limits_drafts_connection dstl ON dstl.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 scenario_ids_data AS (

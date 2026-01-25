@@ -57,17 +57,17 @@ BEGIN
     END IF;
 
     SELECT dn.names_id INTO v_name_id
-    FROM names_draft dn
+    FROM names_drafts_connection dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_draft dd
+    FROM descriptions_drafts_connection dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_draft df
+    FROM flags_drafts_connection df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
     -- Determine if create or update

@@ -44,8 +44,8 @@ WITH params AS (
 ),
 create_run AS (
     -- 1. Create run record with key_id
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id)
-    SELECT 0, 0, p.key_id
+    INSERT INTO runs_entry (input_tokens, output_tokens)
+    SELECT 0, 0
     FROM params p
     RETURNING id
 ),

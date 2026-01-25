@@ -334,10 +334,9 @@ new_standards AS (
         created_at,
         active,
         generated,
-        call_id,
         mcp
     )
-    SELECT 
+    SELECT
         gm.new_group_id,
         os.name,
         os.description,
@@ -345,13 +344,19 @@ new_standards AS (
         NOW(),
         true,
         false,
-        sc.call_id,
         false
     FROM original_standards os
     JOIN groups_mapping gm ON os.standard_group_id = gm.old_group_id
     JOIN standard_calls sc ON sc.standard_id = os.id
     JOIN insert_standard_calls isc ON isc.id = sc.call_id
     RETURNING id
+),
+link_standards_calls AS (
+    INSERT INTO standards_calls_connection (standards_id, call_id, active, created_at)
+    SELECT ns.id, sc.call_id, true, NOW()
+    FROM new_standards ns
+    JOIN standard_calls sc ON true
+    ON CONFLICT (standards_id, call_id) DO NOTHING
 )
 SELECT 
     nr.rubric_id,

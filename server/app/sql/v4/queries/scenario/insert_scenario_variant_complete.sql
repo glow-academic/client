@@ -55,8 +55,8 @@ default_call AS (
     LIMIT 1
 ),
 get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT p.name, NOW(), dc.call_id
+    INSERT INTO names_resource (name, created_at)
+    SELECT p.name, NOW()
     FROM params p
     CROSS JOIN default_call dc
     WHERE p.name IS NOT NULL AND p.name != ''

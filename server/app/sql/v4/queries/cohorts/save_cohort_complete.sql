@@ -52,10 +52,10 @@ BEGIN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
-    SELECT pdj.profile_id, d.group_id
+    SELECT pdj.profiles_id, d.group_id
     INTO v_draft_profile_id, v_group_id
     FROM drafts_entry d
-    LEFT JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id
+    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
     WHERE d.id = v_draft_id;
 
     IF v_draft_profile_id IS NULL THEN
@@ -72,28 +72,28 @@ BEGIN
 
     -- Load draft resources (single-select + arrays)
     SELECT dn.names_id INTO v_name_id
-    FROM names_draft dn
+    FROM names_drafts_connection dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_draft dd
+    FROM descriptions_drafts_connection dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_draft df
+    FROM flags_drafts_connection df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM departments_draft ddp
+    FROM departments_drafts_connection ddp
     WHERE ddp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_simulation_ids
-    FROM simulations_draft ds
+    FROM simulations_drafts_connection ds
     WHERE ds.draft_id = v_draft_id;
 
     -- Validate required resource IDs exist
@@ -305,10 +305,11 @@ BEGIN
     ),
     simulation_positions_draft_data AS (
         SELECT
-            dsp.simulation_id,
+            spr.simulation_id,
             dsp.value
         FROM params_with_departments x
-        JOIN simulation_positions_draft dsp ON dsp.draft_id = x.draft_id
+        JOIN simulation_positions_drafts_connection dsp ON dsp.draft_id = x.draft_id
+        JOIN simulation_positions_resource spr ON spr.id = dsp.simulation_positions_id
     ),
     -- Simulations with implicit ordering (positions stored separately)
     simulations_with_order AS (

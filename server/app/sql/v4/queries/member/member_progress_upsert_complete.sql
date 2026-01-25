@@ -90,8 +90,8 @@ latest_run AS (
 ),
 -- Upsert run (create if doesn't exist)
 create_run_if_needed AS (
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id)
-    SELECT 0, 0, NULL
+    INSERT INTO runs_entry (input_tokens, output_tokens)
+    SELECT 0, 0
     FROM member_agent ma
     WHERE NOT EXISTS (SELECT 1 FROM latest_run)
     RETURNING id as run_id

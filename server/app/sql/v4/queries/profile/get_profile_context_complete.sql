@@ -648,9 +648,9 @@ drafts_data AS (
         NULL::jsonb as payload,
         d.version,
         d.updated_at
-    FROM profile_drafts_junction pdj
+    FROM profiles_drafts_connection pdj
     JOIN drafts_entry d ON d.id = pdj.draft_id
-    WHERE pdj.profile_id = (SELECT profile_id FROM params)
+    WHERE pdj.profiles_id = (SELECT profile_id FROM params)
 ),
 drafts_aggregated AS (
     -- Aggregate drafts as array of composite types

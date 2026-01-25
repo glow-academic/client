@@ -273,7 +273,7 @@ field_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = f.call_id
+                               WHERE c.id IN (SELECT call_id FROM flags_calls_connection WHERE flags_id = f.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -445,16 +445,17 @@ upload_ids_data AS (
 ),
 -- Upload mapping data (uploads_resource + uploads_entry join)
 upload_mapping_data AS (
-    SELECT 
+    SELECT
         ur.id as uploads_id,
-        ur.upload_id,
+        uuc.upload_id,
         u.file_path,
         u.mime_type,
         u.size,
         COALESCE(ur.generated, false) as generated,
-        ur.group_id
+        NULL::uuid as group_id
     FROM uploads_resource ur
-    JOIN uploads_entry u ON u.id = ur.upload_id
+    JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+    JOIN uploads_entry u ON u.id = uuc.upload_id
     WHERE ur.active = true
       AND u.active = true
 ),
@@ -467,7 +468,8 @@ upload_suggestions_data AS (
                  SELECT DISTINCT dur.uploads_id, MAX(dur.created_at) as created_at
                  FROM document_uploads_resource dur
                  JOIN uploads_resource ur ON ur.id = dur.uploads_id
-                 JOIN uploads_entry u ON u.id = ur.upload_id
+                 JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+                 JOIN uploads_entry u ON u.id = uuc.upload_id
                  CROSS JOIN draft_group_data dgd
                  WHERE dur.uploads_id IS NOT NULL
                    AND u.file_path IS NOT NULL
@@ -483,7 +485,7 @@ upload_suggestions_data AS (
                                AND EXISTS (
                                    SELECT 1 FROM calls_entry c
                                    JOIN runs_entry r ON r.id = c.run_id
-                                   WHERE c.id = ur.call_id
+                                   WHERE c.id IN (SELECT call_id FROM uploads_calls_connection WHERE uploads_id = ur.id)
                                      AND r.group_id = dgd.group_id
                                )
                            )
@@ -536,7 +538,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -575,7 +577,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -613,7 +615,7 @@ department_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -671,14 +673,14 @@ descriptions_suggestions_objects AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT n.id FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM names_drafts_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT dn.name_id FROM document_names_junction dn WHERE dn.document_id = (SELECT document_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_document_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM names_draft dn 
+                FROM names_drafts_connection dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -695,20 +697,20 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT dd.description_id FROM document_descriptions_junction dd WHERE dd.document_id = (SELECT document_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_document_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_document_v4_description_resource FROM descriptions_drafts_connection dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_document_v4_description_resource FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = (SELECT document_id FROM params) LIMIT 1) as document_description_resource
     FROM params
 ),
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT df.flag_id FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = (SELECT document_id FROM params) AND f.name = 'document_active' AND df.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = (SELECT document_id FROM params) AND f.name = 'document_active' AND df.value = TRUE LIMIT 1) as document_flag_resource
     FROM params
 ),

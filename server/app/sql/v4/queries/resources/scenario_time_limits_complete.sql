@@ -112,7 +112,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT or UPDATE INTO scenario_time_limits_resource
     INSERT INTO scenario_time_limits_resource (

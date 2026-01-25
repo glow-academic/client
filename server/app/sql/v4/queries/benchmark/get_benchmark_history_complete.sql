@@ -150,7 +150,7 @@ attempts_with_eval AS (
          JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at
          LIMIT 1) as rubric_name
-    FROM eval_attempts ea
+    FROM eval_attempts_entry ea
     JOIN eval_attempts_junction eaj ON eaj.attempt_id = ea.id
     JOIN evals_resource e ON e.id = eaj.eval_id
 ),

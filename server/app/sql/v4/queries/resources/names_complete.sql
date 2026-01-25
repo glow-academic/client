@@ -61,8 +61,8 @@ BEGIN
             RAISE EXCEPTION 'No call_id found for names_resource insert';
         END IF;
 
-        INSERT INTO names_resource(name, active, call_id, mcp)
-        VALUES (api_create_names_v4.name, true, v_call_id, mcp)
+        INSERT INTO names_resource(name, active, mcp)
+        VALUES (api_create_names_v4.name, true, mcp)
         RETURNING id INTO v_name_id;
 
         RETURN QUERY SELECT v_name_id;
@@ -120,11 +120,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
 
     -- INSERT INTO names_resource table (always insert, never update)
-    INSERT INTO names_resource(name, active, call_id, mcp)
-    VALUES (api_create_names_v4.name, true, v_call_id, mcp)
+    INSERT INTO names_resource(name, active, mcp)
+    VALUES (api_create_names_v4.name, true, mcp)
     RETURNING id INTO v_name_id;
 
     -- Create message record (assistant role, not completed)

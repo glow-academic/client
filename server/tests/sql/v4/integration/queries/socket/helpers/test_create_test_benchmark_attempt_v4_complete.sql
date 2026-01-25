@@ -1,6 +1,6 @@
 -- Create a test benchmark attempt for socket tests_entry
 -- Returns attempt_id
--- Note: Uses eval_attempts table (not benchmark_attempts)
+-- Note: Uses eval_attempts_entry table (not benchmark_attempts)
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_benchmark_attempt_v4(uuid);
 
@@ -15,7 +15,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_attempt AS (
-        INSERT INTO eval_attempts(archived)
+        INSERT INTO eval_attempts_entry(archived)
         VALUES (false)
         RETURNING id
     ),

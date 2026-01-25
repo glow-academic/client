@@ -36,8 +36,7 @@ AS $$
             NOW(),
             false,
             false,
-            true,
-            (SELECT id FROM calls_entry LIMIT 1)
+            true
         FROM inserted_link il
         CROSS JOIN flags_resource sf
         WHERE sf.name = 'active'
@@ -61,13 +60,12 @@ AS $$
     inserted_position_resource AS (
         -- First ensure scenario_positions_resource exists for this scenario+position
         INSERT INTO scenario_positions_resource(scenario_id, value, created_at, generated, mcp)
-        SELECT 
+        SELECT
             il.scenario_id,
             COALESCE(test_create_simulation_scenario_link_v4.input_position, 1),
             NOW(),
             false,
-            false,
-            (SELECT id FROM calls_entry LIMIT 1)
+            false
         FROM inserted_link il
         ON CONFLICT (scenario_id, value) DO NOTHING
         RETURNING id, scenario_id, value

@@ -71,14 +71,13 @@ new_tool AS (
 ),
 -- Insert name for new tool
 new_tool_name AS (
-    INSERT INTO names_resource (name, created_at, active, generated, mcp, call_id)
-    SELECT 
+    INSERT INTO names_resource (name, created_at, active, generated, mcp)
+    SELECT
         ot.name || ' Copy',
         NOW(),
         true,
         false,
-        false,
-        NULL
+        false
     FROM original_tool ot
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
@@ -97,14 +96,13 @@ link_new_tool_name AS (
 ),
 -- Insert description for new tool
 new_tool_description AS (
-    INSERT INTO descriptions_resource (description, created_at, active, generated, mcp, call_id)
-    SELECT 
+    INSERT INTO descriptions_resource (description, created_at, active, generated, mcp)
+    SELECT
         ot.description,
         NOW(),
         true,
         false,
-        false,
-        NULL
+        false
     FROM original_tool ot
     WHERE ot.description IS NOT NULL
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at

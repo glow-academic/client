@@ -115,13 +115,13 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO keys table (always insert, never update)
     -- INSERT INTO keys table (always insert, never update)
     -- Create resource with new unique id and key_id FK
     INSERT INTO keys(id, key_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
-    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_keys_v4.group_id, NOW(), NOW())
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, api_create_keys_v4.group_id, NOW(), NOW())
     RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)

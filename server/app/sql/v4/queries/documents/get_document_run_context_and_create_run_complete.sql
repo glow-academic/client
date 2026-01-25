@@ -450,8 +450,8 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record with group_id directly
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, group_id)
-    SELECT 0, 0, NULL, gd.group_id
+    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
+    SELECT 0, 0, gd.group_id
     FROM context_data cd
     CROSS JOIN group_data gd
     RETURNING id

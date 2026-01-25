@@ -38,17 +38,26 @@ AS $$
             NOW()
         )
         RETURNING id as call_id
+    ),
+    new_standard AS (
+        INSERT INTO standards_resource(standard_group_id, name, description, points, active, generated, mcp)
+        SELECT
+            input_standard_group_id,
+            standard_name,
+            standard_description,
+            standard_points,
+            true,
+            false,
+            false
+        FROM call_record cr
+        RETURNING id, standard_group_id, name, description, points, created_at
+    ),
+    link_standard_call AS (
+        INSERT INTO standards_calls_connection(standards_id, call_id, active, created_at)
+        SELECT ns.id, cr.call_id, true, NOW()
+        FROM new_standard ns
+        CROSS JOIN call_record cr
+        RETURNING standards_id
     )
-    INSERT INTO standards_resource(standard_group_id, name, description, points, active, generated, mcp)
-    SELECT
-        input_standard_group_id,
-        standard_name,
-        standard_description,
-        standard_points,
-        cr.call_id,
-        true,
-        false,
-        false
-    FROM call_record cr
-    RETURNING id AS standard_id, standard_group_id, name, description, points, created_at;
+    SELECT id AS standard_id, standard_group_id, name, description, points, created_at FROM new_standard;
 $$;

@@ -124,11 +124,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO uploads_resource table (always insert, never update)
-    INSERT INTO uploads_resource(upload_id, active, call_id, mcp, group_id)
-    VALUES (upload_id, true, v_call_id, mcp, api_create_uploads_v4.group_id)
+    INSERT INTO uploads_resource(active, mcp)
+    VALUES (upload_id, true, mcp, api_create_uploads_v4.group_id)
     RETURNING id INTO v_uploads_id;
     
     -- Create message record (assistant role, not completed)

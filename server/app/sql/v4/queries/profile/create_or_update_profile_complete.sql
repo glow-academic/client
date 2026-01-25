@@ -114,8 +114,8 @@ placeholder_call_id AS (
 ),
 -- Insert/update name in names table
 name_resource AS (
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT name, NOW(), (SELECT id FROM placeholder_call_id)
+    INSERT INTO names_resource (name, created_at)
+    SELECT name, NOW()
     FROM params
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
@@ -208,10 +208,9 @@ all_emails_data AS (
 ),
 email_resources AS (
     -- Create email resources first
-    INSERT INTO emails_resource (email, call_id, created_at)
+    INSERT INTO emails_resource (email, created_at)
     SELECT DISTINCT
         aed.email,
-        (SELECT id FROM calls_entry LIMIT 1),
         NOW()
     FROM all_emails_data aed
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)

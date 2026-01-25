@@ -66,8 +66,8 @@ source_scenario AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT ss.name || ' Copy', NOW(), dc.call_id
+    INSERT INTO names_resource (name, created_at)
+    SELECT ss.name || ' Copy', NOW()
     FROM source_scenario ss
     CROSS JOIN default_call dc
     WHERE ss.name IS NOT NULL
@@ -172,12 +172,11 @@ insert_tree_edge AS (
 ),
 create_problem_statements AS (
     -- Create new problem_statement records (reuse if same text exists, but create new for history)
-    INSERT INTO problem_statements_resource (name, problem_statement, created_at, call_id)
+    INSERT INTO problem_statements_resource (name, problem_statement, created_at)
     SELECT DISTINCT
         COALESCE(ps.name, ss.name) as name,
         ps.problem_statement,
-        NOW(),
-        dc.call_id
+        NOW()
     FROM source_scenario ss
     JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = ss.source_id
     JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
@@ -238,11 +237,10 @@ existing_objectives AS (
 ),
 new_objectives AS (
     -- Create new objectives that don't exist yet
-    INSERT INTO objectives_resource (objective, created_at, call_id)
+    INSERT INTO objectives_resource (objective, created_at)
     SELECT DISTINCT
         so.objective,
-        NOW(),
-        dc.call_id
+        NOW()
     FROM source_objectives so
     CROSS JOIN default_call dc
     WHERE NOT EXISTS (

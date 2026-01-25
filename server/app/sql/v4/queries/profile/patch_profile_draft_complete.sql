@@ -134,7 +134,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profile_drafts_junction pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profile_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
@@ -142,38 +142,38 @@ BEGIN
             v_draft_exists := true;
 
             -- Delete old resource links
-            DELETE FROM names_draft WHERE names_draft.draft_id = v_draft_id;
-            DELETE FROM flags_draft WHERE flags_draft.draft_id = v_draft_id;
-            DELETE FROM request_limits_draft WHERE request_limits_draft.draft_id = v_draft_id;
-            DELETE FROM departments_draft WHERE departments_draft.draft_id = v_draft_id;
-            DELETE FROM emails_draft WHERE emails_draft.draft_id = v_draft_id;
-            DELETE FROM cohorts_draft WHERE cohorts_draft.draft_id = v_draft_id;
-            DELETE FROM roles_draft WHERE roles_draft.draft_id = v_draft_id;
+            DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM request_limits_drafts_connection WHERE request_limits_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM emails_drafts_connection WHERE emails_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM cohorts_drafts_connection WHERE cohorts_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM roles_drafts_connection WHERE roles_drafts_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
-                INSERT INTO names_draft (draft_id, names_id, version)
+                INSERT INTO names_drafts_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF active_flag_id IS NOT NULL THEN
-                INSERT INTO flags_draft (draft_id, flags_id, version)
+                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF request_limit_id IS NOT NULL THEN
-                INSERT INTO request_limits_draft (draft_id, request_limits_id, version)
+                INSERT INTO request_limits_drafts_connection (draft_id, request_limits_id, version)
                 VALUES (v_draft_id, request_limit_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT request_limits_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF v_department_ids IS NOT NULL THEN
-                INSERT INTO departments_draft (draft_id, departments_id, version)
+                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, department_id, v_new_version
                 FROM UNNEST(v_department_ids) as department_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
@@ -181,7 +181,7 @@ BEGIN
             END IF;
 
             IF email_ids IS NOT NULL THEN
-                INSERT INTO emails_draft (draft_id, emails_id, version)
+                INSERT INTO emails_drafts_connection (draft_id, emails_id, version)
                 SELECT v_draft_id, email_id, v_new_version
                 FROM UNNEST(email_ids) as email_id
                 ON CONFLICT ON CONSTRAINT emails_draft_pkey DO UPDATE
@@ -189,7 +189,7 @@ BEGIN
             END IF;
 
             IF v_cohort_ids IS NOT NULL THEN
-                INSERT INTO cohorts_draft (draft_id, cohorts_id, version)
+                INSERT INTO cohorts_drafts_connection (draft_id, cohorts_id, version)
                 SELECT v_draft_id, cohort_id, v_new_version
                 FROM UNNEST(v_cohort_ids) as cohort_id
                 ON CONFLICT ON CONSTRAINT cohorts_draft_pkey DO UPDATE
@@ -197,7 +197,7 @@ BEGIN
             END IF;
 
             IF v_role_id IS NOT NULL THEN
-                INSERT INTO roles_draft (draft_id, roles_id, version)
+                INSERT INTO roles_drafts_connection (draft_id, roles_id, version)
                 VALUES (v_draft_id, v_role_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
                 SET version = v_new_version;
@@ -218,32 +218,32 @@ BEGIN
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link profile to draft
-    INSERT INTO profile_drafts_junction (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
+    INSERT INTO profiles_drafts_connection (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
 
     -- Link resources to draft
     IF name_id IS NOT NULL THEN
-        INSERT INTO names_draft (draft_id, names_id, version)
+        INSERT INTO names_drafts_connection (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_draft (draft_id, flags_id, version)
+        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF request_limit_id IS NOT NULL THEN
-        INSERT INTO request_limits_draft (draft_id, request_limits_id, version)
+        INSERT INTO request_limits_drafts_connection (draft_id, request_limits_id, version)
         VALUES (v_draft_id, request_limit_id, v_new_version)
         ON CONFLICT ON CONSTRAINT request_limits_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_department_ids IS NOT NULL THEN
-        INSERT INTO departments_draft (draft_id, departments_id, version)
+        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
         SELECT v_draft_id, department_id, v_new_version
         FROM UNNEST(v_department_ids) as department_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
@@ -251,7 +251,7 @@ BEGIN
     END IF;
 
     IF email_ids IS NOT NULL THEN
-        INSERT INTO emails_draft (draft_id, emails_id, version)
+        INSERT INTO emails_drafts_connection (draft_id, emails_id, version)
         SELECT v_draft_id, email_id, v_new_version
         FROM UNNEST(email_ids) as email_id
         ON CONFLICT ON CONSTRAINT emails_draft_pkey DO UPDATE
@@ -259,7 +259,7 @@ BEGIN
     END IF;
 
     IF v_cohort_ids IS NOT NULL THEN
-        INSERT INTO cohorts_draft (draft_id, cohorts_id, version)
+        INSERT INTO cohorts_drafts_connection (draft_id, cohorts_id, version)
         SELECT v_draft_id, cohort_id, v_new_version
         FROM UNNEST(v_cohort_ids) as cohort_id
         ON CONFLICT ON CONSTRAINT cohorts_draft_pkey DO UPDATE
@@ -267,7 +267,7 @@ BEGIN
     END IF;
 
     IF v_role_id IS NOT NULL THEN
-        INSERT INTO roles_draft (draft_id, roles_id, version)
+        INSERT INTO roles_drafts_connection (draft_id, roles_id, version)
         VALUES (v_draft_id, v_role_id, v_new_version)
         ON CONFLICT ON CONSTRAINT roles_draft_pkey DO UPDATE
         SET version = v_new_version;

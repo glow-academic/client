@@ -154,8 +154,8 @@ placeholder_call_id AS (
 ),
 -- Insert all unique names INTO names_resource table
 names_resources AS (
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT DISTINCT pwi.name, NOW(), (SELECT id FROM placeholder_call_id)
+    INSERT INTO names_resource (name, created_at)
+    SELECT DISTINCT pwi.name, NOW()
     FROM profile_upsert_with_idx pwi
     WHERE pwi.name IS NOT NULL AND pwi.name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at

@@ -106,12 +106,12 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO request_limits_resource table (always insert, never update)
     -- Note: Column names and values need to be adjusted based on actual table schema
-    INSERT INTO request_limits_resource(requests_per_day, active, call_id, mcp)
-    VALUES (requests_per_day, true, v_call_id, mcp)
+    INSERT INTO request_limits_resource(requests_per_day, active, mcp)
+    VALUES (requests_per_day, true, mcp)
     RETURNING id INTO v_request_limits_id;
     
     -- Create message record (assistant role, not completed)

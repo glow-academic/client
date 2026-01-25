@@ -372,7 +372,8 @@ LEFT JOIN scenario_documents_junction sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id
 LEFT JOIN document_uploads_resource dur ON dur.document_id = doc.id AND dur.active = true
 LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-LEFT JOIN uploads_entry u ON u.id = ur.upload_id
+LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+LEFT JOIN uploads_entry u ON u.id = uuc.upload_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept

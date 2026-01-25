@@ -70,8 +70,8 @@ placeholder_call_id AS (
 ),
 -- Insert name in names table (only if creating)
 name_resource AS (
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT (SELECT name FROM params), NOW(), (SELECT id FROM placeholder_call_id)
+    INSERT INTO names_resource (name, created_at)
+    SELECT (SELECT name FROM params), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
       AND (SELECT name FROM params) IS NOT NULL
       AND (SELECT name FROM params) != ''
@@ -140,8 +140,8 @@ set_profile_active AS (
 ),
 -- Insert email resource (only if creating)
 email_resource AS (
-    INSERT INTO emails_resource (email, call_id, created_at)
-    SELECT (SELECT email FROM params), (SELECT id FROM placeholder_call_id), NOW()
+    INSERT INTO emails_resource (email, created_at)
+    SELECT (SELECT email FROM params), NOW()
     WHERE EXISTS (SELECT 1 FROM profile_insert)
     ON CONFLICT (email) DO NOTHING
     RETURNING id as email_id, email

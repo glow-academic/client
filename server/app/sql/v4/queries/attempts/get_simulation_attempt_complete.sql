@@ -656,7 +656,7 @@ scenario_videos_with_questions AS (
         v.id as video_id,
         v.name as video_title,
         v.length_seconds,
-        v.upload_id,
+        vuc.upload_id,
         COALESCE(
             (SELECT ARRAY_AGG(
                 (q.id, q.question_text, 'choice'::text, q.allow_multiple,
@@ -681,6 +681,7 @@ scenario_videos_with_questions AS (
         ) as questions
     FROM scenario_videos_junction sv
     JOIN videos_resource v ON v.id = sv.video_id
+    LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
     WHERE sv.active = true AND v.active = true
 ),
 -- Note: Quizzes are deprecated - questions are now handled directly through scenarios
@@ -890,19 +891,20 @@ previous_chats_for_scenarios AS (
 scenario_background_images_for_simulation AS (
     SELECT DISTINCT ON (si.scenario_id)
         si.scenario_id,
-        i.upload_id as background_image_upload_id
+        iuc.upload_id as background_image_upload_id
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
-    JOIN scenario_images_junction si ON EXISTS (SELECT 1 FROM simulation_scenarios_junction ss WHERE ss.simulation_id = ab.simulation_id 
-          AND ss.scenario_id = si.scenario_id 
+    JOIN scenario_images_junction si ON EXISTS (SELECT 1 FROM simulation_scenarios_junction ss WHERE ss.simulation_id = ab.simulation_id
+          AND ss.scenario_id = si.scenario_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-              AND f.name = 'scenario_active' 
+              AND f.name = 'scenario_active'
               AND ssf.value = true)
     )
     JOIN images_resource i ON i.id = si.image_id AND i.active = true
+    LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
     WHERE si.active = true
-      AND i.upload_id IS NOT NULL
+      AND iuc.upload_id IS NOT NULL
     ORDER BY si.scenario_id, si.created_at ASC
 ),
 all_simulation_scenarios_with_previous_chats AS (
@@ -962,13 +964,14 @@ all_simulation_scenarios_with_previous_chats AS (
 scenario_background_images_for_chats AS (
     SELECT DISTINCT ON (si.scenario_id)
         si.scenario_id,
-        i.upload_id as background_image_upload_id
+        iuc.upload_id as background_image_upload_id
     FROM scenario_images_junction si
     JOIN images_resource i ON i.id = si.image_id AND i.active = true
+    LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
     CROSS JOIN scenario_ids_list sil
-    WHERE si.scenario_id = ANY(sil.scenario_ids) 
+    WHERE si.scenario_id = ANY(sil.scenario_ids)
       AND si.active = true
-      AND i.upload_id IS NOT NULL
+      AND iuc.upload_id IS NOT NULL
     ORDER BY si.scenario_id, si.created_at ASC
 ),
 scenarios_data AS (
@@ -1274,11 +1277,12 @@ feedbacks_grouped AS (
         fe.grade_id as grade_id,
         COALESCE(
             ARRAY_AGG(
-                (fe.id, fe.created_at, fe.standard_id, fe.grade_id, fe.total::float, fe.feedback)::types.q_get_simulation_attempt_v4_feedback
+                (fe.id, fe.created_at, fsc.standard_id, fe.grade_id, fe.total::float, fe.feedback)::types.q_get_simulation_attempt_v4_feedback
             ),
             '{}'::types.q_get_simulation_attempt_v4_feedback[]
         ) as feedbacks
     FROM feedbacks_entry fe
+    LEFT JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
     WHERE fe.grade_id IN (
         SELECT (gd.grade).id FROM grades_data gd
     )
@@ -1365,7 +1369,7 @@ scenario_documents_data AS (
              ),
              u.file_path,
              u.mime_type,
-             ur.upload_id,
+             uuc.upload_id,
              COALESCE(
                  (SELECT array_agg(DISTINCT df.field_id::text)
                   FROM document_fields_junction df
@@ -1381,7 +1385,8 @@ scenario_documents_data AS (
     JOIN documents_resource dr ON dr.id = ddj.documents_id
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads_entry u ON u.id = ur.upload_id
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+    LEFT JOIN uploads_entry u ON u.id = uuc.upload_id
     JOIN scenario_documents_junction sd ON sd.document_id = dr.id
     CROSS JOIN scenario_ids_list sil
     WHERE sd.scenario_id = ANY(sil.scenario_ids) AND EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)

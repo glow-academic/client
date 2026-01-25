@@ -16,7 +16,7 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH new_attempt AS (
-    INSERT INTO eval_attempts (created_at, infinite_mode)
+    INSERT INTO eval_attempts_entry (created_at, infinite_mode)
     VALUES (NOW(), COALESCE(api_start_benchmark_attempt_v4.infinite_mode, false))
     RETURNING id as attempt_id, infinite_mode
 ),

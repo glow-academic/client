@@ -115,7 +115,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profile_drafts_junction pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profile_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -123,54 +123,54 @@ BEGIN
             v_draft_exists := true;
             
             -- Delete old resource links
-            DELETE FROM names_draft WHERE names_draft.draft_id = v_draft_id;
-            DELETE FROM descriptions_draft WHERE descriptions_draft.draft_id = v_draft_id;
-            DELETE FROM colors_draft WHERE colors_draft.draft_id = v_draft_id;
-            DELETE FROM icons_draft WHERE icons_draft.draft_id = v_draft_id;
-            DELETE FROM instructions_draft WHERE instructions_draft.draft_id = v_draft_id;
-            DELETE FROM flags_draft WHERE flags_draft.draft_id = v_draft_id;
-            DELETE FROM departments_draft WHERE departments_draft.draft_id = v_draft_id;
-            DELETE FROM fields_draft WHERE fields_draft.draft_id = v_draft_id;
-            DELETE FROM examples_draft WHERE examples_draft.draft_id = v_draft_id;
+            DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM colors_drafts_connection WHERE colors_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM icons_drafts_connection WHERE icons_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM instructions_drafts_connection WHERE instructions_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM examples_drafts_connection WHERE examples_drafts_connection.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
-                INSERT INTO names_draft (draft_id, names_id, version)
+                INSERT INTO names_drafts_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF description_id IS NOT NULL THEN
-                INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
+                INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF color_id IS NOT NULL THEN
-                INSERT INTO colors_draft (draft_id, colors_id, version)
+                INSERT INTO colors_drafts_connection (draft_id, colors_id, version)
                 VALUES (v_draft_id, color_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT colors_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF icon_id IS NOT NULL THEN
-                INSERT INTO icons_draft (draft_id, icons_id, version)
+                INSERT INTO icons_drafts_connection (draft_id, icons_id, version)
                 VALUES (v_draft_id, icon_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT icons_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF instructions_id IS NOT NULL THEN
-                INSERT INTO instructions_draft (draft_id, instructions_id, version)
+                INSERT INTO instructions_drafts_connection (draft_id, instructions_id, version)
                 VALUES (v_draft_id, instructions_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT instructions_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
-                INSERT INTO flags_draft (draft_id, flags_id, version)
+                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
                 SET version = v_new_version;
@@ -178,8 +178,8 @@ BEGIN
             
             -- Handle array resources (departments, fields, examples)
             IF department_ids IS NOT NULL THEN
-                DELETE FROM departments_draft WHERE departments_draft.draft_id = v_draft_id;
-                INSERT INTO departments_draft (draft_id, departments_id, version)
+                DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
@@ -187,8 +187,8 @@ BEGIN
             END IF;
             
             IF field_ids IS NOT NULL THEN
-                DELETE FROM fields_draft WHERE fields_draft.draft_id = v_draft_id;
-                INSERT INTO fields_draft (draft_id, fields_id, version)
+                DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, field_id, v_new_version
                 FROM UNNEST(field_ids) as field_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
@@ -196,8 +196,8 @@ BEGIN
             END IF;
             
             IF example_ids IS NOT NULL THEN
-                DELETE FROM examples_draft WHERE examples_draft.draft_id = v_draft_id;
-                INSERT INTO examples_draft (draft_id, examples_id, version)
+                DELETE FROM examples_drafts_connection WHERE examples_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO examples_drafts_connection (draft_id, examples_id, version)
                 SELECT v_draft_id, ex_id, v_new_version
                 FROM UNNEST(example_ids) as ex_id
                 ON CONFLICT ON CONSTRAINT examples_draft_pkey DO UPDATE
@@ -221,46 +221,46 @@ BEGIN
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link profile to draft
-    INSERT INTO profile_drafts_junction (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
+    INSERT INTO profiles_drafts_connection (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
     
     -- Link resources to draft
     IF name_id IS NOT NULL THEN
-        INSERT INTO names_draft (draft_id, names_id, version)
+        INSERT INTO names_drafts_connection (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     
     IF description_id IS NOT NULL THEN
-        INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
+        INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     
     IF color_id IS NOT NULL THEN
-        INSERT INTO colors_draft (draft_id, colors_id, version)
+        INSERT INTO colors_drafts_connection (draft_id, colors_id, version)
         VALUES (v_draft_id, color_id, v_new_version)
         ON CONFLICT ON CONSTRAINT colors_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     
     IF icon_id IS NOT NULL THEN
-        INSERT INTO icons_draft (draft_id, icons_id, version)
+        INSERT INTO icons_drafts_connection (draft_id, icons_id, version)
         VALUES (v_draft_id, icon_id, v_new_version)
         ON CONFLICT ON CONSTRAINT icons_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     
     IF instructions_id IS NOT NULL THEN
-        INSERT INTO instructions_draft (draft_id, instructions_id, version)
+        INSERT INTO instructions_drafts_connection (draft_id, instructions_id, version)
         VALUES (v_draft_id, instructions_id, v_new_version)
         ON CONFLICT ON CONSTRAINT instructions_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     
     IF active_flag_id IS NOT NULL THEN
-        INSERT INTO flags_draft (draft_id, flags_id, version)
+        INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
         SET version = v_new_version;
@@ -268,7 +268,7 @@ BEGIN
     
     -- Handle array resources
     IF department_ids IS NOT NULL THEN
-        INSERT INTO departments_draft (draft_id, departments_id, version)
+        INSERT INTO departments_drafts_connection (draft_id, departments_id, version)
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
@@ -276,7 +276,7 @@ BEGIN
     END IF;
     
     IF field_ids IS NOT NULL THEN
-        INSERT INTO fields_draft (draft_id, fields_id, version)
+        INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
         SELECT v_draft_id, field_id, v_new_version
         FROM UNNEST(field_ids) as field_id
         ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
@@ -284,7 +284,7 @@ BEGIN
     END IF;
     
     IF example_ids IS NOT NULL THEN
-        INSERT INTO examples_draft (draft_id, examples_id, version)
+        INSERT INTO examples_drafts_connection (draft_id, examples_id, version)
         SELECT v_draft_id, ex_id, v_new_version
         FROM UNNEST(example_ids) as ex_id
         ON CONFLICT ON CONSTRAINT examples_draft_pkey DO UPDATE

@@ -111,10 +111,11 @@ link_document_template_flag AS (
         value = false
 ),
 get_uploads_resource_id AS (
-    -- Look up uploads_resource.id from upload_id
+    -- Look up uploads_resource.id from upload_id via connection table
     SELECT ur.id as uploads_id
     FROM uploads_resource ur
-    WHERE ur.upload_id = api_insert_document_v4.upload_id
+    JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+    WHERE uuc.upload_id = api_insert_document_v4.upload_id
     AND api_insert_document_v4.upload_id IS NOT NULL
     LIMIT 1
 ),

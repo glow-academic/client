@@ -107,7 +107,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
 
     -- INSERT or UPDATE INTO simulation_positions_resource
     -- Use ON CONFLICT to update if position already exists for this simulation/value pair

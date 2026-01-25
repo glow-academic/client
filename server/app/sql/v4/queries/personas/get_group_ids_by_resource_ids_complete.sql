@@ -45,7 +45,7 @@ WITH names_group_ids AS (
         n.id as resource_id,
         r.group_id
     FROM names_resource n
-    LEFT JOIN calls_entry c ON c.id = n.call_id
+    LEFT JOIN names_calls_connection ncc ON ncc.names_id = n.id LEFT JOIN calls_entry c ON c.id = ncc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE name_id IS NOT NULL AND n.id = name_id
 ),
@@ -56,40 +56,43 @@ descriptions_group_ids AS (
         d.id as resource_id,
         r.group_id
     FROM descriptions_resource d
-    LEFT JOIN calls_entry c ON c.id = d.call_id
+    LEFT JOIN descriptions_calls_connection dcc ON dcc.descriptions_id = d.id LEFT JOIN calls_entry c ON c.id = dcc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE description_id IS NOT NULL AND d.id = description_id
 ),
 -- Colors group_id lookup
 colors_group_ids AS (
-    SELECT 
+    SELECT
         'colors'::text as resource_type,
-        c.id as resource_id,
+        col.id as resource_id,
         r.group_id
-    FROM colors_resource c
-    LEFT JOIN calls_entry cl ON cl.id = c.call_id
-    LEFT JOIN runs_entry r ON r.id = cl.run_id
-    WHERE color_id IS NOT NULL AND c.id = color_id
+    FROM colors_resource col
+    LEFT JOIN colors_calls_connection ccc ON ccc.colors_id = col.id
+    LEFT JOIN calls_entry c ON c.id = ccc.call_id
+    LEFT JOIN runs_entry r ON r.id = c.run_id
+    WHERE color_id IS NOT NULL AND col.id = color_id
 ),
 -- Icons group_id lookup
 icons_group_ids AS (
-    SELECT 
+    SELECT
         'icons'::text as resource_type,
         i.id as resource_id,
         r.group_id
     FROM icons_resource i
-    LEFT JOIN calls_entry c ON c.id = i.call_id
+    LEFT JOIN icons_calls_connection icc ON icc.icons_id = i.id
+    LEFT JOIN calls_entry c ON c.id = icc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE icon_id IS NOT NULL AND i.id = icon_id
 ),
 -- Instructions group_id lookup
 instructions_group_ids AS (
-    SELECT 
+    SELECT
         'instructions'::text as resource_type,
         inst.id as resource_id,
         r.group_id
     FROM instructions_resource inst
-    LEFT JOIN calls_entry c ON c.id = inst.call_id
+    LEFT JOIN instructions_calls_connection instcc ON instcc.instructions_id = inst.id
+    LEFT JOIN calls_entry c ON c.id = instcc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE instructions_id IS NOT NULL AND inst.id = instructions_id
 ),
@@ -100,40 +103,43 @@ flags_group_ids AS (
         f.id as resource_id,
         r.group_id
     FROM flags_resource f
-    LEFT JOIN calls_entry c ON c.id = f.call_id
+    LEFT JOIN flags_calls_connection fcc ON fcc.flags_id = f.id LEFT JOIN calls_entry c ON c.id = fcc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE active_flag_id IS NOT NULL AND f.id = active_flag_id
 ),
 -- Departments group_id lookup (for each selected department)
 departments_group_ids AS (
-    SELECT 
+    SELECT
         'departments'::text as resource_type,
         d.id as resource_id,
         r.group_id
     FROM departments_resource d
-    LEFT JOIN calls_entry c ON c.id = d.call_id
+    LEFT JOIN departments_calls_connection depcc ON depcc.departments_id = d.id
+    LEFT JOIN calls_entry c ON c.id = depcc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE department_ids IS NOT NULL AND d.id = ANY(department_ids)
 ),
 -- Fields group_id lookup (for each selected field)
 fields_group_ids AS (
-    SELECT 
+    SELECT
         'fields'::text as resource_type,
         f.id as resource_id,
         r.group_id
     FROM fields_resource f
-    LEFT JOIN calls_entry c ON c.id = f.call_id
+    LEFT JOIN fields_calls_connection fieldcc ON fieldcc.fields_id = f.id
+    LEFT JOIN calls_entry c ON c.id = fieldcc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE field_ids IS NOT NULL AND f.id = ANY(field_ids)
 ),
 -- Examples group_id lookup (for each selected example)
 examples_group_ids AS (
-    SELECT 
+    SELECT
         'examples'::text as resource_type,
         e.id as resource_id,
         r.group_id
     FROM examples_resource e
-    LEFT JOIN calls_entry c ON c.id = e.call_id
+    LEFT JOIN examples_calls_connection excc ON excc.examples_id = e.id
+    LEFT JOIN calls_entry c ON c.id = excc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE example_ids IS NOT NULL AND e.id = ANY(example_ids)
 )

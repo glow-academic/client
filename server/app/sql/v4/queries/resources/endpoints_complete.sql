@@ -93,12 +93,12 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO endpoints_resource table (always insert, never update)
     -- Note: Column names and values need to be adjusted based on actual table schema
-    INSERT INTO endpoints_resource(active, call_id, mcp)
-    VALUES (true, v_call_id, mcp)
+    INSERT INTO endpoints_resource(active, mcp)
+    VALUES (true, mcp)
     RETURNING id INTO v_endpoints_id;
     
     -- Create message record (assistant role, not completed)

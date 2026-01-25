@@ -57,8 +57,8 @@ default_call AS (
 ),
 -- Insert title INTO names_resource table
 new_title_resource AS (
-    INSERT INTO names_resource (name, created_at, call_id)
-    SELECT title || ' Copy', NOW(), dc.call_id
+    INSERT INTO names_resource (name, created_at)
+    SELECT title || ' Copy', NOW()
     FROM original_cohort
     CROSS JOIN default_call dc
     WHERE title IS NOT NULL
@@ -74,8 +74,8 @@ existing_description_resource AS (
     LIMIT 1
 ),
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, call_id)
-    SELECT description, NOW(), dc.call_id
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description, NOW()
     FROM original_cohort
     CROSS JOIN default_call dc
     WHERE description IS NOT NULL AND description != ''

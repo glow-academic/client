@@ -105,11 +105,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO descriptions_resource table (always insert, never update)
-    INSERT INTO descriptions_resource(description, active, call_id, mcp)
-    VALUES (description, true, v_call_id, mcp)
+    INSERT INTO descriptions_resource(description, active, mcp)
+    VALUES (description, true, mcp)
     RETURNING id INTO v_description_id;
     
     -- Create message record (assistant role, not completed)

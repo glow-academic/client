@@ -109,11 +109,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO standard_groups_resource table (always insert, never update)
-    INSERT INTO standard_groups_resource(name, short_name, description, points, pass_points, active, call_id, mcp)
-    VALUES (name, short_name, description, points, pass_points, true, v_call_id, mcp)
+    INSERT INTO standard_groups_resource(name, short_name, description, points, pass_points, active, mcp)
+    VALUES (name, short_name, description, points, pass_points, true, mcp)
     RETURNING id INTO v_standard_group_id;
 
         

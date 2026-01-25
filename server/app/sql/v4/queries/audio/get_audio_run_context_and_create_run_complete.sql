@@ -256,8 +256,8 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record (atomic with context query)
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id)
-    SELECT 0, 0, NULL
+    INSERT INTO runs_entry (input_tokens, output_tokens)
+    SELECT 0, 0
     FROM context_data cd
     RETURNING id
 ),

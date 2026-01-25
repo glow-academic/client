@@ -454,30 +454,30 @@ ui_flags AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_drafts_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sn.name_id FROM setting_names_junction sn WHERE sn.setting_id = (SELECT setting_id FROM params) LIMIT 1)
         ) as name_id,
-        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_setting_v4_name_resource FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
+        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_setting_v4_name_resource FROM names_drafts_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_setting_v4_name_resource FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = (SELECT setting_id FROM params) LIMIT 1) as setting_name_resource
     FROM params
 ),
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sd.description_id FROM setting_descriptions_junction sd WHERE sd.setting_id = (SELECT setting_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_setting_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_setting_v4_description_resource FROM descriptions_drafts_connection dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_setting_v4_description_resource FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = (SELECT setting_id FROM params) LIMIT 1) as setting_description_resource
     FROM params
 ),
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sf.flag_id FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = (SELECT setting_id FROM params) AND f.name = 'setting_active' AND sf.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_setting_v4_flag_resource FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_setting_v4_flag_resource FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_setting_v4_flag_resource FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = (SELECT setting_id FROM params) AND f.name = 'setting_active' AND sf.value = TRUE LIMIT 1) as setting_flag_resource
     FROM params
 ),
@@ -486,14 +486,14 @@ color_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(dc.colors_id ORDER BY dc.created_at)
-             FROM colors_draft dc 
+             FROM colors_drafts_connection dc 
              WHERE dc.draft_id = (SELECT draft_id FROM params)),
             (SELECT ARRAY_AGG(sc.color_id ORDER BY sc.created_at)
              FROM setting_colors_junction sc 
              WHERE sc.setting_id = (SELECT setting_id FROM params))
         ) as color_ids,
         (SELECT ARRAY_AGG(ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_setting_v4_color_resource ORDER BY dc.created_at)
-         FROM colors_draft dc 
+         FROM colors_drafts_connection dc 
          JOIN colors_resource c ON dc.colors_id = c.id 
          WHERE dc.draft_id = (SELECT draft_id FROM params)) as draft_color_resources,
         (SELECT ARRAY_AGG(ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_setting_v4_color_resource ORDER BY sc.created_at)
@@ -506,7 +506,7 @@ profile_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(dp.profiles_id ORDER BY dp.created_at)
-             FROM profiles_draft dp
+             FROM profiles_drafts_connection dp
              WHERE dp.draft_id = (SELECT draft_id FROM params)),
             (SELECT ARRAY_AGG(sp.profile_id ORDER BY sp.created_at)
              FROM setting_profiles_junction sp
@@ -517,7 +517,7 @@ profile_resource_data AS (
             (pmd.profile_id, pmd.name, pmd.description, pmd.generated)::types.q_get_setting_v4_profile
             ORDER BY dp.created_at
         )
-         FROM profiles_draft dp
+         FROM profiles_drafts_connection dp
          JOIN profile_mapping_data pmd ON pmd.profile_id = dp.profiles_id
          WHERE dp.draft_id = (SELECT draft_id FROM params)) as draft_profile_resources,
         (SELECT ARRAY_AGG(
@@ -554,7 +554,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -593,7 +593,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -630,7 +630,7 @@ color_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c2
                                JOIN runs_entry r ON r.id = c2.run_id
-                               WHERE c2.id = c.call_id
+                               WHERE c2.id IN (SELECT call_id FROM colors_calls_connection WHERE colors_id = c.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -783,7 +783,7 @@ department_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -862,7 +862,7 @@ auth_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = a.call_id
+                               WHERE c.id IN (SELECT call_id FROM args_calls_connection WHERE args_id = a.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -1068,7 +1068,7 @@ setting_role_ids_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(rd.roles_id ORDER BY rd.created_at)
-             FROM roles_draft rd
+             FROM roles_drafts_connection rd
              WHERE rd.draft_id = (SELECT draft_id FROM params)),
             CASE
                 WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
@@ -1118,7 +1118,7 @@ setting_route_ids_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(rd.routes_id ORDER BY rd.created_at)
-             FROM routes_draft rd
+             FROM routes_drafts_connection rd
              WHERE rd.draft_id = (SELECT draft_id FROM params)),
             CASE
                 WHEN (SELECT setting_id FROM params) IS NULL THEN ARRAY[]::uuid[]
@@ -1164,7 +1164,7 @@ setting_role_route_ids_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(rrd.role_routes_id ORDER BY rrd.created_at)
-             FROM role_routes_draft rrd
+             FROM role_routes_drafts_connection rrd
              WHERE rrd.draft_id = (SELECT draft_id FROM params)),
             COALESCE(
                 (SELECT ARRAY_AGG(rr.id ORDER BY rr.created_at)

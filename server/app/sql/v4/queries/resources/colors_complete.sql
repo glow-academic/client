@@ -106,11 +106,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO colors_resource table (always insert, never update)
-    INSERT INTO colors_resource(name, description, hex_code, active, call_id, mcp)
-    VALUES (name, description, hex_code, true, v_call_id, mcp)
+    INSERT INTO colors_resource(name, description, hex_code, active, mcp)
+    VALUES (name, description, hex_code, true, mcp)
     RETURNING id INTO v_color_id;
     
     -- Create message record (assistant role, not completed)

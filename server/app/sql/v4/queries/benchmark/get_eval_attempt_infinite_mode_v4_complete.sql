@@ -24,5 +24,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT infinite_mode FROM eval_attempts WHERE eval_attempts.id = $1
+    SELECT infinite_mode FROM eval_attempts_entry WHERE eval_attempts_entry.id = $1
 $$;

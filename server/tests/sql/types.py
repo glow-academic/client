@@ -1044,6 +1044,50 @@ class CreateKeyDepartmentLinkApiResponse(BaseModel):
 
 
 
+# Generated from: create_test_key
+
+class CreateTestKeySqlParams(BaseModel):
+
+    key_name: str
+    key_value: str
+    key_description: str | None = None
+    key_active: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.key_name,
+            self.key_value,
+            self.key_description,
+            self.key_active,
+        )
+
+class CreateTestKeySqlRow(BaseModel):
+
+    key_id: UUID | None = None
+    name: str | None = None
+    key: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateTestKeyApiRequest(BaseModel):
+
+    key_name: str
+    key_value: str
+    key_description: str | None = None
+    key_active: bool | None = True
+
+class CreateTestKeyApiResponse(BaseModel):
+
+    key_id: UUID | None = None
+    name: str | None = None
+    key: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: get_key_by_id
 
 class GetKeyByIdSqlParams(BaseModel):
@@ -1908,6 +1952,50 @@ class CreateTestStandardGroupApiResponse(BaseModel):
 
 
 
+# Generated from: create_test_standard
+
+class CreateTestStandardSqlParams(BaseModel):
+
+    input_standard_group_id: UUID
+    standard_name: str
+    standard_description: str
+    standard_points: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_standard_group_id,
+            self.standard_name,
+            self.standard_description,
+            self.standard_points,
+        )
+
+class CreateTestStandardSqlRow(BaseModel):
+
+    standard_id: UUID | None = None
+    standard_group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    created_at: str | None = None
+
+class CreateTestStandardApiRequest(BaseModel):
+
+    input_standard_group_id: UUID
+    standard_name: str
+    standard_description: str
+    standard_points: int
+
+class CreateTestStandardApiResponse(BaseModel):
+
+    standard_id: UUID | None = None
+    standard_group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: int | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: get_rubric_by_id
 
 class GetRubricByIdSqlParams(BaseModel):
@@ -2242,6 +2330,43 @@ class CreateScenarioTreeEdgeApiResponse(BaseModel):
 
 
 
+# Generated from: create_simulation_scenario_link
+
+class CreateSimulationScenarioLinkSqlParams(BaseModel):
+
+    input_simulation_id: UUID
+    input_scenario_id: UUID
+    input_position: int | None = 1
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_simulation_id,
+            self.input_scenario_id,
+            self.input_position,
+        )
+
+class CreateSimulationScenarioLinkSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateSimulationScenarioLinkApiRequest(BaseModel):
+
+    input_simulation_id: UUID
+    input_scenario_id: UUID
+    input_position: int | None = 1
+
+class CreateSimulationScenarioLinkApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: create_test_scenario
 
 class CreateTestScenarioSqlParams(BaseModel):
@@ -2488,6 +2613,9 @@ class CreateSimulationDepartmentLinkApiResponse(BaseModel):
     active: bool | None = None
     created_at: str | None = None
 
+
+
+# Generated from: create_simulation_scenario_link
 
 
 # Generated from: create_test_simulation
@@ -2967,6 +3095,31 @@ class TestCreateTestAttemptV4CompleteApiRequest(BaseModel):
     simulation_id: UUID
 
 class TestCreateTestAttemptV4CompleteApiResponse(BaseModel):
+
+    attempt_id: UUID | None = None
+
+
+
+# Generated from: test_create_test_benchmark_attempt_v4_complete
+
+class TestCreateTestBenchmarkAttemptV4CompleteSqlParams(BaseModel):
+
+    eval_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+        )
+
+class TestCreateTestBenchmarkAttemptV4CompleteSqlRow(BaseModel):
+
+    attempt_id: UUID | None = None
+
+class TestCreateTestBenchmarkAttemptV4CompleteApiRequest(BaseModel):
+
+    eval_id: UUID
+
+class TestCreateTestBenchmarkAttemptV4CompleteApiResponse(BaseModel):
 
     attempt_id: UUID | None = None
 
@@ -3709,6 +3862,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateKeyDepartmentLinkApiRequest",
         "CreateKeyDepartmentLinkApiResponse",
     ),
+    "tests/sql/v4/integration/queries/api/keys/test_create_test_key_v4_complete.sql": (
+        "CreateTestKeySqlParams",
+        "CreateTestKeySqlRow",
+        "CreateTestKeyApiRequest",
+        "CreateTestKeyApiResponse",
+    ),
     "tests/sql/v4/integration/queries/api/keys/test_get_key_by_id_v4_complete.sql": (
         "GetKeyByIdSqlParams",
         "GetKeyByIdSqlRow",
@@ -3853,6 +4012,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateTestStandardGroupApiRequest",
         "CreateTestStandardGroupApiResponse",
     ),
+    "tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_v4_complete.sql": (
+        "CreateTestStandardSqlParams",
+        "CreateTestStandardSqlRow",
+        "CreateTestStandardApiRequest",
+        "CreateTestStandardApiResponse",
+    ),
     "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql": (
         "GetRubricByIdSqlParams",
         "GetRubricByIdSqlRow",
@@ -3913,6 +4078,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateScenarioTreeEdgeApiRequest",
         "CreateScenarioTreeEdgeApiResponse",
     ),
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql": (
+        "CreateSimulationScenarioLinkSqlParams",
+        "CreateSimulationScenarioLinkSqlRow",
+        "CreateSimulationScenarioLinkApiRequest",
+        "CreateSimulationScenarioLinkApiResponse",
+    ),
     "tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql": (
         "CreateTestScenarioSqlParams",
         "CreateTestScenarioSqlRow",
@@ -3960,6 +4131,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateSimulationDepartmentLinkSqlRow",
         "CreateSimulationDepartmentLinkApiRequest",
         "CreateSimulationDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/queries/api/simulations/test_create_simulation_scenario_link_v4_complete.sql": (
+        "CreateSimulationScenarioLinkSqlParams",
+        "CreateSimulationScenarioLinkSqlRow",
+        "CreateSimulationScenarioLinkApiRequest",
+        "CreateSimulationScenarioLinkApiResponse",
     ),
     "tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_v4_complete.sql": (
         "CreateTestSimulationSqlParams",
@@ -4056,6 +4233,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TestCreateTestAttemptV4CompleteSqlRow",
         "TestCreateTestAttemptV4CompleteApiRequest",
         "TestCreateTestAttemptV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql": (
+        "TestCreateTestBenchmarkAttemptV4CompleteSqlParams",
+        "TestCreateTestBenchmarkAttemptV4CompleteSqlRow",
+        "TestCreateTestBenchmarkAttemptV4CompleteApiRequest",
+        "TestCreateTestBenchmarkAttemptV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/queries/socket/helpers/test_create_test_chat_v4_complete.sql": (
         "TestCreateTestChatV4CompleteSqlParams",
@@ -4395,6 +4578,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/queries/api/keys/test_create_test_key_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/keys/test_get_key_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4515,6 +4703,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4565,6 +4758,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4601,6 +4799,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_create_simulation_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_create_simulation_scenario_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -4681,6 +4884,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_attempt_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

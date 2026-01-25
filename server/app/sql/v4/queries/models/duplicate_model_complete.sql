@@ -97,14 +97,13 @@ link_model_group AS (
 ),
 -- Insert value for duplicated model
 duplicated_model_value AS (
-    INSERT INTO values_resource (value, created_at, active, generated, mcp, call_id)
-    SELECT 
+    INSERT INTO values_resource (value, created_at, active, generated, mcp)
+    SELECT
         sm.value,
         NOW(),
         true,
         false,
-        false,
-        NULL
+        false
     FROM source_model sm
     CROSS JOIN duplicated_model dm
     WHERE sm.value IS NOT NULL AND sm.value != ''

@@ -162,7 +162,7 @@ draft_payload_data AS (
         d.version as draft_version
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
-    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
+    JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
 
     LIMIT 1

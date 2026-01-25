@@ -106,11 +106,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO images_resource table (always insert, never update)
-    INSERT INTO images_resource(name, description, active, call_id, mcp)
-    VALUES (name, description, true, v_call_id, mcp)
+    INSERT INTO images_resource(name, description, active, mcp)
+    VALUES (name, description, true, mcp)
     RETURNING id INTO v_image_id;
 
         

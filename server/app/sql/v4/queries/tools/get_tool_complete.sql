@@ -246,7 +246,7 @@ name_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = n.call_id
+                               WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -331,7 +331,7 @@ description_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = d.call_id
+                               WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -415,7 +415,7 @@ args_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(da.args_id ORDER BY da.created_at)
-                 FROM args_draft da
+                 FROM args_drafts_connection da
                  WHERE da.draft_id = (SELECT draft_id FROM params)),
                 ARRAY[]::uuid[]
             )
@@ -454,7 +454,7 @@ args_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = a.call_id
+                               WHERE c.id IN (SELECT call_id FROM args_calls_connection WHERE args_id = a.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -485,7 +485,7 @@ args_mapping_data AS (
     CROSS JOIN draft_group_data dgd
     JOIN args_resource a ON a.active = true
     LEFT JOIN tool_args_junction ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
-    LEFT JOIN calls_entry c ON c.id = a.call_id
+    LEFT JOIN args_calls_connection acc ON acc.args_id = a.id LEFT JOIN calls_entry c ON c.id = acc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
@@ -495,7 +495,7 @@ args_outputs_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(dao.args_outputs_id ORDER BY dao.created_at)
-                 FROM args_outputs_draft dao
+                 FROM args_outputs_drafts_connection dao
                  WHERE dao.draft_id = (SELECT draft_id FROM params)),
                 ARRAY[]::uuid[]
             )
@@ -534,7 +534,7 @@ args_outputs_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE c.id = ao.call_id
+                               WHERE c.id IN (SELECT call_id FROM args_outputs_calls_connection WHERE args_outputs_id = ao.id)
                                  AND r.group_id = dgd.group_id
                            )
                        )
@@ -562,7 +562,7 @@ args_outputs_mapping_data AS (
     CROSS JOIN draft_group_data dgd
     JOIN args_outputs_resource ao ON ao.active = true
     LEFT JOIN tool_args_outputs_junction tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
-    LEFT JOIN calls_entry c ON c.id = ao.call_id
+    LEFT JOIN args_outputs_calls_connection aocc ON aocc.args_outputs_id = ao.id LEFT JOIN calls_entry c ON c.id = aocc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),

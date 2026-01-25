@@ -3,7 +3,7 @@
 -- Returns: attempt_id (UUID)
 -- Note: eval_runs_junction must already exist for the eval_id
 WITH new_attempt AS (
-    INSERT INTO eval_attempts (eval_id, conversation_mode)
+    INSERT INTO eval_attempts_entry (eval_id, conversation_mode)
     VALUES ($1::uuid, COALESCE($4::bool, false))
     RETURNING id as attempt_id
 )

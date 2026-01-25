@@ -37,10 +37,16 @@ WITH upload_row AS (
 ),
 update_image AS (
     UPDATE images_resource
-    SET completed = TRUE,
-        upload_id = (SELECT id FROM upload_row)
+    SET completed = TRUE
     WHERE id = image_id
     RETURNING id
+),
+link_image_upload AS (
+    INSERT INTO images_uploads_connection (images_id, upload_id, active, created_at, updated_at)
+    SELECT image_id, upload_row.id, true, NOW(), NOW()
+    FROM upload_row
+    ON CONFLICT (images_id, upload_id) DO UPDATE SET active = true, updated_at = NOW()
+    RETURNING images_id
 )
 SELECT upload_row.id AS upload_id
 FROM upload_row

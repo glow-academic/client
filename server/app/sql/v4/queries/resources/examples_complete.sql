@@ -105,11 +105,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO examples_resource table (always insert, never update)
-    INSERT INTO examples_resource(example, active, call_id, mcp)
-    VALUES (example, true, v_call_id, mcp)
+    INSERT INTO examples_resource(example, active, mcp)
+    VALUES (example, true, mcp)
     RETURNING id INTO v_example_id;
     
         

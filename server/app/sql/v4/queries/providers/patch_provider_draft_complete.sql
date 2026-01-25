@@ -70,7 +70,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profile_drafts_junction pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profile_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -78,27 +78,27 @@ BEGIN
             v_draft_exists := true;
             
             -- Delete old resource links
-            DELETE FROM names_draft WHERE names_draft.draft_id = v_draft_id;
-            DELETE FROM descriptions_draft WHERE descriptions_draft.draft_id = v_draft_id;
-            DELETE FROM flags_draft WHERE flags_draft.draft_id = v_draft_id;
+            DELETE FROM names_drafts_connection WHERE names_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM descriptions_drafts_connection WHERE descriptions_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
-                INSERT INTO names_draft (draft_id, names_id, version)
+                INSERT INTO names_drafts_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF description_id IS NOT NULL THEN
-                INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
+                INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
-                INSERT INTO flags_draft (draft_id, flags_id, version)
+                INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
                 SET version = v_new_version;
@@ -132,17 +132,17 @@ BEGIN
         
         -- Insert resource links
         IF name_id IS NOT NULL THEN
-            INSERT INTO names_draft (draft_id, names_id, version)
+            INSERT INTO names_drafts_connection (draft_id, names_id, version)
             VALUES (v_draft_id, name_id, v_new_version);
         END IF;
         
         IF description_id IS NOT NULL THEN
-            INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
+            INSERT INTO descriptions_drafts_connection (draft_id, descriptions_id, version)
             VALUES (v_draft_id, description_id, v_new_version);
         END IF;
         
         IF active_flag_id IS NOT NULL THEN
-            INSERT INTO flags_draft (draft_id, flags_id, version)
+            INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, active_flag_id, v_new_version);
         END IF;
     END IF;

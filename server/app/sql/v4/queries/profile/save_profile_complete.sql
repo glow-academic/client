@@ -68,10 +68,10 @@ BEGIN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
-    SELECT pdj.profile_id, d.group_id
+    SELECT pdj.profiles_id, d.group_id
     INTO v_draft_profile_id, v_group_id
     FROM drafts_entry d
-    LEFT JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id
+    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
     WHERE d.id = v_draft_id;
 
     IF v_draft_profile_id IS NULL THEN
@@ -89,21 +89,21 @@ BEGIN
     -- Load draft resources
     SELECT n.name
     INTO v_name
-    FROM names_draft dn
+    FROM names_drafts_connection dn
     JOIN names_resource n ON n.id = dn.names_id
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(e.email ORDER BY de.created_at), ARRAY[]::text[])
     INTO v_emails
-    FROM emails_draft de
+    FROM emails_drafts_connection de
     JOIN emails_resource e ON e.id = de.emails_id
     WHERE de.draft_id = v_draft_id
       AND de.active = true;
 
     SELECT r.id, r.role::text
     INTO v_role_id, v_role
-    FROM roles_draft dr
+    FROM roles_drafts_connection dr
     JOIN roles_resource r ON r.id = dr.roles_id
     WHERE dr.draft_id = v_draft_id
       AND dr.active = true
@@ -125,7 +125,7 @@ BEGIN
 
     SELECT df.flags_id
     INTO v_active_flag_id
-    FROM flags_draft df
+    FROM flags_drafts_connection df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
@@ -133,7 +133,7 @@ BEGIN
 
     SELECT drl.request_limits_id
     INTO v_request_limit_id
-    FROM request_limits_draft drl
+    FROM request_limits_drafts_connection drl
     WHERE drl.draft_id = v_draft_id
     LIMIT 1;
 
@@ -147,19 +147,19 @@ BEGIN
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM departments_draft dd
+    FROM departments_drafts_connection dd
     WHERE dd.draft_id = v_draft_id
       AND dd.active = true;
 
     SELECT COALESCE(ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at), ARRAY[]::uuid[])
     INTO v_cohort_ids
-    FROM cohorts_draft dc
+    FROM cohorts_drafts_connection dc
     WHERE dc.draft_id = v_draft_id
       AND dc.active = true;
 
     SELECT COALESCE(ARRAY_AGG(dr.routes_id ORDER BY dr.created_at), ARRAY[]::uuid[])
     INTO v_route_ids
-    FROM routes_draft dr
+    FROM routes_drafts_connection dr
     WHERE dr.draft_id = v_draft_id
       AND dr.active = true;
 
@@ -269,8 +269,8 @@ BEGIN
     ),
     -- Insert/update name in names table if provided
     name_resource AS (
-        INSERT INTO names_resource (name, created_at, call_id)
-        SELECT name, NOW(), (SELECT id FROM placeholder_call_id)
+        INSERT INTO names_resource (name, created_at)
+        SELECT name, NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
         ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
@@ -354,7 +354,7 @@ BEGIN
           AND array_length((SELECT emails FROM params), 1) > 0
     ),
     email_resources AS (
-        INSERT INTO emails_resource (email, call_id, created_at)
+        INSERT INTO emails_resource (email, created_at)
         SELECT DISTINCT
             aed.email,
             (SELECT id FROM placeholder_call_id),
@@ -456,7 +456,7 @@ BEGIN
     ),
     -- Handle requests_per_day if provided
     request_limit_resource AS (
-        INSERT INTO request_limits_resource (requests_per_day, call_id, created_at)
+        INSERT INTO request_limits_resource (requests_per_day, created_at)
         SELECT 
             x.requests_per_day,
             (SELECT id FROM placeholder_call_id),

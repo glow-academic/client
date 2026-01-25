@@ -43,11 +43,17 @@ AS $$
             COALESCE(key_description, 'Test key description'),
             COALESCE(key_active, true),
             NOW(),
-            cr.call_id,
             false,
             false
         FROM call_record cr
         RETURNING id, name, key, description, active, created_at
+    ),
+    link_key_call AS (
+        INSERT INTO keys_calls_connection(keys_id, call_id, active, created_at)
+        SELECT nk.id, cr.call_id, true, NOW()
+        FROM new_key nk
+        CROSS JOIN call_record cr
+        RETURNING keys_id
     )
     SELECT
         nk.id AS key_id,

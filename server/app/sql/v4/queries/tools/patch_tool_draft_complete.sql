@@ -76,7 +76,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profile_drafts_junction pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profile_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
@@ -84,12 +84,12 @@ BEGIN
             v_draft_exists := true;
 
             -- Delete old resource links
-            DELETE FROM args_draft WHERE args_draft.draft_id = v_draft_id;
-            DELETE FROM args_outputs_draft WHERE args_outputs_draft.draft_id = v_draft_id;
+            DELETE FROM args_drafts_connection WHERE args_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM args_outputs_drafts_connection WHERE args_outputs_drafts_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF args_ids IS NOT NULL AND COALESCE(array_length(args_ids, 1), 0) > 0 THEN
-                INSERT INTO args_draft (draft_id, args_id, version, generated, mcp)
+                INSERT INTO args_drafts_connection (draft_id, args_id, version, generated, mcp)
                 SELECT v_draft_id, args_id, v_new_version, false, false
                 FROM UNNEST(args_ids) as args_id
                 ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE
@@ -97,7 +97,7 @@ BEGIN
             END IF;
 
             IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
-                INSERT INTO args_outputs_draft (draft_id, args_outputs_id, version, generated, mcp)
+                INSERT INTO args_outputs_drafts_connection (draft_id, args_outputs_id, version, generated, mcp)
                 SELECT v_draft_id, args_outputs_id, v_new_version, false, false
                 FROM UNNEST(args_outputs_ids) as args_outputs_id
                 ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE
@@ -121,11 +121,11 @@ BEGIN
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link profile to draft
-    INSERT INTO profile_drafts_junction (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
+    INSERT INTO profiles_drafts_connection (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
 
     -- Link resources to draft
     IF args_ids IS NOT NULL AND COALESCE(array_length(args_ids, 1), 0) > 0 THEN
-        INSERT INTO args_draft (draft_id, args_id, version, generated, mcp)
+        INSERT INTO args_drafts_connection (draft_id, args_id, version, generated, mcp)
         SELECT v_draft_id, args_id, v_new_version, false, false
         FROM UNNEST(args_ids) as args_id
         ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE
@@ -133,7 +133,7 @@ BEGIN
     END IF;
 
     IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
-        INSERT INTO args_outputs_draft (draft_id, args_outputs_id, version, generated, mcp)
+        INSERT INTO args_outputs_drafts_connection (draft_id, args_outputs_id, version, generated, mcp)
         SELECT v_draft_id, args_outputs_id, v_new_version, false, false
         FROM UNNEST(args_outputs_ids) as args_outputs_id
         ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE

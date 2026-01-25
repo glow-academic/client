@@ -104,7 +104,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
 
     -- INSERT INTO role_routes_resource table
     INSERT INTO role_routes_resource (

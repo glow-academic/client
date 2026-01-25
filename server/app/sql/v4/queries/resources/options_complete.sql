@@ -107,11 +107,11 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
     
     -- INSERT INTO options_resource table (always insert, never update)
-    INSERT INTO options_resource(option_text, is_correct, active, call_id, mcp)
-    VALUES (option_text, is_correct, true, v_call_id, mcp)
+    INSERT INTO options_resource(option_text, is_correct, active, mcp)
+    VALUES (option_text, is_correct, true, mcp)
     RETURNING id INTO v_option_id;
 
         

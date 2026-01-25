@@ -293,7 +293,7 @@ BEGIN
     create_run_rubrics AS (
         INSERT INTO run_rubrics_resource (run_id, rubric_id, created_at, generated, mcp, active)
         SELECT DISTINCT
-            rr.run_id,
+            rr.runs_id,
             rubric_id,
             NOW(),
             false,
@@ -325,7 +325,7 @@ BEGIN
     ),
     -- Create group_rubrics_resource entries
     create_group_rubrics AS (
-        INSERT INTO group_rubrics_resource (group_id, rubric_id, created_at, generated, mcp, active)
+        INSERT INTO group_rubrics_resource (rubric_id, created_at, generated, mcp, active)
         SELECT DISTINCT
             gr.group_id,
             rubric_id,

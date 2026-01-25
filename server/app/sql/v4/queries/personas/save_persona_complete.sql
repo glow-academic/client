@@ -56,10 +56,10 @@ BEGIN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
-    SELECT pdj.profile_id, d.group_id
+    SELECT pdj.profiles_id, d.group_id
     INTO v_draft_profile_id, v_group_id
     FROM drafts_entry d
-    LEFT JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id
+    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
     WHERE d.id = v_draft_id;
 
     IF v_draft_profile_id IS NULL THEN
@@ -76,48 +76,48 @@ BEGIN
 
     -- Load draft resources
     SELECT dn.names_id INTO v_name_id
-    FROM names_draft dn
+    FROM names_drafts_connection dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_draft dd
+    FROM descriptions_drafts_connection dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dc.colors_id INTO v_color_id
-    FROM colors_draft dc
+    FROM colors_drafts_connection dc
     WHERE dc.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT di.icons_id INTO v_icon_id
-    FROM icons_draft di
+    FROM icons_drafts_connection di
     WHERE di.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT din.instructions_id INTO v_instructions_id
-    FROM instructions_draft din
+    FROM instructions_drafts_connection din
     WHERE din.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_draft df
+    FROM flags_drafts_connection df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM departments_draft ddp
+    FROM departments_drafts_connection ddp
     WHERE ddp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), ARRAY[]::uuid[])
     INTO v_example_ids
-    FROM examples_draft de
+    FROM examples_drafts_connection de
     WHERE de.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dfld.fields_id ORDER BY dfld.created_at), ARRAY[]::uuid[])
     INTO v_field_ids
-    FROM fields_draft dfld
+    FROM fields_drafts_connection dfld
     WHERE dfld.draft_id = v_draft_id;
 
     -- Determine if create or update

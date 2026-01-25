@@ -62,7 +62,7 @@ BEGIN
 
     -- Handle name (insert/update via tool_names_junction junction)
     IF name IS NOT NULL AND name != '' THEN
-        INSERT INTO names_resource (name, created_at, active, generated, mcp, call_id)
+        INSERT INTO names_resource (name, created_at, active, generated, mcp)
         VALUES (name, NOW(), true, false, false, NULL)
         ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id INTO v_name_id;
@@ -75,7 +75,7 @@ BEGIN
 
     -- Handle description (insert/update via tool_descriptions_junction junction)
     IF description IS NOT NULL AND description != '' THEN
-        INSERT INTO descriptions_resource (description, created_at, active, generated, mcp, call_id)
+        INSERT INTO descriptions_resource (description, created_at, active, generated, mcp)
         VALUES (description, NOW(), true, false, false, NULL)
         ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id INTO v_description_id;
