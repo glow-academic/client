@@ -113,9 +113,10 @@ profile_cohorts_junction AS (
 profile_departments_agg AS (
     SELECT
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1)) as department_ids
+        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) as department_ids
     FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.department_id
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
     WHERE pd.active = true
     GROUP BY pd.profile_id
 ),

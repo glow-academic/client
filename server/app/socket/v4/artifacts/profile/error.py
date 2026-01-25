@@ -40,26 +40,26 @@ async def handle_profiles_error(data: dict[str, Any]) -> None:
     resource_type = data.get("resource_type")
     resource_types = data.get("resource_types", [])
 
-    if not group_id_str:
-        return
-
-    group_id = uuid.UUID(group_id_str)
-
-    try:
-        async with get_db_connection() as conn:
-            params = ValidateProfileResourceErrorSqlParams(
-                profile_id=profile_id,
-                group_id=group_id,
-                resource_type=resource_type or "",
-                resource_types=resource_types or [],
-                artifact_type="profile",
-            )
-            result = cast(
-                ValidateProfileResourceErrorSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-    except Exception:
-        return
+    # SQL validation is optional - only validate if group_id is provided
+    # We must always emit errors to the client, even without a group_id
+    if group_id_str:
+        try:
+            group_id = uuid.UUID(group_id_str)
+            async with get_db_connection() as conn:
+                params = ValidateProfileResourceErrorSqlParams(
+                    profile_id=profile_id,
+                    group_id=group_id,
+                    resource_type=resource_type or "",
+                    resource_types=resource_types or [],
+                    artifact_type="profile",
+                )
+                result = cast(
+                    ValidateProfileResourceErrorSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
+        except Exception:
+            # SQL validation failed, but still emit error to client
+            pass
 
     error_message = data.get("error_message") or data.get(
         "message", "An error occurred during profile generation"

@@ -188,7 +188,8 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) AS dept_id
         LEFT JOIN departments_resource dr_by_id ON dr_by_id.id = dept_id
-        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.department_id = dept_id
+        LEFT JOIN department_departments_junction ddj ON ddj.department_id = dept_id
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
     ),
     department_resource_ids_agg AS (

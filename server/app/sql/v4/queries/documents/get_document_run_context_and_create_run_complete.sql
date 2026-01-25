@@ -312,7 +312,8 @@ agent_tools_data AS (
     FROM best_agent ba
     LEFT JOIN agent_tools_junction at ON at.agent_id = ba.agent_id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     
     
@@ -342,16 +343,17 @@ department_data AS (
 ),
 -- Get template context fields (if field_ids provided)
 template_context_fields_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
-                ((SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1), COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), ''), (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1), COALESCE((SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = pa.id LIMIT 1), ''))::types.i_get_document_run_context_and_create_run_v4_field
+                ((SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1), COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''), (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1), COALESCE((SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = pa.id LIMIT 1), ''))::types.i_get_document_run_context_and_create_run_v4_field
                 ORDER BY array_position(p.field_ids, f.id)
             ),
             '{}'::types.i_get_document_run_context_and_create_run_v4_field[]
         ) as template_context_fields
     FROM params p
     LEFT JOIN fields_resource f ON f.id = ANY(p.field_ids) AND p.field_ids IS NOT NULL AND array_length(p.field_ids, 1) > 0
+    LEFT JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     LEFT JOIN parameters_resource pa ON pa.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM parameter_flags_junction paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = pa.id AND fl.name = 'parameter_active' AND paf.value = true)
     WHERE p.field_ids IS NOT NULL AND array_length(p.field_ids, 1) > 0
     GROUP BY p.field_ids
@@ -424,7 +426,8 @@ context_data AS (
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys_junction
     LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s

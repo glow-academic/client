@@ -150,6 +150,10 @@ async def _call_llm_text_stream(
     if not LITELLM_AVAILABLE:
         raise ValueError("litellm is not available")
 
+    # Fail fast: model name is required
+    if not model or not model.strip():
+        raise ValueError("model name is required but was empty or null")
+
     # Prepare base parameters
     base_kwargs: dict[str, Any] = {
         "model": model,
@@ -157,6 +161,7 @@ async def _call_llm_text_stream(
         "stream": True,
         "api_key": api_key,
         "temperature": temperature,
+        "timeout": 120.0,  # Fail fast: 120 second timeout
     }
 
     if base_url:
@@ -192,6 +197,7 @@ async def _call_llm_text_stream(
                 "stream": True,  # Explicitly set stream=True
                 "api_key": api_key,
                 "temperature": temperature,
+                "timeout": 120.0,  # Fail fast: 120 second timeout
             }
             
             if base_url:
@@ -780,7 +786,7 @@ async def _handle_text_generation(
     # Use group_id for task storage instead of resource_id
     group_id_str = str(group_id) if group_id else sid
     stream = _call_llm_text_stream(
-        model=result.model_name or "",
+        model=result.model_name or "",  # Validation in _call_llm_text_stream will fail fast if empty
         messages=messages,
         tools=responses_tools if responses_tools else (openai_tools if openai_tools else None),
         tool_choice=tool_choice,

@@ -101,7 +101,8 @@ provider_data AS (
             ELSE false
         END as can_duplicate
     FROM providers_resource p
-    JOIN provider_artifact pr ON pr.id = p.provider_id
+    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+    JOIN provider_artifact pr ON pr.id = ppj.provider_id
     JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     CROSS JOIN user_profile up
@@ -130,7 +131,8 @@ provider_options_agg AS (
             '{}'::types.q_list_providers_v4_provider_option[]
         ) as provider_options
     FROM providers_resource p
-    JOIN provider_artifact pr ON pr.id = p.provider_id
+    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+    JOIN provider_artifact pr ON pr.id = ppj.provider_id
     JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true

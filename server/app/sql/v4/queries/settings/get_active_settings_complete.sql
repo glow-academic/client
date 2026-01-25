@@ -190,7 +190,8 @@ settings_providers_data AS (
     FROM selected_settings ss
     JOIN setting_providers_junction sp ON sp.settings_id = ss.settings_id AND sp.active = true
     JOIN providers_resource p ON p.id = sp.providers_id
-    JOIN provider_artifact pr ON pr.id = p.provider_id
+    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+    JOIN provider_artifact pr ON pr.id = ppj.provider_id
     JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
 )

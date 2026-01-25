@@ -338,20 +338,21 @@ all_scenario_ids AS (
     WHERE scenario_ids IS NOT NULL
 ),
 scenario_data AS (
-    SELECT 
+    SELECT
         sc.id as scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1) as name,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = scsj.scenario_id LIMIT 1) as name,
         COALESCE(
-            (SELECT ps.problem_statement 
-             FROM scenario_problem_statements_junction sps 
-             JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id 
-             WHERE sps.scenario_id = sc.id AND sps.active = true 
-             ORDER BY sps.created_at DESC 
+            (SELECT ps.problem_statement
+             FROM scenario_problem_statements_junction sps
+             JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
+             WHERE sps.scenario_id = sc.id AND sps.active = true
+             ORDER BY sps.created_at DESC
              LIMIT 1),
             ''
         ) as description
     FROM all_scenario_ids asci
     LEFT JOIN scenarios_resource sc ON sc.id = asci.scenario_id
+    JOIN scenario_scenarios_junction scsj ON scsj.scenarios_id = sc.id
     WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = sc.id AND f.name = 'scenario_active' AND sf.value = true)
 ),
 -- Get top 25% of profiles by highest score

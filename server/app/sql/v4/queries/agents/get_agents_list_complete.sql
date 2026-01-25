@@ -104,7 +104,8 @@ filtered_agents AS (
         SELECT DISTINCT ar.artifact::text
         FROM agent_tools_junction at
         JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = tr.tool_id
+        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+        JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id
         JOIN artifact_resources_relation ar ON ar.resource = rt.resource
         WHERE at.agent_id = a.id AND at.active = TRUE
         LIMIT 1

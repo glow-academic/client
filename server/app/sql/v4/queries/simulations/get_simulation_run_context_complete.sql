@@ -73,18 +73,20 @@ WITH scenario_dept AS (
     SELECT
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments_junction sd
-         WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
+         WHERE sd.scenario_id = ssj_dept.scenario_id AND sd.active = true LIMIT 1) as department_id
     FROM chats_entry sc
     INNER JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
     INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
     INNER JOIN scenarios_resource s ON s.id = scj.scenario_id
+    INNER JOIN scenario_scenarios_junction ssj_dept ON ssj_dept.scenarios_id = s.id
     WHERE sc.id = chat_id
 ),
 profile_dept AS (
     -- Get first department FROM profile_artifact's accessible departments
     SELECT dr.id as department_id
     FROM departments_resource dr
-    JOIN department_artifact d ON d.id = dr.department_id
+    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+    JOIN department_artifact d ON d.id = ddj.department_id
     JOIN profile_departments_junction pd ON pd.department_id = dr.id
     JOIN chats_entry sc ON sc.id = chat_id
     JOIN attempts_entry sa ON sa.id = sc.attempt_id
@@ -294,9 +296,10 @@ INNER JOIN scenario_chats_junction scj_main ON scj_main.chat_id = sc.id
 INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
 INNER JOIN simulation_attempts_junction saj_main ON saj_main.attempt_id = sa.id
 INNER JOIN profile_attempts_junction paj_main ON paj_main.attempt_id = sa.id
-INNER JOIN scenarios_resource s ON s.scenario_id = scj_main.scenario_id
-LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = saj_main.simulation_id AND ss.scenario_id = s.id
-LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
+INNER JOIN scenarios_resource s ON s.id = scj_main.scenario_id
+INNER JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
+LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = saj_main.simulation_id AND ss.scenario_id = ssj.scenario_id
+LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = ssj.scenario_id AND sps.active = true
 LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
 INNER JOIN simulation_artifact sim ON sim.id = saj_main.simulation_id
 -- Get first persona for orchestrator (ensures single row for orchestrator config)
@@ -328,7 +331,8 @@ LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
 -- Get keys via settings system: provider -> active settings -> setting_provider_keys_junction
 LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
 LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
+LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
+LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj.provider_id
 LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
 LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
 CROSS JOIN active_settings act_s
@@ -355,7 +359,8 @@ LEFT JOIN endpoints_resource e_voice ON e_voice.id = me_voice_j.endpoint_id AND 
 -- Get voice keys via settings system: provider -> active settings -> setting_provider_keys_junction
 LEFT JOIN model_providers_junction mp_voice ON mp_voice.model_id = m_voice.id
 LEFT JOIN providers_resource p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
-LEFT JOIN provider_artifact pr_voice_prov ON pr_voice_prov.id = p_voice_prov.provider_id
+LEFT JOIN provider_providers_junction ppj_voice ON ppj_voice.providers_id = p_voice_prov.id
+LEFT JOIN provider_artifact pr_voice_prov ON pr_voice_prov.id = ppj_voice.provider_id
 LEFT JOIN provider_names_junction pn_voice_prov ON pn_voice_prov.provider_id = pr_voice_prov.id
 LEFT JOIN names_resource n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
 CROSS JOIN active_settings act_s_voice

@@ -496,41 +496,44 @@ parameter_data AS (
 department_mapping_data AS (
     SELECT
         d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments_junction pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
 ),
 -- All available fields (not just connected ones)
 all_fields_data AS (
-    SELECT 
-        f.field_id as field_id,
+    SELECT
+        ffj.field_id as field_id,
         COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM fields_resource f
-    LEFT JOIN field_departments_junction fd ON fd.field_id = f.field_id AND fd.active = true
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'field_active' AND ff.value = true)
-    GROUP BY f.field_id
+    JOIN field_fields_junction ffj ON ffj.fields_id = f.id
+    LEFT JOIN field_departments_junction fd ON fd.field_id = ffj.field_id AND fd.active = true
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
+    GROUP BY ffj.field_id
 ),
 all_fields_with_usage AS (
-    SELECT 
-        f.field_id as id,
-        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
-        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1),
+    SELECT
+        ffj.field_id as id,
+        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
+        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1),
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(afd.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(f.generated, false) as generated
-    FROM fields_resource f 
-    LEFT JOIN all_fields_data afd ON afd.field_id = f.field_id
+    FROM fields_resource f
+    JOIN field_fields_junction ffj ON ffj.fields_id = f.id
+    LEFT JOIN all_fields_data afd ON afd.field_id = ffj.field_id
     LEFT JOIN scenario_fields_junction sf ON sf.field_id = f.id AND sf.active = true
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'field_active' AND ff.value = true)
-    GROUP BY f.id, f.field_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), afd.department_ids, f.generated
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
+    GROUP BY f.id, ffj.field_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), afd.department_ids, f.generated
 ),
 -- Tool existence checks
 tools_existence_check AS (
@@ -652,7 +655,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = pd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.department_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
                    AND (
                        pd.active = true
                        OR
@@ -678,16 +681,17 @@ department_suggestions_data AS (
 ),
 -- Field suggestions: linked to parameters with active=true OR same group with generated=true
 field_suggestions_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at DESC)
              FROM (
                  SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
                  FROM parameter_fields_junction pf
-                 JOIN fields_resource f2 ON f2.field_id = pf.field_id
+                 JOIN fields_resource f2 ON f2.id = pf.field_id
+                 JOIN field_fields_junction ffj2 ON ffj2.fields_id = f2.id
                  CROSS JOIN draft_group_data dgd
                  WHERE pf.field_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f2.field_id AND fl.name = 'field_active' AND ff.value = true)
+                   AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj2.field_id AND fl.name = 'field_active' AND ff.value = true)
                    AND (
                        pf.active = true
                        OR

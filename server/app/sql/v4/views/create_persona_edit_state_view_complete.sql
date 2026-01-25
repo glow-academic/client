@@ -18,6 +18,7 @@ SELECT
     -- Total scenario links (for can_delete)
     COUNT(DISTINCT sp.scenario_id) AS total_scenario_links
 FROM persona_artifact p
-LEFT JOIN personas_resource pr ON pr.persona_id = p.id
+LEFT JOIN persona_personas_junction ppj ON ppj.persona_id = p.id
+LEFT JOIN personas_resource pr ON pr.id = ppj.personas_id
 LEFT JOIN scenario_personas_junction sp ON sp.persona_id = pr.id
 GROUP BY p.id;

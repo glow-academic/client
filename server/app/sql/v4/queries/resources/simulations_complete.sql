@@ -56,7 +56,8 @@ BEGIN
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools_junction at
     JOIN tools_resource tr ON tr.id = at.tool_id
-    JOIN tool_artifact t ON t.id = tr.tool_id
+    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_artifact t ON t.id = ttj.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_simulations_v4.agent_id
       AND rt.resource = 'simulations'::resource_type
@@ -84,7 +85,8 @@ BEGIN
     -- Check if simulations already exists (match on simulation_id + group_id)
     SELECT r.id INTO v_resource_id
     FROM simulations_resource r
-    WHERE r.simulation_id = v_artifact_id
+    JOIN simulation_simulations_junction ssj ON ssj.simulations_id = r.id
+    WHERE ssj.simulation_id = v_artifact_id
       AND r.group_id = api_create_simulations_v4.group_id
     LIMIT 1;
 

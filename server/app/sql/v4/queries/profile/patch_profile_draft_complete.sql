@@ -65,13 +65,15 @@ BEGIN
         INTO v_department_ids
         FROM unnest(department_ids) WITH ORDINALITY AS input_id(id, ord)
         LEFT JOIN departments_resource dr ON dr.id = input_id.id
-        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.department_id = input_id.id;
+        LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id;
 
         IF EXISTS (
             SELECT 1
             FROM unnest(department_ids) WITH ORDINALITY AS input_id(id, ord)
             LEFT JOIN departments_resource dr ON dr.id = input_id.id
-            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.department_id = input_id.id
+            LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id
             WHERE dr.id IS NULL AND dr_by_artifact.id IS NULL
         ) THEN
             RAISE EXCEPTION 'Department resource not found';

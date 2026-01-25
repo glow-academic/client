@@ -483,17 +483,18 @@ flags_data AS (
 department_mapping_data AS (
     SELECT
         d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments_junction pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
 ),
 -- Department suggestions: linked to cohorts with active=true OR same group with generated=true
 department_suggestions_data AS (
@@ -506,7 +507,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = cd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE cd.department_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
                    AND (
                        cd.active = true
                        OR
@@ -667,9 +668,10 @@ simulation_suggestions_data AS (
                            cs.generated = true
                            AND EXISTS (
                                SELECT 1 FROM simulations_resource sr
+                               JOIN simulation_simulations_junction ssj ON ssj.simulations_id = sr.id
                                JOIN calls_entry c ON c.id = sr.call_id
                                JOIN runs_entry r ON r.id = c.run_id
-                               WHERE sr.simulation_id = cs.simulation_id
+                               WHERE ssj.simulation_id = cs.simulation_id
                                  AND sr.generated = true
                                  AND r.group_id = dgd.group_id
                            )
@@ -780,7 +782,8 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -800,7 +803,8 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resource_type
@@ -893,7 +897,8 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -913,7 +918,8 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resource_type
@@ -1006,7 +1012,8 @@ flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -1026,7 +1033,8 @@ flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resource_type
@@ -1119,7 +1127,8 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -1139,7 +1148,8 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'departments'::resource_type
@@ -1232,7 +1242,8 @@ simulations_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -1252,7 +1263,8 @@ simulations_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'simulations'::resource_type
@@ -1345,7 +1357,8 @@ simulation_positions_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -1365,7 +1378,8 @@ simulation_positions_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'simulation_positions'::resource_type
@@ -1458,7 +1472,8 @@ basic_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -1558,7 +1573,8 @@ general_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE

@@ -153,13 +153,14 @@ user_profile AS (
 simulation_scenarios_data AS (
     SELECT
         ss.simulation_id,
-        ARRAY_AGG(ss.scenario_id ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1)) as scenario_ids,
+        ARRAY_AGG(ss.scenario_id ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1)) as scenario_ids,
         COUNT(ss.scenario_id) as num_scenarios
     FROM simulation_scenarios_junction ss
     JOIN scenarios_resource sc ON sc.id = ss.scenario_id
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sc.id
     WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf
         JOIN flags_resource f ON sf.flag_id = f.id
-        WHERE sf.scenario_id = sc.scenario_id
+        WHERE sf.scenario_id = ssj.scenario_id
         AND f.name = 'scenario_active'
         AND sf.value = true)
     GROUP BY ss.simulation_id
@@ -209,13 +210,14 @@ simulation_data AS (
              FROM simulation_scenario_time_limits_junction sstl
              JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
              JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id
-             JOIN scenarios_resource sr_tl ON sr_tl.id = ss.scenario_id AND sr_tl.scenario_id = stlr.scenario_id
+             JOIN scenarios_resource sr_tl ON sr_tl.id = ss.scenario_id
+             JOIN scenario_scenarios_junction ssj_tl ON ssj_tl.scenarios_id = sr_tl.id AND ssj_tl.scenario_id = stlr.scenario_id
              WHERE sstl.simulation_id = s.id
                AND sstl.active = true
                AND stlr.active = true
                AND EXISTS (SELECT 1 FROM scenario_flags_junction sf
                    JOIN flags_resource f ON sf.flag_id = f.id
-                   WHERE sf.scenario_id = sr_tl.scenario_id
+                   WHERE sf.scenario_id = ssj_tl.scenario_id
                    AND f.name = 'scenario_active'
                    AND sf.value = true)),
             0
@@ -224,15 +226,16 @@ simulation_data AS (
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         (SELECT srr.rubric_id FROM simulation_scenarios_junction ss_rubric
          JOIN scenarios_resource sr_rub ON sr_rub.id = ss_rubric.scenario_id
+         JOIN scenario_scenarios_junction ssj_rub ON ssj_rub.scenarios_id = sr_rub.id
          JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss_rubric.simulation_id
-         JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = sr_rub.scenario_id
+         JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ssj_rub.scenario_id
          WHERE ss_rubric.simulation_id = s.id
            AND EXISTS (SELECT 1 FROM scenario_flags_junction sf
                JOIN flags_resource f ON sf.flag_id = f.id
-               WHERE sf.scenario_id = sr_rub.scenario_id
+               WHERE sf.scenario_id = ssj_rub.scenario_id
                AND f.name = 'scenario_active'
                AND sf.value = true)
-         ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss_rubric.simulation_id AND spr.scenario_id = sr_rub.scenario_id LIMIT 1)
+         ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss_rubric.simulation_id AND spr.scenario_id = ssj_rub.scenario_id LIMIT 1)
          LIMIT 1) as rubric_id,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
@@ -286,7 +289,8 @@ scenario_personas_agg AS (
         ARRAY_AGG(sp.persona_id::text ORDER BY sp.persona_id) as persona_ids
     FROM scenario_personas_junction sp
     WHERE sp.scenario_id IN (
-        SELECT sr.scenario_id FROM scenarios_resource sr
+        SELECT ssj_sr.scenario_id FROM scenarios_resource sr
+        JOIN scenario_scenarios_junction ssj_sr ON ssj_sr.scenarios_id = sr.id
         WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
     )
       AND sp.active = true
@@ -300,30 +304,32 @@ all_persona_ids AS (
 persona_data AS (
     SELECT
         p.id as persona_id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.persona_id LIMIT 1),
-        COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.persona_id LIMIT 1), '') as description,
-        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.persona_id LIMIT 1) as color,
-        (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.persona_id LIMIT 1) as icon,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = ppj.persona_id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = ppj.persona_id LIMIT 1), '') as description,
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = ppj.persona_id LIMIT 1) as color,
+        (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = ppj.persona_id LIMIT 1) as icon,
         false as image_model
     FROM all_persona_ids api
     JOIN personas_resource p ON p.id = api.persona_id
+    JOIN persona_personas_junction ppj ON ppj.personas_id = p.id
 ),
 scenario_base_data AS (
     SELECT
         s.id as scenario_id,
-        s.scenario_id as artifact_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1),
+        ssj.scenario_id as artifact_id,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.scenario_id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ssj.scenario_id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
         COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
         ARRAY[]::text[] as parameter_item_ids,
         ARRAY[]::text[] as document_ids
     FROM all_scenario_ids asi
     JOIN scenarios_resource s ON s.id = asi.scenario_id
-    LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.scenario_id AND sps.active = true
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
+    LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = ssj.scenario_id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.scenario_id
-    LEFT JOIN scenario_tree_junction st ON st.parent_id = s.scenario_id AND st.child_id = s.scenario_id
+    LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = ssj.scenario_id
+    LEFT JOIN scenario_tree_junction st ON st.parent_id = ssj.scenario_id AND st.child_id = ssj.scenario_id
     WHERE st.parent_id IS NOT NULL
 ),
 scenario_persona_mapping AS (
@@ -367,9 +373,10 @@ cohort_data AS (
 department_data AS (
     SELECT
         dr.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = dr.department_id LIMIT 1), '') as description
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description
     FROM departments_resource dr
+    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
 ),
 -- Options derived from ALL simulation_data (unfiltered) for filter dropdowns
@@ -394,7 +401,8 @@ general_agent_for_user AS (
     WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
                   WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+        JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+        JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
         JOIN artifact_resources_relation ar ON ar.resource = rt.resource
         WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'simulation'::artifact_type)
     AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
@@ -408,7 +416,8 @@ general_agent_for_user AS (
             (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
              FROM agent_tools_junction at3
              JOIN tools_resource tr2 ON tr2.id = at3.tool_id
-             JOIN tool_artifact t ON t.id = tr2.tool_id
+             JOIN tool_tools_junction ttj2 ON ttj2.tools_id = tr2.id
+             JOIN tool_artifact t ON t.id = ttj2.tool_id
                   AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
                               WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
              JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
@@ -497,7 +506,8 @@ SELECT
         (SELECT ARRAY_AGG((s.id::text, sn_name.name, (SELECT COUNT(*) FROM simulation_data sd WHERE s.id = ANY(sd.scenario_ids)))::types.q_list_simulations_v4_option ORDER BY sn_name.name)
          FROM all_scenario_ids_options asio
          JOIN scenarios_resource s ON s.id = asio.scenario_id
-         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = s.scenario_id
+         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
+         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
          WHERE (scenario_search IS NULL OR LOWER(sn_name.name) LIKE '%' || LOWER(scenario_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]
     ) as scenario_options,
@@ -514,7 +524,8 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG((dr.id::text, dn_name.name, (SELECT COUNT(*) FROM simulation_data sd WHERE dr.id::text = ANY(sd.department_ids)))::types.q_list_simulations_v4_option ORDER BY dn_name.name)
          FROM departments_resource dr
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = dr.department_id
+         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
          WHERE dr.id IN (SELECT department_id FROM user_departments)
            AND dr.id::text IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),

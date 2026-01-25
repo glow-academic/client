@@ -201,7 +201,7 @@ profile_dept AS (
     -- Get first department FROM profile_artifact's accessible departments
     SELECT d.id as department_id
     FROM params p
-    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     JOIN profile_departments_junction pd ON pd.department_id = d.id
     WHERE pd.profile_id = p.profile_id 
       AND pd.active = true
@@ -354,7 +354,8 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys_junction
     LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = p_prov.id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s

@@ -294,7 +294,8 @@ agent_tools_data AS (
     CROSS JOIN params p
     LEFT JOIN agent_tools_junction at ON at.agent_id = sa.agent_id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     
@@ -443,13 +444,13 @@ departments_resources AS (
     WHERE r.resource_type = 'departments'
 ),
 fields_resources AS (
-    SELECT 
+    SELECT
         COALESCE(
             jsonb_agg(
                 jsonb_build_object(
-                    'id', f.field_id::text,
-                    'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
-                    'description', (SELECT desc_data.description FROM field_descriptions_junction fd JOIN descriptions_resource desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = f.field_id LIMIT 1)
+                    'id', ffj.field_id::text,
+                    'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM field_descriptions_junction fd JOIN descriptions_resource desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = ffj.field_id LIMIT 1)
                 )
             ),
             '[]'::jsonb
@@ -458,6 +459,7 @@ fields_resources AS (
     CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
     CROSS JOIN LATERAL unnest(r.resource_ids) AS field_id_val
     JOIN fields_resource f ON f.id = field_id_val
+    JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     WHERE r.resource_type = 'fields'
 ),
 examples_resources AS (
@@ -582,7 +584,8 @@ context_data AS (
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys_junction
     LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s

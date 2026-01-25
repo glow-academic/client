@@ -194,14 +194,15 @@ simulation_options_cte AS (
 scenario_options_cte AS (
     SELECT
         scj.scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) AS scenario_title,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1) AS scenario_title,
         COUNT(DISTINCT ha.attempt_id) AS count
     FROM history_attempts ha
     JOIN chats_entry sc ON sc.attempt_id = ha.attempt_id
     JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
     JOIN scenarios_resource s ON s.id = scj.scenario_id
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
     WHERE scj.scenario_id IS NOT NULL
-    GROUP BY scj.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
+    GROUP BY scj.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1)
     ORDER BY scenario_title
 ),
 -- Apply additional filters (profileIds, simulationIds, scenarioIds, infiniteMode)
@@ -537,9 +538,10 @@ scenario_names_junction AS (
         COALESCE(sn.names, ARRAY[]::text[]) AS names
     FROM final_rows_with_search fr
     LEFT JOIN LATERAL (
-        SELECT ARRAY_AGG((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)) AS names
+        SELECT ARRAY_AGG((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1) ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1)) AS names
         FROM unnest(fr.scenario_ids_assigned) sid
         JOIN scenarios_resource s ON s.id = sid
+        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
     ) sn ON TRUE
 ),
 -- Get total count before pagination

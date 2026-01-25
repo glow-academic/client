@@ -1019,7 +1019,8 @@ scenarios_data AS (
             AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed
     FROM scenarios_resource sr
-    JOIN scenario_artifact s ON s.id = sr.scenario_id
+    JOIN scenario_scenarios_junction ssj_sr ON ssj_sr.scenarios_id = sr.id
+    JOIN scenario_artifact s ON s.id = ssj_sr.scenario_id
     CROSS JOIN scenario_ids_list sil
     CROSS JOIN attempt_base ab
     LEFT JOIN simulation_scenarios_junction ss ON ss.scenario_id = sr.id AND ss.simulation_id = ab.simulation_id
@@ -1376,7 +1377,8 @@ scenario_documents_data AS (
         '{}'::types.q_get_simulation_attempt_v4_scenario_document[]
     ) as scenario_documents_junction
     FROM document_artifact d
-    JOIN documents_resource dr ON dr.document_id = d.id
+    JOIN document_documents_junction ddj ON ddj.document_id = d.id
+    JOIN documents_resource dr ON dr.id = ddj.documents_id
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
     LEFT JOIN uploads_entry u ON u.id = ur.upload_id

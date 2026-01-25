@@ -201,7 +201,8 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
     LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = p_prov.id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s

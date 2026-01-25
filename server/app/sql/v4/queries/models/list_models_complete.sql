@@ -119,9 +119,9 @@ models_with_usage AS (
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
-        (SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
-        (SELECT p.id FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_id,
-        (SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name,
+        (SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_providers_junction ppj ON ppj.providers_id = p.id JOIN provider_artifact pr ON pr.id = ppj.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id JOIN model_models_junction mmj ON mmj.models_id = m_res.id WHERE mmj.model_id = m.id LIMIT 1) as provider,
+        (SELECT p.id FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN models_resource m_res ON m_res.id = mp.model_id JOIN model_models_junction mmj ON mmj.models_id = m_res.id WHERE mmj.model_id = m.id LIMIT 1) as provider_id,
+        (SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_providers_junction ppj ON ppj.providers_id = p.id JOIN provider_artifact pr ON pr.id = ppj.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id JOIN model_models_junction mmj ON mmj.models_id = m_res.id WHERE mmj.model_id = m.id LIMIT 1) as provider_name,
         COALESCE((SELECT e.base_url FROM model_endpoints_junction me_j JOIN endpoints_resource e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
         COALESCE(su.usage_count, 0) as simulation_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
@@ -136,7 +136,8 @@ provider_options_data AS (
         p.id::text as value,
         n.name as label
     FROM providers_resource p
-    JOIN provider_artifact pr ON pr.id = p.provider_id
+    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+    JOIN provider_artifact pr ON pr.id = ppj.provider_id
     JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true

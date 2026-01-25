@@ -124,14 +124,15 @@ user_profile AS (
 ),
 persona_scenarios AS (
     SELECT
-        pr.persona_id,
+        ppj.persona_id,
         ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
     FROM scenario_personas_junction sp
     JOIN personas_resource pr ON pr.id = sp.persona_id
+    JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
     JOIN scenario_tree_junction st ON st.child_id = sp.scenario_id
     WHERE sp.active = true AND st.parent_id = st.child_id
-    GROUP BY pr.persona_id
+    GROUP BY ppj.persona_id
 ),
 persona_departments_data AS (
     SELECT
@@ -143,9 +144,10 @@ persona_departments_data AS (
 persona_fields_data AS (
     SELECT
         pf.persona_id,
-        ARRAY_AGG(DISTINCT fr.field_id) as field_ids
+        ARRAY_AGG(DISTINCT ffj.field_id) as field_ids
     FROM persona_fields_junction pf
     JOIN fields_resource fr ON fr.id = pf.field_id
+    JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
     WHERE pf.active = true
     GROUP BY pf.persona_id
 ),
@@ -252,10 +254,11 @@ filtered_scenario_options AS (
 department_mapping_data AS (
     SELECT
         dr.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = dr.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = dr.department_id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
         (SELECT COUNT(*) FROM persona_data) as count
     FROM departments_resource dr
+    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
 ),
 -- Filter department options by search term
@@ -293,7 +296,8 @@ general_agent_for_user AS (
     WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
                   WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
+        JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+        JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
         JOIN artifact_resources_relation ar ON ar.resource = rt.resource
         WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'persona'::artifact_type)
     AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
@@ -306,7 +310,8 @@ general_agent_for_user AS (
             (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
              FROM agent_tools_junction at3
              JOIN tools_resource tr2 ON tr2.id = at3.tool_id
-             JOIN tool_artifact t ON t.id = tr2.tool_id
+             JOIN tool_tools_junction ttj2 ON ttj2.tools_id = tr2.id
+             JOIN tool_artifact t ON t.id = ttj2.tool_id
                   AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
                               WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
              JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id

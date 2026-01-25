@@ -56,7 +56,8 @@ BEGIN
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools_junction at
     JOIN tools_resource tr ON tr.id = at.tool_id
-    JOIN tool_artifact t ON t.id = tr.tool_id
+    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_artifact t ON t.id = ttj.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_agents_v4.agent_id
       AND rt.resource = 'agents'::resource_type

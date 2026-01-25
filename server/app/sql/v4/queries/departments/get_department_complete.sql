@@ -738,10 +738,11 @@ cohort_suggestions_data AS (
 ),
 -- Departments data (from detail endpoint)
 user_profile_departments AS (
-    SELECT 
-        ARRAY_AGG(pd.department_id ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1)) as department_ids
+    SELECT
+        ARRAY_AGG(pd.department_id ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) as department_ids
     FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.department_id
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
     WHERE pd.profile_id = (SELECT profile_id FROM params) AND pd.active = true
 ),
 all_department_ids AS (
@@ -777,7 +778,7 @@ department_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(d.id ORDER BY d.created_at DESC)
              FROM departments_resource d
-             WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+             WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
              AND EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id)
              LIMIT 20),
             ARRAY[]::uuid[]

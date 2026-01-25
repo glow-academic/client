@@ -221,13 +221,14 @@ all_document_ids AS (
     WHERE document_ids IS NOT NULL
 ),
 scenarios_data AS (
-    SELECT 
+    SELECT
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1),
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj.scenario_id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active
     FROM all_scenario_ids asi
     LEFT JOIN scenarios_resource s ON s.id = asi.scenario_id
+    LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
     LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE s.id IS NOT NULL

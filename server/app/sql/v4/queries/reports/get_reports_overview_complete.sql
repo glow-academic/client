@@ -1268,8 +1268,8 @@ filt AS (
             -- Persona Performance
             persona_agg AS (
                 SELECT f.persona_id,
-                       (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.persona_id LIMIT 1),
-                       COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.persona_id LIMIT 1), '#3b82f6') AS color,
+                       (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = ppj.persona_id LIMIT 1),
+                       COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = ppj.persona_id LIMIT 1), '#3b82f6') AS color,
                        TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score,
                        COUNT(DISTINCT f.chat_id)::int AS sessions,
                        ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids,
@@ -1280,8 +1280,9 @@ filt AS (
                        END AS status
                 FROM filt f
                 JOIN personas_resource p ON p.id = f.persona_id
+                JOIN persona_personas_junction ppj ON ppj.personas_id = p.id
                 WHERE f.grade_percent IS NOT NULL AND f.persona_id IS NOT NULL
-                GROUP BY f.persona_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.persona_id LIMIT 1), (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.persona_id LIMIT 1)
+                GROUP BY f.persona_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = ppj.persona_id LIMIT 1), (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = ppj.persona_id LIMIT 1)
             ),
             trend_data_raw AS (
                 SELECT
@@ -1310,11 +1311,12 @@ filt AS (
             ),
             persona_colors_agg_converted AS (
                 SELECT ARRAY_AGG(
-                    ((SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.persona_id LIMIT 1), COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.persona_id LIMIT 1), '#3b82f6'))::types.q_reports_overview_v4_persona_color
-                    ORDER BY (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.persona_id LIMIT 1)
+                    ((SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = ppj.persona_id LIMIT 1), COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = ppj.persona_id LIMIT 1), '#3b82f6'))::types.q_reports_overview_v4_persona_color
+                    ORDER BY (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = ppj.persona_id LIMIT 1)
                 ) AS colors
                 FROM (SELECT DISTINCT persona_id FROM persona_agg) pa
                 JOIN personas_resource p ON p.id = pa.persona_id
+                JOIN persona_personas_junction ppj ON ppj.personas_id = p.id
             ),
             
             -- Rubric Heatmap (FULL IMPLEMENTATION with correlation matrices)
@@ -2667,15 +2669,16 @@ filt AS (
             sim_perf AS (
                 SELECT f.simulation_id,
                        f.scenario_id,
-                       (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1) AS scenario_name,
+                       (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = scsj.scenario_id LIMIT 1) AS scenario_name,
                        TRUNC(COALESCE(AVG(f.grade_percent), 0)::numeric, 2)::float AS avg_score,
                        TRUNC(COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::numeric, 2)::float AS success_rate,
                        COUNT(*)::int AS total_attempts,
                        SUM((f.completed OR f.grade_percent IS NOT NULL)::int)::int AS completed_attempts
                 FROM filt f
-                JOIN scenarios_resource sc ON sc.scenario_id = f.scenario_id
+                JOIN scenario_scenarios_junction scsj ON scsj.scenario_id = f.scenario_id
+                JOIN scenarios_resource sc ON sc.id = scsj.scenarios_id
                 WHERE f.simulation_id IS NOT NULL AND f.scenario_id IS NOT NULL
-                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1)
+                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = scsj.scenario_id LIMIT 1)
             ),
             simulation_performance_scenario_facts_agg AS (
                 SELECT COALESCE(
@@ -2735,12 +2738,13 @@ filt AS (
             sim_scenarios_seen AS (
                 SELECT
                     s.id AS simulation_id,
-                    COUNT(DISTINCT sc.scenario_id)::int AS scenario_count
+                    COUNT(DISTINCT scsj.scenario_id)::int AS scenario_count
                 FROM simulation_artifact s
                 JOIN simulation_scenarios_junction ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
-                JOIN scen_seen ss ON ss.scenario_id = sc.scenario_id
-                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'simulation_active' AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = sc.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
+                JOIN scenario_scenarios_junction scsj ON scsj.scenarios_id = sc.id
+                JOIN scen_seen ss ON ss.scenario_id = scsj.scenario_id
+                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'simulation_active' AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = scsj.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
                 GROUP BY s.id
             ),
             sim_param_items_seen AS (
@@ -2752,13 +2756,14 @@ filt AS (
                 FROM simulation_artifact s
                 JOIN simulation_scenarios_junction ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
-                JOIN scen_seen ss ON ss.scenario_id = sc.scenario_id
-                JOIN scenario_fields_junction sf ON sf.scenario_id = sc.scenario_id
+                JOIN scenario_scenarios_junction scsj ON scsj.scenarios_id = sc.id
+                JOIN scen_seen ss ON ss.scenario_id = scsj.scenario_id
+                JOIN scenario_fields_junction sf ON sf.scenario_id = scsj.scenario_id
                 JOIN fields_resource f ON f.id = sf.field_id
                 JOIN parameter_fields_junction pfj ON pfj.field_resource_id = f.id
                 JOIN param_ids_categorical pic ON pic.id = pfj.parameter_id
-                JOIN analytics a ON a.scenario_id = sc.scenario_id AND a.profile_id = (SELECT target_profile_id FROM params)
-                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf3 JOIN flags_resource fl ON sf3.flag_id = fl.id WHERE sf3.simulation_id = s.id AND fl.name = 'simulation_active' AND sf3.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = sc.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
+                JOIN analytics a ON a.scenario_id = scsj.scenario_id AND a.profile_id = (SELECT target_profile_id FROM params)
+                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf3 JOIN flags_resource fl ON sf3.flag_id = fl.id WHERE sf3.simulation_id = s.id AND fl.name = 'simulation_active' AND sf3.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = scsj.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
                 GROUP BY s.id, pfj.parameter_id, pfj.field_id
             ),
             simulation_facts AS (

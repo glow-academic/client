@@ -298,18 +298,19 @@ profile_data AS (
 ),
 dept_data AS (
     -- Departments for the effective profile
-    SELECT 
+    SELECT
         d.id as department_id,
-        d.department_id as department_artifact_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true) as active,
+        ddj.department_id as department_artifact_id,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) as active,
         pd.is_primary
     FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.department_id
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
     WHERE pd.profile_id = (SELECT profile_id FROM params)
       AND pd.active = true
-      AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
 cohort_data AS (
     -- Cohorts for the effective profile
@@ -486,7 +487,7 @@ settings_resolution AS (
     ),
     settings_providers_data AS (
         -- Get linked providers for this settings (providers is now a resource table)
-        SELECT 
+        SELECT
             ARRAY_AGG(n.name ORDER BY n.name) as provider_ids,
             COALESCE(
                 ARRAY_AGG(
@@ -498,7 +499,8 @@ settings_resolution AS (
         FROM selected_settings ss
         JOIN setting_providers_junction sp ON sp.settings_id = ss.settings_id AND sp.active = true
         JOIN providers_resource p ON p.id = sp.providers_id
-        JOIN provider_artifact pr ON pr.id = p.provider_id
+        JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+        JOIN provider_artifact pr ON pr.id = ppj.provider_id
         JOIN provider_names_junction pn ON pn.provider_id = pr.id
         JOIN names_resource n ON n.id = pn.name_id
     )

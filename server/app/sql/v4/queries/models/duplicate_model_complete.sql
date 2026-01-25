@@ -52,7 +52,7 @@ source_model AS (
         (SELECT p_prov.id FROM model_providers_junction mp JOIN providers_resource p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
         (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
     FROM params x
-    JOIN models_resource m ON m.id = x.model_id
+    JOIN model_artifact m ON m.id = x.model_id
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -125,15 +125,28 @@ link_duplicated_model_value AS (
 ),
 -- Create models resource entry for duplicated model artifact
 duplicated_model_resource AS (
-    INSERT INTO models_resource (model_id, active, generated, mcp, created_at)
-    SELECT 
-        dm.id,
+    INSERT INTO models_resource (active, generated, mcp, created_at)
+    SELECT
         false,  -- Set to inactive (duplicate)
         false,
         false,
         NOW()
     FROM duplicated_model dm
-    RETURNING id, model_id
+    RETURNING id
+),
+-- Link duplicated model to models_resource via junction table
+link_model_models_junction AS (
+    INSERT INTO model_models_junction (model_id, models_id, active, created_at, generated, mcp)
+    SELECT
+        dm.id,
+        dmr.id,
+        true,
+        NOW(),
+        false,
+        false
+    FROM duplicated_model dm
+    CROSS JOIN duplicated_model_resource dmr
+    ON CONFLICT (model_id, models_id) DO NOTHING
 ),
 -- Link model to name
 link_model_name AS (

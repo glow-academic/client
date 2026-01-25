@@ -98,7 +98,7 @@ active_settings AS (
 )
 SELECT 
     (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
-    COALESCE((SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id WHERE mp.model_id = m.id LIMIT 1), '') as provider,
+    COALESCE((SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_providers_junction ppj ON ppj.providers_id = p.id JOIN provider_artifact pr ON pr.id = ppj.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id WHERE mp.model_id = m.id LIMIT 1), '') as provider,
     COALESCE((SELECT e.base_url FROM model_endpoints_junction me_j JOIN endpoints_resource e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
     kr.key as api_key
 FROM agent_artifact a

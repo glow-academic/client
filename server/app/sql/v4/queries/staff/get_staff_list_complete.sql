@@ -126,11 +126,12 @@ profile_cohorts_junction AS (
     GROUP BY cp.profile_id
 ),
 profile_departments_agg AS (
-    SELECT 
+    SELECT
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1)) as department_ids
+        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) as department_ids
     FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.department_id
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
     WHERE pd.active = true
     GROUP BY pd.profile_id
 ),
@@ -185,11 +186,12 @@ cohorts_data AS (
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
-    SELECT 
+    SELECT
         d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description
     FROM departments_resource d
+    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
     WHERE (d.id IN (SELECT department_id FROM user_departments) OR d.id IN (SELECT department_id FROM all_department_ids))
 ),
 -- Trend data CTEs

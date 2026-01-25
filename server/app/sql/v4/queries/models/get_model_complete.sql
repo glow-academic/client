@@ -450,12 +450,13 @@ user_departments AS (
     WHERE pd.active = true
 ),
 user_departments_data AS (
-    SELECT DISTINCT 
-        dr.id, 
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, 
+    SELECT DISTINCT
+        dr.id,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description
     FROM departments_resource dr
-    JOIN department_artifact d ON d.id = dr.department_id
+    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+    JOIN department_artifact d ON d.id = ddj.department_id
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments_junction pd ON dr.id = pd.department_id
     WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
@@ -936,7 +937,8 @@ providers_data AS (
         n.name as name,
         COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description
     FROM providers_resource p
-    JOIN provider_artifact pr ON pr.id = p.provider_id
+    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+    JOIN provider_artifact pr ON pr.id = ppj.provider_id
     JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
@@ -953,8 +955,9 @@ provider_resource_data AS (
                     SELECT p.id 
                     FROM model_providers_junction mp 
                     JOIN providers_resource p ON p.id = mp.providers_id 
-                    JOIN models_resource m_res ON m_res.id = mp.model_id 
-                    WHERE m_res.model_id = (SELECT model_id FROM params) 
+                    JOIN models_resource m_res ON m_res.id = mp.model_id
+                    JOIN model_models_junction mmj ON mmj.models_id = m_res.id
+                    WHERE mmj.model_id = (SELECT model_id FROM params) 
                     LIMIT 1
                 )
             END
@@ -968,7 +971,8 @@ provider_resource_data AS (
             )::types.q_get_model_v4_provider_resource
             FROM providers_draft dp
             JOIN providers_resource p ON p.id = dp.providers_id
-            JOIN provider_artifact pr ON pr.id = p.provider_id
+            JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+            JOIN provider_artifact pr ON pr.id = ppj.provider_id
             JOIN provider_names_junction pn ON pn.provider_id = pr.id
             JOIN names_resource n ON n.id = pn.name_id
             WHERE dp.draft_id = (SELECT draft_id FROM params)
@@ -982,13 +986,15 @@ provider_resource_data AS (
                         COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
                         false
                     )::types.q_get_model_v4_provider_resource
-                    FROM model_providers_junction mp 
-                    JOIN providers_resource p ON p.id = mp.providers_id 
-                    JOIN provider_artifact pr ON pr.id = p.provider_id
+                    FROM model_providers_junction mp
+                    JOIN providers_resource p ON p.id = mp.providers_id
+                    JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+                    JOIN provider_artifact pr ON pr.id = ppj.provider_id
                     JOIN provider_names_junction pn ON pn.provider_id = pr.id
                     JOIN names_resource n ON n.id = pn.name_id
-                    JOIN models_resource m_res ON m_res.id = mp.model_id 
-                    WHERE m_res.model_id = (SELECT model_id FROM params) 
+                    JOIN models_resource m_res ON m_res.id = mp.model_id
+                    JOIN model_models_junction mmj ON mmj.models_id = m_res.id
+                    WHERE mmj.model_id = (SELECT model_id FROM params)
                     LIMIT 1
                 )
             END
@@ -1014,10 +1020,12 @@ model_all_keys AS (
         kr.active as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
     FROM model_artifact m
-    JOIN models_resource m_res ON m_res.model_id = m.id
+    JOIN models_resource m_res ON TRUE
+    JOIN model_models_junction mmj ON mmj.models_id = m_res.id AND mmj.model_id = m.id
     LEFT JOIN model_providers_junction mp ON mp.model_id = m_res.id
     LEFT JOIN providers_resource p ON p.id = mp.providers_id
-    LEFT JOIN provider_artifact pr ON pr.id = p.provider_id
+    LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
+    LEFT JOIN provider_artifact pr ON pr.id = ppj.provider_id
     LEFT JOIN provider_names_junction pn ON pn.provider_id = pr.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
     JOIN setting_provider_keys_junction spk ON spk.providers_id = p.id AND spk.active = true
@@ -1048,7 +1056,8 @@ model_all_keys AS (
         OR NOT EXISTS (
             -- Exclude keys already included via setting_provider_keys_junction for this model's provider
             SELECT 1 FROM model_artifact m2
-            JOIN models_resource m_res2 ON m_res2.model_id = m2.id
+            JOIN model_models_junction mmj2 ON mmj2.model_id = m2.id
+            JOIN models_resource m_res2 ON m_res2.id = mmj2.models_id
             JOIN model_providers_junction mp2 ON mp2.model_id = m_res2.id
             JOIN providers_resource p2 ON p2.id = mp2.providers_id
             JOIN setting_provider_keys_junction spk2 ON spk2.providers_id = p2.id AND spk2.key_id = kr.id AND spk2.active = true

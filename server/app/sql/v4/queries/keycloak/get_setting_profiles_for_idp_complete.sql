@@ -61,26 +61,27 @@ AS $$
     ),
     profile_details AS (
         SELECT
-            pr.profile_id,
+            ppj.profile_id,
             COALESCE(
                 (SELECT n.name
                  FROM profile_names_junction pn
                  JOIN names_resource n ON n.id = pn.name_id
-                 WHERE pn.profile_id = pr.profile_id
+                 WHERE pn.profile_id = ppj.profile_id
                    AND pn.active = true
                  LIMIT 1),
-                pr.profile_id::text
+                ppj.profile_id::text
             ) as profile_name,
             COALESCE(
                 (SELECT r.role
                  FROM profile_roles_junction prj
                  JOIN roles_resource r ON r.id = prj.role_id
-                 WHERE prj.profile_id = pr.profile_id
+                 WHERE prj.profile_id = ppj.profile_id
                    AND prj.active = true
                  LIMIT 1),
                 pr.role
             ) as role
         FROM profiles_resource pr
+        JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
         WHERE pr.active = true
     )
     SELECT
