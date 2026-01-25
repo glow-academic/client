@@ -18,15 +18,24 @@ router.include_router(args_outputs_router)
 # NOTE: auths removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.colors.create import router as colors_router
+from app.api.v4.resources.colors.get import router as colors_get_router
 
 router.include_router(colors_router)
+router.include_router(colors_get_router)
 # NOTE: contents removed - converted to entry table (migration 305)
 # NOTE: conversations removed - converted to entry table (migration 305)
 # NOTE: departments removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for personas two-pass architecture
+from app.api.v4.resources.departments.get import router as departments_get_router
+
+router.include_router(departments_get_router)
 from app.api.v4.resources.descriptions.create import \
     router as descriptions_router
+from app.api.v4.resources.descriptions.get import \
+    router as descriptions_get_router
 
 router.include_router(descriptions_router)
+router.include_router(descriptions_get_router)
 # NOTE: documents removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.emails.create import router as emails_router
 
@@ -36,14 +45,24 @@ from app.api.v4.resources.endpoints.create import router as endpoints_router
 router.include_router(endpoints_router)
 # NOTE: evals removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.examples.create import router as examples_router
+from app.api.v4.resources.examples.get import router as examples_get_router
 
 router.include_router(examples_router)
+router.include_router(examples_get_router)
 # NOTE: feedbacks removed - converted to entry table (migration 305)
 # NOTE: fields removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for personas two-pass architecture
+from app.api.v4.resources.fields.get import router as fields_get_router
+
+router.include_router(fields_get_router)
 # NOTE: persona_fields removed - non-creatable (migration 328)
 # NOTE: document_fields removed - non-creatable (migration 328)
 # NOTE: parameter_fields removed - non-creatable (migration 328)
 # NOTE: flags removed - non-creatable (migration 328)
+# GET endpoint available for personas two-pass architecture
+from app.api.v4.resources.flags.get import router as flags_get_router
+
+router.include_router(flags_get_router)
 from app.api.v4.resources.group_positions.create import \
     router as group_positions_router
 
@@ -55,14 +74,21 @@ router.include_router(group_rubrics_router)
 # NOTE: groups removed - non-creatable (migration 328)
 # NOTE: hints removed - converted to entry table (migration 305)
 # NOTE: icons removed - non-creatable (migration 328)
+# GET endpoint available for personas two-pass architecture
+from app.api.v4.resources.icons.get import router as icons_get_router
+
+router.include_router(icons_get_router)
 from app.api.v4.resources.images.create import router as images_router
 
 router.include_router(images_router)
 # NOTE: improvements removed - converted to entry table (migration 305)
 from app.api.v4.resources.instructions.create import \
     router as instructions_router
+from app.api.v4.resources.instructions.get import \
+    router as instructions_get_router
 
 router.include_router(instructions_router)
+router.include_router(instructions_get_router)
 from app.api.v4.resources.items.create import router as items_router
 
 router.include_router(items_router)
@@ -72,8 +98,10 @@ router.include_router(keys_router)
 # NOTE: modalities removed - non-creatable (migration 328)
 # NOTE: models removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.names.create import router as names_router
+from app.api.v4.resources.names.get import router as names_get_router
 
 router.include_router(names_router)
+router.include_router(names_get_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
 
 router.include_router(objectives_router)

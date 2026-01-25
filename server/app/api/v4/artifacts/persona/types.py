@@ -1,0 +1,132 @@
+"""Handcrafted types for persona GET endpoint."""
+
+from uuid import UUID
+
+from app.sql.types import (
+    QGetColorsV4Item,
+    QGetDepartmentsV4Item,
+    QGetDescriptionsV4Item,
+    QGetExamplesV4Item,
+    QGetFieldsV4Item,
+    QGetFlagsV4Item,
+    QGetIconsV4Item,
+    QGetInstructionsV4Item,
+    QGetNamesV4Item,
+)
+from pydantic import BaseModel
+
+
+class GetPersonaApiRequest(BaseModel):
+    """Request model for get persona endpoint."""
+
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    # Search filters for resources
+    color_search: str | None = None
+    icon_search: str | None = None
+    descriptions_search: str | None = None
+    instructions_search: str | None = None
+    field_search: str | None = None
+    # Show selected filters
+    color_show_selected: bool | None = None
+    icon_show_selected: bool | None = None
+    field_show_selected: bool | None = None
+
+
+class GetPersonaApiResponse(BaseModel):
+    """Response model for get persona endpoint."""
+
+    # Required fields
+    actor_name: str | None = None
+    persona_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+
+    # Group ID
+    group_id: UUID | None = None
+
+    # Single-select resources: name
+    name_id: UUID | None = None
+    name_resource: QGetNamesV4Item | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetNamesV4Item] | None = None
+
+    # Single-select resources: description
+    description_id: UUID | None = None
+    description_resource: QGetDescriptionsV4Item | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetDescriptionsV4Item] | None = None
+
+    # Single-select resources: color
+    color_id: UUID | None = None
+    color_resource: QGetColorsV4Item | None = None
+    show_color: bool | None = None
+    color_agent_id: UUID | None = None
+    color_required: bool | None = None
+    color_suggestions: list[UUID] | None = None
+    colors: list[QGetColorsV4Item] | None = None
+
+    # Single-select resources: icon
+    icon_id: UUID | None = None
+    icon_resource: QGetIconsV4Item | None = None
+    show_icon: bool | None = None
+    icon_agent_id: UUID | None = None
+    icon_required: bool | None = None
+    icon_suggestions: list[UUID] | None = None
+    icons: list[QGetIconsV4Item] | None = None
+
+    # Single-select resources: instructions
+    instructions_id: UUID | None = None
+    instructions_resource: QGetInstructionsV4Item | None = None
+    show_instructions: bool | None = None
+    instructions_agent_id: UUID | None = None
+    instructions_required: bool | None = None
+    instructions_suggestions: list[UUID] | None = None
+    instructions: list[QGetInstructionsV4Item] | None = None
+
+    # Single-select resources: flag
+    active_flag_id: UUID | None = None
+    flag_resource: QGetFlagsV4Item | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetFlagsV4Item] | None = None
+
+    # Multi-select resources: departments
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetDepartmentsV4Item] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetDepartmentsV4Item] | None = None
+
+    # Multi-select resources: fields
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetFieldsV4Item] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetFieldsV4Item] | None = None
+
+    # Multi-select resources: examples
+    example_ids: list[UUID] | None = None
+    example_resources: list[QGetExamplesV4Item] | None = None
+    show_examples: bool | None = None
+    examples_agent_id: UUID | None = None
+    examples_required: bool | None = None
+    example_suggestions: list[UUID] | None = None
+    examples: list[QGetExamplesV4Item] | None = None
+
+    # Multi-resource combination agent IDs
+    basic_agent_id: UUID | None = None
+    content_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None

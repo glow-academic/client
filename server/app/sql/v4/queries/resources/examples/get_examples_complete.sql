@@ -1,0 +1,67 @@
+-- Get examples resources by IDs
+-- Simple data fetching - no business logic
+-- Parameters: ids (uuid[])
+-- Returns: items (array of example resources)
+
+-- Drop function if exists (handles signature variations)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_get_examples_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_examples_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- Drop types WITHOUT CASCADE
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_get_examples_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- Create composite type for example item
+CREATE TYPE types.q_get_examples_v4_item AS (
+    id uuid,
+    example text,
+    idx integer,
+    generated boolean
+);
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_get_examples_v4(
+    ids uuid[] DEFAULT ARRAY[]::uuid[],
+    search text DEFAULT NULL
+)
+RETURNS TABLE (
+    items types.q_get_examples_v4_item[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+SELECT COALESCE(
+    ARRAY_AGG(
+        (e.id, e.example, array_position(ids, e.id), COALESCE(e.generated, false))::types.q_get_examples_v4_item
+        ORDER BY array_position(ids, e.id)
+    ),
+    ARRAY[]::types.q_get_examples_v4_item[]
+) as items
+FROM examples_resource e
+WHERE e.id = ANY(ids)
+  AND e.example IS NOT NULL
+  AND e.example != ''
+  AND (search IS NULL OR search = '' OR LOWER(e.example) LIKE '%' || LOWER(search) || '%');
+$$;

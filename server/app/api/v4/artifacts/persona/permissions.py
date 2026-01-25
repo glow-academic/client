@@ -1,0 +1,288 @@
+"""Persona permission helpers.
+
+Extracts business logic from SQL into Python for the two-pass architecture.
+These functions compute permissions, UI flags, and access control based on
+data fetched from the Pass 1 SQL query.
+"""
+
+from uuid import UUID
+
+
+def compute_can_edit(
+    persona_id: UUID | None,
+    user_role: str | None,
+    user_department_ids: list[UUID] | None,
+    persona_department_ids: list[UUID] | None,
+    active_scenario_count: int,
+    names_has_tools: bool,
+    colors_has_tools: bool,
+    icons_has_tools: bool,
+    instructions_has_tools: bool,
+    show_departments: bool,
+    departments_has_tools: bool,
+    show_fields: bool,
+    fields_has_tools: bool,
+    show_examples: bool,
+    examples_has_tools: bool,
+) -> bool:
+    """Compute whether the user can edit the persona.
+
+    Business logic:
+    - New mode (persona_id is None): User can edit if they have a primary department
+      or are superadmin
+    - Detail mode: User can edit if:
+      - Persona has departments (not default persona) OR user is superadmin
+      - No active scenarios using this persona
+      - User role is admin, instructional, or superadmin
+      - All required tools exist
+    """
+    # Check for missing tools first
+    missing_tools = get_missing_tools(
+        names_has_tools=names_has_tools,
+        colors_has_tools=colors_has_tools,
+        icons_has_tools=icons_has_tools,
+        instructions_has_tools=instructions_has_tools,
+        show_departments=show_departments,
+        departments_has_tools=departments_has_tools,
+        show_fields=show_fields,
+        fields_has_tools=fields_has_tools,
+        show_examples=show_examples,
+        examples_has_tools=examples_has_tools,
+    )
+    if missing_tools:
+        return False
+
+    if persona_id is None:
+        # New mode: can edit if superadmin or has primary department
+        if user_role == "superadmin":
+            return True
+        # Check if user has any departments (primary department check simplified)
+        return bool(user_department_ids)
+    else:
+        # Detail mode
+        # Default personas (no departments) can only be edited by superadmin
+        if not persona_department_ids and user_role != "superadmin":
+            return False
+
+        # Personas in use by scenarios cannot be edited
+        if active_scenario_count > 0:
+            return False
+
+        # Only admins, instructional, and superadmins can edit
+        return user_role in ("admin", "instructional", "superadmin")
+
+
+def compute_disabled_reason(
+    persona_id: UUID | None,
+    user_role: str | None,
+    persona_department_ids: list[UUID] | None,
+    active_scenario_count: int,
+    names_has_tools: bool,
+    colors_has_tools: bool,
+    icons_has_tools: bool,
+    instructions_has_tools: bool,
+    show_departments: bool,
+    departments_has_tools: bool,
+    show_fields: bool,
+    fields_has_tools: bool,
+    show_examples: bool,
+    examples_has_tools: bool,
+) -> str | None:
+    """Compute the reason why editing is disabled, if any.
+
+    Returns None if editing is allowed.
+    """
+    # Check for missing tools first
+    missing_tools = get_missing_tools(
+        names_has_tools=names_has_tools,
+        colors_has_tools=colors_has_tools,
+        icons_has_tools=icons_has_tools,
+        instructions_has_tools=instructions_has_tools,
+        show_departments=show_departments,
+        departments_has_tools=departments_has_tools,
+        show_fields=show_fields,
+        fields_has_tools=fields_has_tools,
+        show_examples=show_examples,
+        examples_has_tools=examples_has_tools,
+    )
+    if missing_tools:
+        return f"No tool configured for {', '.join(missing_tools)}. Therefore we cannot proceed ahead."
+
+    if persona_id is None:
+        # New mode: no disabled reason if can_edit is true
+        return None
+
+    # Detail mode
+    if not persona_department_ids and user_role != "superadmin":
+        return (
+            "This is a default persona that cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    if active_scenario_count > 0:
+        return (
+            "This persona is currently in use by scenarios and cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return (
+            "This persona cannot be edited. "
+            "You can view the details but cannot make changes."
+        )
+
+    return None
+
+
+def get_missing_tools(
+    names_has_tools: bool,
+    colors_has_tools: bool,
+    icons_has_tools: bool,
+    instructions_has_tools: bool,
+    show_departments: bool,
+    departments_has_tools: bool,
+    show_fields: bool,
+    fields_has_tools: bool,
+    show_examples: bool,
+    examples_has_tools: bool,
+) -> list[str]:
+    """Get list of missing required tools."""
+    missing = []
+
+    if not names_has_tools:
+        missing.append("name")
+    if not colors_has_tools:
+        missing.append("color")
+    if not icons_has_tools:
+        missing.append("icon")
+    if not instructions_has_tools:
+        missing.append("instructions")
+    if show_departments and not departments_has_tools:
+        missing.append("departments")
+    if show_fields and not fields_has_tools:
+        missing.append("fields")
+    if show_examples and not examples_has_tools:
+        missing.append("examples")
+
+    return missing
+
+
+def has_access(
+    user_role: str | None,
+    user_department_ids: list[UUID] | None,
+    persona_department_ids: list[UUID] | None,
+) -> bool:
+    """Check if user has access to view the persona.
+
+    Access rules:
+    - Superadmin has access to all personas
+    - User has access if persona has no departments (default persona)
+    - User has access if they share at least one department with the persona
+    """
+    if user_role == "superadmin":
+        return True
+
+    # Default personas (no departments) are accessible to all
+    if not persona_department_ids:
+        return True
+
+    # Check department overlap
+    if not user_department_ids:
+        return False
+
+    user_dept_set = set(user_department_ids)
+    persona_dept_set = set(persona_department_ids)
+    return bool(user_dept_set & persona_dept_set)
+
+
+def compute_show_name(names_has_tools: bool) -> bool:
+    """Determine if name picker should be shown."""
+    return names_has_tools
+
+
+def compute_show_description() -> bool:
+    """Determine if description picker should be shown."""
+    # Always show description picker
+    return True
+
+
+def compute_show_color(colors_has_tools: bool, colors_count: int) -> bool:
+    """Determine if color picker should be shown."""
+    return colors_has_tools and colors_count > 0
+
+
+def compute_show_icon(icons_has_tools: bool, icons_count: int) -> bool:
+    """Determine if icon picker should be shown."""
+    return icons_has_tools and icons_count > 0
+
+
+def compute_show_instructions(instructions_has_tools: bool) -> bool:
+    """Determine if instructions picker should be shown."""
+    return instructions_has_tools
+
+
+def compute_show_flag() -> bool:
+    """Determine if flag toggle should be shown."""
+    # Flag is always shown
+    return True
+
+
+def compute_show_departments(departments_count: int) -> bool:
+    """Determine if departments picker should be shown."""
+    return departments_count > 0
+
+
+def compute_show_fields(fields_count: int) -> bool:
+    """Determine if fields picker should be shown."""
+    return fields_count > 0
+
+
+def compute_show_examples(examples_count: int) -> bool:
+    """Determine if examples editor should be shown."""
+    # Show examples if there are any existing examples or suggestions
+    return examples_count > 0
+
+
+def compute_name_required() -> bool:
+    """Determine if name is required."""
+    return True
+
+
+def compute_description_required() -> bool:
+    """Determine if description is required."""
+    return False
+
+
+def compute_color_required() -> bool:
+    """Determine if color is required."""
+    return True
+
+
+def compute_icon_required() -> bool:
+    """Determine if icon is required."""
+    return True
+
+
+def compute_instructions_required() -> bool:
+    """Determine if instructions is required."""
+    return True
+
+
+def compute_flag_required() -> bool:
+    """Determine if flag is required."""
+    return False
+
+
+def compute_departments_required() -> bool:
+    """Determine if departments is required."""
+    return False
+
+
+def compute_fields_required() -> bool:
+    """Determine if fields is required."""
+    return False
+
+
+def compute_examples_required() -> bool:
+    """Determine if examples is required."""
+    return False
