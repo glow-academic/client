@@ -479,7 +479,7 @@ BEGIN
             active,
             created_at
         )
-        SELECT 
+        SELECT
             x.target_profile_id,
             rlr.request_limit_id,
             rlr.requests_per_day,
@@ -488,8 +488,19 @@ BEGIN
         FROM params x
         CROSS JOIN request_limit_resource rlr
         WHERE x.requests_per_day IS NOT NULL
+    ),
+    -- Sync linked resources with name (profiles don't have description)
+    sync_artifact_resources AS (
+        UPDATE profiles_resource r
+        SET name = nr.name
+        FROM profile_profiles_junction j
+        CROSS JOIN params p
+        LEFT JOIN name_resource nr ON true
+        WHERE j.profiles_id = r.id
+          AND j.profile_id = p.target_profile_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.target_profile_id AS profile_id,
         v_actor_name
     FROM params x

@@ -303,7 +303,7 @@ BEGIN
     -- Link auth to items via junction table
     link_auth_items AS (
         INSERT INTO auth_items_junction (auth_id, item_id, created_at)
-        SELECT 
+        SELECT
             x.auth_id,
             iwi.item_id,
             NOW()
@@ -312,8 +312,21 @@ BEGIN
         JOIN items_with_idx iwi ON iwi.item_idx = ie.item_idx
         WHERE COALESCE(array_length(x.auth_items_junction, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT auth_items_pkey DO NOTHING
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE auths_resource r
+        SET name = n.name,
+            description = d.description
+        FROM auth_auths_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.auths_id = r.id
+          AND j.auth_id = p.auth_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.auth_id AS auth_id,
         ap.actor_name AS actor_name
     FROM params x

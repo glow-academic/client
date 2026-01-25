@@ -284,10 +284,23 @@ BEGIN
         WHERE COALESCE(array_length(x.route_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_routes_junction_pkey DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE settings_resource r
+        SET name = n.name,
+            description = d.description
+        FROM setting_settings_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.settings_id = r.id
+          AND j.setting_id = p.setting_id
+        RETURNING r.id
     )
     -- Note: Keys are handled separately via setting_provider_keys_junction (ternary relationship with providers)
     -- Keys require both setting_id and providers_id, so they're managed in a separate endpoint
-    SELECT 
+    SELECT
         x.setting_id AS setting_id,
         ap.actor_name AS actor_name
     FROM params x

@@ -356,8 +356,19 @@ BEGIN
         WHERE x.use_groups = true
         ON CONFLICT (eval_id, group_rubric_id) DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE evals_resource r
+        SET name = p.name,
+            description = p.description
+        FROM eval_evals_junction j
+        CROSS JOIN params p
+        WHERE j.evals_id = r.id
+          AND j.eval_id = p.eval_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.eval_id AS eval_id,
         ap.actor_name AS actor_name
     FROM params x

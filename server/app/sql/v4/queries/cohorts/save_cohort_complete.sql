@@ -377,8 +377,21 @@ BEGIN
         CROSS JOIN upsert_simulation_positions usp
         ON CONFLICT ON CONSTRAINT cohort_simulation_positions_pkey DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE cohorts_resource r
+        SET name = n.name,
+            description = d.description
+        FROM cohort_cohorts_junction j
+        CROSS JOIN params_with_departments p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.cohorts_id = r.id
+          AND j.cohort_id = p.cohort_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.cohort_id AS cohort_id,
         ap.actor_name AS actor_name
     FROM params_with_departments x

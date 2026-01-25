@@ -177,11 +177,24 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'provider_active'
-        ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET 
+        ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET
             flag_id = COALESCE(EXCLUDED.flag_id, provider_flags_junction.flag_id),
             value = EXCLUDED.value
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE providers_resource r
+        SET name = n.name,
+            description = d.description
+        FROM provider_providers_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.providers_id = r.id
+          AND j.provider_id = p.p_provider_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.p_provider_id AS provider_id,
         ap.actor_name AS actor_name
     FROM params x

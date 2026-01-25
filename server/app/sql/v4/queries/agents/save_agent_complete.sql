@@ -370,8 +370,19 @@ BEGIN
         WHERE COALESCE(array_length(x.tool_ids, 1), 0) > 0
         ON CONFLICT (agent_id, tool_id) DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE agents_resource r
+        SET name = p.name,
+            description = p.description
+        FROM agent_agents_junction j
+        CROSS JOIN params p
+        WHERE j.agents_id = r.id
+          AND j.agent_id = p.agent_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.agent_id AS agent_id,
         ap.actor_name AS actor_name
     FROM params x

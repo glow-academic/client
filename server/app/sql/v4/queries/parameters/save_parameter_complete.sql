@@ -444,7 +444,7 @@ BEGIN
     -- Note: Only insert if parameter_documents table exists (may not exist yet)
     link_documents AS (
         INSERT INTO parameter_documents (parameter_id, document_id, active, created_at, updated_at)
-        SELECT 
+        SELECT
             x.parameter_id,
             document_id,
             true,
@@ -457,8 +457,19 @@ BEGIN
         ON CONFLICT (parameter_id, document_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE parameters_resource r
+        SET name = p.name,
+            description = p.description
+        FROM parameter_parameters_junction j
+        CROSS JOIN params p
+        WHERE j.parameters_id = r.id
+          AND j.parameter_id = p.parameter_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.parameter_id AS parameter_id,
         CASE WHEN x.is_create THEN false ELSE true END as parameter_exists,
         ap.actor_name AS actor_name

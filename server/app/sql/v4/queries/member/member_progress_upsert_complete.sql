@@ -241,14 +241,14 @@ link_message_to_run AS (
 ),
 -- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
-    INSERT INTO audios_resource (created_at, active, generated, call_id, upload_id)
+    INSERT INTO audios_entry (created_at, active, generated, call_id, upload_id)
     SELECT NOW(), true, false, utc.tool_call_id, p.upload_id
     FROM params p
     CROSS JOIN user_tool_call_id utc
     WHERE p.upload_id IS NOT NULL
     RETURNING id as audio_id
 ),
--- Audio is now linked via audios_resource.call_id -> calls_entry.run_id (no junction table needed)
+-- Audio is now linked via audios_entry.call_id -> calls_entry.run_id (no junction table needed)
 link_audio_placeholder AS (
     SELECT 1 WHERE false  -- Placeholder CTE to maintain structure
 ),

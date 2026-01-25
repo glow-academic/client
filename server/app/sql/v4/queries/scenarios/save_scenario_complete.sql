@@ -426,6 +426,16 @@ BEGIN
         ON CONFLICT (scenario_id, question_id) DO UPDATE SET active = true;
     END IF;
 
+    -- Sync linked resources with name/description
+    UPDATE scenarios_resource r
+    SET name = n.name,
+        description = d.description
+    FROM scenario_scenarios_junction j
+    LEFT JOIN names_resource n ON n.id = v_name_id
+    LEFT JOIN descriptions_resource d ON d.id = v_description_id
+    WHERE j.scenarios_id = r.id
+      AND j.scenario_id = v_scenario_id;
+
     -- Return saved scenario
     RETURN QUERY
     SELECT 

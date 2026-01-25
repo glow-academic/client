@@ -198,7 +198,7 @@ BEGIN
     -- Link settings if provided
     link_settings AS (
         INSERT INTO department_settings_junction (settings_id, department_id, active, created_at)
-        SELECT 
+        SELECT
             x.settings_id,
             x.department_id,
             true,
@@ -207,8 +207,21 @@ BEGIN
         WHERE x.settings_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT department_settings_pkey DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE departments_resource r
+        SET name = n.name,
+            description = d.description
+        FROM department_departments_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.departments_id = r.id
+          AND j.department_id = p.department_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.department_id,
         ap.actor_name
     FROM params x

@@ -416,6 +416,16 @@ BEGIN
         ON CONFLICT (model_id, quality_id) DO UPDATE SET active = true;
     END IF;
 
+    -- Sync linked resources with name/description
+    UPDATE models_resource r
+    SET name = n.name,
+        description = d.description
+    FROM model_models_junction j
+    LEFT JOIN names_resource n ON n.id = name_id
+    LEFT JOIN descriptions_resource d ON d.id = description_id
+    WHERE j.models_id = r.id
+      AND j.model_id = v_model_id;
+
     -- Return result
     RETURN QUERY
     SELECT 

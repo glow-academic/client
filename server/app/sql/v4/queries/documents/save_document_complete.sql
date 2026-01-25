@@ -328,11 +328,24 @@ BEGIN
     ),
     delete_template_link AS (
         -- Delete template link if html_id is NULL (removing template)
-        DELETE FROM document_templates 
+        DELETE FROM document_templates
         WHERE document_id = (SELECT document_id FROM params)
         AND (SELECT html_id FROM params) IS NULL
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE documents_resource r
+        SET name = n.name,
+            description = d.description
+        FROM document_documents_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.documents_id = r.id
+          AND j.document_id = p.document_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.document_id AS document_id,
         ap.actor_name AS actor_name
     FROM params x

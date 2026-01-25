@@ -221,7 +221,7 @@ BEGIN
     -- Link departments
     link_departments AS (
         INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
-        SELECT 
+        SELECT
             x.field_id,
             dept_id::uuid,
             true,
@@ -231,8 +231,19 @@ BEGIN
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT (field_id, department_id) DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE fields_resource r
+        SET name = p.name,
+            description = p.description
+        FROM field_fields_junction j
+        CROSS JOIN params p
+        WHERE j.fields_id = r.id
+          AND j.field_id = p.field_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.field_id AS field_id,
         ap.actor_name AS actor_name
     FROM params x

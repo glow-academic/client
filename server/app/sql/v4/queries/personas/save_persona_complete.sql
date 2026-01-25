@@ -370,7 +370,7 @@ BEGIN
     ),
     link_examples AS (
         INSERT INTO persona_examples_junction (persona_id, example_id, idx, active, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             ewi.ex_id,
             ewi.idx,
@@ -382,8 +382,21 @@ BEGIN
             idx = EXCLUDED.idx,
             active = true,
             created_at = EXCLUDED.created_at
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE personas_resource r
+        SET name = n.name,
+            description = d.description
+        FROM persona_personas_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.personas_id = r.id
+          AND j.persona_id = p.persona_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.persona_id AS persona_id,
         ap.actor_name AS actor_name
     FROM params x

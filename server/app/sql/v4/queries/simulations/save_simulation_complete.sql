@@ -461,8 +461,21 @@ BEGIN
         WHERE COALESCE(array_length(x.scenario_time_limit_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenario_time_limits_pkey DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE simulations_resource r
+        SET name = n.name,
+            description = d.description
+        FROM simulation_simulations_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.simulations_id = r.id
+          AND j.simulation_id = p.simulation_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.simulation_id AS simulation_id,
         ap.actor_name AS actor_name
     FROM params x

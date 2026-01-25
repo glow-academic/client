@@ -163,7 +163,7 @@ BEGIN
     -- Link tool to args_outputs (old ones already deleted above if update)
     link_args_outputs AS (
         INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp)
-        SELECT 
+        SELECT
             x.tool_id,
             args_outputs_id,
             NOW(),
@@ -173,8 +173,20 @@ BEGIN
         CROSS JOIN UNNEST(x.args_outputs_ids) as args_outputs_id
         WHERE COALESCE(array_length(x.args_outputs_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO NOTHING
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE tools_resource r
+        SET name = n.name,
+            description = d.description
+        FROM tool_tools_junction j
+        LEFT JOIN names_resource n ON n.id = v_name_id
+        LEFT JOIN descriptions_resource d ON d.id = v_description_id
+        WHERE j.tools_id = r.id
+          AND j.tool_id = (SELECT tool_id FROM params)
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.tool_id AS tool_id,
         ap.actor_name AS actor_name
     FROM params x

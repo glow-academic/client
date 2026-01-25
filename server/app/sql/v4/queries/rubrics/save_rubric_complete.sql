@@ -342,7 +342,7 @@ BEGIN
     -- Link standards (old ones already deactivated above if update)
     link_standards AS (
         INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at)
-        SELECT 
+        SELECT
             x.rubric_id,
             std_id,
             true,
@@ -352,8 +352,21 @@ BEGIN
         WHERE COALESCE(array_length(x.standard_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT rubric_standards_pkey DO UPDATE SET
             active = true
+    ),
+    -- Sync linked resources with name/description
+    sync_artifact_resources AS (
+        UPDATE rubrics_resource r
+        SET name = n.name,
+            description = d.description
+        FROM rubric_rubrics_junction j
+        CROSS JOIN params p
+        LEFT JOIN names_resource n ON n.id = p.name_id
+        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        WHERE j.rubrics_id = r.id
+          AND j.rubric_id = p.rubric_id
+        RETURNING r.id
     )
-    SELECT 
+    SELECT
         x.rubric_id AS rubric_id,
         ap.actor_name AS actor_name
     FROM params x
