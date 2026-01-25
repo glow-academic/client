@@ -1,13 +1,13 @@
 /**
  * Departments.tsx
  * Resource component for department selection
- * Uses GenericPicker to select existing department resources
+ * Uses SelectableGrid to display departments as horizontal scrollable cards
  * Manages department_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -111,7 +111,7 @@ export function Departments({
     ids.forEach((id) => createdDepartmentIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert departments array to DepartmentItem format for GenericPicker
+  // Convert departments array to DepartmentItem format for SelectableGrid
   const departmentItems = useMemo(() => {
     return allDepartments
       .filter((d) => d.department_id && d.name) // Filter out nulls
@@ -181,7 +181,7 @@ export function Departments({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 min-w-0 w-full">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">
@@ -220,46 +220,55 @@ export function Departments({
           )}
         </div>
       )}
-      <GenericPicker<DepartmentItem>
+
+      <SelectableGrid<DepartmentItem>
         items={departmentItems}
-        itemIds={allDepartments
-          .map((d) => d.department_id)
-          .filter((id): id is string => id !== null)} // All department IDs from array, filter nulls
+        selectedId={null}
         selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
+        onSelect={(departmentId) => {
+          // Toggle selection for multi-select
+          const newIds = ids.includes(departmentId)
+            ? ids.filter((id) => id !== departmentId)
+            : [...ids, departmentId];
+          handleSelect(newIds);
+        }}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary group-data-[selected=true]:bg-primary-foreground/20 group-data-[selected=true]:text-primary-foreground text-xs rounded shrink-0">
-                  Suggested
+          <div
+            className={cn(
+              "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3 w-3 text-primary-foreground" />
+              </div>
+            )}
+
+            {/* Suggested badge - top right */}
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
+                Suggested
+              </div>
+            )}
+
+            <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
+              <span className="text-sm font-medium truncate">{item.name}</span>
+              {item.description && (
+                <span className="text-xs text-muted-foreground line-clamp-2">
+                  {item.description}
                 </span>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground">
-                    {item.description}
-                  </div>
-                )}
-              </div>
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No departments available."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
+        horizontal
       />
     </div>
   );
