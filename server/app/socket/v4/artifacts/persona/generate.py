@@ -10,8 +10,14 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (GetPersonaApiRequest, GetPersonaSqlParams,
-                           GetPersonaSqlRow)
+from app.sql.types import (
+    GetPersonaApiRequest,
+    GetPersonaResourceTreeSqlParams,
+    GetPersonaResourceTreeSqlRow,
+    GetPersonaSqlParams,
+    GetPersonaSqlRow,
+    QGetPersonaResourceTreeV4Node,
+)
 from fastapi import APIRouter
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -24,6 +30,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/queries/personas/get_persona_complete.sql"
+RESOURCE_TREE_SQL_PATH = (
+    "app/sql/v4/queries/personas/get_persona_resource_tree_complete.sql"
+)
 GET_GROUP_IDS_BY_RESOURCE_IDS_SQL_PATH = (
     "app/sql/v4/queries/personas/get_group_ids_by_resource_ids_complete.sql"
 )
@@ -147,55 +156,77 @@ async def _persona_generate_impl(
                 )
                 return
 
-            # Extract resource IDs from arrays and build resources array (composite type format)
-            resources: list[dict[str, Any]] = []
+            # Seed resource nodes from the persona GET result
+            seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
 
-            # Extract IDs from each resource array
+            def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
+                if resource_id:
+                    seed_nodes.append(
+                        QGetPersonaResourceTreeV4Node(
+                            resource_type=resource_type,
+                            resource_id=resource_id,
+                        )
+                    )
+
             if result.names:
-                resources.append({
-                    "resource_type": "names",
-                    "resource_ids": [str(n.id) for n in result.names if n.id]
-                })
+                for name in result.names:
+                    add_seed("names", name.id)
             if result.descriptions:
-                resources.append({
-                    "resource_type": "descriptions",
-                    "resource_ids": [str(d.id) for d in result.descriptions if d.id]
-                })
+                for desc in result.descriptions:
+                    add_seed("descriptions", desc.id)
             if result.colors:
-                resources.append({
-                    "resource_type": "colors",
-                    "resource_ids": [str(c.id) for c in result.colors if c.id]
-                })
+                for color in result.colors:
+                    add_seed("colors", color.id)
             if result.icons:
-                resources.append({
-                    "resource_type": "icons",
-                    "resource_ids": [str(i.id) for i in result.icons if i.id]
-                })
+                for icon in result.icons:
+                    add_seed("icons", icon.id)
             if result.instructions:
-                resources.append({
-                    "resource_type": "instructions",
-                    "resource_ids": [str(inst.id) for inst in result.instructions if inst.id]
-                })
+                for instruction in result.instructions:
+                    add_seed("instructions", instruction.id)
             if result.flags:
-                resources.append({
-                    "resource_type": "flags",
-                    "resource_ids": [str(f.id) for f in result.flags if f.id]
-                })
+                for flag in result.flags:
+                    add_seed("flags", flag.id)
             if result.departments:
-                resources.append({
-                    "resource_type": "departments",
-                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
-                })
+                for dept in result.departments:
+                    add_seed("departments", dept.department_id)
             if result.fields:
-                resources.append({
-                    "resource_type": "fields",
-                    "resource_ids": [str(f.field_id) for f in result.fields if f.field_id]
-                })
+                for field in result.fields:
+                    add_seed("fields", field.field_id)
             if result.examples:
-                resources.append({
-                    "resource_type": "examples",
-                    "resource_ids": [str(e.id) for e in result.examples if e.id]
-                })
+                for example in result.examples:
+                    add_seed("examples", example.id)
+
+            # Expand seed nodes via resource tree traversal
+            resources: list[dict[str, Any]] = []
+            if seed_nodes:
+                resource_tree_params = GetPersonaResourceTreeSqlParams(
+                    profile_id=profile_id,
+                    seed_nodes=seed_nodes,
+                )
+                resource_tree_result = cast(
+                    GetPersonaResourceTreeSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        RESOURCE_TREE_SQL_PATH,
+                        params=resource_tree_params,
+                    ),
+                )
+
+                resources_by_type: dict[str, set[str]] = {}
+                for node in resource_tree_result.resources or []:
+                    if not node.resource_type or not node.resource_id:
+                        continue
+                    resources_by_type.setdefault(node.resource_type, set()).add(
+                        str(node.resource_id)
+                    )
+
+                resources = [
+                    {
+                        "resource_type": resource_type,
+                        "resource_ids": sorted(resource_ids),
+                    }
+                    for resource_type, resource_ids in resources_by_type.items()
+                ]
 
             # Get group_id from response if available
             group_id: uuid.UUID | None = result.group_id

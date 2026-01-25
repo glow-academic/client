@@ -29,7 +29,7 @@ AS $$
     ),
     inserted_flag_resource AS (
         -- First ensure scenario_flags_resource exists for this scenario
-        INSERT INTO scenario_flags_resource (scenario_id, flag_id, created_at, generated, mcp, active, call_id)
+        INSERT INTO scenario_flags_resource (scenario_id, flag_id, created_at, generated, mcp, active)
         SELECT DISTINCT
             il.scenario_id,
             sf.id,
@@ -60,7 +60,7 @@ AS $$
     ),
     inserted_position_resource AS (
         -- First ensure scenario_positions_resource exists for this scenario+position
-        INSERT INTO scenario_positions_resource(scenario_id, value, created_at, generated, mcp, call_id)
+        INSERT INTO scenario_positions_resource(scenario_id, value, created_at, generated, mcp)
         SELECT 
             il.scenario_id,
             COALESCE(test_create_simulation_scenario_link_v4.input_position, 1),

@@ -6257,6 +6257,43 @@ class GetPersonaResourceIdsByGroupIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_persona_resource_tree
+
+class QGetPersonaResourceTreeV4Node(BaseModel):
+
+    resource_type: Any | None
+    resource_id: UUID | None
+
+class GetPersonaResourceTreeSqlParams(BaseModel):
+
+    profile_id: UUID
+    seed_nodes: list[QGetPersonaResourceTreeV4Node]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert seed_nodes composite array to tuples for asyncpg
+        seed_nodes_tuples = [
+            (conn.resource_type, conn.resource_id)
+            for conn in (self.seed_nodes or [])
+        ]
+        return (
+            self.profile_id,
+            seed_nodes_tuples,
+        )
+
+class GetPersonaResourceTreeSqlRow(BaseModel):
+
+    resources: list[QGetPersonaResourceTreeV4Node] | None = None
+
+class GetPersonaResourceTreeApiRequest(BaseModel):
+
+    seed_nodes: list[QGetPersonaResourceTreeV4Node]
+
+class GetPersonaResourceTreeApiResponse(BaseModel):
+
+    resources: list[QGetPersonaResourceTreeV4Node] | None = None
+
+
+
 # Generated from: get_personas_list
 
 class GetPersonasListSqlParams(BaseModel):
@@ -12651,6 +12688,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaResourceIdsByGroupIdApiRequest",
         "GetPersonaResourceIdsByGroupIdApiResponse",
     ),
+    "app/sql/v4/queries/personas/get_persona_resource_tree_complete.sql": (
+        "GetPersonaResourceTreeSqlParams",
+        "GetPersonaResourceTreeSqlRow",
+        "GetPersonaResourceTreeApiRequest",
+        "GetPersonaResourceTreeApiResponse",
+    ),
     "app/sql/v4/queries/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
         "GetPersonasListSqlRow",
@@ -14132,6 +14175,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_tree_complete.sql"]
     ) -> SqlString: ...
 
     @overload

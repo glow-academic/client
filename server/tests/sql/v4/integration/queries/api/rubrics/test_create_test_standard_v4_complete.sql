@@ -39,7 +39,7 @@ AS $$
         )
         RETURNING id as call_id
     )
-    INSERT INTO standards_resource(standard_group_id, name, description, points, call_id, active, generated, mcp)
+    INSERT INTO standards_resource(standard_group_id, name, description, points, active, generated, mcp)
     SELECT
         input_standard_group_id,
         standard_name,

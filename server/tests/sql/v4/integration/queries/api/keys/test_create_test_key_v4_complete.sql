@@ -35,7 +35,7 @@ AS $$
         RETURNING id as call_id
     ),
     new_key AS (
-        INSERT INTO keys_resource(key_id, key, name, description, active, created_at, call_id, generated, mcp)
+        INSERT INTO keys_resource(key_id, key, name, description, active, created_at, generated, mcp)
         SELECT
             uuidv7(),
             key_value,
