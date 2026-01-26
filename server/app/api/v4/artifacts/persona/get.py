@@ -1,8 +1,9 @@
 """Persona get endpoint - Two-pass architecture.
 
 This implements the refactored two-pass approach:
-1. Pass 1: Access check + resource ID fetching (always fresh, no cache)
-2. Pass 2: Parallel resource fetching (per-resource caching)
+1. Query 1: Access check (user context, persona state)
+2. Query 2: ID fetching (resource IDs, suggestions, agents)
+3. Pass 2: Parallel resource fetching (per-resource caching)
 
 Business logic (permissions, UI flags) is computed in Python.
 """
@@ -54,13 +55,16 @@ from app.main import get_db
 from app.sql.types import (
     GetPersonaAccessSqlParams,
     GetPersonaAccessSqlRow,
+    GetPersonaIdsSqlParams,
+    GetPersonaIdsSqlRow,
     load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-# SQL path for Pass 1
-PASS1_SQL_PATH = "app/sql/v4/queries/personas/get_persona_access_complete.sql"
+# SQL paths
+QUERY1_SQL_PATH = "app/sql/v4/queries/personas/get_persona_access_complete.sql"
+QUERY2_SQL_PATH = "app/sql/v4/queries/personas/get_persona_ids_complete.sql"
 
 
 router = APIRouter()
@@ -112,13 +116,14 @@ async def get_persona(
 ) -> GetPersonaApiResponse:
     """Get persona information using two-pass architecture.
 
-    Pass 1: Fetch IDs + metadata (no cache, always fresh for access/draft state)
+    Query 1: Access check (user role, departments, persona state)
+    Query 2: ID fetching (resource IDs, suggestions, agents)
     Pass 2: Parallel resource fetching (each resource type has own cache)
     """
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    sql_query = load_sql_query(PASS1_SQL_PATH)
+    sql_query = load_sql_query(QUERY1_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -130,47 +135,75 @@ async def get_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # === PASS 1: Fetch IDs + Metadata (always fresh, no cache) ===
-        pass1_params = GetPersonaAccessSqlParams(
+        # === QUERY 1: Access Check (always fresh, no cache) ===
+        query1_params = GetPersonaAccessSqlParams(
             profile_id=profile_id,
             persona_id=request.persona_id,
             draft_id=request.draft_id,
         )
-        sql_params = pass1_params.to_tuple()
+        sql_params = query1_params.to_tuple()
 
         access_result = cast(
             GetPersonaAccessSqlRow,
-            await execute_sql_typed(conn, PASS1_SQL_PATH, params=pass1_params),
+            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
-        # === PYTHON BUSINESS LOGIC ===
-
-        # Extract data from Pass 1 result
+        # Extract user context from Query 1
         user_role = access_result.user_role
         user_department_ids = access_result.user_department_ids or []
         persona_department_ids = access_result.persona_department_ids or []
         active_scenario_count = access_result.active_scenario_count or 0
 
-        # Get tools existence flags
-        names_has_tools = access_result.names_has_tools or False
-        colors_has_tools = access_result.colors_has_tools or False
-        icons_has_tools = access_result.icons_has_tools or False
-        instructions_has_tools = access_result.instructions_has_tools or False
-        departments_has_tools = access_result.departments_has_tools or False
-        fields_has_tools = access_result.fields_has_tools or False
-        examples_has_tools = access_result.examples_has_tools or False
+        # Early validation: check persona exists
+        if request.persona_id is not None:
+            if access_result.persona_exists is False:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Persona {request.persona_id} not found",
+                )
+
+            # Check access
+            if not has_access(user_role, user_department_ids, persona_department_ids):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this persona. It may be restricted to other departments.",
+                )
+
+        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
+        query2_params = GetPersonaIdsSqlParams(
+            profile_id=profile_id,
+            persona_id=request.persona_id,
+            draft_id=request.draft_id,
+            group_id=access_result.group_id,
+            user_department_ids=user_department_ids,
+        )
+
+        ids_result = cast(
+            GetPersonaIdsSqlRow,
+            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
+        )
+
+        # Get tools existence flags from Query 2
+        names_has_tools = ids_result.names_has_tools or False
+        colors_has_tools = ids_result.colors_has_tools or False
+        icons_has_tools = ids_result.icons_has_tools or False
+        instructions_has_tools = ids_result.instructions_has_tools or False
+        departments_has_tools = ids_result.departments_has_tools or False
+        fields_has_tools = ids_result.fields_has_tools or False
+        examples_has_tools = ids_result.examples_has_tools or False
 
         # Compute show flags for departments, fields, examples (needed for can_edit)
-        # These depend on data we'll fetch in Pass 2, so use suggestions count as proxy
-        show_departments = len(access_result.department_suggestions or []) > 0 or len(
-            access_result.department_ids or []
+        show_departments = len(ids_result.department_suggestions or []) > 0 or len(
+            ids_result.department_ids or []
         ) > 0
-        show_fields = len(access_result.field_suggestions or []) > 0 or len(
-            access_result.field_ids or []
+        show_fields = len(ids_result.field_suggestions or []) > 0 or len(
+            ids_result.field_ids or []
         ) > 0
-        show_examples = len(access_result.example_suggestions or []) > 0 or len(
-            access_result.example_ids or []
+        show_examples = len(ids_result.example_suggestions or []) > 0 or len(
+            ids_result.example_ids or []
         ) > 0
+
+        # === PYTHON BUSINESS LOGIC ===
 
         # Compute permissions
         can_edit = compute_can_edit(
@@ -208,49 +241,33 @@ async def get_persona(
             examples_has_tools=examples_has_tools,
         )
 
-        # Validation
-        if request.persona_id is not None:
-            # Detail mode: check if persona exists and has access
-            if access_result.persona_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Persona {request.persona_id} not found",
-                )
-
-            # Check access
-            if not has_access(user_role, user_department_ids, persona_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this persona. It may be restricted to other departments.",
-                )
-
         # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 
         # Combine selected IDs with suggestions for fetching
         name_ids = _combine_ids(
-            access_result.name_id, access_result.name_suggestions
+            ids_result.name_id, ids_result.name_suggestions
         )
         description_ids = _combine_ids(
-            access_result.description_id, access_result.description_suggestions
+            ids_result.description_id, ids_result.description_suggestions
         )
         color_ids = _combine_ids(
-            access_result.color_id, access_result.color_suggestions
+            ids_result.color_id, ids_result.color_suggestions
         )
         icon_ids = _combine_ids(
-            access_result.icon_id, access_result.icon_suggestions
+            ids_result.icon_id, ids_result.icon_suggestions
         )
         instructions_ids = _combine_ids(
-            access_result.instructions_id, access_result.instructions_suggestions
+            ids_result.instructions_id, ids_result.instructions_suggestions
         )
-        flag_ids = [access_result.active_flag_id] if access_result.active_flag_id else []
+        flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
         department_ids = _combine_multi_ids(
-            access_result.department_ids, access_result.department_suggestions
+            ids_result.department_ids, ids_result.department_suggestions
         )
         field_ids = _combine_multi_ids(
-            access_result.field_ids, access_result.field_suggestions
+            ids_result.field_ids, ids_result.field_suggestions
         )
         example_ids = _combine_multi_ids(
-            access_result.example_ids, access_result.example_suggestions
+            ids_result.example_ids, ids_result.example_suggestions
         )
 
         # Parallel fetch all resources
@@ -280,33 +297,32 @@ async def get_persona(
             get_examples_internal(conn, example_ids, None, bypass_cache),
         )
 
-        # Resources are already in correct auto-generated types
         # Find selected resources
         name_resource = next(
-            (n for n in names if n.id == access_result.name_id), None
+            (n for n in names if n.id == ids_result.name_id), None
         )
         description_resource = next(
-            (d for d in descriptions if d.id == access_result.description_id),
+            (d for d in descriptions if d.id == ids_result.description_id),
             None,
         )
         color_resource = next(
-            (c for c in colors if c.id == access_result.color_id), None
+            (c for c in colors if c.id == ids_result.color_id), None
         )
         icon_resource = next(
-            (i for i in icons if i.id == access_result.icon_id), None
+            (i for i in icons if i.id == ids_result.icon_id), None
         )
         instructions_resource = next(
-            (i for i in instructions_list if i.id == access_result.instructions_id),
+            (i for i in instructions_list if i.id == ids_result.instructions_id),
             None,
         )
         flag_resource = next(
-            (f for f in flags if f.id == access_result.active_flag_id), None
+            (f for f in flags if f.id == ids_result.active_flag_id), None
         )
 
         # Selected department/field/example resources
-        selected_department_ids = access_result.department_ids or []
-        selected_field_ids = access_result.field_ids or []
-        selected_example_ids = access_result.example_ids or []
+        selected_department_ids = ids_result.department_ids or []
+        selected_field_ids = ids_result.field_ids or []
+        selected_example_ids = ids_result.example_ids or []
 
         department_resources = [
             d for d in departments if d.department_id in selected_department_ids
@@ -366,84 +382,83 @@ async def get_persona(
             draft_version=access_result.draft_version,
             group_id=access_result.group_id,
             # Name
-            name_id=access_result.name_id,
+            name_id=ids_result.name_id,
             name_resource=name_resource,
             show_name=show_name,
-            name_agent_id=access_result.name_agent_id,
+            name_agent_id=ids_result.name_agent_id,
             name_required=compute_name_required(),
-            name_suggestions=access_result.name_suggestions,
+            name_suggestions=ids_result.name_suggestions,
             names=names,
             # Description
-            description_id=access_result.description_id,
+            description_id=ids_result.description_id,
             description_resource=description_resource,
             show_description=show_description_flag,
-            description_agent_id=access_result.description_agent_id,
+            description_agent_id=ids_result.description_agent_id,
             description_required=compute_description_required(),
-            description_suggestions=access_result.description_suggestions,
+            description_suggestions=ids_result.description_suggestions,
             descriptions=descriptions,
             # Color
-            color_id=access_result.color_id,
+            color_id=ids_result.color_id,
             color_resource=color_resource,
             show_color=show_color,
-            color_agent_id=access_result.color_agent_id,
+            color_agent_id=ids_result.color_agent_id,
             color_required=compute_color_required(),
-            color_suggestions=access_result.color_suggestions,
+            color_suggestions=ids_result.color_suggestions,
             colors=colors,
             # Icon
-            icon_id=access_result.icon_id,
+            icon_id=ids_result.icon_id,
             icon_resource=icon_resource,
             show_icon=show_icon,
-            icon_agent_id=access_result.icon_agent_id,
+            icon_agent_id=ids_result.icon_agent_id,
             icon_required=compute_icon_required(),
-            icon_suggestions=access_result.icon_suggestions,
+            icon_suggestions=ids_result.icon_suggestions,
             icons=icons,
             # Instructions
-            instructions_id=access_result.instructions_id,
+            instructions_id=ids_result.instructions_id,
             instructions_resource=instructions_resource,
             show_instructions=show_instructions_flag,
-            instructions_agent_id=access_result.instructions_agent_id,
+            instructions_agent_id=ids_result.instructions_agent_id,
             instructions_required=compute_instructions_required(),
-            instructions_suggestions=access_result.instructions_suggestions,
+            instructions_suggestions=ids_result.instructions_suggestions,
             instructions=instructions_list,
             # Flag
-            active_flag_id=access_result.active_flag_id,
+            active_flag_id=ids_result.active_flag_id,
             flag_resource=flag_resource,
             show_flag=show_flag,
-            flag_agent_id=access_result.flag_agent_id,
+            flag_agent_id=ids_result.flag_agent_id,
             flag_required=compute_flag_required(),
             flags=flags,
             # Departments
-            department_ids=access_result.department_ids,
+            department_ids=ids_result.department_ids,
             department_resources=department_resources,
             show_departments=show_departments_flag,
-            departments_agent_id=access_result.departments_agent_id,
+            departments_agent_id=ids_result.departments_agent_id,
             departments_required=compute_departments_required(),
-            department_suggestions=access_result.department_suggestions,
+            department_suggestions=ids_result.department_suggestions,
             departments=departments,
             # Fields
-            field_ids=access_result.field_ids,
+            field_ids=ids_result.field_ids,
             field_resources=field_resources,
             show_fields=show_fields_flag,
-            fields_agent_id=access_result.fields_agent_id,
+            fields_agent_id=ids_result.fields_agent_id,
             fields_required=compute_fields_required(),
-            field_suggestions=access_result.field_suggestions,
+            field_suggestions=ids_result.field_suggestions,
             fields=fields,
             # Examples
-            example_ids=access_result.example_ids,
+            example_ids=ids_result.example_ids,
             example_resources=example_resources,
             show_examples=show_examples_flag,
-            examples_agent_id=access_result.examples_agent_id,
+            examples_agent_id=ids_result.examples_agent_id,
             examples_required=compute_examples_required(),
-            example_suggestions=access_result.example_suggestions,
+            example_suggestions=ids_result.example_suggestions,
             examples=examples,
             # Multi-resource agent IDs
-            basic_agent_id=access_result.basic_agent_id,
-            content_agent_id=access_result.content_agent_id,
-            general_agent_id=access_result.general_agent_id,
+            basic_agent_id=ids_result.basic_agent_id,
+            content_agent_id=ids_result.content_agent_id,
+            general_agent_id=ids_result.general_agent_id,
         )
 
-        # No global cache for Pass 2 response - individual resources are cached
-        # Set headers to indicate no global cache
+        # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "personas"
         response.headers["X-Cache-Hit"] = "0"
         response.headers["X-Two-Pass"] = "1"

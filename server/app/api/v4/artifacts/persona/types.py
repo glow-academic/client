@@ -130,3 +130,77 @@ class GetPersonaApiResponse(BaseModel):
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
+
+
+# ========== List Endpoint Types ==========
+
+
+class ListPersonaApiPersona(BaseModel):
+    """Persona type for list endpoint with computed permissions."""
+
+    persona_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    color: str | None = None
+    icon: str | None = None
+    department_ids: list[str] | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    agent_id: UUID | None = None
+    agent_name: str | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    reasoning: str | None = None
+    temperature: float | None = None
+    temperature_display: str | None = None
+    active: bool | None = None
+    is_inactive: bool | None = None
+    num_scenarios: int | None = None
+    # Computed in Python
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    updated_at: str | None = None
+
+
+class ListPersonaApiScenario(BaseModel):
+    """Scenario type for list endpoint."""
+
+    scenario_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_item_ids: list[UUID] | None = None
+    count: int | None = None
+
+
+class ListPersonaApiField(BaseModel):
+    """Field type for list endpoint."""
+
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListPersonaApiDepartment(BaseModel):
+    """Department type for list endpoint."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    count: int | None = None
+
+
+class ListPersonaApiResponse(BaseModel):
+    """Response model for list persona endpoint with computed permissions."""
+
+    actor_name: str | None = None
+    personas: list[ListPersonaApiPersona] | None = None
+    scenarios: list[ListPersonaApiScenario] | None = None
+    fields: list[ListPersonaApiField] | None = None
+    departments: list[ListPersonaApiDepartment] | None = None
+    total_count: int | None = None
+    general_agent_id: UUID | None = None

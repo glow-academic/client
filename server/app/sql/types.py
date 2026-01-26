@@ -11273,9 +11273,8 @@ class QListPersonasV4Persona(BaseModel):
     active: bool | None
     is_inactive: bool | None
     num_scenarios: int | None
-    can_edit: bool | None
-    can_duplicate: bool | None
-    can_delete: bool | None
+    active_scenario_count: int | None
+    total_scenario_links: int | None
     updated_at: str | None
 
 
@@ -11295,6 +11294,7 @@ class QListPersonasV4Scenario(BaseModel):
 class GetPersonasListSqlRow(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     personas: list[QListPersonasV4Persona] | None = None
     scenarios: list[QListPersonasV4Scenario] | None = None
     fields: list[QListPersonasV4Field] | None = None
@@ -11317,6 +11317,7 @@ class GetPersonasListApiRequest(BaseModel):
 class GetPersonasListApiResponse(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     personas: list[QListPersonasV4Persona] | None = None
     scenarios: list[QListPersonasV4Scenario] | None = None
     fields: list[QListPersonasV4Field] | None = None

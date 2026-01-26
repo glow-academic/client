@@ -53,9 +53,8 @@ CREATE TYPE types.q_list_personas_v4_persona AS (
     active boolean,
     is_inactive boolean,
     num_scenarios int,
-    can_edit boolean,
-    can_duplicate boolean,
-    can_delete boolean,
+    active_scenario_count int,
+    total_scenario_links int,
     updated_at timestamptz
 );
 
@@ -99,6 +98,7 @@ CREATE OR REPLACE FUNCTION api_list_personas_v4(
 )
 RETURNS TABLE (
     actor_name text,
+    user_role text,
     personas types.q_list_personas_v4_persona[],
     scenarios types.q_list_personas_v4_scenario[],
     fields types.q_list_personas_v4_field[],
@@ -184,22 +184,8 @@ persona_data_base AS (
     )
 ),
 persona_data AS (
-    SELECT
-        pdb.*,
-        CASE
-            WHEN pdb.active_scenario_count > 0 THEN false
-            WHEN pdb.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_edit,
-        CASE
-            WHEN pdb.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN pdb.total_scenario_links > 0 THEN false
-            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_delete
+    SELECT pdb.*
     FROM persona_data_base pdb
-    CROSS JOIN user_profile up
 ),
 -- Apply server-side filters
 filtered_personas AS (
@@ -329,6 +315,7 @@ general_agent_for_user AS (
 )
 SELECT
     up.actor_name::text as actor_name,
+    up.role::text as user_role,
     -- Aggregate paginated personas
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -338,9 +325,8 @@ SELECT
              COALESCE(pd.temperature, 0.0),
              CASE WHEN pd.temperature IS NOT NULL THEN TO_CHAR(pd.temperature, 'FM0.00') ELSE '0.00' END,
              pd.active, NOT pd.active, pd.num_scenarios,
-             pd.can_edit,
-             true,
-             pd.can_delete,
+             pd.active_scenario_count,
+             pd.total_scenario_links,
              pd.updated_at
             )::types.q_list_personas_v4_persona
             ORDER BY pd.updated_at DESC NULLS LAST

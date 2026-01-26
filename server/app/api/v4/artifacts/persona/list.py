@@ -1,15 +1,34 @@
-"""Personas list endpoint - v4 API following DHH principles."""
+"""Personas list endpoint - v4 API following DHH principles.
+
+Two-pass architecture:
+1. SQL returns raw data with active_scenario_count and total_scenario_links
+2. Python computes permissions (can_edit, can_delete, can_duplicate)
+"""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from app.api.v4.artifacts.persona.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit_for_list,
+)
+from app.api.v4.artifacts.persona.types import (
+    ListPersonaApiDepartment,
+    ListPersonaApiField,
+    ListPersonaApiPersona,
+    ListPersonaApiResponse,
+    ListPersonaApiScenario,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetPersonasListApiRequest,
-                           GetPersonasListApiResponse,
-                           GetPersonasListSqlParams, GetPersonasListSqlRow,
-                           load_sql_query)
+from app.sql.types import (
+    GetPersonasListApiRequest,
+    GetPersonasListSqlParams,
+    GetPersonasListSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -25,7 +44,7 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=GetPersonasListApiResponse,
+    response_model=ListPersonaApiResponse,
     dependencies=[
         audit_activity("personas.list", "{{ actor.name }} visited the Personas page")
     ],
@@ -35,7 +54,7 @@ async def get_persona_list(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetPersonasListApiResponse:
+) -> ListPersonaApiResponse:
     """Get personas list with permissions and scenario details."""
     tags = ["personas"]  # From router tags
 
@@ -52,7 +71,7 @@ async def get_persona_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetPersonasListApiResponse.model_validate(cached["data"])
+            return ListPersonaApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -95,8 +114,98 @@ async def get_persona_list(
         if result.actor_name:
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetPersonasListApiResponse.model_validate(result.model_dump())
+        # Get user_role from SQL result for Python permission computation
+        user_role = result.user_role
+
+        # Compute permissions for each persona in Python
+        personas_with_permissions: list[ListPersonaApiPersona] = []
+        for persona in result.personas or []:
+            # Compute permissions based on user role and persona state
+            can_edit = compute_can_edit_for_list(
+                user_role=user_role,
+                persona_department_ids=persona.department_ids,
+                active_scenario_count=persona.active_scenario_count or 0,
+            )
+            can_delete = compute_can_delete(
+                user_role=user_role,
+                persona_department_ids=persona.department_ids,
+                total_scenario_links=persona.total_scenario_links or 0,
+            )
+            can_duplicate = compute_can_duplicate(user_role)
+
+            # Create persona with computed permissions
+            personas_with_permissions.append(
+                ListPersonaApiPersona(
+                    persona_id=persona.persona_id,
+                    name=persona.name,
+                    description=persona.description,
+                    color=persona.color,
+                    icon=persona.icon,
+                    department_ids=persona.department_ids,
+                    scenario_ids=persona.scenario_ids,
+                    field_ids=persona.field_ids,
+                    agent_id=persona.agent_id,
+                    agent_name=persona.agent_name,
+                    model_id=persona.model_id,
+                    model_name=persona.model_name,
+                    reasoning=persona.reasoning,
+                    temperature=persona.temperature,
+                    temperature_display=persona.temperature_display,
+                    active=persona.active,
+                    is_inactive=persona.is_inactive,
+                    num_scenarios=persona.num_scenarios,
+                    can_edit=can_edit,
+                    can_duplicate=can_duplicate,
+                    can_delete=can_delete,
+                    updated_at=persona.updated_at,
+                )
+            )
+
+        # Transform scenarios, fields, departments to API types
+        scenarios = [
+            ListPersonaApiScenario(
+                scenario_id=s.scenario_id,
+                name=s.name,
+                description=s.description,
+                active=s.active,
+                persona_ids=s.persona_ids,
+                document_ids=s.document_ids,
+                parameter_item_ids=s.parameter_item_ids,
+                count=s.count,
+            )
+            for s in (result.scenarios or [])
+        ]
+
+        fields = [
+            ListPersonaApiField(
+                field_id=f.field_id,
+                name=f.name,
+                description=f.description,
+                count=f.count,
+            )
+            for f in (result.fields or [])
+        ]
+
+        departments = [
+            ListPersonaApiDepartment(
+                department_id=d.department_id,
+                name=d.name,
+                description=d.description,
+                count=d.count,
+            )
+            for d in (result.departments or [])
+        ]
+
+        # Build API response with computed permissions
+        api_response = ListPersonaApiResponse(
+            actor_name=result.actor_name,
+            personas=personas_with_permissions,
+            scenarios=scenarios,
+            fields=fields,
+            departments=departments,
+            total_count=result.total_count,
+            general_agent_id=result.general_agent_id,
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

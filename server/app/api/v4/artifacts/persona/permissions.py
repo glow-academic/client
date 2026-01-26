@@ -286,3 +286,64 @@ def compute_fields_required() -> bool:
 def compute_examples_required() -> bool:
     """Determine if examples is required."""
     return False
+
+
+# ========== List Endpoint Permission Functions ==========
+
+
+def compute_can_edit_for_list(
+    user_role: str | None,
+    persona_department_ids: list[str] | None,
+    active_scenario_count: int,
+) -> bool:
+    """Compute can_edit for list view.
+
+    Business logic:
+    - Default personas (no departments) can only be edited by superadmin
+    - Personas in use by active scenarios cannot be edited
+    - Only admins, instructional, and superadmins can edit
+    """
+    # Default personas can only be edited by superadmin
+    if not persona_department_ids and user_role != "superadmin":
+        return False
+
+    # Personas in use by active scenarios cannot be edited
+    if active_scenario_count > 0:
+        return False
+
+    # Only admins, instructional, and superadmins can edit
+    return user_role in ("admin", "instructional", "superadmin")
+
+
+def compute_can_delete(
+    user_role: str | None,
+    persona_department_ids: list[str] | None,
+    total_scenario_links: int,
+) -> bool:
+    """Compute can_delete permission.
+
+    Business logic:
+    - Default personas (no departments) cannot be deleted except by superadmin
+    - Personas linked to ANY scenario (active or not) cannot be deleted
+    - Only admins, instructional, and superadmins can delete
+    """
+    # Default personas can only be deleted by superadmin
+    if not persona_department_ids and user_role != "superadmin":
+        return False
+
+    # Personas with any scenario links cannot be deleted
+    if total_scenario_links > 0:
+        return False
+
+    # Only admins, instructional, and superadmins can delete
+    return user_role in ("admin", "instructional", "superadmin")
+
+
+def compute_can_duplicate(user_role: str | None) -> bool:
+    """Compute can_duplicate permission.
+
+    Business logic:
+    - Anyone with edit permissions can duplicate
+    - Currently always true for admin/instructional/superadmin
+    """
+    return user_role in ("admin", "instructional", "superadmin")

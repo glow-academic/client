@@ -1,6 +1,6 @@
 """Names GET endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -82,60 +82,17 @@ async def get_names(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetNamesApiResponse:
-    """Get names resources by IDs."""
-    tags = ["resources", "names"]
+    """Get names resources by IDs.
 
-    # Check for cache bypass header
+    HTTP wrapper that delegates to internal function for caching and data fetching.
+    """
+    tags = ["resources", "names"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Generate cache key
-    body_dict = request.model_dump(mode="json")
-    cache_key_val = cache_key(http_request.url.path, body_dict)
-
-    # Try cache (unless bypassed)
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            response.headers["X-Cache-Tags"] = ",".join(tags)
-            response.headers["X-Cache-Hit"] = "1"
-            return GetNamesApiResponse.model_validate(cached)
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        # Get profile_id from header (set by router-level dependency)
-        profile_id = http_request.state.profile_id
-        if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
-
-        # Execute SQL
-        params = GetNamesSqlParams(ids=request.ids, search=request.search)
-        sql_params = params.to_tuple()
-
-        result = cast(
-            GetNamesSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        items = result.items if result and result.items else []
-
-        response_data = GetNamesApiResponse(items=items)
-
-        # Cache response
-        await set_cached(
-            cache_key_val,
-            response_data.model_dump(mode="json"),
-            ttl=60,
-            tags=tags,
-        )
+        items = await get_names_internal(conn, request.ids, request.search, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "0"
-
-        return response_data
+        return GetNamesApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
@@ -145,7 +102,7 @@ async def get_names(
             error=e,
             route_path=http_request.url.path,
             operation="get_names",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=load_sql_query(SQL_PATH),
+            sql_params=None,
             request=http_request,
         )
