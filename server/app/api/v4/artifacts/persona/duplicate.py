@@ -4,22 +4,28 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
+from app.api.v4.artifacts.persona.permissions import compute_can_duplicate
+from app.api.v4.artifacts.persona.types import (
+    DuplicatePersonaApiRequest,
+    DuplicatePersonaApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    DuplicatePersonaApiRequest,
-    DuplicatePersonaApiResponse,
+    CheckPersonaDuplicateAccessSqlParams,
+    CheckPersonaDuplicateAccessSqlRow,
     DuplicatePersonaSqlParams,
     DuplicatePersonaSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/personas/duplicate_persona_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
+DUPLICATE_SQL_PATH = "app/sql/v4/queries/personas/duplicate_persona_complete.sql"
 
 
 router = APIRouter()
@@ -44,7 +50,7 @@ async def duplicate_persona(
     """Duplicate a persona."""
     tags = ["personas"]  # From router tags
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DUPLICATE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -54,6 +60,33 @@ async def duplicate_persona(
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Permission check: get user role using typed SQL
+        access_params = CheckPersonaDuplicateAccessSqlParams(
+            profile_id=profile_id,
+        )
+        access_result = cast(
+            CheckPersonaDuplicateAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_duplicate = compute_can_duplicate(user_role=access_result.user_role)
+
+        if not can_duplicate:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to duplicate this persona.",
             )
 
         async with conn.transaction():
@@ -68,7 +101,7 @@ async def duplicate_persona(
                 DuplicatePersonaSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DUPLICATE_SQL_PATH,
                     params=params,
                 ),
             )
@@ -90,7 +123,7 @@ async def duplicate_persona(
             api_response = DuplicatePersonaApiResponse.model_validate(
                 {
                     "success": True,
-                    "personaId": str(result.new_persona_id),
+                    "persona_id": str(result.new_persona_id),
                     "message": f"Persona '{original_name}' duplicated successfully",
                 }
             )

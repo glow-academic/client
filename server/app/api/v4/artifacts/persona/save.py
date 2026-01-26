@@ -6,21 +6,27 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
+from app.api.v4.artifacts.persona.permissions import compute_can_edit
+from app.api.v4.artifacts.persona.types import (
+    SavePersonaApiRequest,
+    SavePersonaApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    SavePersonaApiRequest,
-    SavePersonaApiResponse,
+    CheckPersonaSaveAccessSqlParams,
+    CheckPersonaSaveAccessSqlRow,
     SavePersonaSqlParams,
     SavePersonaSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/personas/check_persona_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/personas/save_persona_complete.sql"
 
 
@@ -56,6 +62,44 @@ async def save_persona(
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Permission check: get user role and persona info using typed SQL
+        access_params = CheckPersonaSaveAccessSqlParams(
+            profile_id=profile_id,
+            persona_id=request.input_persona_id,
+        )
+        access_result = cast(
+            CheckPersonaSaveAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        # Permission logic: create vs update mode
+        if not request.input_persona_id:
+            # Create mode: just check role
+            can_save = access_result.user_role in ("admin", "instructional", "superadmin")
+        else:
+            # Update mode: use full can_edit logic
+            can_save = compute_can_edit(
+                user_role=access_result.user_role,
+                persona_department_ids=access_result.persona_department_ids,
+                active_scenario_count=access_result.active_scenario_count or 0,
+            )
+
+        if not can_save:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to save this persona.",
             )
 
         async with conn.transaction():
@@ -98,10 +142,12 @@ async def save_persona(
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
+        is_update = request.input_persona_id is not None
         api_response = SavePersonaApiResponse.model_validate(
             {
+                "success": True,
                 "persona_id": str(result.persona_id),
-                "actor_name": result.actor_name,
+                "message": "Persona updated successfully" if is_update else "Persona created successfully",
             }
         )
 

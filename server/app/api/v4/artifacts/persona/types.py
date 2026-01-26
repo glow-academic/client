@@ -199,3 +199,54 @@ class ListPersonaApiResponse(BaseModel):
     departments: list[ListPersonaApiDepartment] | None = None
     total_count: int | None = None
     general_agent_id: UUID | None = None
+
+
+# ========== Save Endpoint Types ==========
+
+
+class SavePersonaApiRequest(BaseModel):
+    """Request model for save persona endpoint."""
+
+    draft_id: UUID
+    input_persona_id: UUID | None = None
+
+
+class SavePersonaApiResponse(BaseModel):
+    """Response model for save persona endpoint."""
+
+    success: bool
+    persona_id: UUID
+    message: str
+
+
+# ========== Delete Endpoint Types ==========
+
+
+class DeletePersonaApiRequest(BaseModel):
+    """Request model for delete persona endpoint."""
+
+    persona_id: UUID
+
+
+class DeletePersonaApiResponse(BaseModel):
+    """Response model for delete persona endpoint."""
+
+    success: bool
+    message: str
+
+
+# ========== Duplicate Endpoint Types ==========
+
+
+class DuplicatePersonaApiRequest(BaseModel):
+    """Request model for duplicate persona endpoint."""
+
+    persona_id: UUID
+
+
+class DuplicatePersonaApiResponse(BaseModel):
+    """Response model for duplicate persona endpoint."""
+
+    success: bool
+    persona_id: UUID
+    message: str

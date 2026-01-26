@@ -6,14 +6,16 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import compute_can_delete
+from app.api.v4.artifacts.persona.types import (
+    DeletePersonaApiRequest,
+    DeletePersonaApiResponse,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     CheckPersonaDeleteAccessSqlParams,
     CheckPersonaDeleteAccessSqlRow,
-    DeletePersonaApiRequest,
-    DeletePersonaApiResponse,
     DeletePersonaSqlParams,
     DeletePersonaSqlRow,
     load_sql_query,
