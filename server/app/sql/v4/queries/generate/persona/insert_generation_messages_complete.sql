@@ -89,7 +89,7 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO general_messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'developer'::message_type, false, false, nd.run_id, NOW(), NOW()
     FROM new_developer_messages_data nd
     RETURNING id, run_id, created_at, updated_at
@@ -124,7 +124,7 @@ new_developer_messages_matched AS (
     JOIN new_developer_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_developer_contents AS (
-    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT
         nd.message_id,
         nd.content,
@@ -134,7 +134,7 @@ insert_developer_contents AS (
     FROM new_developer_messages_matched nd
 ),
 update_existing_developer_messages_run AS (
-    UPDATE messages_entry m
+    UPDATE general_messages_entry m
     SET run_id = edm.run_id, updated_at = NOW()
     FROM existing_developer_messages edm
     WHERE m.id = edm.message_id AND edm.run_id IS NOT NULL
@@ -180,7 +180,7 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO general_messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'user'::message_type, false, false, nd.run_id, NOW(), NOW()
     FROM new_user_messages_data nd
     RETURNING id, run_id, created_at, updated_at
@@ -215,7 +215,7 @@ new_user_messages_matched AS (
     JOIN new_user_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_user_contents AS (
-    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT
         nd.message_id,
         nd.content,
@@ -225,7 +225,7 @@ insert_user_contents AS (
     FROM new_user_messages_matched nd
 ),
 update_existing_user_messages_run AS (
-    UPDATE messages_entry m
+    UPDATE general_messages_entry m
     SET run_id = eum.run_id, updated_at = NOW()
     FROM existing_user_messages eum
     WHERE m.id = eum.message_id AND eum.run_id IS NOT NULL
@@ -233,7 +233,7 @@ update_existing_user_messages_run AS (
 ),
 -- Create assistant message for the response
 create_assistant_message AS (
-    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO general_messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'assistant'::message_type, false, false, p.run_id, NOW(), NOW()
     FROM params p
     RETURNING id as message_id, run_id

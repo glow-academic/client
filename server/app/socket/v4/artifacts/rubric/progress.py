@@ -1,4 +1,4 @@
-"""Rubric progress handler - listens to internal progress events and emits to clients."""
+"""Rubric progress handler - listens to generate_* events and emits to clients."""
 
 from typing import Any
 
@@ -11,13 +11,10 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_progress")  # type: ignore
+@internal_sio.on("generate_call_start")  # type: ignore
+@internal_sio.on("generate_call_progress")  # type: ignore
 async def handle_rubric_progress(data: dict[str, Any]) -> None:
-    """Handle generate_progress internal event - filter by resource_type and emit to client."""
-    # Filter by modality (rubrics are text-based) and resource_type
-    modality = data.get("modality", "text")
-    if modality != "text":
-        return  # Not for us
+    """Handle generate_* internal events - filter by resource_type and emit to client."""
 
     if data.get("resource_type") != "rubric":
         return  # Not for us
@@ -27,16 +24,16 @@ async def handle_rubric_progress(data: dict[str, Any]) -> None:
         return  # No socket ID, can't emit to client
 
     # Transform internal event format to client format
-    progress_type = data.get("type", "")
+    progress_type = data.get("event_type") or data.get("type", "")
 
     # Map internal progress_type to client type
     if progress_type == "tool_call_start":
         client_type = "tool_call"
         message = f"Starting {data.get('tool_name', 'tool')}..."
-    elif progress_type == "tool_call_progress":
+    elif progress_type == "tool_call_delta":
         client_type = "tool_call"
         message = f"Generating {data.get('tool_name', 'descriptions')}..."
-    elif progress_type == "start":
+    elif progress_type == "text_start" or progress_type == "start":
         client_type = "start"
         message = data.get("message", "Starting rubric generation...")
     else:

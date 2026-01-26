@@ -1,15 +1,19 @@
-"""Attempts WebSocket event handlers - simulation and benchmark operations."""
+"""Attempts WebSocket event handlers - general, practice, and benchmark operations."""
 
 from fastapi import APIRouter
 
-from . import benchmark, simulation
+from . import benchmark, general, practice
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-# Include simulation routers
-client_router.include_router(simulation.client_router)
-server_router.include_router(simulation.server_router)
+# Include general routers
+client_router.include_router(general.client_router)
+server_router.include_router(general.server_router)
+
+# Include practice routers
+client_router.include_router(practice.client_router)
+server_router.include_router(practice.server_router)
 
 # Include benchmark routers
 client_router.include_router(benchmark.client_router)

@@ -208,24 +208,15 @@ async def handle_internal_event(
         return
     except ValidationError as e:
         # Socket.IO logs validation errors automatically
-        # Special handling for generate_error - even if error_response_type is None, we should emit
+        # Special handling for generate_error - emit directly to avoid recursion
         if error_event_name == "generate_error":
-            # Prevent infinite recursion: emit directly to resource-specific handler, not generate_error
             if sid:
                 try:
                     from app.main import get_internal_sio
-                    from app.socket.v4.artifacts.error import AGENT_ERROR_MAPPING
 
                     internal_sio = get_internal_sio()
-                    resource_type = data.get("resource_type", "text")
-                    # Map to resource-specific error event (e.g., "rubric_error")
-                    agent_error_event = AGENT_ERROR_MAPPING.get(
-                        resource_type, "text_error"
-                    )
-                    # Emit directly to resource handler, bypassing generate_error to prevent recursion
-                    # Provide user-friendly error message instead of Pydantic validation details
                     await internal_sio.emit(
-                        agent_error_event,
+                        "generate_error",
                         {
                             "sid": sid,
                             "success": False,
@@ -235,9 +226,8 @@ async def handle_internal_event(
                         },
                     )
                 except Exception:
-                    # If emitting fails, don't recurse - just return silently
                     pass
-            return  # CRITICAL: Return immediately to prevent recursion
+            return
 
         if error_event_name and error_response_type:
             # For other error events (not generate_error), try to emit to client

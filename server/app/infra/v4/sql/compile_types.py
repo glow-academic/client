@@ -195,29 +195,171 @@ async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
 
 
 def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
-    """Sort SQL files with analytics routes first, and handle type dependencies.
-    
+    """Sort SQL files with proper dependency ordering for views and MVs.
+
     Args:
         sql_file: Path to SQL file
         server_root: Server root directory
-    
+
     Returns:
-        Tuple of (priority, path) where:
-        - Priority 0: Analytics view creation file (must be first)
-        - Priority 1: Other analytics routes
-        - Priority 2: Files that depend on analytics view (dashboard, home, reports, etc.)
-        - Priority 3: Settings detail (must come before active settings)
-        - Priority 4: All other routes (sorted alphabetically)
+        Tuple of (priority, path) for sorting where lower priority = earlier execution.
+
+    View/MV Dependency Ordering:
+        Priority 0: Base MVs with no MV dependencies (mv_general_analytics, mv_practice_analytics, etc.)
+        Priority 1: First-level dependent MVs (mv_dashboard_facts, mv_run_pricing_facts, etc.)
+        Priority 2: Second-level dependent MVs (mv_dashboard_*, mv_group_pricing_facts, etc.)
+        Priority 3: Third-level dependent MVs (mv_session_facts)
+        Priority 4: MVs that depend on missing tables (skipped but ordered last in views)
+        Priority 5: Other views (regular views, not MVs)
+
+    Query Ordering:
+        Priority 10: Analytics queries
+        Priority 11: Analytics-dependent queries (dashboard, reports, etc.)
+        Priority 12: Settings detail (before active settings due to type dependency)
+        Priority 13: Active settings
+        Priority 20: All other queries
     """
     sql_path = str(sql_file.relative_to(server_root))
-    
-    # All files in views/ directory must be first (DDL definitions)
+    filename = sql_file.name
+
+    # Handle views/ directory with detailed MV dependency ordering
     if sql_path.startswith(f"app/sql/{VERSION}/views/"):
-        return (0, sql_path)
+        # Base MVs - no MV dependencies (Level 0)
+        base_mvs = [
+            "mv_general_analytics_complete.sql",
+            "mv_practice_analytics_complete.sql",
+            "mv_benchmark_analytics_complete.sql",
+            "mv_model_pricing_ppm_complete.sql",
+            "mv_call_facts_complete.sql",
+        ]
+        if filename in base_mvs:
+            return (0, sql_path)
+
+        # First-level dependent MVs (Level 1)
+        # mv_dashboard_facts depends on mv_general_analytics and mv_practice_analytics
+        # mv_run_pricing_facts depends on mv_model_pricing_ppm
+        # mv_call_metrics_daily depends on mv_call_facts
+        level1_mvs = [
+            "mv_dashboard_facts_complete.sql",
+            "mv_run_pricing_facts_complete.sql",
+            "mv_call_metrics_daily_complete.sql",
+        ]
+        if filename in level1_mvs:
+            return (1, sql_path)
+
+        # Second-level dependent MVs (Level 2)
+        # These depend on mv_dashboard_facts or mv_run_pricing_facts
+        level2_mvs = [
+            "mv_dashboard_attempt_seq_complete.sql",
+            "mv_dashboard_cohort_facts_complete.sql",
+            "mv_dashboard_daily_agg_complete.sql",
+            "mv_dashboard_persona_agg_complete.sql",
+            "mv_dashboard_rubric_facts_complete.sql",
+            "mv_persona_response_times_complete.sql",
+            "mv_profile_analytics_complete.sql",
+            "mv_group_pricing_facts_complete.sql",
+            "mv_run_costs_daily_complete.sql",
+        ]
+        if filename in level2_mvs:
+            return (2, sql_path)
+
+        # Third-level dependent MVs (Level 3)
+        # mv_session_facts depends on mv_group_pricing_facts
+        level3_mvs = [
+            "mv_session_facts_complete.sql",
+        ]
+        if filename in level3_mvs:
+            return (3, sql_path)
+
+        # MVs that depend on missing tables (will fail but ordered last in views)
+        # These reference tables like service_health, app_metrics that may not exist
+        missing_table_mvs = [
+            "mv_health_hourly_agg_complete.sql",
+            "mv_health_daily_agg_complete.sql",
+            "mv_metrics_hourly_agg_complete.sql",
+            "mv_metrics_daily_agg_complete.sql",
+        ]
+        if filename in missing_table_mvs:
+            return (4, sql_path)
+
+        # Union views - must be created first (before views that depend on them)
+        # These combine general/practice/benchmark tables into unified views
+        union_views = [
+            "create_union_view_grades_entry_complete.sql",
+            "create_union_view_messages_entry_complete.sql",
+            "create_union_view_feedbacks_entry_complete.sql",
+            "create_union_view_contents_entry_complete.sql",
+            "create_union_view_hints_entry_complete.sql",
+            "create_union_view_strengths_entry_complete.sql",
+            "create_union_view_message_tree_entry_complete.sql",
+            "create_union_view_improvements_entry_complete.sql",
+        ]
+        if filename in union_views:
+            return (4, "a_" + sql_path)  # 'a_' prefix ensures they come before level 5 views
+
+        # Regular views - Level 0 (base views with no view dependencies)
+        base_views = [
+            "create_view_attempts_complete.sql",
+            "create_view_chats_complete.sql",
+            "create_view_drafts_complete.sql",
+            "create_view_runs_complete.sql",
+            "create_view_audits_complete.sql",
+            "create_view_tests_complete.sql",
+            "create_view_problems_complete.sql",
+            "create_view_grants_complete.sql",
+            "create_view_scenario_roots_complete.sql",
+            "create_view_logins_complete.sql",
+            "create_view_activity_complete.sql",
+            "create_view_calls_complete.sql",
+            "create_view_uploads_complete.sql",
+            "create_view_sessions_complete.sql",
+            "create_view_emulations_complete.sql",
+            "create_view_groups_complete.sql",
+            "create_view_run_pricing_complete.sql",
+            "create_view_simulation_cohorts_complete.sql",
+            "create_user_profile_view_complete.sql",
+            "create_view_profile_department_complete.sql",
+            "create_scenario_edit_state_view_complete.sql",
+            "create_persona_edit_state_view_complete.sql",
+            "create_simulation_edit_state_view_complete.sql",
+            "create_cohort_edit_state_view_complete.sql",
+        ]
+        if filename in base_views:
+            return (5, sql_path)
+
+        # Regular views - Level 1 (depend on base views, but not on missing union views)
+        level1_views = [
+            "create_view_attempt_context_complete.sql",  # depends on view_attempts
+        ]
+        if filename in level1_views:
+            return (6, sql_path)
+
+        # Regular views that depend on union views (grades_entry, messages_entry, feedbacks_entry)
+        # These now work since we create the union views first
+        union_dependent_views = [
+            "create_view_grades_complete.sql",  # depends on grades_entry union view
+            "create_view_messages_complete.sql",  # depends on messages_entry union view
+            "create_view_grade_feedback_complete.sql",  # depends on feedbacks_entry union view
+            "create_grade_per_standard_group_view_complete.sql",  # depends on grades_entry
+            "create_view_message_feedback_complete.sql",  # may depend on feedbacks_entry
+        ]
+        if filename in union_dependent_views:
+            return (6, "b_" + sql_path)  # After base views, before derived views
+
+        # Views that depend on views created from union views (second level)
+        derived_views = [
+            "create_view_chat_grades_complete.sql",  # depends on view_grades
+            "create_view_chat_messages_stats_complete.sql",  # depends on view_messages_complete
+        ]
+        if filename in derived_views:
+            return (7, sql_path)
+
+        # All other regular views
+        return (6, sql_path)
 
     # Other analytics routes come next
     if sql_path.startswith(f"app/sql/{VERSION}/queries/analytics/"):
-        return (1, sql_path)
+        return (10, sql_path)
 
     # Files that depend on analytics view must come after analytics
     analytics_dependent_paths = [
@@ -231,20 +373,17 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         f"app/sql/{VERSION}/queries/reports/get_reports_overview_complete.sql",
     ]
     if sql_path in analytics_dependent_paths:
-        return (2, sql_path)
+        return (11, sql_path)
 
     # Settings detail must come before active settings (type dependency)
     if sql_path == f"app/sql/{VERSION}/queries/settings/get_settings_detail_complete.sql":
-        return (
-            3,
-            "a_" + sql_path,
-        )  # 'a_' prefix ensures it sorts before 'get_active_'
+        return (12, "a_" + sql_path)  # 'a_' prefix ensures it sorts before 'get_active_'
 
     if sql_path == f"app/sql/{VERSION}/queries/settings/get_active_settings_complete.sql":
-        return (3, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
-    
+        return (13, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
+
     # All other routes sorted alphabetically
-    return (4, sql_path)
+    return (20, sql_path)
 
 
 async def execute_sql_file(

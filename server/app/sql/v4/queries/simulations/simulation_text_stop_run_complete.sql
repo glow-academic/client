@@ -33,12 +33,26 @@ latest_message AS (
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
-update_message AS (
-    UPDATE messages_entry
+-- Update in both tables - only one will match based on which table has the message
+update_general_message AS (
+    UPDATE general_messages_entry
     SET completed = TRUE,
         updated_at = NOW()
     WHERE id = (SELECT id FROM latest_message)
     RETURNING id
+),
+update_practice_message AS (
+    UPDATE practice_messages_entry
+    SET completed = TRUE,
+        updated_at = NOW()
+    WHERE id = (SELECT id FROM latest_message)
+    RETURNING id
+),
+update_message AS (
+    SELECT COALESCE(
+        (SELECT id FROM update_general_message),
+        (SELECT id FROM update_practice_message)
+    ) AS id
 )
 SELECT
     (SELECT id FROM update_message) IS NOT NULL as success,

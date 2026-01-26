@@ -162,6 +162,8 @@ LEFT JOIN chat_parameter_fields cpf ON cpf.chat_id = c.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 -- Grade connections (optional)
 LEFT JOIN general_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
+-- Message counts (pre-aggregated)
+LEFT JOIN message_counts mc ON mc.chat_id = c.id
 -- Message time deltas for persona response times
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = c.id
 WHERE a.active = TRUE

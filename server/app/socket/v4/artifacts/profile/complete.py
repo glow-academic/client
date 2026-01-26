@@ -1,4 +1,4 @@
-"""Profile completion handler - listens to resource_complete events and emits granular profile events."""
+"""Profile completion handler - listens to generate_call_complete events and emits granular profile events."""
 
 import uuid
 from typing import Any, cast
@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/queries/profile/get_profile_resource_ids_by_group_id_complete.sql"
 
 
-@internal_sio.on("resource_complete")  # type: ignore
+@internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_profile_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle resource_complete internal event - filter by profile artifact_type and emit granular event."""
+    """Handle generate_call_complete events - filter by profile artifact_type and emit granular event."""
     eval_mode = data.get("eval_mode", False)
     if eval_mode:
         return
@@ -41,23 +41,30 @@ async def handle_profile_artifact_complete(data: dict[str, Any]) -> None:
     profile_id = uuid.UUID(profile_id_str)
 
     group_id_str = data.get("group_id")
-    resource_id_str = data.get("resource_id")
+    event_type = data.get("event_type")
+    tool_result = data.get("result") or {}
+    tool_results = data.get("tool_results") or []
+    if not tool_result and tool_results:
+        tool_result = tool_results[0]
+    if event_type == "tool_call_complete" and not tool_result and not tool_results:
+        return
+    resource_id_str = tool_result.get("resource_id")
     resource_type = data.get("resource_type")
 
     if not group_id_str or not resource_type:
         return
 
     if not resource_id_str:
-        await internal_sio.emit(
-            "resource_error",
+        await sio.emit(
+            "profile_generation_error",
             {
-                "sid": sid,
                 "artifact_type": "profile",
-                "group_id": group_id_str,
                 "resource_type": resource_type,
-                "error_message": f"Model generated text but did not call the {resource_type} creation tool. Expected a tool call to create a resource.",
-                "trace_id": data.get("trace_id"),
+                "group_id": group_id_str,
+                "success": False,
+                "message": f"Missing resource_id for {resource_type} tool result",
             },
+            room=sid,
         )
         return
 
@@ -111,7 +118,7 @@ async def handle_profile_artifact_complete(data: dict[str, Any]) -> None:
             "success": True,
             "message": f"{resource_type} generation completed successfully",
             "run_id": data.get("run_id"),
-            "type": data.get("type", "run_complete"),
+            "type": data.get("type", "complete"),
         },
         room=sid,
     )

@@ -1,4 +1,4 @@
-"""Simulation progress handler - listens to generate_progress events and emits simulation-specific events."""
+"""Simulation progress handler - listens to generate_* events and emits simulation-specific events."""
 
 import uuid
 from datetime import UTC, datetime
@@ -10,9 +10,17 @@ from app.main import get_internal_sio, sio
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("generate_progress")  # type: ignore
+@internal_sio.on("generate_text_start")  # type: ignore
+@internal_sio.on("generate_text_progress")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
+@internal_sio.on("generate_audio_start")  # type: ignore
+@internal_sio.on("generate_audio_progress")  # type: ignore
+@internal_sio.on("generate_audio_complete")  # type: ignore
+@internal_sio.on("generate_call_start")  # type: ignore
+@internal_sio.on("generate_call_progress")  # type: ignore
+@internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_simulations_progress(data: dict[str, Any]) -> None:
-    """Handle generate_progress internal event - filter by simulation artifact_type and voice resource_type."""
+    """Handle generate_* internal events - filter by simulation artifact_type and voice resource_type."""
     # Filter by artifact_type
     artifact_type = data.get("artifact_type")
     if artifact_type != "simulation":
@@ -31,11 +39,11 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
         return
     
     # Extract event type and map to simulation events
-    event_type = data.get("type")
-    chat_id = data.get("group_id")  # group_id contains chat_id for simulations
+    event_type = data.get("event_type") or data.get("type")
+    chat_id = data.get("chat_id") or data.get("group_id")
     message_id = data.get("message_id")
 
-    if modality in ("text", "call", "document") and resource_type == "simulation":
+    if modality in ("text", "call") and resource_type == "simulation":
         if event_type == "text_start" and message_id:
             await sio.emit(
                 "simulation_text_new_message",

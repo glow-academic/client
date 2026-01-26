@@ -1,4 +1,4 @@
-"""Cohort error handler - listens to resource_error events and emits cohort-specific events."""
+"""Cohort error handler - listens to generate_*_error events and emits cohort-specific events."""
 
 import uuid
 from typing import Any, cast
@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/queries/cohorts/validate_cohort_resource_error_complete.sql"
 
 
-@internal_sio.on("resource_error")  # type: ignore
+@internal_sio.on("generate_call_error")  # type: ignore
 async def handle_cohorts_error(data: dict[str, Any]) -> None:
-    """Handle resource_error event - filter by cohort artifact_type and emit cohort-specific event."""
+    """Handle generate_*_error event - filter by cohort artifact_type and emit cohort-specific event."""
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "cohort":

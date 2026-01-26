@@ -2221,10 +2221,11 @@ filt AS (
             ),
             
             -- Cohort Performance (FULL IMPLEMENTATION)
+            -- Note: cohort_id is singular in mv_dashboard_facts (not an array)
             filt_with_cohorts AS (
-                SELECT f.*, c_id
-                FROM filt f,
-                LATERAL unnest(f.cohort_ids) AS c_id
+                SELECT f.*, f.cohort_id AS c_id
+                FROM filt f
+                WHERE f.cohort_id IS NOT NULL
             ),
             cohort_list AS (
                 SELECT DISTINCT 

@@ -6,27 +6,32 @@
 -- Layer 1 (Base - Independent):
 --   1. mv_general_analytics
 --   2. mv_practice_analytics
---   3. mv_model_pricing_ppm
---   4. mv_run_pricing_facts
---   5. mv_call_facts
+--   3. mv_benchmark_analytics
+--   4. mv_model_pricing_ppm
+--   5. mv_run_pricing_facts
+--   6. mv_call_facts
+--   7. mv_health_hourly_agg
+--   8. mv_metrics_hourly_agg
 --
 -- Layer 2:
---   6. mv_dashboard_facts (depends on general + practice)
---   7. mv_group_pricing_facts (depends on mv_run_pricing_facts)
+--   9. mv_dashboard_facts (depends on general + practice)
+--   10. mv_group_pricing_facts (depends on mv_run_pricing_facts)
+--   11. mv_health_daily_agg (depends on mv_health_hourly_agg)
+--   12. mv_metrics_daily_agg (depends on mv_metrics_hourly_agg)
 --
 -- Layer 3:
---   8. mv_dashboard_daily_agg (depends on facts)
---   9. mv_dashboard_persona_agg (depends on facts)
---   10. mv_dashboard_attempt_seq (depends on facts)
---   11. mv_dashboard_cohort_facts (depends on facts)
---   12. mv_persona_response_times (depends on facts)
---   13. mv_profile_analytics (depends on facts)
---   14. mv_run_costs_daily (depends on mv_run_pricing_facts)
---   15. mv_call_metrics_daily (depends on mv_call_facts)
---   16. mv_session_facts (depends on mv_group_pricing_facts)
+--   13. mv_dashboard_daily_agg (depends on facts)
+--   14. mv_dashboard_persona_agg (depends on facts)
+--   15. mv_dashboard_attempt_seq (depends on facts)
+--   16. mv_dashboard_cohort_facts (depends on facts)
+--   17. mv_persona_response_times (depends on facts)
+--   18. mv_profile_analytics (depends on facts)
+--   19. mv_run_costs_daily (depends on mv_run_pricing_facts)
+--   20. mv_call_metrics_daily (depends on mv_call_facts)
+--   21. mv_session_facts (depends on mv_group_pricing_facts)
 --
 -- Independent:
---   17. mv_dashboard_rubric_facts (uses base tables directly)
+--   22. mv_dashboard_rubric_facts (uses base tables directly)
 --
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
@@ -77,6 +82,9 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_practice_analytics;
     refreshed := array_append(refreshed, 'mv_practice_analytics');
 
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_analytics;
+    refreshed := array_append(refreshed, 'mv_benchmark_analytics');
+
     -- Pricing base MVs
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_model_pricing_ppm;
     refreshed := array_append(refreshed, 'mv_model_pricing_ppm');
@@ -87,6 +95,13 @@ BEGIN
     -- Calls base MV
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_call_facts;
     refreshed := array_append(refreshed, 'mv_call_facts');
+
+    -- Health & Metrics base MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_hourly_agg;
+    refreshed := array_append(refreshed, 'mv_health_hourly_agg');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics_hourly_agg;
+    refreshed := array_append(refreshed, 'mv_metrics_hourly_agg');
 
     -- ===========================================
     -- Layer 2: MVs dependent on Layer 1
@@ -99,6 +114,13 @@ BEGIN
     -- Group pricing (depends on mv_run_pricing_facts)
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_group_pricing_facts;
     refreshed := array_append(refreshed, 'mv_group_pricing_facts');
+
+    -- Health & Metrics daily (depends on hourly)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_health_daily_agg;
+    refreshed := array_append(refreshed, 'mv_health_daily_agg');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_metrics_daily_agg;
+    refreshed := array_append(refreshed, 'mv_metrics_daily_agg');
 
     -- ===========================================
     -- Layer 3: MVs dependent on Layer 2

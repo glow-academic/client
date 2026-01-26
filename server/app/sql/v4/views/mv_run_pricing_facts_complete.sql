@@ -122,11 +122,11 @@ SELECT
     rc.cached_input_tokens,
     (rc.input_tokens + rc.output_tokens + rc.cached_input_tokens)::int AS total_tokens,
 
-    -- Computed costs
-    ROUND(rc.input_cost, 8)::numeric AS input_cost,
-    ROUND(rc.output_cost, 8)::numeric AS output_cost,
-    ROUND(rc.cached_cost, 8)::numeric AS cached_cost,
-    ROUND(rc.input_cost + rc.output_cost + rc.cached_cost, 8)::numeric AS total_cost,
+    -- Computed costs (cast to numeric before rounding - PostgreSQL requires round(numeric, int))
+    ROUND(rc.input_cost::numeric, 8) AS input_cost,
+    ROUND(rc.output_cost::numeric, 8) AS output_cost,
+    ROUND(rc.cached_cost::numeric, 8) AS cached_cost,
+    ROUND((rc.input_cost + rc.output_cost + rc.cached_cost)::numeric, 8) AS total_cost,
 
     -- Timestamps
     rc.run_created_at,

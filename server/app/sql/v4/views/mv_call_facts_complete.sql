@@ -34,14 +34,35 @@ DROP MATERIALIZED VIEW IF EXISTS mv_call_facts CASCADE;
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_call_facts AS
+WITH
+-- Get first agent/model/provider per call to avoid Cartesian product
+-- (A call typically has one agent/model/provider, but some test data has multiple)
+call_agent AS (
+    SELECT DISTINCT ON (call_id) call_id, agents_id
+    FROM agents_calls_connection
+    WHERE active = TRUE
+    ORDER BY call_id, created_at DESC
+),
+call_model AS (
+    SELECT DISTINCT ON (call_id) call_id, models_id
+    FROM models_calls_connection
+    WHERE active = TRUE
+    ORDER BY call_id, created_at DESC
+),
+call_provider AS (
+    SELECT DISTINCT ON (call_id) call_id, providers_id
+    FROM providers_calls_connection
+    WHERE active = TRUE
+    ORDER BY call_id, created_at DESC
+)
 SELECT
     -- Entry ID
     c.id AS call_id,
 
-    -- Resource IDs (from connections)
-    acc.agents_id AS agent_id,
-    mcc.models_id AS model_id,
-    pcc.providers_id AS provider_id,
+    -- Resource IDs (from connections - using first/most recent)
+    ca.agents_id AS agent_id,
+    cm.models_id AS model_id,
+    cp.providers_id AS provider_id,
     c.run_id,
     c.template_id,
     tcj.tool_id,
@@ -67,9 +88,9 @@ SELECT
     END AS completion_time_ms
 
 FROM calls_entry c
-LEFT JOIN agents_calls_connection acc ON acc.call_id = c.id AND acc.active = TRUE
-LEFT JOIN models_calls_connection mcc ON mcc.call_id = c.id AND mcc.active = TRUE
-LEFT JOIN providers_calls_connection pcc ON pcc.call_id = c.id AND pcc.active = TRUE
+LEFT JOIN call_agent ca ON ca.call_id = c.id
+LEFT JOIN call_model cm ON cm.call_id = c.id
+LEFT JOIN call_provider cp ON cp.call_id = c.id
 LEFT JOIN tool_calls_junction tcj ON tcj.call_id = c.id AND tcj.active = TRUE
 WITH NO DATA;
 

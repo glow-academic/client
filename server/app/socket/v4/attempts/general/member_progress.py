@@ -10,16 +10,12 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.sql.types import (
-    GetMessageCreatedAtSqlParams,
-    GetMessageCreatedAtSqlRow,
-    MemberProgressUpsertSqlParams,
-    MemberProgressUpsertSqlRow,
+    GetSimulationRunContextSqlParams,
+    GetSimulationRunContextSqlRow,
 )
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
@@ -33,6 +29,7 @@ class MemberProgressPayload(BaseModel):
 
     chat_id: str
     message: str
+    group_id: str | None = None
     voice_mode: bool = False
     upload_id: str | None = None  # For voice audio uploads
 
@@ -84,87 +81,52 @@ async def _member_progress_impl(
         chat_id_uuid = uuid.UUID(chat_id)
 
         async with get_db_connection() as conn:
-            # Upsert user message and run via SQL
-            SQL_PATH_UPSERT = "app/sql/v4/queries/member/member_progress_upsert_complete.sql"
-            try:
-                import asyncpg  # type: ignore
-
-                params = MemberProgressUpsertSqlParams(
-                    chat_id=chat_id_uuid,
-                    message_content=message_str,
-                    audio=data.voice_mode,  # Maps to audio column in DB
-                    upload_id=uuid.UUID(data.upload_id) if data.upload_id else None,
+            # Determine chat type (general vs practice)
+            is_general_sql = load_sql(
+                "app/sql/v4/queries/attempts/general/is_general_chat_complete.sql"
+            )
+            is_general_row = await conn.fetchrow(is_general_sql, chat_id_uuid)
+            is_general = bool(is_general_row["is_general"]) if is_general_row else False
+            if is_general:
+                sql_path = (
+                    "app/sql/v4/queries/attempts/general/member_progress_start_complete.sql"
                 )
-                result = cast(
-                    MemberProgressUpsertSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH_UPSERT, params=params),
+            else:
+                sql_path = (
+                    "app/sql/v4/queries/attempts/practice/member_progress_start_complete.sql"
                 )
-            except Exception as e:
-                import asyncpg  # type: ignore
 
-                error_msg = str(e)
-                # Check if it's a rate limit error from SQL
-                if (
-                    isinstance(e, asyncpg.PostgresError)
-                    and "RATE_LIMIT_EXCEEDED" in error_msg
-                ):
-                    user_msg = (
-                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                        if "RATE_LIMIT_EXCEEDED: " in error_msg
-                        else error_msg
-                    )
-                    await member_progress_error(
-                        MemberProgressErrorPayload(
-                            success=False,
-                            message=user_msg,
-                        ),
-                        room=sid,
-                    )
-                    return
+            sql = load_sql(sql_path)
+            row = await conn.fetchrow(
+                sql,
+                chat_id_uuid,
+                uuid.UUID(data.group_id) if data.group_id else None,
+                message_str,
+                data.voice_mode,
+                uuid.UUID(data.upload_id) if data.upload_id else None,
+            )
+            if not row:
                 await member_progress_error(
                     MemberProgressErrorPayload(
                         success=False,
-                        message=f"Failed to process message: {str(e)}",
+                        message="Failed to create message/run",
                     ),
                     room=sid,
                 )
                 return
 
-            if not result:
-                await member_progress_error(
-                    MemberProgressErrorPayload(
-                        success=False,
-                        message="Failed to upsert user message/run",
-                    ),
-                    room=sid,
-                )
-                return
-
-            message_id = result.message_id
-            run_id = result.run_id
-            audio = result.audio  # audio column indicates voice mode
-            group_id = result.group_id
-
-            # Get created_at for message_sent event
-            SQL_PATH_CREATED_AT = (
-                "app/sql/v4/queries/messages/get_message_created_at_complete.sql"
-            )
-            created_at_params = GetMessageCreatedAtSqlParams(
-                message_id=uuid.UUID(message_id)
-            )
-            created_at_result = cast(
-                GetMessageCreatedAtSqlRow,
-                await execute_sql_typed(
-                    conn, SQL_PATH_CREATED_AT, params=created_at_params
-                ),
-            )
-            created_at = created_at_result.created_at if created_at_result else None
+            user_message_id = str(row["user_message_id"])
+            assistant_message_id = str(row["assistant_message_id"])
+            run_id = str(row["run_id"])
+            group_id = str(row["group_id"]) if row.get("group_id") else None
+            created_at = row.get("created_at")
+            audio = data.voice_mode
 
             # Emit message_sent event for tour progression and cross-component communication
             await sio.emit(
                 "simulation_text_message_sent",
                 MessageSentPayload(
-                    message_id=message_id,
+                    message_id=user_message_id,
                     chat_id=str(chat_id_uuid),
                     message=message_str,
                     created_at=created_at.isoformat() if created_at else "",
@@ -174,7 +136,7 @@ async def _member_progress_impl(
             await sio.emit(
                 "simulation_text_new_message",
                 {
-                    "message_id": message_id,
+                    "message_id": user_message_id,
                     "chat_id": str(chat_id_uuid),
                     "role": "user",
                     "content": message_str,
@@ -197,14 +159,7 @@ async def _member_progress_impl(
             except Exception:
                 pass
 
-            # Route through artifacts system instead of old handlers
-            # Get agent_id from chat context (SQL will determine text vs voice agent)
-            # Use simulation context SQL to get the appropriate agent_id
-            from app.sql.types import (
-                GetSimulationRunContextSqlParams,
-                GetSimulationRunContextSqlRow,
-            )
-
+            # Get simulation context for model config + prompts
             context_params = GetSimulationRunContextSqlParams(chat_id=chat_id_uuid)
             context_result = cast(
                 GetSimulationRunContextSqlRow,
@@ -215,41 +170,70 @@ async def _member_progress_impl(
                 ),
             )
 
-            if not context_result or not context_result.agent_id:
+            if not context_result or not context_result.model_name:
                 await member_progress_error(
                     MemberProgressErrorPayload(
                         success=False,
-                        message="Failed to get simulation agent context",
+                        message="Failed to get simulation model context",
                     ),
                     room=sid,
                 )
                 return
 
-            # Determine agent_id and resource_type based on audio mode
-            # For voice mode, use voice_agent_id and resource_type "voice" (audio adapter)
-            # For text mode, use agent_id and resource_type "simulation" (text adapter)
             if audio:
-                agent_id = (
-                    context_result.voice_agent_id
-                    if context_result.voice_agent_id
-                    else context_result.agent_id
+                resource_type = "voice"
+                model_name = context_result.voice_model_name or context_result.model_name
+                api_key = context_result.voice_api_key or context_result.api_key
+                base_url = context_result.voice_base_url or context_result.base_url
+                temperature = (
+                    context_result.voice_temperature
+                    if context_result.voice_temperature is not None
+                    else context_result.temperature
                 )
-                resource_type = "voice"  # Maps to audio adapter in HANDLER_MAPPING
+                reasoning = context_result.voice_reasoning or context_result.reasoning
+                provider = context_result.voice_provider or context_result.provider
+                system_prompt = (
+                    context_result.voice_system_prompt
+                    or context_result.system_prompt
+                    or ""
+                )
             else:
-                agent_id = context_result.agent_id
-                resource_type = "simulation"  # Maps to text adapter in HANDLER_MAPPING
+                resource_type = "simulation"
+                model_name = context_result.model_name
+                api_key = context_result.api_key
+                base_url = context_result.base_url
+                temperature = context_result.temperature
+                reasoning = context_result.reasoning
+                provider = context_result.provider
+                system_prompt = context_result.system_prompt or ""
 
             # Route through artifacts system
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "agent_id": agent_id,
-                    "resource_id": str(chat_id_uuid),
+                    "artifact_type": "simulation",
                     "resource_type": resource_type,
+                    "modality": "text",
+                    "run_id": run_id,
                     "group_id": str(group_id) if group_id else None,
-                    "user_instructions": None,
-                    "message_ids": [message_id],
+                    "chat_id": str(chat_id_uuid),
+                    "message_id": assistant_message_id,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": message_str},
+                    ],
+                    "model_config": {
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": temperature,
+                        "reasoning": reasoning,
+                        "provider": provider,
+                        "voice": None,
+                        "quality": None,
+                        "length_seconds": None,
+                    },
                 },
             )
     except ValueError as e:

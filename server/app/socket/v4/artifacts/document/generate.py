@@ -3,14 +3,16 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.documents.format_document_template_context import \
-    format_document_template_context
+from app.infra.v4.documents.format_document_template_context import (
+    format_document_template_context,
+)
+from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (GetDocumentAgentIdV4SqlParams,
                            GetDocumentAgentIdV4SqlRow,
                            GetDocumentDepartmentV4SqlParams,
@@ -85,7 +87,7 @@ async def _generate_document_impl(
 
             if not result:
                 await emit_to_internal(
-                    "generate_error",
+                    "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
                         error_message="Failed to get document context",
@@ -139,8 +141,8 @@ async def _generate_document_impl(
                 fields=fields_data,
             )
 
-            # Step 2: Route to generate_artifact (which will create run and handle generation)
-            # Get agent_id for generate_artifact from result
+            # Step 2: Route to generate_artifact (token factory)
+            # Get agent_id for generation from result
             agent_id: uuid.UUID | None = None
             if not agent_id:
                 # Get agent_id from result (best_agent provides agent_id)
@@ -160,22 +162,51 @@ async def _generate_document_impl(
             if not agent_id:
                 raise ValueError("Could not determine agent_id for document generation")
 
+            rendered_developer_messages = render_developer_instructions(
+                templates=[result.developer_instruction_template]
+                if result.developer_instruction_template
+                else None,
+                jinja_context=None,
+            )
+
+            messages: list[dict[str, Any]] = []
+            if result.system_prompt:
+                messages.append({"role": "system", "content": result.system_prompt})
+            for dev_msg in rendered_developer_messages:
+                messages.append({"role": "developer", "content": dev_msg})
+            for context_item in context_items:
+                messages.append(context_item)
+
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "agent_id": str(agent_id),
-                    "resource_id": data.document_id,
+                    "artifact_type": "document",
                     "resource_type": "document",
-                    "group_id": None,  # Will be created by generate_artifact
-                    "user_instructions": None,
-                    "message_ids": None,
+                    "run_id": str(result.run_id),
+                    "group_id": str(result.group_id) if result.group_id else None,
+                    "message_id": None,
+                    "messages": messages,
+                    "model_config": {
+                        "model": result.model_name,
+                        "api_key": result.api_key,
+                        "base_url": result.base_url,
+                        "temperature": result.temperature,
+                        "reasoning": result.reasoning,
+                        "provider": result.provider,
+                        "voice": None,
+                        "quality": None,
+                        "length_seconds": None,
+                    },
+                    "tools": convert_tools_to_dict(result.tools),
+                    "metadata": {"trace_id": result.trace_id},
+                    "eval_mode": False,
                 },
             )
 
     except Exception as e:
         await emit_to_internal(
-            "generate_error",
+            "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to generate document: {str(e)}",
@@ -195,7 +226,7 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
-                "generate_error",
+                "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
@@ -210,7 +241,7 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
         await _generate_document_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
-            "generate_error",
+            "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
@@ -234,7 +265,7 @@ async def document_generate_internal(data: dict[str, Any]) -> None:
     except Exception as e:
         sid = data.get("sid", "")
         await emit_to_internal(
-            "generate_error",
+            "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to route document generation: {str(e)}",

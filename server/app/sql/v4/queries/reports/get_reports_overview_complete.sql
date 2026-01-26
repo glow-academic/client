@@ -2282,21 +2282,21 @@ filt AS (
                 FROM mv_dashboard_facts f
                 JOIN profile_cohorts_junction pc ON pc.profile_id = f.profile_id AND pc.active = true
                 JOIN target_profile_cohorts tpc ON tpc.cohort_id = pc.cohort_id
-                WHERE a.attempt_created_at >= (SELECT start_date FROM params)
-                  AND a.attempt_created_at < (SELECT end_date FROM params)
+                WHERE f.attempt_created_at >= (SELECT start_date FROM params)
+                  AND f.attempt_created_at < (SELECT end_date FROM params)
                   AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
                   AND (
                       (SELECT simulation_filters FROM params)::text[] IS NULL OR (
-                          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general = TRUE) OR
-                          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_practice = TRUE) OR
-                          ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_archived = TRUE)
+                          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND (f.attempt_type = 'general' AND NOT f.is_archived) = TRUE) OR
+                          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND (f.attempt_type = 'practice') = TRUE) OR
+                          ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.is_archived = TRUE)
                       )
                   )
                   AND (
-                      'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
+                      'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR f.is_archived = FALSE
                   )
-                  AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                  AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
+                  AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                  AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
             ),
             cohort_list AS (
                 SELECT DISTINCT
@@ -2851,7 +2851,7 @@ filt AS (
                     s.id AS simulation_id,
                     pfj.parameter_id AS parameter_id,
                     pfj.field_id AS parameter_item_id,
-                    COUNT(a.chat_id)::int AS cnt
+                    COUNT(df.chat_id)::int AS cnt
                 FROM simulation_artifact s
                 JOIN simulation_scenarios_junction ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id

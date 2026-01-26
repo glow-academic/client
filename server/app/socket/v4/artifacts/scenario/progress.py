@@ -1,4 +1,4 @@
-"""Scenario progress handler - listens to resource_progress events and emits scenario-specific events."""
+"""Scenario progress handler - listens to generate_text_* events and emits scenario-specific events."""
 
 import uuid
 from typing import Any, cast
@@ -22,82 +22,115 @@ SQL_PATH = (
 )
 
 
-@internal_sio.on("resource_progress")  # type: ignore
-async def handle_scenarios_progress(data: dict[str, Any]) -> None:
-    """Handle resource_progress internal event - filter by scenario artifact_type and emit scenario-specific event."""
-    # Filter by artifact_type (SQL will also validate, but early return for efficiency)
+@internal_sio.on("generate_call_start")  # type: ignore
+@internal_sio.on("generate_call_progress")  # type: ignore
+async def handle_scenarios_call_progress(data: dict[str, Any]) -> None:
+    """Handle generate_call_* events - filter by scenario artifact_type and emit scenario-specific event."""
     artifact_type = data.get("artifact_type")
     if artifact_type != "scenario":
-        return  # Not for us
+        return
 
     sid = data.get("sid", "")
     if not sid:
-        return  # No socket ID, can't emit to client
+        return
 
-    # Get profile_id from sid
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         return
     profile_id = uuid.UUID(profile_id_str)
 
-    # Extract data from event
     group_id_str = data.get("group_id")
     resource_type = data.get("resource_type")
-
     if not group_id_str or not resource_type:
         return
 
     group_id = uuid.UUID(group_id_str)
 
-    # Query SQL function - SQL handles validation
     try:
         async with get_db_connection() as conn:
             params = ValidateScenarioResourceProgressSqlParams(
                 profile_id=profile_id,
                 group_id=group_id,
                 resource_type=resource_type,
-                artifact_type="scenario",  # Always "scenario" for this handler
+                artifact_type="scenario",
             )
-            result = cast(
-                ValidateScenarioResourceProgressSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+            await execute_sql_typed(conn, SQL_PATH, params=params)
     except Exception:
-        # SQL function raised error (validation failed) - return early
         return
 
-    # Emit scenario-specific progress event with all fields from internal event
     await sio.emit(
         "scenario_generation_progress",
         {
-            "modality": data.get("modality", "text"),
+            "modality": "call",
             "artifact_type": artifact_type,
             "resource_type": resource_type,
             "resource_id": data.get("resource_id"),
             "run_id": data.get("run_id"),
             "group_id": data.get("group_id"),
             "type": data.get("type", "progress"),
-            "message": data.get("message", "Processing..."),
-            "text": data.get("text"),  # For token events
+            "event_type": data.get("event_type"),
             "tool_call_id": data.get("tool_call_id"),
             "tool_name": data.get("tool_name"),
             "arguments": data.get("arguments"),
             "arguments_delta": data.get("arguments_delta"),
+            "trace_id": data.get("trace_id"),
+        },
+        room=sid,
+    )
+
+
+@internal_sio.on("generate_image_start")  # type: ignore
+@internal_sio.on("generate_image_progress")  # type: ignore
+@internal_sio.on("generate_video_start")  # type: ignore
+@internal_sio.on("generate_video_progress")  # type: ignore
+async def handle_scenarios_media_progress(data: dict[str, Any]) -> None:
+    """Handle generate_image/video_* events - filter by scenario artifact_type and emit scenario-specific event."""
+    artifact_type = data.get("artifact_type")
+    if artifact_type != "scenario":
+        return
+
+    sid = data.get("sid", "")
+    if not sid:
+        return
+
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        return
+    profile_id = uuid.UUID(profile_id_str)
+
+    group_id_str = data.get("group_id")
+    resource_type = data.get("resource_type")
+    if not group_id_str or not resource_type:
+        return
+
+    group_id = uuid.UUID(group_id_str)
+
+    try:
+        async with get_db_connection() as conn:
+            params = ValidateScenarioResourceProgressSqlParams(
+                profile_id=profile_id,
+                group_id=group_id,
+                resource_type=resource_type,
+                artifact_type="scenario",
+            )
+            await execute_sql_typed(conn, SQL_PATH, params=params)
+    except Exception:
+        return
+
+    await sio.emit(
+        "scenario_generation_progress",
+        {
+            "modality": data.get("modality"),
+            "artifact_type": artifact_type,
+            "resource_type": resource_type,
+            "resource_id": data.get("resource_id"),
+            "run_id": data.get("run_id"),
+            "group_id": data.get("group_id"),
+            "type": data.get("type", "progress"),
+            "event_type": data.get("event_type"),
             "status": data.get("status"),
             "progress": data.get("progress"),
-            "ephemeral_key": data.get("ephemeral_key"),  # For audio session (deprecated)
-            "expires_in": data.get("expires_in"),  # For audio session (deprecated)
-            "model": data.get("model"),  # For audio session
             "trace_id": data.get("trace_id"),
-            # Audio-specific fields
-            "item_id": data.get("item_id"),
-            "audio_start_ms": data.get("audio_start_ms"),
-            "transcript": data.get("transcript"),
-            "response_id": data.get("response_id"),
-            "output_type": data.get("output_type"),
-            "audio": data.get("audio"),  # Base64 audio data
-            "call_id": data.get("call_id"),
-            "function_call": data.get("function_call"),
         },
         room=sid,
     )

@@ -1,4 +1,4 @@
-"""Simulation completion handler - listens to artifact_generation_complete events and emits granular simulation events."""
+"""Simulation completion handler - listens to generate_call_complete events and emits granular simulation events."""
 
 import uuid
 from typing import Any, cast
@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql"
 
 
-@internal_sio.on("resource_complete")  # type: ignore
+@internal_sio.on("generate_call_complete")  # type: ignore
 async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle resource_complete internal event - filter by simulation artifact_type and emit granular event."""
+    """Handle generate_call_complete events - filter by simulation artifact_type and emit granular event."""
     # Skip processing if in eval mode - benchmark handlers will handle evals
     eval_mode = data.get("eval_mode", False)
     if eval_mode:
@@ -45,26 +45,30 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
 
     # Extract all data from event (no Python filtering for resource_type - SQL handles it)
     group_id_str = data.get("group_id")
-    resource_id_str = data.get("resource_id")
+    event_type = data.get("event_type")
+    tool_result = data.get("result") or {}
+    tool_results = data.get("tool_results") or []
+    if not tool_result and tool_results:
+        tool_result = tool_results[0]
+    if event_type == "tool_call_complete" and not tool_result and not tool_results:
+        return
+    resource_id_str = tool_result.get("resource_id")
     resource_type = data.get("resource_type")
 
     if not group_id_str or not resource_type:
         return
 
-    # If no resource_id, this is an error - we expected a tool call to create a resource
-    # Emit resource_error so the error handler can process it and unblock the frontend
     if not resource_id_str:
-        # Emit resource_error - the simulations error handler will pick it up and emit simulation_generation_error to client
-        await internal_sio.emit(
-            "resource_error",
+        await sio.emit(
+            "simulation_generation_error",
             {
-                "sid": sid,
                 "artifact_type": "simulation",
-                "group_id": group_id_str,
                 "resource_type": resource_type,
-                "error_message": f"Model generated text but did not call the {resource_type} creation tool. Expected a tool call to create a resource.",
-                "trace_id": data.get("trace_id"),
+                "group_id": group_id_str,
+                "success": False,
+                "message": f"Missing resource_id for {resource_type} tool result",
             },
+            room=sid,
         )
         return
 
@@ -119,7 +123,7 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
             "success": True,
             "message": f"{resource_type} generation completed successfully",
             "run_id": data.get("run_id"),
-            "type": data.get("type", "run_complete"),
+            "type": data.get("type", "complete"),
         },
         room=sid,
     )

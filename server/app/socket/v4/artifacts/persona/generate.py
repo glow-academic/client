@@ -20,7 +20,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetPersonaApiRequest,
     GetPersonaResourceTreeSqlParams,
@@ -136,7 +136,7 @@ async def _persona_generate_impl(
         resource_types = data.resource_types
         if not resource_types:
             await emit_to_internal(
-                "generate_error",
+                "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="resource_types must be provided",
@@ -153,7 +153,7 @@ async def _persona_generate_impl(
         ]
         if invalid_types:
             await emit_to_internal(
-                "generate_error",
+                "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Invalid resource types: {', '.join(invalid_types)}",
@@ -209,7 +209,7 @@ async def _persona_generate_impl(
 
             if not agent_id:
                 await emit_to_internal(
-                    "generate_error",
+                    "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
                         error_message=f"No agent found for agent_type: {data.agent_type}",
@@ -311,7 +311,7 @@ async def _persona_generate_impl(
 
                 if not prepare_row:
                     await emit_to_internal(
-                        "generate_error",
+                        "generate_call_error",
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message="Failed to prepare persona generation",
@@ -333,7 +333,7 @@ async def _persona_generate_impl(
                         else "Rate limit exceeded. Please try again later."
                     )
                     await emit_to_internal(
-                        "generate_error",
+                        "generate_call_error",
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message=user_msg,
@@ -363,7 +363,6 @@ async def _persona_generate_impl(
             tools = prepare_row["tools"]
             developer_instruction_templates = prepare_row["developer_instruction_templates"]
             jinja_context = prepare_row["jinja_context"]
-            output_modalities = prepare_row["output_modalities"]
 
             # Step 5: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
@@ -382,7 +381,7 @@ async def _persona_generate_impl(
 
             if not insert_row:
                 await emit_to_internal(
-                    "generate_error",
+                    "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
                         error_message="Failed to insert generation messages",
@@ -403,39 +402,37 @@ async def _persona_generate_impl(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    # Run metadata
+                    "artifact_type": "persona",
+                    "resource_type": resource_types[0] if resource_types else "persona",
                     "run_id": str(run_id),
                     "group_id": str(group_id) if group_id else None,
-                    "trace_id": trace_id,
                     "message_id": str(message_id) if message_id else None,
-                    "resource_types": resource_types,
-                    # Model context (API key encrypted - AI handler decrypts)
-                    "model_name": model_name,
-                    "provider_name": provider_name,
-                    "api_key": api_key,  # Encrypted - secure transfer
-                    "base_url": base_url,
-                    "temperature": temperature,
-                    "reasoning": reasoning,
-                    "voice": voice,
-                    "quality": quality,
-                    # Messages (pre-rendered, properly ordered)
-                    "system_prompt": system_prompt,
-                    "developer_messages": rendered_developer_messages,
-                    "messages": messages,  # Ordered user/assistant messages from SQL
-                    # Tools
+                    "messages": (
+                        ([{"role": "system", "content": system_prompt}] if system_prompt else [])
+                        + [{"role": "developer", "content": m} for m in rendered_developer_messages]
+                        + (messages if isinstance(messages, list) else [])
+                    ),
+                    "model_config": {
+                        "model": model_name,
+                        "api_key": api_key,
+                        "base_url": base_url,
+                        "temperature": temperature,
+                        "reasoning": reasoning,
+                        "provider": provider_name,
+                        "voice": voice,
+                        "quality": quality,
+                        "length_seconds": None,
+                    },
                     "tools": convert_tools_to_dict(tools),
-                    # Metadata
-                    "artifact_type": "persona",
-                    "output_modalities": output_modalities,
-                    # Resources (for progress events)
-                    "resources": resources,
+                    "metadata": {"trace_id": trace_id},
+                    "eval_mode": False,
                 },
             )
 
     except Exception as e:
         logger.exception(f"Failed to generate persona resources: {str(e)}")
         await emit_to_internal(
-            "generate_error",
+            "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to generate persona resources: {str(e)}",
@@ -455,7 +452,7 @@ async def persona_generate(sid: str, data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
-                "generate_error",
+                "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
@@ -470,7 +467,7 @@ async def persona_generate(sid: str, data: dict[str, Any]) -> None:
         await _persona_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
-            "generate_error",
+            "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
@@ -493,7 +490,7 @@ async def persona_generate_internal(data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
-                "generate_error",
+                "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
@@ -510,7 +507,7 @@ async def persona_generate_internal(data: dict[str, Any]) -> None:
         await _persona_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
-            "generate_error",
+            "generate_call_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",

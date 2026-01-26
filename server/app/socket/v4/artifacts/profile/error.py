@@ -1,4 +1,4 @@
-"""Profile error handler - listens to resource_error events and emits profile-specific events."""
+"""Profile error handler - listens to generate_*_error events and emits profile-specific events."""
 
 import uuid
 from typing import Any, cast
@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/queries/profile/validate_profile_resource_error_complete.sql"
 
 
-@internal_sio.on("resource_error")  # type: ignore
+@internal_sio.on("generate_call_error")  # type: ignore
 async def handle_profiles_error(data: dict[str, Any]) -> None:
-    """Handle resource_error event - filter by profile artifact_type and emit profile-specific event."""
+    """Handle generate_*_error event - filter by profile artifact_type and emit profile-specific event."""
     artifact_type = data.get("artifact_type")
     if artifact_type != "profile":
         return

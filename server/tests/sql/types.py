@@ -3464,6 +3464,31 @@ class TestGetChatByIdV4CompleteApiResponse(BaseModel):
 
 
 
+# Generated from: test_get_developer_messages_by_run_v4_complete
+
+class TestGetDeveloperMessagesByRunV4CompleteSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class TestGetDeveloperMessagesByRunV4CompleteSqlRow(BaseModel):
+
+    message_count: int | None = None
+
+class TestGetDeveloperMessagesByRunV4CompleteApiRequest(BaseModel):
+
+    run_id: UUID
+
+class TestGetDeveloperMessagesByRunV4CompleteApiResponse(BaseModel):
+
+    message_count: int | None = None
+
+
+
 # Generated from: test_get_eval_by_active_v4_complete
 
 class TestGetEvalByActiveV4CompleteSqlParams(BaseModel):
@@ -4290,6 +4315,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TestGetChatByIdV4CompleteApiRequest",
         "TestGetChatByIdV4CompleteApiResponse",
     ),
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql": (
+        "TestGetDeveloperMessagesByRunV4CompleteSqlParams",
+        "TestGetDeveloperMessagesByRunV4CompleteSqlRow",
+        "TestGetDeveloperMessagesByRunV4CompleteApiRequest",
+        "TestGetDeveloperMessagesByRunV4CompleteApiResponse",
+    ),
     "tests/sql/v4/integration/queries/socket/helpers/test_get_eval_by_active_v4_complete.sql": (
         "TestGetEvalByActiveV4CompleteSqlParams",
         "TestGetEvalByActiveV4CompleteSqlRow",
@@ -4922,6 +4953,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_chat_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

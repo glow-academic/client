@@ -195,7 +195,7 @@ latest_user_message AS (
 ),
 -- Upsert user message (create if empty, update if exists)
 create_message_if_needed AS (
-    INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'user'::message_type, true, p.audio, NOW(), NOW()
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
@@ -243,7 +243,7 @@ user_tool_call_id AS (
     SELECT tool_call_id FROM existing_user_tool_call
 ),
 insert_user_content_if_needed AS (
-    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT cm.message_id, p.message_contents, 0, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
@@ -251,7 +251,7 @@ insert_user_content_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
 ),
 update_existing_message AS (
-    UPDATE messages_entry
+    UPDATE general_messages_entry
     SET audio = p.audio,
         updated_at = NOW()
     FROM params p
@@ -260,12 +260,12 @@ update_existing_message AS (
     RETURNING id as message_id
 ),
 update_existing_message_content AS (
-    UPDATE contents_entry
+    UPDATE general_contents_entry
     SET content = p.message_contents,
         updated_at = NOW()
     FROM params p
-    WHERE contents_entry.message_id = (SELECT message_id FROM latest_user_message)
-      AND contents_entry.idx = 0
+    WHERE general_contents_entry.message_id = (SELECT message_id FROM latest_user_message)
+      AND general_contents_entry.idx = 0
       AND EXISTS (SELECT 1 FROM latest_user_message)
 ),
 upserted_message AS (
@@ -275,13 +275,13 @@ upserted_message AS (
 ),
 -- Link message to run (set run_id directly on message)
 link_message_to_run AS (
-    UPDATE messages_entry
+    UPDATE general_messages_entry
     SET run_id = ur.run_id, updated_at = NOW()
     FROM upserted_message um
     CROSS JOIN upserted_run ur
-    WHERE messages_entry.id = um.message_id
-      AND (messages_entry.run_id IS NULL OR messages_entry.run_id = ur.run_id)
-    RETURNING messages_entry.id as message_id, ur.run_id
+    WHERE general_messages_entry.id = um.message_id
+      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = ur.run_id)
+    RETURNING general_messages_entry.id as message_id, ur.run_id
 ),
 -- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
@@ -306,7 +306,7 @@ latest_message_for_branch AS (
     LIMIT 1
 ),
 create_branch AS (
-    INSERT INTO message_tree_entry (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO general_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT 
         lmb.parent_id,
         um.message_id as child_id,
@@ -374,7 +374,7 @@ existing_system_message AS (
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_type, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -382,7 +382,7 @@ new_system_message AS (
 ),
 -- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
 insert_system_content AS (
-    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT nsm.system_message_id, smc.content, 0, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -394,13 +394,13 @@ system_message AS (
     SELECT system_message_id FROM new_system_message
 ),
 link_system AS (
-    UPDATE messages_entry
+    UPDATE general_messages_entry
     SET run_id = ur.run_id, updated_at = NOW()
     FROM system_message sm
     CROSS JOIN upserted_run ur
-    WHERE messages_entry.id = sm.system_message_id
-      AND (messages_entry.run_id IS NULL OR messages_entry.run_id = ur.run_id)
-    RETURNING messages_entry.id as system_message_id
+    WHERE general_messages_entry.id = sm.system_message_id
+      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = ur.run_id)
+    RETURNING general_messages_entry.id as system_message_id
 ),
 scenario_developer_content AS (
     SELECT DISTINCT
@@ -428,7 +428,7 @@ existing_scenario_developer_message AS (
     LIMIT 1
 ),
 new_scenario_developer_message AS (
-    INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_type, false, false, NOW(), NOW()
     FROM scenario_developer_content sdc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
@@ -436,7 +436,7 @@ new_scenario_developer_message AS (
 ),
 -- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
 insert_scenario_developer_content AS (
-    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT nsdm.developer_message_id, sdc.content, 0, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
@@ -448,16 +448,16 @@ scenario_developer_message AS (
     SELECT developer_message_id FROM new_scenario_developer_message
 ),
 link_developer AS (
-    UPDATE messages_entry
+    UPDATE general_messages_entry
     SET run_id = ur.run_id, updated_at = NOW()
     FROM scenario_developer_message sdm
     CROSS JOIN upserted_run ur
-    WHERE messages_entry.id = sdm.developer_message_id
-      AND (messages_entry.run_id IS NULL OR messages_entry.run_id = ur.run_id)
-    RETURNING messages_entry.id as developer_message_id
+    WHERE general_messages_entry.id = sdm.developer_message_id
+      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = ur.run_id)
+    RETURNING general_messages_entry.id as developer_message_id
 ),
 link_system_to_developer AS (
-    INSERT INTO message_tree_entry (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO general_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT DISTINCT
         ls.system_message_id as parent_id,
         ld.developer_message_id as child_id,
