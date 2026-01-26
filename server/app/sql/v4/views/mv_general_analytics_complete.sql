@@ -55,15 +55,9 @@ latest_grade AS (
         g.passed,
         g.time_taken,
         g.created_at,
-        -- Get rubric points from the grade's rubric connection
-        (SELECT p.value FROM general_grades_rubrics_connection grc2
-         JOIN rubric_points_junction rp ON rp.rubric_id = grc2.rubrics_id AND rp.type = 'total'::point_type
-         JOIN points_resource p ON p.id = rp.point_id
-         WHERE grc2.grade_id = g.id LIMIT 1) AS rubric_total_points,
-        (SELECT p.value FROM general_grades_rubrics_connection grc2
-         JOIN rubric_points_junction rp ON rp.rubric_id = grc2.rubrics_id AND rp.type = 'pass'::point_type
-         JOIN points_resource p ON p.id = rp.point_id
-         WHERE grc2.grade_id = g.id LIMIT 1) AS rubric_pass_points
+        -- Rubric points denormalized directly on grade
+        g.total_points AS rubric_total_points,
+        g.pass_points AS rubric_pass_points
     FROM general_grades_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
