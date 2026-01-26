@@ -1,14 +1,20 @@
 -- Start simulation attempt: create attempt, link profile, select scenario, create chat
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+--
+-- Updated for migration 331: Uses the new entry→resource connection tables
+-- - General attempts: general_attempts_entry, general_chats_entry
+-- - Practice attempts: practice_attempts_entry, practice_chats_entry
+-- - Connection tables: *_simulations_connection, *_cohorts_connection, etc.
+
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'socket_start_simulation_attempt_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -21,9 +27,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_start_simulation_attempt_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -102,51 +108,29 @@ VOLATILE
 AS $$
 WITH params AS (
     -- Wrap all function parameters in a CTE for asyncpg prepared statement compatibility
-    SELECT 
+    SELECT
         simulation_id::uuid as simulation_id,
         infinite_mode::boolean as infinite_mode,
         profile_id::uuid as profile_id,
         scenario_id_override::uuid as scenario_id_override
 ),
--- Create the attempt first
-new_attempt AS (
-    INSERT INTO attempts_entry (infinite_mode, created_at)
-    SELECT p.infinite_mode, now()
-    FROM params p
-    RETURNING id as attempt_id
-),
--- Link attempt to simulation via junction
-link_attempt_simulation AS (
-    INSERT INTO simulation_attempts_junction (simulation_id, attempt_id)
-    SELECT p.simulation_id, na.attempt_id
-    FROM params p
-    CROSS JOIN new_attempt na
-    RETURNING attempt_id
-),
--- Link attempt to profile via junction (if profile_id provided)
-link_attempt_profile AS (
-    INSERT INTO profile_attempts_junction (profile_id, attempt_id)
-    SELECT p.profile_id, na.attempt_id
-    FROM params p
-    CROSS JOIN new_attempt na
-    WHERE p.profile_id IS NOT NULL
-    RETURNING attempt_id
-),
--- Get simulation data
+-- Get simulation data and determine if practice
 simulation_data AS (
-    SELECT 
+    SELECT
         s.id,
         (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
         (SELECT (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
-        (SELECT srr.rubric_id FROM simulation_scenarios_junction ss 
+        -- Get simulations_resource.id for connections
+        (SELECT ssj.simulations_id FROM simulation_simulations_junction ssj WHERE ssj.simulation_id = s.id LIMIT 1) as simulations_resource_id,
+        (SELECT srr.rubric_id FROM simulation_scenarios_junction ss
          JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
          JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-         WHERE ss.simulation_id = s.id 
-           AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-               AND sfr.scenario_id = ss.scenario_id 
-               AND f.name = 'simulation_active' 
+         WHERE ss.simulation_id = s.id
+           AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
+               AND sfr.scenario_id = ss.scenario_id
+               AND f.name = 'simulation_active'
                AND ssf.value = true)
          ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as rubric_id
@@ -154,46 +138,156 @@ simulation_data AS (
     JOIN simulation_artifact s ON s.id = p.simulation_id
 ),
 -- Get simulation scenarios in order
-simulation_scenarios_junction AS (
-    SELECT 
+simulation_scenarios_cte AS (
+    SELECT
         ss.scenario_id,
         (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) as position
     FROM params p
-    JOIN simulation_scenarios_junction ss ON ss.simulation_id = p.simulation_id 
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-          AND sfr.scenario_id = ss.scenario_id 
-          AND f.name = 'simulation_active' 
+    JOIN simulation_scenarios_junction ss ON ss.simulation_id = p.simulation_id
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
+          AND sfr.scenario_id = ss.scenario_id
+          AND f.name = 'simulation_active'
           AND ssf.value = true)
     ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
 -- Determine content type (always scenario now - videos are accessed through scenarios)
 content_type_check AS (
-    SELECT 
+    SELECT
         'scenario' as content_type,
         NULL::uuid as first_video_id
 ),
 -- Determine chosen scenario
 chosen_scenario_id AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN p.scenario_id_override IS NOT NULL THEN p.scenario_id_override
-            WHEN EXISTS(SELECT 1 FROM simulation_scenarios_junction) THEN 
-                (SELECT scenario_id FROM simulation_scenarios_junction 
+            WHEN EXISTS(SELECT 1 FROM simulation_scenarios_cte) THEN
+                (SELECT scenario_id FROM simulation_scenarios_cte
                  ORDER BY position LIMIT 1)
             ELSE (
-                SELECT s.id 
-                FROM scenario_artifact s 
-                ORDER BY random() 
+                SELECT s.id
+                FROM scenario_artifact s
+                ORDER BY random()
                 LIMIT 1
             )
-        END as scenario_id
+        END as scenario_id,
+        -- Get scenarios_resource.id for connections
+        (SELECT ssj.scenarios_id FROM scenario_scenarios_junction ssj
+         WHERE ssj.scenario_id = CASE
+            WHEN p.scenario_id_override IS NOT NULL THEN p.scenario_id_override
+            WHEN EXISTS(SELECT 1 FROM simulation_scenarios_cte) THEN
+                (SELECT scenario_id FROM simulation_scenarios_cte ORDER BY position LIMIT 1)
+            ELSE (SELECT s.id FROM scenario_artifact s ORDER BY random() LIMIT 1)
+         END LIMIT 1) as scenarios_resource_id
     FROM params p
+),
+-- Get profile's profiles_resource.id, cohorts_resource.id, and departments_resource.id for connections
+profile_resources AS (
+    SELECT
+        ppj.profiles_id,
+        (SELECT ccj.cohorts_id FROM profile_cohorts_junction pcj
+         JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = pcj.cohort_id
+         WHERE pcj.profile_id = p.profile_id AND pcj.active = true
+         LIMIT 1) as cohorts_resource_id,
+        pdj.department_id as departments_resource_id
+    FROM params p
+    JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id
+    LEFT JOIN profile_departments_junction pdj ON pdj.profile_id = p.profile_id AND pdj.active = true
+    WHERE p.profile_id IS NOT NULL
+    LIMIT 1
+),
+-- Create the GENERAL attempt (non-practice simulations)
+new_general_attempt AS (
+    INSERT INTO general_attempts_entry (infinite_mode, created_at)
+    SELECT p.infinite_mode, now()
+    FROM params p
+    CROSS JOIN simulation_data sd
+    WHERE NOT sd.practice_simulation
+    RETURNING id as attempt_id
+),
+-- Create the PRACTICE attempt (practice simulations)
+new_practice_attempt AS (
+    INSERT INTO practice_attempts_entry (infinite_mode, created_at)
+    SELECT p.infinite_mode, now()
+    FROM params p
+    CROSS JOIN simulation_data sd
+    WHERE sd.practice_simulation
+    RETURNING id as attempt_id
+),
+-- Unified new_attempt CTE (returns the created attempt_id regardless of type)
+new_attempt AS (
+    SELECT attempt_id, false as is_practice FROM new_general_attempt
+    UNION ALL
+    SELECT attempt_id, true as is_practice FROM new_practice_attempt
+),
+-- Link GENERAL attempt to simulation via connection table
+link_general_attempt_simulation AS (
+    INSERT INTO general_attempts_simulations_connection (attempt_id, simulations_id)
+    SELECT nga.attempt_id, sd.simulations_resource_id
+    FROM new_general_attempt nga
+    CROSS JOIN simulation_data sd
+    WHERE sd.simulations_resource_id IS NOT NULL
+    RETURNING attempt_id
+),
+-- Link GENERAL attempt to cohort via connection table (if profile has cohort)
+link_general_attempt_cohort AS (
+    INSERT INTO general_attempts_cohorts_connection (attempt_id, cohorts_id)
+    SELECT nga.attempt_id, pr.cohorts_resource_id
+    FROM new_general_attempt nga
+    CROSS JOIN profile_resources pr
+    WHERE pr.cohorts_resource_id IS NOT NULL
+    RETURNING attempt_id
+),
+-- Link GENERAL attempt to department via connection table (if profile has department)
+link_general_attempt_department AS (
+    INSERT INTO general_attempts_departments_connection (attempt_id, departments_id)
+    SELECT nga.attempt_id, pr.departments_resource_id
+    FROM new_general_attempt nga
+    CROSS JOIN profile_resources pr
+    WHERE pr.departments_resource_id IS NOT NULL
+    RETURNING attempt_id
+),
+-- Link GENERAL attempt to profile via connection table
+link_general_attempt_profile AS (
+    INSERT INTO general_attempts_profiles_connection (attempt_id, profiles_id)
+    SELECT nga.attempt_id, pr.profiles_id
+    FROM new_general_attempt nga
+    CROSS JOIN profile_resources pr
+    WHERE pr.profiles_id IS NOT NULL
+    RETURNING attempt_id
+),
+-- Link PRACTICE attempt to simulation via connection table
+link_practice_attempt_simulation AS (
+    INSERT INTO practice_attempts_simulations_connection (attempt_id, simulations_id)
+    SELECT npa.attempt_id, sd.simulations_resource_id
+    FROM new_practice_attempt npa
+    CROSS JOIN simulation_data sd
+    WHERE sd.simulations_resource_id IS NOT NULL
+    RETURNING attempt_id
+),
+-- Link PRACTICE attempt to department via connection table (if profile has department)
+link_practice_attempt_department AS (
+    INSERT INTO practice_attempts_departments_connection (attempt_id, departments_id)
+    SELECT npa.attempt_id, pr.departments_resource_id
+    FROM new_practice_attempt npa
+    CROSS JOIN profile_resources pr
+    WHERE pr.departments_resource_id IS NOT NULL
+    RETURNING attempt_id
+),
+-- Link PRACTICE attempt to profile via connection table
+link_practice_attempt_profile AS (
+    INSERT INTO practice_attempts_profiles_connection (attempt_id, profiles_id)
+    SELECT npa.attempt_id, pr.profiles_id
+    FROM new_practice_attempt npa
+    CROSS JOIN profile_resources pr
+    WHERE pr.profiles_id IS NOT NULL
+    RETURNING attempt_id
 ),
 -- Resolve department_id for agent prompt selection (scenario -> profile -> any active)
 scenario_dept AS (
-    SELECT 
+    SELECT
         csi.scenario_id,
-        (SELECT sd.department_id FROM scenario_departments_junction sd 
+        (SELECT sd.department_id FROM scenario_departments_junction sd
          WHERE sd.scenario_id = csi.scenario_id AND sd.active = true LIMIT 1) as department_id
     FROM chosen_scenario_id csi
 ),
@@ -203,7 +297,7 @@ profile_dept AS (
     FROM params p
     JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     JOIN profile_departments_junction pd ON pd.department_id = d.id
-    WHERE pd.profile_id = p.profile_id 
+    WHERE pd.profile_id = p.profile_id
       AND pd.active = true
     LIMIT 1
 ),
@@ -229,7 +323,7 @@ default_settings AS (
     FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
       AND NOT EXISTS (
-          SELECT 1 FROM department_settings_junction sd 
+          SELECT 1 FROM department_settings_junction sd
           WHERE sd.settings_id = s.id AND sd.active = true
       )
     LIMIT 1
@@ -239,7 +333,7 @@ profile_primary_department AS (
     SELECT pd.department_id
     FROM params p
     JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
-    WHERE pd.is_primary = TRUE 
+    WHERE pd.is_primary = TRUE
       AND pd.active = true
     LIMIT 1
 ),
@@ -249,14 +343,14 @@ dept_specific_settings AS (
     FROM setting_artifact s
     JOIN department_settings_junction sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) 
+    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
       AND sd.active = true
     LIMIT 1
 ),
 active_settings AS (
     -- For authenticated users: prefer department-specific, then default, then any active
     -- For NULL profile_id: use default settings
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
@@ -265,7 +359,7 @@ active_settings AS (
 ),
 -- Document data for composite type aggregation
 document_data AS (
-    SELECT 
+    SELECT
         s.id as scenario_id,
         d.id as document_id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
@@ -283,7 +377,7 @@ document_data AS (
 ),
 -- Parameter item data for composite type aggregation
 parameter_item_data AS (
-    SELECT 
+    SELECT
         s.id as scenario_id,
         f.id as field_id,
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
@@ -301,7 +395,7 @@ parameter_item_data AS (
 -- CRITICAL FIX: Use DISTINCT ON to ensure only ONE row per scenario
 -- Multiple agents/models for the same persona can cause multiple rows, leading to duplicate chats_entry
 scenario_full_data_raw AS (
-    SELECT 
+    SELECT
         s.id as scenario_id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as scenario_name,
         ps.problem_statement,
@@ -326,7 +420,7 @@ scenario_full_data_raw AS (
         COALESCE(e.base_url, '') as base_url,
         kr.key as api_key,
         -- Check if scenario needs generation
-        CASE 
+        CASE
             WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true
             ELSE false
         END as needs_generation
@@ -336,17 +430,17 @@ scenario_full_data_raw AS (
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = s.id AND sp.active = true
     CROSS JOIN simulation_data sd_agents
-    
+
     LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LEFT JOIN agent_models_junction am ON am.agent_id = a.id
     LEFT JOIN models_resource m ON m.id = am.model_id
     -- Join temperature and reasoning FROM model_artifact levels via agent
     LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
+    LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id
 LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
-    LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
+    LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id
 LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
@@ -360,13 +454,13 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id 
-        AND spk.settings_id = act_s.settings_id 
+    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id
+        AND spk.settings_id = act_s.settings_id
         AND spk.active = true
     LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
     WHERE s.id = csi.scenario_id
-    GROUP BY s.id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE), 
-             CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, sp.persona_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1), pr_prompt_default.system_prompt, 
+    GROUP BY s.id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
+             CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, sp.persona_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1), pr_prompt_default.system_prompt,
              COALESCE(tl.temperature, 0.0), rl.reasoning_level, (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = sp.persona_id LIMIT 1), (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = sp.persona_id LIMIT 1), m.id, (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name,
              kr.key, e.base_url, act_s.settings_id
 ),
@@ -385,9 +479,9 @@ new_group AS (
     WHERE ctc.content_type = 'scenario'
     RETURNING id as group_id, trace_id, created_at, updated_at
 ),
--- Create simulation chat with attempt_id directly (only for scenarios, not videos)
-new_chat AS (
-    INSERT INTO chats_entry (
+-- Create GENERAL chat with attempt_id directly (only for scenarios, not videos)
+new_general_chat AS (
+    INSERT INTO general_chats_entry (
         created_at, title, completed, updated_at, attempt_id
     )
     SELECT
@@ -395,22 +489,58 @@ new_chat AS (
         COALESCE(sfd.scenario_name, 'New Simulation'),
         false,
         ng.updated_at,
-        na.attempt_id
+        nga.attempt_id
     FROM new_group ng
     CROSS JOIN scenario_full_data sfd
-    CROSS JOIN new_attempt na
+    CROSS JOIN new_general_attempt nga
+    CROSS JOIN simulation_data sd
+    WHERE NOT sd.practice_simulation
     RETURNING id as chat_id, title as chat_title, created_at, updated_at, attempt_id
 ),
--- Link chat to scenario via junction
-link_chat_scenario AS (
-    INSERT INTO scenario_chats_junction (scenario_id, chat_id)
-    SELECT sfd.scenario_id::uuid, nc.chat_id
-    FROM scenario_full_data sfd
-    CROSS JOIN new_chat nc
+-- Create PRACTICE chat with attempt_id directly
+new_practice_chat AS (
+    INSERT INTO practice_chats_entry (
+        created_at, title, completed, updated_at, attempt_id
+    )
+    SELECT
+        ng.created_at,
+        COALESCE(sfd.scenario_name, 'New Simulation'),
+        false,
+        ng.updated_at,
+        npa.attempt_id
+    FROM new_group ng
+    CROSS JOIN scenario_full_data sfd
+    CROSS JOIN new_practice_attempt npa
+    CROSS JOIN simulation_data sd
+    WHERE sd.practice_simulation
+    RETURNING id as chat_id, title as chat_title, created_at, updated_at, attempt_id
+),
+-- Unified new_chat CTE
+new_chat AS (
+    SELECT chat_id, chat_title, created_at, updated_at, attempt_id FROM new_general_chat
+    UNION ALL
+    SELECT chat_id, chat_title, created_at, updated_at, attempt_id FROM new_practice_chat
+),
+-- Link GENERAL chat to scenario via connection table
+link_general_chat_scenario AS (
+    INSERT INTO general_chats_scenarios_connection (chat_id, scenarios_id)
+    SELECT ngc.chat_id, csi.scenarios_resource_id
+    FROM new_general_chat ngc
+    CROSS JOIN chosen_scenario_id csi
+    WHERE csi.scenarios_resource_id IS NOT NULL
+    RETURNING chat_id
+),
+-- Link PRACTICE chat to scenario via connection table
+link_practice_chat_scenario AS (
+    INSERT INTO practice_chats_scenarios_connection (chat_id, scenarios_id)
+    SELECT npc.chat_id, csi.scenarios_resource_id
+    FROM new_practice_chat npc
+    CROSS JOIN chosen_scenario_id csi
+    WHERE csi.scenarios_resource_id IS NOT NULL
     RETURNING chat_id
 )
 -- Return all data in single row
-SELECT 
+SELECT
     na.attempt_id::text,
     CASE WHEN ctc.content_type = 'scenario' THEN nc.chat_id::text ELSE NULL::text END as chat_id,
     CASE WHEN ctc.content_type = 'scenario' THEN nc.chat_title ELSE NULL::text END as chat_title,
@@ -424,7 +554,7 @@ SELECT
     -- Simulation metadata as composite type
     (sd.id::text, sd.title, sd.description, sd.active, sd.practice_simulation, sd.rubric_id::text)::types.q_start_simulation_attempt_v4_simulation_data as simulation_data,
     -- Scenario metadata as composite type (only for scenarios)
-    CASE 
+    CASE
         WHEN ctc.content_type = 'scenario' THEN
             (
                 sfd.persona_id::text,

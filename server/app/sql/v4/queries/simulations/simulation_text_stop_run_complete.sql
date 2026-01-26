@@ -12,11 +12,17 @@ AS $$
 WITH params AS (
     SELECT api_simulation_text_stop_run_v4.chat_id as chat_id
 ),
+-- Unified chats from both entry tables
+all_chats AS (
+    SELECT id FROM general_chats_entry
+    UNION ALL
+    SELECT id FROM practice_chats_entry
+),
 latest_message AS (
     SELECT
         m.id,
         COALESCE(ce.content, '') as content
-    FROM chats_entry c
+    FROM all_chats c
     JOIN messages_entry m ON m.chat_id = c.id
     LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     WHERE c.id = (SELECT chat_id FROM params)

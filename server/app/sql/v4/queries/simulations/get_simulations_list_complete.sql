@@ -165,13 +165,21 @@ simulation_scenarios_data AS (
         AND sf.value = true)
     GROUP BY ss.simulation_id
 ),
-attempts_entry AS (
+-- Unified attempt→simulation connections for counting
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id
+    FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id
+    FROM practice_attempts_simulations_connection
+),
+attempt_counts AS (
     SELECT
-        saj.simulation_id,
+        sim_ssj.simulation_id,
         COUNT(*) as attempt_count
-    FROM attempts_entry sa
-    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-    GROUP BY saj.simulation_id
+    FROM all_attempt_simulations aas
+    JOIN simulation_simulations_junction sim_ssj ON sim_ssj.simulations_id = aas.simulations_id
+    GROUP BY sim_ssj.simulation_id
 ),
 simulation_cohorts_data AS (
     SELECT
@@ -241,7 +249,7 @@ simulation_data AS (
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(ssd.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(ssd.num_scenarios, 0) as num_scenarios,
-        COALESCE(sa.attempt_count, 0) as attempt_count,
+        COALESCE(ac.attempt_count, 0) as attempt_count,
         COALESCE(ses.active_cohort_count, 0) as active_cohort_count,
         COALESCE(ses.total_cohort_links, 0) as total_cohort_links,
         COALESCE(ses.num_cohorts, 0) as num_cohorts,
@@ -251,11 +259,11 @@ simulation_data AS (
     LEFT JOIN simulation_departments_junction sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
     LEFT JOIN simulation_scenarios_data ssd ON ssd.simulation_id = s.id
-    LEFT JOIN attempts_entry sa ON sa.simulation_id = s.id
+    LEFT JOIN attempt_counts ac ON ac.simulation_id = s.id
     LEFT JOIN view_simulation_edit_state ses ON ses.simulation_id = s.id
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
     GROUP BY s.id, (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1), EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE), EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE),
-             s.updated_at, sdd.department_ids, ssd.scenario_ids, ssd.num_scenarios, sa.attempt_count,
+             s.updated_at, sdd.department_ids, ssd.scenario_ids, ssd.num_scenarios, ac.attempt_count,
              ses.active_cohort_count, ses.total_cohort_links, ses.num_cohorts, scd.cohort_ids, ses.department_ids
     HAVING
         -- Include if has matching department link OR has no department links at all (cross-dept)

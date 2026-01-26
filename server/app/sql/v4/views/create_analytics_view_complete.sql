@@ -2,12 +2,14 @@
 -- This SQL file creates the analytics materialized view with all necessary indexes.
 -- Follows idempotent drop/recreate pattern - safe to run multiple times.
 --
--- This view aggregates simulation attempts, chats_entry, grades_entry, and related data
+-- This view aggregates simulation attempts, chats, grades_entry, and related data
 -- for efficient analytics queries.
 --
--- Uses junction tables for artifact-entry relationships:
---   scenario_tree_junction, simulation_attempts_junction, profile_attempts_junction,
---   scenario_chats_junction, messages_entry.chat_id
+-- Uses the new entry→resource connection tables:
+--   general_attempts_entry, practice_attempts_entry (attempts)
+--   general_chats_entry, practice_chats_entry (chats)
+--   *_simulations_connection, *_cohorts_connection, *_departments_connection (connections)
+--   general_chats_scenarios_connection, practice_chats_scenarios_connection (chat→scenario)
 -- ============================================================================
 -- Step 1: Drop all indexes on analytics materialized view (if it exists)
 -- ============================================================================
@@ -38,7 +40,52 @@ DROP MATERIALIZED VIEW IF EXISTS analytics CASCADE;
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW analytics AS
-WITH RECURSIVE scenario_roots AS (
+WITH RECURSIVE
+-- Unified attempts (general + practice)
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
+           false AS is_practice_attempt
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
+           true AS is_practice_attempt
+    FROM practice_attempts_entry
+),
+-- Unified chats (general + practice)
+all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active,
+           false AS is_practice_chat
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active,
+           true AS is_practice_chat
+    FROM practice_chats_entry
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id
+    FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id
+    FROM practice_attempts_simulations_connection
+),
+-- Unified attempt→profile connections
+all_attempt_profiles AS (
+    SELECT attempt_id, profiles_id
+    FROM general_attempts_profiles_connection
+    UNION ALL
+    SELECT attempt_id, profiles_id
+    FROM practice_attempts_profiles_connection
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id, created_at
+    FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id, created_at
+    FROM practice_chats_scenarios_connection
+),
+scenario_roots AS (
   -- Map every scenario.id to its root_id using scenario_tree_junction (self-edge = root)
   SELECT s.id, st.parent_id, s.id AS root_id
   FROM scenario_artifact s
@@ -63,9 +110,10 @@ latest_grade AS (
          srr.rubric_id,
          g.created_at
   FROM grades_entry g
-  JOIN chats_entry c ON c.id = g.chat_id
-  LEFT JOIN scenario_chats_junction scj ON scj.chat_id = c.id
-  LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = scj.scenario_id
+  JOIN all_chats c ON c.id = g.chat_id
+  LEFT JOIN all_chat_scenarios acs ON acs.chat_id = c.id
+  LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = acs.scenarios_id
+  LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = ssj.scenario_id
   ORDER BY c.id, g.created_at DESC
 ),
 -- only ACTIVE simulations
@@ -106,19 +154,27 @@ cohorts_by_sim AS (
   FROM active_sims s
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
+-- Uses the new connection tables and joins through simulations_resource
 profile_cohorts_for_sim AS (
-  SELECT sa.id AS attempt_id, paj.profile_id, saj.simulation_id,
+  SELECT sa.id AS attempt_id, aap.profiles_id AS profile_id, aas.simulations_id AS simulation_id,
          ARRAY(
            SELECT c.id
            FROM cohort_artifact c
-           JOIN cohort_simulations_junction cs ON cs.cohort_id = c.id AND cs.simulation_id = saj.simulation_id
-           JOIN profile_cohorts_junction cp ON cp.cohort_id = c.id AND cp.profile_id = paj.profile_id
-           WHERE EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+           -- Join via cohort_simulations_junction (cohort_id, simulation_id)
+           JOIN cohort_simulations_junction csj ON csj.cohort_id = c.id
+           -- Get simulation artifact via simulations_resource
+           JOIN simulations_resource sr ON sr.id = aas.simulations_id
+           JOIN simulation_simulations_junction ssj ON ssj.simulations_id = sr.id AND ssj.simulation_id = csj.simulation_id
+           -- Profile must be in this cohort
+           JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id
+           JOIN profile_cohorts_junction cp ON cp.cohort_id = c.id AND cp.profile_id = ppj.profile_id
+           WHERE csj.active = true
+             AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
                AND f.name = 'cohort_active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
-  FROM attempts_entry sa
-  JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-  LEFT JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id
+  FROM all_attempts sa
+  JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
+  LEFT JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
 ),
 -- Pick one attempt per chat to avoid duplicate chat_id rows
 -- Prefer attempts with active profiles, then most recent
@@ -126,20 +182,21 @@ chat_first_attempt AS (
   SELECT DISTINCT ON (c.id)
     c.id AS chat_id,
     c.attempt_id
-  FROM chats_entry c
-  JOIN attempts_entry sa ON sa.id = c.attempt_id
-  LEFT JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id
+  FROM all_chats c
+  JOIN all_attempts sa ON sa.id = c.attempt_id
+  LEFT JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
   WHERE c.attempt_id IS NOT NULL
   ORDER BY c.id,
-    CASE WHEN paj.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
+    CASE WHEN aap.profiles_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
     sa.created_at DESC -- then most recent
 ),
 -- Pick one scenario per chat to avoid duplicate chat_id rows
+-- Now uses all_chat_scenarios (unified general + practice)
 chat_first_scenario AS (
   SELECT DISTINCT ON (chat_id)
     chat_id,
-    scenario_id
-  FROM scenario_chats_junction
+    scenarios_id AS scenario_id
+  FROM all_chat_scenarios
   ORDER BY chat_id, created_at DESC
 ),
 -- Message counts per chat (using messages_entry.chat_id directly)
@@ -169,7 +226,7 @@ message_deltas AS (
     END AS delta_seconds,
     m.created_at
   FROM messages_entry m
-  JOIN chats_entry c ON c.id = m.chat_id
+  JOIN all_chats c ON c.id = m.chat_id
   WHERE m.chat_id IS NOT NULL
 ),
 message_deltas_agg AS (
@@ -180,19 +237,22 @@ message_deltas_agg AS (
 ),
 effective_profile_department AS (
   -- Choose the primary department if set; otherwise earliest assignment
-  SELECT pd.profile_id,
+  -- Now uses profiles_resource.id (via all_attempt_profiles)
+  SELECT pd.profiles_id,
          COALESCE(
            (SELECT pd1.department_id
-              FROM profile_departments_junction pd1
-             WHERE pd1.profile_id = pd.profile_id AND pd1.is_primary
+              FROM profile_profiles_junction ppj
+              JOIN profile_departments_junction pd1 ON pd1.profile_id = ppj.profile_id
+             WHERE ppj.profiles_id = pd.profiles_id AND pd1.is_primary
              LIMIT 1),
            (SELECT pd2.department_id
-              FROM profile_departments_junction pd2
-             WHERE pd2.profile_id = pd.profile_id
+              FROM profile_profiles_junction ppj
+              JOIN profile_departments_junction pd2 ON pd2.profile_id = ppj.profile_id
+             WHERE ppj.profiles_id = pd.profiles_id
              ORDER BY pd2.created_at ASC
              LIMIT 1)
          ) AS department_id
-  FROM (SELECT DISTINCT paj.profile_id FROM profile_attempts_junction paj) pd
+  FROM (SELECT DISTINCT aap.profiles_id FROM all_attempt_profiles aap) pd
 ),
 -- Get first department_id for each entity from junction tables
 simulation_first_dept AS (
@@ -239,8 +299,8 @@ scenario_first_persona AS (
 SELECT DISTINCT ON (sc.id)
   sc.id                         AS chat_id,
   sa.id                         AS attempt_id,
-  paj.profile_id                AS profile_id,
-  saj.simulation_id             AS simulation_id,
+  aap.profiles_id               AS profile_id,
+  aas.simulations_id            AS simulation_id,
 
   rm.root_scenario_id           AS scenario_id,
   rm.leaf_scenario_id           AS leaf_scenario_id,
@@ -248,25 +308,15 @@ SELECT DISTINCT ON (sc.id)
   sfp.persona_id                AS persona_id,
   (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
 
-  EXISTS (
-    SELECT 1 FROM simulation_flags_junction sf
-    JOIN flags_resource f ON sf.flag_id = f.id
-    WHERE sf.simulation_id = sim.id
-      AND f.name = 'practice'
-      AND sf.value = TRUE
-  ) AS is_practice,
+  -- is_practice now comes from the attempt type (using the unified CTE)
+  sa.is_practice_attempt        AS is_practice,
   COALESCE(sa.archived, FALSE)  AS is_archived,
-  (NOT EXISTS (
-    SELECT 1 FROM simulation_flags_junction sf
-    JOIN flags_resource f ON sf.flag_id = f.id
-    WHERE sf.simulation_id = sim.id
-      AND f.name = 'practice'
-      AND sf.value = TRUE
-  ) AND NOT COALESCE(sa.archived, FALSE)) AS is_general,
+  (NOT sa.is_practice_attempt AND NOT COALESCE(sa.archived, FALSE)) AS is_general,
   COALESCE(
-    (SELECT r.role FROM profile_roles_junction pr_j
+    (SELECT r.role FROM profile_profiles_junction ppj
+     JOIN profile_roles_junction pr_j ON pr_j.profile_id = ppj.profile_id
      JOIN roles_resource r ON pr_j.role_id = r.id
-     WHERE pr_j.profile_id = pr.id
+     WHERE ppj.profiles_id = aap.profiles_id
      LIMIT 1),
     'member'::profile_type
   ) AS profile_type,
@@ -300,7 +350,8 @@ SELECT DISTINCT ON (sc.id)
 
   sa.created_at                 AS attempt_created_at,
   pcs.profile_cohort_ids        AS profile_cohort_ids,
-  (SELECT COUNT(*) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = sim.id)::int AS sim_scenario_count,
+  (SELECT COUNT(*) FROM simulation_scenarios_junction ss
+   JOIN simulation_simulations_junction ssj_cnt ON ssj_cnt.simulation_id = ss.simulation_id AND ssj_cnt.simulations_id = aas.simulations_id)::int AS sim_scenario_count,
   lg.created_at                 AS grade_created_at,
 
   -- Department ID coalesced from all relevant tables (using junction tables)
@@ -311,15 +362,19 @@ SELECT DISTINCT ON (sc.id)
     scfd.department_id,
     pfd.department_id
   ) AS department_id
-FROM chats_entry sc
+FROM all_chats sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
-JOIN attempts_entry sa ON sa.id = cfa.attempt_id
-JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-JOIN active_sims sim ON sim.id = saj.simulation_id
-LEFT JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id
-LEFT JOIN profile_artifact pr ON pr.id = paj.profile_id
+JOIN all_attempts sa ON sa.id = cfa.attempt_id
+JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
+JOIN simulations_resource sim_res ON sim_res.id = aas.simulations_id
+JOIN simulation_simulations_junction sim_ssj ON sim_ssj.simulations_id = sim_res.id
+JOIN active_sims sim ON sim.id = sim_ssj.simulation_id
+LEFT JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
+LEFT JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id
+LEFT JOIN profile_artifact pr ON pr.id = ppj.profile_id
 JOIN chat_first_scenario cfs ON cfs.chat_id = sc.id
-JOIN active_scenarios s ON s.id = cfs.scenario_id
+LEFT JOIN scenario_scenarios_junction ssj_scen ON ssj_scen.scenarios_id = cfs.scenario_id
+JOIN active_scenarios s ON s.id = ssj_scen.scenario_id
 JOIN root_map rm ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
 LEFT JOIN personas_resource p ON p.id = sfp.persona_id
@@ -327,16 +382,16 @@ LEFT JOIN latest_grade lg ON lg.simulation_chat_id = sc.id
 LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.scenario_id = s.id AND lg.rubric_id IS NULL
 LEFT JOIN rubric_rubrics_junction rrj ON rrj.rubric_id = COALESCE(lg.rubric_id, srr_fallback.rubric_id)
 LEFT JOIN rubrics_resource r ON r.id = rrj.rubrics_id
-LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = saj.simulation_id
+LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sim.id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
-LEFT JOIN effective_profile_department epd ON epd.profile_id = paj.profile_id
+LEFT JOIN effective_profile_department epd ON epd.profiles_id = aap.profiles_id
 LEFT JOIN simulation_first_dept sfd ON sfd.simulation_id = sim.id
 LEFT JOIN rubric_first_dept rfd ON rfd.rubric_id = rrj.rubric_id
 LEFT JOIN scenario_first_dept scfd ON scfd.scenario_id = s.id
 LEFT JOIN persona_first_dept pfd ON pfd.persona_id = p.id
-ORDER BY sc.id, paj.profile_id NULLS LAST, lg.created_at DESC NULLS LAST
+ORDER BY sc.id, aap.profiles_id NULLS LAST, lg.created_at DESC NULLS LAST
 WITH NO DATA;
 
 -- ============================================================================
@@ -446,11 +501,21 @@ CREATE INDEX analytics_is_archived_true_idx
 CREATE INDEX IF NOT EXISTS messages_chat_id_created_idx
   ON messages_entry (chat_id, created_at);
 
-CREATE INDEX IF NOT EXISTS chats_id_created_idx
-  ON chats_entry (id, created_at);
+-- Indexes for general_chats_entry
+CREATE INDEX IF NOT EXISTS general_chats_id_created_idx
+  ON general_chats_entry (id, created_at);
 
-CREATE INDEX IF NOT EXISTS attempts_entry_archived_idx
-  ON attempts_entry (archived);
+-- Indexes for practice_chats_entry
+CREATE INDEX IF NOT EXISTS practice_chats_id_created_idx
+  ON practice_chats_entry (id, created_at);
+
+-- Indexes for general_attempts_entry
+CREATE INDEX IF NOT EXISTS general_attempts_archived_idx
+  ON general_attempts_entry (archived);
+
+-- Indexes for practice_attempts_entry
+CREATE INDEX IF NOT EXISTS practice_attempts_archived_idx
+  ON practice_attempts_entry (archived);
 
 -- Common joins
 CREATE INDEX IF NOT EXISTS simulations_id_idx

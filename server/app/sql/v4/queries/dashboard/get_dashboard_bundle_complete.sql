@@ -572,7 +572,35 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
+-- Unified chats (general + practice)
+WITH all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM practice_chats_entry
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id FROM practice_chats_scenarios_connection
+),
+-- Unified attempts (general + practice)
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM practice_attempts_entry
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id FROM practice_attempts_simulations_connection
+),
+params AS (
     SELECT 
         start_date::timestamptz AS start_date,
         end_date::timestamptz AS end_date,
@@ -807,10 +835,10 @@ filt AS (
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj_stag.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
+                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = acs_stag.scenarios_id LIMIT 1), 0)) * 100.0, 2) AS norm
                 FROM grades_entry sg
-                JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
-                JOIN scenario_chats_junction scj_stag ON scj_stag.chat_id = c_stag.id
+                JOIN all_chats c_stag ON c_stag.id = sg.chat_id
+                JOIN all_chat_scenarios acs_stag ON acs_stag.chat_id = c_stag.id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
             ),
             ordered_grades AS (
@@ -1292,12 +1320,12 @@ filt AS (
             ),
             
             -- Rubric Heatmap (FULL IMPLEMENTATION with correlation matrices)
-            -- Get all chats_entry that have grades_entry in the date range (not filtered by analytics attempt_created_at)
+            -- Get all chats that have grades_entry in the date range (not filtered by analytics attempt_created_at)
             filtered_chats AS (
                 SELECT DISTINCT c.id AS chat_id
                 FROM grades_entry scg
-                JOIN chats_entry c ON c.id = scg.chat_id
-                JOIN attempts_entry sa ON sa.id = c.attempt_id
+                JOIN all_chats c ON c.id = scg.chat_id
+                JOIN all_attempts sa ON sa.id = c.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
                   AND scg.created_at < (SELECT end_date FROM params)
                   -- Apply same filters as filt but on attempt level

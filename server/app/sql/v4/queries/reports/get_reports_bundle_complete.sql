@@ -191,7 +191,21 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
+-- Unified chats (general + practice)
+WITH all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM practice_chats_entry
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id FROM practice_chats_scenarios_connection
+),
+params AS (
     SELECT 
         (start_date::timestamptz) AS start_date,
         (end_date::timestamptz) AS end_date,
@@ -435,10 +449,10 @@ grade_stream_per_profile AS (
         sg.id,
         c_bundle.id AS simulation_chat_id,
         sg.created_at,
-        TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj_bundle.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
+        TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = acs_bundle.scenarios_id LIMIT 1), 0)) * 100.0, 2) AS norm
     FROM grades_entry sg
-    JOIN chats_entry c_bundle ON c_bundle.id = sg.chat_id
-    JOIN scenario_chats_junction scj_bundle ON scj_bundle.chat_id = c_bundle.id
+    JOIN all_chats c_bundle ON c_bundle.id = sg.chat_id
+    JOIN all_chat_scenarios acs_bundle ON acs_bundle.chat_id = c_bundle.id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
 ),
 ordered_grades_per_profile AS (

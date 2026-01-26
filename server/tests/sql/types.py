@@ -3080,10 +3080,12 @@ class TestGetActivityByMessageV4CompleteApiResponse(BaseModel):
 class TestCreateTestAttemptV4CompleteSqlParams(BaseModel):
 
     simulation_id: UUID
+    is_practice: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.simulation_id,
+            self.is_practice,
         )
 
 class TestCreateTestAttemptV4CompleteSqlRow(BaseModel):
@@ -3093,6 +3095,7 @@ class TestCreateTestAttemptV4CompleteSqlRow(BaseModel):
 class TestCreateTestAttemptV4CompleteApiRequest(BaseModel):
 
     simulation_id: UUID
+    is_practice: bool | None = False
 
 class TestCreateTestAttemptV4CompleteApiResponse(BaseModel):
 
@@ -3130,12 +3133,16 @@ class TestCreateTestBenchmarkAttemptV4CompleteApiResponse(BaseModel):
 class TestCreateTestChatV4CompleteSqlParams(BaseModel):
 
     scenario_id: UUID
+    attempt_id: UUID
     trace_id: str | None = None
+    is_practice: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.scenario_id,
+            self.attempt_id,
             self.trace_id,
+            self.is_practice,
         )
 
 class TestCreateTestChatV4CompleteSqlRow(BaseModel):
@@ -3145,7 +3152,9 @@ class TestCreateTestChatV4CompleteSqlRow(BaseModel):
 class TestCreateTestChatV4CompleteApiRequest(BaseModel):
 
     scenario_id: UUID
+    attempt_id: UUID
     trace_id: str | None = None
+    is_practice: bool | None = False
 
 class TestCreateTestChatV4CompleteApiResponse(BaseModel):
 

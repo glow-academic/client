@@ -138,6 +138,22 @@ run_token_agg AS (
       AND r.created_at <= (SELECT end_date FROM params)
     GROUP BY rpu.run_id
 ),
+-- Unified chats and attempts
+all_chats AS (
+    SELECT id, attempt_id, false AS is_practice_chat FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, true AS is_practice_chat FROM practice_chats_entry
+),
+all_attempts AS (
+    SELECT id, archived, false AS is_practice_attempt FROM general_attempts_entry
+    UNION ALL
+    SELECT id, archived, true AS is_practice_attempt FROM practice_attempts_entry
+),
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id FROM practice_attempts_simulations_connection
+),
 runs_base AS (
     SELECT
         mr.id as run_id,
@@ -154,13 +170,14 @@ runs_base AS (
     LEFT JOIN agent_runs_junction arj ON arj.run_id = mr.id
     LEFT JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    -- Join to simulations via runs_entry.group_id -> groups_entry -> messages_entry.chat_id -> chats_entry.attempt_id -> simulation_attempts_junction
+    -- Join to simulations via runs_entry.group_id -> groups_entry -> messages_entry.chat_id -> unified chats/attempts
     LEFT JOIN groups_entry g ON g.id = mr.group_id
     LEFT JOIN messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
-    LEFT JOIN chats_entry c ON c.id = msg.chat_id
-    LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
-    LEFT JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-    LEFT JOIN simulation_artifact sim ON sim.id = saj.simulation_id
+    LEFT JOIN all_chats c ON c.id = msg.chat_id
+    LEFT JOIN all_attempts sa ON sa.id = c.attempt_id
+    LEFT JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
+    LEFT JOIN simulation_simulations_junction ssj ON ssj.simulations_id = aas.simulations_id
+    LEFT JOIN simulation_artifact sim ON sim.id = ssj.simulation_id
     CROSS JOIN params p
     WHERE
         -- Date filters (always required)

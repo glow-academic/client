@@ -142,7 +142,29 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH params AS (
+-- Unified chats (general + practice)
+WITH all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM practice_chats_entry
+),
+-- Unified attempts (general + practice)
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM practice_attempts_entry
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id FROM practice_attempts_simulations_connection
+),
+params AS (
     SELECT
         COALESCE(NULLIF(start_date, ''), NULL)::timestamptz AS start_date,
         COALESCE(NULLIF(end_date, ''), NULL)::timestamptz AS end_date,
@@ -202,12 +224,13 @@ runs_base AS (
     LEFT JOIN agent_runs_junction arj ON arj.run_id = mr.id
     LEFT JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    -- Join to simulations via messages_entry.chat_id -> chats_entry.attempt_id -> simulation_attempts_junction
+    -- Join to simulations via messages_entry.chat_id -> all_chats.attempt_id -> all_attempt_simulations
     LEFT JOIN messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
-    LEFT JOIN chats_entry c ON c.id = msg.chat_id
-    LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
-    LEFT JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
-    LEFT JOIN simulation_artifact sim ON sim.id = saj.simulation_id
+    LEFT JOIN all_chats c ON c.id = msg.chat_id
+    LEFT JOIN all_attempts sa ON sa.id = c.attempt_id
+    LEFT JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
+    LEFT JOIN simulation_simulations_junction ssj ON ssj.simulations_id = aas.simulations_id
+    LEFT JOIN simulation_artifact sim ON sim.id = ssj.simulation_id
     CROSS JOIN params p
     WHERE
         -- Date filters (always required)

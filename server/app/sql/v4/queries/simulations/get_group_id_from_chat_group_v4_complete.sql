@@ -4,9 +4,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'socket_get_group_id_from_chat_group_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -15,7 +15,7 @@ BEGIN
 END $$;
 
 -- 2) Recreate function
--- chats_entry no longer has group_id directly.
+-- Uses unified chats from general_chats_entry and practice_chats_entry
 -- Path: chat.id -> messages_entry.chat_id -> messages_entry.run_id -> runs_entry.group_id
 CREATE OR REPLACE FUNCTION socket_get_group_id_from_chat_group_v4(
     chat_id uuid
@@ -26,8 +26,13 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+    WITH all_chats AS (
+        SELECT id FROM general_chats_entry
+        UNION ALL
+        SELECT id FROM practice_chats_entry
+    )
     SELECT r.group_id
-    FROM chats_entry c
+    FROM all_chats c
     JOIN messages_entry m ON m.chat_id = c.id
     JOIN runs_entry r ON r.id = m.run_id
     WHERE c.id = $1

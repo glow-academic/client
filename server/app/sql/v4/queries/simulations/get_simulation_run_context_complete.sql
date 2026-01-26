@@ -2,9 +2,13 @@
 -- Converted to PostgreSQL function
 -- Returns: chat, attempt, scenario, persona, model, provider, simulation settings, profile, and documents data
 -- Returns both text and voice agent/model fields for flexibility
--- Existing fields (persona_id, model_id, etc.) point to text agent/model 
+-- Existing fields (persona_id, model_id, etc.) point to text agent/model
 -- Voice fields are prefixed with voice_* (voice_model_id, voice_model_name, etc.)
 -- Note: Uses JSON for documents aggregation - may need refactoring per STANDARDS.md
+--
+-- Updated for migration 331: Uses the new entry→resource connection tables
+-- - Unified all_chats, all_attempts, all_attempt_simulations, all_attempt_profiles CTEs
+-- - Chat→scenario via all_chat_scenarios connection
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -69,15 +73,55 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH scenario_dept AS (
+WITH
+-- Unified chats (general + practice)
+all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM practice_chats_entry
+),
+-- Unified attempts (general + practice)
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM practice_attempts_entry
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id, created_at
+    FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id, created_at
+    FROM practice_chats_scenarios_connection
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id
+    FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id
+    FROM practice_attempts_simulations_connection
+),
+-- Unified attempt→profile connections
+all_attempt_profiles AS (
+    SELECT attempt_id, profiles_id
+    FROM general_attempts_profiles_connection
+    UNION ALL
+    SELECT attempt_id, profiles_id
+    FROM practice_attempts_profiles_connection
+),
+scenario_dept AS (
     SELECT
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments_junction sd
          WHERE sd.scenario_id = ssj_dept.scenario_id AND sd.active = true LIMIT 1) as department_id
-    FROM chats_entry sc
-    INNER JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
-    INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    INNER JOIN scenarios_resource s ON s.id = scj.scenario_id
+    FROM all_chats sc
+    INNER JOIN all_chat_scenarios acs ON acs.chat_id = sc.id
+    INNER JOIN scenarios_resource s ON s.id = acs.scenarios_id
     INNER JOIN scenario_scenarios_junction ssj_dept ON ssj_dept.scenarios_id = s.id
     WHERE sc.id = chat_id
 ),
@@ -88,10 +132,11 @@ profile_dept AS (
     JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
     JOIN department_artifact d ON d.id = ddj.department_id
     JOIN profile_departments_junction pd ON pd.department_id = dr.id
-    JOIN chats_entry sc ON sc.id = chat_id
-    JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id AND paj.profile_id = pd.profile_id
-    WHERE paj.profile_id IS NOT NULL
+    JOIN all_chats sc ON sc.id = chat_id
+    JOIN all_attempts sa ON sa.id = sc.attempt_id
+    JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
+    JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id AND ppj.profile_id = pd.profile_id
+    WHERE aap.profiles_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     LIMIT 1
 ),
@@ -114,12 +159,13 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempts_entry)
     SELECT
         rl.requests_per_day as req_per_day
-    FROM chats_entry sc
-    JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    JOIN profile_attempts_junction paj2 ON paj2.attempt_id = sa.id
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = paj2.profile_id AND prl.active = true
+    FROM all_chats sc
+    JOIN all_attempts sa ON sa.id = sc.attempt_id
+    JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
+    JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id
+    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = ppj.profile_id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    WHERE sc.id = chat_id AND paj2.profile_id IS NOT NULL
+    WHERE sc.id = chat_id AND aap.profiles_id IS NOT NULL
     LIMIT 1
 ),
 runs_today AS (
@@ -129,19 +175,21 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs_entry mr
     JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    WHERE prj.profile_id = (SELECT paj3.profile_id FROM chats_entry sc
-                            JOIN attempts_entry sa ON sa.id = sc.attempt_id
-                            JOIN profile_attempts_junction paj3 ON paj3.attempt_id = sa.id
-                            WHERE sc.id = chat_id AND paj3.profile_id IS NOT NULL LIMIT 1)
+    WHERE prj.profile_id = (SELECT ppj.profile_id FROM all_chats sc
+                            JOIN all_attempts sa ON sa.id = sc.attempt_id
+                            JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
+                            JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id
+                            WHERE sc.id = chat_id AND aap.profiles_id IS NOT NULL LIMIT 1)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 profile_from_attempt AS (
-    -- Get profile_id from attempts_entry for settings resolution
-    SELECT paj4.profile_id
-    FROM chats_entry sc
-    JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    JOIN profile_attempts_junction paj4 ON paj4.attempt_id = sa.id
-    WHERE sc.id = chat_id AND paj4.profile_id IS NOT NULL
+    -- Get profile_id (artifact) from attempts_entry for settings resolution
+    SELECT ppj.profile_id
+    FROM all_chats sc
+    JOIN all_attempts sa ON sa.id = sc.attempt_id
+    JOIN all_attempt_profiles aap ON aap.attempt_id = sa.id
+    JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id
+    WHERE sc.id = chat_id AND aap.profiles_id IS NOT NULL
     LIMIT 1
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys_junction)
@@ -225,7 +273,7 @@ SELECT
     
     -- Attempt data
     sa.id::text as attempt_id,
-    saj_main.simulation_id::text,
+    sim_ssj.simulation_id::text,
     
     -- Scenario data
     s.id::text as scenario_id,
@@ -270,7 +318,7 @@ SELECT
         AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
 
     -- Profile data (via attempts_entry)
-    paj_main.profile_id::text as profile_id,
+    aap_main.profiles_id::text as profile_id,
     
     -- Rate limit data
     prl.req_per_day,
@@ -291,17 +339,18 @@ SELECT
         '[]'::json
     ) as documents
 
-FROM chats_entry sc
-INNER JOIN scenario_chats_junction scj_main ON scj_main.chat_id = sc.id
-INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
-INNER JOIN simulation_attempts_junction saj_main ON saj_main.attempt_id = sa.id
-INNER JOIN profile_attempts_junction paj_main ON paj_main.attempt_id = sa.id
-INNER JOIN scenarios_resource s ON s.id = scj_main.scenario_id
+FROM all_chats sc
+INNER JOIN all_chat_scenarios acs_main ON acs_main.chat_id = sc.id
+INNER JOIN all_attempts sa ON sa.id = sc.attempt_id
+INNER JOIN all_attempt_simulations aas_main ON aas_main.attempt_id = sa.id
+INNER JOIN simulation_simulations_junction sim_ssj ON sim_ssj.simulations_id = aas_main.simulations_id
+LEFT JOIN all_attempt_profiles aap_main ON aap_main.attempt_id = sa.id
+INNER JOIN scenarios_resource s ON s.id = acs_main.scenarios_id
 INNER JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id
-LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = saj_main.simulation_id AND ss.scenario_id = ssj.scenario_id
+LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = sim_ssj.simulation_id AND ss.scenario_id = ssj.scenario_id
 LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = ssj.scenario_id AND sps.active = true
 LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-INNER JOIN simulation_artifact sim ON sim.id = saj_main.simulation_id
+INNER JOIN simulation_artifact sim ON sim.id = sim_ssj.simulation_id
 -- Get first persona for orchestrator (ensures single row for orchestrator config)
 LEFT JOIN (
     SELECT DISTINCT ON (sp.scenario_id) 
@@ -379,7 +428,7 @@ CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept
 WHERE sc.id = chat_id
 GROUP BY sc.id, sc.title,
-         sa.id, saj_main.simulation_id,
+         sa.id, sim_ssj.simulation_id,
          s.id, ps.problem_statement,
          first_persona.persona_id, first_persona.persona_name,
          n_prov.name,
@@ -394,6 +443,6 @@ GROUP BY sc.id, sc.title,
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
              AND sfr.scenario_id = ss.scenario_id
              AND f.name = 'copy_paste_allowed'), false),
-         paj_main.profile_id,
+         aap_main.profiles_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 $$;

@@ -2,6 +2,8 @@
 -- Encapsulates per-cohort state data (user-independent) used for permission checks.
 -- Shared between the list and single-page queries for consistent can_edit logic.
 -- This is a regular view (not materialized) so data is always fresh.
+--
+-- Uses the new entry→resource connection tables for usage count.
 
 CREATE OR REPLACE VIEW view_cohort_edit_state AS
 SELECT
@@ -11,13 +13,13 @@ SELECT
      FROM cohort_departments_junction cd
      WHERE cd.cohort_id = c.id AND cd.active = true
     ) AS department_ids,
-    -- Usage count (attempts linked through profiles in this cohort)
+    -- Usage count (general attempts linked through this cohort)
+    -- Only general attempts have cohort connections
     COALESCE(
-        (SELECT COUNT(DISTINCT sa.id)
-         FROM profile_cohorts_junction cp
-         JOIN profile_attempts_junction paj ON paj.profile_id = cp.profile_id
-         JOIN attempts_entry sa ON sa.id = paj.attempt_id
-         WHERE cp.cohort_id = c.id AND cp.active = true
+        (SELECT COUNT(DISTINCT gacc.attempt_id)
+         FROM cohort_cohorts_junction ccj
+         JOIN general_attempts_cohorts_connection gacc ON gacc.cohorts_id = ccj.cohorts_id
+         WHERE ccj.cohort_id = c.id AND gacc.active = true
         ), 0
     ) AS usage_count
 FROM cohort_artifact c;

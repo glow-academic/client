@@ -402,15 +402,27 @@ simulations_aggregated AS (
 ),
 earliest_attempt AS (
     -- Earliest attempt across all departments the effective profile belongs to
+    -- Uses unified attempts from general and practice entry tables
+    WITH all_attempts AS (
+        SELECT id, created_at FROM general_attempts_entry
+        UNION ALL
+        SELECT id, created_at FROM practice_attempts_entry
+    ),
+    all_attempt_profiles AS (
+        SELECT attempt_id, profiles_id FROM general_attempts_profiles_connection
+        UNION ALL
+        SELECT attempt_id, profiles_id FROM practice_attempts_profiles_connection
+    )
     SELECT MIN(sa.created_at) as earliest
     -- Get all departments for the effective profile
     FROM profile_departments_junction pd_effective
     -- Get all profiles in those departments
     JOIN profile_departments_junction pd_all ON pd_all.department_id = pd_effective.department_id
         AND pd_all.active = true
-    -- Get attempts for those profiles (via profile_attempts_junction)
-    JOIN profile_attempts_junction patj ON patj.profile_id = pd_all.profile_id
-    JOIN attempts_entry sa ON sa.id = patj.attempt_id
+    -- Get attempts for those profiles (via unified attempt_profiles connection)
+    JOIN profile_profiles_junction ppj ON ppj.profile_id = pd_all.profile_id
+    JOIN all_attempt_profiles aap ON aap.profiles_id = ppj.profiles_id
+    JOIN all_attempts sa ON sa.id = aap.attempt_id
     WHERE pd_effective.profile_id = (SELECT profile_id FROM params)
       AND pd_effective.active = true
 ),

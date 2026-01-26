@@ -8,20 +8,58 @@
 -- 3. Feedback aggregation per standard group (SUM of feedback totals)
 -- 4. Score percentage calculation (total_score / max_group_points * 100)
 --
--- Uses junction tables: scenario_chats_junction, simulation_attempts_junction
+-- Uses the new entry→resource connection tables:
+--   general_chats_entry, practice_chats_entry (chats)
+--   general_chats_scenarios_connection, practice_chats_scenarios_connection (chat→scenario)
+--   general_attempts_simulations_connection, practice_attempts_simulations_connection (attempt→simulation)
 
 DROP VIEW IF EXISTS view_grade_per_standard_group;
 
 CREATE OR REPLACE VIEW view_grade_per_standard_group AS
-WITH chat_scenario_info AS (
+WITH
+-- Unified chats (general + practice)
+all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM practice_chats_entry
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id, created_at
+    FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id, created_at
+    FROM practice_chats_scenarios_connection
+),
+-- Unified attempts (general + practice)
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM practice_attempts_entry
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id
+    FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id
+    FROM practice_attempts_simulations_connection
+),
+chat_scenario_info AS (
     SELECT DISTINCT
         c.id AS chat_id,
-        scj.scenario_id,
-        saj.simulation_id
-    FROM chats_entry c
-    JOIN scenario_chats_junction scj ON scj.chat_id = c.id
-    JOIN attempts_entry sa ON sa.id = c.attempt_id
-    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
+        ssj.scenario_id,
+        sim_ssj.simulation_id
+    FROM all_chats c
+    JOIN all_chat_scenarios acs ON acs.chat_id = c.id
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = acs.scenarios_id
+    JOIN all_attempts sa ON sa.id = c.attempt_id
+    JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
+    JOIN simulation_simulations_junction sim_ssj ON sim_ssj.simulations_id = aas.simulations_id
 ),
 -- Get first scenario's rubric per simulation (fallback when no direct scenario rubric exists)
 sim_first_scenario_rubric AS (
@@ -59,7 +97,7 @@ latest_grade AS (
         ) AS rubric_id,
         scg.created_at
     FROM grades_entry scg
-    JOIN chats_entry c ON c.id = scg.chat_id
+    JOIN all_chats c ON c.id = scg.chat_id
     LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = csi.scenario_id
     LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id

@@ -27,13 +27,43 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH RECURSIVE attempt_base AS (
+WITH RECURSIVE
+-- Unified attempts (general + practice)
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
+    FROM practice_attempts_entry
+),
+-- Unified chats (general + practice)
+all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    FROM practice_chats_entry
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id FROM practice_attempts_simulations_connection
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id FROM practice_chats_scenarios_connection
+),
+attempt_base AS (
     SELECT
         sa.id as attempt_id,
-        saj.simulation_id,
+        ssj.simulation_id,
         sa.infinite_mode
-    FROM attempts_entry sa
-    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
+    FROM all_attempts sa
+    JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
+    JOIN simulation_simulations_junction ssj ON ssj.simulations_id = aas.simulations_id
     WHERE sa.id = attempt_id
 ),
 simulation_scenarios_list AS (
@@ -53,10 +83,11 @@ simulation_scenarios_list AS (
 existing_chats AS (
     SELECT
         sc.id as chat_id,
-        scj.scenario_id as child_scenario_id,
+        ssj.scenario_id as child_scenario_id,
         sc.completed
-    FROM chats_entry sc
-    JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
+    FROM all_chats sc
+    JOIN all_chat_scenarios acs ON acs.chat_id = sc.id
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = acs.scenarios_id
     CROSS JOIN attempt_base ab
     WHERE sc.attempt_id = ab.attempt_id
 ),
@@ -114,15 +145,16 @@ existing_parent_scenario_ids AS (
     FROM child_to_parent_mapping ctp
     JOIN simulation_scenarios_list ssl ON ssl.scenario_id = ctp.parent_scenario_id
 ),
--- Get parent scenarios that have graded chats_entry (reuse logic from get_scenarios_with_grades.sql)
+-- Get parent scenarios that have graded chats (reuse logic from get_scenarios_with_grades.sql)
 scenarios_with_grades AS (
     SELECT DISTINCT ss.scenario_id as parent_scenario_id
     FROM simulation_scenarios_junction ss
     CROSS JOIN attempt_base ab
-    JOIN chats_entry sc ON sc.attempt_id = ab.attempt_id
-    JOIN scenario_chats_junction scj2 ON scj2.chat_id = sc.id
+    JOIN all_chats sc ON sc.attempt_id = ab.attempt_id
+    JOIN all_chat_scenarios acs2 ON acs2.chat_id = sc.id
+    JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = acs2.scenarios_id
     JOIN grades_entry scg ON scg.chat_id = sc.id
-    LEFT JOIN root_scenarios rs ON rs.child_scenario_id = scj2.scenario_id
+    LEFT JOIN root_scenarios rs ON rs.child_scenario_id = ssj2.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id
         WHERE ssf.simulation_id = ss.simulation_id
@@ -130,8 +162,8 @@ scenarios_with_grades AS (
           AND f.name = 'scenario_active'
           AND ssf.value = true)
       AND (
-        COALESCE(rs.root_scenario_id, scj2.scenario_id) = ss.scenario_id
-        OR scj2.scenario_id = ss.scenario_id
+        COALESCE(rs.root_scenario_id, ssj2.scenario_id) = ss.scenario_id
+        OR ssj2.scenario_id = ss.scenario_id
       )
 ),
 -- Find next scenario that doesn't have a graded chat and doesn't already have a chat

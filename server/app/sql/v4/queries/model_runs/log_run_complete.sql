@@ -39,12 +39,15 @@ run_info AS (
         NULL::uuid as persona_id,
         COALESCE(
             x.department_id,
-            -- Try to get department FROM chats_entry (chats_entry now have direct group_id column)
+            -- Try to get department from chat via new connection tables
             (SELECT sd.department_id FROM runs_entry r2
              JOIN messages_entry m2 ON m2.run_id = r2.id
-             JOIN chats_entry c ON c.id = m2.chat_id
-             JOIN scenario_chats_junction scj ON scj.chat_id = c.id
-             JOIN scenario_departments_junction sd ON sd.scenario_id = scj.scenario_id AND sd.active = true
+             LEFT JOIN general_chats_entry gc ON gc.id = m2.chat_id
+             LEFT JOIN practice_chats_entry pc ON pc.id = m2.chat_id
+             LEFT JOIN general_chats_scenarios_connection gcsc ON gcsc.chat_id = gc.id
+             LEFT JOIN practice_chats_scenarios_connection pcsc ON pcsc.chat_id = pc.id
+             LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = COALESCE(gcsc.scenarios_id, pcsc.scenarios_id)
+             JOIN scenario_departments_junction sd ON sd.scenario_id = ssj.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
             (SELECT pd.department_id FROM runs_entry r2_prof

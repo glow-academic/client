@@ -595,7 +595,16 @@ scenario_statistics AS (
         MAX(sc.created_at) as last_used_date
     FROM params x
     JOIN simulation_scenarios_junction ss ON ss.simulation_id = x.simulation_id
-    LEFT JOIN scenario_chats_junction scj_sc ON (
+    -- Get chats linked to this scenario via unified chat→scenario connections
+    LEFT JOIN (
+        SELECT gcsc.chat_id, ssj2.scenario_id
+        FROM general_chats_scenarios_connection gcsc
+        JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = gcsc.scenarios_id
+        UNION ALL
+        SELECT pcsc.chat_id, ssj2.scenario_id
+        FROM practice_chats_scenarios_connection pcsc
+        JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = pcsc.scenarios_id
+    ) scj_sc ON (
         scj_sc.scenario_id IN (
             SELECT st2.child_id
             FROM scenario_tree_junction st2
@@ -609,7 +618,11 @@ scenario_statistics AS (
         )
         OR scj_sc.scenario_id = ss.scenario_id
     )
-    LEFT JOIN chats_entry sc ON sc.id = scj_sc.chat_id
+    LEFT JOIN (
+        SELECT id, created_at, completed FROM general_chats_entry
+        UNION ALL
+        SELECT id, created_at, completed FROM practice_chats_entry
+    ) sc ON sc.id = scj_sc.chat_id
     LEFT JOIN grades_entry scg ON scg.chat_id = sc.id
     WHERE x.simulation_id IS NOT NULL
     GROUP BY ss.scenario_id

@@ -33,19 +33,63 @@ member_agent AS (
     WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
+-- Unified chats CTE
+all_chats AS (
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active,
+           false AS is_practice_chat
+    FROM general_chats_entry
+    UNION ALL
+    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active,
+           true AS is_practice_chat
+    FROM practice_chats_entry
+),
+-- Unified attempts CTE
+all_attempts AS (
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
+           false AS is_practice_attempt
+    FROM general_attempts_entry
+    UNION ALL
+    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
+           true AS is_practice_attempt
+    FROM practice_attempts_entry
+),
+-- Unified chat→scenario connections
+all_chat_scenarios AS (
+    SELECT chat_id, scenarios_id
+    FROM general_chats_scenarios_connection
+    UNION ALL
+    SELECT chat_id, scenarios_id
+    FROM practice_chats_scenarios_connection
+),
+-- Unified attempt→simulation connections
+all_attempt_simulations AS (
+    SELECT attempt_id, simulations_id
+    FROM general_attempts_simulations_connection
+    UNION ALL
+    SELECT attempt_id, simulations_id
+    FROM practice_attempts_simulations_connection
+),
+-- Unified attempt→profile connections
+all_attempt_profiles AS (
+    SELECT attempt_id, profiles_id
+    FROM general_attempts_profiles_connection
+    UNION ALL
+    SELECT attempt_id, profiles_id
+    FROM practice_attempts_profiles_connection
+),
 -- Get chat context
 chat_context AS (
     SELECT
         c.id as chat_id,
         (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as chat_title,
-        (SELECT scj.scenario_id FROM scenario_chats_junction scj WHERE scj.chat_id = c.id LIMIT 1) as scenario_id,
+        (SELECT ssj.scenario_id FROM all_chat_scenarios acs JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = acs.scenarios_id WHERE acs.chat_id = c.id LIMIT 1) as scenario_id,
         NULL::uuid as trace_id,
         sa.id as attempt_id,
-        (SELECT saj.simulation_id FROM simulation_attempts_junction saj WHERE saj.attempt_id = sa.id LIMIT 1) as simulation_id,
-        (SELECT paj.profile_id FROM profile_attempts_junction paj WHERE paj.attempt_id = sa.id LIMIT 1) as profile_id
+        (SELECT ssimj.simulation_id FROM all_attempt_simulations aas JOIN simulation_simulations_junction ssimj ON ssimj.simulations_id = aas.simulations_id WHERE aas.attempt_id = sa.id LIMIT 1) as simulation_id,
+        (SELECT ppj.profile_id FROM all_attempt_profiles aap JOIN profile_profiles_junction ppj ON ppj.profiles_id = aap.profiles_id WHERE aap.attempt_id = sa.id LIMIT 1) as profile_id
     FROM params p
-    JOIN chats_entry c ON c.id = p.chat_id
-    JOIN attempts_entry sa ON sa.id = c.attempt_id
+    JOIN all_chats c ON c.id = p.chat_id
+    JOIN all_attempts sa ON sa.id = c.attempt_id
     LIMIT 1
 ),
 -- Get or create group for chat (find existing group via runs linked to this chat's messages)
@@ -364,8 +408,9 @@ scenario_developer_content AS (
     FROM run_info ri
     JOIN upserted_run ur ON ur.run_id = ri.run_id
     JOIN params p ON true
-    JOIN scenario_chats_junction scj ON scj.chat_id = p.chat_id
-    JOIN scenario_problem_statements_junction sps ON sps.scenario_id = scj.scenario_id AND sps.active = true
+    JOIN all_chat_scenarios acs ON acs.chat_id = p.chat_id
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = acs.scenarios_id
+    JOIN scenario_problem_statements_junction sps ON sps.scenario_id = ssj.scenario_id AND sps.active = true
     JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE ps.problem_statement IS NOT NULL
     AND ps.problem_statement != ''
