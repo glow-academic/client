@@ -223,7 +223,7 @@ async def _member_progress_impl(
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": message_str},
                     ],
-                    "model_config": {
+                    "llm_config": {
                         "model": model_name,
                         "api_key": api_key,
                         "base_url": base_url,

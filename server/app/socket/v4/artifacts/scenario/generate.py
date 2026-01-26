@@ -299,17 +299,22 @@ async def _scenario_generate_impl(
             for user_msg in data.user_instructions or []:
                 messages.append({"role": "user", "content": user_msg})
 
+            resource_type = resource_types[0] if resource_types else "scenario"
+            upload_id: str | None = None
+            if resource_type in {"images", "videos"}:
+                upload_id = str(uuid.uuid4())
+
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
                     "artifact_type": "scenario",
-                    "resource_type": resource_types[0] if resource_types else "scenario",
+                    "resource_type": resource_type,
                     "run_id": run_id,
                     "group_id": str(group_id) if group_id else None,
                     "message_id": None,
                     "messages": messages,
-                    "model_config": {
+                    "llm_config": {
                         "model": run_context_row.get("model_name"),
                         "api_key": run_context_row.get("api_key"),
                         "base_url": run_context_row.get("base_url"),
@@ -323,6 +328,7 @@ async def _scenario_generate_impl(
                     "tools": convert_tools_to_dict(run_context_row.get("tools")),
                     "metadata": {"trace_id": trace_id},
                     "eval_mode": False,
+                    "upload_id": upload_id,
                 },
             )
 

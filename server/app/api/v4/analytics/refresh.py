@@ -6,16 +6,16 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (RefreshAnalyticsApiRequest,
-                           RefreshAnalyticsApiResponse,
-                           RefreshAnalyticsSqlParams, RefreshAnalyticsSqlRow,
+from app.sql.types import (RefreshViewApiRequest,
+                           RefreshViewApiResponse,
+                           RefreshViewSqlParams, RefreshViewSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/analytics/refresh_analytics_complete.sql"
+SQL_PATH = "app/sql/v4/queries/analytics/refresh_view_complete.sql"
 VIEW_CREATION_SQL_PATH = "app/sql/v4/views/create_analytics_view_complete.sql"
 
 router = APIRouter()
@@ -23,17 +23,17 @@ router = APIRouter()
 
 @router.post(
     "/refresh",
-    response_model=RefreshAnalyticsApiResponse,
+    response_model=RefreshViewApiResponse,
     dependencies=[
         audit_activity("analytics.refreshed", "{{ actor.name }} refreshed analytics")
     ],
 )
 async def refresh_analytics(
-    request: RefreshAnalyticsApiRequest,
+    request: RefreshViewApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RefreshAnalyticsApiResponse:
+) -> RefreshViewApiResponse:
     """Refresh the analytics materialized view. Creates view if it doesn't exist."""
     tags = ["analytics"]  # From router tags
 
@@ -70,14 +70,14 @@ async def refresh_analytics(
         # Use double star pattern for parameter construction
         import uuid
 
-        params = RefreshAnalyticsSqlParams(
+        params = RefreshViewSqlParams(
             **request.model_dump(), profile_id=uuid.UUID(profile_id)
         )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            RefreshAnalyticsSqlRow,
+            RefreshViewSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -90,7 +90,7 @@ async def refresh_analytics(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Build response - SQL function returns structured data
-        api_response = RefreshAnalyticsApiResponse.model_validate(result.model_dump())
+        api_response = RefreshViewApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

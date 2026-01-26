@@ -412,7 +412,7 @@ async def _persona_generate_impl(
                         + [{"role": "developer", "content": m} for m in rendered_developer_messages]
                         + (messages if isinstance(messages, list) else [])
                     ),
-                    "model_config": {
+                    "llm_config": {
                         "model": model_name,
                         "api_key": api_key,
                         "base_url": base_url,

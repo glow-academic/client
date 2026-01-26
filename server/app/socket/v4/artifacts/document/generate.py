@@ -187,7 +187,7 @@ async def _generate_document_impl(
                     "group_id": str(result.group_id) if result.group_id else None,
                     "message_id": None,
                     "messages": messages,
-                    "model_config": {
+                    "llm_config": {
                         "model": result.model_name,
                         "api_key": result.api_key,
                         "base_url": result.base_url,

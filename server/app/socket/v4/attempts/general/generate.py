@@ -134,7 +134,7 @@ async def _simulation_voice_generate_impl(
                     "message_id": None,
                     "modality": "audio",
                     "messages": messages,
-                    "model_config": {
+                    "llm_config": {
                         "model": result.voice_model_name or result.model_name,
                         "api_key": result.voice_api_key or result.api_key,
                         "base_url": result.voice_base_url or result.base_url,

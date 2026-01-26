@@ -72,7 +72,7 @@ class GenerateArtifactPayload(BaseModel):
     resource_types: list[str] | None = None
     resource_id: str | None = None
     messages: list[dict[str, Any]]
-    model_config: ModelConfig
+    llm_config: ModelConfig
     tools: list[dict[str, Any]] | None = None
     eval_mode: bool = False
     metadata: dict[str, Any] | None = None
@@ -228,7 +228,7 @@ async def _generate_artifact_impl(
 
         messages = format_messages_for_litellm(data.messages)
 
-        model_config = data.model_config
+        model_config = data.llm_config
         extra_body: dict[str, Any] = {}
         if model_config.voice is not None:
             extra_body["voice"] = model_config.voice

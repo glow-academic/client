@@ -148,7 +148,7 @@ async def _handle_agent_eval_start(data: dict[str, Any]) -> None:
                     "group_id": str(group_id) if group_id else None,
                     "message_id": None,
                     "messages": messages,
-                    "model_config": {
+                    "llm_config": {
                         "model": run_context_row.get("model_name"),
                         "api_key": run_context_row.get("api_key"),
                         "base_url": run_context_row.get("base_url"),
@@ -246,7 +246,7 @@ async def _handle_tool_eval_start(data: dict[str, Any]) -> None:
                 "group_id": str(group_id) if group_id else None,
                 "message_id": None,
                 "messages": messages,
-                "model_config": model_config,
+                "llm_config": model_config,
                 "tools": data.get("tools"),
                 "metadata": {"trace_id": data.get("trace_id")},
                 "eval_mode": True,

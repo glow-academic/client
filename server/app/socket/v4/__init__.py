@@ -29,7 +29,6 @@ from .artifacts import (
 )
 from .attempts import (
     benchmark,
-    simulation,
 )
 
 # Create main router
@@ -71,10 +70,7 @@ server_router.include_router(cohort.server_router)
 client_router.include_router(profile.client_router)
 server_router.include_router(profile.server_router)
 
-# Include attempts routers (simulation, benchmark)
-client_router.include_router(simulation.client_router)
-server_router.include_router(simulation.server_router)
-
+# Include attempts routers (benchmark)
 client_router.include_router(benchmark.client_router)
 server_router.include_router(benchmark.server_router)
 

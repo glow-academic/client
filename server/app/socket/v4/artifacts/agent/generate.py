@@ -276,7 +276,7 @@ async def _agent_generate_impl(
                     "group_id": str(group_id) if group_id else None,
                     "message_id": None,
                     "messages": messages,
-                    "model_config": {
+                    "llm_config": {
                         "model": run_context_row.get("model_name"),
                         "api_key": run_context_row.get("api_key"),
                         "base_url": run_context_row.get("base_url"),
