@@ -254,3 +254,79 @@ def compute_can_duplicate(user_role: str | None) -> bool:
     - Currently always true for admin/instructional/superadmin
     """
     return user_role in ("admin", "instructional", "superadmin")
+
+
+# ========== Save/Create Endpoint Permission Functions ==========
+
+
+def compute_can_create(
+    user_role: str | None,
+    department_ids: list[str] | list[UUID] | None,
+) -> bool:
+    """Compute permission to create a new persona.
+
+    Business logic (from SQL validate_department_create_permissions):
+    - Non-superadmins cannot create general objects (empty department_ids)
+    - Only admin/instructional/superadmin can create personas
+    """
+    # Role check first
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return False
+
+    # Non-superadmins cannot create general objects (no departments)
+    if user_role != "superadmin" and not department_ids:
+        return False
+
+    return True
+
+
+def compute_can_save(
+    user_role: str | None,
+    user_department_ids: list[str] | list[UUID] | None,
+    persona_department_ids: list[str] | list[UUID] | None,
+    active_scenario_count: int,
+) -> bool:
+    """Compute permission to save/update an existing persona.
+
+    Business logic (from SQL validate_department_update_permissions + compute_can_edit):
+    - Not a default persona (unless superadmin)
+    - Not linked to active scenarios
+    - User has admin/instructional/superadmin role
+    - Non-superadmins must belong to ALL of the persona's departments
+    """
+    # Role check first
+    if user_role not in ("admin", "instructional", "superadmin"):
+        return False
+
+    # Default personas can only be edited by superadmin
+    if not persona_department_ids and user_role != "superadmin":
+        return False
+
+    # Personas in use by active scenarios cannot be edited
+    if active_scenario_count > 0:
+        return False
+
+    # Non-superadmins must belong to ALL of the persona's departments
+    if user_role != "superadmin" and persona_department_ids:
+        if not user_department_ids:
+            return False
+        # Convert to sets of strings for comparison
+        user_dept_set = {str(d) for d in user_department_ids}
+        persona_dept_set = {str(d) for d in persona_department_ids}
+        # User must have ALL persona departments
+        if not persona_dept_set.issubset(user_dept_set):
+            return False
+
+    return True
+
+
+# ========== Draft Endpoint Permission Functions ==========
+
+
+def compute_can_draft(user_role: str | None) -> bool:
+    """Compute permission to create or update a draft.
+
+    Business logic:
+    - Only admin/instructional/superadmin can create/edit drafts
+    """
+    return user_role in ("admin", "instructional", "superadmin")

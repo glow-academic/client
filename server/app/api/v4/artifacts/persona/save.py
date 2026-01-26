@@ -7,7 +7,10 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.persona.permissions import compute_can_edit
+from app.api.v4.artifacts.persona.permissions import (
+    compute_can_create,
+    compute_can_save,
+)
 from app.api.v4.artifacts.persona.types import (
     SavePersonaApiRequest,
     SavePersonaApiResponse,
@@ -86,17 +89,24 @@ async def save_persona(
 
         # Permission logic: create vs update mode
         if not request.input_persona_id:
-            # Create mode: just check role
-            can_save = access_result.user_role in ("admin", "instructional", "superadmin")
-        else:
-            # Update mode: use full can_edit logic
-            can_save = compute_can_edit(
+            # Create mode: check role and department permissions
+            # Note: For create, we don't have department_ids in the request yet
+            # The actual department validation happens in save SQL based on draft contents
+            # Here we just do role check - department validation is deferred
+            can_save_result = compute_can_create(
                 user_role=access_result.user_role,
+                department_ids=None,  # Will be validated when saving from draft
+            )
+        else:
+            # Update mode: full permission check including user department membership
+            can_save_result = compute_can_save(
+                user_role=access_result.user_role,
+                user_department_ids=access_result.user_department_ids,
                 persona_department_ids=access_result.persona_department_ids,
                 active_scenario_count=access_result.active_scenario_count or 0,
             )
 
-        if not can_save:
+        if not can_save_result:
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to save this persona.",

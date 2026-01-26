@@ -250,3 +250,31 @@ class DuplicatePersonaApiResponse(BaseModel):
     success: bool
     persona_id: UUID
     message: str
+
+
+# ========== Draft Endpoint Types ==========
+
+
+class PatchPersonaDraftApiRequest(BaseModel):
+    """Request model for patch persona draft endpoint."""
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    expected_version: int = 0
+
+
+class PatchPersonaDraftApiResponse(BaseModel):
+    """Response model for patch persona draft endpoint."""
+
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str

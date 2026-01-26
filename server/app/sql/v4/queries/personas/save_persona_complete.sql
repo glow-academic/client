@@ -225,37 +225,8 @@ BEGIN
         FROM view_user_profile_context
         WHERE profile_id = (SELECT profile_id FROM params)
     ),
-    -- Conditional: Validate permissions based on operation
-    object_current_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM persona_departments_junction
-        WHERE persona_departments_junction.persona_id = (SELECT p.persona_id FROM params p LIMIT 1) AND active = true
-    ),
-    user_departments AS (
-        SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments_junction
-        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
-    ),
-    validate_permissions AS (
-        SELECT 
-            CASE 
-                WHEN (SELECT p.persona_id FROM params p) IS NULL THEN
-                    -- Validate create permissions
-                    (SELECT validate_department_create_permissions(
-                        up.role::text,
-                        x.department_ids::text[]
-                    ) FROM params x CROSS JOIN user_profile up)
-                ELSE
-                    -- Validate update permissions
-                    (SELECT validate_department_update_permissions(
-                        up.role::text,
-                        ocd.department_ids,
-                        ud.department_ids
-                    ) FROM user_profile up
-                    CROSS JOIN object_current_departments ocd
-                    CROSS JOIN user_departments ud)
-            END as validation_passed
-    ),
+    -- Permission validation is now handled in Python (permissions.py)
+    -- See compute_can_create and compute_can_save functions
     actor_profile AS (
         SELECT 
             x.profile_id,

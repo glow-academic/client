@@ -1,7 +1,7 @@
 -- Persona Save Access Check
--- Returns user role and persona state for Python to compute save permissions
--- For update mode: returns user_role, persona_department_ids, active_scenario_count
--- For create mode: returns just user_role (other fields NULL)
+-- Returns user role, user departments, and persona state for Python to compute save permissions
+-- For update mode: returns user_role, user_department_ids, persona_department_ids, active_scenario_count
+-- For create mode: returns user_role, user_department_ids (persona fields NULL)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -26,6 +26,7 @@ CREATE OR REPLACE FUNCTION api_check_persona_save_access_v4(
 RETURNS TABLE (
     -- User context for Python permission logic
     user_role text,
+    user_department_ids text[],
     -- Persona state for Python permission logic (NULL for create mode)
     persona_department_ids text[],
     active_scenario_count bigint
@@ -44,14 +45,22 @@ user_profile AS (
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
+-- Get user's departments
+user_departments AS (
+    SELECT COALESCE(ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at), ARRAY[]::text[]) as department_ids
+    FROM params x
+    LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
+),
 -- Get persona edit state (for update mode)
 persona_edit_state AS (
     SELECT * FROM view_persona_edit_state WHERE persona_id = (SELECT persona_id FROM params)
 )
 SELECT
     up.role::text as user_role,
+    ud.department_ids as user_department_ids,
     (SELECT department_ids FROM persona_edit_state) as persona_department_ids,
     COALESCE((SELECT active_scenario_count FROM persona_edit_state), 0)::bigint as active_scenario_count
 FROM params x
-CROSS JOIN user_profile up;
+CROSS JOIN user_profile up
+CROSS JOIN user_departments ud;
 $$;
