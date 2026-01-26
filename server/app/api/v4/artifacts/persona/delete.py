@@ -4,22 +4,26 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
+from app.api.v4.artifacts.persona.permissions import compute_can_delete
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    CheckPersonaDeleteAccessSqlParams,
+    CheckPersonaDeleteAccessSqlRow,
     DeletePersonaApiRequest,
     DeletePersonaApiResponse,
     DeletePersonaSqlParams,
     DeletePersonaSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/personas/delete_persona_complete.sql"
+# SQL paths
+ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/personas/check_persona_delete_access_complete.sql"
+DELETE_SQL_PATH = "app/sql/v4/queries/personas/delete_persona_complete.sql"
 
 
 router = APIRouter()
@@ -43,7 +47,7 @@ async def delete_persona(
     """Delete a persona."""
     tags = ["personas"]  # From router tags
 
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(DELETE_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -53,6 +57,38 @@ async def delete_persona(
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Permission check: get user role and persona info using typed SQL
+        access_params = CheckPersonaDeleteAccessSqlParams(
+            profile_id=profile_id,
+            persona_id=request.persona_id,
+        )
+        access_result = cast(
+            CheckPersonaDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_CHECK_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        can_delete = compute_can_delete(
+            user_role=access_result.user_role,
+            persona_department_ids=access_result.persona_department_ids,
+            total_scenario_links=access_result.total_scenario_links or 0,
+        )
+
+        if not can_delete:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this persona.",
             )
 
         async with conn.transaction():
@@ -67,7 +103,7 @@ async def delete_persona(
                 DeletePersonaSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
+                    DELETE_SQL_PATH,
                     params=params,
                 ),
             )

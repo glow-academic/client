@@ -13,6 +13,8 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.api.v4.artifacts.persona.permissions import (
     compute_can_edit,
     compute_color_required,
@@ -60,7 +62,6 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # SQL paths
 QUERY1_SQL_PATH = "app/sql/v4/queries/personas/get_persona_access_complete.sql"
@@ -183,62 +184,25 @@ async def get_persona(
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
 
-        # Get tools existence flags from Query 2
+        # Get tools existence flags from Query 2 (used for show_* UI flags)
         names_has_tools = ids_result.names_has_tools or False
         colors_has_tools = ids_result.colors_has_tools or False
         icons_has_tools = ids_result.icons_has_tools or False
         instructions_has_tools = ids_result.instructions_has_tools or False
-        departments_has_tools = ids_result.departments_has_tools or False
-        fields_has_tools = ids_result.fields_has_tools or False
-        examples_has_tools = ids_result.examples_has_tools or False
-
-        # Compute show flags for departments, fields, examples (needed for can_edit)
-        show_departments = len(ids_result.department_suggestions or []) > 0 or len(
-            ids_result.department_ids or []
-        ) > 0
-        show_fields = len(ids_result.field_suggestions or []) > 0 or len(
-            ids_result.field_ids or []
-        ) > 0
-        show_examples = len(ids_result.example_suggestions or []) > 0 or len(
-            ids_result.example_ids or []
-        ) > 0
 
         # === PYTHON BUSINESS LOGIC ===
 
-        # Compute permissions
+        # Compute permissions (simplified - no tools check needed for can_edit)
         can_edit = compute_can_edit(
-            persona_id=request.persona_id,
             user_role=user_role,
-            user_department_ids=user_department_ids,
             persona_department_ids=persona_department_ids,
             active_scenario_count=active_scenario_count,
-            names_has_tools=names_has_tools,
-            colors_has_tools=colors_has_tools,
-            icons_has_tools=icons_has_tools,
-            instructions_has_tools=instructions_has_tools,
-            show_departments=show_departments,
-            departments_has_tools=departments_has_tools,
-            show_fields=show_fields,
-            fields_has_tools=fields_has_tools,
-            show_examples=show_examples,
-            examples_has_tools=examples_has_tools,
         )
 
         disabled_reason = compute_disabled_reason(
-            persona_id=request.persona_id,
             user_role=user_role,
             persona_department_ids=persona_department_ids,
             active_scenario_count=active_scenario_count,
-            names_has_tools=names_has_tools,
-            colors_has_tools=colors_has_tools,
-            icons_has_tools=icons_has_tools,
-            instructions_has_tools=instructions_has_tools,
-            show_departments=show_departments,
-            departments_has_tools=departments_has_tools,
-            show_fields=show_fields,
-            fields_has_tools=fields_has_tools,
-            show_examples=show_examples,
-            examples_has_tools=examples_has_tools,
         )
 
         # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===

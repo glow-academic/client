@@ -10508,6 +10508,37 @@ class SaveParameterApiResponse(BaseModel):
 
 
 
+# Generated from: check_persona_delete_access
+
+class CheckPersonaDeleteAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+        )
+
+class CheckPersonaDeleteAccessSqlRow(BaseModel):
+
+    user_role: str | None = None
+    persona_department_ids: list[str] | None = None
+    total_scenario_links: int | None = None
+
+class CheckPersonaDeleteAccessApiRequest(BaseModel):
+
+    persona_id: UUID
+
+class CheckPersonaDeleteAccessApiResponse(BaseModel):
+
+    user_role: str | None = None
+    persona_department_ids: list[str] | None = None
+    total_scenario_links: int | None = None
+
+
+
 # Generated from: delete_persona
 
 class DeletePersonaSqlParams(BaseModel):
@@ -11263,14 +11294,8 @@ class QListPersonasV4Persona(BaseModel):
     department_ids: list[str] | None
     scenario_ids: list[UUID] | None
     field_ids: list[UUID] | None
-    agent_id: UUID | None
-    agent_name: str | None
-    model_id: UUID | None
-    model_name: str | None
     reasoning: str | None
-    temperature: float | None
     temperature_display: str | None
-    active: bool | None
     is_inactive: bool | None
     num_scenarios: int | None
     active_scenario_count: int | None
@@ -21815,6 +21840,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveParameterApiRequest",
         "SaveParameterApiResponse",
     ),
+    "app/sql/v4/queries/personas/check_persona_delete_access_complete.sql": (
+        "CheckPersonaDeleteAccessSqlParams",
+        "CheckPersonaDeleteAccessSqlRow",
+        "CheckPersonaDeleteAccessApiRequest",
+        "CheckPersonaDeleteAccessApiResponse",
+    ),
     "app/sql/v4/queries/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
         "DeletePersonaSqlRow",
@@ -23673,6 +23704,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/parameters/save_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/check_persona_delete_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload

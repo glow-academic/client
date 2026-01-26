@@ -9,122 +9,53 @@ from uuid import UUID
 
 
 def compute_can_edit(
-    persona_id: UUID | None,
     user_role: str | None,
-    user_department_ids: list[UUID] | None,
-    persona_department_ids: list[UUID] | None,
+    persona_department_ids: list[str] | list[UUID] | None,
     active_scenario_count: int,
-    names_has_tools: bool,
-    colors_has_tools: bool,
-    icons_has_tools: bool,
-    instructions_has_tools: bool,
-    show_departments: bool,
-    departments_has_tools: bool,
-    show_fields: bool,
-    fields_has_tools: bool,
-    show_examples: bool,
-    examples_has_tools: bool,
 ) -> bool:
-    """Compute whether the user can edit the persona.
+    """Unified can_edit logic for both get and list views.
 
-    Business logic:
-    - New mode (persona_id is None): User can edit if they have a primary department
-      or are superadmin
-    - Detail mode: User can edit if:
-      - Persona has departments (not default persona) OR user is superadmin
-      - No active scenarios using this persona
-      - User role is admin, instructional, or superadmin
-      - All required tools exist
+    Constraints:
+    1. Not a default persona (unless superadmin)
+    2. Not linked to active scenarios
+    3. User has admin/instructional/superadmin role
     """
-    # Check for missing tools first
-    missing_tools = get_missing_tools(
-        names_has_tools=names_has_tools,
-        colors_has_tools=colors_has_tools,
-        icons_has_tools=icons_has_tools,
-        instructions_has_tools=instructions_has_tools,
-        show_departments=show_departments,
-        departments_has_tools=departments_has_tools,
-        show_fields=show_fields,
-        fields_has_tools=fields_has_tools,
-        show_examples=show_examples,
-        examples_has_tools=examples_has_tools,
-    )
-    if missing_tools:
+    # Default personas can only be edited by superadmin
+    if not persona_department_ids and user_role != "superadmin":
         return False
 
-    if persona_id is None:
-        # New mode: can edit if superadmin or has primary department
-        if user_role == "superadmin":
-            return True
-        # Check if user has any departments (primary department check simplified)
-        return bool(user_department_ids)
-    else:
-        # Detail mode
-        # Default personas (no departments) can only be edited by superadmin
-        if not persona_department_ids and user_role != "superadmin":
-            return False
+    # Personas in use by scenarios cannot be edited
+    if active_scenario_count > 0:
+        return False
 
-        # Personas in use by scenarios cannot be edited
-        if active_scenario_count > 0:
-            return False
-
-        # Only admins, instructional, and superadmins can edit
-        return user_role in ("admin", "instructional", "superadmin")
+    # Role check
+    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_disabled_reason(
-    persona_id: UUID | None,
     user_role: str | None,
-    persona_department_ids: list[UUID] | None,
+    persona_department_ids: list[str] | list[UUID] | None,
     active_scenario_count: int,
-    names_has_tools: bool,
-    colors_has_tools: bool,
-    icons_has_tools: bool,
-    instructions_has_tools: bool,
-    show_departments: bool,
-    departments_has_tools: bool,
-    show_fields: bool,
-    fields_has_tools: bool,
-    show_examples: bool,
-    examples_has_tools: bool,
 ) -> str | None:
     """Compute the reason why editing is disabled, if any.
 
     Returns None if editing is allowed.
     """
-    # Check for missing tools first
-    missing_tools = get_missing_tools(
-        names_has_tools=names_has_tools,
-        colors_has_tools=colors_has_tools,
-        icons_has_tools=icons_has_tools,
-        instructions_has_tools=instructions_has_tools,
-        show_departments=show_departments,
-        departments_has_tools=departments_has_tools,
-        show_fields=show_fields,
-        fields_has_tools=fields_has_tools,
-        show_examples=show_examples,
-        examples_has_tools=examples_has_tools,
-    )
-    if missing_tools:
-        return f"No tool configured for {', '.join(missing_tools)}. Therefore we cannot proceed ahead."
-
-    if persona_id is None:
-        # New mode: no disabled reason if can_edit is true
-        return None
-
-    # Detail mode
+    # Default personas can only be edited by superadmin
     if not persona_department_ids and user_role != "superadmin":
         return (
             "This is a default persona that cannot be edited. "
             "You can view the details but cannot make changes."
         )
 
+    # Personas in use by scenarios cannot be edited
     if active_scenario_count > 0:
         return (
             "This persona is currently in use by scenarios and cannot be edited. "
             "You can view the details but cannot make changes."
         )
 
+    # Role check
     if user_role not in ("admin", "instructional", "superadmin"):
         return (
             "This persona cannot be edited. "
@@ -289,30 +220,6 @@ def compute_examples_required() -> bool:
 
 
 # ========== List Endpoint Permission Functions ==========
-
-
-def compute_can_edit_for_list(
-    user_role: str | None,
-    persona_department_ids: list[str] | None,
-    active_scenario_count: int,
-) -> bool:
-    """Compute can_edit for list view.
-
-    Business logic:
-    - Default personas (no departments) can only be edited by superadmin
-    - Personas in use by active scenarios cannot be edited
-    - Only admins, instructional, and superadmins can edit
-    """
-    # Default personas can only be edited by superadmin
-    if not persona_department_ids and user_role != "superadmin":
-        return False
-
-    # Personas in use by active scenarios cannot be edited
-    if active_scenario_count > 0:
-        return False
-
-    # Only admins, instructional, and superadmins can edit
-    return user_role in ("admin", "instructional", "superadmin")
 
 
 def compute_can_delete(

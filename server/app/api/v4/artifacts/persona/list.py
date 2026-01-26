@@ -8,10 +8,12 @@ Two-pass architecture:
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.api.v4.artifacts.persona.permissions import (
     compute_can_delete,
     compute_can_duplicate,
-    compute_can_edit_for_list,
+    compute_can_edit,
 )
 from app.api.v4.artifacts.persona.types import (
     ListPersonaApiDepartment,
@@ -33,7 +35,6 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/personas/get_personas_list_complete.sql"
@@ -121,17 +122,17 @@ async def get_persona_list(
         personas_with_permissions: list[ListPersonaApiPersona] = []
         for persona in result.personas or []:
             # Compute permissions based on user role and persona state
-            can_edit = compute_can_edit_for_list(
+            can_edit_val = compute_can_edit(
                 user_role=user_role,
                 persona_department_ids=persona.department_ids,
                 active_scenario_count=persona.active_scenario_count or 0,
             )
-            can_delete = compute_can_delete(
+            can_delete_val = compute_can_delete(
                 user_role=user_role,
                 persona_department_ids=persona.department_ids,
                 total_scenario_links=persona.total_scenario_links or 0,
             )
-            can_duplicate = compute_can_duplicate(user_role)
+            can_duplicate_val = compute_can_duplicate(user_role)
 
             # Create persona with computed permissions
             personas_with_permissions.append(
@@ -144,19 +145,13 @@ async def get_persona_list(
                     department_ids=persona.department_ids,
                     scenario_ids=persona.scenario_ids,
                     field_ids=persona.field_ids,
-                    agent_id=persona.agent_id,
-                    agent_name=persona.agent_name,
-                    model_id=persona.model_id,
-                    model_name=persona.model_name,
                     reasoning=persona.reasoning,
-                    temperature=persona.temperature,
                     temperature_display=persona.temperature_display,
-                    active=persona.active,
                     is_inactive=persona.is_inactive,
                     num_scenarios=persona.num_scenarios,
-                    can_edit=can_edit,
-                    can_duplicate=can_duplicate,
-                    can_delete=can_delete,
+                    can_edit=can_edit_val,
+                    can_duplicate=can_duplicate_val,
+                    can_delete=can_delete_val,
                     updated_at=persona.updated_at,
                 )
             )

@@ -2,6 +2,8 @@
 
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from app.sql.types import (
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
@@ -13,7 +15,6 @@ from app.sql.types import (
     QGetInstructionsV4Item,
     QGetNamesV4Item,
 )
-from pydantic import BaseModel
 
 
 class GetPersonaApiRequest(BaseModel):
@@ -146,14 +147,8 @@ class ListPersonaApiPersona(BaseModel):
     department_ids: list[str] | None = None
     scenario_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
-    agent_id: UUID | None = None
-    agent_name: str | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
     reasoning: str | None = None
-    temperature: float | None = None
     temperature_display: str | None = None
-    active: bool | None = None
     is_inactive: bool | None = None
     num_scenarios: int | None = None
     # Computed in Python
