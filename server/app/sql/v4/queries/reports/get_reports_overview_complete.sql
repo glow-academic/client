@@ -685,29 +685,67 @@ filtered_simulation_ids AS (
                       (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0)
       )
 ),
+-- Use mv_dashboard_facts with backward compatibility columns
 filt AS (
-    SELECT * FROM analytics a
-    WHERE a.attempt_created_at >= (SELECT start_date FROM params)
-        AND a.attempt_created_at < (SELECT end_date FROM params)
-                    AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
-                    AND (
-                        (SELECT simulation_filters FROM params)::text[] IS NULL OR (
-                            ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general = TRUE) OR
-                            ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_practice = TRUE) OR
-                            ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_archived = TRUE)
+    SELECT
+        f.chat_id,
+        f.attempt_id,
+        f.profile_id,
+        f.simulation_id,
+        f.scenario_id,
+        f.persona_id,
+        f.rubric_id,
+        f.department_id,
+        f.cohort_id,
+        f.role_id,
+        f.attempt_created_at,
+        f.chat_created_at,
+        f.grade_created_at,
+        f.is_archived,
+        f.infinite_mode,
+        f.completed,
+        f.score,
+        f.passed,
+        f.time_taken AS time_taken_seconds,
+        f.rubric_total_points AS rubric_points_junction,
+        f.rubric_pass_points,
+        f.grade_percent,
+        f.num_messages_total,
+        f.num_query_messages,
+        f.num_response_messages,
+        f.message_time_taken_seconds,
+        f.attempt_type,
+        (f.attempt_type = 'general' AND NOT f.is_archived) AS is_general,
+        (f.attempt_type = 'practice') AS is_practice,
+        -- Get simulation scenario count
+        COALESCE(
+            (SELECT COUNT(*)::int FROM simulation_scenarios_junction ss
+             JOIN simulation_simulations_junction ssj ON ssj.simulation_id = ss.simulation_id
+             WHERE ssj.simulations_id = f.simulation_id),
+            0
+        ) AS sim_scenario_count
+    FROM mv_dashboard_facts f
+    WHERE f.attempt_created_at >= (SELECT start_date FROM params)
+        AND f.attempt_created_at < (SELECT end_date FROM params)
+        AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
+        AND (
+            (SELECT simulation_filters FROM params)::text[] IS NULL OR (
+                ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.attempt_type = 'general' AND NOT f.is_archived) OR
+                ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.attempt_type = 'practice') OR
+                ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.is_archived = TRUE)
             )
         )
         -- Exclude archived attempts unless 'archived' is explicitly in the filter list
         AND (
-                        'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
+            'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR f.is_archived = FALSE
         )
         -- Reports always filters by profile_id (required parameter)
-        AND a.profile_id = (SELECT target_profile_id FROM params)
+        AND f.profile_id = (SELECT target_profile_id FROM params)
         -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
-                    AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+        AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
-                    AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
-            ),
+        AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
+),
             
             -- =====================================================
             -- HEADER METRICS (10 metrics_entry)
@@ -761,27 +799,27 @@ filt AS (
             
             -- First Attempt Pass Rate (earliest attempt all-time, then filter to window)
             earliest_attempt_all_time AS (
-                SELECT DISTINCT ON (a.profile_id, a.simulation_id)
-                       a.attempt_id, a.profile_id, a.simulation_id, a.attempt_created_at,
-                       a.grade_percent, a.rubric_pass_points, a.rubric_points_junction
-                FROM analytics a
+                SELECT DISTINCT ON (f.profile_id, f.simulation_id)
+                       f.attempt_id, f.profile_id, f.simulation_id, f.attempt_created_at,
+                       f.grade_percent, f.rubric_pass_points, f.rubric_total_points AS rubric_points_junction
+                FROM mv_dashboard_facts f
                 WHERE (
                     -- Match simulation type filters
-                    ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general = TRUE) OR
-                    ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_practice = TRUE) OR
-                    ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_archived = TRUE)
+                    ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.attempt_type = 'general' AND NOT f.is_archived) OR
+                    ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.attempt_type = 'practice') OR
+                    ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND f.is_archived = TRUE)
                 )
                 -- Exclude archived attempts unless 'archived' is explicitly in the filter list
                 AND (
-                    'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
+                    'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR f.is_archived = FALSE
                 )
-                -- Dashboard never filters by profile - always filter by roles
-                AND a.profile_id = (SELECT target_profile_id FROM params)
+                -- Reports always filters by profile_id
+                AND f.profile_id = (SELECT target_profile_id FROM params)
                 -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
-                AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)
-                AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
-                ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
+                AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
+                ORDER BY f.profile_id, f.simulation_id, f.attempt_created_at
             ),
             first_attempts AS (
                 SELECT * FROM earliest_attempt_all_time
@@ -2210,9 +2248,39 @@ filt AS (
                   AND pc.active = true
             ),
             cohort_all_data AS (
-                SELECT a.*, pc.cohort_id AS c_id
-                FROM analytics a
-                JOIN profile_cohorts_junction pc ON pc.profile_id = a.profile_id AND pc.active = true
+                SELECT
+                    f.chat_id,
+                    f.attempt_id,
+                    f.profile_id,
+                    f.simulation_id,
+                    f.scenario_id,
+                    f.persona_id,
+                    f.rubric_id,
+                    f.department_id,
+                    f.cohort_id,
+                    f.role_id,
+                    f.attempt_created_at,
+                    f.chat_created_at,
+                    f.grade_created_at,
+                    f.is_archived,
+                    f.infinite_mode,
+                    f.completed,
+                    f.score,
+                    f.passed,
+                    f.time_taken AS time_taken_seconds,
+                    f.rubric_total_points AS rubric_points_junction,
+                    f.rubric_pass_points,
+                    f.grade_percent,
+                    f.num_messages_total,
+                    f.num_query_messages,
+                    f.num_response_messages,
+                    f.message_time_taken_seconds,
+                    f.attempt_type,
+                    (f.attempt_type = 'general' AND NOT f.is_archived) AS is_general,
+                    (f.attempt_type = 'practice') AS is_practice,
+                    pc.cohort_id AS c_id
+                FROM mv_dashboard_facts f
+                JOIN profile_cohorts_junction pc ON pc.profile_id = f.profile_id AND pc.active = true
                 JOIN target_profile_cohorts tpc ON tpc.cohort_id = pc.cohort_id
                 WHERE a.attempt_created_at >= (SELECT start_date FROM params)
                   AND a.attempt_created_at < (SELECT end_date FROM params)
@@ -2793,7 +2861,7 @@ filt AS (
                 JOIN fields_resource f ON f.id = sf.field_id
                 JOIN parameter_fields_junction pfj ON pfj.field_resource_id = f.id
                 JOIN param_ids_categorical pic ON pic.id = pfj.parameter_id
-                JOIN analytics a ON a.scenario_id = scsj.scenario_id AND a.profile_id = (SELECT target_profile_id FROM params)
+                JOIN mv_dashboard_facts df ON df.scenario_id = scsj.scenario_id AND df.profile_id = (SELECT target_profile_id FROM params)
                 WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf3 JOIN flags_resource fl ON sf3.flag_id = fl.id WHERE sf3.simulation_id = s.id AND fl.name = 'simulation_active' AND sf3.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = scsj.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
                 GROUP BY s.id, pfj.parameter_id, pfj.field_id
             ),

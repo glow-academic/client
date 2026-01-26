@@ -326,7 +326,21 @@ async def _generate_artifact_impl(
     data: dict[str, Any],
     profile_id: uuid.UUID,
 ) -> None:
-    """Unified entry point for all artifact generation - handles ALL logic inline."""
+    """Unified entry point for all artifact generation - handles ALL logic inline.
+
+    For pre-validated payloads (from persona/generate.py), this function routes
+    to _handle_prevalidated_text_generation which skips SQL context fetching.
+
+    Pre-validated payloads are detected by the presence of 'model_name' and 'run_id'
+    keys in the data dictionary (business logic already executed).
+    """
+    # Check for pre-validated payload (from persona/generate.py)
+    # Pre-validated payloads have model_name and run_id already set
+    if data.get("model_name") and data.get("run_id"):
+        # Route to simplified handler - all business logic already done
+        await _handle_prevalidated_text_generation(sid, data, profile_id)
+        return
+
     try:
         async with get_db_connection() as conn:
             # Extract eval_mode flag (defaults to False for backward compatibility)
@@ -2292,6 +2306,398 @@ async def _persist_video(
     video_path.write_bytes(video_bytes)
 
     return video_relative_path
+
+
+async def _handle_prevalidated_text_generation(
+    sid: str,
+    data: dict[str, Any],
+    profile_id: uuid.UUID,
+) -> None:
+    """Handle text generation with pre-validated payload from persona/generate.py.
+
+    This handler receives a payload where all business logic has been executed:
+    - Rate limit checked
+    - Group/run created
+    - Developer instructions rendered with Jinja
+    - Messages inserted
+
+    It only needs to:
+    1. Decrypt the API key
+    2. Build LLM messages from pre-rendered content
+    3. Stream LLM response
+    """
+    if not LITELLM_AVAILABLE:
+        raise ValueError("litellm is not available")
+
+    # Extract run metadata
+    run_id = uuid.UUID(data["run_id"])
+    group_id = uuid.UUID(data["group_id"]) if data.get("group_id") else None
+    trace_id = data.get("trace_id")
+    message_id = data.get("message_id")
+    resource_types = data.get("resource_types", [])
+    artifact_type = data.get("artifact_type")
+    eval_mode = data.get("eval_mode", False)
+    resources = data.get("resources")
+
+    # Extract model context
+    model_name = data.get("model_name")
+    provider_name = data.get("provider_name")
+    api_key_encrypted = data.get("api_key")
+    base_url = data.get("base_url")
+    temperature = data.get("temperature", 0.0)
+    reasoning = data.get("reasoning")
+
+    # Validate required fields
+    if not model_name:
+        raise ValueError("model_name is required for pre-validated payload")
+    if not api_key_encrypted:
+        raise ValueError("api_key is required for pre-validated payload")
+
+    # Decrypt API key (secure transfer - only decrypted in AI handler)
+    try:
+        decrypted_api_key = decrypt_api_key(api_key_encrypted)
+    except Exception as e:
+        raise ValueError(f"Failed to decrypt API key: {str(e)}")
+
+    # Build LLM messages from pre-rendered content
+    llm_messages: list[dict[str, Any]] = []
+
+    # Add system prompt if present
+    system_prompt = data.get("system_prompt")
+    if system_prompt:
+        llm_messages.append({
+            "role": "system",
+            "content": system_prompt,
+        })
+
+    # Add pre-rendered developer messages
+    developer_messages = data.get("developer_messages", [])
+    for msg in developer_messages:
+        if msg and msg.strip():
+            llm_messages.append({
+                "role": "developer",
+                "content": msg,
+            })
+
+    # Add ordered user/assistant messages from SQL
+    messages = data.get("messages", [])
+    if isinstance(messages, list):
+        for msg in messages:
+            if isinstance(msg, dict) and msg.get("role") and msg.get("content"):
+                llm_messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"],
+                })
+
+    # Get tools (already converted to dict format)
+    tools_data = data.get("tools")
+    tools: list[dict[str, Any]] | None = None
+    if tools_data:
+        # Convert to OpenAI format for LLM
+        tools = convert_tools_to_openai_format(tools_data)
+
+    # Convert tools to Responses format for aresponses() API
+    responses_tools = None
+    if tools_data:
+        responses_tools = convert_tools_to_responses_format(tools_data)
+
+    # Emit start event
+    await internal_sio.emit(
+        "generate_progress",
+        {
+            "modality": "text",
+            "sid": sid,
+            "artifact_type": artifact_type,
+            "resource_type": resource_types[0] if resource_types else "persona",
+            "run_id": str(run_id),
+            "group_id": str(group_id) if group_id else None,
+            "message_id": message_id,
+            "type": "start",
+            "message": "Starting text generation",
+            "eval_mode": eval_mode,
+        },
+    )
+
+    # Prepare metadata for tracing
+    metadata: dict[str, Any] = {
+        "run_id": str(run_id),
+        "trace_id": trace_id,
+        "group_id": str(group_id) if group_id else None,
+        "resource_type": resource_types[0] if resource_types else "persona",
+    }
+
+    # Call LLM with streaming
+    group_id_str = str(group_id) if group_id else sid
+    stream = _call_llm_text_stream(
+        model=model_name,
+        messages=llm_messages,
+        tools=responses_tools if responses_tools else (tools if tools else None),
+        tool_choice="auto",
+        api_key=decrypted_api_key,
+        base_url=base_url,
+        temperature=temperature or 0.0,
+        reasoning=reasoning,
+        metadata=metadata,
+    )
+
+    # Track output
+    assistant_output = ""
+    input_tokens = 0
+    output_tokens = 0
+    tool_call_states: dict[str, dict[str, Any]] = {}
+
+    async def _stream_and_emit() -> None:
+        """Inner function to handle streaming and emitting events."""
+        nonlocal assistant_output, input_tokens, output_tokens
+        import logging
+
+        logger = logging.getLogger(__name__)
+        event_count = 0
+        resource_type = resource_types[0] if resource_types else "persona"
+
+        try:
+            async for event in stream_litellm_events(stream):
+                event_count += 1
+                # Check for cancellation periodically
+                if await is_run_cancelled(str(run_id)):
+                    break
+
+                event_type = event.get("type")
+
+                # TEXT lifecycle
+                if event_type == "text_start":
+                    await internal_sio.emit(
+                        "generate_progress",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "message_id": message_id,
+                            "type": "text_start",
+                            "eval_mode": eval_mode,
+                        },
+                    )
+
+                elif event_type == "text_delta":
+                    delta = event.get("delta", "")
+                    if delta:
+                        assistant_output += delta
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "text",
+                                "sid": sid,
+                                "artifact_type": artifact_type,
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "group_id": str(group_id) if group_id else None,
+                                "message_id": message_id,
+                                "type": "text_delta",
+                                "delta": delta,
+                                "accumulated_content": assistant_output,
+                                "eval_mode": eval_mode,
+                            },
+                        )
+
+                elif event_type == "text_complete":
+                    assistant_output = event.get("text", assistant_output)
+                    await internal_sio.emit(
+                        "generate_progress",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "message_id": message_id,
+                            "type": "text_complete",
+                            "text": assistant_output,
+                            "eval_mode": eval_mode,
+                        },
+                    )
+
+                # TOOL lifecycle
+                elif event_type == "tool_call_start":
+                    tool_call_id = cast(str, event.get("tool_call_id"))
+                    tool_index = event.get("tool_index", 0)
+
+                    tool_call_states.setdefault(
+                        tool_call_id,
+                        {
+                            "tool_index": tool_index,
+                            "call_id": tool_call_id,
+                            "tool_name": None,
+                            "arguments": "",
+                        },
+                    )
+
+                    await internal_sio.emit(
+                        "generate_progress",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "message_id": message_id,
+                            "type": "tool_call_start",
+                            "tool_call_id": tool_call_id,
+                            "eval_mode": eval_mode,
+                        },
+                    )
+
+                elif event_type == "tool_call_delta":
+                    tool_call_id = cast(str, event.get("tool_call_id"))
+                    delta = event.get("delta", "") or ""
+                    tool_name = event.get("tool_name")
+
+                    st = tool_call_states.setdefault(
+                        tool_call_id,
+                        {
+                            "tool_index": event.get("tool_index", 0),
+                            "call_id": tool_call_id,
+                            "tool_name": None,
+                            "arguments": "",
+                        },
+                    )
+                    if tool_name and not st["tool_name"]:
+                        st["tool_name"] = tool_name
+                    st["arguments"] += delta
+
+                    await internal_sio.emit(
+                        "generate_progress",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "message_id": message_id,
+                            "type": "tool_call_delta",
+                            "tool_call_id": tool_call_id,
+                            "delta": delta,
+                            "tool_name": st.get("tool_name"),
+                            "arguments_delta": delta,
+                            "eval_mode": eval_mode,
+                        },
+                    )
+
+                elif event_type == "tool_call_complete":
+                    tool_call_id = cast(str, event.get("tool_call_id"))
+                    tool_name = (
+                        event.get("name")
+                        or tool_call_states.get(tool_call_id, {}).get("tool_name")
+                        or ""
+                    )
+                    st = tool_call_states.get(tool_call_id, {})
+                    arguments_str = event.get("arguments") or st.get("arguments", "")
+
+                    try:
+                        arguments_dict = json.loads(arguments_str) if arguments_str else {}
+                    except json.JSONDecodeError:
+                        arguments_dict = {}
+
+                    await internal_sio.emit(
+                        "generate_progress",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "message_id": message_id,
+                            "type": "tool_call_complete",
+                            "tool_call_id": tool_call_id,
+                            "tool_name": tool_name,
+                            "arguments": arguments_str,
+                            "arguments_dict": arguments_dict,
+                            "eval_mode": eval_mode,
+                        },
+                    )
+
+                    # Emit generate_complete for tool execution
+                    await internal_sio.emit(
+                        "generate_complete",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "type": "tool_call_complete",
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "message_id": message_id,
+                            "tool_call_id": tool_call_id,
+                            "call_id": tool_call_id,
+                            "tool_name": tool_name,
+                            "eval_mode": eval_mode,
+                        },
+                    )
+
+                # Message completion + usage
+                elif event_type == "message_complete":
+                    usage_data = event.get("usage")
+                    if isinstance(usage_data, dict):
+                        input_tokens = usage_data.get("prompt_tokens", 0) or 0
+                        output_tokens = usage_data.get("completion_tokens", 0) or 0
+
+        except Exception as stream_error:
+            logger.error(
+                f"Error processing stream events for run {run_id}: {str(stream_error)}",
+                exc_info=True,
+            )
+            raise
+        finally:
+            if event_count == 0:
+                logger.warning(
+                    f"No events received from stream for run {run_id}. "
+                    f"This may indicate a parsing issue or empty response."
+                )
+
+    # Create task for cancellation support
+    task = asyncio.create_task(_stream_and_emit())
+    _store_active_task(group_id_str, task)
+    await store_active_run(group_id_str, task)
+
+    try:
+        await task
+    except asyncio.CancelledError:
+        raise
+    except BaseException as stream_error:
+        if isinstance(stream_error, (KeyboardInterrupt, SystemExit)):
+            raise
+        raise
+    finally:
+        _remove_active_task(group_id_str)
+        await remove_active_run(group_id_str)
+
+    # Emit run completion event
+    resource_type = resource_types[0] if resource_types else "persona"
+    await internal_sio.emit(
+        "generate_complete",
+        {
+            "modality": "text",
+            "sid": sid,
+            "artifact_type": artifact_type,
+            "type": "run_complete",
+            "resource_type": resource_type,
+            "run_id": str(run_id),
+            "group_id": str(group_id) if group_id else None,
+            "message_id": message_id,
+            "input_text_tokens": input_tokens,
+            "output_text_tokens": output_tokens,
+            "system_prompt": data.get("system_prompt", ""),
+            "assistant_output": assistant_output,
+            "eval_mode": eval_mode,
+        },
+    )
 
 
 @internal_sio.on("generate_artifact")  # type: ignore

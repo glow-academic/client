@@ -71,10 +71,18 @@ SELECT
     passed,
     time_taken,
 
+    -- Rubric points and grade percent
+    rubric_total_points,
+    rubric_pass_points,
+    grade_percent,
+
     -- Message stats (pre-aggregated)
     num_messages_total,
     num_query_messages,
     num_response_messages,
+
+    -- Message time taken for persona response times
+    message_time_taken_seconds,
 
     -- Attempt type discriminator
     'general'::text AS attempt_type
@@ -117,10 +125,18 @@ SELECT
     passed,
     time_taken,
 
+    -- Rubric points and grade percent
+    rubric_total_points,
+    rubric_pass_points,
+    grade_percent,
+
     -- Message stats (pre-aggregated)
     num_messages_total,
     num_query_messages,
     num_response_messages,
+
+    -- Message time taken for persona response times
+    message_time_taken_seconds,
 
     -- Attempt type discriminator
     'practice'::text AS attempt_type
@@ -237,6 +253,30 @@ CREATE INDEX mv_dashboard_facts_general_not_archived_idx
 CREATE INDEX mv_dashboard_facts_practice_not_archived_idx
     ON mv_dashboard_facts (attempt_created_at DESC)
     WHERE attempt_type = 'practice' AND is_archived = FALSE;
+
+-- Grade percent index for score-based filtering and sorting
+CREATE INDEX mv_dashboard_facts_grade_percent_idx
+    ON mv_dashboard_facts (grade_percent DESC NULLS LAST)
+    WHERE grade_percent IS NOT NULL;
+
+-- Rubric points indexes
+CREATE INDEX mv_dashboard_facts_rubric_total_points_idx
+    ON mv_dashboard_facts (rubric_total_points)
+    WHERE rubric_total_points IS NOT NULL;
+
+-- GIN index for message_time_taken_seconds array
+CREATE INDEX mv_dashboard_facts_message_time_taken_gin
+    ON mv_dashboard_facts USING GIN (message_time_taken_seconds);
+
+-- Composite index for profile leaderboard queries
+CREATE INDEX mv_dashboard_facts_profile_grade_percent_idx
+    ON mv_dashboard_facts (profile_id, grade_percent DESC NULLS LAST)
+    WHERE grade_percent IS NOT NULL;
+
+-- Composite index for simulation + grade percent (reports/leaderboard)
+CREATE INDEX mv_dashboard_facts_simulation_grade_percent_idx
+    ON mv_dashboard_facts (simulation_id, grade_percent DESC NULLS LAST)
+    WHERE grade_percent IS NOT NULL;
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

@@ -46,7 +46,7 @@ message_counts AS (
     WHERE m.active = TRUE
     GROUP BY m.chat_id
 ),
--- Latest grade per chat (most recent grade)
+-- Latest grade per chat (most recent grade) with rubric points
 latest_grade AS (
     SELECT DISTINCT ON (g.chat_id)
         g.id AS grade_id,
@@ -54,10 +54,41 @@ latest_grade AS (
         g.score,
         g.passed,
         g.time_taken,
-        g.created_at
+        g.created_at,
+        -- Get rubric points from the grade's rubric connection
+        (SELECT p.value FROM general_grades_rubrics_connection grc2
+         JOIN rubric_points_junction rp ON rp.rubric_id = grc2.rubrics_id AND rp.type = 'total'::point_type
+         JOIN points_resource p ON p.id = rp.point_id
+         WHERE grc2.grade_id = g.id LIMIT 1) AS rubric_total_points,
+        (SELECT p.value FROM general_grades_rubrics_connection grc2
+         JOIN rubric_points_junction rp ON rp.rubric_id = grc2.rubrics_id AND rp.type = 'pass'::point_type
+         JOIN points_resource p ON p.id = rp.point_id
+         WHERE grc2.grade_id = g.id LIMIT 1) AS rubric_pass_points
     FROM general_grades_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
+),
+-- Message time deltas for persona response time tracking
+message_deltas AS (
+    SELECT
+        m.chat_id,
+        CASE
+            WHEN lag(m.role) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'assistant'
+             AND m.role = 'user'
+            THEN GREATEST(
+                   EXTRACT(epoch FROM m.created_at - lag(COALESCE(m.updated_at, m.created_at))
+                       OVER (PARTITION BY m.chat_id ORDER BY m.created_at))::int, 0)
+            ELSE NULL
+        END AS delta_seconds
+    FROM general_messages_entry m
+    WHERE m.active = TRUE
+),
+message_deltas_agg AS (
+    SELECT
+        chat_id,
+        ARRAY_REMOVE(ARRAY_AGG(delta_seconds ORDER BY delta_seconds), NULL) AS message_time_taken_seconds
+    FROM message_deltas
+    GROUP BY chat_id
 ),
 -- Parameter field IDs aggregated per chat
 chat_parameter_fields AS (
@@ -101,10 +132,22 @@ SELECT
     lg.passed,
     lg.time_taken,
 
+    -- Rubric points (for grade_percent calculation)
+    lg.rubric_total_points,
+    lg.rubric_pass_points,
+    -- Computed grade percent
+    CASE
+        WHEN lg.score IS NULL OR lg.rubric_total_points IS NULL OR lg.rubric_total_points = 0 THEN NULL
+        ELSE TRUNC((lg.score::numeric / lg.rubric_total_points) * 100.0, 2)
+    END AS grade_percent,
+
     -- Message stats (pre-aggregated)
     COALESCE(mc.num_messages_total, 0) AS num_messages_total,
     COALESCE(mc.num_query_messages, 0) AS num_query_messages,
-    COALESCE(mc.num_response_messages, 0) AS num_response_messages
+    COALESCE(mc.num_response_messages, 0) AS num_response_messages,
+
+    -- Message time taken for persona response times
+    COALESCE(mda.message_time_taken_seconds, ARRAY[]::int[]) AS message_time_taken_seconds
 
 FROM general_attempts_entry a
 -- Attempt connections (required)
@@ -125,6 +168,8 @@ LEFT JOIN chat_parameter_fields cpf ON cpf.chat_id = c.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 -- Grade connections (optional)
 LEFT JOIN general_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
+-- Message time deltas for persona response times
+LEFT JOIN message_deltas_agg mda ON mda.chat_id = c.id
 WHERE a.active = TRUE
 WITH NO DATA;
 
@@ -222,6 +267,25 @@ CREATE INDEX mv_general_analytics_department_attempt_created_idx
 CREATE INDEX mv_general_analytics_not_archived_idx
     ON mv_general_analytics (attempt_created_at DESC)
     WHERE is_archived = FALSE;
+
+-- Grade percent index for score-based filtering and sorting
+CREATE INDEX mv_general_analytics_grade_percent_idx
+    ON mv_general_analytics (grade_percent DESC NULLS LAST)
+    WHERE grade_percent IS NOT NULL;
+
+-- Rubric points indexes
+CREATE INDEX mv_general_analytics_rubric_total_points_idx
+    ON mv_general_analytics (rubric_total_points)
+    WHERE rubric_total_points IS NOT NULL;
+
+-- GIN index for message_time_taken_seconds array
+CREATE INDEX mv_general_analytics_message_time_taken_gin
+    ON mv_general_analytics USING GIN (message_time_taken_seconds);
+
+-- Composite index for profile leaderboard queries
+CREATE INDEX mv_general_analytics_profile_grade_percent_idx
+    ON mv_general_analytics (profile_id, grade_percent DESC NULLS LAST)
+    WHERE grade_percent IS NOT NULL;
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

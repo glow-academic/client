@@ -184,20 +184,50 @@ profile_type_lookup AS (
         END AS role_hierarchy
     FROM resolve_profile_id rpi
 ),
--- Filter analytics for items: for member mode include profileId filter
+-- Filter using mv_dashboard_facts for items: for member mode include profileId filter
 -- Also filter by simulation_ids FROM cohort_artifact (new filtering order)
 filt AS (
-    SELECT a.* 
+    SELECT
+        f.chat_id,
+        f.attempt_id,
+        f.profile_id,
+        f.simulation_id,
+        f.scenario_id,
+        f.persona_id,
+        f.rubric_id,
+        f.department_id,
+        f.cohort_id,
+        f.role_id,
+        f.attempt_created_at,
+        f.chat_created_at,
+        f.grade_created_at,
+        f.is_archived,
+        f.infinite_mode,
+        f.completed,
+        f.score,
+        f.passed,
+        f.time_taken AS time_taken_seconds,
+        f.rubric_total_points AS rubric_points_junction,
+        f.rubric_pass_points,
+        f.grade_percent,
+        f.num_messages_total,
+        f.num_query_messages,
+        f.num_response_messages,
+        f.message_time_taken_seconds,
+        f.attempt_type,
+        (f.attempt_type = 'general' AND NOT f.is_archived) AS is_general,
+        (f.attempt_type = 'practice') AS is_practice
     FROM params p
     CROSS JOIN profile_type_lookup prl
     CROSS JOIN resolve_profile_id rpi
-    CROSS JOIN analytics a
-    WHERE a.attempt_created_at >= p.start_date 
-      AND a.attempt_created_at < p.end_date 
-      AND a.is_general = TRUE
-      AND (NOT prl.is_member_mode OR a.profile_id = rpi.resolved_profile_id)
+    CROSS JOIN mv_dashboard_facts f
+    WHERE f.attempt_created_at >= p.start_date
+      AND f.attempt_created_at < p.end_date
+      AND f.attempt_type = 'general'
+      AND NOT f.is_archived
+      AND (NOT prl.is_member_mode OR f.profile_id = rpi.resolved_profile_id)
       -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
-      AND (cardinality(p.cohort_ids) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+      AND (cardinality(p.cohort_ids) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
 ),
 -- Get cohort-simulation pairs (includes empty cohorts)
 cohort_sim AS (

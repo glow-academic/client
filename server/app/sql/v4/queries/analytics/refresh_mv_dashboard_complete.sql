@@ -1,13 +1,19 @@
 -- Refresh Dashboard Materialized Views - API Endpoint
 -- Refreshes all dashboard MVs in dependency order:
--- 1. mv_general_analytics (base)
--- 2. mv_practice_analytics (base)
--- 3. mv_dashboard_facts (depends on general + practice)
--- 4. mv_dashboard_daily_agg (depends on facts)
--- 5. mv_dashboard_persona_agg (depends on facts)
--- 6. mv_dashboard_attempt_seq (depends on facts)
--- 7. mv_dashboard_cohort_facts (depends on facts)
--- Note: mv_dashboard_rubric_facts does NOT depend on facts, uses base tables directly
+-- Layer 1 (Base):
+--   1. mv_general_analytics (base)
+--   2. mv_practice_analytics (base)
+-- Layer 2:
+--   3. mv_dashboard_facts (depends on general + practice)
+-- Layer 3:
+--   4. mv_dashboard_daily_agg (depends on facts)
+--   5. mv_dashboard_persona_agg (depends on facts)
+--   6. mv_dashboard_attempt_seq (depends on facts)
+--   7. mv_dashboard_cohort_facts (depends on facts)
+--   8. mv_persona_response_times (depends on facts)
+--   9. mv_profile_analytics (depends on facts)
+-- Independent:
+--   10. mv_dashboard_rubric_facts (uses base tables directly)
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
 -- Step 1: Drop function if exists
@@ -69,6 +75,12 @@ BEGIN
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_cohort_facts;
     refreshed := array_append(refreshed, 'mv_dashboard_cohort_facts');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_persona_response_times;
+    refreshed := array_append(refreshed, 'mv_persona_response_times');
+
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_profile_analytics;
+    refreshed := array_append(refreshed, 'mv_profile_analytics');
 
     -- Step 4: Refresh rubric facts (independent, uses base tables directly)
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_rubric_facts;

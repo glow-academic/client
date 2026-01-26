@@ -1,11 +1,22 @@
-"""Persona generation router - unified handler for all persona resource types."""
+"""Persona generation router - unified handler for all persona resource types.
 
-import json
+This module handles all business logic for persona generation:
+- Rate limit validation (fail fast)
+- Group/run creation
+- Agent/model context fetching
+- Jinja template rendering for developer instructions
+- Message insertion with deduplication
+
+The AI handler (generate.py) receives a simplified payload with pre-rendered content.
+"""
+
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from pydantic import BaseModel
+
+from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
@@ -20,7 +31,7 @@ from app.sql.types import (
 )
 from fastapi import APIRouter
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -29,12 +40,20 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
+# SQL paths
 SQL_PATH = "app/sql/v4/queries/personas/get_persona_complete.sql"
 RESOURCE_TREE_SQL_PATH = (
     "app/sql/v4/queries/personas/get_persona_resource_tree_complete.sql"
 )
 GET_GROUP_IDS_BY_RESOURCE_IDS_SQL_PATH = (
     "app/sql/v4/queries/personas/get_group_ids_by_resource_ids_complete.sql"
+)
+# New SQL paths for business logic separation
+SQL_PATH_PREPARE = (
+    "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
+)
+SQL_PATH_INSERT_MESSAGES = (
+    "app/sql/v4/queries/generate/persona/insert_generation_messages_complete.sql"
 )
 
 # Persona resource types
@@ -59,10 +78,59 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     user_instructions: list[str] | None = None  # Optional: user instructions
 
 
+class PreparePersonaGenerationSqlParams(BaseModel):
+    """Parameters for prepare_persona_generation SQL function."""
+
+    p_profile_id: uuid.UUID
+    p_agent_id: uuid.UUID
+    p_group_id: uuid.UUID | None = None
+    p_resources: list[dict[str, Any]] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources to SQL composite type format
+        resources = None
+        if self.p_resources:
+            resources = [
+                (r["resource_type"], [uuid.UUID(rid) for rid in r["resource_ids"]])
+                for r in self.p_resources
+            ]
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+            self.p_group_id,
+            resources,
+        )
+
+
+class InsertGenerationMessagesSqlParams(BaseModel):
+    """Parameters for insert_generation_messages SQL function."""
+
+    p_run_id: uuid.UUID
+    p_developer_messages: list[str] | None = None
+    p_user_messages: list[str] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_run_id,
+            self.p_developer_messages,
+            self.p_user_messages,
+        )
+
+
 async def _persona_generate_impl(
     sid: str, data: GeneratePersonaPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle persona generation - emit generate_artifact for each resource type, then emit client event."""
+    """Handle persona generation with all business logic.
+
+    This function:
+    1. Validates resource types
+    2. Fetches persona data and maps agent_type to agent_id
+    3. Expands resources via tree traversal
+    4. Calls prepare_persona_generation SQL (rate limit, group/run, context)
+    5. Renders developer instructions with Jinja
+    6. Inserts pre-rendered messages
+    7. Emits simplified payload to generate_artifact handler
+    """
     try:
         # Validate resource types
         resource_types = data.resource_types
@@ -97,11 +165,8 @@ async def _persona_generate_impl(
             )
             return
 
-        # Map agent_type to agent_id from response (will be done after fetching persona data)
-
-        # Call get_persona_v4 SQL function (same as GET API endpoint)
         async with get_db_connection() as conn:
-            # Convert payload to SQL params (same as GET endpoint)
+            # Step 1: Fetch persona data to get agent_id mapping
             params = GetPersonaSqlParams(
                 profile_id=profile_id,
                 persona_id=data.persona_id,
@@ -156,7 +221,7 @@ async def _persona_generate_impl(
                 )
                 return
 
-            # Seed resource nodes from the persona GET result
+            # Step 2: Seed resource nodes from the persona GET result
             seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
 
             def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
@@ -196,7 +261,7 @@ async def _persona_generate_impl(
                 for example in result.examples:
                     add_seed("examples", example.id)
 
-            # Expand seed nodes via resource tree traversal
+            # Step 3: Expand seed nodes via resource tree traversal
             resources: list[dict[str, Any]] = []
             if seed_nodes:
                 resource_tree_params = GetPersonaResourceTreeSqlParams(
@@ -228,26 +293,147 @@ async def _persona_generate_impl(
                     for resource_type, resource_ids in resources_by_type.items()
                 ]
 
-            # Get group_id from response if available
-            group_id: uuid.UUID | None = result.group_id
+            # Get group_id from persona response if available
+            existing_group_id: uuid.UUID | None = result.group_id
 
-            # Emit single generate_artifact event with all resource types
+            # Step 4: Prepare generation (rate limit, group/run, context)
+            # This SQL function handles rate limit validation (fail fast),
+            # group/run creation, and fetches all context in one call
+            try:
+                prepare_sql = load_sql(SQL_PATH_PREPARE)
+                prepare_params = PreparePersonaGenerationSqlParams(
+                    p_profile_id=profile_id,
+                    p_agent_id=agent_id,
+                    p_group_id=existing_group_id,
+                    p_resources=resources if resources else None,
+                )
+                prepare_row = await conn.fetchrow(prepare_sql, *prepare_params.to_tuple())
+
+                if not prepare_row:
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to prepare persona generation",
+                            artifact_type="persona",
+                            group_id=str(existing_group_id) if existing_group_id else None,
+                            resource_type="persona",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+            except Exception as e:
+                error_msg = str(e)
+                # Check for rate limit error (fail fast)
+                if "RATE_LIMIT_EXCEEDED" in error_msg:
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else "Rate limit exceeded. Please try again later."
+                    )
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=user_msg,
+                            artifact_type="persona",
+                            group_id=str(existing_group_id) if existing_group_id else None,
+                            resource_type="persona",
+                        ),
+                        sid=sid,
+                    )
+                    return
+                raise
+
+            # Extract context from prepare result
+            run_id = prepare_row["run_id"]
+            group_id = prepare_row["group_id"]
+            trace_id = prepare_row["trace_id"]
+            agent_name = prepare_row["agent_name"]
+            system_prompt = prepare_row["system_prompt"]
+            model_name = prepare_row["model_name"]
+            provider_name = prepare_row["provider_name"]
+            base_url = prepare_row["base_url"]
+            api_key = prepare_row["api_key"]
+            temperature = prepare_row["temperature"]
+            reasoning = prepare_row["reasoning"]
+            voice = prepare_row["voice"]
+            quality = prepare_row["quality"]
+            tools = prepare_row["tools"]
+            developer_instruction_templates = prepare_row["developer_instruction_templates"]
+            jinja_context = prepare_row["jinja_context"]
+            output_modalities = prepare_row["output_modalities"]
+
+            # Step 5: Render developer instructions with Jinja
+            rendered_developer_messages = render_developer_instructions(
+                templates=developer_instruction_templates,
+                jinja_context=jinja_context,
+            )
+
+            # Step 6: Insert pre-rendered messages
+            insert_sql = load_sql(SQL_PATH_INSERT_MESSAGES)
+            insert_params = InsertGenerationMessagesSqlParams(
+                p_run_id=run_id,
+                p_developer_messages=rendered_developer_messages if rendered_developer_messages else None,
+                p_user_messages=data.user_instructions if data.user_instructions else None,
+            )
+            insert_row = await conn.fetchrow(insert_sql, *insert_params.to_tuple())
+
+            if not insert_row:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Failed to insert generation messages",
+                        artifact_type="persona",
+                        group_id=str(group_id) if group_id else None,
+                        resource_type="persona",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            message_id = insert_row["message_id"]
+            messages = insert_row["messages"]
+
+            # Step 7: Emit simplified payload to generate_artifact handler
+            # The AI handler only needs to decrypt API key and stream LLM
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "artifact_type": "persona",
-                    "agent_id": str(agent_id),  # Use agent_id from mapping
-                    "resource_types": resource_types,  # Pass all resource types at once
+                    # Run metadata
+                    "run_id": str(run_id),
                     "group_id": str(group_id) if group_id else None,
-                    "resources": resources,  # Pass resources array
-                    "user_instructions": data.user_instructions
-                    if data.user_instructions
-                    else None,
+                    "trace_id": trace_id,
+                    "message_id": str(message_id) if message_id else None,
+                    "resource_types": resource_types,
+                    # Model context (API key encrypted - AI handler decrypts)
+                    "model_name": model_name,
+                    "provider_name": provider_name,
+                    "api_key": api_key,  # Encrypted - secure transfer
+                    "base_url": base_url,
+                    "temperature": temperature,
+                    "reasoning": reasoning,
+                    "voice": voice,
+                    "quality": quality,
+                    # Messages (pre-rendered, properly ordered)
+                    "system_prompt": system_prompt,
+                    "developer_messages": rendered_developer_messages,
+                    "messages": messages,  # Ordered user/assistant messages from SQL
+                    # Tools
+                    "tools": convert_tools_to_dict(tools),
+                    # Metadata
+                    "artifact_type": "persona",
+                    "output_modalities": output_modalities,
+                    # Resources (for progress events)
+                    "resources": resources,
                 },
             )
 
     except Exception as e:
+        logger.exception(f"Failed to generate persona resources: {str(e)}")
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
