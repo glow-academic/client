@@ -3,7 +3,7 @@
 -- Uses idempotent drop/recreate pattern - safe to run multiple times.
 --
 -- Key: (hour, service)
--- Source: service_health table
+-- Source: health_entry table
 --
 -- Columns:
 --   hour                - DATE_TRUNC('hour', ts)
@@ -59,34 +59,37 @@ hourly_stats AS (
         MIN(latency_ms)::double precision AS min_latency_ms,
         MAX(latency_ms)::double precision AS max_latency_ms,
         -- Percentile calculation for p95
-        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms)::double precision AS p95_latency_ms,
-        -- Get last error in the hour (most recent non-empty error)
-        (SELECT sh.error
-         FROM service_health sh
-         WHERE sh.service = service_health.service
-           AND DATE_TRUNC('hour', sh.ts) = DATE_TRUNC('hour', service_health.ts)
-           AND sh.error != ''
-         ORDER BY sh.ts DESC
-         LIMIT 1) AS last_error
-    FROM service_health
+        PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms)::double precision AS p95_latency_ms
+    FROM health_entry
     GROUP BY DATE_TRUNC('hour', ts), service
+),
+-- Get last error per hour/service (most recent non-empty error)
+last_errors AS (
+    SELECT DISTINCT ON (DATE_TRUNC('hour', ts), service)
+        DATE_TRUNC('hour', ts) AS hour,
+        service,
+        error AS last_error
+    FROM health_entry
+    WHERE error != ''
+    ORDER BY DATE_TRUNC('hour', ts), service, ts DESC
 )
 SELECT
-    hour,
-    service,
-    check_count,
-    success_count,
-    failure_count,
+    hs.hour,
+    hs.service,
+    hs.check_count,
+    hs.success_count,
+    hs.failure_count,
     CASE
-        WHEN check_count = 0 THEN 0
-        ELSE TRUNC((success_count::numeric / check_count) * 100.0, 2)
+        WHEN hs.check_count = 0 THEN 0
+        ELSE TRUNC((hs.success_count::numeric / hs.check_count) * 100.0, 2)
     END AS uptime_percent,
-    avg_latency_ms,
-    min_latency_ms,
-    max_latency_ms,
-    p95_latency_ms,
-    COALESCE(last_error, '')::text AS last_error
-FROM hourly_stats
+    hs.avg_latency_ms,
+    hs.min_latency_ms,
+    hs.max_latency_ms,
+    hs.p95_latency_ms,
+    COALESCE(le.last_error, '')::text AS last_error
+FROM hourly_stats hs
+LEFT JOIN last_errors le ON le.hour = hs.hour AND le.service = hs.service
 WITH NO DATA;
 
 -- ============================================================================

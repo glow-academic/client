@@ -257,9 +257,8 @@ sim_persona_meta AS (
 -- 3) All-time analytics slice (lifetime data for this user)
 filt_all AS (
     SELECT a.*
-    FROM analytics a, resolve_profile_id rpi
+    FROM mv_practice_analytics a, resolve_profile_id rpi
     WHERE a.profile_id = rpi.resolved_profile_id
-      AND a.is_practice = TRUE
 ),
 -- 4) Per-attempt progression (completed-only average - lifetime)
 attempt_progress AS (

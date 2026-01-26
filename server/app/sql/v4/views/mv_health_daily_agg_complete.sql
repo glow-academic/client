@@ -62,7 +62,7 @@ daily_stats AS (
         PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms)::double precision AS p95_latency_ms,
         -- Count of distinct non-empty error messages
         COUNT(DISTINCT CASE WHEN error != '' THEN error END)::int AS error_count
-    FROM service_health
+    FROM health_entry
     GROUP BY DATE_TRUNC('day', ts), service
 )
 SELECT

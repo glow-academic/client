@@ -3,7 +3,7 @@
 -- Uses idempotent drop/recreate pattern - safe to run multiple times.
 --
 -- Key: (hour)
--- Source: app_metrics table
+-- Source: metrics_entry table
 --
 -- Columns:
 --   hour                - DATE_TRUNC('hour', ts)
@@ -64,7 +64,7 @@ SELECT
     -- Memory metrics
     AVG(memory_bytes)::bigint AS avg_memory_bytes,
     MAX(memory_bytes)::bigint AS max_memory_bytes
-FROM app_metrics
+FROM metrics_entry
 GROUP BY DATE_TRUNC('hour', ts)
 WITH NO DATA;
 

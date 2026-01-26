@@ -3,7 +3,7 @@
 -- Uses idempotent drop/recreate pattern - safe to run multiple times.
 --
 -- Key: (day)
--- Source: app_metrics table (direct, not from hourly MV for accuracy)
+-- Source: metrics_entry table (direct, not from hourly MV for accuracy)
 --
 -- Columns:
 --   day                 - DATE_TRUNC('day', ts)
@@ -52,17 +52,17 @@ daily_boundaries AS (
         DATE_TRUNC('day', ts) AS day,
         MIN(ts) AS first_ts,
         MAX(ts) AS last_ts
-    FROM app_metrics
+    FROM metrics_entry
     GROUP BY DATE_TRUNC('day', ts)
 ),
 daily_deltas AS (
     SELECT
         db.day,
         -- Get delta from first to last sample (cumulative counters)
-        (SELECT requests_total FROM app_metrics WHERE ts = db.last_ts) -
-        (SELECT requests_total FROM app_metrics WHERE ts = db.first_ts) AS total_requests,
-        (SELECT errors_total FROM app_metrics WHERE ts = db.last_ts) -
-        (SELECT errors_total FROM app_metrics WHERE ts = db.first_ts) AS total_errors
+        (SELECT requests_total FROM metrics_entry WHERE ts = db.last_ts) -
+        (SELECT requests_total FROM metrics_entry WHERE ts = db.first_ts) AS total_requests,
+        (SELECT errors_total FROM metrics_entry WHERE ts = db.last_ts) -
+        (SELECT errors_total FROM metrics_entry WHERE ts = db.first_ts) AS total_errors
     FROM daily_boundaries db
 )
 SELECT
@@ -80,7 +80,7 @@ SELECT
     -- Memory metrics
     AVG(am.memory_bytes)::bigint AS avg_memory_bytes,
     MAX(am.memory_bytes)::bigint AS max_memory_bytes
-FROM app_metrics am
+FROM metrics_entry am
 LEFT JOIN daily_deltas dd ON dd.day = DATE_TRUNC('day', am.ts)
 GROUP BY DATE_TRUNC('day', am.ts), dd.total_requests, dd.total_errors
 WITH NO DATA;

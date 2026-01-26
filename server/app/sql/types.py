@@ -5789,6 +5789,47 @@ class DuplicateDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: get_certificate_data
+
+class GetCertificateDataSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetCertificateDataV4Simulation(BaseModel):
+
+    name: str | None
+    score: int | None
+    passed: bool | None
+
+class QGetCertificateDataV4Cohort(BaseModel):
+
+    name: str | None
+    passed: bool | None
+    simulations: list[QGetCertificateDataV4Simulation] | None
+
+class GetCertificateDataSqlRow(BaseModel):
+
+    profile_name: str | None = None
+    actor_name: str | None = None
+    cohorts: list[QGetCertificateDataV4Cohort] | None = None
+
+class GetCertificateDataApiRequest(BaseModel):
+
+    pass
+
+class GetCertificateDataApiResponse(BaseModel):
+
+    profile_name: str | None = None
+    actor_name: str | None = None
+    cohorts: list[QGetCertificateDataV4Cohort] | None = None
+
+
+
 # Generated from: get_document
 
 class GetDocumentSqlParams(BaseModel):
@@ -12334,6 +12375,179 @@ class GetPracticeHistoryApiResponse(BaseModel):
     profile_options: list[QGetPracticeHistoryV4ProfileOption] | None = None
     simulation_options: list[QGetPracticeHistoryV4SimulationOption] | None = None
     scenario_options_junction: list[QGetPracticeHistoryV4ScenarioOption] | None = None
+
+
+
+# Generated from: get_practice_overview
+
+class GetPracticeOverviewSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_ids,
+            self.draft_id,
+        )
+
+class QGetPracticeOverviewV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetPracticeOverviewV4Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetPracticeOverviewV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QGetPracticeOverviewV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+
+
+
+
+class QGetPracticeOverviewV4PracticeSimulation(BaseModel):
+
+    view_mode: str | None
+    simulation_id: UUID | None
+    simulation_title: str | None
+    simulation_description: str | None
+    simulation_name: str | None
+    time_limit: int | None
+    num_sessions: int | None
+    highest_score: int | None
+    rubric_id: UUID | None
+    color: str | None
+    icon: str | None
+    has_passed: bool | None
+    pass_rate: int | None
+    status: str | None
+    completion_pct: int | None
+    passed_count: int | None
+    in_progress_count: int | None
+    not_started_count: int | None
+    pass_pct: int | None
+    cohort_name: str | None
+    updated_at: str | None
+    last_activity_ts: str | None
+    has_activity: bool | None
+    standard_groups: list[str] | None
+
+
+
+
+class QGetPracticeOverviewV4Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    persona_ids: list[str] | None
+
+
+
+
+class QGetPracticeOverviewV4Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetPracticeOverviewV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetPracticeOverviewV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetPracticeOverviewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    has_data: bool | None = None
+    items: list[QGetPracticeOverviewV4PracticeSimulation] | None = None
+    standard_groups: list[QGetPracticeOverviewV4StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewV4Standard] | None = None
+    simulations: list[QGetPracticeOverviewV4Simulation] | None = None
+    personas: list[QGetPracticeOverviewV4Persona] | None = None
+    scenarios: list[QGetPracticeOverviewV4Scenario] | None = None
+    parameters: list[QGetPracticeOverviewV4Parameter] | None = None
+    fields: list[QGetPracticeOverviewV4Field] | None = None
+    departments: list[QGetPracticeOverviewV4Department] | None = None
+    valid_department_ids: list[str] | None = None
+    draft_version: int | None = None
+    draft_persona_ids: Any | None = None
+    draft_parameter_item_ids: Any | None = None
+    draft_department_ids: Any | None = None
+
+class GetPracticeOverviewApiRequest(BaseModel):
+
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
+
+class GetPracticeOverviewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    has_data: bool | None = None
+    items: list[QGetPracticeOverviewV4PracticeSimulation] | None = None
+    standard_groups: list[QGetPracticeOverviewV4StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewV4Standard] | None = None
+    simulations: list[QGetPracticeOverviewV4Simulation] | None = None
+    personas: list[QGetPracticeOverviewV4Persona] | None = None
+    scenarios: list[QGetPracticeOverviewV4Scenario] | None = None
+    parameters: list[QGetPracticeOverviewV4Parameter] | None = None
+    fields: list[QGetPracticeOverviewV4Field] | None = None
+    departments: list[QGetPracticeOverviewV4Department] | None = None
+    valid_department_ids: list[str] | None = None
+    draft_version: int | None = None
+    draft_persona_ids: Any | None = None
+    draft_parameter_item_ids: Any | None = None
+    draft_department_ids: Any | None = None
 
 
 
@@ -21918,6 +22132,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateDocumentApiRequest",
         "DuplicateDocumentApiResponse",
     ),
+    "app/sql/v4/queries/documents/get_certificate_data_complete.sql": (
+        "GetCertificateDataSqlParams",
+        "GetCertificateDataSqlRow",
+        "GetCertificateDataApiRequest",
+        "GetCertificateDataApiResponse",
+    ),
     "app/sql/v4/queries/documents/get_document_complete.sql": (
         "GetDocumentSqlParams",
         "GetDocumentSqlRow",
@@ -22601,6 +22821,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPracticeHistorySqlRow",
         "GetPracticeHistoryApiRequest",
         "GetPracticeHistoryApiResponse",
+    ),
+    "app/sql/v4/queries/practice/get_practice_overview_complete.sql": (
+        "GetPracticeOverviewSqlParams",
+        "GetPracticeOverviewSqlRow",
+        "GetPracticeOverviewApiRequest",
+        "GetPracticeOverviewApiResponse",
     ),
     "app/sql/v4/queries/pricing/get_pricing_analytics_complete.sql": (
         "GetPricingAnalyticsSqlParams",
@@ -23993,6 +24219,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/documents/get_certificate_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/documents/get_document_complete.sql"]
     ) -> SqlString: ...
 
@@ -24559,6 +24790,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/practice/get_practice_history_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/practice/get_practice_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
