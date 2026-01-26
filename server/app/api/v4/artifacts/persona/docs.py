@@ -4,15 +4,33 @@ Queries database schema at runtime and extracts business logic from permissions.
 """
 
 import inspect
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends
 
 from app.api.v4.artifacts.persona import permissions
 from app.main import get_db
+from app.sql.types import (
+    GetPersonaDocsColumnsSqlParams,
+    GetPersonaDocsColumnsSqlRow,
+    GetPersonaDocsForeignKeysSqlParams,
+    GetPersonaDocsForeignKeysSqlRow,
+    GetPersonaDocsJunctionsSqlParams,
+    GetPersonaDocsJunctionsSqlRow,
+)
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
+
+# SQL paths
+COLUMNS_SQL_PATH = "app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql"
+JUNCTIONS_SQL_PATH = (
+    "app/sql/v4/queries/personas/get_persona_docs_junctions_complete.sql"
+)
+FK_SQL_PATH = (
+    "app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql"
+)
 
 # Permission functions to document
 PERMISSION_FUNCTIONS = [
@@ -29,72 +47,62 @@ PERMISSION_FUNCTIONS = [
 # ========== Schema Discovery Helpers ==========
 
 
-async def _get_table_columns(conn: asyncpg.Connection, table_name: str) -> list[dict]:
+async def _get_table_columns(
+    conn: asyncpg.Connection, table_name: str
+) -> list[dict[str, Any]]:
     """Get columns for a table from information_schema."""
-    rows = await conn.fetch(
-        """
-        SELECT column_name, data_type, is_nullable, column_default
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = $1
-        ORDER BY ordinal_position
-        """,
-        table_name,
+    params = GetPersonaDocsColumnsSqlParams(table_name=table_name)
+    result = cast(
+        GetPersonaDocsColumnsSqlRow,
+        await execute_sql_typed(conn, COLUMNS_SQL_PATH, params=params),
     )
+    if not result.columns:
+        return []
     return [
         {
-            "name": row["column_name"],
-            "type": row["data_type"],
-            "nullable": row["is_nullable"] == "YES",
-            "default": row["column_default"],
+            "name": col.name,
+            "type": col.type,
+            "nullable": col.nullable,
+            "default": col.default_value,
         }
-        for row in rows
+        for col in result.columns
     ]
 
 
-async def _get_junction_tables(conn: asyncpg.Connection, prefix: str) -> list[dict]:
+async def _get_junction_tables(
+    conn: asyncpg.Connection, prefix: str
+) -> list[dict[str, Any]]:
     """Get junction tables and their columns for a given prefix."""
-    rows = await conn.fetch(
-        """
-        SELECT t.table_name, array_agg(c.column_name ORDER BY c.ordinal_position) as columns
-        FROM information_schema.tables t
-        JOIN information_schema.columns c ON t.table_name = c.table_name AND t.table_schema = c.table_schema
-        WHERE t.table_schema = 'public'
-          AND (t.table_name LIKE $1 OR t.table_name LIKE $2)
-        GROUP BY t.table_name
-        ORDER BY t.table_name
-        """,
-        f"{prefix}_%_junction",
-        f"%_{prefix}s_%",
+    params = GetPersonaDocsJunctionsSqlParams(prefix=prefix)
+    result = cast(
+        GetPersonaDocsJunctionsSqlRow,
+        await execute_sql_typed(conn, JUNCTIONS_SQL_PATH, params=params),
     )
-    return [{"name": row["table_name"], "columns": row["columns"]} for row in rows]
+    if not result.junction_tables:
+        return []
+    return [
+        {"name": jt.name, "columns": jt.columns} for jt in result.junction_tables
+    ]
 
 
-async def _get_foreign_keys(conn: asyncpg.Connection, table_pattern: str) -> list[dict]:
+async def _get_foreign_keys(
+    conn: asyncpg.Connection, table_pattern: str
+) -> list[dict[str, Any]]:
     """Get foreign key relationships for tables matching a pattern."""
-    rows = await conn.fetch(
-        """
-        SELECT tc.table_name, kcu.column_name, ccu.table_name AS references_table
-        FROM information_schema.table_constraints tc
-        JOIN information_schema.key_column_usage kcu
-            ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.constraint_column_usage ccu
-            ON tc.constraint_name = ccu.constraint_name
-            AND tc.table_schema = ccu.table_schema
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND tc.table_schema = 'public'
-          AND tc.table_name LIKE $1
-        ORDER BY tc.table_name, kcu.column_name
-        """,
-        table_pattern,
+    params = GetPersonaDocsForeignKeysSqlParams(table_pattern=table_pattern)
+    result = cast(
+        GetPersonaDocsForeignKeysSqlRow,
+        await execute_sql_typed(conn, FK_SQL_PATH, params=params),
     )
+    if not result.foreign_keys:
+        return []
     return [
         {
-            "table": row["table_name"],
-            "column": row["column_name"],
-            "references": row["references_table"],
+            "table": fk.table_name,
+            "column": fk.column_name,
+            "references": fk.references_table,
         }
-        for row in rows
+        for fk in result.foreign_keys
     ]
 
 
@@ -234,7 +242,7 @@ async def _build_docs(conn: asyncpg.Connection) -> dict[str, Any]:
     for jt in junction_tables:
         name = jt["name"]
         # Extract resource name from junction table (e.g., persona_names_junction -> names)
-        if name.startswith("persona_") and name.endswith("_junction"):
+        if name and name.startswith("persona_") and name.endswith("_junction"):
             resource = name[8:-9]  # Remove 'persona_' prefix and '_junction' suffix
             if resource:
                 linked_resources.append(resource)
