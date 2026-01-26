@@ -56,6 +56,10 @@ export interface InstructionsProps {
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   searchTerm?: string; // Search term for filtering instructions
   onSearchChange?: (term: string) => void; // Callback when search term changes
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<void>) => void;
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
@@ -84,6 +88,8 @@ export function Instructions({
   createInstructionsAction,
   searchTerm,
   onSearchChange,
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   instructionsResource,
   instructionsId,
@@ -107,6 +113,50 @@ export function Instructions({
   const saveSeqRef = useRef(0);
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(resourceTemplate);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async () => {
+    // Skip if no change or no action
+    if (internalValue === lastSavedValueRef.current) return;
+    if (!createInstructionsAction || !agent_id || !group_id) return;
+
+    const seq = ++saveSeqRef.current;
+    try {
+      if (internalValue.trim()) {
+        const result = await createInstructionsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            template: internalValue,
+            mcp: false,
+          },
+        });
+        if (seq !== saveSeqRef.current) return;
+        if (result.instruction_id) {
+          onInstructionsIdChange(result.instruction_id);
+        }
+      } else {
+        if (seq !== saveSeqRef.current) return;
+        onInstructionsIdChange(null);
+      }
+      lastSavedValueRef.current = internalValue;
+      isDirtyRef.current = false;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create instructions resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Use resourceId for validation/debugging
   useEffect(() => {
@@ -147,8 +197,13 @@ export function Instructions({
     lastServerTextRef.current = serverValue;
   }, [resourceTemplate, resourceId, instructionsById]);
 
-  // Debounced resource creation
+  // Debounced resource creation - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -172,35 +227,8 @@ export function Instructions({
     }
 
     // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      const seq = ++saveSeqRef.current;
-      try {
-        if (internalValue.trim()) {
-          if (!agent_id || !group_id) {
-            return;
-          }
-          const result = await createInstructionsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: group_id,
-              template: internalValue,
-            },
-          });
-          if (seq !== saveSeqRef.current) return;
-          if (result.instruction_id) {
-            onInstructionsIdChange(result.instruction_id);
-          }
-        } else {
-          if (seq !== saveSeqRef.current) return;
-          // Clear resource ID if value is empty
-          onInstructionsIdChange(null);
-        }
-        lastSavedValueRef.current = internalValue;
-        isDirtyRef.current = false;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create instructions resource:", error);
-      }
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
     }, 1000);
 
     return () => {
@@ -208,7 +236,7 @@ export function Instructions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createInstructionsAction, onInstructionsIdChange, agent_id, group_id]);
+  }, [internalValue, createInstructionsAction, isAutosaveEnabled]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
@@ -307,12 +335,9 @@ export function Instructions({
             isDirtyRef.current = false;
             onInstructionsIdChange(selectedId);
           }}
-          getId={(item) => (typeof item === 'string' ? item : item.id)}
+          getId={(item) => item.id || ''}
           getLabel={(item) => {
-            if (typeof item === 'string') {
-              return `Instructions ${item.slice(0, 8)}...`;
-            }
-            return item.template || `Instructions ${item.id.slice(0, 8)}...`;
+            return item.template || `Instructions ${(item.id || '').slice(0, 8)}...`;
           }}
           placeholder="Instructions"
           disabled={disabled}

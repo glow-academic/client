@@ -78,6 +78,10 @@ export interface ColorsProps {
   createColorsAction?:
     | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
     | undefined;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<void>) => void;
   // Legacy props for backward compatibility
   colorResource?: {
     id: string;
@@ -116,6 +120,8 @@ export function Colors({
   group_id,
   agent_id,
   createColorsAction,
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   colorResource,
   colorId: _colorId,
@@ -171,6 +177,48 @@ export function Colors({
   const lastSavedValueRef = useRef<string>(resourceHexCode || "");
   const isInitialMountRef = useRef(true);
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async () => {
+    // Skip if no change or no action
+    if (internalValue === lastSavedValueRef.current) return;
+    if (!createColorsAction || !agent_id || !group_id || !internalValue) return;
+
+    try {
+      const hexCode = internalValue.toLowerCase().startsWith("#")
+        ? internalValue.toLowerCase()
+        : `#${internalValue.toLowerCase()}`;
+      const colorName = getColorName(hexCode);
+      const result = await createColorsAction({
+        body: {
+          agent_id: agent_id,
+          group_id: group_id,
+          name: colorName,
+          description: `Color: ${hexCode}`,
+          hex_code: hexCode,
+          mcp: false,
+        },
+      });
+      if (result.color_id && onColorIdChange) {
+        onColorIdChange(result.color_id);
+      }
+      lastSavedValueRef.current = internalValue;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create color resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Update internal value when color_resource changes
   useEffect(() => {
     if (resourceHexCode) {
@@ -195,8 +243,13 @@ export function Colors({
     }
   }, [resourceId, resource]);
 
-  // Debounced resource creation
+  // Debounced resource creation - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -224,30 +277,8 @@ export function Colors({
     }
 
     // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        const hexCode = currentColor;
-        const colorName = getColorName(hexCode);
-        if (!agent_id || !group_id) {
-          return;
-        }
-        const result = await createColorsAction({
-          body: {
-            agent_id: agent_id,
-            group_id: group_id,
-            name: colorName,
-            description: `Color: ${hexCode}`,
-            hex_code: hexCode,
-          },
-        });
-        if (result.color_id && onColorIdChange) {
-          onColorIdChange(result.color_id);
-        }
-        lastSavedValueRef.current = internalValue;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create color resource:", error);
-      }
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
     }, 1000);
 
     return () => {
@@ -255,14 +286,7 @@ export function Colors({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [
-    internalValue,
-    currentColor,
-    createColorsAction,
-    onColorIdChange,
-    agent_id,
-    group_id,
-  ]);
+  }, [internalValue, createColorsAction, onColorIdChange, isAutosaveEnabled]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
@@ -365,7 +389,9 @@ export function Colors({
                 body: {
                   agent_id: agent_id,
                   group_id: group_id,
-                  color_id: colorId,
+                  name: color.name || "Color",
+                  description: color.description || `Color: ${color.hex_code}`,
+                  hex_code: color.hex_code,
                   mcp: false,
                 },
               });

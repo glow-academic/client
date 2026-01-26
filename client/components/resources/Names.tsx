@@ -50,6 +50,10 @@ export interface NamesProps {
   createNamesAction?:
     | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
     | undefined;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<void>) => void;
   // Legacy props for backward compatibility
   nameResource?: {
     id: string;
@@ -79,6 +83,8 @@ export function Names({
   group_id,
   agent_id,
   createNamesAction,
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   nameResource,
   nameId: _nameId,
@@ -103,6 +109,46 @@ export function Names({
   const isInitialMountRef = useRef(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async () => {
+    // Skip if no change or no action
+    if (internalValue === lastSavedValueRef.current) return;
+    if (!createNamesAction || !group_id) return;
+
+    try {
+      if (internalValue.trim()) {
+        const result = await createNamesAction({
+          body: {
+            agent_id: agent_id ?? null,
+            group_id: group_id,
+            name: internalValue,
+            mcp: false,
+          },
+        });
+        if (result.name_id) {
+          onNameIdChange(result.name_id);
+        }
+      } else {
+        onNameIdChange(null);
+      }
+      lastSavedValueRef.current = internalValue;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create name resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Use resourceId for validation/debugging
   useEffect(() => {
@@ -157,8 +203,13 @@ export function Names({
     }
   }, [resourceName, defaultName]);
 
-  // Debounced resource creation
+  // Debounced resource creation - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -182,29 +233,8 @@ export function Names({
     }
 
     // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        if (internalValue.trim() && group_id) {
-          const result = await createNamesAction({
-            body: {
-              agent_id: agent_id ?? null,
-              group_id: group_id,
-              name: internalValue,
-              mcp: false,
-            },
-          });
-          if (result.name_id) {
-            onNameIdChange(result.name_id);
-          }
-        } else if (!internalValue.trim()) {
-          // Clear resource ID only if value is empty
-          onNameIdChange(null);
-        }
-        lastSavedValueRef.current = internalValue;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create name resource:", error);
-      }
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
     }, 1000);
 
     return () => {
@@ -212,7 +242,7 @@ export function Names({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createNamesAction, onNameIdChange, agent_id, group_id]);
+  }, [internalValue, createNamesAction, isAutosaveEnabled]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);

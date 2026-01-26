@@ -8,7 +8,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -38,6 +38,7 @@ import {
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
@@ -157,6 +158,29 @@ function PersonaComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
+  const { isAutosaveEnabled } = useSaveContext();
+
+  // Registry of flush callbacks from creatable resource components
+  const flushRegistryRef = useRef<Map<string, () => Promise<void>>>(new Map());
+
+  // Create stable registerFlush callback
+  const createRegisterFlush = useCallback((key: string) => {
+    return (flush: () => Promise<void>) => {
+      flushRegistryRef.current.set(key, flush);
+    };
+  }, []);
+
+  // Memoize registerFlush callbacks to prevent re-renders
+  const registerFlushCallbacks = useMemo(
+    () => ({
+      names: createRegisterFlush("names"),
+      descriptions: createRegisterFlush("descriptions"),
+      instructions: createRegisterFlush("instructions"),
+      examples: createRegisterFlush("examples"),
+      colors: createRegisterFlush("colors"),
+    }),
+    [createRegisterFlush]
+  );
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -588,6 +612,7 @@ function PersonaComponent({
     // Debug logging at effect start
     console.debug("[Persona Draft] Effect triggered", {
       hasResourceIds,
+      isAutosaveEnabled,
       draftPatchKey: draftPatchKey.substring(0, 100) + "...",
       lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
     });
@@ -618,6 +643,12 @@ function PersonaComponent({
 
     // Mark that we have pending changes (for beforeunload warning)
     hasPendingChangesRef.current = true;
+
+    // Skip autosave if disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      console.debug("[Persona Draft] Autosave disabled, skipping auto-patch");
+      return;
+    }
 
     const timer = setTimeout(async () => {
       try {
@@ -695,6 +726,7 @@ function PersonaComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     draftPatchKey, // ✅ trigger only when payload changes
+    isAutosaveEnabled, // ✅ re-check when autosave mode changes
     // patchPersonaDraftAction and setDraftId are accessed via refs
   ]);
 
@@ -709,6 +741,86 @@ function PersonaComponent({
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
+
+  // Emit unsaved-changes event when draftPatchKey changes
+  useEffect(() => {
+    const hasChanges = lastPatchedKeyRef.current !== draftPatchKey;
+    window.dispatchEvent(
+      new CustomEvent("unsaved-changes", { detail: { hasChanges } })
+    );
+  }, [draftPatchKey]);
+
+  // Flush all resources and patch draft (for manual save)
+  const flushAllAndSave = useCallback(async () => {
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
+
+    try {
+      // 1. Flush all creatable resource components
+      const flushPromises = Array.from(flushRegistryRef.current.values()).map(
+        (flush) => flush()
+      );
+      await Promise.all(flushPromises);
+
+      // 2. Small delay to allow state updates to propagate
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // 3. Patch draft with all resource IDs
+      if (patchPersonaDraftActionRef.current) {
+        const result = await patchPersonaDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            color_id: formState.color_id,
+            icon_id: formState.icon_id,
+            instructions_id: formState.instructions_id,
+            active_flag_id: formState.active_flag_id,
+            department_ids: formState.department_ids,
+            field_ids: formState.field_ids,
+            example_ids: formState.example_ids,
+            expected_version: lastSavedVersionRef.current,
+          },
+        });
+
+        // Update refs
+        lastPatchedKeyRef.current = draftPatchKey;
+        if (result.new_version !== undefined && result.new_version !== null) {
+          lastSavedVersionRef.current = result.new_version;
+          setLastSavedVersion(result.new_version);
+        }
+
+        // Update URL if draft was created
+        if (!draftId && result.draft_id) {
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+          toast.success("Draft created");
+        }
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", { detail: { status: "saved" } })
+      );
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+
+      hasPendingChangesRef.current = false;
+    } catch (error) {
+      console.error("[Persona] Save failed:", error);
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", { detail: { status: "error" } })
+      );
+      toast.error("Failed to save draft");
+    }
+  }, [draftId, formState, draftPatchKey]);
+
+  // Listen for save trigger from layout
+  useEffect(() => {
+    const handleTriggerSave = () => flushAllAndSave();
+    window.addEventListener("trigger-save", handleTriggerSave);
+    return () => window.removeEventListener("trigger-save", handleTriggerSave);
+  }, [flushAllAndSave]);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
   useEffect(() => {
@@ -1488,6 +1600,8 @@ function PersonaComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.names}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1579,6 +1693,8 @@ function PersonaComponent({
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.description_agent_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.descriptions}
                 />
 
                 {/* Department Selection */}
@@ -1839,6 +1955,8 @@ function PersonaComponent({
                 agent_id={currentPersonaData?.color_agent_id ?? null}
                 createColorsAction={createColorsAction}
                 required={currentPersonaData?.color_required ?? false}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.colors}
               />
             </StepCard>
           );
@@ -2052,6 +2170,8 @@ function PersonaComponent({
                 group_id={currentPersonaData?.group_id ?? null}
                 agent_id={currentPersonaData?.instructions_agent_id ?? null}
                 createInstructionsAction={createInstructionsAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.instructions}
               />
 
               {/* Examples Section */}
@@ -2107,6 +2227,8 @@ function PersonaComponent({
                       )
                     : {}
                 }
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.examples}
               />
             </StepCard>
           );
@@ -2153,6 +2275,8 @@ function PersonaComponent({
       createDepartmentsAction,
       canRegenerate,
       handleOpenStepCardModal,
+      isAutosaveEnabled,
+      registerFlushCallbacks,
     ]
   );
 

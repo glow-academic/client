@@ -64,6 +64,10 @@ export interface DescriptionsProps {
     | undefined;
   searchTerm?: string; // Search term for filtering descriptions
   onSearchChange?: (term: string) => void; // Callback when search term changes
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<void>) => void;
   // Legacy props for backward compatibility
   descriptionResource?: {
     id: string;
@@ -96,6 +100,8 @@ export function Descriptions({
   createDescriptionsAction,
   searchTerm,
   onSearchChange,
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   descriptionResource,
   descriptionId,
@@ -123,6 +129,50 @@ export function Descriptions({
 
   // Keep a stable "server identity" for when we should accept server as source of truth
   const lastServerTextRef = useRef<string>(resourceDescription);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async () => {
+    // Skip if no change or no action
+    if (internalValue === lastSavedValueRef.current) return;
+    if (!createDescriptionsAction || !agent_id || !group_id) return;
+
+    const seq = ++saveSeqRef.current;
+    try {
+      if (internalValue.trim()) {
+        const result = await createDescriptionsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            description: internalValue,
+            mcp: false,
+          },
+        });
+        if (seq !== saveSeqRef.current) return;
+        if (result.description_id) {
+          onDescriptionIdChange(result.description_id);
+        }
+      } else {
+        if (seq !== saveSeqRef.current) return;
+        onDescriptionIdChange(null);
+      }
+      lastSavedValueRef.current = internalValue;
+      isDirtyRef.current = false;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create description resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const descriptionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -165,8 +215,13 @@ export function Descriptions({
     lastServerTextRef.current = serverValue;
   }, [resourceDescription, resourceId, descriptionsById]);
 
-  // Debounced resource creation
+  // Debounced resource creation - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -190,38 +245,8 @@ export function Descriptions({
     }
 
     // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      const seq = ++saveSeqRef.current;
-      try {
-        if (internalValue.trim()) {
-          if (!agent_id || !group_id) {
-            return;
-          }
-          const result = await createDescriptionsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: group_id,
-              description: internalValue,
-              mcp: false,
-            },
-          });
-          // Ignore stale response if user typed more
-          if (seq !== saveSeqRef.current) return;
-          if (result.description_id) {
-            onDescriptionIdChange(result.description_id);
-          }
-        } else {
-          // Ignore stale response if user typed more
-          if (seq !== saveSeqRef.current) return;
-          // Clear resource ID if value is empty
-          onDescriptionIdChange(null);
-        }
-        lastSavedValueRef.current = internalValue;
-        isDirtyRef.current = false;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create description resource:", error);
-      }
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
     }, 1000);
 
     return () => {
@@ -229,13 +254,7 @@ export function Descriptions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [
-    internalValue,
-    createDescriptionsAction,
-    onDescriptionIdChange,
-    agent_id,
-    group_id,
-  ]);
+  }, [internalValue, createDescriptionsAction, isAutosaveEnabled]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);

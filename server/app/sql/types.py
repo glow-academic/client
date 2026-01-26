@@ -886,6 +886,101 @@ class RefreshAnalyticsApiResponse(BaseModel):
 
 
 
+# Generated from: refresh_mv_dashboard
+
+class RefreshMvDashboardSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvDashboardSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+class RefreshMvDashboardApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvDashboardApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+    refreshed_views: list[str] | None = None
+
+
+
+# Generated from: refresh_mv_general
+
+class RefreshMvGeneralSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvGeneralSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+
+class RefreshMvGeneralApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvGeneralApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+
+
+
+# Generated from: refresh_mv_practice
+
+class RefreshMvPracticeSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class RefreshMvPracticeSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+
+class RefreshMvPracticeApiRequest(BaseModel):
+
+    pass
+
+class RefreshMvPracticeApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+
+
+
 # Generated from: refresh_view
 
 class RefreshViewSqlParams(BaseModel):
@@ -8758,6 +8853,99 @@ class GetPersonaApiResponse(BaseModel):
 
 
 
+# Generated from: get_persona_docs_columns
+
+class GetPersonaDocsColumnsSqlParams(BaseModel):
+
+    table_name_param: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.table_name_param,
+        )
+
+class QPersonaDocsColumnsV4Column(BaseModel):
+
+    name: str | None
+    type: str | None
+    nullable: bool | None
+    default_value: str | None
+
+class GetPersonaDocsColumnsSqlRow(BaseModel):
+
+    columns: list[QPersonaDocsColumnsV4Column] | None = None
+
+class GetPersonaDocsColumnsApiRequest(BaseModel):
+
+    table_name_param: str
+
+class GetPersonaDocsColumnsApiResponse(BaseModel):
+
+    columns: list[QPersonaDocsColumnsV4Column] | None = None
+
+
+
+# Generated from: get_persona_docs_foreign_keys
+
+class GetPersonaDocsForeignKeysSqlParams(BaseModel):
+
+    table_pattern_param: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.table_pattern_param,
+        )
+
+class QPersonaDocsFkV4ForeignKey(BaseModel):
+
+    table_name: str | None
+    column_name: str | None
+    references_table: str | None
+
+class GetPersonaDocsForeignKeysSqlRow(BaseModel):
+
+    foreign_keys: list[QPersonaDocsFkV4ForeignKey] | None = None
+
+class GetPersonaDocsForeignKeysApiRequest(BaseModel):
+
+    table_pattern_param: str
+
+class GetPersonaDocsForeignKeysApiResponse(BaseModel):
+
+    foreign_keys: list[QPersonaDocsFkV4ForeignKey] | None = None
+
+
+
+# Generated from: get_persona_docs_junctions
+
+class GetPersonaDocsJunctionsSqlParams(BaseModel):
+
+    prefix_param: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.prefix_param,
+        )
+
+class QPersonaDocsJunctionsV4Junction(BaseModel):
+
+    name: str | None
+    columns: list[str] | None
+
+class GetPersonaDocsJunctionsSqlRow(BaseModel):
+
+    junction_tables: list[QPersonaDocsJunctionsV4Junction] | None = None
+
+class GetPersonaDocsJunctionsApiRequest(BaseModel):
+
+    prefix_param: str
+
+class GetPersonaDocsJunctionsApiResponse(BaseModel):
+
+    junction_tables: list[QPersonaDocsJunctionsV4Junction] | None = None
+
+
+
 # Generated from: get_persona_generation_context
 
 class GetPersonaGenerationContextSqlParams(BaseModel):
@@ -9193,66 +9381,6 @@ class SavePersonaApiResponse(BaseModel):
     persona_id: UUID | None = None
     actor_name: str | None = None
 
-
-
-# Generated from: get_persona_docs_columns
-
-class GetPersonaDocsColumnsSqlParams(BaseModel):
-
-    table_name: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.table_name,)
-
-class QPersonaDocsColumnsV4Column(BaseModel):
-
-    name: str | None = None
-    type: str | None = None
-    nullable: bool | None = None
-    default_value: str | None = None
-
-class GetPersonaDocsColumnsSqlRow(BaseModel):
-
-    columns: list[QPersonaDocsColumnsV4Column] | None = None
-
-
-# Generated from: get_persona_docs_junctions
-
-class GetPersonaDocsJunctionsSqlParams(BaseModel):
-
-    prefix: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.prefix,)
-
-class QPersonaDocsJunctionsV4Junction(BaseModel):
-
-    name: str | None = None
-    columns: list[str] | None = None
-
-class GetPersonaDocsJunctionsSqlRow(BaseModel):
-
-    junction_tables: list[QPersonaDocsJunctionsV4Junction] | None = None
-
-
-# Generated from: get_persona_docs_foreign_keys
-
-class GetPersonaDocsForeignKeysSqlParams(BaseModel):
-
-    table_pattern: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.table_pattern,)
-
-class QPersonaDocsFkV4ForeignKey(BaseModel):
-
-    table_name: str | None = None
-    column_name: str | None = None
-    references_table: str | None = None
-
-class GetPersonaDocsForeignKeysSqlRow(BaseModel):
-
-    foreign_keys: list[QPersonaDocsFkV4ForeignKey] | None = None
 
 
 # Generated from: validate_persona_resource_error
@@ -16581,6 +16709,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
+    "app/sql/v4/queries/analytics/refresh_mv_dashboard_complete.sql": (
+        "RefreshMvDashboardSqlParams",
+        "RefreshMvDashboardSqlRow",
+        "RefreshMvDashboardApiRequest",
+        "RefreshMvDashboardApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/refresh_mv_general_complete.sql": (
+        "RefreshMvGeneralSqlParams",
+        "RefreshMvGeneralSqlRow",
+        "RefreshMvGeneralApiRequest",
+        "RefreshMvGeneralApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/refresh_mv_practice_complete.sql": (
+        "RefreshMvPracticeSqlParams",
+        "RefreshMvPracticeSqlRow",
+        "RefreshMvPracticeApiRequest",
+        "RefreshMvPracticeApiResponse",
+    ),
     "app/sql/v4/queries/analytics/refresh_view_complete.sql": (
         "RefreshViewSqlParams",
         "RefreshViewSqlRow",
@@ -17451,6 +17597,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaApiRequest",
         "GetPersonaApiResponse",
     ),
+    "app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql": (
+        "GetPersonaDocsColumnsSqlParams",
+        "GetPersonaDocsColumnsSqlRow",
+        "GetPersonaDocsColumnsApiRequest",
+        "GetPersonaDocsColumnsApiResponse",
+    ),
+    "app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql": (
+        "GetPersonaDocsForeignKeysSqlParams",
+        "GetPersonaDocsForeignKeysSqlRow",
+        "GetPersonaDocsForeignKeysApiRequest",
+        "GetPersonaDocsForeignKeysApiResponse",
+    ),
+    "app/sql/v4/queries/personas/get_persona_docs_junctions_complete.sql": (
+        "GetPersonaDocsJunctionsSqlParams",
+        "GetPersonaDocsJunctionsSqlRow",
+        "GetPersonaDocsJunctionsApiRequest",
+        "GetPersonaDocsJunctionsApiResponse",
+    ),
     "app/sql/v4/queries/personas/get_persona_generation_context_complete.sql": (
         "GetPersonaGenerationContextSqlParams",
         "GetPersonaGenerationContextSqlRow",
@@ -17492,24 +17656,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SavePersonaSqlRow",
         "SavePersonaApiRequest",
         "SavePersonaApiResponse",
-    ),
-    "app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql": (
-        "GetPersonaDocsColumnsSqlParams",
-        "GetPersonaDocsColumnsSqlRow",
-        "GetPersonaDocsColumnsSqlParams",
-        "GetPersonaDocsColumnsSqlRow",
-    ),
-    "app/sql/v4/queries/personas/get_persona_docs_junctions_complete.sql": (
-        "GetPersonaDocsJunctionsSqlParams",
-        "GetPersonaDocsJunctionsSqlRow",
-        "GetPersonaDocsJunctionsSqlParams",
-        "GetPersonaDocsJunctionsSqlRow",
-    ),
-    "app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql": (
-        "GetPersonaDocsForeignKeysSqlParams",
-        "GetPersonaDocsForeignKeysSqlRow",
-        "GetPersonaDocsForeignKeysSqlParams",
-        "GetPersonaDocsForeignKeysSqlRow",
     ),
     "app/sql/v4/queries/personas/validate_persona_resource_error_complete.sql": (
         "ValidatePersonaResourceErrorSqlParams",
@@ -18432,6 +18578,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_dashboard_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_general_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_mv_practice_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/refresh_view_complete.sql"]
     ) -> SqlString: ...
 
@@ -19157,6 +19318,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_junctions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_persona_generation_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -19188,21 +19364,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/save_persona_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_junctions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql"]
     ) -> SqlString: ...
 
     @overload

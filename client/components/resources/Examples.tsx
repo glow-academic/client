@@ -56,6 +56,10 @@ export interface ExamplesProps {
   isGenerating?: boolean;
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<void>) => void;
   // Legacy props for backward compatibility
   exampleIds?: string[];
   suggestions?: string[]; // History suggestions for autocomplete (legacy)
@@ -81,6 +85,8 @@ export function Examples({
   onGenerate,
   isGenerating = false,
   exampleMapping = {},
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   exampleIds,
   suggestions = [],
@@ -143,6 +149,56 @@ export function Examples({
   const isInitialMountRef = useRef(true);
   const exampleIdMapRef = useRef<Map<string, string>>(new Map()); // Maps example text -> example_id
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async () => {
+    if (!createExamplesAction || !agent_id || !group_id) return;
+
+    // Find texts that need creation (have text but no ID)
+    const textsToCreate = internalTexts.filter(
+      (text) => text.trim() && !exampleIdMapRef.current.has(text)
+    );
+
+    // Create resources for each
+    for (const text of textsToCreate) {
+      try {
+        const result = await createExamplesAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            example: text,
+            mcp: false,
+          },
+        });
+        if (result.example_id) {
+          exampleIdMapRef.current.set(text, result.example_id);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create example: "${text}"`, error);
+        throw error;
+      }
+    }
+
+    // Update parent with all IDs
+    const allIds = internalTexts
+      .filter((t) => t.trim())
+      .map((t) => exampleIdMapRef.current.get(t))
+      .filter((id): id is string => id !== undefined);
+
+    onChange(allIds);
+    lastSavedTextsRef.current = internalTexts;
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Sync external example_ids changes (when loading from server)
   useEffect(() => {
     if (ids.length > 0 && Object.keys(effectiveExampleMapping).length > 0) {
@@ -161,8 +217,13 @@ export function Examples({
     }
   }, [ids, effectiveExampleMapping]);
 
-  // Debounced resource creation for each example text
+  // Debounced resource creation for each example text - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -174,64 +235,27 @@ export function Examples({
     debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
     debounceTimersRef.current.clear();
 
-    // Create/update resources for each text
-    const newExampleIds: string[] = [];
-    // Use promises to track async operations
-    const promises: Promise<void>[] = [];
+    // Check if there are any texts that need creation
+    const hasTextsToCreate = internalTexts.some(
+      (text) => text.trim() && !exampleIdMapRef.current.has(text)
+    );
 
-    internalTexts.forEach((text, index) => {
-      if (!text.trim()) {
-        // Skip empty texts
-        return;
-      }
+    if (!hasTextsToCreate) {
+      // All texts already have IDs, just update parent with current IDs
+      const allIds = internalTexts
+        .filter((t) => t.trim())
+        .map((t) => exampleIdMapRef.current.get(t))
+        .filter((id): id is string => id !== undefined);
+      onChange(allIds);
+      return;
+    }
 
-      // Check if we already have an ID for this text
-      const existingId = exampleIdMapRef.current.get(text);
-      if (existingId) {
-        newExampleIds.push(existingId);
-        return;
-      }
+    // Debounce the flush
+    const timer = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
 
-      // Debounce creation for this text
-      const promise = (async () => {
-        if (createExamplesAction && agent_id && group_id) {
-          try {
-            const result = await createExamplesAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                example: text,
-                mcp: false,
-              },
-            });
-            if (result.example_id) {
-              exampleIdMapRef.current.set(text, result.example_id);
-              // Update parent with all IDs
-              const allIds = internalTexts
-                .map((t) => {
-                  if (!t.trim()) return null;
-                  return exampleIdMapRef.current.get(t) || null;
-                })
-                .filter((id): id is string => id !== null);
-              onChange(allIds);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create example resource for "${text}":`,
-              error
-            );
-          }
-        }
-      })();
-      promises.push(promise);
-
-      const timer = setTimeout(() => {
-        // Timer just tracks the debounce, promise handles the actual work
-      }, 1000);
-
-      debounceTimersRef.current.set(index, timer);
-    });
+    debounceTimersRef.current.set(0, timer);
 
     lastSavedTextsRef.current = internalTexts;
 
@@ -243,7 +267,7 @@ export function Examples({
       timersAtStart.forEach((timer) => clearTimeout(timer));
       timersAtStart.clear();
     };
-  }, [internalTexts, createExamplesAction, onChange, agent_id, group_id]);
+  }, [internalTexts, createExamplesAction, onChange, isAutosaveEnabled]);
 
   const handleItemsChange = useCallback((items: string[]) => {
     setInternalTexts(items.length > 0 ? items : [""]);

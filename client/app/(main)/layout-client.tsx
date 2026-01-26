@@ -14,8 +14,8 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
-import { DraftPicker } from "@/components/common/drafts/DraftPicker";
 import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -29,6 +29,7 @@ import {
 } from "@/contexts/breadcrumb-context";
 import { GenerationProvider } from "@/contexts/generation-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
+import { SaveProvider } from "@/contexts/save-context";
 import {
   generateBreadcrumbs,
   getActiveSectionFromPath,
@@ -435,11 +436,9 @@ function MainLayoutContent({
             {/* Generate Button - self-gates via GenerationCapability context (works on both create/edit and list pages) */}
             <FullPageGenerateButton />
 
-            {/* DraftPicker - Show on create/edit pages */}
+            {/* SaveToolbar - Show on create/edit pages */}
             {isCreateOrEditPage && artifactType && (
-              <div className="pr-4 flex items-center">
-                <DraftPicker artifactType={artifactType} />
-              </div>
+              <SaveToolbar artifactType={artifactType} />
             )}
 
             {/* Add Staff Button - Show in top right for staff management pages */}
@@ -542,19 +541,21 @@ export function MainLayoutClient({
       >
         <BreadcrumbProvider>
           <GenerationProvider>
-            <AnalyticsProvider>
-              <MainLayoutContent
-                attemptData={attemptData}
-                switchEffectiveProfileAction={switchEffectiveProfileAction}
-                createFeedbackAction={createFeedbackAction}
-                refreshAnalyticsAction={refreshAnalyticsAction}
-                searchSimulatableProfilesAction={
-                  searchSimulatableProfilesAction
-                }
-              >
-                {children}
-              </MainLayoutContent>
-            </AnalyticsProvider>
+            <SaveProvider>
+              <AnalyticsProvider>
+                <MainLayoutContent
+                  attemptData={attemptData}
+                  switchEffectiveProfileAction={switchEffectiveProfileAction}
+                  createFeedbackAction={createFeedbackAction}
+                  refreshAnalyticsAction={refreshAnalyticsAction}
+                  searchSimulatableProfilesAction={
+                    searchSimulatableProfilesAction
+                  }
+                >
+                  {children}
+                </MainLayoutContent>
+              </AnalyticsProvider>
+            </SaveProvider>
           </GenerationProvider>
         </BreadcrumbProvider>
       </ProfileProviderClient>
