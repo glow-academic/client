@@ -120,7 +120,8 @@ BEGIN
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link profile to draft
-    INSERT INTO profiles_drafts_connection (profile_id, draft_id) VALUES (v_profile_id, v_draft_id);
+    INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
+    VALUES (v_draft_id, v_profile_id, v_new_version);
 
     -- Link resources to draft
     IF args_ids IS NOT NULL AND COALESCE(array_length(args_ids, 1), 0) > 0 THEN
