@@ -1644,6 +1644,827 @@ class GetEvalAttemptApiResponse(BaseModel):
 
 
 
+# Generated from: get_general_attempt
+
+class GetGeneralAttemptSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class QGetGeneralAttemptV4AggregatedResults(BaseModel):
+
+    total_score: float | None
+    total_possible_points: float | None
+    percentage: float | None
+    passed: bool | None
+    chats_completed: int | None
+    total_chats: int | None
+
+
+
+
+class QGetGeneralAttemptV4PreviousChat(BaseModel):
+
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    score: float | None
+    passed: bool | None
+    created_at: str | None
+    title: str | None
+    time_taken: float | None
+    total_possible_points: float | None
+    percentage: float | None
+
+class QGetGeneralAttemptV4AllSimulationScenario(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    department_id: UUID | None
+    active: bool | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    created_at: str | None
+    updated_at: str | None
+    generated: bool | None
+    default_scenario: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    show_problem_statement: bool | None
+    show_objectives: bool | None
+    show_images: bool | None
+    background_image: UUID | None
+    objectives: list[str] | None
+    previous_chats: list[QGetGeneralAttemptV4PreviousChat] | None
+
+
+
+
+class QGetGeneralAttemptV4Attempt(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    simulation_id: UUID | None
+    infinite_mode: bool | None
+    archived: bool | None
+    profile_id: UUID | None
+
+
+
+
+class QGetGeneralAttemptV4AttemptProfile(BaseModel):
+
+    profile_id: UUID | None
+    attempt_id: UUID | None
+    active: bool | None
+
+
+
+
+class QGetGeneralAttemptV4ContinuationOption(BaseModel):
+
+    scenario_id: UUID | None
+    position: int | None
+    scenario_name: str | None
+    previous_chat_id: UUID | None
+    title: str | None
+    score: float | None
+    percentage: float | None
+    time_taken: float | None
+
+class QGetGeneralAttemptV4AvailableContinuationOptions(BaseModel):
+
+    next_sequential_options: list[QGetGeneralAttemptV4ContinuationOption] | None
+    has_options: bool | None
+
+
+
+
+class QGetGeneralAttemptV4Chat(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+    title: str | None
+    scenario_id: UUID | None
+    parent_scenario_id: UUID | None
+    attempt_id: UUID | None
+    completed: bool | None
+    completed_at: str | None
+    trace_id: str | None
+    document_ids: list[str] | None
+
+
+
+
+class QGetGeneralAttemptV4SkillFeedback(BaseModel):
+
+    skill_name: str | None
+    feedback: str | None
+
+
+
+
+class QGetGeneralAttemptV4SkillScore(BaseModel):
+
+    skill_name: str | None
+    score: float | None
+
+class QGetGeneralAttemptV4DynamicRubric(BaseModel):
+
+    chat_id: UUID | None
+    score: float | None
+    passed: bool | None
+    time_taken: float | None
+    skill_scores: list[QGetGeneralAttemptV4SkillScore] | None
+    skill_feedbacks: list[QGetGeneralAttemptV4SkillFeedback] | None
+    total_possible_points: float | None
+
+
+
+
+class QGetGeneralAttemptV4Grade(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    simulation_chat_id: UUID | None
+    rubric_id: UUID | None
+    description: str | None
+    passed: bool | None
+    score: int | None
+    time_taken: int | None
+
+
+
+
+class QGetGeneralAttemptV4StandardAchievement(BaseModel):
+
+    standard_id: UUID | None
+    achieved: bool | None
+
+
+
+
+class QGetGeneralAttemptV4StandardFeedback(BaseModel):
+
+    standard_id: UUID | None
+    feedback: str | None
+
+
+
+
+class QGetGeneralAttemptV4StandardPass(BaseModel):
+
+    standard_id: UUID | None
+    passed: bool | None
+
+class QGetGeneralAttemptV4GradingState(BaseModel):
+
+    achieved_standards: list[QGetGeneralAttemptV4StandardAchievement] | None
+    passed_standards: list[QGetGeneralAttemptV4StandardPass] | None
+    grade_description: str | None
+    feedback_by_standard_id: list[QGetGeneralAttemptV4StandardFeedback] | None
+
+
+
+
+class QGetGeneralAttemptV4HighlightsEntry(BaseModel):
+
+    section: str | None
+
+
+
+
+class QGetGeneralAttemptV4ReplacementsEntry(BaseModel):
+
+    section: str | None
+    replace: str | None
+
+class QGetGeneralAttemptV4MessageFeedback(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    replaces: list[QGetGeneralAttemptV4ReplacementsEntry] | None
+    highlights: list[QGetGeneralAttemptV4HighlightsEntry] | None
+
+class QGetGeneralAttemptV4Message(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+    chat_id: UUID | None
+    content: str | None
+    type: str | None
+    completed: bool | None
+    persona_id: UUID | None
+    feedbacks: list[QGetGeneralAttemptV4MessageFeedback] | None
+
+
+
+
+class QGetGeneralAttemptV4Persona(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    icon: str | None
+    color: str | None
+
+
+
+
+class QGetGeneralAttemptV4Scenario(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    department_id: UUID | None
+    active: bool | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    created_at: str | None
+    updated_at: str | None
+    generated: bool | None
+    default_scenario: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    show_problem_statement: bool | None
+    show_objectives: bool | None
+    show_images: bool | None
+    background_image: UUID | None
+    objectives: list[str] | None
+
+class QGetGeneralAttemptV4ChatData(BaseModel):
+
+    chat: QGetGeneralAttemptV4Chat | None
+    scenario: QGetGeneralAttemptV4Scenario | None
+    messages_entry: list[QGetGeneralAttemptV4Message] | None
+    grade: QGetGeneralAttemptV4Grade | None
+    grading_state: QGetGeneralAttemptV4GradingState | None
+    dynamic_rubric: QGetGeneralAttemptV4DynamicRubric | None
+    previous_chats: list[QGetGeneralAttemptV4PreviousChat] | None
+    personas: list[QGetGeneralAttemptV4Persona] | None
+    content_type: str | None
+
+
+
+
+class QGetGeneralAttemptV4StandardGroupMapping(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+    pass_points: float | None
+
+
+
+
+class QGetGeneralAttemptV4StandardGroupStandards(BaseModel):
+
+    standard_group_id: UUID | None
+    standard_ids: list[str] | None
+
+
+
+
+class QGetGeneralAttemptV4StandardMapping(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+
+class QGetGeneralAttemptV4RubricStructure(BaseModel):
+
+    standard_groups: list[QGetGeneralAttemptV4StandardGroupStandards] | None
+    standard_groups_mapping: list[QGetGeneralAttemptV4StandardGroupMapping] | None
+    standards_mapping: list[QGetGeneralAttemptV4StandardMapping] | None
+
+
+
+
+class QGetGeneralAttemptV4ScenarioDocument(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    type: str | None
+    updated_at: str | None
+    extension: str | None
+    scenario_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    active: bool | None
+    department_ids: list[str] | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    field_ids: list[str] | None
+
+
+
+
+class QGetGeneralAttemptV4Simulation(BaseModel):
+
+    id: UUID | None
+    title: str | None
+    description: str | None
+    department_id: UUID | None
+    active: bool | None
+    default_simulation: bool | None
+    practice_simulation: bool | None
+    hints_enabled: bool | None
+    objectives_enabled: bool | None
+    input_guardrail_active: bool | None
+    output_guardrail_active: bool | None
+    image_input_active: bool | None
+    copy_paste_allowed: bool | None
+    time_limit: int | None
+    rubric_id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+
+
+
+
+class QGetGeneralAttemptV4Timer(BaseModel):
+
+    elapsed: int | None
+    limit: int | None
+    exceeded: bool | None
+    formatted: str | None
+
+class GetGeneralAttemptSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    access_denied: bool | None = None
+    attempt: QGetGeneralAttemptV4Attempt | None = None
+    simulation: QGetGeneralAttemptV4Simulation | None = None
+    attempt_profiles: list[QGetGeneralAttemptV4AttemptProfile] | None = None
+    chats_entry: list[QGetGeneralAttemptV4ChatData] | None = None
+    scenario_documents_junction: list[QGetGeneralAttemptV4ScenarioDocument] | None = None
+    aggregated_results: QGetGeneralAttemptV4AggregatedResults | None = None
+    timer: QGetGeneralAttemptV4Timer | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_single_chat_attempt: bool | None = None
+    is_last_attempt: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    remaining_scenarios_count: int | None = None
+    is_last_remaining_scenario: bool | None = None
+    can_pick_multiple_alternatives: bool | None = None
+    is_active: bool | None = None
+    rubric_structure: QGetGeneralAttemptV4RubricStructure | None = None
+    all_simulation_scenarios: list[QGetGeneralAttemptV4AllSimulationScenario] | None = None
+    available_continuation_options: QGetGeneralAttemptV4AvailableContinuationOptions | None = None
+
+class GetGeneralAttemptApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetGeneralAttemptApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    access_denied: bool | None = None
+    attempt: QGetGeneralAttemptV4Attempt | None = None
+    simulation: QGetGeneralAttemptV4Simulation | None = None
+    attempt_profiles: list[QGetGeneralAttemptV4AttemptProfile] | None = None
+    chats_entry: list[QGetGeneralAttemptV4ChatData] | None = None
+    scenario_documents_junction: list[QGetGeneralAttemptV4ScenarioDocument] | None = None
+    aggregated_results: QGetGeneralAttemptV4AggregatedResults | None = None
+    timer: QGetGeneralAttemptV4Timer | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_single_chat_attempt: bool | None = None
+    is_last_attempt: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    remaining_scenarios_count: int | None = None
+    is_last_remaining_scenario: bool | None = None
+    can_pick_multiple_alternatives: bool | None = None
+    is_active: bool | None = None
+    rubric_structure: QGetGeneralAttemptV4RubricStructure | None = None
+    all_simulation_scenarios: list[QGetGeneralAttemptV4AllSimulationScenario] | None = None
+    available_continuation_options: QGetGeneralAttemptV4AvailableContinuationOptions | None = None
+
+
+
+# Generated from: get_practice_attempt
+
+class GetPracticeAttemptSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class QGetPracticeAttemptV4AggregatedResults(BaseModel):
+
+    total_score: float | None
+    total_possible_points: float | None
+    percentage: float | None
+    passed: bool | None
+    chats_completed: int | None
+    total_chats: int | None
+
+
+
+
+class QGetPracticeAttemptV4AllSimulationScenario(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    department_id: UUID | None
+    active: bool | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    created_at: str | None
+    updated_at: str | None
+    generated: bool | None
+    default_scenario: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    show_problem_statement: bool | None
+    show_objectives: bool | None
+    show_images: bool | None
+    background_image: UUID | None
+    objectives: list[str] | None
+
+
+
+
+class QGetPracticeAttemptV4Attempt(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    simulation_id: UUID | None
+    infinite_mode: bool | None
+    archived: bool | None
+    profile_id: UUID | None
+
+
+
+
+class QGetPracticeAttemptV4AttemptProfile(BaseModel):
+
+    profile_id: UUID | None
+    attempt_id: UUID | None
+    active: bool | None
+
+
+
+
+class QGetPracticeAttemptV4Chat(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+    title: str | None
+    scenario_id: UUID | None
+    parent_scenario_id: UUID | None
+    attempt_id: UUID | None
+    completed: bool | None
+    completed_at: str | None
+    trace_id: str | None
+    document_ids: list[str] | None
+
+
+
+
+class QGetPracticeAttemptV4SkillFeedback(BaseModel):
+
+    skill_name: str | None
+    feedback: str | None
+
+
+
+
+class QGetPracticeAttemptV4SkillScore(BaseModel):
+
+    skill_name: str | None
+    score: float | None
+
+class QGetPracticeAttemptV4DynamicRubric(BaseModel):
+
+    chat_id: UUID | None
+    score: float | None
+    passed: bool | None
+    time_taken: float | None
+    skill_scores: list[QGetPracticeAttemptV4SkillScore] | None
+    skill_feedbacks: list[QGetPracticeAttemptV4SkillFeedback] | None
+    total_possible_points: float | None
+
+
+
+
+class QGetPracticeAttemptV4Grade(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    simulation_chat_id: UUID | None
+    rubric_id: UUID | None
+    description: str | None
+    passed: bool | None
+    score: int | None
+    time_taken: int | None
+
+
+
+
+class QGetPracticeAttemptV4StandardAchievement(BaseModel):
+
+    standard_id: UUID | None
+    achieved: bool | None
+
+
+
+
+class QGetPracticeAttemptV4StandardFeedback(BaseModel):
+
+    standard_id: UUID | None
+    feedback: str | None
+
+
+
+
+class QGetPracticeAttemptV4StandardPass(BaseModel):
+
+    standard_id: UUID | None
+    passed: bool | None
+
+class QGetPracticeAttemptV4GradingState(BaseModel):
+
+    achieved_standards: list[QGetPracticeAttemptV4StandardAchievement] | None
+    passed_standards: list[QGetPracticeAttemptV4StandardPass] | None
+    grade_description: str | None
+    feedback_by_standard_id: list[QGetPracticeAttemptV4StandardFeedback] | None
+
+
+
+
+class QGetPracticeAttemptV4Hint(BaseModel):
+
+    simulation_message_id: UUID | None
+    hint: str | None
+    idx: int | None
+    created_at: str | None
+
+class QGetPracticeAttemptV4HintsByMessage(BaseModel):
+
+    message_id: UUID | None
+    hints: list[QGetPracticeAttemptV4Hint] | None
+
+
+
+
+class QGetPracticeAttemptV4HighlightsEntry(BaseModel):
+
+    section: str | None
+
+
+
+
+class QGetPracticeAttemptV4ReplacementsEntry(BaseModel):
+
+    section: str | None
+    replace: str | None
+
+class QGetPracticeAttemptV4MessageFeedback(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    replaces: list[QGetPracticeAttemptV4ReplacementsEntry] | None
+    highlights: list[QGetPracticeAttemptV4HighlightsEntry] | None
+
+class QGetPracticeAttemptV4Message(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+    chat_id: UUID | None
+    content: str | None
+    type: str | None
+    completed: bool | None
+    persona_id: UUID | None
+    feedbacks: list[QGetPracticeAttemptV4MessageFeedback] | None
+
+
+
+
+class QGetPracticeAttemptV4Persona(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    icon: str | None
+    color: str | None
+
+
+
+
+class QGetPracticeAttemptV4Scenario(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    department_id: UUID | None
+    active: bool | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    created_at: str | None
+    updated_at: str | None
+    generated: bool | None
+    default_scenario: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    show_problem_statement: bool | None
+    show_objectives: bool | None
+    show_images: bool | None
+    background_image: UUID | None
+    objectives: list[str] | None
+
+class QGetPracticeAttemptV4ChatData(BaseModel):
+
+    chat: QGetPracticeAttemptV4Chat | None
+    scenario: QGetPracticeAttemptV4Scenario | None
+    messages_entry: list[QGetPracticeAttemptV4Message] | None
+    hints: list[QGetPracticeAttemptV4HintsByMessage] | None
+    grade: QGetPracticeAttemptV4Grade | None
+    grading_state: QGetPracticeAttemptV4GradingState | None
+    dynamic_rubric: QGetPracticeAttemptV4DynamicRubric | None
+    personas: list[QGetPracticeAttemptV4Persona] | None
+    content_type: str | None
+
+
+
+
+class QGetPracticeAttemptV4StandardGroupMapping(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+    pass_points: float | None
+
+
+
+
+class QGetPracticeAttemptV4StandardGroupStandards(BaseModel):
+
+    standard_group_id: UUID | None
+    standard_ids: list[str] | None
+
+
+
+
+class QGetPracticeAttemptV4StandardMapping(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+
+class QGetPracticeAttemptV4RubricStructure(BaseModel):
+
+    standard_groups: list[QGetPracticeAttemptV4StandardGroupStandards] | None
+    standard_groups_mapping: list[QGetPracticeAttemptV4StandardGroupMapping] | None
+    standards_mapping: list[QGetPracticeAttemptV4StandardMapping] | None
+
+
+
+
+class QGetPracticeAttemptV4ScenarioDocument(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    type: str | None
+    updated_at: str | None
+    extension: str | None
+    scenario_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    active: bool | None
+    department_ids: list[str] | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    field_ids: list[str] | None
+
+
+
+
+class QGetPracticeAttemptV4Simulation(BaseModel):
+
+    id: UUID | None
+    title: str | None
+    description: str | None
+    department_id: UUID | None
+    active: bool | None
+    default_simulation: bool | None
+    practice_simulation: bool | None
+    hints_enabled: bool | None
+    objectives_enabled: bool | None
+    input_guardrail_active: bool | None
+    output_guardrail_active: bool | None
+    image_input_active: bool | None
+    copy_paste_allowed: bool | None
+    time_limit: int | None
+    rubric_id: UUID | None
+    created_at: str | None
+    updated_at: str | None
+
+
+
+
+class QGetPracticeAttemptV4Timer(BaseModel):
+
+    elapsed: int | None
+    limit: int | None
+    exceeded: bool | None
+    formatted: str | None
+
+class GetPracticeAttemptSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    access_denied: bool | None = None
+    attempt: QGetPracticeAttemptV4Attempt | None = None
+    simulation: QGetPracticeAttemptV4Simulation | None = None
+    attempt_profiles: list[QGetPracticeAttemptV4AttemptProfile] | None = None
+    chats_entry: list[QGetPracticeAttemptV4ChatData] | None = None
+    scenario_documents_junction: list[QGetPracticeAttemptV4ScenarioDocument] | None = None
+    aggregated_results: QGetPracticeAttemptV4AggregatedResults | None = None
+    timer: QGetPracticeAttemptV4Timer | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_single_chat_attempt: bool | None = None
+    is_last_attempt: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    remaining_scenarios_count: int | None = None
+    is_last_remaining_scenario: bool | None = None
+    can_pick_multiple_alternatives: bool | None = None
+    is_active: bool | None = None
+    rubric_structure: QGetPracticeAttemptV4RubricStructure | None = None
+    all_simulation_scenarios: list[QGetPracticeAttemptV4AllSimulationScenario] | None = None
+
+class GetPracticeAttemptApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetPracticeAttemptApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    access_denied: bool | None = None
+    attempt: QGetPracticeAttemptV4Attempt | None = None
+    simulation: QGetPracticeAttemptV4Simulation | None = None
+    attempt_profiles: list[QGetPracticeAttemptV4AttemptProfile] | None = None
+    chats_entry: list[QGetPracticeAttemptV4ChatData] | None = None
+    scenario_documents_junction: list[QGetPracticeAttemptV4ScenarioDocument] | None = None
+    aggregated_results: QGetPracticeAttemptV4AggregatedResults | None = None
+    timer: QGetPracticeAttemptV4Timer | None = None
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_single_chat_attempt: bool | None = None
+    is_last_attempt: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    remaining_scenarios_count: int | None = None
+    is_last_remaining_scenario: bool | None = None
+    can_pick_multiple_alternatives: bool | None = None
+    is_active: bool | None = None
+    rubric_structure: QGetPracticeAttemptV4RubricStructure | None = None
+    all_simulation_scenarios: list[QGetPracticeAttemptV4AllSimulationScenario] | None = None
+
+
+
 # Generated from: get_simulation_attempt
 
 class GetSimulationAttemptSqlParams(BaseModel):
@@ -21760,6 +22581,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetEvalAttemptApiRequest",
         "GetEvalAttemptApiResponse",
     ),
+    "app/sql/v4/queries/attempts/get_general_attempt_complete.sql": (
+        "GetGeneralAttemptSqlParams",
+        "GetGeneralAttemptSqlRow",
+        "GetGeneralAttemptApiRequest",
+        "GetGeneralAttemptApiResponse",
+    ),
+    "app/sql/v4/queries/attempts/get_practice_attempt_complete.sql": (
+        "GetPracticeAttemptSqlParams",
+        "GetPracticeAttemptSqlRow",
+        "GetPracticeAttemptApiRequest",
+        "GetPracticeAttemptApiResponse",
+    ),
     "app/sql/v4/queries/attempts/get_simulation_attempt_complete.sql": (
         "GetSimulationAttemptSqlParams",
         "GetSimulationAttemptSqlRow",
@@ -23905,6 +24738,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/attempts/get_eval_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/attempts/get_general_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/attempts/get_practice_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
