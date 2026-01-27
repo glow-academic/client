@@ -2207,6 +2207,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/colors/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Colors */
+        post: operations["search_colors_api_v4_resources_colors_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/departments/get": {
         parameters: {
             query?: never;
@@ -2223,6 +2240,23 @@ export interface paths {
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
         post: operations["get_departments_api_v4_resources_departments_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/departments/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Departments */
+        post: operations["search_departments_api_v4_resources_departments_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2265,6 +2299,23 @@ export interface paths {
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
         post: operations["get_descriptions_api_v4_resources_descriptions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/descriptions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Descriptions */
+        post: operations["search_descriptions_api_v4_resources_descriptions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2353,6 +2404,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/examples/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Examples */
+        post: operations["search_examples_api_v4_resources_examples_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/fields/get": {
         parameters: {
             query?: never;
@@ -2375,6 +2443,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/fields/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Fields */
+        post: operations["search_fields_api_v4_resources_fields_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/flags/get": {
         parameters: {
             query?: never;
@@ -2391,6 +2476,23 @@ export interface paths {
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
         post: operations["get_flags_api_v4_resources_flags_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/flags/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Flags */
+        post: operations["search_flags_api_v4_resources_flags_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2459,6 +2561,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/icons/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Icons */
+        post: operations["search_icons_api_v4_resources_icons_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/images": {
         parameters: {
             query?: never;
@@ -2515,6 +2634,23 @@ export interface paths {
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
         post: operations["get_instructions_api_v4_resources_instructions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/instructions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Instructions */
+        post: operations["search_instructions_api_v4_resources_instructions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2603,6 +2739,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/names/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Names
+         * @description Search names resources.
+         */
+        post: operations["search_names_api_v4_resources_names_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/objectives": {
         parameters: {
             query?: never;
@@ -2659,6 +2815,23 @@ export interface paths {
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
         post: operations["get_parameters_api_v4_resources_parameters_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/parameters/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Parameters */
+        post: operations["search_parameters_api_v4_resources_parameters_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6787,8 +6960,6 @@ export interface components {
         GetColorsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetColorsApiResponse */
         GetColorsApiResponse: {
@@ -7042,8 +7213,6 @@ export interface components {
         GetDepartmentsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetDepartmentsApiResponse */
         GetDepartmentsApiResponse: {
@@ -7067,8 +7236,6 @@ export interface components {
         GetDescriptionsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetDescriptionsApiResponse */
         GetDescriptionsApiResponse: {
@@ -7417,8 +7584,6 @@ export interface components {
         GetExamplesApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetExamplesApiResponse */
         GetExamplesApiResponse: {
@@ -7525,8 +7690,6 @@ export interface components {
         GetFieldsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetFieldsApiResponse */
         GetFieldsApiResponse: {
@@ -7554,8 +7717,6 @@ export interface components {
         GetFlagsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetFlagsApiResponse */
         GetFlagsApiResponse: {
@@ -7743,8 +7904,6 @@ export interface components {
         GetIconsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetIconsApiResponse */
         GetIconsApiResponse: {
@@ -7755,8 +7914,6 @@ export interface components {
         GetInstructionsApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetInstructionsApiResponse */
         GetInstructionsApiResponse: {
@@ -8147,8 +8304,6 @@ export interface components {
         GetNamesApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
         };
         /** GetNamesApiResponse */
         GetNamesApiResponse: {
@@ -8269,8 +8424,6 @@ export interface components {
         GetParametersApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Search */
-            search?: string | null;
             /** Persona Parameter */
             persona_parameter?: boolean | null;
             /** Document Parameter */
@@ -19688,6 +19841,296 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** SearchColorsApiRequest */
+        SearchColorsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchColorsApiResponse */
+        SearchColorsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetColorsV4Item"][] | null;
+        };
+        /** SearchDepartmentsApiRequest */
+        SearchDepartmentsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** User Department Ids */
+            user_department_ids?: string[] | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchDepartmentsApiResponse */
+        SearchDepartmentsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+        };
+        /** SearchDescriptionsApiRequest */
+        SearchDescriptionsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchDescriptionsApiResponse */
+        SearchDescriptionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+        };
+        /** SearchExamplesApiRequest */
+        SearchExamplesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** User Department Ids */
+            user_department_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchExamplesApiResponse */
+        SearchExamplesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetExamplesV4Item"][] | null;
+        };
+        /** SearchFieldsApiRequest */
+        SearchFieldsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** User Department Ids */
+            user_department_ids?: string[] | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchFieldsApiResponse */
+        SearchFieldsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetFieldsV4Item"][] | null;
+        };
+        /** SearchFlagsApiRequest */
+        SearchFlagsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchFlagsApiResponse */
+        SearchFlagsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetFlagsV4Item"][] | null;
+        };
+        /** SearchIconsApiRequest */
+        SearchIconsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchIconsApiResponse */
+        SearchIconsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetIconsV4Item"][] | null;
+        };
+        /** SearchInstructionsApiRequest */
+        SearchInstructionsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchInstructionsApiResponse */
+        SearchInstructionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+        };
+        /** SearchNamesApiRequest */
+        SearchNamesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Use Recent
+             * @default false
+             */
+            use_recent: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchNamesApiResponse */
+        SearchNamesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** SearchParametersApiRequest */
+        SearchParametersApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Persona Parameter */
+            persona_parameter?: boolean | null;
+            /** Document Parameter */
+            document_parameter?: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter?: boolean | null;
+            /** Video Parameter */
+            video_parameter?: boolean | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+        };
+        /** SearchParametersApiResponse */
+        SearchParametersApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
             /** Limit Count */
@@ -23875,6 +24318,43 @@ export interface operations {
             };
         };
     };
+    search_colors_api_v4_resources_colors_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchColorsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchColorsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_departments_api_v4_resources_departments_get_post: {
         parameters: {
             query?: never;
@@ -23899,6 +24379,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDepartmentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_departments_api_v4_resources_departments_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchDepartmentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchDepartmentsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23973,6 +24490,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDescriptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_descriptions_api_v4_resources_descriptions_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchDescriptionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchDescriptionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24134,6 +24688,43 @@ export interface operations {
             };
         };
     };
+    search_examples_api_v4_resources_examples_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchExamplesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchExamplesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_fields_api_v4_resources_fields_get_post: {
         parameters: {
             query?: never;
@@ -24171,6 +24762,43 @@ export interface operations {
             };
         };
     };
+    search_fields_api_v4_resources_fields_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_flags_api_v4_resources_flags_get_post: {
         parameters: {
             query?: never;
@@ -24195,6 +24823,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetFlagsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_flags_api_v4_resources_flags_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchFlagsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchFlagsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24319,6 +24984,43 @@ export interface operations {
             };
         };
     };
+    search_icons_api_v4_resources_icons_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchIconsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchIconsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_images_api_v4_resources_images_post: {
         parameters: {
             query?: never;
@@ -24417,6 +25119,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetInstructionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_instructions_api_v4_resources_instructions_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchInstructionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchInstructionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24578,6 +25317,43 @@ export interface operations {
             };
         };
     };
+    search_names_api_v4_resources_names_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchNamesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchNamesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_objectives_api_v4_resources_objectives_post: {
         parameters: {
             query?: never;
@@ -24676,6 +25452,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetParametersApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_parameters_api_v4_resources_parameters_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchParametersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchParametersApiResponse"];
                 };
             };
             /** @description Validation Error */

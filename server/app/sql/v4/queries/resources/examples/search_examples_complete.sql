@@ -17,29 +17,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop types WITHOUT CASCADE
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT typname
-        FROM pg_type
-        WHERE typname LIKE 'q_get_examples_v4_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
-END $$;
-
--- Create composite type for example item
-CREATE TYPE types.q_get_examples_v4_item AS (
-    id uuid,
-    example text,
-    idx integer,
-    generated boolean
-);
-
 -- Create function
 CREATE OR REPLACE FUNCTION api_search_examples_v4(
     search text DEFAULT NULL,
@@ -121,7 +98,7 @@ SELECT COALESCE(
 FROM (
     SELECT * FROM base
     ORDER BY
-        CASE WHEN use_recent THEN recent.recent_at END DESC NULLS LAST,
+        CASE WHEN use_recent THEN recent_at END DESC NULLS LAST,
         example
     LIMIT limit_count
     OFFSET offset_count

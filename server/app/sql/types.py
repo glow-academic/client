@@ -16157,6 +16157,46 @@ class GetColorsApiResponse(BaseModel):
 
 
 
+# Generated from: search_colors
+
+class SearchColorsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchColorsSqlRow(BaseModel):
+
+    items: list[QGetColorsV4Item] | None = None
+
+class SearchColorsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchColorsApiResponse(BaseModel):
+
+    items: list[QGetColorsV4Item] | None = None
+
+
+
 # Generated from: colors
 
 class ColorsSqlParams(BaseModel):
@@ -16229,6 +16269,46 @@ class GetDepartmentsApiResponse(BaseModel):
 
 
 
+# Generated from: search_departments
+
+class SearchDepartmentsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.user_department_ids,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchDepartmentsSqlRow(BaseModel):
+
+    items: list[QGetDepartmentsV4Item] | None = None
+
+class SearchDepartmentsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchDepartmentsApiResponse(BaseModel):
+
+    items: list[QGetDepartmentsV4Item] | None = None
+
+
+
 # Generated from: get_descriptions
 
 class GetDescriptionsSqlParams(BaseModel):
@@ -16255,6 +16335,46 @@ class GetDescriptionsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetDescriptionsApiResponse(BaseModel):
+
+    items: list[QGetDescriptionsV4Item] | None = None
+
+
+
+# Generated from: search_descriptions
+
+class SearchDescriptionsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchDescriptionsSqlRow(BaseModel):
+
+    items: list[QGetDescriptionsV4Item] | None = None
+
+class SearchDescriptionsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchDescriptionsApiResponse(BaseModel):
 
     items: list[QGetDescriptionsV4Item] | None = None
 
@@ -16391,6 +16511,52 @@ class GetExamplesApiResponse(BaseModel):
 
 
 
+# Generated from: search_examples
+
+class SearchExamplesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    persona_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.persona_id,
+            self.user_department_ids,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchExamplesSqlRow(BaseModel):
+
+    items: list[QGetExamplesV4Item] | None = None
+
+class SearchExamplesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    persona_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchExamplesApiResponse(BaseModel):
+
+    items: list[QGetExamplesV4Item] | None = None
+
+
+
 # Generated from: examples
 
 class ExamplesSqlParams(BaseModel):
@@ -16458,6 +16624,49 @@ class GetFieldsApiResponse(BaseModel):
 
 
 
+# Generated from: search_fields
+
+class SearchFieldsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.user_department_ids,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchFieldsSqlRow(BaseModel):
+
+    items: list[QGetFieldsV4Item] | None = None
+
+class SearchFieldsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchFieldsApiResponse(BaseModel):
+
+    items: list[QGetFieldsV4Item] | None = None
+
+
+
 # Generated from: get_flags
 
 class GetFlagsSqlParams(BaseModel):
@@ -16486,6 +16695,40 @@ class GetFlagsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetFlagsApiResponse(BaseModel):
+
+    items: list[QGetFlagsV4Item] | None = None
+
+
+
+# Generated from: search_flags
+
+class SearchFlagsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+        )
+
+class SearchFlagsSqlRow(BaseModel):
+
+    items: list[QGetFlagsV4Item] | None = None
+
+class SearchFlagsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchFlagsApiResponse(BaseModel):
 
     items: list[QGetFlagsV4Item] | None = None
 
@@ -16592,6 +16835,46 @@ class GetIconsApiResponse(BaseModel):
 
 
 
+# Generated from: search_icons
+
+class SearchIconsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchIconsSqlRow(BaseModel):
+
+    items: list[QGetIconsV4Item] | None = None
+
+class SearchIconsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchIconsApiResponse(BaseModel):
+
+    items: list[QGetIconsV4Item] | None = None
+
+
+
 # Generated from: images
 
 class ImagesSqlParams(BaseModel):
@@ -16655,6 +16938,46 @@ class GetInstructionsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetInstructionsApiResponse(BaseModel):
+
+    items: list[QGetInstructionsV4Item] | None = None
+
+
+
+# Generated from: search_instructions
+
+class SearchInstructionsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchInstructionsSqlRow(BaseModel):
+
+    items: list[QGetInstructionsV4Item] | None = None
+
+class SearchInstructionsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchInstructionsApiResponse(BaseModel):
 
     items: list[QGetInstructionsV4Item] | None = None
 
@@ -16785,6 +17108,46 @@ class GetNamesApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetNamesApiResponse(BaseModel):
+
+    items: list[QGetNamesV4Item] | None = None
+
+
+
+# Generated from: search_names
+
+class SearchNamesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+            self.use_recent,
+            self.exclude_ids,
+        )
+
+class SearchNamesSqlRow(BaseModel):
+
+    items: list[QGetNamesV4Item] | None = None
+
+class SearchNamesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    use_recent: bool | None = False
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchNamesApiResponse(BaseModel):
 
     items: list[QGetNamesV4Item] | None = None
 
@@ -16939,6 +17302,52 @@ class GetParametersApiRequest(BaseModel):
     video_parameter: bool | None = None
 
 class GetParametersApiResponse(BaseModel):
+
+    items: list[QGetParametersV4Item] | None = None
+
+
+
+# Generated from: search_parameters
+
+class SearchParametersSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    persona_parameter: bool | None = None
+    document_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.persona_parameter,
+            self.document_parameter,
+            self.scenario_parameter,
+            self.video_parameter,
+            self.exclude_ids,
+        )
+
+class SearchParametersSqlRow(BaseModel):
+
+    items: list[QGetParametersV4Item] | None = None
+
+class SearchParametersApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    persona_parameter: bool | None = None
+    document_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchParametersApiResponse(BaseModel):
 
     items: list[QGetParametersV4Item] | None = None
 
@@ -23886,6 +24295,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetColorsApiRequest",
         "GetColorsApiResponse",
     ),
+    "app/sql/v4/queries/resources/colors/search_colors_complete.sql": (
+        "SearchColorsSqlParams",
+        "SearchColorsSqlRow",
+        "SearchColorsApiRequest",
+        "SearchColorsApiResponse",
+    ),
     "app/sql/v4/queries/resources/colors_complete.sql": (
         "ColorsSqlParams",
         "ColorsSqlRow",
@@ -23898,11 +24313,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentsApiRequest",
         "GetDepartmentsApiResponse",
     ),
+    "app/sql/v4/queries/resources/departments/search_departments_complete.sql": (
+        "SearchDepartmentsSqlParams",
+        "SearchDepartmentsSqlRow",
+        "SearchDepartmentsApiRequest",
+        "SearchDepartmentsApiResponse",
+    ),
     "app/sql/v4/queries/resources/descriptions/get_descriptions_complete.sql": (
         "GetDescriptionsSqlParams",
         "GetDescriptionsSqlRow",
         "GetDescriptionsApiRequest",
         "GetDescriptionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/descriptions/search_descriptions_complete.sql": (
+        "SearchDescriptionsSqlParams",
+        "SearchDescriptionsSqlRow",
+        "SearchDescriptionsApiRequest",
+        "SearchDescriptionsApiResponse",
     ),
     "app/sql/v4/queries/resources/descriptions_complete.sql": (
         "DescriptionsSqlParams",
@@ -23928,6 +24355,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetExamplesApiRequest",
         "GetExamplesApiResponse",
     ),
+    "app/sql/v4/queries/resources/examples/search_examples_complete.sql": (
+        "SearchExamplesSqlParams",
+        "SearchExamplesSqlRow",
+        "SearchExamplesApiRequest",
+        "SearchExamplesApiResponse",
+    ),
     "app/sql/v4/queries/resources/examples_complete.sql": (
         "ExamplesSqlParams",
         "ExamplesSqlRow",
@@ -23940,11 +24373,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldsApiRequest",
         "GetFieldsApiResponse",
     ),
+    "app/sql/v4/queries/resources/fields/search_fields_complete.sql": (
+        "SearchFieldsSqlParams",
+        "SearchFieldsSqlRow",
+        "SearchFieldsApiRequest",
+        "SearchFieldsApiResponse",
+    ),
     "app/sql/v4/queries/resources/flags/get_flags_complete.sql": (
         "GetFlagsSqlParams",
         "GetFlagsSqlRow",
         "GetFlagsApiRequest",
         "GetFlagsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/flags/search_flags_complete.sql": (
+        "SearchFlagsSqlParams",
+        "SearchFlagsSqlRow",
+        "SearchFlagsApiRequest",
+        "SearchFlagsApiResponse",
     ),
     "app/sql/v4/queries/resources/group_positions_complete.sql": (
         "GroupPositionsSqlParams",
@@ -23964,6 +24409,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetIconsApiRequest",
         "GetIconsApiResponse",
     ),
+    "app/sql/v4/queries/resources/icons/search_icons_complete.sql": (
+        "SearchIconsSqlParams",
+        "SearchIconsSqlRow",
+        "SearchIconsApiRequest",
+        "SearchIconsApiResponse",
+    ),
     "app/sql/v4/queries/resources/images_complete.sql": (
         "ImagesSqlParams",
         "ImagesSqlRow",
@@ -23975,6 +24426,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetInstructionsSqlRow",
         "GetInstructionsApiRequest",
         "GetInstructionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/instructions/search_instructions_complete.sql": (
+        "SearchInstructionsSqlParams",
+        "SearchInstructionsSqlRow",
+        "SearchInstructionsApiRequest",
+        "SearchInstructionsApiResponse",
     ),
     "app/sql/v4/queries/resources/instructions_complete.sql": (
         "InstructionsSqlParams",
@@ -24000,6 +24457,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetNamesApiRequest",
         "GetNamesApiResponse",
     ),
+    "app/sql/v4/queries/resources/names/search_names_complete.sql": (
+        "SearchNamesSqlParams",
+        "SearchNamesSqlRow",
+        "SearchNamesApiRequest",
+        "SearchNamesApiResponse",
+    ),
     "app/sql/v4/queries/resources/names_complete.sql": (
         "NamesSqlParams",
         "NamesSqlRow",
@@ -24023,6 +24486,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParametersSqlRow",
         "GetParametersApiRequest",
         "GetParametersApiResponse",
+    ),
+    "app/sql/v4/queries/resources/parameters/search_parameters_complete.sql": (
+        "SearchParametersSqlParams",
+        "SearchParametersSqlRow",
+        "SearchParametersApiRequest",
+        "SearchParametersApiResponse",
     ),
     "app/sql/v4/queries/resources/points_complete.sql": (
         "PointsSqlParams",
@@ -25841,6 +26310,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/colors/search_colors_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/colors_complete.sql"]
     ) -> SqlString: ...
 
@@ -25851,7 +26325,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/departments/search_departments_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/descriptions/get_descriptions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/descriptions/search_descriptions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25876,6 +26360,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/examples/search_examples_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/examples_complete.sql"]
     ) -> SqlString: ...
 
@@ -25886,7 +26375,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/fields/search_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/flags/get_flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/flags/search_flags_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25906,12 +26405,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/icons/search_icons_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/images_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/instructions/get_instructions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/instructions/search_instructions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -25936,6 +26445,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/names/search_names_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/names_complete.sql"]
     ) -> SqlString: ...
 
@@ -25952,6 +26466,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameters/get_parameters_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/parameters/search_parameters_complete.sql"]
     ) -> SqlString: ...
 
     @overload

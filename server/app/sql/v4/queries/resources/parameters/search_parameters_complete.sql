@@ -17,34 +17,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop types WITHOUT CASCADE
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT typname
-        FROM pg_type
-        WHERE typname LIKE 'q_get_parameters_v4_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
-    END LOOP;
-END $$;
-
--- Create composite type for parameter item
-CREATE TYPE types.q_get_parameters_v4_item AS (
-    parameter_id uuid,
-    name text,
-    description text,
-    value text,
-    generated boolean,
-    persona_parameter boolean,
-    document_parameter boolean,
-    scenario_parameter boolean,
-    video_parameter boolean
-);
-
 -- Create function
 CREATE OR REPLACE FUNCTION api_search_parameters_v4(
     search text DEFAULT NULL,
