@@ -19,23 +19,30 @@ router.include_router(args_outputs_router)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.colors.create import router as colors_router
 from app.api.v4.resources.colors.get import router as colors_get_router
+from app.api.v4.resources.colors.search import router as colors_search_router
 
 router.include_router(colors_router)
 router.include_router(colors_get_router)
+router.include_router(colors_search_router)
 # NOTE: contents removed - converted to entry table (migration 305)
 # NOTE: conversations removed - converted to entry table (migration 305)
 # NOTE: departments removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.departments.get import router as departments_get_router
+from app.api.v4.resources.departments.search import router as departments_search_router
 
 router.include_router(departments_get_router)
+router.include_router(departments_search_router)
 from app.api.v4.resources.descriptions.create import \
     router as descriptions_router
 from app.api.v4.resources.descriptions.get import \
     router as descriptions_get_router
+from app.api.v4.resources.descriptions.search import \
+    router as descriptions_search_router
 
 router.include_router(descriptions_router)
 router.include_router(descriptions_get_router)
+router.include_router(descriptions_search_router)
 # NOTE: documents removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.emails.create import router as emails_router
 
@@ -46,23 +53,29 @@ router.include_router(endpoints_router)
 # NOTE: evals removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.examples.create import router as examples_router
 from app.api.v4.resources.examples.get import router as examples_get_router
+from app.api.v4.resources.examples.search import router as examples_search_router
 
 router.include_router(examples_router)
 router.include_router(examples_get_router)
+router.include_router(examples_search_router)
 # NOTE: feedbacks removed - converted to entry table (migration 305)
 # NOTE: fields removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.fields.get import router as fields_get_router
+from app.api.v4.resources.fields.search import router as fields_search_router
 
 router.include_router(fields_get_router)
+router.include_router(fields_search_router)
 # NOTE: persona_fields removed - non-creatable (migration 328)
 # NOTE: document_fields removed - non-creatable (migration 328)
 # NOTE: parameter_fields removed - non-creatable (migration 328)
 # NOTE: flags removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.flags.get import router as flags_get_router
+from app.api.v4.resources.flags.search import router as flags_search_router
 
 router.include_router(flags_get_router)
+router.include_router(flags_search_router)
 from app.api.v4.resources.group_positions.create import \
     router as group_positions_router
 
@@ -76,8 +89,10 @@ router.include_router(group_rubrics_router)
 # NOTE: icons removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.icons.get import router as icons_get_router
+from app.api.v4.resources.icons.search import router as icons_search_router
 
 router.include_router(icons_get_router)
+router.include_router(icons_search_router)
 from app.api.v4.resources.images.create import router as images_router
 
 router.include_router(images_router)
@@ -86,9 +101,12 @@ from app.api.v4.resources.instructions.create import \
     router as instructions_router
 from app.api.v4.resources.instructions.get import \
     router as instructions_get_router
+from app.api.v4.resources.instructions.search import \
+    router as instructions_search_router
 
 router.include_router(instructions_router)
 router.include_router(instructions_get_router)
+router.include_router(instructions_search_router)
 from app.api.v4.resources.items.create import router as items_router
 
 router.include_router(items_router)
@@ -99,9 +117,11 @@ router.include_router(keys_router)
 # NOTE: models removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.names.create import router as names_router
 from app.api.v4.resources.names.get import router as names_get_router
+from app.api.v4.resources.names.search import router as names_search_router
 
 router.include_router(names_router)
 router.include_router(names_get_router)
+router.include_router(names_search_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
 
 router.include_router(objectives_router)
@@ -111,8 +131,10 @@ router.include_router(options_router)
 # NOTE: parameters removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.parameters.get import router as parameters_get_router
+from app.api.v4.resources.parameters.search import router as parameters_search_router
 
 router.include_router(parameters_get_router)
+router.include_router(parameters_search_router)
 # NOTE: personas removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.points.create import router as points_router
 

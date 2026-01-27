@@ -30,7 +30,6 @@ router = APIRouter()
 async def get_instructions_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    search: str | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetInstructionsV4Item]:
     """Internal function to fetch instructions by IDs.
@@ -43,7 +42,7 @@ async def get_instructions_internal(
     tags = ["resources", "instructions"]
     cache_key_val = cache_key(
         "/api/v4/resources/instructions/get",
-        {"ids": [str(id) for id in ids], "search": search},
+        {"ids": [str(id) for id in ids]},
     )
 
     # Try cache (unless bypassed)
@@ -53,7 +52,7 @@ async def get_instructions_internal(
             return [QGetInstructionsV4Item.model_validate(item) for item in cached.get("items", [])]
 
     # Execute SQL
-    params = GetInstructionsSqlParams(ids=ids, search=search)
+    params = GetInstructionsSqlParams(ids=ids)
     result = cast(
         GetInstructionsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -90,7 +89,7 @@ async def get_instructions(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_instructions_internal(conn, request.ids, request.search, bypass_cache)
+        items = await get_instructions_internal(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetInstructionsApiResponse(items=items)
     except HTTPException:

@@ -1,6 +1,6 @@
 -- Get fields resources by IDs
 -- Simple data fetching - no business logic
--- Parameters: ids (uuid[]), search (text, optional)
+-- Parameters: ids (uuid[])
 -- Returns: items (array of field resources)
 
 -- Drop function if exists (handles signature variations)
@@ -44,8 +44,7 @@ CREATE TYPE types.q_get_fields_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_fields_v4(
-    ids uuid[] DEFAULT ARRAY[]::uuid[],
-    search text DEFAULT NULL
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_fields_v4_item[]
@@ -75,7 +74,5 @@ WHERE f.id = ANY(ids)
       WHERE ff.field_id = ffj.field_id
         AND fl.name = 'field_active'
         AND ff.value = true
-  )
-  AND (search IS NULL OR search = '' OR
-       LOWER((SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)) LIKE '%' || LOWER(search) || '%');
+  );
 $$;

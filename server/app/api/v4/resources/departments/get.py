@@ -30,7 +30,6 @@ router = APIRouter()
 async def get_departments_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    search: str | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetDepartmentsV4Item]:
     """Internal function to fetch departments by IDs.
@@ -43,7 +42,7 @@ async def get_departments_internal(
     tags = ["resources", "departments"]
     cache_key_val = cache_key(
         "/api/v4/resources/departments/get",
-        {"ids": [str(id) for id in ids], "search": search},
+        {"ids": [str(id) for id in ids]},
     )
 
     # Try cache (unless bypassed)
@@ -53,7 +52,7 @@ async def get_departments_internal(
             return [QGetDepartmentsV4Item.model_validate(item) for item in cached.get("items", [])]
 
     # Execute SQL
-    params = GetDepartmentsSqlParams(ids=ids, search=search)
+    params = GetDepartmentsSqlParams(ids=ids)
     result = cast(
         GetDepartmentsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -90,7 +89,7 @@ async def get_departments(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_departments_internal(conn, request.ids, request.search, bypass_cache)
+        items = await get_departments_internal(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetDepartmentsApiResponse(items=items)
     except HTTPException:

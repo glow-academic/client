@@ -43,8 +43,7 @@ CREATE TYPE types.q_get_departments_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_departments_v4(
-    ids uuid[] DEFAULT ARRAY[]::uuid[],
-    search text DEFAULT NULL
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_departments_v4_item[]
@@ -75,5 +74,5 @@ WHERE d.id = ANY(ids)
         AND f.name = 'department_active'
         AND df.value = true
   )
-  AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) LIKE '%' || LOWER(search) || '%');
+;
 $$;

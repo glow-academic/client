@@ -1,4 +1,4 @@
-"""Flags GET endpoint - v4 API following DHH principles."""
+"""Flags SEARCH endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, cast
 from uuid import UUID
@@ -7,11 +7,11 @@ import asyncpg  # type: ignore
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    GetFlagsApiRequest,
-    GetFlagsApiResponse,
-    GetFlagsSqlParams,
-    GetFlagsSqlRow,
     QGetFlagsV4Item,
+    SearchFlagsApiRequest,
+    SearchFlagsApiResponse,
+    SearchFlagsSqlParams,
+    SearchFlagsSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -20,47 +20,51 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-# Load SQL with types at module level
-SQL_PATH = "app/sql/v4/queries/resources/flags/get_flags_complete.sql"
-
+SQL_PATH = "app/sql/v4/queries/resources/flags/search_flags_complete.sql"
 
 router = APIRouter()
 
 
-async def get_flags_internal(
+async def search_flags_internal(
     conn: asyncpg.Connection,
-    ids: list[UUID],
+    search: str | None = None,
+    limit_count: int | None = 20,
+    offset_count: int | None = 0,
+    exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetFlagsV4Item]:
-    """Internal function to fetch flags by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-    """
-    if not ids:
+    if limit_count is not None and limit_count <= 0:
         return []
 
     tags = ["resources", "flags"]
     cache_key_val = cache_key(
-        "/api/v4/resources/flags/get",
-        {"ids": [str(id) for id in ids]},
+        "/api/v4/resources/flags/search",
+        {
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+        },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
             return [QGetFlagsV4Item.model_validate(item) for item in cached.get("items", [])]
 
-    # Execute SQL
-    params = GetFlagsSqlParams(ids=ids)
+    params = SearchFlagsSqlParams(
+        search=search,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=exclude_ids or [],
+    )
     result = cast(
-        GetFlagsSqlRow,
+        SearchFlagsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
     items: list[QGetFlagsV4Item] = result.items if result and result.items else []
 
-    # Cache result
     await set_cached(
         cache_key_val,
         {"items": [item.model_dump(mode="json") for item in items]},
@@ -72,26 +76,29 @@ async def get_flags_internal(
 
 
 @router.post(
-    "/flags/get",
-    response_model=GetFlagsApiResponse,
+    "/flags/search",
+    response_model=SearchFlagsApiResponse,
 )
-async def get_flags(
-    request: GetFlagsApiRequest,
+async def search_flags(
+    request: SearchFlagsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetFlagsApiResponse:
-    """Get flags resources by IDs.
-
-    HTTP wrapper that delegates to internal function for caching and data fetching.
-    """
+) -> SearchFlagsApiResponse:
     tags = ["resources", "flags"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_flags_internal(conn, request.ids, bypass_cache)
+        items = await search_flags_internal(
+            conn,
+            request.search,
+            request.limit_count,
+            request.offset_count,
+            request.exclude_ids,
+            bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetFlagsApiResponse(items=items)
+        return SearchFlagsApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
@@ -100,7 +107,7 @@ async def get_flags(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_flags",
+            operation="search_flags",
             sql_query=load_sql_query(SQL_PATH),
             sql_params=None,
             request=http_request,

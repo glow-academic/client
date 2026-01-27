@@ -1,6 +1,6 @@
 -- Get icons resources by IDs
 -- Simple data fetching - no business logic
--- Parameters: ids (uuid[]), search (text, optional)
+-- Parameters: ids (uuid[])
 -- Returns: items (array of icon resources)
 
 -- Drop function if exists (handles signature variations)
@@ -44,8 +44,7 @@ CREATE TYPE types.q_get_icons_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_icons_v4(
-    ids uuid[] DEFAULT ARRAY[]::uuid[],
-    search text DEFAULT NULL
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_icons_v4_item[]
@@ -62,8 +61,5 @@ SELECT COALESCE(
 ) as items
 FROM icons_resource i
 WHERE i.id = ANY(ids)
-  AND i.active = true
-  AND (search IS NULL OR search = '' OR
-       LOWER(i.name) LIKE '%' || LOWER(search) || '%' OR
-       LOWER(i.value) LIKE '%' || LOWER(search) || '%');
+  AND i.active = true;
 $$;

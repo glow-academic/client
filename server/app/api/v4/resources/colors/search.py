@@ -1,4 +1,4 @@
-"""Colors GET endpoint - v4 API following DHH principles."""
+"""Colors SEARCH endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, cast
 from uuid import UUID
@@ -7,11 +7,11 @@ import asyncpg  # type: ignore
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    GetColorsApiRequest,
-    GetColorsApiResponse,
-    GetColorsSqlParams,
-    GetColorsSqlRow,
     QGetColorsV4Item,
+    SearchColorsApiRequest,
+    SearchColorsApiResponse,
+    SearchColorsSqlParams,
+    SearchColorsSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -20,47 +20,57 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-# Load SQL with types at module level
-SQL_PATH = "app/sql/v4/queries/resources/colors/get_colors_complete.sql"
-
+SQL_PATH = "app/sql/v4/queries/resources/colors/search_colors_complete.sql"
 
 router = APIRouter()
 
 
-async def get_colors_internal(
+async def search_colors_internal(
     conn: asyncpg.Connection,
-    ids: list[UUID],
+    search: str | None = None,
+    limit_count: int | None = 20,
+    offset_count: int | None = 0,
+    group_id: UUID | None = None,
+    use_recent: bool | None = None,
+    exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetColorsV4Item]:
-    """Internal function to fetch colors by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-    """
-    if not ids:
+    if limit_count is not None and limit_count <= 0:
         return []
 
     tags = ["resources", "colors"]
     cache_key_val = cache_key(
-        "/api/v4/resources/colors/get",
-        {"ids": [str(id) for id in ids]},
+        "/api/v4/resources/colors/search",
+        {
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "group_id": str(group_id) if group_id else None,
+            "use_recent": use_recent,
+            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+        },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
             return [QGetColorsV4Item.model_validate(item) for item in cached.get("items", [])]
 
-    # Execute SQL
-    params = GetColorsSqlParams(ids=ids)
+    params = SearchColorsSqlParams(
+        search=search,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        group_id=group_id,
+        use_recent=use_recent,
+        exclude_ids=exclude_ids or [],
+    )
     result = cast(
-        GetColorsSqlRow,
+        SearchColorsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
     items: list[QGetColorsV4Item] = result.items if result and result.items else []
 
-    # Cache result
     await set_cached(
         cache_key_val,
         {"items": [item.model_dump(mode="json") for item in items]},
@@ -72,26 +82,31 @@ async def get_colors_internal(
 
 
 @router.post(
-    "/colors/get",
-    response_model=GetColorsApiResponse,
+    "/colors/search",
+    response_model=SearchColorsApiResponse,
 )
-async def get_colors(
-    request: GetColorsApiRequest,
+async def search_colors(
+    request: SearchColorsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetColorsApiResponse:
-    """Get colors resources by IDs.
-
-    HTTP wrapper that delegates to internal function for caching and data fetching.
-    """
+) -> SearchColorsApiResponse:
     tags = ["resources", "colors"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_colors_internal(conn, request.ids, bypass_cache)
+        items = await search_colors_internal(
+            conn,
+            request.search,
+            request.limit_count,
+            request.offset_count,
+            request.group_id,
+            request.use_recent,
+            request.exclude_ids,
+            bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetColorsApiResponse(items=items)
+        return SearchColorsApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
@@ -100,7 +115,7 @@ async def get_colors(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_colors",
+            operation="search_colors",
             sql_query=load_sql_query(SQL_PATH),
             sql_params=None,
             request=http_request,

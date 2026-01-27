@@ -1,6 +1,6 @@
 -- Get descriptions resources by IDs
 -- Simple data fetching - no business logic
--- Parameters: ids (uuid[]), search (text, optional)
+-- Parameters: ids (uuid[])
 -- Returns: items (array of description resources)
 
 -- Drop function if exists (handles signature variations)
@@ -42,8 +42,7 @@ CREATE TYPE types.q_get_descriptions_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_descriptions_v4(
-    ids uuid[] DEFAULT ARRAY[]::uuid[],
-    search text DEFAULT NULL
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_descriptions_v4_item[]
@@ -61,6 +60,5 @@ SELECT COALESCE(
 FROM descriptions_resource d
 WHERE d.id = ANY(ids)
   AND d.description IS NOT NULL
-  AND d.description != ''
-  AND (search IS NULL OR search = '' OR LOWER(d.description) LIKE '%' || LOWER(search) || '%');
+  AND d.description != '';
 $$;

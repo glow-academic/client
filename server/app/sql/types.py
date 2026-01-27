@@ -16129,12 +16129,10 @@ class ArgsOutputsApiResponse(BaseModel):
 class GetColorsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetColorsV4Item(BaseModel):
@@ -16152,7 +16150,6 @@ class GetColorsSqlRow(BaseModel):
 class GetColorsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetColorsApiResponse(BaseModel):
 
@@ -16205,12 +16202,10 @@ class ColorsApiResponse(BaseModel):
 class GetDepartmentsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetDepartmentsV4Item(BaseModel):
@@ -16227,7 +16222,6 @@ class GetDepartmentsSqlRow(BaseModel):
 class GetDepartmentsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetDepartmentsApiResponse(BaseModel):
 
@@ -16240,12 +16234,10 @@ class GetDepartmentsApiResponse(BaseModel):
 class GetDescriptionsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetDescriptionsV4Item(BaseModel):
@@ -16261,7 +16253,6 @@ class GetDescriptionsSqlRow(BaseModel):
 class GetDescriptionsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetDescriptionsApiResponse(BaseModel):
 
@@ -16373,12 +16364,10 @@ class EndpointsApiResponse(BaseModel):
 class GetExamplesSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetExamplesV4Item(BaseModel):
@@ -16395,7 +16384,6 @@ class GetExamplesSqlRow(BaseModel):
 class GetExamplesApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetExamplesApiResponse(BaseModel):
 
@@ -16442,12 +16430,10 @@ class ExamplesApiResponse(BaseModel):
 class GetFieldsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetFieldsV4Item(BaseModel):
@@ -16465,7 +16451,6 @@ class GetFieldsSqlRow(BaseModel):
 class GetFieldsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetFieldsApiResponse(BaseModel):
 
@@ -16478,12 +16463,10 @@ class GetFieldsApiResponse(BaseModel):
 class GetFlagsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetFlagsV4Item(BaseModel):
@@ -16501,7 +16484,6 @@ class GetFlagsSqlRow(BaseModel):
 class GetFlagsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetFlagsApiResponse(BaseModel):
 
@@ -16582,12 +16564,10 @@ class GroupRubricsApiResponse(BaseModel):
 class GetIconsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetIconsV4Item(BaseModel):
@@ -16605,7 +16585,6 @@ class GetIconsSqlRow(BaseModel):
 class GetIconsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetIconsApiResponse(BaseModel):
 
@@ -16655,12 +16634,10 @@ class ImagesApiResponse(BaseModel):
 class GetInstructionsSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetInstructionsV4Item(BaseModel):
@@ -16676,7 +16653,6 @@ class GetInstructionsSqlRow(BaseModel):
 class GetInstructionsApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetInstructionsApiResponse(BaseModel):
 
@@ -16788,12 +16764,10 @@ class KeysApiResponse(BaseModel):
 class GetNamesSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
         )
 
 class QGetNamesV4Item(BaseModel):
@@ -16809,7 +16783,6 @@ class GetNamesSqlRow(BaseModel):
 class GetNamesApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
 
 class GetNamesApiResponse(BaseModel):
 
@@ -16927,7 +16900,6 @@ class OptionsApiResponse(BaseModel):
 class GetParametersSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
     persona_parameter: bool | None = None
     document_parameter: bool | None = None
     scenario_parameter: bool | None = None
@@ -16936,7 +16908,6 @@ class GetParametersSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.search,
             self.persona_parameter,
             self.document_parameter,
             self.scenario_parameter,
@@ -16962,7 +16933,6 @@ class GetParametersSqlRow(BaseModel):
 class GetParametersApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
     persona_parameter: bool | None = None
     document_parameter: bool | None = None
     scenario_parameter: bool | None = None

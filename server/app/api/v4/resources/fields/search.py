@@ -1,4 +1,4 @@
-"""Fields GET endpoint - v4 API following DHH principles."""
+"""Fields SEARCH endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, cast
 from uuid import UUID
@@ -7,11 +7,11 @@ import asyncpg  # type: ignore
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    GetFieldsApiRequest,
-    GetFieldsApiResponse,
-    GetFieldsSqlParams,
-    GetFieldsSqlRow,
     QGetFieldsV4Item,
+    SearchFieldsApiRequest,
+    SearchFieldsApiResponse,
+    SearchFieldsSqlParams,
+    SearchFieldsSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -20,47 +20,60 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-# Load SQL with types at module level
-SQL_PATH = "app/sql/v4/queries/resources/fields/get_fields_complete.sql"
-
+SQL_PATH = "app/sql/v4/queries/resources/fields/search_fields_complete.sql"
 
 router = APIRouter()
 
 
-async def get_fields_internal(
+async def search_fields_internal(
     conn: asyncpg.Connection,
-    ids: list[UUID],
+    search: str | None = None,
+    limit_count: int | None = 20,
+    offset_count: int | None = 0,
+    user_department_ids: list[UUID] | None = None,
+    group_id: UUID | None = None,
+    use_recent: bool | None = None,
+    exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetFieldsV4Item]:
-    """Internal function to fetch fields by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-    """
-    if not ids:
+    if limit_count is not None and limit_count <= 0:
         return []
 
     tags = ["resources", "fields"]
     cache_key_val = cache_key(
-        "/api/v4/resources/fields/get",
-        {"ids": [str(id) for id in ids]},
+        "/api/v4/resources/fields/search",
+        {
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "user_department_ids": [str(id) for id in (user_department_ids or [])],
+            "group_id": str(group_id) if group_id else None,
+            "use_recent": use_recent,
+            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+        },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
             return [QGetFieldsV4Item.model_validate(item) for item in cached.get("items", [])]
 
-    # Execute SQL
-    params = GetFieldsSqlParams(ids=ids)
+    params = SearchFieldsSqlParams(
+        search=search,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        user_department_ids=user_department_ids or [],
+        group_id=group_id,
+        use_recent=use_recent,
+        exclude_ids=exclude_ids or [],
+    )
     result = cast(
-        GetFieldsSqlRow,
+        SearchFieldsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
     items: list[QGetFieldsV4Item] = result.items if result and result.items else []
 
-    # Cache result
     await set_cached(
         cache_key_val,
         {"items": [item.model_dump(mode="json") for item in items]},
@@ -72,26 +85,32 @@ async def get_fields_internal(
 
 
 @router.post(
-    "/fields/get",
-    response_model=GetFieldsApiResponse,
+    "/fields/search",
+    response_model=SearchFieldsApiResponse,
 )
-async def get_fields(
-    request: GetFieldsApiRequest,
+async def search_fields(
+    request: SearchFieldsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetFieldsApiResponse:
-    """Get fields resources by IDs.
-
-    HTTP wrapper that delegates to internal function for caching and data fetching.
-    """
+) -> SearchFieldsApiResponse:
     tags = ["resources", "fields"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_fields_internal(conn, request.ids, bypass_cache)
+        items = await search_fields_internal(
+            conn,
+            request.search,
+            request.limit_count,
+            request.offset_count,
+            request.user_department_ids,
+            request.group_id,
+            request.use_recent,
+            request.exclude_ids,
+            bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetFieldsApiResponse(items=items)
+        return SearchFieldsApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
@@ -100,7 +119,7 @@ async def get_fields(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_fields",
+            operation="search_fields",
             sql_query=load_sql_query(SQL_PATH),
             sql_params=None,
             request=http_request,

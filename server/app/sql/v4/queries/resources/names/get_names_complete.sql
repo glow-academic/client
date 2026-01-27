@@ -42,8 +42,7 @@ CREATE TYPE types.q_get_names_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_names_v4(
-    ids uuid[] DEFAULT ARRAY[]::uuid[],
-    search text DEFAULT NULL
+    ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_names_v4_item[]
@@ -61,6 +60,5 @@ SELECT COALESCE(
 FROM names_resource n
 WHERE n.id = ANY(ids)
   AND n.name IS NOT NULL
-  AND n.name != ''
-  AND (search IS NULL OR search = '' OR LOWER(n.name) LIKE '%' || LOWER(search) || '%');
+  AND n.name != '';
 $$;

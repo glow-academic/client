@@ -1,6 +1,6 @@
 -- Get parameters resources by IDs
 -- Simple data fetching - no business logic
--- Parameters: ids (uuid[]), search (text, optional), persona_parameter, document_parameter, scenario_parameter, video_parameter (boolean filters)
+-- Parameters: ids (uuid[]), persona_parameter, document_parameter, scenario_parameter, video_parameter (boolean filters)
 -- Returns: items (array of parameter resources)
 
 -- Drop function if exists (handles signature variations)
@@ -49,7 +49,6 @@ CREATE TYPE types.q_get_parameters_v4_item AS (
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_parameters_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[],
-    search text DEFAULT NULL,
     persona_parameter boolean DEFAULT NULL,
     document_parameter boolean DEFAULT NULL,
     scenario_parameter boolean DEFAULT NULL,
@@ -83,7 +82,6 @@ WHERE p.id = ANY(ids)
   AND p.active = true
   AND p.name IS NOT NULL
   AND p.name != ''
-  AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
   AND (persona_parameter IS NULL OR p.persona_parameter = persona_parameter)
   AND (document_parameter IS NULL OR p.document_parameter = document_parameter)
   AND (scenario_parameter IS NULL OR p.scenario_parameter = scenario_parameter)

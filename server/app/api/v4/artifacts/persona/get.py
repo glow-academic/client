@@ -45,15 +45,25 @@ from app.api.v4.artifacts.persona.types import (
     GetPersonaApiResponse,
 )
 from app.api.v4.resources.colors.get import get_colors_internal
+from app.api.v4.resources.colors.search import search_colors_internal
 from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.examples.get import get_examples_internal
+from app.api.v4.resources.examples.search import search_examples_internal
 from app.api.v4.resources.fields.get import get_fields_internal
+from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.get import get_icons_internal
+from app.api.v4.resources.icons.search import search_icons_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.instructions.search import search_instructions_internal
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
+from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -74,32 +84,16 @@ QUERY2_SQL_PATH = "app/sql/v4/queries/personas/get_persona_ids_complete.sql"
 router = APIRouter()
 
 
-def _combine_ids(
-    selected_id: UUID | None, suggestion_ids: list[UUID] | None
-) -> list[UUID]:
-    """Combine selected ID with suggestion IDs, deduplicating."""
-    ids = []
-    if selected_id:
-        ids.append(selected_id)
-    if suggestion_ids:
-        for sid in suggestion_ids:
-            if sid not in ids:
-                ids.append(sid)
-    return ids
-
-
-def _combine_multi_ids(
-    selected_ids: list[UUID] | None, suggestion_ids: list[UUID] | None
-) -> list[UUID]:
-    """Combine selected IDs with suggestion IDs, deduplicating."""
-    ids = []
-    if selected_ids:
-        ids.extend(selected_ids)
-    if suggestion_ids:
-        for sid in suggestion_ids:
-            if sid not in ids:
-                ids.append(sid)
-    return ids
+def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
+    """Preserve order while deduplicating by id attribute."""
+    seen: set[UUID] = set()
+    output: list[Any] = []
+    for item in items:
+        item_id = getattr(item, id_attr, None)
+        if item_id and item_id not in seen:
+            seen.add(item_id)
+            output.append(item)
+    return output
 
 
 @router.post(
@@ -210,35 +204,17 @@ async def get_persona(
 
         # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 
-        # Combine selected IDs with suggestions for fetching
-        name_ids = _combine_ids(
-            ids_result.name_id, ids_result.name_suggestions
-        )
-        description_ids = _combine_ids(
-            ids_result.description_id, ids_result.description_suggestions
-        )
-        color_ids = _combine_ids(
-            ids_result.color_id, ids_result.color_suggestions
-        )
-        icon_ids = _combine_ids(
-            ids_result.icon_id, ids_result.icon_suggestions
-        )
-        instructions_ids = _combine_ids(
-            ids_result.instructions_id, ids_result.instructions_suggestions
-        )
+        # Selected IDs for fetching
+        name_ids = [ids_result.name_id] if ids_result.name_id else []
+        description_ids = [ids_result.description_id] if ids_result.description_id else []
+        color_ids = [ids_result.color_id] if ids_result.color_id else []
+        icon_ids = [ids_result.icon_id] if ids_result.icon_id else []
+        instructions_ids = [ids_result.instructions_id] if ids_result.instructions_id else []
         flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
-        department_ids = _combine_multi_ids(
-            ids_result.department_ids, ids_result.department_suggestions
-        )
-        field_ids = _combine_multi_ids(
-            ids_result.field_ids, ids_result.field_suggestions
-        )
-        example_ids = _combine_multi_ids(
-            ids_result.example_ids, ids_result.example_suggestions
-        )
-        parameter_ids = _combine_multi_ids(
-            ids_result.parameter_ids, ids_result.parameter_suggestions
-        )
+        department_ids = ids_result.department_ids or []
+        field_ids = ids_result.field_ids or []
+        example_ids = ids_result.example_ids or []
+        parameter_ids = ids_result.parameter_ids or []
 
         # Parallel fetch all resources
         # NOTE: Each query needs its own connection from the pool because
@@ -249,62 +225,175 @@ async def get_persona(
 
         async def fetch_names():
             async with pool.acquire() as c:
-                return await get_names_internal(c, name_ids, None, bypass_cache)
+                selected = await get_names_internal(c, name_ids, bypass_cache)
+                suggestions = await search_names_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    access_result.group_id,
+                    True,
+                    name_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_descriptions():
             async with pool.acquire() as c:
-                return await get_descriptions_internal(
-                    c, description_ids, request.descriptions_search, bypass_cache
+                selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+                suggestions = await search_descriptions_internal(
+                    c,
+                    request.descriptions_search,
+                    20,
+                    0,
+                    access_result.group_id,
+                    True,
+                    description_ids,
+                    bypass_cache,
                 )
+                return (selected, suggestions)
 
         async def fetch_colors():
             async with pool.acquire() as c:
-                return await get_colors_internal(c, color_ids, request.color_search, bypass_cache)
+                selected = await get_colors_internal(c, color_ids, bypass_cache)
+                suggestions = await search_colors_internal(
+                    c,
+                    request.color_search,
+                    20,
+                    0,
+                    access_result.group_id,
+                    True,
+                    color_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_icons():
             async with pool.acquire() as c:
-                return await get_icons_internal(c, icon_ids, request.icon_search, bypass_cache)
+                selected = await get_icons_internal(c, icon_ids, bypass_cache)
+                suggestions = await search_icons_internal(
+                    c,
+                    request.icon_search,
+                    20,
+                    0,
+                    access_result.group_id,
+                    True,
+                    icon_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_instructions():
             async with pool.acquire() as c:
-                return await get_instructions_internal(
-                    c, instructions_ids, request.instructions_search, bypass_cache
+                selected = await get_instructions_internal(
+                    c, instructions_ids, bypass_cache
                 )
+                suggestions = await search_instructions_internal(
+                    c,
+                    request.instructions_search,
+                    20,
+                    0,
+                    access_result.group_id,
+                    True,
+                    instructions_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_flags():
             async with pool.acquire() as c:
-                return await get_flags_internal(c, flag_ids, None, bypass_cache)
+                selected = await get_flags_internal(c, flag_ids, bypass_cache)
+                suggestions = await search_flags_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    flag_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_departments():
             async with pool.acquire() as c:
-                return await get_departments_internal(c, department_ids, None, bypass_cache)
+                selected = await get_departments_internal(c, department_ids, bypass_cache)
+                suggestions = await search_departments_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    user_department_ids,
+                    True,
+                    department_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_fields():
             async with pool.acquire() as c:
-                return await get_fields_internal(c, field_ids, request.field_search, bypass_cache)
+                selected = await get_fields_internal(c, field_ids, bypass_cache)
+                suggestions = await search_fields_internal(
+                    c,
+                    request.field_search,
+                    20,
+                    0,
+                    user_department_ids,
+                    access_result.group_id,
+                    True,
+                    field_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_examples():
             async with pool.acquire() as c:
-                return await get_examples_internal(c, example_ids, None, bypass_cache)
+                selected = await get_examples_internal(c, example_ids, bypass_cache)
+                suggestions = await search_examples_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    request.persona_id,
+                    user_department_ids,
+                    access_result.group_id,
+                    True,
+                    example_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_parameters():
             async with pool.acquire() as c:
-                return await get_parameters_internal(
-                    c, parameter_ids, request.parameter_search, bypass_cache,
-                    persona_parameter=True  # Only fetch persona parameters
+                selected = await get_parameters_internal(
+                    c,
+                    parameter_ids,
+                    bypass_cache,
+                    persona_parameter=True,  # Only fetch persona parameters
                 )
+                suggestions = await search_parameters_internal(
+                    c,
+                    request.parameter_search,
+                    20,
+                    0,
+                    True,
+                    None,
+                    None,
+                    None,
+                    parameter_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         (
-            names,
-            descriptions,
-            colors,
-            icons,
-            instructions_list,
-            flags,
-            departments,
-            fields,
-            examples,
-            parameters,
+            (names_selected, names_suggestions),
+            (descriptions_selected, descriptions_suggestions),
+            (colors_selected, colors_suggestions),
+            (icons_selected, icons_suggestions),
+            (instructions_selected, instructions_suggestions),
+            (flags_selected, flags_suggestions),
+            (departments_selected, departments_suggestions),
+            (fields_selected, fields_suggestions),
+            (examples_selected, examples_suggestions),
+            (parameters_selected, parameters_suggestions),
         ) = await asyncio.gather(
             fetch_names(),
             fetch_descriptions(),
@@ -317,6 +406,21 @@ async def get_persona(
             fetch_examples(),
             fetch_parameters(),
         )
+
+        names = _dedupe_by_id(names_selected + names_suggestions, "id")
+        descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
+        colors = _dedupe_by_id(colors_selected + colors_suggestions, "id")
+        icons = _dedupe_by_id(icons_selected + icons_suggestions, "id")
+        instructions_list = _dedupe_by_id(
+            instructions_selected + instructions_suggestions, "id"
+        )
+        flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
+        departments = _dedupe_by_id(
+            departments_selected + departments_suggestions, "department_id"
+        )
+        fields = _dedupe_by_id(fields_selected + fields_suggestions, "field_id")
+        examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
+        parameters = _dedupe_by_id(parameters_selected + parameters_suggestions, "parameter_id")
 
         # Find selected resources
         name_resource = next(
@@ -358,6 +462,16 @@ async def get_persona(
         parameter_resources = [
             p for p in parameters if p.parameter_id in selected_parameter_ids
         ]
+
+        name_suggestions = [n.id for n in names_suggestions]
+        description_suggestions = [d.id for d in descriptions_suggestions]
+        color_suggestions = [c.id for c in colors_suggestions]
+        icon_suggestions = [i.id for i in icons_suggestions]
+        instructions_suggestions = [i.id for i in instructions_suggestions]
+        department_suggestions = [d.department_id for d in departments_suggestions]
+        field_suggestions = [f.field_id for f in fields_suggestions]
+        example_suggestions = [e.id for e in examples_suggestions]
+        parameter_suggestions = [p.parameter_id for p in parameters_suggestions]
 
         # Compute final show flags based on actual data
         show_name = compute_show_name(names_has_tools)
@@ -413,7 +527,7 @@ async def get_persona(
             show_name=show_name,
             name_agent_id=ids_result.name_agent_id,
             name_required=compute_name_required(),
-            name_suggestions=ids_result.name_suggestions,
+            name_suggestions=name_suggestions,
             names=names,
             # Description
             description_id=ids_result.description_id,
@@ -421,7 +535,7 @@ async def get_persona(
             show_description=show_description_flag,
             description_agent_id=ids_result.description_agent_id,
             description_required=compute_description_required(),
-            description_suggestions=ids_result.description_suggestions,
+            description_suggestions=description_suggestions,
             descriptions=descriptions,
             # Color
             color_id=ids_result.color_id,
@@ -429,7 +543,7 @@ async def get_persona(
             show_color=show_color,
             color_agent_id=ids_result.color_agent_id,
             color_required=compute_color_required(),
-            color_suggestions=ids_result.color_suggestions,
+            color_suggestions=color_suggestions,
             colors=colors,
             # Icon
             icon_id=ids_result.icon_id,
@@ -437,7 +551,7 @@ async def get_persona(
             show_icon=show_icon,
             icon_agent_id=ids_result.icon_agent_id,
             icon_required=compute_icon_required(),
-            icon_suggestions=ids_result.icon_suggestions,
+            icon_suggestions=icon_suggestions,
             icons=icons,
             # Instructions
             instructions_id=ids_result.instructions_id,
@@ -445,7 +559,7 @@ async def get_persona(
             show_instructions=show_instructions_flag,
             instructions_agent_id=ids_result.instructions_agent_id,
             instructions_required=compute_instructions_required(),
-            instructions_suggestions=ids_result.instructions_suggestions,
+            instructions_suggestions=instructions_suggestions,
             instructions=instructions_list,
             # Flag
             active_flag_id=ids_result.active_flag_id,
@@ -460,7 +574,7 @@ async def get_persona(
             show_departments=show_departments_flag,
             departments_agent_id=ids_result.departments_agent_id,
             departments_required=compute_departments_required(),
-            department_suggestions=ids_result.department_suggestions,
+            department_suggestions=department_suggestions,
             departments=departments,
             # Fields
             field_ids=ids_result.field_ids,
@@ -468,7 +582,7 @@ async def get_persona(
             show_fields=show_fields_flag,
             fields_agent_id=ids_result.fields_agent_id,
             fields_required=compute_fields_required(),
-            field_suggestions=ids_result.field_suggestions,
+            field_suggestions=field_suggestions,
             fields=fields,
             # Examples
             example_ids=ids_result.example_ids,
@@ -476,7 +590,7 @@ async def get_persona(
             show_examples=show_examples_flag,
             examples_agent_id=ids_result.examples_agent_id,
             examples_required=compute_examples_required(),
-            example_suggestions=ids_result.example_suggestions,
+            example_suggestions=example_suggestions,
             examples=examples,
             # Parameters
             parameter_ids=ids_result.parameter_ids,
@@ -484,7 +598,7 @@ async def get_persona(
             show_parameters=show_parameters_flag,
             parameters_agent_id=ids_result.parameters_agent_id,
             parameters_required=compute_parameters_required(),
-            parameter_suggestions=ids_result.parameter_suggestions,
+            parameter_suggestions=parameter_suggestions,
             parameters=parameters,
             # Multi-resource agent IDs
             basic_agent_id=ids_result.basic_agent_id,
