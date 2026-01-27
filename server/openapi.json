@@ -30752,7 +30752,7 @@
             ],
             "title": "Upload Suggestions"
           },
-          "uploads_entry": {
+          "uploads": {
             "anyOf": [
               {
                 "items": {
@@ -30764,7 +30764,7 @@
                 "type": "null"
               }
             ],
-            "title": "Uploads Entry"
+            "title": "Uploads"
           },
           "active_flag_id": {
             "anyOf": [
@@ -33278,7 +33278,7 @@
               }
             ]
           },
-          "metrics_entry": {
+          "metrics": {
             "anyOf": [
               {
                 "items": {
@@ -33290,7 +33290,7 @@
                 "type": "null"
               }
             ],
-            "title": "Metrics Entry"
+            "title": "Metrics"
           }
         },
         "type": "object",
@@ -33339,7 +33339,7 @@
             ],
             "title": "Actor Name"
           },
-          "metrics_entry": {
+          "metrics": {
             "anyOf": [
               {
                 "items": {
@@ -33351,7 +33351,7 @@
                 "type": "null"
               }
             ],
-            "title": "Metrics Entry"
+            "title": "Metrics"
           },
           "total_count": {
             "anyOf": [
@@ -39000,7 +39000,7 @@
             ],
             "title": "Actor Name"
           },
-          "runs_entry": {
+          "runs": {
             "anyOf": [
               {
                 "items": {
@@ -39012,7 +39012,7 @@
                 "type": "null"
               }
             ],
-            "title": "Runs Entry"
+            "title": "Runs"
           },
           "models": {
             "anyOf": [
@@ -63849,7 +63849,7 @@
               }
             ]
           },
-          "messages_entry": {
+          "messages": {
             "anyOf": [
               {
                 "items": {
@@ -63861,7 +63861,7 @@
                 "type": "null"
               }
             ],
-            "title": "Messages Entry"
+            "title": "Messages"
           },
           "grade": {
             "anyOf": [
@@ -63937,7 +63937,7 @@
         "required": [
           "chat",
           "scenario",
-          "messages_entry",
+          "messages",
           "grade",
           "grading_state",
           "dynamic_rubric",
@@ -67414,7 +67414,7 @@
             ],
             "title": "Scenario Ids"
           },
-          "metrics_entry": {
+          "metrics": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/QGetLeaderboardBundleV4Metrics"
@@ -67431,7 +67431,7 @@
           "name",
           "simulation_ids",
           "scenario_ids",
-          "metrics_entry"
+          "metrics"
         ],
         "title": "QGetLeaderboardBundleV4Row"
       },
@@ -70298,7 +70298,7 @@
               }
             ]
           },
-          "messages_entry": {
+          "messages": {
             "anyOf": [
               {
                 "items": {
@@ -70310,7 +70310,7 @@
                 "type": "null"
               }
             ],
-            "title": "Messages Entry"
+            "title": "Messages"
           },
           "hints": {
             "anyOf": [
@@ -70386,7 +70386,7 @@
         "required": [
           "chat",
           "scenario",
-          "messages_entry",
+          "messages",
           "hints",
           "grade",
           "grading_state",
@@ -73671,7 +73671,7 @@
             ],
             "title": "Run Cost"
           },
-          "debug_info_entry": {
+          "debug_info": {
             "anyOf": [
               {
                 "items": {
@@ -73683,7 +73683,7 @@
                 "type": "null"
               }
             ],
-            "title": "Debug Info Entry"
+            "title": "Debug Info"
           }
         },
         "type": "object",
@@ -73696,7 +73696,7 @@
           "profile_id",
           "agent_id",
           "run_cost",
-          "debug_info_entry"
+          "debug_info"
         ],
         "title": "QGetPricingAnalyticsV4ModelRun"
       },
@@ -74153,7 +74153,7 @@
               }
             ]
           },
-          "messages_entry": {
+          "messages": {
             "anyOf": [
               {
                 "items": {
@@ -74165,7 +74165,7 @@
                 "type": "null"
               }
             ],
-            "title": "Messages Entry"
+            "title": "Messages"
           },
           "previous_context_start_index": {
             "anyOf": [
@@ -74182,7 +74182,7 @@
         "type": "object",
         "required": [
           "run",
-          "messages_entry",
+          "messages",
           "previous_context_start_index"
         ],
         "title": "QGetPricingGroupDetailV4RunWithMessages"
@@ -74378,7 +74378,7 @@
             ],
             "title": "Total Cost"
           },
-          "runs_entry": {
+          "runs": {
             "anyOf": [
               {
                 "items": {
@@ -74390,7 +74390,7 @@
                 "type": "null"
               }
             ],
-            "title": "Runs Entry"
+            "title": "Runs"
           }
         },
         "type": "object",
@@ -74401,7 +74401,7 @@
           "total_input_tokens",
           "total_output_tokens",
           "total_cost",
-          "runs_entry"
+          "runs"
         ],
         "title": "QGetPricingRunsV4GroupRun"
       },
@@ -74601,7 +74601,7 @@
             ],
             "title": "Agent Id"
           },
-          "debug_info_entry": {
+          "debug_info": {
             "anyOf": [
               {
                 "items": {
@@ -74613,7 +74613,7 @@
                 "type": "null"
               }
             ],
-            "title": "Debug Info Entry"
+            "title": "Debug Info"
           }
         },
         "type": "object",
@@ -74626,7 +74626,7 @@
           "model_id",
           "profile_id",
           "agent_id",
-          "debug_info_entry"
+          "debug_info"
         ],
         "title": "QGetPricingRunsV4RunSummary"
       },
@@ -79952,7 +79952,7 @@
               }
             ]
           },
-          "messages_entry": {
+          "messages": {
             "anyOf": [
               {
                 "items": {
@@ -79964,7 +79964,7 @@
                 "type": "null"
               }
             ],
-            "title": "Messages Entry"
+            "title": "Messages"
           },
           "hints": {
             "anyOf": [
@@ -80074,7 +80074,7 @@
         "required": [
           "chat",
           "scenario",
-          "messages_entry",
+          "messages",
           "hints",
           "grade",
           "grading_state",
@@ -89773,7 +89773,7 @@
             ],
             "title": "Scenario Ids"
           },
-          "metrics_entry": {
+          "profile_metrics": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/QReportsBundleV4ProfileMetrics"
@@ -89793,7 +89793,7 @@
           "role",
           "simulation_ids",
           "scenario_ids",
-          "metrics_entry"
+          "profile_metrics"
         ],
         "title": "QReportsBundleV4Profile"
       },

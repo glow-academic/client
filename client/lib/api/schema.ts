@@ -7145,8 +7145,8 @@ export interface components {
             uploads_required?: boolean | null;
             /** Upload Suggestions */
             upload_suggestions?: string[] | null;
-            /** Uploads Entry */
-            uploads_entry?: components["schemas"]["QGetDocumentV4Upload"][] | null;
+            /** Uploads */
+            uploads?: components["schemas"]["QGetDocumentV4Upload"][] | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             flag_resource?: components["schemas"]["QGetDocumentV4FlagResource"] | null;
@@ -7598,8 +7598,8 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             health_kpis?: components["schemas"]["QGetHealthBundleV4HealthKpis"] | null;
-            /** Metrics Entry */
-            metrics_entry?: components["schemas"]["QGetHealthBundleV4MetricsDataPoint"][] | null;
+            /** Metrics */
+            metrics?: components["schemas"]["QGetHealthBundleV4MetricsDataPoint"][] | null;
         };
         /** GetHealthListApiRequest */
         GetHealthListApiRequest: {
@@ -7618,8 +7618,8 @@ export interface components {
         GetHealthListApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            /** Metrics Entry */
-            metrics_entry?: components["schemas"]["QGetHealthListV4Metric"][] | null;
+            /** Metrics */
+            metrics?: components["schemas"]["QGetHealthListV4Metric"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -8643,8 +8643,8 @@ export interface components {
             group_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-            /** Runs Entry */
-            runs_entry?: components["schemas"]["QGetPricingGroupDetailV4RunWithMessages"][] | null;
+            /** Runs */
+            runs?: components["schemas"]["QGetPricingGroupDetailV4RunWithMessages"][] | null;
             /** Models */
             models?: components["schemas"]["QGetPricingGroupDetailV4Model"][] | null;
             /** Agents */
@@ -13386,8 +13386,8 @@ export interface components {
         QGetGeneralAttemptV4ChatData: {
             chat: components["schemas"]["QGetGeneralAttemptV4Chat"] | null;
             scenario: components["schemas"]["QGetGeneralAttemptV4Scenario"] | null;
-            /** Messages Entry */
-            messages_entry: components["schemas"]["QGetGeneralAttemptV4Message"][] | null;
+            /** Messages */
+            messages: components["schemas"]["QGetGeneralAttemptV4Message"][] | null;
             grade: components["schemas"]["QGetGeneralAttemptV4Grade"] | null;
             grading_state: components["schemas"]["QGetGeneralAttemptV4GradingState"] | null;
             dynamic_rubric: components["schemas"]["QGetGeneralAttemptV4DynamicRubric"] | null;
@@ -14009,7 +14009,7 @@ export interface components {
             simulation_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            metrics_entry: components["schemas"]["QGetLeaderboardBundleV4Metrics"] | null;
+            metrics: components["schemas"]["QGetLeaderboardBundleV4Metrics"] | null;
         };
         /** QGetLeaderboardBundleV4Scenario */
         QGetLeaderboardBundleV4Scenario: {
@@ -14545,8 +14545,8 @@ export interface components {
         QGetPracticeAttemptV4ChatData: {
             chat: components["schemas"]["QGetPracticeAttemptV4Chat"] | null;
             scenario: components["schemas"]["QGetPracticeAttemptV4Scenario"] | null;
-            /** Messages Entry */
-            messages_entry: components["schemas"]["QGetPracticeAttemptV4Message"][] | null;
+            /** Messages */
+            messages: components["schemas"]["QGetPracticeAttemptV4Message"][] | null;
             /** Hints */
             hints: components["schemas"]["QGetPracticeAttemptV4HintsByMessage"][] | null;
             grade: components["schemas"]["QGetPracticeAttemptV4Grade"] | null;
@@ -15150,8 +15150,8 @@ export interface components {
             agent_id: string | null;
             /** Run Cost */
             run_cost: number | null;
-            /** Debug Info Entry */
-            debug_info_entry: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
+            /** Debug Info */
+            debug_info: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
         };
         /** QGetPricingAnalyticsV4Profile */
         QGetPricingAnalyticsV4Profile: {
@@ -15239,8 +15239,8 @@ export interface components {
         /** QGetPricingGroupDetailV4RunWithMessages */
         QGetPricingGroupDetailV4RunWithMessages: {
             run: components["schemas"]["QGetPricingGroupDetailV4RunMetadata"] | null;
-            /** Messages Entry */
-            messages_entry: components["schemas"]["QGetPricingGroupDetailV4Message"][] | null;
+            /** Messages */
+            messages: components["schemas"]["QGetPricingGroupDetailV4Message"][] | null;
             /** Previous Context Start Index */
             previous_context_start_index: number | null;
         };
@@ -15283,8 +15283,8 @@ export interface components {
             total_output_tokens: number | null;
             /** Total Cost */
             total_cost: number | null;
-            /** Runs Entry */
-            runs_entry: components["schemas"]["QGetPricingRunsV4RunSummary"][] | null;
+            /** Runs */
+            runs: components["schemas"]["QGetPricingRunsV4RunSummary"][] | null;
         };
         /** QGetPricingRunsV4Model */
         QGetPricingRunsV4Model: {
@@ -15324,8 +15324,8 @@ export interface components {
             profile_id: string | null;
             /** Agent Id */
             agent_id: string | null;
-            /** Debug Info Entry */
-            debug_info_entry: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
+            /** Debug Info */
+            debug_info: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
         };
         /** QGetProfileContextV4Auth */
         QGetProfileContextV4Auth: {
@@ -16303,8 +16303,8 @@ export interface components {
         QGetSimulationAttemptV4ChatData: {
             chat: components["schemas"]["QGetSimulationAttemptV4Chat"] | null;
             scenario: components["schemas"]["QGetSimulationAttemptV4Scenario"] | null;
-            /** Messages Entry */
-            messages_entry: components["schemas"]["QGetSimulationAttemptV4Message"][] | null;
+            /** Messages */
+            messages: components["schemas"]["QGetSimulationAttemptV4Message"][] | null;
             /** Hints */
             hints: components["schemas"]["QGetSimulationAttemptV4HintsByMessage"][] | null;
             grade: components["schemas"]["QGetSimulationAttemptV4Grade"] | null;
@@ -18077,7 +18077,7 @@ export interface components {
             simulation_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            metrics_entry: components["schemas"]["QReportsBundleV4ProfileMetrics"] | null;
+            profile_metrics: components["schemas"]["QReportsBundleV4ProfileMetrics"] | null;
         };
         /** QReportsBundleV4ProfileMetrics */
         QReportsBundleV4ProfileMetrics: {
