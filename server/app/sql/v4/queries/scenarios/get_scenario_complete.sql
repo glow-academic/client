@@ -162,8 +162,7 @@ CREATE TYPE types.q_get_scenario_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
-    icon_name text,
+    icon text,
     generated boolean
 );
 
@@ -1173,28 +1172,25 @@ active_flag_resource_data AS (
              LIMIT 1)
         ) as active_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'active'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'scenario_active'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'scenario_active'
             ) fd
             ORDER BY priority
@@ -1222,28 +1218,25 @@ objectives_enabled_flag_resource_data AS (
              LIMIT 1)
         ) as objectives_enabled_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'objectives_enabled'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'objectives_enabled'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'objectives_enabled'
             ) fd
             ORDER BY priority
@@ -1271,28 +1264,25 @@ images_enabled_flag_resource_data AS (
              LIMIT 1)
         ) as images_enabled_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'images_enabled'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'images_enabled'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'images_enabled'
             ) fd
             ORDER BY priority
@@ -1320,28 +1310,25 @@ video_enabled_flag_resource_data AS (
              LIMIT 1)
         ) as video_enabled_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'video_enabled'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'video_enabled'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'video_enabled'
             ) fd
             ORDER BY priority
@@ -1369,28 +1356,25 @@ questions_enabled_flag_resource_data AS (
              LIMIT 1)
         ) as questions_enabled_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'questions_enabled'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'questions_enabled'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'questions_enabled'
             ) fd
             ORDER BY priority
@@ -1418,28 +1402,25 @@ problem_statement_enabled_flag_resource_data AS (
              LIMIT 1)
         ) as problem_statement_enabled_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'problem_statement_enabled'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'problem_statement_enabled'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'problem_statement_enabled'
             ) fd
             ORDER BY priority
@@ -1467,28 +1448,25 @@ use_templates_flag_resource_data AS (
              LIMIT 1)
         ) as use_templates_flag_id,
         (
-            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
+            SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, df.generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'use_templates'
                   AND df.active = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, sf.generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, sf.generated, 2 as priority
                 FROM scenario_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE sf.scenario_id = (SELECT scenario_id FROM params)
                   AND f.name = 'use_templates'
                   AND sf.active = true
                   AND sf.value = true
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, f.generated, 3 as priority
+                SELECT f.id, f.name, f.description, f.icon, f.generated, 3 as priority
                 FROM flags_resource f
-                LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE f.name = 'use_templates'
             ) fd
             ORDER BY priority

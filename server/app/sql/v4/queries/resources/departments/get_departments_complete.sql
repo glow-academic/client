@@ -70,7 +70,8 @@ WHERE d.id = ANY(ids)
   AND EXISTS (
       SELECT 1 FROM department_flags_junction df
       JOIN flags_resource f ON df.flag_id = f.id
-      WHERE df.department_id = d.id
+      -- NOTE: Flags are on department_artifact (ddj.department_id), not departments_resource (d.id)
+      WHERE df.department_id = ddj.department_id
         AND f.name = 'department_active'
         AND df.value = true
   )

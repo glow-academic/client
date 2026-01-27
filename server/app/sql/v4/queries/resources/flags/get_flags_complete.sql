@@ -38,7 +38,7 @@ CREATE TYPE types.q_get_flags_v4_item AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -55,7 +55,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_flags_v4_item
+        (f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_flags_v4_item
         ORDER BY array_position(ids, f.id)
     ),
     ARRAY[]::types.q_get_flags_v4_item[]

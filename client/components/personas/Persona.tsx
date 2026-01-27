@@ -1172,18 +1172,19 @@ function PersonaComponent({
   }, [personaData]);
 
   // Set breadcrumb context when persona data is loaded
+  // Extract the specific field to use as dependency (not the whole object)
+  const personaNameForBreadcrumb = personaData?.name_resource?.name;
   useEffect(() => {
-    const personaName = personaData?.name_resource?.name;
-    if (personaName && personaId && isEditMode) {
+    if (personaNameForBreadcrumb && personaId && isEditMode) {
       setEntityMetadata({
         entityId: personaId,
-        entityName: personaName,
+        entityName: personaNameForBreadcrumb,
         entityType: "persona",
       });
     }
     return () => clearEntityMetadata();
   }, [
-    personaData,
+    personaNameForBreadcrumb,
     personaId,
     isEditMode,
     setEntityMetadata,

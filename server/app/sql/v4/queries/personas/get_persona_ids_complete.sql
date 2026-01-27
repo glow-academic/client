@@ -370,25 +370,48 @@ instructions_suggestions_data AS (
     LIMIT 1
 ),
 department_suggestions_data AS (
+    -- For new personas, return all user's accessible departments
+    -- For existing personas, return departments already linked to other personas (filtered by user access)
+    -- NOTE: Flags are on department_artifact, linked via department_departments_junction
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at DESC)
+        (SELECT ARRAY_AGG(dept_id ORDER BY dept_name)
          FROM (
-             SELECT DISTINCT pd.department_id, MAX(pd.created_at) as created_at
+             -- User's accessible departments (always included for new persona creation)
+             SELECT DISTINCT d.id as dept_id, d.name as dept_name
+             FROM departments_resource d
+             JOIN department_departments_junction ddj ON ddj.departments_id = d.id
+             JOIN department_artifact da ON da.id = ddj.department_id
+             CROSS JOIN params p
+             WHERE d.id = ANY(p.user_department_ids)
+               AND EXISTS (
+                   SELECT 1 FROM department_flags_junction df
+                   JOIN flags_resource f ON df.flag_id = f.id
+                   WHERE df.department_id = da.id  -- Check artifact's flags, not resource's
+                     AND f.name = 'department_active' AND df.value = true
+               )
+             UNION
+             -- Departments already used by other personas (for suggestions)
+             SELECT DISTINCT pd.department_id as dept_id, d.name as dept_name
              FROM persona_departments_junction pd
              JOIN departments_resource d ON d.id = pd.department_id
+             JOIN department_departments_junction ddj ON ddj.departments_id = d.id
+             JOIN department_artifact da ON da.id = ddj.department_id
              CROSS JOIN params p
              WHERE pd.department_id IS NOT NULL
-               AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
-               -- Filter by user departments
+               AND EXISTS (
+                   SELECT 1 FROM department_flags_junction df
+                   JOIN flags_resource f ON df.flag_id = f.id
+                   WHERE df.department_id = da.id
+                     AND f.name = 'department_active' AND df.value = true
+               )
                AND (
                    COALESCE(array_length(p.user_department_ids, 1), 0) = 0
                    OR pd.department_id = ANY(p.user_department_ids)
                )
                AND (pd.active = true OR (pd.generated = true AND d.generated = true))
-             GROUP BY pd.department_id
-             ORDER BY MAX(pd.created_at) DESC
+             ORDER BY dept_name
              LIMIT 20
-         ) pd),
+         ) depts),
         ARRAY[]::uuid[]
     ) as department_suggestions
     FROM params

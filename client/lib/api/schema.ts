@@ -11560,8 +11560,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -11765,8 +11765,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -11974,8 +11974,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -12822,8 +12822,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -12941,8 +12941,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -13135,8 +13135,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -13215,8 +13215,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -13259,8 +13259,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -14137,8 +14137,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -14150,8 +14150,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -14418,8 +14418,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -15534,8 +15534,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -15587,8 +15587,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -15629,8 +15629,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -15847,10 +15847,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
-            /** Icon Name */
-            icon_name: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -16059,8 +16057,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -16803,8 +16801,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -16816,8 +16814,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -16860,8 +16858,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Icon Id */
-            icon_id: string | null;
+            /** Icon */
+            icon: string | null;
             /** Generated */
             generated: boolean | null;
         };

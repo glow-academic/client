@@ -65,7 +65,7 @@ CREATE TYPE types.q_get_document_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -710,8 +710,8 @@ flag_resource_data AS (
             (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT df.flag_id FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = (SELECT document_id FROM params) AND f.name = 'document_active' AND df.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = (SELECT document_id FROM params) AND f.name = 'document_active' AND df.value = TRUE LIMIT 1) as document_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = (SELECT document_id FROM params) AND f.name = 'document_active' AND df.value = TRUE LIMIT 1) as document_flag_resource
     FROM params
 ),
 -- Agent selection helper CTEs (shared across all agent selections)

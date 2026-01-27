@@ -63,7 +63,7 @@ CREATE TYPE types.q_get_field_v4_flag_resource AS (
     flag_id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -1190,7 +1190,7 @@ SELECT
     -- Single-select resources: active flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (
-        SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_field_v4_flag_resource
+        SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_field_v4_flag_resource
         FROM flag_resource_data frd
         JOIN flags_resource f ON f.id = frd.active_flag_id
         LIMIT 1

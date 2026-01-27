@@ -71,7 +71,7 @@ CREATE TYPE types.q_get_profile_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -561,14 +561,14 @@ flag_resource_data AS (
             NULL::uuid
         ) as active_flag_id,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_profile_v4_flag_resource
+            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_profile_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM profile_flags_junction pf
                 JOIN flags_resource f ON pf.flag_id = f.id
                 WHERE pf.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)

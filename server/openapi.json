@@ -53846,17 +53846,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -53875,7 +53874,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetAgentV4FlagResource"
@@ -54950,17 +54949,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -54979,7 +54977,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetAuthV4FlagResource"
@@ -56063,17 +56061,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -56092,7 +56089,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetCohortV4FlagResource"
@@ -60777,17 +60774,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -60806,7 +60802,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetDepartmentV4FlagResource"
@@ -61398,17 +61394,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -61427,7 +61422,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetDocumentV4FlagResource"
@@ -62474,17 +62469,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -62503,7 +62497,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetEvalV4FlagResource"
@@ -62891,17 +62885,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -62920,7 +62913,7 @@
           "flag_id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetFieldV4FlagResource"
@@ -63120,17 +63113,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -63149,7 +63141,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetFlagsV4Item"
@@ -68098,17 +68090,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -68127,7 +68118,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetModelV4FlagOption"
@@ -68168,17 +68159,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -68197,7 +68187,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetModelV4FlagResource"
@@ -69574,17 +69564,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -69603,7 +69592,7 @@
           "flag_id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetParameterV4FlagResource"
@@ -75762,17 +75751,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -75791,7 +75779,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetProfileV4FlagResource"
@@ -76035,17 +76023,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -76064,7 +76051,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetProviderV4FlagResource"
@@ -76252,17 +76239,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -76281,7 +76267,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetRubricV4FlagResource"
@@ -77448,19 +77434,7 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon Id"
-          },
-          "icon_name": {
+          "icon": {
             "anyOf": [
               {
                 "type": "string"
@@ -77469,7 +77443,7 @@
                 "type": "null"
               }
             ],
-            "title": "Icon Name"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -77488,8 +77462,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
-          "icon_name",
+          "icon",
           "generated"
         ],
         "title": "QGetScenarioV4FlagResource"
@@ -78590,17 +78563,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -78619,7 +78591,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetSettingV4FlagResource"
@@ -82759,17 +82731,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -82788,7 +82759,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetSimulationV4FlagOption"
@@ -82829,17 +82800,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -82858,7 +82828,7 @@
           "id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetSimulationV4FlagResource"
@@ -83058,17 +83028,16 @@
             ],
             "title": "Description"
           },
-          "icon_id": {
+          "icon": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Icon Id"
+            "title": "Icon"
           },
           "generated": {
             "anyOf": [
@@ -83089,7 +83058,7 @@
           "flag_id",
           "name",
           "description",
-          "icon_id",
+          "icon",
           "generated"
         ],
         "title": "QGetSimulationV4ScenarioFlagResource"

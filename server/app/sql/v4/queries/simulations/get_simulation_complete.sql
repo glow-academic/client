@@ -62,7 +62,7 @@ CREATE TYPE types.q_get_simulation_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -82,7 +82,7 @@ CREATE TYPE types.q_get_simulation_v4_flag_option AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -101,7 +101,7 @@ CREATE TYPE types.q_get_simulation_v4_scenario_flag_resource AS (
     flag_id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -1229,15 +1229,15 @@ flag_resource_data AS (
             (SELECT sf.flag_id FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
+            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false)
             )::types.q_get_simulation_v4_flag_resource
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM simulation_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
                 WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE
@@ -2278,7 +2278,7 @@ scenario_flag_resources_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(
-                (sfr.id, sr.id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false)
+                (sfr.id, sr.id, sfr.flag_id, f.name, f.description, f.icon, COALESCE(sfr.generated, false)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
@@ -2305,7 +2305,7 @@ scenario_flags_data AS (
     SELECT
         COALESCE(
             (SELECT ARRAY_AGG(
-                (f.id, rfr.resource_id, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
+                (f.id, rfr.resource_id, f.id, f.name, f.description, f.icon, COALESCE(f.generated, false)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY rfr.resource_id, f.name
             )
@@ -2768,7 +2768,7 @@ SELECT
     false as flag_required,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
+            (f.id, f.name, f.description, f.icon, COALESCE(f.generated, false)
             )::types.q_get_simulation_v4_flag_option
             ORDER BY f.name
         ) FROM flags_resource f

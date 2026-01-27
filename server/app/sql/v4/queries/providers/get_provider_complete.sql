@@ -49,7 +49,7 @@ CREATE TYPE types.q_get_provider_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -359,14 +359,14 @@ flag_resource_data AS (
             (SELECT pf.flag_id FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = (SELECT provider_id FROM params) AND f.name = 'provider_active' AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_provider_v4_flag_resource 
+            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_provider_v4_flag_resource 
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM flags_drafts_connection df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM provider_flags_junction pf 
                 JOIN flags_resource f ON pf.flag_id = f.id 
                 JOIN flags_resource fl ON pf.flag_id = fl.id 
@@ -386,7 +386,7 @@ flags_data AS (
         f.id,
         f.name,
         f.description,
-        f.icon_id,
+        f.icon,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
     CROSS JOIN params p
@@ -572,7 +572,7 @@ SELECT
     false as flag_required,  -- Flag is optional
     COALESCE(
         (SELECT ARRAY_AGG(
-            (f.id, f.name, f.description, f.icon_id, f.generated)::types.q_get_provider_v4_flag_resource
+            (f.id, f.name, f.description, f.icon, f.generated)::types.q_get_provider_v4_flag_resource
             ORDER BY f.name
         ) FROM flags_data f),
         '{}'::types.q_get_provider_v4_flag_resource[]

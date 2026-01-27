@@ -253,7 +253,7 @@ class QGetAgentV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -3289,7 +3289,7 @@ class QGetAuthV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -4748,7 +4748,7 @@ class QGetCohortV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -6073,7 +6073,7 @@ class QGetDepartmentV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -6702,7 +6702,7 @@ class QGetDocumentV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -7394,7 +7394,7 @@ class QGetEvalV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -7836,7 +7836,7 @@ class QGetFieldV4FlagResource(BaseModel):
     flag_id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -10692,7 +10692,7 @@ class QGetModelV4FlagOption(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -10703,7 +10703,7 @@ class QGetModelV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -11553,7 +11553,7 @@ class QGetParameterV4FlagResource(BaseModel):
     flag_id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -12271,7 +12271,7 @@ class QGetPersonaV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -14016,7 +14016,7 @@ class QGetProfileV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -14826,7 +14826,7 @@ class QGetProviderV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -16479,7 +16479,7 @@ class QGetFlagsV4Item(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 class GetFlagsSqlRow(BaseModel):
@@ -17892,7 +17892,7 @@ class QGetRubricV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -18725,8 +18725,7 @@ class QGetScenarioV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
-    icon_name: str | None
+    icon: str | None
     generated: bool | None
 
 
@@ -19669,7 +19668,7 @@ class QGetSettingV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -20310,7 +20309,7 @@ class QGetSimulationV4FlagOption(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -20321,7 +20320,7 @@ class QGetSimulationV4FlagResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 
@@ -20361,7 +20360,7 @@ class QGetSimulationV4ScenarioFlagResource(BaseModel):
     flag_id: UUID | None
     name: str | None
     description: str | None
-    icon_id: UUID | None
+    icon: str | None
     generated: bool | None
 
 

@@ -66,7 +66,7 @@ CREATE TYPE types.q_get_parameter_v4_flag_resource AS (
     flag_id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -386,7 +386,7 @@ active_flag_id_data AS (
 active_flag_resource_data AS (
     SELECT 
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_parameter_v4_flag_resource
+            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_parameter_v4_flag_resource
             FROM flags_resource f
             WHERE f.id = (SELECT active_flag_id FROM active_flag_id_data)
             LIMIT 1

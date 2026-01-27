@@ -49,7 +49,7 @@ CREATE TYPE types.q_get_model_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -82,7 +82,7 @@ CREATE TYPE types.q_get_model_v4_flag_option AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -498,13 +498,13 @@ flag_resource_data AS (
                  AND f.name = 'model_active'
                  LIMIT 1)
         END as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
          FROM flags_drafts_connection df
          JOIN flags_resource f ON df.flags_id = f.id
          WHERE df.draft_id = (SELECT draft_id FROM params)
          AND f.name = 'model_active'
          LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1) as model_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1) as model_flag_resource
     FROM params
 ),
 modalities_enabled_flag_resource_data AS (
@@ -522,9 +522,9 @@ modalities_enabled_flag_resource_data AS (
         END as modalities_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_drafts_connection df
                  JOIN flags_resource f ON df.flags_id = f.id
                  WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -548,9 +548,9 @@ temperature_enabled_flag_resource_data AS (
         END as temperature_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_drafts_connection df
                  JOIN flags_resource f ON df.flags_id = f.id
                  WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -574,9 +574,9 @@ pricing_enabled_flag_resource_data AS (
         END as pricing_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_drafts_connection df
                  JOIN flags_resource f ON df.flags_id = f.id
                  WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -600,9 +600,9 @@ voices_enabled_flag_resource_data AS (
         END as voices_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_drafts_connection df
                  JOIN flags_resource f ON df.flags_id = f.id
                  WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -626,9 +626,9 @@ reasoning_levels_enabled_flag_resource_data AS (
         END as reasoning_levels_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_drafts_connection df
                  JOIN flags_resource f ON df.flags_id = f.id
                  WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -652,9 +652,9 @@ qualities_enabled_flag_resource_data AS (
         END as qualities_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                (SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_drafts_connection df
                  JOIN flags_resource f ON df.flags_id = f.id
                  WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1773,7 +1773,7 @@ flags_data AS (
         f.id,
         f.name,
         f.description,
-        f.icon_id,
+        f.icon,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
     JOIN artifact_flags_relation aft ON f.type = aft.flag_type
@@ -1790,7 +1790,7 @@ flags_data AS (
 flags_aggregated AS (
     SELECT 
         ARRAY_AGG(
-            (f.id, f.name, f.description, f.icon_id, f.generated)::types.q_get_model_v4_flag_option
+            (f.id, f.name, f.description, f.icon, f.generated)::types.q_get_model_v4_flag_option
             ORDER BY f.name
         ) as flags
     FROM flags_data f

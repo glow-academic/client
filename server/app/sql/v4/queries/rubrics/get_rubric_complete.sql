@@ -58,7 +58,7 @@ CREATE TYPE types.q_get_rubric_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon text,
     generated boolean
 );
 
@@ -344,14 +344,14 @@ flag_resource_data AS (
             (SELECT rf.flag_id FROM rubric_flags_junction rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = (SELECT rubric_id FROM params) AND f.name = 'rubric_active' AND rf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_rubric_v4_flag_resource 
+            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_rubric_v4_flag_resource 
             FROM (
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM flags_drafts_connection df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
+                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM rubric_flags_junction rf 
                 JOIN flags_resource f ON rf.flag_id = f.id 
                 JOIN flags_resource fl ON rf.flag_id = fl.id 
@@ -361,7 +361,7 @@ flag_resource_data AS (
             LIMIT 1
         ) as draft_flag_resource,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_rubric_v4_flag_resource 
+            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_rubric_v4_flag_resource 
             FROM rubric_flags_junction rf 
             JOIN flags_resource f ON rf.flag_id = f.id 
             JOIN flags_resource fl ON rf.flag_id = fl.id 
@@ -1589,7 +1589,7 @@ flags_data AS (
         f.id,
         f.name,
         f.description,
-        f.icon_id,
+        f.icon,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
     CROSS JOIN params p
@@ -1604,7 +1604,7 @@ flags_agg AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                (fd.id, fd.name, fd.description, fd.icon_id, fd.generated)::types.q_get_rubric_v4_flag_resource
+                (fd.id, fd.name, fd.description, fd.icon, fd.generated)::types.q_get_rubric_v4_flag_resource
                 ORDER BY fd.name
             ),
             '{}'::types.q_get_rubric_v4_flag_resource[]

@@ -22,14 +22,12 @@ module.exports = {
     { isServer, webpack }: WebpackConfigContext
   ): WebpackConfig => {
     // Fix @radix-ui/react-compose-refs unstable useComposedRefs with React 19
+    const aliasPath = path.resolve(__dirname, "lib/patches/react-compose-refs.ts");
     config.resolve = {
       ...config.resolve,
       alias: {
         ...(config.resolve?.alias as Record<string, string>),
-        "@radix-ui/react-compose-refs": path.resolve(
-          __dirname,
-          "lib/patches/react-compose-refs.ts"
-        ),
+        "@radix-ui/react-compose-refs": aliasPath,
       },
     };
 
