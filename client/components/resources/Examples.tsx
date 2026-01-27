@@ -148,6 +148,8 @@ export function Examples({
   const lastSavedTextsRef = useRef<string[]>(internalTexts);
   const isInitialMountRef = useRef(true);
   const exampleIdMapRef = useRef<Map<string, string>>(new Map()); // Maps example text -> example_id
+  const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
+  onChangeRef.current = onChange;
 
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
@@ -188,7 +190,7 @@ export function Examples({
       .map((t) => exampleIdMapRef.current.get(t))
       .filter((id): id is string => id !== undefined);
 
-    onChange(allIds);
+    onChangeRef.current(allIds);
     lastSavedTextsRef.current = internalTexts;
   };
 
@@ -246,7 +248,7 @@ export function Examples({
         .filter((t) => t.trim())
         .map((t) => exampleIdMapRef.current.get(t))
         .filter((id): id is string => id !== undefined);
-      onChange(allIds);
+      onChangeRef.current(allIds);
       return;
     }
 
@@ -267,7 +269,9 @@ export function Examples({
       timersAtStart.forEach((timer) => clearTimeout(timer));
       timersAtStart.clear();
     };
-  }, [internalTexts, createExamplesAction, onChange, isAutosaveEnabled]);
+  // Note: onChange is accessed via onChangeRef to avoid dependency issues
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [internalTexts, createExamplesAction, isAutosaveEnabled]);
 
   const handleItemsChange = useCallback((items: string[]) => {
     setInternalTexts(items.length > 0 ? items : [""]);
