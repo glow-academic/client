@@ -38,6 +38,7 @@ RETURNS TABLE (
     department_ids uuid[],
     field_ids uuid[],
     example_ids uuid[],
+    parameter_ids uuid[],
 
     -- Suggestion IDs (for resource options)
     name_suggestions uuid[],
@@ -48,6 +49,7 @@ RETURNS TABLE (
     department_suggestions uuid[],
     field_suggestions uuid[],
     example_suggestions uuid[],
+    parameter_suggestions uuid[],
 
     -- Agent IDs (for generate buttons)
     name_agent_id uuid,
@@ -59,6 +61,7 @@ RETURNS TABLE (
     departments_agent_id uuid,
     fields_agent_id uuid,
     examples_agent_id uuid,
+    parameters_agent_id uuid,
     basic_agent_id uuid,
     content_agent_id uuid,
     general_agent_id uuid,
@@ -70,7 +73,8 @@ RETURNS TABLE (
     instructions_has_tools boolean,
     departments_has_tools boolean,
     fields_has_tools boolean,
-    examples_has_tools boolean
+    examples_has_tools boolean,
+    parameters_has_tools boolean
 )
 LANGUAGE sql
 STABLE
@@ -100,6 +104,12 @@ draft_examples_data AS (
     SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), NULL), ARRAY[]::uuid[]) as example_ids
     FROM params x
     LEFT JOIN examples_drafts_connection de ON de.draft_id = x.draft_id
+    LIMIT 1
+),
+draft_parameters_data AS (
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as parameter_ids
+    FROM params x
+    LEFT JOIN parameters_drafts_connection dp ON dp.draft_id = x.draft_id
     LIMIT 1
 ),
 -- Persona junction multi-select resource IDs
@@ -146,6 +156,23 @@ persona_examples_junction_data AS (
     FROM params
     LIMIT 1
 ),
+persona_parameters_junction_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(pp.parameter_id ORDER BY pp.created_at)
+                 FROM persona_parameters_junction pp
+                 JOIN parameters_resource pr ON pr.id = pp.parameter_id
+                 WHERE pp.persona_id = (SELECT persona_id FROM params)
+                   AND pp.active = true
+                   AND pr.persona_parameter = true),
+                ARRAY[]::uuid[]
+            )
+        END as parameter_ids
+    FROM params
+    LIMIT 1
+),
 -- Combined multi-select IDs (draft preferred over persona)
 persona_departments_combined_data AS (
     SELECT
@@ -183,6 +210,19 @@ persona_examples_combined_data AS (
                 THEN (SELECT example_ids FROM persona_examples_junction_data)
             ELSE ARRAY[]::uuid[]
         END as example_ids
+    FROM params
+    LIMIT 1
+),
+persona_parameters_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT parameter_ids FROM draft_parameters_data), 1), 0) > 0
+                THEN (SELECT parameter_ids FROM draft_parameters_data)
+            WHEN COALESCE(array_length((SELECT parameter_ids FROM persona_parameters_junction_data), 1), 0) > 0
+                THEN (SELECT parameter_ids FROM persona_parameters_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as parameter_ids
     FROM params
     LIMIT 1
 ),
@@ -504,6 +544,21 @@ example_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+-- Parameter suggestions - only those with persona_parameter = true
+parameter_suggestions_data AS (
+    SELECT COALESCE(
+        (SELECT ARRAY_AGG(pr.id ORDER BY pr.name)
+         FROM parameters_resource pr
+         WHERE pr.active = true
+           AND pr.persona_parameter = true
+           AND pr.name IS NOT NULL
+           AND pr.name != ''
+         LIMIT 20),
+        ARRAY[]::uuid[]
+    ) as parameter_suggestions
+    FROM params
+    LIMIT 1
+),
 -- Agent IDs for each resource (simplified selection - first eligible agent)
 name_agent_data AS (
     SELECT a.id as agent_id
@@ -658,6 +713,23 @@ examples_agent_data AS (
     ORDER BY a.updated_at DESC
     LIMIT 1
 ),
+parameters_agent_data AS (
+    SELECT a.id as agent_id
+    FROM agent_artifact a
+    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    AND EXISTS (
+        SELECT 1 FROM agent_tools_junction at
+        JOIN tools_resource tr ON tr.id = at.tool_id
+        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+        JOIN tool_artifact t ON t.id = ttj.tool_id
+        JOIN resource_tools_relation rt ON rt.tool_id = t.id
+        WHERE at.agent_id = a.id AND at.active = true
+          AND rt.resource = 'parameters'::resource_type
+          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    )
+    ORDER BY a.updated_at DESC
+    LIMIT 1
+),
 -- Multi-resource agent IDs (basic, content, general)
 basic_agent_data AS (SELECT NULL::uuid as agent_id),
 content_agent_data AS (SELECT NULL::uuid as agent_id),
@@ -671,7 +743,8 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'instructions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as instructions_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'departments'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as departments_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'fields'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as fields_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'examples'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as examples_has_tools
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'examples'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as examples_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'parameters'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as parameters_has_tools
     FROM params x
 )
 SELECT
@@ -687,6 +760,7 @@ SELECT
     (SELECT department_ids FROM persona_departments_combined_data) as department_ids,
     (SELECT field_ids FROM persona_fields_combined_data) as field_ids,
     (SELECT example_ids FROM persona_examples_combined_data) as example_ids,
+    (SELECT parameter_ids FROM persona_parameters_combined_data) as parameter_ids,
 
     -- Suggestion IDs
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
@@ -697,6 +771,7 @@ SELECT
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
     COALESCE((SELECT field_suggestions FROM field_suggestions_data), ARRAY[]::uuid[]) as field_suggestions,
     COALESCE((SELECT example_suggestions FROM example_suggestions_data), ARRAY[]::uuid[]) as example_suggestions,
+    COALESCE((SELECT parameter_suggestions FROM parameter_suggestions_data), ARRAY[]::uuid[]) as parameter_suggestions,
 
     -- Agent IDs
     (SELECT agent_id FROM name_agent_data) as name_agent_id,
@@ -708,6 +783,7 @@ SELECT
     (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
     (SELECT agent_id FROM fields_agent_data) as fields_agent_id,
     (SELECT agent_id FROM examples_agent_data) as examples_agent_id,
+    (SELECT agent_id FROM parameters_agent_data) as parameters_agent_id,
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
     (SELECT agent_id FROM content_agent_data) as content_agent_id,
     (SELECT agent_id FROM general_agent_data) as general_agent_id,
@@ -719,7 +795,8 @@ SELECT
     tec.instructions_has_tools,
     tec.departments_has_tools,
     tec.fields_has_tools,
-    tec.examples_has_tools
+    tec.examples_has_tools,
+    tec.parameters_has_tools
 FROM params x
 CROSS JOIN tools_existence_check tec;
 $$;

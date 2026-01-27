@@ -38,7 +38,8 @@ CREATE TYPE types.q_get_fields_v4_item AS (
     field_id uuid,
     name text,
     description text,
-    generated boolean
+    generated boolean,
+    parameter_id uuid
 );
 
 -- Create function
@@ -58,7 +59,8 @@ SELECT COALESCE(
             f.id,
             (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
             COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''),
-            COALESCE(f.generated, false)
+            COALESCE(f.generated, false),
+            f.parameter_id
         )::types.q_get_fields_v4_item
         ORDER BY array_position(ids, f.id)
     ),

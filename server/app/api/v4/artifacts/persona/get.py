@@ -27,6 +27,7 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_icon_required,
     compute_instructions_required,
     compute_name_required,
+    compute_parameters_required,
     compute_show_color,
     compute_show_departments,
     compute_show_description,
@@ -36,6 +37,7 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_icon,
     compute_show_instructions,
     compute_show_name,
+    compute_show_parameters,
     has_access,
 )
 from app.api.v4.artifacts.persona.types import (
@@ -51,6 +53,7 @@ from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.icons.get import get_icons_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -233,6 +236,9 @@ async def get_persona(
         example_ids = _combine_multi_ids(
             ids_result.example_ids, ids_result.example_suggestions
         )
+        parameter_ids = _combine_multi_ids(
+            ids_result.parameter_ids, ids_result.parameter_suggestions
+        )
 
         # Parallel fetch all resources
         # NOTE: Each query needs its own connection from the pool because
@@ -281,6 +287,13 @@ async def get_persona(
             async with pool.acquire() as c:
                 return await get_examples_internal(c, example_ids, None, bypass_cache)
 
+        async def fetch_parameters():
+            async with pool.acquire() as c:
+                return await get_parameters_internal(
+                    c, parameter_ids, request.parameter_search, bypass_cache,
+                    persona_parameter=True  # Only fetch persona parameters
+                )
+
         (
             names,
             descriptions,
@@ -291,6 +304,7 @@ async def get_persona(
             departments,
             fields,
             examples,
+            parameters,
         ) = await asyncio.gather(
             fetch_names(),
             fetch_descriptions(),
@@ -301,6 +315,7 @@ async def get_persona(
             fetch_departments(),
             fetch_fields(),
             fetch_examples(),
+            fetch_parameters(),
         )
 
         # Find selected resources
@@ -325,10 +340,11 @@ async def get_persona(
             (f for f in flags if f.id == ids_result.active_flag_id), None
         )
 
-        # Selected department/field/example resources
+        # Selected department/field/example/parameter resources
         selected_department_ids = ids_result.department_ids or []
         selected_field_ids = ids_result.field_ids or []
         selected_example_ids = ids_result.example_ids or []
+        selected_parameter_ids = ids_result.parameter_ids or []
 
         department_resources = [
             d for d in departments if d.department_id in selected_department_ids
@@ -338,6 +354,9 @@ async def get_persona(
         ]
         example_resources = [
             e for e in examples if e.id in selected_example_ids
+        ]
+        parameter_resources = [
+            p for p in parameters if p.parameter_id in selected_parameter_ids
         ]
 
         # Compute final show flags based on actual data
@@ -350,6 +369,7 @@ async def get_persona(
         show_departments_flag = compute_show_departments(len(departments))
         show_fields_flag = compute_show_fields(len(fields))
         show_examples_flag = compute_show_examples(len(examples))
+        show_parameters_flag = compute_show_parameters(len(parameters))
 
         # Set audit context
         if access_result.actor_name:
@@ -458,6 +478,14 @@ async def get_persona(
             examples_required=compute_examples_required(),
             example_suggestions=ids_result.example_suggestions,
             examples=examples,
+            # Parameters
+            parameter_ids=ids_result.parameter_ids,
+            parameter_resources=parameter_resources,
+            show_parameters=show_parameters_flag,
+            parameters_agent_id=ids_result.parameters_agent_id,
+            parameters_required=compute_parameters_required(),
+            parameter_suggestions=ids_result.parameter_suggestions,
+            parameters=parameters,
             # Multi-resource agent IDs
             basic_agent_id=ids_result.basic_agent_id,
             content_agent_id=ids_result.content_agent_id,

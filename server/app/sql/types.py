@@ -12633,6 +12633,7 @@ class GetPersonaIdsSqlRow(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     color_suggestions: list[UUID] | None = None
@@ -12641,6 +12642,7 @@ class GetPersonaIdsSqlRow(BaseModel):
     department_suggestions: list[UUID] | None = None
     field_suggestions: list[UUID] | None = None
     example_suggestions: list[UUID] | None = None
+    parameter_suggestions: list[UUID] | None = None
     name_agent_id: UUID | None = None
     description_agent_id: UUID | None = None
     color_agent_id: UUID | None = None
@@ -12650,6 +12652,7 @@ class GetPersonaIdsSqlRow(BaseModel):
     departments_agent_id: UUID | None = None
     fields_agent_id: UUID | None = None
     examples_agent_id: UUID | None = None
+    parameters_agent_id: UUID | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
@@ -12660,6 +12663,7 @@ class GetPersonaIdsSqlRow(BaseModel):
     departments_has_tools: bool | None = None
     fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
+    parameters_has_tools: bool | None = None
 
 class GetPersonaIdsApiRequest(BaseModel):
 
@@ -12679,6 +12683,7 @@ class GetPersonaIdsApiResponse(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     color_suggestions: list[UUID] | None = None
@@ -12687,6 +12692,7 @@ class GetPersonaIdsApiResponse(BaseModel):
     department_suggestions: list[UUID] | None = None
     field_suggestions: list[UUID] | None = None
     example_suggestions: list[UUID] | None = None
+    parameter_suggestions: list[UUID] | None = None
     name_agent_id: UUID | None = None
     description_agent_id: UUID | None = None
     color_agent_id: UUID | None = None
@@ -12696,6 +12702,7 @@ class GetPersonaIdsApiResponse(BaseModel):
     departments_agent_id: UUID | None = None
     fields_agent_id: UUID | None = None
     examples_agent_id: UUID | None = None
+    parameters_agent_id: UUID | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
@@ -12706,6 +12713,7 @@ class GetPersonaIdsApiResponse(BaseModel):
     departments_has_tools: bool | None = None
     fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
+    parameters_has_tools: bool | None = None
 
 
 
@@ -12930,6 +12938,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12945,6 +12954,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
             self.department_ids,
             self.field_ids,
             self.example_ids,
+            self.parameter_ids,
             self.expected_version,
         )
 
@@ -12966,6 +12976,7 @@ class PatchPersonaDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchPersonaDraftApiResponse(BaseModel):
@@ -16445,6 +16456,7 @@ class QGetFieldsV4Item(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
+    parameter_id: UUID | None
 
 class GetFieldsSqlRow(BaseModel):
 
@@ -16907,6 +16919,58 @@ class OptionsApiRequest(BaseModel):
 class OptionsApiResponse(BaseModel):
 
     option_id: UUID | None = None
+
+
+
+# Generated from: get_parameters
+
+class GetParametersSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    persona_parameter: bool | None = None
+    document_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+            self.search,
+            self.persona_parameter,
+            self.document_parameter,
+            self.scenario_parameter,
+            self.video_parameter,
+        )
+
+class QGetParametersV4Item(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    generated: bool | None
+    persona_parameter: bool | None
+    document_parameter: bool | None
+    scenario_parameter: bool | None
+    video_parameter: bool | None
+
+class GetParametersSqlRow(BaseModel):
+
+    items: list[QGetParametersV4Item] | None = None
+
+class GetParametersApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    persona_parameter: bool | None = None
+    document_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+
+class GetParametersApiResponse(BaseModel):
+
+    items: list[QGetParametersV4Item] | None = None
 
 
 
@@ -23984,6 +24048,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "OptionsApiRequest",
         "OptionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/parameters/get_parameters_complete.sql": (
+        "GetParametersSqlParams",
+        "GetParametersSqlRow",
+        "GetParametersApiRequest",
+        "GetParametersApiResponse",
+    ),
     "app/sql/v4/queries/resources/points_complete.sql": (
         "PointsSqlParams",
         "PointsSqlRow",
@@ -25907,6 +25977,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/options_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/parameters/get_parameters_complete.sql"]
     ) -> SqlString: ...
 
     @overload

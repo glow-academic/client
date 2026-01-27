@@ -2643,6 +2643,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/parameters/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Parameters
+         * @description Get parameters resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_parameters_api_v4_resources_parameters_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/points": {
         parameters: {
             query?: never;
@@ -8243,6 +8265,26 @@ export interface components {
             /** Fields */
             fields?: components["schemas"]["QGetParameterV4Field"][] | null;
         };
+        /** GetParametersApiRequest */
+        GetParametersApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /** Persona Parameter */
+            persona_parameter?: boolean | null;
+            /** Document Parameter */
+            document_parameter?: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter?: boolean | null;
+            /** Video Parameter */
+            video_parameter?: boolean | null;
+        };
+        /** GetParametersApiResponse */
+        GetParametersApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
         /** GetParametersListApiRequest */
         GetParametersListApiRequest: Record<string, never>;
         /** GetParametersListApiResponse */
@@ -8281,12 +8323,16 @@ export interface components {
             instructions_search?: string | null;
             /** Field Search */
             field_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
             /** Color Show Selected */
             color_show_selected?: boolean | null;
             /** Icon Show Selected */
             icon_show_selected?: boolean | null;
             /** Field Show Selected */
             field_show_selected?: boolean | null;
+            /** Parameter Show Selected */
+            parameter_show_selected?: boolean | null;
         };
         /**
          * GetPersonaApiResponse
@@ -8423,6 +8469,20 @@ export interface components {
             example_suggestions?: string[] | null;
             /** Examples */
             examples?: components["schemas"]["QGetExamplesV4Item"][] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Resources */
+            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Show Parameters */
+            show_parameters?: boolean | null;
+            /** Parameters Agent Id */
+            parameters_agent_id?: string | null;
+            /** Parameters Required */
+            parameters_required?: boolean | null;
+            /** Parameter Suggestions */
+            parameter_suggestions?: string[] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** Content Agent Id */
@@ -11047,6 +11107,8 @@ export interface components {
             field_ids?: string[] | null;
             /** Example Ids */
             example_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -13250,6 +13312,8 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
+            /** Parameter Id */
+            parameter_id: string | null;
         };
         /** QGetFlagsV4Item */
         QGetFlagsV4Item: {
@@ -14431,6 +14495,27 @@ export interface components {
             name: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetParametersV4Item */
+        QGetParametersV4Item: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter: boolean | null;
+            /** Video Parameter */
+            video_parameter: boolean | null;
         };
         /** QGetPracticeAttemptV4AggregatedResults */
         QGetPracticeAttemptV4AggregatedResults: {
@@ -24554,6 +24639,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_parameters_api_v4_resources_parameters_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetParametersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetParametersApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -109,6 +109,10 @@ from app.api.v4.resources.options.create import router as options_router
 
 router.include_router(options_router)
 # NOTE: parameters removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for personas two-pass architecture
+from app.api.v4.resources.parameters.get import router as parameters_get_router
+
+router.include_router(parameters_get_router)
 # NOTE: personas removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.points.create import router as points_router
 

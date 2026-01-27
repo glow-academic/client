@@ -11,6 +11,7 @@ export type ResourceType =
   | "flags"
   | "examples"
   | "fields"
+  | "parameters"
   | "departments"
   | "points"
   | "standard_groups"

@@ -29,6 +29,7 @@ CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     department_ids uuid[] DEFAULT NULL,
     field_ids uuid[] DEFAULT NULL,
     example_ids uuid[] DEFAULT NULL,
+    parameter_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -98,6 +99,15 @@ BEGIN
         END IF;
     END IF;
 
+    IF parameter_ids IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(parameter_ids) as pid
+            WHERE NOT EXISTS (SELECT 1 FROM parameters_resource WHERE id = pid)
+        ) THEN
+            RAISE EXCEPTION 'One or more parameter resource IDs not found in parameters_resource';
+        END IF;
+    END IF;
+
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
@@ -132,6 +142,7 @@ BEGIN
             DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
             DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
             DELETE FROM examples_drafts_connection WHERE examples_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM parameters_drafts_connection WHERE parameters_drafts_connection.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
@@ -202,7 +213,16 @@ BEGIN
                 ON CONFLICT ON CONSTRAINT examples_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
-            
+
+            IF parameter_ids IS NOT NULL THEN
+                DELETE FROM parameters_drafts_connection WHERE parameters_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO parameters_drafts_connection (draft_id, parameters_id, version)
+                SELECT v_draft_id, param_id, v_new_version
+                FROM UNNEST(parameter_ids) as param_id
+                ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
             RETURN;
         END IF;
@@ -289,7 +309,15 @@ BEGIN
         ON CONFLICT ON CONSTRAINT examples_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
-    
+
+    IF parameter_ids IS NOT NULL THEN
+        INSERT INTO parameters_drafts_connection (draft_id, parameters_id, version)
+        SELECT v_draft_id, param_id, v_new_version
+        FROM UNNEST(parameter_ids) as param_id
+        ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
     RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;

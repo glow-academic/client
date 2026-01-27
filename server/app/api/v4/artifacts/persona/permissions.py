@@ -174,6 +174,11 @@ def compute_show_examples(examples_count: int) -> bool:
     return examples_count > 0
 
 
+def compute_show_parameters(parameters_count: int) -> bool:
+    """Determine if parameters picker should be shown."""
+    return parameters_count > 0
+
+
 def compute_name_required() -> bool:
     """Determine if name is required."""
     return True
@@ -216,6 +221,11 @@ def compute_fields_required() -> bool:
 
 def compute_examples_required() -> bool:
     """Determine if examples is required."""
+    return False
+
+
+def compute_parameters_required() -> bool:
+    """Determine if parameters is required."""
     return False
 
 

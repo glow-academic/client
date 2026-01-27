@@ -26,6 +26,7 @@ import { Examples } from "@/components/resources/Examples";
 import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
+import { Parameters } from "@/components/resources/Parameters";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
 import { Button } from "@/components/ui/button";
@@ -214,10 +215,12 @@ function PersonaComponent({
       descriptionSearch: parseAsString,
       instructionsSearch: parseAsString,
       fieldSearch: parseAsString,
+      parameterSearch: parseAsString,
       // Filter params (URL-backed)
       colorShowSelected: parseAsBoolean,
       iconShowSelected: parseAsBoolean,
       fieldShowSelected: parseAsBoolean,
+      parameterShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -288,6 +291,12 @@ function PersonaComponent({
       examples_required: personaData.examples_required,
       examples_agent_id: personaData.examples_agent_id,
       examples: personaData.examples,
+      parameter_resources: personaData.parameter_resources,
+      show_parameters: personaData.show_parameters,
+      parameter_suggestions: personaData.parameter_suggestions,
+      parameters_required: personaData.parameters_required,
+      parameters_agent_id: personaData.parameters_agent_id,
+      parameters: personaData.parameters,
       basic_agent_id: personaData.basic_agent_id,
       content_agent_id: personaData.content_agent_id,
     };
@@ -348,6 +357,12 @@ function PersonaComponent({
     personaData?.examples_required,
     personaData?.examples_agent_id,
     personaData?.examples,
+    personaData?.parameter_resources,
+    personaData?.show_parameters,
+    personaData?.parameter_suggestions,
+    personaData?.parameters_required,
+    personaData?.parameters_agent_id,
+    personaData?.parameters,
     personaData?.basic_agent_id,
     personaData?.content_agent_id,
   ]);
@@ -411,6 +426,7 @@ function PersonaComponent({
         department_ids: [] as string[],
         field_ids: [] as string[],
         example_ids: [] as string[],
+        parameter_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
@@ -425,6 +441,7 @@ function PersonaComponent({
       department_ids: data.department_ids ?? [],
       field_ids: data.field_ids ?? [],
       example_ids: data.example_ids ?? [],
+      parameter_ids: data.parameter_ids ?? [],
     };
     // Remove personaData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -449,6 +466,10 @@ function PersonaComponent({
     () => JSON.stringify(personaData?.example_ids ?? []),
     [personaData?.example_ids]
   );
+  const parameterIdsStr = React.useMemo(
+    () => JSON.stringify(personaData?.parameter_ids ?? []),
+    [personaData?.parameter_ids]
+  );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
@@ -462,6 +483,10 @@ function PersonaComponent({
   const formStateExampleIdsStr = React.useMemo(
     () => JSON.stringify(formState.example_ids),
     [formState.example_ids]
+  );
+  const formStateParameterIdsStr = React.useMemo(
+    () => JSON.stringify(formState.parameter_ids),
+    [formState.parameter_ids]
   );
 
   // Update form state when server data changes
@@ -481,7 +506,9 @@ function PersonaComponent({
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
         JSON.stringify(prev.example_ids) !==
-          JSON.stringify(newState.example_ids)
+          JSON.stringify(newState.example_ids) ||
+        JSON.stringify(prev.parameter_ids) !==
+          JSON.stringify(newState.parameter_ids)
       ) {
         return newState;
       }
@@ -500,6 +527,7 @@ function PersonaComponent({
     departmentIdsStr,
     fieldIdsStr,
     exampleIdsStr,
+    parameterIdsStr,
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -572,6 +600,7 @@ function PersonaComponent({
       department_ids: formState.department_ids,
       field_ids: formState.field_ids,
       example_ids: formState.example_ids,
+      parameter_ids: formState.parameter_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -586,6 +615,7 @@ function PersonaComponent({
     formStateDepartmentIdsStr,
     formStateFieldIdsStr,
     formStateExampleIdsStr,
+    formStateParameterIdsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -607,7 +637,8 @@ function PersonaComponent({
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
       formState.field_ids.length > 0 ||
-      formState.example_ids.length > 0;
+      formState.example_ids.length > 0 ||
+      formState.parameter_ids.length > 0;
 
     // Debug logging at effect start
     console.debug("[Persona Draft] Effect triggered", {
@@ -673,6 +704,7 @@ function PersonaComponent({
             department_ids: formState.department_ids,
             field_ids: formState.field_ids,
             example_ids: formState.example_ids,
+            parameter_ids: formState.parameter_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -780,6 +812,7 @@ function PersonaComponent({
             department_ids: formState.department_ids,
             field_ids: formState.field_ids,
             example_ids: formState.example_ids,
+            parameter_ids: formState.parameter_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -1364,6 +1397,7 @@ function PersonaComponent({
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
+      parameters: ["parameters"],
       fields: ["fields"],
       color: ["colors"],
       icon: ["icons"],
@@ -1375,6 +1409,7 @@ function PersonaComponent({
         "icons",
         "instructions",
         "flags",
+        "parameters",
         "fields",
         "departments",
         "examples",
@@ -1459,6 +1494,12 @@ function PersonaComponent({
         resetFields: ["name", "description", "department_ids", "active"],
       },
       {
+        id: "parameters",
+        title: "Parameters",
+        description: "Select parameters for this persona.",
+        resetFields: ["parameter_ids", "parameterSearch", "parameterShowSelected"],
+      },
+      {
         id: "fields",
         title: "Fields",
         description: "Select fields for this persona.",
@@ -1498,6 +1539,7 @@ function PersonaComponent({
       "active",
       "department_ids",
       "field_ids",
+      "parameter_ids",
       "examples",
     ],
     []
@@ -1508,6 +1550,8 @@ function PersonaComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
+      case "parameters":
+        return "Parameters reset";
       case "fields":
         return "Fields reset";
       case "color":
@@ -1752,6 +1796,60 @@ function PersonaComponent({
               </div>
             </StepCard>
           );
+
+        case "parameters": {
+          const parameterSearchTerm =
+            (stepFormData["parameterSearch"] as string | null | undefined) || "";
+          const parameterShowSelected =
+            (stepFormData["parameterShowSelected"] as boolean | null | undefined) ??
+            false;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={parameterSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ parameterSearch: term || null })
+              }
+              searchPlaceholder="Search parameters..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: parameterShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({ parameterShowSelected: value || null }),
+                },
+              ]}
+              resetFields={["parameter_ids", "parameterSearch", "parameterShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Parameters
+                parameter_ids={formState.parameter_ids ?? []}
+                parameter_resources={currentPersonaData?.parameter_resources ?? []}
+                show_parameters={currentPersonaData?.show_parameters ?? false}
+                parameter_suggestions={currentPersonaData?.parameter_suggestions ?? []}
+                parameters={currentPersonaData?.parameters ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, parameter_ids: ids }))
+                }
+                label="Parameters"
+                required={currentPersonaData?.parameters_required ?? false}
+                group_id={currentPersonaData?.group_id ?? null}
+                agent_id={currentPersonaData?.parameters_agent_id ?? null}
+                searchTerm={parameterSearchTerm}
+                showSelectedFilter={parameterShowSelected}
+              />
+            </StepCard>
+          );
+        }
 
         case "fields":
           const fieldSearchTerm =

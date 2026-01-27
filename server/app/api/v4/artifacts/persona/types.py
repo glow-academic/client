@@ -14,6 +14,7 @@ from app.sql.types import (
     QGetIconsV4Item,
     QGetInstructionsV4Item,
     QGetNamesV4Item,
+    QGetParametersV4Item,
 )
 
 
@@ -28,10 +29,12 @@ class GetPersonaApiRequest(BaseModel):
     descriptions_search: str | None = None
     instructions_search: str | None = None
     field_search: str | None = None
+    parameter_search: str | None = None
     # Show selected filters
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
     field_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
 
 
 class GetPersonaApiResponse(BaseModel):
@@ -126,6 +129,15 @@ class GetPersonaApiResponse(BaseModel):
     examples_required: bool | None = None
     example_suggestions: list[UUID] | None = None
     examples: list[QGetExamplesV4Item] | None = None
+
+    # Multi-select resources: parameters
+    parameter_ids: list[UUID] | None = None
+    parameter_resources: list[QGetParametersV4Item] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
+    parameters: list[QGetParametersV4Item] | None = None
 
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None
@@ -268,6 +280,7 @@ class PatchPersonaDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
