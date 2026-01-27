@@ -6,6 +6,7 @@ import uuid
 from typing import Any, cast
 
 import asyncpg  # type: ignore
+from app.main import get_pool
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.sql.types import (
@@ -161,15 +162,21 @@ async def run_eval_parallel(
         eval_id: The eval ID
         model_run_ids: List of model_run IDs to evaluate
         rubric_id: The rubric ID to use for evaluation
-        conn: Database connection
+        conn: Database connection (unused - each task acquires its own)
         emit_progress_func: Optional function to emit WebSocket progress events
     """
+    # NOTE: Each task needs its own connection from the pool because
+    # asyncpg connections cannot handle concurrent operations.
+    pool = get_pool()
+    if not pool:
+        raise RuntimeError("Database pool not initialized")
 
     async def run_with_semaphore(model_run_id: str) -> None:
         async with _eval_semaphore:
-            await run_single_eval(
-                eval_id, model_run_id, rubric_id, conn, emit_progress_func
-            )
+            async with pool.acquire() as task_conn:
+                await run_single_eval(
+                    eval_id, model_run_id, rubric_id, task_conn, emit_progress_func
+                )
 
     # Create tasks for all model_runs
     tasks = [run_with_semaphore(mr_id) for mr_id in model_run_ids]

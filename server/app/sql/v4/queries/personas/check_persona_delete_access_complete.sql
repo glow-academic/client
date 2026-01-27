@@ -44,13 +44,18 @@ user_profile AS (
 ),
 -- Get persona departments
 persona_departments_data AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id::text), ARRAY[]::text[]) as department_ids
+    SELECT COALESCE(
+        ARRAY_AGG(pd.department_id::text) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY[]::text[]
+    ) as department_ids
     FROM params x
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id
 ),
 -- Count total scenario links (active or not)
+-- NOTE: Must use COUNT(column) not COUNT(*) with LEFT JOIN, as COUNT(*)
+-- counts the NULL row when there are no matches
 scenario_links AS (
-    SELECT COUNT(*)::bigint as total_links
+    SELECT COUNT(sp.persona_id)::bigint as total_links
     FROM params x
     LEFT JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id
 )

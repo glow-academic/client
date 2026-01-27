@@ -63,7 +63,10 @@ user_profile AS (
 ),
 -- Get user's departments
 user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(DISTINCT pd.department_id), ARRAY[]::uuid[]) as department_ids
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT pd.department_id) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY[]::uuid[]
+    ) as department_ids
     FROM params x
     LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
@@ -89,7 +92,10 @@ draft_version_data AS (
 ),
 -- Get persona departments (for access check)
 persona_departments_data AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id ORDER BY pd.created_at), ARRAY[]::uuid[]) as department_ids
+    SELECT COALESCE(
+        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY[]::uuid[]
+    ) as department_ids
     FROM params x
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id AND pd.active = true
     WHERE x.persona_id IS NOT NULL

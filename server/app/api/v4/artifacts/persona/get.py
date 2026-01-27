@@ -53,7 +53,7 @@ from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetPersonaAccessSqlParams,
     GetPersonaAccessSqlRow,
@@ -235,6 +235,52 @@ async def get_persona(
         )
 
         # Parallel fetch all resources
+        # NOTE: Each query needs its own connection from the pool because
+        # asyncpg connections cannot handle concurrent operations.
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
+        async def fetch_names():
+            async with pool.acquire() as c:
+                return await get_names_internal(c, name_ids, None, bypass_cache)
+
+        async def fetch_descriptions():
+            async with pool.acquire() as c:
+                return await get_descriptions_internal(
+                    c, description_ids, request.descriptions_search, bypass_cache
+                )
+
+        async def fetch_colors():
+            async with pool.acquire() as c:
+                return await get_colors_internal(c, color_ids, request.color_search, bypass_cache)
+
+        async def fetch_icons():
+            async with pool.acquire() as c:
+                return await get_icons_internal(c, icon_ids, request.icon_search, bypass_cache)
+
+        async def fetch_instructions():
+            async with pool.acquire() as c:
+                return await get_instructions_internal(
+                    c, instructions_ids, request.instructions_search, bypass_cache
+                )
+
+        async def fetch_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, flag_ids, None, bypass_cache)
+
+        async def fetch_departments():
+            async with pool.acquire() as c:
+                return await get_departments_internal(c, department_ids, None, bypass_cache)
+
+        async def fetch_fields():
+            async with pool.acquire() as c:
+                return await get_fields_internal(c, field_ids, request.field_search, bypass_cache)
+
+        async def fetch_examples():
+            async with pool.acquire() as c:
+                return await get_examples_internal(c, example_ids, None, bypass_cache)
+
         (
             names,
             descriptions,
@@ -246,19 +292,15 @@ async def get_persona(
             fields,
             examples,
         ) = await asyncio.gather(
-            get_names_internal(conn, name_ids, None, bypass_cache),
-            get_descriptions_internal(
-                conn, description_ids, request.descriptions_search, bypass_cache
-            ),
-            get_colors_internal(conn, color_ids, request.color_search, bypass_cache),
-            get_icons_internal(conn, icon_ids, request.icon_search, bypass_cache),
-            get_instructions_internal(
-                conn, instructions_ids, request.instructions_search, bypass_cache
-            ),
-            get_flags_internal(conn, flag_ids, None, bypass_cache),
-            get_departments_internal(conn, department_ids, None, bypass_cache),
-            get_fields_internal(conn, field_ids, request.field_search, bypass_cache),
-            get_examples_internal(conn, example_ids, None, bypass_cache),
+            fetch_names(),
+            fetch_descriptions(),
+            fetch_colors(),
+            fetch_icons(),
+            fetch_instructions(),
+            fetch_flags(),
+            fetch_departments(),
+            fetch_fields(),
+            fetch_examples(),
         )
 
         # Find selected resources
