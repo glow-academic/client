@@ -140,19 +140,15 @@ run_token_agg AS (
 ),
 -- Unified chats and attempts
 all_chats AS (
-    SELECT id, attempt_id, false AS is_practice_chat FROM general_chats_entry
-    UNION ALL
-    SELECT id, attempt_id, true AS is_practice_chat FROM practice_chats_entry
+    SELECT c.id, c.attempt_id, a.practice AS is_practice_chat
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
 ),
 all_attempts AS (
-    SELECT id, archived, false AS is_practice_attempt FROM general_attempts_entry
-    UNION ALL
-    SELECT id, archived, true AS is_practice_attempt FROM practice_attempts_entry
+    SELECT id, archived, practice AS is_practice_attempt FROM simulation_attempts_entry
 ),
 all_attempt_simulations AS (
-    SELECT attempt_id, simulations_id FROM general_attempts_simulations_connection
-    UNION ALL
-    SELECT attempt_id, simulations_id FROM practice_attempts_simulations_connection
+    SELECT attempt_id, simulations_id FROM simulation_attempts_simulations_connection
 ),
 runs_base AS (
     SELECT

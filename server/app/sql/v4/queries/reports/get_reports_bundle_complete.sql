@@ -194,16 +194,11 @@ AS $$
 -- Unified chats (general + practice)
 WITH all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM general_chats_entry
-    UNION ALL
-    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM practice_chats_entry
+    FROM simulation_chats_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
-    SELECT chat_id, scenarios_id FROM general_chats_scenarios_connection
-    UNION ALL
-    SELECT chat_id, scenarios_id FROM practice_chats_scenarios_connection
+    SELECT chat_id, scenarios_id FROM simulation_chats_scenarios_connection
 ),
 params AS (
     SELECT 

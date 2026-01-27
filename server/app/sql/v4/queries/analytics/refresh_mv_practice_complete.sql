@@ -1,5 +1,5 @@
 -- Refresh Practice Analytics Materialized View - API Endpoint
--- Refreshes mv_practice_analytics concurrently
+-- Refreshes mv_simulation_analytics concurrently
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- ============================================================================
 -- Step 1: Drop function if exists
@@ -36,8 +36,8 @@ AS $$
 DECLARE
     actor_name_val text;
 BEGIN
-    -- Refresh the mv_practice_analytics materialized view concurrently
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_practice_analytics;
+    -- Refresh the mv_simulation_analytics materialized view concurrently
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_analytics;
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(
@@ -51,13 +51,13 @@ BEGIN
     RETURN QUERY SELECT
         COALESCE(actor_name_val, 'System')::text as actor_name,
         true::boolean as success,
-        'mv_practice_analytics refreshed successfully'::text as message,
+        'mv_simulation_analytics refreshed successfully'::text as message,
         'success'::text as status;
 EXCEPTION
     WHEN OTHERS THEN
         RETURN QUERY SELECT
             'System'::text as actor_name,
             false::boolean as success,
-            format('Failed to refresh mv_practice_analytics: %s', SQLERRM)::text as message,
+            format('Failed to refresh mv_simulation_analytics: %s', SQLERRM)::text as message,
             'error'::text as status;
 END $$;

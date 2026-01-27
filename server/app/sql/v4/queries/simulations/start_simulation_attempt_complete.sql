@@ -3,8 +3,8 @@
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Updated for migration 331: Uses the new entry→resource connection tables
--- - General attempts: general_attempts_entry, general_chats_entry
--- - Practice attempts: practice_attempts_entry, practice_chats_entry
+-- - General attempts: simulation_attempts_entry, simulation_chats_entry
+-- - Practice attempts: simulation_attempts_entry, simulation_chats_entry
 -- - Connection tables: *_simulations_connection, *_cohorts_connection, etc.
 
 -- 1) Drop function first (breaks dependency on types)
@@ -196,89 +196,47 @@ profile_resources AS (
     WHERE p.profile_id IS NOT NULL
     LIMIT 1
 ),
--- Create the GENERAL attempt (non-practice simulations)
-new_general_attempt AS (
-    INSERT INTO general_attempts_entry (infinite_mode, created_at)
-    SELECT p.infinite_mode, now()
-    FROM params p
-    CROSS JOIN simulation_data sd
-    WHERE NOT sd.practice_simulation
-    RETURNING id as attempt_id
-),
--- Create the PRACTICE attempt (practice simulations)
-new_practice_attempt AS (
-    INSERT INTO practice_attempts_entry (infinite_mode, created_at)
-    SELECT p.infinite_mode, now()
-    FROM params p
-    CROSS JOIN simulation_data sd
-    WHERE sd.practice_simulation
-    RETURNING id as attempt_id
-),
--- Unified new_attempt CTE (returns the created attempt_id regardless of type)
+-- Create the attempt (practice flag derived from simulation)
 new_attempt AS (
-    SELECT attempt_id, false as is_practice FROM new_general_attempt
-    UNION ALL
-    SELECT attempt_id, true as is_practice FROM new_practice_attempt
+    INSERT INTO simulation_attempts_entry (infinite_mode, created_at, practice)
+    SELECT p.infinite_mode, now(), sd.practice_simulation
+    FROM params p
+    CROSS JOIN simulation_data sd
+    RETURNING id as attempt_id, practice
 ),
--- Link GENERAL attempt to simulation via connection table
-link_general_attempt_simulation AS (
-    INSERT INTO general_attempts_simulations_connection (attempt_id, simulations_id)
-    SELECT nga.attempt_id, sd.simulations_resource_id
-    FROM new_general_attempt nga
+-- Link attempt to simulation via connection table
+link_attempt_simulation AS (
+    INSERT INTO simulation_attempts_simulations_connection (attempt_id, simulations_id)
+    SELECT na.attempt_id, sd.simulations_resource_id
+    FROM new_attempt na
     CROSS JOIN simulation_data sd
     WHERE sd.simulations_resource_id IS NOT NULL
     RETURNING attempt_id
 ),
--- Link GENERAL attempt to cohort via connection table (if profile has cohort)
-link_general_attempt_cohort AS (
-    INSERT INTO general_attempts_cohorts_connection (attempt_id, cohorts_id)
-    SELECT nga.attempt_id, pr.cohorts_resource_id
-    FROM new_general_attempt nga
+-- Link attempt to cohort via connection table (if profile has cohort and not practice)
+link_attempt_cohort AS (
+    INSERT INTO simulation_attempts_cohorts_connection (attempt_id, cohorts_id)
+    SELECT na.attempt_id, pr.cohorts_resource_id
+    FROM new_attempt na
     CROSS JOIN profile_resources pr
     WHERE pr.cohorts_resource_id IS NOT NULL
+      AND na.practice IS FALSE
     RETURNING attempt_id
 ),
--- Link GENERAL attempt to department via connection table (if profile has department)
-link_general_attempt_department AS (
-    INSERT INTO general_attempts_departments_connection (attempt_id, departments_id)
-    SELECT nga.attempt_id, pr.departments_resource_id
-    FROM new_general_attempt nga
+-- Link attempt to department via connection table (if profile has department)
+link_attempt_department AS (
+    INSERT INTO simulation_attempts_departments_connection (attempt_id, departments_id)
+    SELECT na.attempt_id, pr.departments_resource_id
+    FROM new_attempt na
     CROSS JOIN profile_resources pr
     WHERE pr.departments_resource_id IS NOT NULL
     RETURNING attempt_id
 ),
--- Link GENERAL attempt to profile via connection table
-link_general_attempt_profile AS (
-    INSERT INTO general_attempts_profiles_connection (attempt_id, profiles_id)
-    SELECT nga.attempt_id, pr.profiles_id
-    FROM new_general_attempt nga
-    CROSS JOIN profile_resources pr
-    WHERE pr.profiles_id IS NOT NULL
-    RETURNING attempt_id
-),
--- Link PRACTICE attempt to simulation via connection table
-link_practice_attempt_simulation AS (
-    INSERT INTO practice_attempts_simulations_connection (attempt_id, simulations_id)
-    SELECT npa.attempt_id, sd.simulations_resource_id
-    FROM new_practice_attempt npa
-    CROSS JOIN simulation_data sd
-    WHERE sd.simulations_resource_id IS NOT NULL
-    RETURNING attempt_id
-),
--- Link PRACTICE attempt to department via connection table (if profile has department)
-link_practice_attempt_department AS (
-    INSERT INTO practice_attempts_departments_connection (attempt_id, departments_id)
-    SELECT npa.attempt_id, pr.departments_resource_id
-    FROM new_practice_attempt npa
-    CROSS JOIN profile_resources pr
-    WHERE pr.departments_resource_id IS NOT NULL
-    RETURNING attempt_id
-),
--- Link PRACTICE attempt to profile via connection table
-link_practice_attempt_profile AS (
-    INSERT INTO practice_attempts_profiles_connection (attempt_id, profiles_id)
-    SELECT npa.attempt_id, pr.profiles_id
-    FROM new_practice_attempt npa
+-- Link attempt to profile via connection table
+link_attempt_profile AS (
+    INSERT INTO simulation_attempts_profiles_connection (attempt_id, profiles_id)
+    SELECT na.attempt_id, pr.profiles_id
+    FROM new_attempt na
     CROSS JOIN profile_resources pr
     WHERE pr.profiles_id IS NOT NULL
     RETURNING attempt_id
@@ -479,62 +437,29 @@ new_group AS (
     WHERE ctc.content_type = 'scenario'
     RETURNING id as group_id, trace_id, created_at, updated_at
 ),
--- Create GENERAL chat with attempt_id directly (only for scenarios, not videos)
-new_general_chat AS (
-    INSERT INTO general_chats_entry (
-        created_at, title, completed, updated_at, attempt_id
-    )
-    SELECT
-        ng.created_at,
-        COALESCE(sfd.scenario_name, 'New Simulation'),
-        false,
-        ng.updated_at,
-        nga.attempt_id
-    FROM new_group ng
-    CROSS JOIN scenario_full_data sfd
-    CROSS JOIN new_general_attempt nga
-    CROSS JOIN simulation_data sd
-    WHERE NOT sd.practice_simulation
-    RETURNING id as chat_id, title as chat_title, created_at, updated_at, attempt_id
-),
--- Create PRACTICE chat with attempt_id directly
-new_practice_chat AS (
-    INSERT INTO practice_chats_entry (
-        created_at, title, completed, updated_at, attempt_id
-    )
-    SELECT
-        ng.created_at,
-        COALESCE(sfd.scenario_name, 'New Simulation'),
-        false,
-        ng.updated_at,
-        npa.attempt_id
-    FROM new_group ng
-    CROSS JOIN scenario_full_data sfd
-    CROSS JOIN new_practice_attempt npa
-    CROSS JOIN simulation_data sd
-    WHERE sd.practice_simulation
-    RETURNING id as chat_id, title as chat_title, created_at, updated_at, attempt_id
-),
--- Unified new_chat CTE
+-- Create chat with attempt_id directly (only for scenarios, not videos)
 new_chat AS (
-    SELECT chat_id, chat_title, created_at, updated_at, attempt_id FROM new_general_chat
-    UNION ALL
-    SELECT chat_id, chat_title, created_at, updated_at, attempt_id FROM new_practice_chat
+    INSERT INTO simulation_chats_entry (
+        created_at, title, completed, updated_at, attempt_id
+    )
+    SELECT
+        ng.created_at,
+        COALESCE(sfd.scenario_name, 'New Simulation'),
+        false,
+        ng.updated_at,
+        na.attempt_id
+    FROM new_group ng
+    CROSS JOIN scenario_full_data sfd
+    CROSS JOIN new_attempt na
+    CROSS JOIN content_type_check ctc
+    WHERE ctc.content_type = 'scenario'
+    RETURNING id as chat_id, title as chat_title, created_at, updated_at, attempt_id
 ),
--- Link GENERAL chat to scenario via connection table
-link_general_chat_scenario AS (
-    INSERT INTO general_chats_scenarios_connection (chat_id, scenarios_id)
-    SELECT ngc.chat_id, csi.scenarios_resource_id
-    FROM new_general_chat ngc
-    CROSS JOIN chosen_scenario_id csi
-    WHERE csi.scenarios_resource_id IS NOT NULL
-    RETURNING chat_id
-),
--- Link PRACTICE chat to scenario via connection table
-link_practice_chat_scenario AS (
-    INSERT INTO practice_chats_scenarios_connection (chat_id, scenarios_id)
-    SELECT npc.chat_id, csi.scenarios_resource_id
-    FROM new_practice_chat npc
+-- Link chat to scenario via connection table
+link_chat_scenario AS (
+    INSERT INTO simulation_chats_scenarios_connection (chat_id, scenarios_id)
+    SELECT nc.chat_id, csi.scenarios_resource_id
+    FROM new_chat nc
     CROSS JOIN chosen_scenario_id csi
     WHERE csi.scenarios_resource_id IS NOT NULL
     RETURNING chat_id

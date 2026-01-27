@@ -1,5 +1,5 @@
 -- Union View: grades_entry
--- Combines general_grades_entry, practice_grades_entry, and benchmark_grades_entry
+-- Combines simulation_grades_entry, simulation_grades_entry, and benchmark_grades_entry
 -- into a single view for backward compatibility with queries that expect a unified grades table.
 --
 -- Note: The 'type' column indicates the source table ('general', 'practice', 'benchmark').
@@ -7,46 +7,29 @@
 
 CREATE OR REPLACE VIEW grades_entry AS
 SELECT
-    id,
-    chat_id,
-    run_id,
-    rubric_grade_agent_id,
-    created_at,
-    updated_at,
-    passed,
-    score,
-    description,
-    time_taken,
-    end_reason,
-    generated,
-    mcp,
-    active,
-    total_points,
-    pass_points,
-    'general'::text AS type
-FROM general_grades_entry
-
-UNION ALL
-
-SELECT
-    id,
-    chat_id,
-    run_id,
-    rubric_grade_agent_id,
-    created_at,
-    updated_at,
-    passed,
-    score,
-    description,
-    time_taken,
-    end_reason,
-    generated,
-    mcp,
-    active,
-    total_points,
-    pass_points,
-    'practice'::text AS type
-FROM practice_grades_entry
+    g.id,
+    g.chat_id,
+    g.run_id,
+    g.rubric_grade_agent_id,
+    g.created_at,
+    g.updated_at,
+    g.passed,
+    g.score,
+    g.description,
+    g.time_taken,
+    g.end_reason,
+    g.generated,
+    g.mcp,
+    g.active,
+    g.total_points,
+    g.pass_points,
+    CASE
+        WHEN a.practice IS TRUE THEN 'practice'::text
+        ELSE 'general'::text
+    END AS type
+FROM simulation_grades_entry g
+LEFT JOIN simulation_chats_entry c ON c.id = g.chat_id
+LEFT JOIN simulation_attempts_entry a ON a.id = c.attempt_id
 
 UNION ALL
 

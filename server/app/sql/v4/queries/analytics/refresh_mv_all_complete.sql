@@ -4,8 +4,7 @@
 --
 -- Dependency Graph:
 -- Layer 1 (Base - Independent):
---   1. mv_general_analytics
---   2. mv_practice_analytics
+--   1. mv_simulation_analytics
 --   3. mv_benchmark_analytics
 --   4. mv_model_pricing_ppm
 --   5. mv_run_pricing_facts
@@ -14,7 +13,7 @@
 --   8. mv_metrics_hourly_agg
 --
 -- Layer 2:
---   9. mv_dashboard_facts (depends on general + practice)
+--   9. mv_dashboard_facts (depends on mv_simulation_analytics)
 --   10. mv_group_pricing_facts (depends on mv_run_pricing_facts)
 --   11. mv_health_daily_agg (depends on mv_health_hourly_agg)
 --   12. mv_metrics_daily_agg (depends on mv_metrics_hourly_agg)
@@ -76,11 +75,8 @@ BEGIN
     -- ===========================================
 
     -- Analytics base MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_general_analytics;
-    refreshed := array_append(refreshed, 'mv_general_analytics');
-
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_practice_analytics;
-    refreshed := array_append(refreshed, 'mv_practice_analytics');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_analytics;
+    refreshed := array_append(refreshed, 'mv_simulation_analytics');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_benchmark_analytics;
     refreshed := array_append(refreshed, 'mv_benchmark_analytics');

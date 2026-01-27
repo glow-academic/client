@@ -69,11 +69,11 @@ usage_check AS (
           )
     ) + (
         -- Count chats using this scenario via scenario_scenarios_junction
-        SELECT COUNT(*) FROM general_chats_scenarios_connection gcsc
+        SELECT COUNT(*) FROM simulation_chats_scenarios_connection gcsc
         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = gcsc.scenarios_id
         WHERE ssj.scenario_id = x.scenario_id
     ) + (
-        SELECT COUNT(*) FROM practice_chats_scenarios_connection pcsc
+        SELECT COUNT(*) FROM simulation_chats_scenarios_connection pcsc
         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = pcsc.scenarios_id
         WHERE ssj.scenario_id = x.scenario_id
     ) + (

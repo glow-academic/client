@@ -1,5 +1,5 @@
 -- Union View: hints_entry
--- Combines general_hints_entry and practice_hints_entry
+-- Combines simulation_hints_entry and simulation_hints_entry
 -- into a single view for backward compatibility with queries that expect a unified hints table.
 --
 -- Note: The 'type' column indicates the source table ('general', 'practice').
@@ -8,31 +8,21 @@
 
 CREATE OR REPLACE VIEW hints_entry AS
 SELECT
-    id,
-    message_id,
-    hint,
-    idx,
-    created_at,
-    updated_at,
-    generated,
-    mcp,
-    active,
-    call_id,
-    'general'::text AS type
-FROM general_hints_entry
-
-UNION ALL
-
-SELECT
-    id,
-    message_id,
-    hint,
-    idx,
-    created_at,
-    updated_at,
-    generated,
-    mcp,
-    active,
-    call_id,
-    'practice'::text AS type
-FROM practice_hints_entry;
+    h.id,
+    h.message_id,
+    h.hint,
+    h.idx,
+    h.created_at,
+    h.updated_at,
+    h.generated,
+    h.mcp,
+    h.active,
+    h.call_id,
+    CASE
+        WHEN a.practice IS TRUE THEN 'practice'::text
+        ELSE 'general'::text
+    END AS type
+FROM simulation_hints_entry h
+LEFT JOIN simulation_messages_entry m ON m.id = h.message_id
+LEFT JOIN simulation_chats_entry c ON c.id = m.chat_id
+LEFT JOIN simulation_attempts_entry a ON a.id = c.attempt_id;

@@ -10,5 +10,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT EXISTS (SELECT 1 FROM general_chats_entry WHERE id = chat_id) as is_general;
+    SELECT EXISTS (
+        SELECT 1
+        FROM simulation_chats_entry c
+        JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+        WHERE c.id = chat_id
+          AND a.practice IS FALSE
+    ) as is_general;
 $$;

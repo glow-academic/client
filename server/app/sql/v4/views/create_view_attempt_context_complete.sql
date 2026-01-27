@@ -5,23 +5,14 @@
 
 CREATE OR REPLACE VIEW view_attempt_context AS
 WITH
--- Unified attempt→profile connections
 all_attempt_profiles AS (
-    SELECT attempt_id, profiles_id FROM general_attempts_profiles_connection
-    UNION ALL
-    SELECT attempt_id, profiles_id FROM practice_attempts_profiles_connection
+    SELECT attempt_id, profiles_id FROM simulation_attempts_profiles_connection
 ),
--- Unified attempt→simulation connections
 all_attempt_simulations AS (
-    SELECT attempt_id, simulations_id FROM general_attempts_simulations_connection
-    UNION ALL
-    SELECT attempt_id, simulations_id FROM practice_attempts_simulations_connection
+    SELECT attempt_id, simulations_id FROM simulation_attempts_simulations_connection
 ),
--- Unified chat→scenario connections
 all_chat_scenarios AS (
-    SELECT chat_id, scenarios_id FROM general_chats_scenarios_connection
-    UNION ALL
-    SELECT chat_id, scenarios_id FROM practice_chats_scenarios_connection
+    SELECT chat_id, scenarios_id FROM simulation_chats_scenarios_connection
 )
 SELECT
     a.id AS attempt_id,

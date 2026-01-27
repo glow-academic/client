@@ -132,14 +132,15 @@ sim_expected AS (
     LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = cs.simulation_id
     GROUP BY cs.simulation_id
 ),
--- Get attempt data from mv_general_analytics (non-practice analytics)
+-- Get attempt data from mv_simulation_analytics (non-practice analytics)
 -- Filter for this profile's attempts
 filt AS (
     SELECT a.*
     FROM params x
-    JOIN mv_general_analytics a ON a.profile_id = x.profile_id
+    JOIN mv_simulation_analytics a ON a.profile_id = x.profile_id
     WHERE a.simulation_id IN (SELECT simulation_id FROM cohort_sims)
       AND a.is_archived = FALSE
+      AND a.attempt_type = 'general'
 ),
 -- Per attempt: sum grade_percent over completed root scenarios
 attempt_scores AS (

@@ -1,8 +1,7 @@
 -- Refresh Dashboard Materialized Views - API Endpoint
 -- Refreshes all dashboard MVs in dependency order:
 -- Layer 1 (Base):
---   1. mv_general_analytics (base)
---   2. mv_practice_analytics (base)
+--   1. mv_simulation_analytics (base)
 -- Layer 2:
 --   3. mv_dashboard_facts (depends on general + practice)
 -- Layer 3:
@@ -52,14 +51,11 @@ DECLARE
     actor_name_val text;
     refreshed text[] := ARRAY[]::text[];
 BEGIN
-    -- Step 1: Refresh base MVs (general + practice)
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_general_analytics;
-    refreshed := array_append(refreshed, 'mv_general_analytics');
+    -- Step 1: Refresh base MVs
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_analytics;
+    refreshed := array_append(refreshed, 'mv_simulation_analytics');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_practice_analytics;
-    refreshed := array_append(refreshed, 'mv_practice_analytics');
-
-    -- Step 2: Refresh dashboard facts (depends on general + practice)
+    -- Step 2: Refresh dashboard facts
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_facts;
     refreshed := array_append(refreshed, 'mv_dashboard_facts');
 

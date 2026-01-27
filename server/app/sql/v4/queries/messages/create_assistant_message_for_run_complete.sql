@@ -1,6 +1,6 @@
 -- Create or reuse assistant message for a run
 -- Uses safe drop/recreate pattern: drop function first, then recreate
--- Note: Inserts into general_messages_entry by default. If you need practice messages,
+-- Note: Inserts into simulation_messages_entry by default. If you need practice messages,
 -- the chat_id must be determined from context and routed appropriately.
 DROP FUNCTION IF EXISTS socket_create_assistant_message_for_run_v4(uuid, uuid);
 
@@ -22,8 +22,8 @@ WITH params AS (
 chat_type AS (
     SELECT
         CASE
-            WHEN EXISTS (SELECT 1 FROM general_chats_entry WHERE id = (SELECT chat_id FROM params)) THEN 'general'
-            WHEN EXISTS (SELECT 1 FROM practice_chats_entry WHERE id = (SELECT chat_id FROM params)) THEN 'practice'
+            WHEN EXISTS (SELECT 1 FROM simulation_chats_entry WHERE id = (SELECT chat_id FROM params)) THEN 'general'
+            WHEN EXISTS (SELECT 1 FROM simulation_chats_entry WHERE id = (SELECT chat_id FROM params)) THEN 'practice'
             ELSE 'general'  -- Default to general if no chat_id or not found
         END AS type
 ),
@@ -35,9 +35,9 @@ existing_assistant_message AS (
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
--- Insert into general_messages_entry if chat type is general or default
+-- Insert into simulation_messages_entry if chat type is general or default
 new_general_assistant_message AS (
-    INSERT INTO general_messages_entry (chat_id, role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (chat_id, role, completed, audio, run_id, created_at, updated_at)
     SELECT p.chat_id, 'assistant'::message_type, false, false, p.run_id, NOW(), NOW()
     FROM params p, chat_type ct
     WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)
@@ -45,9 +45,9 @@ new_general_assistant_message AS (
       AND p.chat_id IS NOT NULL
     RETURNING id as assistant_message_id
 ),
--- Insert into practice_messages_entry if chat type is practice
+-- Insert into simulation_messages_entry if chat type is practice
 new_practice_assistant_message AS (
-    INSERT INTO practice_messages_entry (chat_id, role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (chat_id, role, completed, audio, run_id, created_at, updated_at)
     SELECT p.chat_id, 'assistant'::message_type, false, false, p.run_id, NOW(), NOW()
     FROM params p, chat_type ct
     WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)

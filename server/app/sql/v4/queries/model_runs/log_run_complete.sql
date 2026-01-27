@@ -42,11 +42,9 @@ run_info AS (
             -- Try to get department from chat via new connection tables
             (SELECT sd.department_id FROM runs_entry r2
              JOIN messages_entry m2 ON m2.run_id = r2.id
-             LEFT JOIN general_chats_entry gc ON gc.id = m2.chat_id
-             LEFT JOIN practice_chats_entry pc ON pc.id = m2.chat_id
-             LEFT JOIN general_chats_scenarios_connection gcsc ON gcsc.chat_id = gc.id
-             LEFT JOIN practice_chats_scenarios_connection pcsc ON pcsc.chat_id = pc.id
-             LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = COALESCE(gcsc.scenarios_id, pcsc.scenarios_id)
+             LEFT JOIN simulation_chats_entry c ON c.id = m2.chat_id
+             LEFT JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
+             LEFT JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = csc.scenarios_id
              JOIN scenario_departments_junction sd ON sd.scenario_id = ssj.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
@@ -280,7 +278,7 @@ existing_system_message AS (
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_type, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -333,7 +331,7 @@ system_tool_call_id AS (
     SELECT tool_call_id FROM existing_system_tool_call
 ),
 insert_system_content AS (
-    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT nsm.system_message_id, smc.content, 0, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -347,13 +345,13 @@ system_message AS (
 ),
 -- Link system message to run (set run_id directly on message)
 link_system AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN system_message sm
-    WHERE general_messages_entry.id = sm.system_message_id
-      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = x.run_id)
-    RETURNING general_messages_entry.id as system_message_id
+    WHERE simulation_messages_entry.id = sm.system_message_id
+      AND (simulation_messages_entry.run_id IS NULL OR simulation_messages_entry.run_id = x.run_id)
+    RETURNING simulation_messages_entry.id as system_message_id
 ),
 -- Process developer messages_entry from array (preserve order for parent selection)
 developer_contents_array AS (
@@ -400,7 +398,7 @@ existing_developer_messages AS (
     WHERE rn = 1
 ),
 new_developer_messages AS (
-    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_type, false, false, NOW(), NOW()
     FROM developer_messages_processed dmp
     WHERE NOT EXISTS (
@@ -478,7 +476,7 @@ all_developer_calls AS (
     SELECT message_id, tool_call_id FROM existing_developer_calls
 ),
 insert_developer_content AS (
-    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT
         adtcm.message_id,
         dmp.content,
@@ -509,17 +507,17 @@ all_developer_messages AS (
 ),
 -- Link developer messages_entry to run (set run_id directly on message)
 link_developers AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN all_developer_messages adm
-    WHERE general_messages_entry.id = adm.message_id
-      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = x.run_id)
-    RETURNING general_messages_entry.id as developer_message_id
+    WHERE simulation_messages_entry.id = adm.message_id
+      AND (simulation_messages_entry.run_id IS NULL OR simulation_messages_entry.run_id = x.run_id)
+    RETURNING simulation_messages_entry.id as developer_message_id
 ),
 -- Link system → developer in message_tree_entry (if both exist)
 link_system_to_developer AS (
-    INSERT INTO general_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO simulation_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT DISTINCT
         ls.system_message_id as parent_id,
         ld.developer_message_id as child_id,
@@ -547,14 +545,14 @@ existing_assistant_message AS (
     LIMIT 1
 ),
 update_existing_assistant_message AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET completed = true,
         updated_at = NOW()
     WHERE id = (SELECT assistant_message_id FROM existing_assistant_message)
     RETURNING id as assistant_message_id, created_at, updated_at
 ),
 new_assistant_message AS (
-    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_type, true, false, NOW(), NOW()
     FROM params x
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
@@ -588,15 +586,15 @@ existing_assistant_content AS (
     LIMIT 1
 ),
 update_existing_assistant_content AS (
-    UPDATE general_contents_entry
+    UPDATE simulation_contents_entry
     SET content = trim(x.assistant_output),
         updated_at = NOW()
     FROM params x
-    WHERE general_contents_entry.id = (SELECT content_id FROM existing_assistant_content)
+    WHERE simulation_contents_entry.id = (SELECT content_id FROM existing_assistant_content)
     RETURNING id as content_id
 ),
 insert_assistant_content AS (
-    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT am.assistant_message_id, trim(x.assistant_output), 0, am.created_at, am.updated_at
     FROM params x
     CROSS JOIN assistant_message am
@@ -605,12 +603,12 @@ insert_assistant_content AS (
       AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
 ),
 link_assistant AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN assistant_message am
-    WHERE general_messages_entry.id = am.assistant_message_id
-      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = x.run_id)
+    WHERE simulation_messages_entry.id = am.assistant_message_id
+      AND (simulation_messages_entry.run_id IS NULL OR simulation_messages_entry.run_id = x.run_id)
 ),
 -- Determine parent for assistant message (last developer if exists, otherwise system)
 -- Note: link_developers returns rows in insertion order, so last row is the last developer message
@@ -623,7 +621,7 @@ assistant_parent AS (
 ),
 -- Create message_tree_entry branch for assistant
 create_assistant_branch AS (
-    INSERT INTO general_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO simulation_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT 
         ap.parent_message_id,
         am.assistant_message_id,

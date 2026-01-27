@@ -168,10 +168,7 @@ simulation_scenarios_data AS (
 -- Unified attempt→simulation connections for counting
 all_attempt_simulations AS (
     SELECT attempt_id, simulations_id
-    FROM general_attempts_simulations_connection
-    UNION ALL
-    SELECT attempt_id, simulations_id
-    FROM practice_attempts_simulations_connection
+    FROM simulation_attempts_simulations_connection
 ),
 attempt_counts AS (
     SELECT

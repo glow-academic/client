@@ -1,9 +1,9 @@
 -- Materialized View: mv_dashboard_facts
--- UNION ALL of mv_general_analytics and mv_practice_analytics with attempt_type discriminator.
+-- Derived from mv_simulation_analytics with attempt_type derived from practice flag.
 -- This is the primary view for dashboard queries that need both general and practice data.
 -- Uses idempotent drop/recreate pattern - safe to run multiple times.
 --
--- IMPORTANT: This MV depends on mv_general_analytics and mv_practice_analytics.
+-- IMPORTANT: This MV depends on mv_simulation_analytics.
 -- Those MVs must be created and refreshed BEFORE this one.
 --
 -- Key principle: MVs only go stale when new records are added.
@@ -85,63 +85,9 @@ SELECT
     message_time_taken_seconds,
 
     -- Attempt type discriminator
-    'general'::text AS attempt_type
+    attempt_type
 
-FROM mv_general_analytics
-
-UNION ALL
-
-SELECT
-    -- Entry IDs
-    attempt_id,
-    chat_id,
-    grade_id,
-
-    -- Resource IDs (from connections)
-    simulation_id,
-    profile_id,
-    department_id,
-    NULL::uuid AS cohort_id,  -- Practice has no cohorts
-    role_id,
-    scenario_id,
-    persona_id,
-    rubric_id,
-
-    -- Parameter field IDs array
-    parameter_field_ids,
-
-    -- Timestamps (from entries)
-    attempt_created_at,
-    chat_created_at,
-    grade_created_at,
-
-    -- Flags (from entries)
-    is_archived,
-    infinite_mode,
-    completed,
-
-    -- Grade data (from grade entry - immutable facts)
-    score,
-    passed,
-    time_taken,
-
-    -- Rubric points and grade percent
-    rubric_total_points,
-    rubric_pass_points,
-    grade_percent,
-
-    -- Message stats (pre-aggregated)
-    num_messages_total,
-    num_query_messages,
-    num_response_messages,
-
-    -- Message time taken for persona response times
-    message_time_taken_seconds,
-
-    -- Attempt type discriminator
-    'practice'::text AS attempt_type
-
-FROM mv_practice_analytics
+FROM mv_simulation_analytics
 WITH NO DATA;
 
 -- ============================================================================

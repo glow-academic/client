@@ -9,9 +9,9 @@
 -- 4. Score percentage calculation (total_score / max_group_points * 100)
 --
 -- Uses the new entry→resource connection tables:
---   general_chats_entry, practice_chats_entry (chats)
---   general_chats_scenarios_connection, practice_chats_scenarios_connection (chat→scenario)
---   general_attempts_simulations_connection, practice_attempts_simulations_connection (attempt→simulation)
+--   simulation_chats_entry, simulation_chats_entry (chats)
+--   simulation_chats_scenarios_connection, simulation_chats_scenarios_connection (chat→scenario)
+--   simulation_attempts_simulations_connection, simulation_attempts_simulations_connection (attempt→simulation)
 
 DROP VIEW IF EXISTS view_grade_per_standard_group;
 
@@ -20,34 +20,22 @@ WITH
 -- Unified chats (general + practice)
 all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM general_chats_entry
-    UNION ALL
-    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM practice_chats_entry
+    FROM simulation_chats_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
     SELECT chat_id, scenarios_id, created_at
-    FROM general_chats_scenarios_connection
-    UNION ALL
-    SELECT chat_id, scenarios_id, created_at
-    FROM practice_chats_scenarios_connection
+    FROM simulation_chats_scenarios_connection
 ),
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM general_attempts_entry
-    UNION ALL
-    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM practice_attempts_entry
+    FROM simulation_attempts_entry
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
     SELECT attempt_id, simulations_id
-    FROM general_attempts_simulations_connection
-    UNION ALL
-    SELECT attempt_id, simulations_id
-    FROM practice_attempts_simulations_connection
+    FROM simulation_attempts_simulations_connection
 ),
 chat_scenario_info AS (
     SELECT DISTINCT

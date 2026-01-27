@@ -404,14 +404,10 @@ earliest_attempt AS (
     -- Earliest attempt across all departments the effective profile belongs to
     -- Uses unified attempts from general and practice entry tables
     WITH all_attempts AS (
-        SELECT id, created_at FROM general_attempts_entry
-        UNION ALL
-        SELECT id, created_at FROM practice_attempts_entry
+        SELECT id, created_at FROM simulation_attempts_entry
     ),
     all_attempt_profiles AS (
-        SELECT attempt_id, profiles_id FROM general_attempts_profiles_connection
-        UNION ALL
-        SELECT attempt_id, profiles_id FROM practice_attempts_profiles_connection
+        SELECT attempt_id, profiles_id FROM simulation_attempts_profiles_connection
     )
     SELECT MIN(sa.created_at) as earliest
     -- Get all departments for the effective profile

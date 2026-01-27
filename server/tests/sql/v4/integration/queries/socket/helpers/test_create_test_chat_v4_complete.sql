@@ -1,6 +1,6 @@
 -- Create a test chat for socket tests_entry
 -- Returns chat_id
--- Updated for migration 331: Creates general_chats_entry or practice_chats_entry
+-- Unified simulation_chats_entry (practice flag lives on attempt)
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_chat_v4(uuid, text);
 DROP FUNCTION IF EXISTS test_create_test_chat_v4(uuid, uuid, text, boolean);
@@ -27,35 +27,18 @@ AS $$
         WHERE ssj.scenario_id = test_create_test_chat_v4.scenario_id
         LIMIT 1
     ),
-    new_general_chat AS (
-        -- Create general chat (non-practice)
-        INSERT INTO general_chats_entry(title, completed, attempt_id)
+    new_chat AS (
+        -- Create simulation chat
+        INSERT INTO simulation_chats_entry(title, completed, attempt_id)
         SELECT 'Test Chat', false, test_create_test_chat_v4.attempt_id
-        WHERE NOT test_create_test_chat_v4.is_practice
         RETURNING id
     ),
-    new_practice_chat AS (
-        -- Create practice chat
-        INSERT INTO practice_chats_entry(title, completed, attempt_id)
-        SELECT 'Test Chat', false, test_create_test_chat_v4.attempt_id
-        WHERE test_create_test_chat_v4.is_practice
-        RETURNING id
-    ),
-    general_connection AS (
-        INSERT INTO general_chats_scenarios_connection(chat_id, scenarios_id)
-        SELECT ngc.id, sr.scenarios_id
-        FROM new_general_chat ngc
-        CROSS JOIN scenario_resource sr
-        WHERE sr.scenarios_id IS NOT NULL
-    ),
-    practice_connection AS (
-        INSERT INTO practice_chats_scenarios_connection(chat_id, scenarios_id)
-        SELECT npc.id, sr.scenarios_id
-        FROM new_practice_chat npc
+    simulation_connection AS (
+        INSERT INTO simulation_chats_scenarios_connection(chat_id, scenarios_id)
+        SELECT nc.id, sr.scenarios_id
+        FROM new_chat nc
         CROSS JOIN scenario_resource sr
         WHERE sr.scenarios_id IS NOT NULL
     )
-    SELECT id AS chat_id FROM new_general_chat
-    UNION ALL
-    SELECT id AS chat_id FROM new_practice_chat;
+    SELECT id AS chat_id FROM new_chat;
 $$;

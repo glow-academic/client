@@ -29,19 +29,19 @@ chat_context AS (
         gc.id as chat_id,
         ga.id as attempt_id,
         (SELECT ppj.profile_id
-         FROM general_attempts_profiles_connection gap
+         FROM simulation_attempts_profiles_connection gap
          JOIN profile_profiles_junction ppj ON ppj.profiles_id = gap.profiles_id
          WHERE gap.attempt_id = ga.id
          LIMIT 1) as profile_id
     FROM params p
-    JOIN general_chats_entry gc ON gc.id = p.chat_id
-    JOIN general_attempts_entry ga ON ga.id = gc.attempt_id
+    JOIN simulation_chats_entry gc ON gc.id = p.chat_id
+    JOIN simulation_attempts_entry ga ON ga.id = gc.attempt_id
     LIMIT 1
 ),
 existing_group AS (
     SELECT r.group_id
     FROM params p
-    JOIN general_messages_entry m ON m.chat_id = p.chat_id
+    JOIN simulation_messages_entry m ON m.chat_id = p.chat_id
     JOIN runs_entry r ON r.id = m.run_id
     WHERE r.group_id IS NOT NULL
     LIMIT 1
@@ -72,7 +72,7 @@ create_run AS (
     RETURNING id as run_id
 ),
 insert_user_message AS (
-    INSERT INTO general_messages_entry (
+    INSERT INTO simulation_messages_entry (
         chat_id,
         run_id,
         content,
@@ -96,7 +96,7 @@ insert_user_message AS (
     RETURNING id as user_message_id, created_at
 ),
 insert_assistant_message AS (
-    INSERT INTO general_messages_entry (
+    INSERT INTO simulation_messages_entry (
         chat_id,
         run_id,
         content,

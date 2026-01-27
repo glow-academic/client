@@ -14,7 +14,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH updated_message AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET content = assistant_content,
         completed = true,
         updated_at = NOW()

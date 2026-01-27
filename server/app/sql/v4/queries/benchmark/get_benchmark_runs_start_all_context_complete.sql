@@ -59,9 +59,9 @@ AS $$
             ELSE
                 ARRAY_AGG(er.run_id::text) FILTER (WHERE er.completed = false)
         END as pending_ids
-    FROM eval_attempts_entry ea
-    JOIN eval_attempts_junction eaj ON eaj.attempt_id = ea.id
-    JOIN evals_resource e ON e.id = eaj.eval_id
+    FROM benchmark_attempts_entry ea
+    JOIN benchmark_attempts_evals_connection eaj ON eaj.attempt_id = ea.id
+    JOIN evals_resource e ON e.id = eaj.evals_id
     LEFT JOIN eval_runs_junction er ON er.eval_id = e.id AND er.completed = false
     LEFT JOIN eval_groups_junction eg ON eg.eval_id = e.id
         AND NOT EXISTS (

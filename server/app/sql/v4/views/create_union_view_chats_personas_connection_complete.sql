@@ -1,29 +1,15 @@
--- Union View: chats_personas_connection
--- Combines general_chats_personas_connection + practice_chats_personas_connection
--- into a single view for queries that need unified chat-persona connections.
---
--- Note: The 'type' column indicates the source table ('general', 'practice').
+-- View: chats_personas_connection
+-- Unified chat-persona connections with chat type derived from practice flag.
 -- Uses OR REPLACE for idempotent execution.
 
 CREATE OR REPLACE VIEW chats_personas_connection AS
 SELECT
-    chat_id,
-    personas_id,
-    created_at,
-    active,
-    generated,
-    mcp,
-    'general'::text AS type
-FROM general_chats_personas_connection
-
-UNION ALL
-
-SELECT
-    chat_id,
-    personas_id,
-    created_at,
-    active,
-    generated,
-    mcp,
-    'practice'::text AS type
-FROM practice_chats_personas_connection;
+    cpc.chat_id,
+    cpc.personas_id,
+    cpc.created_at,
+    cpc.active,
+    cpc.generated,
+    cpc.mcp,
+    ce.chat_type AS type
+FROM simulation_chats_personas_connection cpc
+JOIN chats_entry ce ON ce.id = cpc.chat_id;

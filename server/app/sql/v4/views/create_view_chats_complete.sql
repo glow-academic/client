@@ -1,35 +1,23 @@
 -- View: view_chats
--- Wrapper for chats_entry (general + practice).
+-- Wrapper for chats_entry (simulation only).
 -- Regular VIEW (upgrade to MATERIALIZED VIEW later if needed).
 -- Filters active = true by default.
--- Combines general_chats_entry and practice_chats_entry via UNION ALL.
--- Also includes 'chat_type' column to distinguish general vs practice.
 
 CREATE OR REPLACE VIEW view_chats AS
 SELECT
-    id,
-    created_at,
-    updated_at,
-    title,
-    completed,
-    generated,
-    mcp,
-    active,
-    attempt_id,
-    'general'::text AS chat_type
-FROM general_chats_entry
-WHERE active = true
-UNION ALL
-SELECT
-    id,
-    created_at,
-    updated_at,
-    title,
-    completed,
-    generated,
-    mcp,
-    active,
-    attempt_id,
-    'practice'::text AS chat_type
-FROM practice_chats_entry
-WHERE active = true;
+    c.id,
+    c.created_at,
+    c.updated_at,
+    c.title,
+    c.completed,
+    c.generated,
+    c.mcp,
+    c.active,
+    c.attempt_id,
+    CASE
+        WHEN a.practice IS TRUE THEN 'practice'::text
+        ELSE 'general'::text
+    END AS chat_type
+FROM simulation_chats_entry c
+JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+WHERE c.active = true;

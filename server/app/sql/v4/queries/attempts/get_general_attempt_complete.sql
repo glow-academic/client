@@ -406,10 +406,10 @@ params AS (
         attempt_id AS attempt_id,
         profile_id AS profile_id
 ),
--- Check if attempt exists in general_attempts_entry only
+-- Check if attempt exists in simulation_attempts_entry only
 attempt_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM general_attempts_entry WHERE id = (SELECT attempt_id FROM params) AND active = true
+        SELECT 1 FROM simulation_attempts_entry WHERE id = (SELECT attempt_id FROM params) AND active = true
     )::boolean as attempt_exists
 ),
 -- Get actor profile name
@@ -436,13 +436,13 @@ attempt_profiles_data AS (
         '{}'::types.q_get_general_attempt_v4_attempt_profile[]
     ) as attempt_profiles
     FROM attempt_context ac
-    JOIN general_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
+    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
     JOIN profile_profiles_junction ppj ON ppj.profiles_id = apc.profiles_id
 ),
 current_attempt_profile AS (
     SELECT ppj.profile_id
     FROM attempt_context ac
-    JOIN general_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
+    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
     JOIN profile_profiles_junction ppj ON ppj.profiles_id = apc.profiles_id
     LIMIT 1
 ),
@@ -504,7 +504,7 @@ simulation_scenarios_list AS (
 chats_with_context AS (
     SELECT csc.*
     FROM view_chat_scenario_context_complete csc
-    JOIN general_chats_entry gce ON gce.id = csc.chat_id
+    JOIN simulation_chats_entry gce ON gce.id = csc.chat_id
     WHERE csc.attempt_id = (SELECT attempt_id FROM params)
       AND csc.chat_type = 'general'
     ORDER BY csc.chat_created_at
@@ -579,14 +579,14 @@ previous_chats_with_grades AS (
     FROM params x
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN simulation_scenarios_list ssl
-    JOIN general_attempts_profiles_connection apc ON apc.profiles_id = (SELECT profiles_id FROM profile_profiles_junction WHERE profile_id = cap.profile_id LIMIT 1)
-    JOIN general_attempts_entry ga ON ga.id = apc.attempt_id AND ga.active = true
-    JOIN general_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = ga.id
+    JOIN simulation_attempts_profiles_connection apc ON apc.profiles_id = (SELECT profiles_id FROM profile_profiles_junction WHERE profile_id = cap.profile_id LIMIT 1)
+    JOIN simulation_attempts_entry ga ON ga.id = apc.attempt_id AND ga.active = true
+    JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = ga.id
     JOIN simulation_simulations_junction ssj2 ON ssj2.simulations_id = asc_conn.simulations_id
-    JOIN general_chats_entry gc ON gc.attempt_id = ga.id AND gc.completed = true AND gc.active = true
-    JOIN general_chats_scenarios_connection csc ON csc.chat_id = gc.id
+    JOIN simulation_chats_entry gc ON gc.attempt_id = ga.id AND gc.completed = true AND gc.active = true
+    JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = gc.id
     JOIN scenario_scenarios_junction ssj_scj ON ssj_scj.scenarios_id = csc.scenarios_id
-    JOIN general_grades_entry gg ON gg.chat_id = gc.id AND gg.active = true
+    JOIN simulation_grades_entry gg ON gg.chat_id = gc.id AND gg.active = true
     WHERE gc.attempt_id != x.attempt_id
       AND (
           COALESCE(
@@ -633,7 +633,7 @@ messages_with_tree AS (
             0 as depth,
             m.id as path_root_id
         FROM chats_with_context cwc
-        JOIN general_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+        JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
         JOIN runs_entry r ON r.id = m.run_id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
@@ -655,7 +655,7 @@ messages_with_tree AS (
             NULL::uuid AS persona_id,
             mp.depth + 1 as depth,
             mp.path_root_id
-        FROM general_messages_entry m
+        FROM simulation_messages_entry m
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         JOIN message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
@@ -677,7 +677,7 @@ messages_with_tree AS (
             -1 as depth,
             m.id as path_root_id
         FROM chats_with_context cwc
-        JOIN general_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+        JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
         JOIN runs_entry r ON r.id = m.run_id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
@@ -710,8 +710,8 @@ grades_data AS (
         )::types.q_get_general_attempt_v4_grade as grade
     FROM chats_with_context cwc
     CROSS JOIN attempt_context ac
-    JOIN general_grades_entry gg ON gg.chat_id = cwc.chat_id AND gg.active = true
-    LEFT JOIN general_grades_rubrics_connection grc ON grc.grade_id = gg.id
+    JOIN simulation_grades_entry gg ON gg.chat_id = cwc.chat_id AND gg.active = true
+    LEFT JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = gg.id
     ORDER BY cwc.chat_id, gg.created_at DESC
 ),
 -- Message feedbacks
@@ -1091,7 +1091,7 @@ available_continuation_options AS (
         SELECT
             vns.scenario_id, vns.position, vns.scenario_name,
             pc.chat_id as previous_chat_id,
-            COALESCE((SELECT title FROM general_chats_entry WHERE id = pc.chat_id), 'Previous attempt') as title,
+            COALESCE((SELECT title FROM simulation_chats_entry WHERE id = pc.chat_id), 'Previous attempt') as title,
             pc.score, pc.percentage, pc.time_taken
         FROM valid_next_scenarios vns
         CROSS JOIN LATERAL unnest(COALESCE(vns.previous_chats, '{}'::types.q_get_general_attempt_v4_previous_chat[])) pc

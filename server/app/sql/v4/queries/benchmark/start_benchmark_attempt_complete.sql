@@ -16,15 +16,15 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH new_attempt AS (
-    INSERT INTO eval_attempts_entry (created_at, infinite_mode)
+    INSERT INTO benchmark_attempts_entry (created_at, infinite_mode)
     VALUES (NOW(), COALESCE(api_start_benchmark_attempt_v4.infinite_mode, false))
     RETURNING id as attempt_id, infinite_mode
 ),
 new_attempt_junction AS (
-    INSERT INTO eval_attempts_junction (eval_id, attempt_id)
+    INSERT INTO benchmark_attempts_evals_connection (evals_id, attempt_id)
     SELECT api_start_benchmark_attempt_v4.eval_id, na.attempt_id
     FROM new_attempt na
-    RETURNING eval_id, attempt_id
+    RETURNING evals_id as eval_id, attempt_id
 ),
 eval_data AS (
     SELECT 

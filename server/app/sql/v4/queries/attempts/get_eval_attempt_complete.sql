@@ -114,19 +114,19 @@ actor_profile AS (
 ),
 attempt_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM eval_attempts_entry WHERE id = (SELECT attempt_id FROM params)
+        SELECT 1 FROM benchmark_attempts_entry WHERE id = (SELECT attempt_id FROM params)
     )::boolean as attempt_exists
 ),
 attempt_data AS (
     SELECT
         ea.id,
         ea.created_at,
-        eaj.eval_id,
+        eaj.evals_id as eval_id,
         ea.archived,
         ea.infinite_mode
     FROM params x
-    JOIN eval_attempts_entry ea ON ea.id = x.attempt_id
-    JOIN eval_attempts_junction eaj ON eaj.attempt_id = ea.id
+    JOIN benchmark_attempts_entry ea ON ea.id = x.attempt_id
+    JOIN benchmark_attempts_evals_connection eaj ON eaj.attempt_id = ea.id
 ),
 -- Get eval agents for system prompt (use first agent)
 eval_agents_data AS (

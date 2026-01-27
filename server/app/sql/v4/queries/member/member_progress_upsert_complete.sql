@@ -35,47 +35,31 @@ member_agent AS (
 ),
 -- Unified chats CTE
 all_chats AS (
-    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active,
-           false AS is_practice_chat
-    FROM general_chats_entry
-    UNION ALL
-    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active,
-           true AS is_practice_chat
-    FROM practice_chats_entry
+    SELECT c.id, c.attempt_id, c.created_at, c.updated_at, c.title, c.completed, c.generated, c.mcp, c.active,
+           a.practice AS is_practice_chat
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
 ),
 -- Unified attempts CTE
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
-           false AS is_practice_attempt
-    FROM general_attempts_entry
-    UNION ALL
-    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
-           true AS is_practice_attempt
-    FROM practice_attempts_entry
+           practice AS is_practice_attempt
+    FROM simulation_attempts_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
     SELECT chat_id, scenarios_id
-    FROM general_chats_scenarios_connection
-    UNION ALL
-    SELECT chat_id, scenarios_id
-    FROM practice_chats_scenarios_connection
+    FROM simulation_chats_scenarios_connection
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
     SELECT attempt_id, simulations_id
-    FROM general_attempts_simulations_connection
-    UNION ALL
-    SELECT attempt_id, simulations_id
-    FROM practice_attempts_simulations_connection
+    FROM simulation_attempts_simulations_connection
 ),
 -- Unified attempt→profile connections
 all_attempt_profiles AS (
     SELECT attempt_id, profiles_id
-    FROM general_attempts_profiles_connection
-    UNION ALL
-    SELECT attempt_id, profiles_id
-    FROM practice_attempts_profiles_connection
+    FROM simulation_attempts_profiles_connection
 ),
 -- Get chat context
 chat_context AS (
@@ -195,7 +179,7 @@ latest_user_message AS (
 ),
 -- Upsert user message (create if empty, update if exists)
 create_message_if_needed AS (
-    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'user'::message_type, true, p.audio, NOW(), NOW()
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
@@ -243,7 +227,7 @@ user_tool_call_id AS (
     SELECT tool_call_id FROM existing_user_tool_call
 ),
 insert_user_content_if_needed AS (
-    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT cm.message_id, p.message_contents, 0, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
@@ -251,7 +235,7 @@ insert_user_content_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
 ),
 update_existing_message AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET audio = p.audio,
         updated_at = NOW()
     FROM params p
@@ -260,12 +244,12 @@ update_existing_message AS (
     RETURNING id as message_id
 ),
 update_existing_message_content AS (
-    UPDATE general_contents_entry
+    UPDATE simulation_contents_entry
     SET content = p.message_contents,
         updated_at = NOW()
     FROM params p
-    WHERE general_contents_entry.message_id = (SELECT message_id FROM latest_user_message)
-      AND general_contents_entry.idx = 0
+    WHERE simulation_contents_entry.message_id = (SELECT message_id FROM latest_user_message)
+      AND simulation_contents_entry.idx = 0
       AND EXISTS (SELECT 1 FROM latest_user_message)
 ),
 upserted_message AS (
@@ -275,13 +259,13 @@ upserted_message AS (
 ),
 -- Link message to run (set run_id directly on message)
 link_message_to_run AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET run_id = ur.run_id, updated_at = NOW()
     FROM upserted_message um
     CROSS JOIN upserted_run ur
-    WHERE general_messages_entry.id = um.message_id
-      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = ur.run_id)
-    RETURNING general_messages_entry.id as message_id, ur.run_id
+    WHERE simulation_messages_entry.id = um.message_id
+      AND (simulation_messages_entry.run_id IS NULL OR simulation_messages_entry.run_id = ur.run_id)
+    RETURNING simulation_messages_entry.id as message_id, ur.run_id
 ),
 -- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
@@ -306,7 +290,7 @@ latest_message_for_branch AS (
     LIMIT 1
 ),
 create_branch AS (
-    INSERT INTO general_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO simulation_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT 
         lmb.parent_id,
         um.message_id as child_id,
@@ -374,7 +358,7 @@ existing_system_message AS (
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_type, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -382,7 +366,7 @@ new_system_message AS (
 ),
 -- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
 insert_system_content AS (
-    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT nsm.system_message_id, smc.content, 0, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -394,13 +378,13 @@ system_message AS (
     SELECT system_message_id FROM new_system_message
 ),
 link_system AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET run_id = ur.run_id, updated_at = NOW()
     FROM system_message sm
     CROSS JOIN upserted_run ur
-    WHERE general_messages_entry.id = sm.system_message_id
-      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = ur.run_id)
-    RETURNING general_messages_entry.id as system_message_id
+    WHERE simulation_messages_entry.id = sm.system_message_id
+      AND (simulation_messages_entry.run_id IS NULL OR simulation_messages_entry.run_id = ur.run_id)
+    RETURNING simulation_messages_entry.id as system_message_id
 ),
 scenario_developer_content AS (
     SELECT DISTINCT
@@ -428,7 +412,7 @@ existing_scenario_developer_message AS (
     LIMIT 1
 ),
 new_scenario_developer_message AS (
-    INSERT INTO general_messages_entry (role, completed, audio, created_at, updated_at)
+    INSERT INTO simulation_messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_type, false, false, NOW(), NOW()
     FROM scenario_developer_content sdc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
@@ -436,7 +420,7 @@ new_scenario_developer_message AS (
 ),
 -- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
 insert_scenario_developer_content AS (
-    INSERT INTO general_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
     SELECT nsdm.developer_message_id, sdc.content, 0, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
@@ -448,16 +432,16 @@ scenario_developer_message AS (
     SELECT developer_message_id FROM new_scenario_developer_message
 ),
 link_developer AS (
-    UPDATE general_messages_entry
+    UPDATE simulation_messages_entry
     SET run_id = ur.run_id, updated_at = NOW()
     FROM scenario_developer_message sdm
     CROSS JOIN upserted_run ur
-    WHERE general_messages_entry.id = sdm.developer_message_id
-      AND (general_messages_entry.run_id IS NULL OR general_messages_entry.run_id = ur.run_id)
-    RETURNING general_messages_entry.id as developer_message_id
+    WHERE simulation_messages_entry.id = sdm.developer_message_id
+      AND (simulation_messages_entry.run_id IS NULL OR simulation_messages_entry.run_id = ur.run_id)
+    RETURNING simulation_messages_entry.id as developer_message_id
 ),
 link_system_to_developer AS (
-    INSERT INTO general_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO simulation_message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT DISTINCT
         ls.system_message_id as parent_id,
         ld.developer_message_id as child_id,

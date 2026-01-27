@@ -77,42 +77,27 @@ WITH
 -- Unified chats (general + practice)
 all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM general_chats_entry
-    UNION ALL
-    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM practice_chats_entry
+    FROM simulation_chats_entry
 ),
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM general_attempts_entry
-    UNION ALL
-    SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM practice_attempts_entry
+    FROM simulation_attempts_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
     SELECT chat_id, scenarios_id, created_at
-    FROM general_chats_scenarios_connection
-    UNION ALL
-    SELECT chat_id, scenarios_id, created_at
-    FROM practice_chats_scenarios_connection
+    FROM simulation_chats_scenarios_connection
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
     SELECT attempt_id, simulations_id
-    FROM general_attempts_simulations_connection
-    UNION ALL
-    SELECT attempt_id, simulations_id
-    FROM practice_attempts_simulations_connection
+    FROM simulation_attempts_simulations_connection
 ),
 -- Unified attempt→profile connections
 all_attempt_profiles AS (
     SELECT attempt_id, profiles_id
-    FROM general_attempts_profiles_connection
-    UNION ALL
-    SELECT attempt_id, profiles_id
-    FROM practice_attempts_profiles_connection
+    FROM simulation_attempts_profiles_connection
 ),
 scenario_dept AS (
     SELECT

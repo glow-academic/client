@@ -387,10 +387,10 @@ params AS (
         attempt_id AS attempt_id,
         profile_id AS profile_id
 ),
--- Check if attempt exists in practice_attempts_entry only
+-- Check if attempt exists in simulation_attempts_entry only
 attempt_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM practice_attempts_entry WHERE id = (SELECT attempt_id FROM params) AND active = true
+        SELECT 1 FROM simulation_attempts_entry WHERE id = (SELECT attempt_id FROM params) AND active = true
     )::boolean as attempt_exists
 ),
 -- Get actor profile name
@@ -417,13 +417,13 @@ attempt_profiles_data AS (
         '{}'::types.q_get_practice_attempt_v4_attempt_profile[]
     ) as attempt_profiles
     FROM attempt_context ac
-    JOIN practice_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
+    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
     JOIN profile_profiles_junction ppj ON ppj.profiles_id = apc.profiles_id
 ),
 current_attempt_profile AS (
     SELECT ppj.profile_id
     FROM attempt_context ac
-    JOIN practice_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
+    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = ac.attempt_id
     JOIN profile_profiles_junction ppj ON ppj.profiles_id = apc.profiles_id
     LIMIT 1
 ),
@@ -485,7 +485,7 @@ simulation_scenarios_list AS (
 chats_with_context AS (
     SELECT csc.*
     FROM view_chat_scenario_context_complete csc
-    JOIN practice_chats_entry pce ON pce.id = csc.chat_id
+    JOIN simulation_chats_entry pce ON pce.id = csc.chat_id
     WHERE csc.attempt_id = (SELECT attempt_id FROM params)
       AND csc.chat_type = 'practice'
     ORDER BY csc.chat_created_at
@@ -515,7 +515,7 @@ messages_with_tree AS (
             0 as depth,
             m.id as path_root_id
         FROM chats_with_context cwc
-        JOIN practice_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+        JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
         JOIN runs_entry r ON r.id = m.run_id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
@@ -537,7 +537,7 @@ messages_with_tree AS (
             NULL::uuid AS persona_id,
             mp.depth + 1 as depth,
             mp.path_root_id
-        FROM practice_messages_entry m
+        FROM simulation_messages_entry m
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         JOIN message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
@@ -559,7 +559,7 @@ messages_with_tree AS (
             -1 as depth,
             m.id as path_root_id
         FROM chats_with_context cwc
-        JOIN practice_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+        JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
         JOIN runs_entry r ON r.id = m.run_id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
@@ -592,8 +592,8 @@ grades_data AS (
         )::types.q_get_practice_attempt_v4_grade as grade
     FROM chats_with_context cwc
     CROSS JOIN attempt_context ac
-    JOIN practice_grades_entry pg ON pg.chat_id = cwc.chat_id AND pg.active = true
-    LEFT JOIN practice_grades_rubrics_connection grc ON grc.grade_id = pg.id
+    JOIN simulation_grades_entry pg ON pg.chat_id = cwc.chat_id AND pg.active = true
+    LEFT JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = pg.id
     ORDER BY cwc.chat_id, pg.created_at DESC
 ),
 -- Message feedbacks
@@ -675,7 +675,7 @@ hints_data AS (
             '{}'::types.q_get_practice_attempt_v4_hints_by_message[]
         ) as hints
     FROM chats_with_context cwc
-    JOIN practice_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+    JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
     JOIN runs_entry r ON r.id = m.run_id
     WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
     GROUP BY cwc.chat_id

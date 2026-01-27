@@ -285,7 +285,7 @@ messages_with_tree AS (
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN run_idx_map rim ON rim.run_id = r.id
         JOIN messages_entry m ON m.run_id = r.id
-        JOIN (SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM general_chats_entry UNION ALL SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM practice_chats_entry) c ON c.id = rcm.chat_id
+        JOIN (SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM simulation_chats_entry) c ON c.id = rcm.chat_id
 
         UNION ALL
 
@@ -336,7 +336,7 @@ messages_with_tree AS (
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN run_idx_map rim ON rim.run_id = r.id
         JOIN messages_entry m ON m.run_id = r.id
-        JOIN (SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM general_chats_entry UNION ALL SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM practice_chats_entry) c ON c.id = rcm.chat_id
+        JOIN (SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM simulation_chats_entry) c ON c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_tree_entry mt
             WHERE mt.child_id = m.id AND mt.active = true
@@ -365,7 +365,7 @@ messages_with_tree AS (
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
         JOIN messages_entry m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_type, 'developer'::message_type)
-        JOIN (SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM general_chats_entry UNION ALL SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM practice_chats_entry) c ON c.id = rcm.chat_id
+        JOIN (SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active FROM simulation_chats_entry) c ON c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_path mp
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id

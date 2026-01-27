@@ -18,7 +18,7 @@ SELECT
     COALESCE(
         (SELECT COUNT(DISTINCT gacc.attempt_id)
          FROM cohort_cohorts_junction ccj
-         JOIN general_attempts_cohorts_connection gacc ON gacc.cohorts_id = ccj.cohorts_id
+         JOIN simulation_attempts_cohorts_connection gacc ON gacc.cohorts_id = ccj.cohorts_id
          WHERE ccj.cohort_id = c.id AND gacc.active = true
         ), 0
     ) AS usage_count

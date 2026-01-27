@@ -1,29 +1,15 @@
--- Union View: attempts_profiles_connection
--- Combines general_attempts_profiles_connection + practice_attempts_profiles_connection
--- into a single view for queries that need unified attempt-profile connections.
---
--- Note: The 'type' column indicates the source table ('general', 'practice').
+-- View: attempts_profiles_connection
+-- Unified attempt-profile connections with attempt type derived from practice flag.
 -- Uses OR REPLACE for idempotent execution.
 
 CREATE OR REPLACE VIEW attempts_profiles_connection AS
 SELECT
-    attempt_id,
-    profiles_id,
-    created_at,
-    active,
-    generated,
-    mcp,
-    'general'::text AS type
-FROM general_attempts_profiles_connection
-
-UNION ALL
-
-SELECT
-    attempt_id,
-    profiles_id,
-    created_at,
-    active,
-    generated,
-    mcp,
-    'practice'::text AS type
-FROM practice_attempts_profiles_connection;
+    apc.attempt_id,
+    apc.profiles_id,
+    apc.created_at,
+    apc.active,
+    apc.generated,
+    apc.mcp,
+    ae.attempt_type AS type
+FROM simulation_attempts_profiles_connection apc
+JOIN attempts_entry ae ON ae.id = apc.attempt_id;

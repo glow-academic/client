@@ -116,7 +116,7 @@ attempts_with_eval AS (
     SELECT
         ea.id as attempt_id,
         ea.created_at as attempt_created_at,
-        eaj.eval_id,
+        eaj.evals_id as eval_id,
         ea.archived,
         (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
         (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
@@ -150,9 +150,9 @@ attempts_with_eval AS (
          JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at
          LIMIT 1) as rubric_name
-    FROM eval_attempts_entry ea
-    JOIN eval_attempts_junction eaj ON eaj.attempt_id = ea.id
-    JOIN evals_resource e ON e.id = eaj.eval_id
+    FROM benchmark_attempts_entry ea
+    JOIN benchmark_attempts_evals_connection eaj ON eaj.attempt_id = ea.id
+    JOIN evals_resource e ON e.id = eaj.evals_id
 ),
 -- Get eval departments for access control
 attempt_eval_departments AS (

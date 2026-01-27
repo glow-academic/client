@@ -205,7 +205,7 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         Tuple of (priority, path) for sorting where lower priority = earlier execution.
 
     View/MV Dependency Ordering:
-        Priority 0: Base MVs with no MV dependencies (mv_general_analytics, mv_practice_analytics, etc.)
+        Priority 0: Base MVs with no MV dependencies (mv_simulation_analytics, mv_benchmark_analytics, etc.)
         Priority 1: First-level dependent MVs (mv_dashboard_facts, mv_run_pricing_facts, etc.)
         Priority 2: Second-level dependent MVs (mv_dashboard_*, mv_group_pricing_facts, etc.)
         Priority 3: Third-level dependent MVs (mv_session_facts)
@@ -236,7 +236,7 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
             return (0, sql_path)
 
         # First-level dependent MVs (Level 1)
-        # mv_dashboard_facts depends on mv_general_analytics and mv_practice_analytics
+        # mv_dashboard_facts depends on mv_simulation_analytics
         # mv_run_pricing_facts depends on mv_model_pricing_ppm
         # mv_call_metrics_daily depends on mv_call_facts
         level1_mvs = [

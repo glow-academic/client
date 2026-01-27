@@ -28,9 +28,9 @@ grade_rubrics AS (
         lg.grade_id,
         COALESCE(
             -- Try general grades first
-            (SELECT grc.rubrics_id FROM general_grades_rubrics_connection grc WHERE grc.grade_id = lg.grade_id),
+            (SELECT grc.rubrics_id FROM simulation_grades_rubrics_connection grc WHERE grc.grade_id = lg.grade_id),
             -- Then practice grades
-            (SELECT grc.rubrics_id FROM practice_grades_rubrics_connection grc WHERE grc.grade_id = lg.grade_id)
+            (SELECT grc.rubrics_id FROM simulation_grades_rubrics_connection grc WHERE grc.grade_id = lg.grade_id)
         ) AS rubric_resource_id
     FROM latest_grades lg
 ),

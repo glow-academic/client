@@ -1,12 +1,12 @@
--- Materialized View: mv_general_analytics
--- Pre-computes joins between general entry tables and connection tables, outputting resource IDs only.
+-- Materialized View: mv_simulation_analytics
+-- Pre-computes joins between simulation entry tables and connection tables, outputting resource IDs only.
 -- Query endpoints join to resource tables for current names/values.
 -- Uses idempotent drop/recreate pattern - safe to run multiple times.
 --
 -- Key principle: MVs only go stale when new records are added.
 -- Resource metadata changes (names, descriptions) are always fresh via query-time joins.
 -- ============================================================================
--- Step 1: Drop all indexes on mv_general_analytics materialized view (if it exists)
+-- Step 1: Drop all indexes on mv_simulation_analytics materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -17,23 +17,23 @@ BEGIN
         SELECT indexname
         FROM pg_indexes
         WHERE schemaname = 'public'
-          AND tablename = 'mv_general_analytics'
+          AND tablename = 'mv_simulation_analytics'
     LOOP
         EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname);
     END LOOP;
 END $$;
 
 -- ============================================================================
--- Step 2: Drop mv_general_analytics materialized view if it exists
+-- Step 2: Drop mv_simulation_analytics materialized view if it exists
 -- ============================================================================
 
-DROP MATERIALIZED VIEW IF EXISTS mv_general_analytics CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_simulation_analytics CASCADE;
 
 -- ============================================================================
--- Step 3: Create mv_general_analytics Materialized View
+-- Step 3: Create mv_simulation_analytics Materialized View
 -- ============================================================================
 
-CREATE MATERIALIZED VIEW mv_general_analytics AS
+CREATE MATERIALIZED VIEW mv_simulation_analytics AS
 WITH
 -- Message counts per chat
 message_counts AS (
@@ -42,7 +42,7 @@ message_counts AS (
         COUNT(*)::int AS num_messages_total,
         COUNT(*) FILTER (WHERE m.role = 'user')::int AS num_query_messages,
         COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-    FROM general_messages_entry m
+    FROM simulation_messages_entry m
     WHERE m.active = TRUE
     GROUP BY m.chat_id
 ),
@@ -58,7 +58,7 @@ latest_grade AS (
         -- Rubric points denormalized directly on grade
         g.total_points AS rubric_total_points,
         g.pass_points AS rubric_pass_points
-    FROM general_grades_entry g
+    FROM simulation_grades_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
 ),
@@ -74,7 +74,7 @@ message_deltas AS (
                        OVER (PARTITION BY m.chat_id ORDER BY m.created_at))::int, 0)
             ELSE NULL
         END AS delta_seconds
-    FROM general_messages_entry m
+    FROM simulation_messages_entry m
     WHERE m.active = TRUE
 ),
 message_deltas_agg AS (
@@ -89,7 +89,7 @@ chat_parameter_fields AS (
     SELECT
         cpf.chat_id,
         ARRAY_AGG(cpf.parameter_fields_id ORDER BY cpf.created_at) AS parameter_field_ids
-    FROM general_chats_parameter_fields_connection cpf
+    FROM simulation_chats_parameter_fields_connection cpf
     GROUP BY cpf.chat_id
 )
 SELECT
@@ -120,6 +120,10 @@ SELECT
     COALESCE(a.archived, FALSE) AS is_archived,
     COALESCE(a.infinite_mode, FALSE) AS infinite_mode,
     COALESCE(c.completed, FALSE) AS completed,
+    CASE
+        WHEN a.practice IS TRUE THEN 'practice'::text
+        ELSE 'general'::text
+    END AS attempt_type,
 
     -- Grade data (from grade entry - immutable facts)
     lg.score,
@@ -143,25 +147,25 @@ SELECT
     -- Message time taken for persona response times
     COALESCE(mda.message_time_taken_seconds, ARRAY[]::int[]) AS message_time_taken_seconds
 
-FROM general_attempts_entry a
+FROM simulation_attempts_entry a
 -- Attempt connections (required)
-JOIN general_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
-JOIN general_attempts_profiles_connection apc ON apc.attempt_id = a.id
+JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
+JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 -- Attempt connections (optional)
-LEFT JOIN general_attempts_departments_connection adc ON adc.attempt_id = a.id
-LEFT JOIN general_attempts_cohorts_connection acc ON acc.attempt_id = a.id
-LEFT JOIN general_attempts_roles_connection arc ON arc.attempt_id = a.id
+LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
+LEFT JOIN simulation_attempts_roles_connection arc ON arc.attempt_id = a.id
 -- Chat entry
-JOIN general_chats_entry c ON c.attempt_id = a.id AND c.active = TRUE
+JOIN simulation_chats_entry c ON c.attempt_id = a.id AND c.active = TRUE
 -- Chat connections (required)
-JOIN general_chats_scenarios_connection csc ON csc.chat_id = c.id
+JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
 -- Chat connections (optional)
-LEFT JOIN general_chats_personas_connection cpc ON cpc.chat_id = c.id
+LEFT JOIN simulation_chats_personas_connection cpc ON cpc.chat_id = c.id
 LEFT JOIN chat_parameter_fields cpf ON cpf.chat_id = c.id
 -- Grade (optional - latest grade per chat)
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 -- Grade connections (optional)
-LEFT JOIN general_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
+LEFT JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
 -- Message counts (pre-aggregated)
 LEFT JOIN message_counts mc ON mc.chat_id = c.id
 -- Message time deltas for persona response times
@@ -173,118 +177,118 @@ WITH NO DATA;
 -- Step 4: Create Unique Index (Required for CONCURRENT refresh)
 -- ============================================================================
 
-CREATE UNIQUE INDEX mv_general_analytics_pk
-    ON mv_general_analytics (chat_id);
+CREATE UNIQUE INDEX mv_simulation_analytics_pk
+    ON mv_simulation_analytics (chat_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
 -- Primary key alternatives for different access patterns
-CREATE INDEX mv_general_analytics_attempt_id_idx
-    ON mv_general_analytics (attempt_id);
+CREATE INDEX mv_simulation_analytics_attempt_id_idx
+    ON mv_simulation_analytics (attempt_id);
 
-CREATE INDEX mv_general_analytics_grade_id_idx
-    ON mv_general_analytics (grade_id)
+CREATE INDEX mv_simulation_analytics_grade_id_idx
+    ON mv_simulation_analytics (grade_id)
     WHERE grade_id IS NOT NULL;
 
 -- Resource ID indexes for filtering
-CREATE INDEX mv_general_analytics_simulation_id_idx
-    ON mv_general_analytics (simulation_id);
+CREATE INDEX mv_simulation_analytics_simulation_id_idx
+    ON mv_simulation_analytics (simulation_id);
 
-CREATE INDEX mv_general_analytics_profile_id_idx
-    ON mv_general_analytics (profile_id);
+CREATE INDEX mv_simulation_analytics_profile_id_idx
+    ON mv_simulation_analytics (profile_id);
 
-CREATE INDEX mv_general_analytics_department_id_idx
-    ON mv_general_analytics (department_id)
+CREATE INDEX mv_simulation_analytics_department_id_idx
+    ON mv_simulation_analytics (department_id)
     WHERE department_id IS NOT NULL;
 
-CREATE INDEX mv_general_analytics_cohort_id_idx
-    ON mv_general_analytics (cohort_id)
+CREATE INDEX mv_simulation_analytics_cohort_id_idx
+    ON mv_simulation_analytics (cohort_id)
     WHERE cohort_id IS NOT NULL;
 
-CREATE INDEX mv_general_analytics_role_id_idx
-    ON mv_general_analytics (role_id)
+CREATE INDEX mv_simulation_analytics_role_id_idx
+    ON mv_simulation_analytics (role_id)
     WHERE role_id IS NOT NULL;
 
-CREATE INDEX mv_general_analytics_scenario_id_idx
-    ON mv_general_analytics (scenario_id);
+CREATE INDEX mv_simulation_analytics_scenario_id_idx
+    ON mv_simulation_analytics (scenario_id);
 
-CREATE INDEX mv_general_analytics_persona_id_idx
-    ON mv_general_analytics (persona_id)
+CREATE INDEX mv_simulation_analytics_persona_id_idx
+    ON mv_simulation_analytics (persona_id)
     WHERE persona_id IS NOT NULL;
 
-CREATE INDEX mv_general_analytics_rubric_id_idx
-    ON mv_general_analytics (rubric_id)
+CREATE INDEX mv_simulation_analytics_rubric_id_idx
+    ON mv_simulation_analytics (rubric_id)
     WHERE rubric_id IS NOT NULL;
 
 -- Timestamp indexes for date range filtering
-CREATE INDEX mv_general_analytics_attempt_created_at_idx
-    ON mv_general_analytics (attempt_created_at);
+CREATE INDEX mv_simulation_analytics_attempt_created_at_idx
+    ON mv_simulation_analytics (attempt_created_at);
 
-CREATE INDEX mv_general_analytics_chat_created_at_idx
-    ON mv_general_analytics (chat_created_at);
+CREATE INDEX mv_simulation_analytics_chat_created_at_idx
+    ON mv_simulation_analytics (chat_created_at);
 
-CREATE INDEX mv_general_analytics_grade_created_at_idx
-    ON mv_general_analytics (grade_created_at)
+CREATE INDEX mv_simulation_analytics_grade_created_at_idx
+    ON mv_simulation_analytics (grade_created_at)
     WHERE grade_created_at IS NOT NULL;
 
 -- Flag indexes
-CREATE INDEX mv_general_analytics_is_archived_idx
-    ON mv_general_analytics (is_archived);
+CREATE INDEX mv_simulation_analytics_is_archived_idx
+    ON mv_simulation_analytics (is_archived);
 
-CREATE INDEX mv_general_analytics_completed_idx
-    ON mv_general_analytics (completed);
+CREATE INDEX mv_simulation_analytics_completed_idx
+    ON mv_simulation_analytics (completed);
 
-CREATE INDEX mv_general_analytics_passed_idx
-    ON mv_general_analytics (passed)
+CREATE INDEX mv_simulation_analytics_passed_idx
+    ON mv_simulation_analytics (passed)
     WHERE passed IS NOT NULL;
 
 -- GIN index for parameter_field_ids array filtering
-CREATE INDEX mv_general_analytics_parameter_field_ids_gin
-    ON mv_general_analytics USING GIN (parameter_field_ids);
+CREATE INDEX mv_simulation_analytics_parameter_field_ids_gin
+    ON mv_simulation_analytics USING GIN (parameter_field_ids);
 
 -- Composite indexes for common query patterns
-CREATE INDEX mv_general_analytics_simulation_attempt_created_idx
-    ON mv_general_analytics (simulation_id, attempt_created_at DESC);
+CREATE INDEX mv_simulation_analytics_simulation_attempt_created_idx
+    ON mv_simulation_analytics (simulation_id, attempt_created_at DESC);
 
-CREATE INDEX mv_general_analytics_profile_attempt_created_idx
-    ON mv_general_analytics (profile_id, attempt_created_at DESC);
+CREATE INDEX mv_simulation_analytics_profile_attempt_created_idx
+    ON mv_simulation_analytics (profile_id, attempt_created_at DESC);
 
-CREATE INDEX mv_general_analytics_cohort_attempt_created_idx
-    ON mv_general_analytics (cohort_id, attempt_created_at DESC)
+CREATE INDEX mv_simulation_analytics_cohort_attempt_created_idx
+    ON mv_simulation_analytics (cohort_id, attempt_created_at DESC)
     WHERE cohort_id IS NOT NULL;
 
-CREATE INDEX mv_general_analytics_department_attempt_created_idx
-    ON mv_general_analytics (department_id, attempt_created_at DESC)
+CREATE INDEX mv_simulation_analytics_department_attempt_created_idx
+    ON mv_simulation_analytics (department_id, attempt_created_at DESC)
     WHERE department_id IS NOT NULL;
 
 -- Partial index for non-archived records (common filter)
-CREATE INDEX mv_general_analytics_not_archived_idx
-    ON mv_general_analytics (attempt_created_at DESC)
+CREATE INDEX mv_simulation_analytics_not_archived_idx
+    ON mv_simulation_analytics (attempt_created_at DESC)
     WHERE is_archived = FALSE;
 
 -- Grade percent index for score-based filtering and sorting
-CREATE INDEX mv_general_analytics_grade_percent_idx
-    ON mv_general_analytics (grade_percent DESC NULLS LAST)
+CREATE INDEX mv_simulation_analytics_grade_percent_idx
+    ON mv_simulation_analytics (grade_percent DESC NULLS LAST)
     WHERE grade_percent IS NOT NULL;
 
 -- Rubric points indexes
-CREATE INDEX mv_general_analytics_rubric_total_points_idx
-    ON mv_general_analytics (rubric_total_points)
+CREATE INDEX mv_simulation_analytics_rubric_total_points_idx
+    ON mv_simulation_analytics (rubric_total_points)
     WHERE rubric_total_points IS NOT NULL;
 
 -- GIN index for message_time_taken_seconds array
-CREATE INDEX mv_general_analytics_message_time_taken_gin
-    ON mv_general_analytics USING GIN (message_time_taken_seconds);
+CREATE INDEX mv_simulation_analytics_message_time_taken_gin
+    ON mv_simulation_analytics USING GIN (message_time_taken_seconds);
 
 -- Composite index for profile leaderboard queries
-CREATE INDEX mv_general_analytics_profile_grade_percent_idx
-    ON mv_general_analytics (profile_id, grade_percent DESC NULLS LAST)
+CREATE INDEX mv_simulation_analytics_profile_grade_percent_idx
+    ON mv_simulation_analytics (profile_id, grade_percent DESC NULLS LAST)
     WHERE grade_percent IS NOT NULL;
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data
 -- ============================================================================
 
-REFRESH MATERIALIZED VIEW mv_general_analytics;
+REFRESH MATERIALIZED VIEW mv_simulation_analytics;

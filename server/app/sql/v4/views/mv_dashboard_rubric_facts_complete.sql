@@ -40,8 +40,7 @@ DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_rubric_facts CASCADE;
 
 CREATE MATERIALIZED VIEW mv_dashboard_rubric_facts AS
 WITH
--- General grades with rubric and feedback standard scores
-general_grade_standards AS (
+grade_standards AS (
     SELECT
         g.id AS grade_id,
         c.id AS chat_id,
@@ -52,14 +51,17 @@ general_grade_standards AS (
         asc_conn.simulations_id AS simulation_id,
         adc.departments_id AS department_id,
         a.created_at AS attempt_created_at,
-        'general'::text AS attempt_type
-    FROM general_grades_entry g
-    JOIN general_chats_entry c ON c.id = g.chat_id
-    JOIN general_attempts_entry a ON a.id = c.attempt_id
-    JOIN general_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
-    LEFT JOIN general_attempts_departments_connection adc ON adc.attempt_id = a.id
-    JOIN general_grades_rubrics_connection grc ON grc.grade_id = g.id
-    JOIN general_feedbacks_entry fe ON fe.grade_id = g.id
+        CASE
+            WHEN a.practice IS TRUE THEN 'practice'::text
+            ELSE 'general'::text
+        END AS attempt_type
+    FROM simulation_grades_entry g
+    JOIN simulation_chats_entry c ON c.id = g.chat_id
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    JOIN simulation_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
+    LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
+    JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = g.id
+    JOIN simulation_feedbacks_entry fe ON fe.grade_id = g.id
     JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
     JOIN standards_resource s ON s.id = fsc.standard_id
     WHERE g.active = TRUE
@@ -67,36 +69,7 @@ general_grade_standards AS (
       AND c.active = TRUE
     GROUP BY
         g.id, c.id, grc.rubrics_id, s.standard_group_id,
-        a.id, asc_conn.simulations_id, adc.departments_id, a.created_at
-),
--- Practice grades with rubric and feedback standard scores
-practice_grade_standards AS (
-    SELECT
-        g.id AS grade_id,
-        c.id AS chat_id,
-        grc.rubrics_id AS rubric_id,
-        s.standard_group_id,
-        SUM(fe.total)::int AS group_score,
-        a.id AS attempt_id,
-        asc_conn.simulations_id AS simulation_id,
-        adc.departments_id AS department_id,
-        a.created_at AS attempt_created_at,
-        'practice'::text AS attempt_type
-    FROM practice_grades_entry g
-    JOIN practice_chats_entry c ON c.id = g.chat_id
-    JOIN practice_attempts_entry a ON a.id = c.attempt_id
-    JOIN practice_attempts_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
-    LEFT JOIN practice_attempts_departments_connection adc ON adc.attempt_id = a.id
-    JOIN practice_grades_rubrics_connection grc ON grc.grade_id = g.id
-    JOIN practice_feedbacks_entry fe ON fe.grade_id = g.id
-    JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
-    JOIN standards_resource s ON s.id = fsc.standard_id
-    WHERE g.active = TRUE
-      AND a.active = TRUE
-      AND c.active = TRUE
-    GROUP BY
-        g.id, c.id, grc.rubrics_id, s.standard_group_id,
-        a.id, asc_conn.simulations_id, adc.departments_id, a.created_at
+        a.id, asc_conn.simulations_id, adc.departments_id, a.created_at, a.practice
 )
 SELECT
     grade_id,
@@ -110,23 +83,7 @@ SELECT
     department_id,
     attempt_created_at,
     attempt_type
-FROM general_grade_standards
-
-UNION ALL
-
-SELECT
-    grade_id,
-    chat_id,
-    rubric_id,
-    standard_group_id,
-    group_score,
-    -- Context IDs for filtering
-    attempt_id,
-    simulation_id,
-    department_id,
-    attempt_created_at,
-    attempt_type
-FROM practice_grade_standards
+FROM grade_standards
 WITH NO DATA;
 
 -- ============================================================================
