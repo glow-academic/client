@@ -111,12 +111,12 @@ WITH
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM simulation_attempts_entry
+    FROM view_simulation_attempts_entry
 ),
 -- Unified chats (general + practice)
 all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
@@ -262,7 +262,7 @@ history_attempts_final AS (
         -- Scenario filter (if any scenario matches, include the attempt)
         (cardinality((SELECT scenario_ids FROM params)::uuid[]) = 0 OR asi.scenario_ids IS NULL OR asi.scenario_ids && (SELECT scenario_ids FROM params)::uuid[])
 ),
--- Aggregate chats_entry per attempt
+-- Aggregate view_chats_entry per attempt
 history_chat_rollup AS (
     SELECT
         sc.attempt_id,
@@ -282,14 +282,14 @@ history_chat_grades AS (
     SELECT DISTINCT ON (scg.chat_id)
         scg.chat_id AS chat_id,
         scg.score
-    FROM grades_entry scg
+    FROM view_grades_entry scg
     WHERE scg.chat_id IN (
         SELECT sc.id FROM all_chats sc
         WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
     ORDER BY scg.chat_id, scg.created_at DESC
 ),
--- Aggregate grades_entry per attempt
+-- Aggregate view_grades_entry per attempt
 -- Score formula: grade.score / rubric total points * 100
 history_grade_rollup AS (
     SELECT
@@ -313,12 +313,12 @@ history_elapsed_time AS (
             SUM(
                 CASE
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
-                        (SELECT COALESCE(scg.time_taken, 0) FROM grades_entry scg
+                        (SELECT COALESCE(scg.time_taken, 0) FROM view_grades_entry scg
                          WHERE scg.chat_id = sc.id
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
-                            (SELECT scg.created_at FROM grades_entry scg
+                            (SELECT scg.created_at FROM view_grades_entry scg
                              WHERE scg.chat_id = sc.id
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
@@ -515,7 +515,7 @@ final_rows AS (
                 AND (
                     -- No time limit OR time limit not exceeded
                     (aj.time_limit_seconds IS NULL OR aj.elapsed_seconds < aj.time_limit_seconds)
-                    -- AND there are incomplete chats_entry (pending work)
+                    -- AND there are incomplete view_chats_entry (pending work)
                     AND aj.incomplete_chats > 0
                 ))
             OR

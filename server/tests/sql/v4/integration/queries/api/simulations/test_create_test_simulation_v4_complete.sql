@@ -1,5 +1,5 @@
 -- Create a test simulation for test setup
--- Returns simulation_id for use in tests_entry
+-- Returns simulation_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_simulation_v4(text, text, boolean);
 

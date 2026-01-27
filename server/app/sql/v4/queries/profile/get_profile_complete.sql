@@ -166,7 +166,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -275,7 +275,7 @@ roles_data AS (
 group_id_data AS (
     SELECT
         COALESCE(
-            (SELECT d.group_id FROM drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
+            (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
             (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) LIMIT 1),
             (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_profile_id FROM resolve_current_profile_id) LIMIT 1)
         ) as group_id
@@ -331,8 +331,8 @@ name_suggestions_data AS (
                            pn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = gid.group_id
                            )
@@ -420,8 +420,8 @@ email_suggestions_data AS (
                            pe.generated = true
                            AND e.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM examples_calls_connection WHERE examples_id = e.id)
                                  AND r.group_id = gid.group_id
                            )
@@ -515,8 +515,8 @@ request_limit_suggestions_data AS (
                  (
                      rl.generated = true
                      AND EXISTS (
-                         SELECT 1 FROM calls_entry c
-                         JOIN runs_entry r ON r.id = c.run_id
+                         SELECT 1 FROM view_calls_entry c
+                         JOIN view_runs_entry r ON r.id = c.run_id
                          WHERE c.id IN (SELECT call_id FROM reasoning_levels_calls_connection WHERE reasoning_levels_id = rl.id)
                            AND r.group_id = gid.group_id
                      )
@@ -653,8 +653,8 @@ department_suggestions_data AS (
                    (
                        d.generated = true
                        AND EXISTS (
-                           SELECT 1 FROM calls_entry c
-                           JOIN runs_entry r ON r.id = c.run_id
+                           SELECT 1 FROM view_calls_entry c
+                           JOIN view_runs_entry r ON r.id = c.run_id
                            WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                              AND r.group_id = gid.group_id
                        )

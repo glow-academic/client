@@ -243,8 +243,8 @@ name_suggestions_data AS (
                AND (
                    pn.generated = false
                    OR (pn.generated = true AND n.generated = true AND EXISTS (
-                       SELECT 1 FROM calls_entry c
-                       JOIN runs_entry r ON r.id = c.run_id
+                       SELECT 1 FROM view_calls_entry c
+                       JOIN view_runs_entry r ON r.id = c.run_id
                        WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                          AND r.group_id = p.group_id
                    ))
@@ -271,8 +271,8 @@ description_suggestions_data AS (
                AND (
                    pd.generated = false
                    OR (pd.generated = true AND d.generated = true AND EXISTS (
-                       SELECT 1 FROM calls_entry c
-                       JOIN runs_entry r ON r.id = c.run_id
+                       SELECT 1 FROM view_calls_entry c
+                       JOIN view_runs_entry r ON r.id = c.run_id
                        WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                          AND r.group_id = p.group_id
                    ))
@@ -298,8 +298,8 @@ color_suggestions_data AS (
                AND (
                    pc.generated = false
                    OR (pc.generated = true AND c.generated = true AND EXISTS (
-                       SELECT 1 FROM calls_entry c2
-                       JOIN runs_entry r ON r.id = c2.run_id
+                       SELECT 1 FROM view_calls_entry c2
+                       JOIN view_runs_entry r ON r.id = c2.run_id
                        WHERE c2.id IN (SELECT call_id FROM colors_calls_connection WHERE colors_id = c.id)
                          AND r.group_id = p.group_id
                    ))
@@ -325,8 +325,8 @@ icon_suggestions_data AS (
                AND (
                    pi.generated = false
                    OR (pi.generated = true AND i.generated = true AND EXISTS (
-                       SELECT 1 FROM calls_entry c
-                       JOIN runs_entry r ON r.id = c.run_id
+                       SELECT 1 FROM view_calls_entry c
+                       JOIN view_runs_entry r ON r.id = c.run_id
                        WHERE c.id IN (SELECT call_id FROM icons_calls_connection WHERE icons_id = i.id)
                          AND r.group_id = p.group_id
                    ))
@@ -354,8 +354,8 @@ instructions_suggestions_data AS (
                AND (
                    pi.generated = false
                    OR (pi.generated = true AND i.generated = true AND EXISTS (
-                       SELECT 1 FROM calls_entry c
-                       JOIN runs_entry r ON r.id = c.run_id
+                       SELECT 1 FROM view_calls_entry c
+                       JOIN view_runs_entry r ON r.id = c.run_id
                        WHERE c.id IN (SELECT call_id FROM instructions_calls_connection WHERE instructions_id = i.id)
                          AND r.group_id = p.group_id
                    ))
@@ -427,8 +427,8 @@ field_suggestions_data AS (
                    )
                )
                AND (pf.active = true OR (pf.generated = true AND f.generated = true AND EXISTS (
-                   SELECT 1 FROM calls_entry c
-                   JOIN runs_entry r ON r.id = c.run_id
+                   SELECT 1 FROM view_calls_entry c
+                   JOIN view_runs_entry r ON r.id = c.run_id
                    WHERE c.id IN (SELECT call_id FROM fields_calls_connection WHERE fields_id = f.id)
                      AND r.group_id = p.group_id
                )))
@@ -467,8 +467,8 @@ example_suggestions_data AS (
              WHERE pe.example_id IS NOT NULL
                AND e.example IS NOT NULL AND e.example != ''
                AND (pe.active = true OR (pe.generated = true AND e.generated = true AND EXISTS (
-                   SELECT 1 FROM calls_entry c
-                   JOIN runs_entry r ON r.id = c.run_id
+                   SELECT 1 FROM view_calls_entry c
+                   JOIN view_runs_entry r ON r.id = c.run_id
                    WHERE c.id IN (SELECT call_id FROM examples_calls_connection WHERE examples_id = e.id)
                      AND r.group_id = p.group_id
                )))

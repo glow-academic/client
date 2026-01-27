@@ -1,5 +1,5 @@
 -- Create a test cohort for test setup
--- Returns cohort_id for use in tests_entry
+-- Returns cohort_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_cohort_v4(text, text, boolean);
 

@@ -91,8 +91,8 @@ model_run_costs AS (
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as cost
-    FROM run_pricing_entry rpu
-    JOIN runs_entry r ON r.id = rpu.run_id
+    FROM view_run_pricing_entry rpu
+    JOIN view_runs_entry r ON r.id = rpu.run_id
     JOIN agent_runs_junction arj ON arj.run_id = r.id
     JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
@@ -108,7 +108,7 @@ model_run_departments_via_agents AS (
         mrc.run_id,
         ad.department_id
     FROM model_run_costs mrc
-    JOIN runs_entry mr ON mr.id = mrc.run_id
+    JOIN view_runs_entry mr ON mr.id = mrc.run_id
     JOIN agent_runs_junction arj ON arj.run_id = mr.id
     JOIN agent_departments_junction ad ON ad.agent_id = arj.agent_id AND ad.active = true
     WHERE arj.agent_id IS NOT NULL
@@ -119,7 +119,7 @@ model_run_departments_via_profiles AS (
         mrc.run_id,
         pd.department_id
     FROM model_run_costs mrc
-    JOIN runs_entry r ON r.id = mrc.run_id
+    JOIN view_runs_entry r ON r.id = mrc.run_id
     LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
     JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)

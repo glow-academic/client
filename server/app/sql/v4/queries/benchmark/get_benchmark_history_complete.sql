@@ -120,18 +120,18 @@ attempts_with_eval AS (
         ea.archived,
         (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
         (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
-        -- Get first rubric from junction table (runs_entry or groups_entry based on use_groups)
+        -- Get first rubric from junction table (view_runs_entry or view_groups_entry based on use_groups)
         (SELECT combined.rubric_id
          FROM (
              SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
              JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = false)
              UNION ALL
              SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
              JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = true)
          ) combined
          ORDER BY combined.created_at
          LIMIT 1) as rubric_id,
@@ -140,17 +140,17 @@ attempts_with_eval AS (
              SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
              JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = false)
              UNION ALL
              SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
              JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at
          LIMIT 1) as rubric_name
-    FROM benchmark_attempts_entry ea
+    FROM view_benchmark_attempts_entry ea
     JOIN benchmark_attempts_evals_connection eaj ON eaj.attempt_id = ea.id
     JOIN evals_resource e ON e.id = eaj.evals_id
 ),
@@ -168,24 +168,24 @@ attempt_status_summary AS (
     SELECT 
         aea.attempt_id,
         aea.eval_id,
-        -- Count runs_entry from eval_runs_junction for this eval
+        -- Count view_runs_entry from eval_runs_junction for this eval
         COUNT(DISTINCT er.run_id) as total_runs,
-        -- Count completed runs_entry (where test exists and is completed)
+        -- Count completed view_runs_entry (where test exists and is completed)
         COUNT(DISTINCT er.run_id) FILTER (
             WHERE EXISTS (
                 SELECT 1
-                FROM tests_entry t
+                FROM view_tests_entry t
                 WHERE t.attempt_id = aea.attempt_id
                   AND t.trace_id LIKE 'eval_' || aea.attempt_id::text || '_%'
                   AND SPLIT_PART(t.trace_id, '_', 3) = er.run_id::text
                   AND t.completed = true
             )
         ) as completed_runs,
-        -- Count pending runs_entry (where test doesn't exist or is not completed)
+        -- Count pending view_runs_entry (where test doesn't exist or is not completed)
         COUNT(DISTINCT er.run_id) FILTER (
             WHERE NOT EXISTS (
                 SELECT 1
-                FROM tests_entry t
+                FROM view_tests_entry t
                 WHERE t.attempt_id = aea.attempt_id
                   AND t.trace_id LIKE 'eval_' || aea.attempt_id::text || '_%'
                   AND SPLIT_PART(t.trace_id, '_', 3) = er.run_id::text
@@ -196,7 +196,7 @@ attempt_status_summary AS (
     LEFT JOIN eval_runs_junction er ON er.eval_id = aea.eval_id
     GROUP BY aea.attempt_id, aea.eval_id
 ),
--- Derive status FROM runs_entry counts
+-- Derive status FROM view_runs_entry counts
 attempts_with_status AS (
     SELECT 
         aea.*,

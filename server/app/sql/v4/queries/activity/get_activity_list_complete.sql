@@ -81,7 +81,7 @@ filtered_sessions AS (
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = s.profile_id LIMIT 1), 'Anonymous') as profile_name,
         s.profile_id,
         s.active
-    FROM sessions_entry s
+    FROM view_sessions_entry s
     CROSS JOIN params x
     WHERE (x.search IS NULL OR x.search = '' OR COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = s.profile_id LIMIT 1), 'Anonymous') ILIKE '%' || x.search || '%')
 ),

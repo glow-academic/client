@@ -1,4 +1,4 @@
--- Get health_entry bundle with health_entry KPIs and metrics_entry
+-- Get view_health_entry bundle with view_health_entry KPIs and view_metrics_entry
 -- Converted to function with composite types (zero JSONB tolerance)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -63,7 +63,7 @@ CREATE OR REPLACE FUNCTION api_get_health_bundle_v4(profile_id uuid DEFAULT NULL
 RETURNS TABLE (
     actor_name text,
     health_kpis types.q_get_health_bundle_v4_health_kpis,
-    metrics_entry types.q_get_health_bundle_v4_metrics_data_point[]
+    metrics types.q_get_health_bundle_v4_metrics_data_point[]
 )
 LANGUAGE sql
 STABLE
@@ -71,7 +71,7 @@ AS $$
 WITH params AS (
     SELECT profile_id AS profile_id
 ),
--- Current health_entry status for each service (latest record per service)
+-- Current view_health_entry status for each service (latest record per service)
 current_health AS (
     SELECT DISTINCT ON (service)
         service,
@@ -79,7 +79,7 @@ current_health AS (
         latency_ms,
         error,
         ts
-    FROM health_entry
+    FROM view_health_entry
     WHERE service IN ('websocket', 'redis', 'tus', 'database', 'keycloak')
     ORDER BY service, ts DESC
 ),
@@ -92,7 +92,7 @@ health_trends AS (
         TRUNC((COUNT(*) FILTER (WHERE ok = true)::numeric / NULLIF(COUNT(*), 0)) * 100.0, 2) as uptime_percent,
         AVG(latency_ms) as avg_latency_ms,
         COUNT(*) as check_count
-    FROM health_entry
+    FROM view_health_entry
     WHERE service IN ('websocket', 'redis', 'tus', 'database', 'keycloak')
       AND ts >= NOW() - INTERVAL '7 days'
     GROUP BY service, date_hour
@@ -155,7 +155,7 @@ authentication_trend AS (
     ORDER BY date_hour
 ),
 
--- Build health_entry KPIs with composite types
+-- Build view_health_entry KPIs with composite types
 websocket_kpi AS (
     SELECT 
         COALESCE((SELECT ok FROM current_health WHERE service = 'websocket' LIMIT 1), false) as ok,
@@ -226,7 +226,7 @@ authentication_kpi AS (
         ) as trend
 ),
 
--- App metrics_entry time series (last 7 days, aggregated by hour)
+-- App view_metrics_entry time series (last 7 days, aggregated by hour)
 metrics_trend AS (
     SELECT 
         date_trunc('hour', ts) as date_hour,
@@ -236,7 +236,7 @@ metrics_trend AS (
         MAX(requests_total) as max_requests_total,
         MAX(errors_total) as max_errors_total,
         COUNT(*) as sample_count
-    FROM metrics_entry
+    FROM view_metrics_entry
     WHERE ts >= NOW() - INTERVAL '7 days'
     GROUP BY date_hour
     ORDER BY date_hour
@@ -274,6 +274,6 @@ SELECT
             ORDER BY mt.date_hour
         ),
         '{}'::types.q_get_health_bundle_v4_metrics_data_point[]
-    ) as metrics_entry
+    ) as metrics
 FROM metrics_trend mt
 $$;

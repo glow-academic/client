@@ -180,10 +180,10 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -346,8 +346,8 @@ name_suggestions_data AS (
                        (
                            n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -384,8 +384,8 @@ description_suggestions_data AS (
                        (
                            d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -422,8 +422,8 @@ protocol_suggestions_data AS (
                        (
                            p.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM prompts_calls_connection WHERE prompts_id = p.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -460,8 +460,8 @@ slug_suggestions_data AS (
                        (
                            s.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM slugs_calls_connection WHERE slugs_id = s.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -499,8 +499,8 @@ flag_suggestions_data AS (
                        (
                            f.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM flags_calls_connection WHERE flags_id = f.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -1228,7 +1228,7 @@ SELECT
         (SELECT COALESCE(jsonb_object_agg(aid.auth_item_id::text, aid.encrypted), '{}'::jsonb) FROM auth_items_data aid),
         '{}'::jsonb
     ) as auth_item_encrypted_states,
-    COALESCE((SELECT d.version FROM drafts_entry d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
+    COALESCE((SELECT d.version FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf

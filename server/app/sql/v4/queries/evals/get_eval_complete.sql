@@ -157,7 +157,7 @@ RETURNS TABLE (
     show_dynamic_flag boolean,
     dynamic_flag_agent_id uuid,
     dynamic_flag_required boolean,
-    -- Single-select resources: groups_entry flag
+    -- Single-select resources: view_groups_entry flag
     groups_flag_id uuid,
     groups_flag_resource types.q_get_eval_v4_flag_resource,
     show_groups_flag boolean,
@@ -237,10 +237,10 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -249,7 +249,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -395,8 +395,8 @@ name_suggestions_data AS (
                        (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -452,8 +452,8 @@ description_suggestions_data AS (
                        (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -538,12 +538,12 @@ dynamic_flag_resource_data AS (
         ) as dynamic_flag_resource
     FROM params
 ),
--- Flag resource data for groups_entry flag
+-- Flag resource data for view_groups_entry flag
 groups_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'groups_entry' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'groups_entry' AND ef.value = TRUE LIMIT 1)
+            (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = '' LIMIT 1),
+            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND ef.value = TRUE LIMIT 1)
         ) as groups_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
@@ -551,12 +551,12 @@ groups_flag_resource_data AS (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM flags_drafts_connection df 
                 JOIN flags_resource f ON df.flags_id = f.id 
-                WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'groups_entry'
+                WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = ''
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM eval_flags_junction ef 
                 JOIN flags_resource f ON ef.flag_id = f.id 
-                WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'groups_entry' AND ef.value = TRUE
+                WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND ef.value = TRUE
             ) f
             ORDER BY priority
             LIMIT 1
@@ -610,8 +610,8 @@ department_suggestions_data AS (
                            ed.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -841,7 +841,7 @@ description_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
--- Agent selection for 'flags' resource (for active, dynamic, groups_entry flags)
+-- Agent selection for 'flags' resource (for active, dynamic, view_groups_entry flags)
 active_flag_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
@@ -1381,7 +1381,7 @@ permissions_final AS (
     FROM permissions_data_with_tools pd
     CROSS JOIN missing_tools_check mtc
 ),
--- Available model runs_entry query (adapted from get_eval_detail_complete.sql)
+-- Available model view_runs_entry query (adapted from get_eval_detail_complete.sql)
 available_model_runs_params AS (
     SELECT 
         available_model_runs_search,
@@ -1407,7 +1407,7 @@ runs_base AS (
         prj.profile_id,
         arj.agent_id,
         NULL::uuid as persona_id
-    FROM runs_entry r
+    FROM view_runs_entry r
     LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
     LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
     WHERE
@@ -1492,14 +1492,14 @@ available_model_runs_array AS (
     FROM paginated_runs pr
     CROSS JOIN available_model_runs_params amp
 ),
--- Available groups_entry query (filtered by group_search)
+-- Available view_groups_entry query (filtered by group_search)
 groups_base AS (
     SELECT
         g.id as group_id,
         g.created_at,
         COUNT(r.id) as member_count
-    FROM groups_entry g
-    LEFT JOIN runs_entry r ON r.group_id = g.id
+    FROM view_groups_entry g
+    LEFT JOIN view_runs_entry r ON r.group_id = g.id
     GROUP BY g.id, g.created_at
 ),
 groups_filtered AS (
@@ -1576,7 +1576,7 @@ SELECT
     END as show_dynamic_flag,
     (SELECT agent_id FROM dynamic_flag_agent_data) as dynamic_flag_agent_id,
     false as dynamic_flag_required,
-    -- Single-select resources: groups_entry flag
+    -- Single-select resources: view_groups_entry flag
     (SELECT groups_flag_id FROM groups_flag_resource_data) as groups_flag_id,
     gfrd.groups_flag_resource,
     CASE 

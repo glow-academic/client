@@ -15,6 +15,6 @@ STABLE
 AS $$
     -- NOTE: simulations table doesn't have rubric_id column
     -- Rubrics are linked to simulations via simulation_scenarios_scenario_rubric_grade_agents -> scenario_rubric_grade_agents -> rubric_grade_agents
-    -- This function returns 0 - tests_entry using this may need updating
+    -- This function returns 0 - view_tests_entry using this may need updating
     SELECT 0::bigint AS simulation_count;
 $$;

@@ -1,5 +1,5 @@
 -- Create a test persona for test setup
--- Returns persona_id for use in tests_entry
+-- Returns persona_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_persona_v4(text, text, text, text, boolean, text);
 

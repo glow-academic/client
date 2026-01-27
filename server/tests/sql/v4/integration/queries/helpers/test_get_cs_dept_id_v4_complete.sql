@@ -1,5 +1,5 @@
 -- Get Computer Science department ID from seed data
--- Returns department_id for use in tests_entry
+-- Returns department_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_cs_dept_id_v4();
 

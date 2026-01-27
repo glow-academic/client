@@ -73,8 +73,8 @@ existing_developer_messages AS (
         m.id as message_id,
         dmh.run_id,
         dmh.hash
-    FROM messages_entry m
-    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    FROM view_messages_entry m
+    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN developer_message_hash_array dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     ORDER BY dmh.hash, m.created_at DESC
@@ -164,8 +164,8 @@ existing_user_messages AS (
         m.id as message_id,
         umh.run_id,
         umh.hash
-    FROM messages_entry m
-    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    FROM view_messages_entry m
+    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN user_message_hash_array umh ON message_content_hash(ce.content, 'user') = umh.hash
     WHERE m.role = 'user'
     ORDER BY umh.hash, m.created_at DESC
@@ -245,8 +245,8 @@ all_run_messages AS (
         m.role::text as role,
         ce.content,
         m.created_at
-    FROM messages_entry m
-    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    FROM view_messages_entry m
+    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     CROSS JOIN params p
     WHERE m.run_id = p.run_id
       AND m.role IN ('user', 'assistant')

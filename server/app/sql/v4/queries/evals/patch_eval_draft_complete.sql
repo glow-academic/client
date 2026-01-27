@@ -60,12 +60,12 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = input_draft_id;
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+            VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
         
@@ -93,8 +93,7 @@ BEGIN
                     INSERT INTO runs_drafts_connection (draft_id, runs_id, version)
                     SELECT v_draft_id, run_id, v_new_version
                     FROM UNNEST(model_run_ids) as run_id
-                    ON CONFLICT ON CONSTRAINT runs_draft_pkey DO UPDATE
-                    SET version = v_new_version;
+                    ON CONFLICT ON CONSTRAINT runs_draft_pkey DO UPDATE SET version = v_new_version;
                 END IF;
             END IF;
             IF group_ids IS NOT NULL THEN
@@ -157,7 +156,7 @@ BEGIN
     -- Create new draft with group
     -- First create a group for this draft
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
     RETURNING id INTO v_group_id;
     
     -- Create new draft with group_id

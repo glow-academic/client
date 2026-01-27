@@ -313,10 +313,10 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -325,7 +325,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -552,8 +552,8 @@ name_suggestions_data AS (
                            COALESCE(sn.generated, false) = true
                            AND COALESCE(n.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -591,8 +591,8 @@ description_suggestions_data AS (
                            COALESCE(sd.generated, false) = true
                            AND COALESCE(d.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -628,8 +628,8 @@ color_suggestions_data AS (
                            COALESCE(sc.generated, false) = true
                            AND COALESCE(c.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c2
-                               JOIN runs_entry r ON r.id = c2.run_id
+                               SELECT 1 FROM view_calls_entry c2
+                               JOIN view_runs_entry r ON r.id = c2.run_id
                                WHERE c2.id IN (SELECT call_id FROM colors_calls_connection WHERE colors_id = c.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -781,8 +781,8 @@ department_suggestions_data AS (
                        (
                            d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -860,8 +860,8 @@ auth_suggestions_data AS (
                            COALESCE(sa.generated, false) = true
                            AND COALESCE(a.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM args_calls_connection WHERE args_id = a.id)
                                  AND r.group_id = dgd.group_id
                            )

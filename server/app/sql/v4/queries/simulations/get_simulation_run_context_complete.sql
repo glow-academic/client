@@ -77,12 +77,12 @@ WITH
 -- Unified chats (general + practice)
 all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
 ),
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM simulation_attempts_entry
+    FROM view_simulation_attempts_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
@@ -141,7 +141,7 @@ resolved_dept AS (
     ) as department_id
 ),
 profile_rate_limit AS (
-    -- Get rate limit for the profile (via attempts_entry)
+    -- Get rate limit for the profile (via view_attempts_entry)
     SELECT
         rl.requests_per_day as req_per_day
     FROM all_chats sc
@@ -154,11 +154,11 @@ profile_rate_limit AS (
     LIMIT 1
 ),
 runs_today AS (
-    -- Count model runs_entry for this profile since start of day
+    -- Count model view_runs_entry for this profile since start of day
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs_entry mr
+    FROM view_runs_entry mr
     JOIN profile_runs_junction prj ON prj.run_id = mr.id
     WHERE prj.profile_id = (SELECT ppj.profile_id FROM all_chats sc
                             JOIN all_attempts sa ON sa.id = sc.attempt_id
@@ -168,7 +168,7 @@ runs_today AS (
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 profile_from_attempt AS (
-    -- Get profile_id (artifact) from attempts_entry for settings resolution
+    -- Get profile_id (artifact) from view_attempts_entry for settings resolution
     SELECT ppj.profile_id
     FROM all_chats sc
     JOIN all_attempts sa ON sa.id = sc.attempt_id
@@ -254,7 +254,7 @@ SELECT
     -- Chat data
     sc.id::text as chat_id,
     sc.title as chat_title,
-    (SELECT g.trace_id FROM messages_entry m_t JOIN runs_entry r_t ON r_t.id = m_t.run_id JOIN groups_entry g ON g.id = r_t.group_id WHERE m_t.chat_id = sc.id LIMIT 1) as trace_id,
+    (SELECT g.trace_id FROM view_messages_entry m_t JOIN view_runs_entry r_t ON r_t.id = m_t.run_id JOIN view_groups_entry g ON g.id = r_t.group_id WHERE m_t.chat_id = sc.id LIMIT 1) as trace_id,
     
     -- Attempt data
     sa.id::text as attempt_id,
@@ -302,7 +302,7 @@ SELECT
         AND sfr.scenario_id = ss.scenario_id
         AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
 
-    -- Profile data (via attempts_entry)
+    -- Profile data (via view_attempts_entry)
     aap_main.profiles_id::text as profile_id,
     
     -- Rate limit data
@@ -407,7 +407,7 @@ LEFT JOIN documents_resource doc ON doc.id = sd.document_id
 LEFT JOIN document_uploads_resource dur ON dur.document_id = doc.id AND dur.active = true
 LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
 LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
-LEFT JOIN uploads_entry u ON u.id = uuc.upload_id
+LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept

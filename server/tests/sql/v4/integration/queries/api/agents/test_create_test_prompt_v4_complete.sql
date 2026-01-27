@@ -1,5 +1,5 @@
 -- Create a test prompt for test setup
--- Returns prompt_id for use in tests_entry
+-- Returns prompt_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_prompt_v4(text);
 

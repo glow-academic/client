@@ -4,21 +4,21 @@
 -- ============================================================
 -- The group_stop table was a denormalized cache that stored which stop tools
 -- (like end_conversation) were called at each position within a conversation group.
--- This data is fully derivable from group_runs + message_runs + calls_entry:
+-- This data is fully derivable from group_runs + message_runs + view_calls_entry:
 --
 -- Original table structure:
 --   group_stop(group_id, tool_id, position_idx, created_at, updated_at, generated, mcp, active)
 --
 -- Derivation formula:
---   For each run in a group (via group_runs), we find calls_entry made during that run
---   (via message_runs -> calls_entry) where the tool is a "stop" tool (like end_conversation).
+--   For each run in a group (via group_runs), we find view_calls_entry made during that run
+--   (via message_runs -> view_calls_entry) where the tool is a "stop" tool (like end_conversation).
 --   The position_idx is computed as ROW_NUMBER() ordered by run position and call time.
 --
 -- The query below computes the same result without needing the
 -- group_stop table, using:
---   - group_runs: links runs_entry to groups_entry with idx (position)
---   - message_runs: links messages_entry to runs_entry
---   - calls_entry: contains tool calls_entry with tool_id
+--   - group_runs: links view_runs_entry to view_groups_entry with idx (position)
+--   - message_runs: links view_messages_entry to view_runs_entry
+--   - view_calls_entry: contains tool view_calls_entry with tool_id
 --   - tool_names_junction/names_resource: to identify stop tools by name
 --
 -- This allows us to drop the group_stop table while preserving functionality.
@@ -68,8 +68,8 @@ AS $$
             r.group_id,
             tcj.tool_id,
             ROW_NUMBER() OVER (PARTITION BY r.group_id ORDER BY r.created_at, c.created_at) as position_idx
-        FROM runs_entry r
-        JOIN calls_entry c ON c.run_id = r.id
+        FROM view_runs_entry r
+        JOIN view_calls_entry c ON c.run_id = r.id
         JOIN tool_calls_junction tcj ON tcj.call_id = c.id
         JOIN stop_tool_ids sti ON sti.tool_id = tcj.tool_id
         WHERE r.group_id = $1

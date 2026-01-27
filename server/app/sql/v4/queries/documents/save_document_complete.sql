@@ -234,7 +234,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT document_fields_pkey DO UPDATE SET
             active = true
     ),
-    -- Link uploads_entry (old ones already deleted above if update)
+    -- Link view_uploads_entry (old ones already deleted above if update)
     link_uploads AS (
         INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at)
         SELECT 

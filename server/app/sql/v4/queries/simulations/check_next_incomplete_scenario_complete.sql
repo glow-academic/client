@@ -31,12 +31,12 @@ WITH RECURSIVE
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM simulation_attempts_entry
+    FROM view_simulation_attempts_entry
 ),
 -- Unified chats (general + practice)
 all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
@@ -129,7 +129,7 @@ child_to_parent_mapping AS (
     FROM existing_chats ec
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = ec.child_scenario_id
 ),
--- Get scenarios that already have chats_entry (even without grades_entry) to avoid duplicates
+-- Get scenarios that already have view_chats_entry (even without view_grades_entry) to avoid duplicates
 existing_parent_scenario_ids AS (
     SELECT DISTINCT ctp.parent_scenario_id
     FROM child_to_parent_mapping ctp
@@ -143,7 +143,7 @@ scenarios_with_grades AS (
     JOIN all_chats sc ON sc.attempt_id = ab.attempt_id
     JOIN all_chat_scenarios acs2 ON acs2.chat_id = sc.id
     JOIN scenario_scenarios_junction ssj2 ON ssj2.scenarios_id = acs2.scenarios_id
-    JOIN grades_entry scg ON scg.chat_id = sc.id
+    JOIN view_grades_entry scg ON scg.chat_id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = ssj2.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id

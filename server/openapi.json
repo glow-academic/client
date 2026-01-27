@@ -16780,6 +16780,208 @@
         ]
       }
     },
+    "/api/v4/attempts/general/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "general"
+        ],
+        "summary": "Get General Attempt",
+        "description": "Get complete general attempt data with all related entities and computed values.\n\nGeneral attempts include:\n- Cohort support\n- Continuation options from previous attempts\n- Previous chat history for scenarios\n\nUse this endpoint for non-practice simulation attempts.",
+        "operationId": "get_general_attempt_api_v4_attempts_general_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGeneralAttemptApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGeneralAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "general"
+        ]
+      }
+    },
+    "/api/v4/attempts/practice/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "practice"
+        ],
+        "summary": "Get Practice Attempt",
+        "description": "Get complete practice attempt data with all related entities and computed values.\n\nPractice attempts include:\n- Hints data (practice-specific feature)\n- Single-run (no continuation options)\n- No previous chat history\n\nUse this endpoint for practice simulation attempts.",
+        "operationId": "get_practice_attempt_api_v4_attempts_practice_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPracticeAttemptApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPracticeAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "practice"
+        ]
+      }
+    },
     "/api/v4/bulk/staff/process": {
       "post": {
         "tags": [
@@ -32769,6 +32971,285 @@
         "type": "object",
         "title": "GetFlagsApiResponse"
       },
+      "GetGeneralAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GetGeneralAttemptApiRequest"
+      },
+      "GetGeneralAttemptApiResponse": {
+        "properties": {
+          "attempt_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Exists"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "access_denied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Denied"
+          },
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4Attempt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4Simulation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempt_profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4AttemptProfile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Profiles"
+          },
+          "chats_entry": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4ChatData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats Entry"
+          },
+          "scenario_documents_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4ScenarioDocument"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Documents Junction"
+          },
+          "aggregated_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4AggregatedResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4Timer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_chat_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Chat Index"
+          },
+          "expected_chat_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Chat Count"
+          },
+          "is_single_chat_attempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Single Chat Attempt"
+          },
+          "is_last_attempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Last Attempt"
+          },
+          "show_results": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Results"
+          },
+          "should_show_controls": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Should Show Controls"
+          },
+          "remaining_scenarios_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Scenarios Count"
+          },
+          "is_last_remaining_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Last Remaining Scenario"
+          },
+          "can_pick_multiple_alternatives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Pick Multiple Alternatives"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "rubric_structure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4RubricStructure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "all_simulation_scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4AllSimulationScenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Simulation Scenarios"
+          },
+          "available_continuation_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4AvailableContinuationOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "GetGeneralAttemptApiResponse"
+      },
       "GetHealthApiRequest": {
         "properties": {},
         "type": "object",
@@ -37584,6 +38065,275 @@
         },
         "type": "object",
         "title": "GetPersonasListApiRequest"
+      },
+      "GetPracticeAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GetPracticeAttemptApiRequest"
+      },
+      "GetPracticeAttemptApiResponse": {
+        "properties": {
+          "attempt_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Exists"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "access_denied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Denied"
+          },
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4Attempt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4Simulation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempt_profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4AttemptProfile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Profiles"
+          },
+          "chats_entry": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4ChatData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats Entry"
+          },
+          "scenario_documents_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4ScenarioDocument"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Documents Junction"
+          },
+          "aggregated_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4AggregatedResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4Timer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_chat_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Chat Index"
+          },
+          "expected_chat_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Chat Count"
+          },
+          "is_single_chat_attempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Single Chat Attempt"
+          },
+          "is_last_attempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Last Attempt"
+          },
+          "show_results": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Results"
+          },
+          "should_show_controls": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Should Show Controls"
+          },
+          "remaining_scenarios_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Scenarios Count"
+          },
+          "is_last_remaining_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Last Remaining Scenario"
+          },
+          "can_pick_multiple_alternatives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Pick Multiple Alternatives"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "rubric_structure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4RubricStructure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "all_simulation_scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4AllSimulationScenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Simulation Scenarios"
+          }
+        },
+        "type": "object",
+        "title": "GetPracticeAttemptApiResponse"
       },
       "GetPracticeHistoryApiRequest": {
         "properties": {
@@ -62404,6 +63154,2703 @@
         ],
         "title": "QGetFlagsV4Item"
       },
+      "QGetGeneralAttemptV4AggregatedResults": {
+        "properties": {
+          "total_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Score"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "chats_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats Completed"
+          },
+          "total_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_score",
+          "total_possible_points",
+          "percentage",
+          "passed",
+          "chats_completed",
+          "total_chats"
+        ],
+        "title": "QGetGeneralAttemptV4AggregatedResults"
+      },
+      "QGetGeneralAttemptV4AllSimulationScenario": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "default_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Scenario"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Images"
+          },
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "previous_chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4PreviousChat"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problem_statement",
+          "department_id",
+          "active",
+          "persona_id",
+          "persona_name",
+          "persona_icon",
+          "persona_color",
+          "created_at",
+          "updated_at",
+          "generated",
+          "default_scenario",
+          "copy_paste_allowed",
+          "text_enabled",
+          "audio_enabled",
+          "show_problem_statement",
+          "show_objectives",
+          "show_images",
+          "background_image",
+          "objectives",
+          "previous_chats"
+        ],
+        "title": "QGetGeneralAttemptV4AllSimulationScenario"
+      },
+      "QGetGeneralAttemptV4Attempt": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "simulation_id",
+          "infinite_mode",
+          "archived",
+          "profile_id"
+        ],
+        "title": "QGetGeneralAttemptV4Attempt"
+      },
+      "QGetGeneralAttemptV4AttemptProfile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "attempt_id",
+          "active"
+        ],
+        "title": "QGetGeneralAttemptV4AttemptProfile"
+      },
+      "QGetGeneralAttemptV4AvailableContinuationOptions": {
+        "properties": {
+          "next_sequential_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4ContinuationOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Sequential Options"
+          },
+          "has_options": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "next_sequential_options",
+          "has_options"
+        ],
+        "title": "QGetGeneralAttemptV4AvailableContinuationOptions"
+      },
+      "QGetGeneralAttemptV4Chat": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at",
+          "title",
+          "scenario_id",
+          "parent_scenario_id",
+          "attempt_id",
+          "completed",
+          "completed_at",
+          "trace_id",
+          "document_ids"
+        ],
+        "title": "QGetGeneralAttemptV4Chat"
+      },
+      "QGetGeneralAttemptV4ChatData": {
+        "properties": {
+          "chat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4Chat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4Scenario"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages_entry": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4Message"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages Entry"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4Grade"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grading_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4GradingState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dynamic_rubric": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetGeneralAttemptV4DynamicRubric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previous_chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4PreviousChat"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chats"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat",
+          "scenario",
+          "messages_entry",
+          "grade",
+          "grading_state",
+          "dynamic_rubric",
+          "previous_chats",
+          "personas",
+          "content_type"
+        ],
+        "title": "QGetGeneralAttemptV4ChatData"
+      },
+      "QGetGeneralAttemptV4ContinuationOption": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "scenario_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Name"
+          },
+          "previous_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "position",
+          "scenario_name",
+          "previous_chat_id",
+          "title",
+          "score",
+          "percentage",
+          "time_taken"
+        ],
+        "title": "QGetGeneralAttemptV4ContinuationOption"
+      },
+      "QGetGeneralAttemptV4DynamicRubric": {
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "skill_scores": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4SkillScore"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Scores"
+          },
+          "skill_feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4SkillFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Feedbacks"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "score",
+          "passed",
+          "time_taken",
+          "skill_scores",
+          "skill_feedbacks",
+          "total_possible_points"
+        ],
+        "title": "QGetGeneralAttemptV4DynamicRubric"
+      },
+      "QGetGeneralAttemptV4Grade": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "simulation_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Chat Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "simulation_chat_id",
+          "rubric_id",
+          "description",
+          "passed",
+          "score",
+          "time_taken"
+        ],
+        "title": "QGetGeneralAttemptV4Grade"
+      },
+      "QGetGeneralAttemptV4GradingState": {
+        "properties": {
+          "achieved_standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4StandardAchievement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved Standards"
+          },
+          "passed_standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4StandardPass"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Standards"
+          },
+          "grade_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Description"
+          },
+          "feedback_by_standard_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4StandardFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback By Standard Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "achieved_standards",
+          "passed_standards",
+          "grade_description",
+          "feedback_by_standard_id"
+        ],
+        "title": "QGetGeneralAttemptV4GradingState"
+      },
+      "QGetGeneralAttemptV4HighlightsEntry": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "title": "QGetGeneralAttemptV4HighlightsEntry"
+      },
+      "QGetGeneralAttemptV4Message": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4MessageFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at",
+          "chat_id",
+          "content",
+          "type",
+          "completed",
+          "persona_id",
+          "feedbacks"
+        ],
+        "title": "QGetGeneralAttemptV4Message"
+      },
+      "QGetGeneralAttemptV4MessageFeedback": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "replaces": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4ReplacementsEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaces"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4HighlightsEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "replaces",
+          "highlights"
+        ],
+        "title": "QGetGeneralAttemptV4MessageFeedback"
+      },
+      "QGetGeneralAttemptV4Persona": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "color"
+        ],
+        "title": "QGetGeneralAttemptV4Persona"
+      },
+      "QGetGeneralAttemptV4PreviousChat": {
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id",
+          "score",
+          "passed",
+          "created_at",
+          "title",
+          "time_taken",
+          "total_possible_points",
+          "percentage"
+        ],
+        "title": "QGetGeneralAttemptV4PreviousChat"
+      },
+      "QGetGeneralAttemptV4ReplacementsEntry": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "replace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "replace"
+        ],
+        "title": "QGetGeneralAttemptV4ReplacementsEntry"
+      },
+      "QGetGeneralAttemptV4RubricStructure": {
+        "properties": {
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4StandardGroupStandards"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standard_groups_mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4StandardGroupMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups Mapping"
+          },
+          "standards_mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGeneralAttemptV4StandardMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_groups",
+          "standard_groups_mapping",
+          "standards_mapping"
+        ],
+        "title": "QGetGeneralAttemptV4RubricStructure"
+      },
+      "QGetGeneralAttemptV4Scenario": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "default_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Scenario"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Images"
+          },
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problem_statement",
+          "department_id",
+          "active",
+          "persona_id",
+          "persona_name",
+          "persona_icon",
+          "persona_color",
+          "created_at",
+          "updated_at",
+          "generated",
+          "default_scenario",
+          "copy_paste_allowed",
+          "text_enabled",
+          "audio_enabled",
+          "show_problem_statement",
+          "show_objectives",
+          "show_images",
+          "background_image",
+          "objectives"
+        ],
+        "title": "QGetGeneralAttemptV4Scenario"
+      },
+      "QGetGeneralAttemptV4ScenarioDocument": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "type",
+          "updated_at",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "QGetGeneralAttemptV4ScenarioDocument"
+      },
+      "QGetGeneralAttemptV4Simulation": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "default_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Simulation"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Active"
+          },
+          "output_guardrail_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Active"
+          },
+          "image_input_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Input Active"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "department_id",
+          "active",
+          "default_simulation",
+          "practice_simulation",
+          "hints_enabled",
+          "objectives_enabled",
+          "input_guardrail_active",
+          "output_guardrail_active",
+          "image_input_active",
+          "copy_paste_allowed",
+          "time_limit",
+          "rubric_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QGetGeneralAttemptV4Simulation"
+      },
+      "QGetGeneralAttemptV4SkillFeedback": {
+        "properties": {
+          "skill_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Name"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill_name",
+          "feedback"
+        ],
+        "title": "QGetGeneralAttemptV4SkillFeedback"
+      },
+      "QGetGeneralAttemptV4SkillScore": {
+        "properties": {
+          "skill_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill_name",
+          "score"
+        ],
+        "title": "QGetGeneralAttemptV4SkillScore"
+      },
+      "QGetGeneralAttemptV4StandardAchievement": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "achieved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "achieved"
+        ],
+        "title": "QGetGeneralAttemptV4StandardAchievement"
+      },
+      "QGetGeneralAttemptV4StandardFeedback": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "feedback"
+        ],
+        "title": "QGetGeneralAttemptV4StandardFeedback"
+      },
+      "QGetGeneralAttemptV4StandardGroupMapping": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points"
+        ],
+        "title": "QGetGeneralAttemptV4StandardGroupMapping"
+      },
+      "QGetGeneralAttemptV4StandardGroupStandards": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "standard_ids"
+        ],
+        "title": "QGetGeneralAttemptV4StandardGroupStandards"
+      },
+      "QGetGeneralAttemptV4StandardMapping": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetGeneralAttemptV4StandardMapping"
+      },
+      "QGetGeneralAttemptV4StandardPass": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "passed"
+        ],
+        "title": "QGetGeneralAttemptV4StandardPass"
+      },
+      "QGetGeneralAttemptV4Timer": {
+        "properties": {
+          "elapsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "exceeded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exceeded"
+          },
+          "formatted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "elapsed",
+          "limit",
+          "exceeded",
+          "formatted"
+        ],
+        "title": "QGetGeneralAttemptV4Timer"
+      },
       "QGetHealthBundleV4HealthKpi": {
         "properties": {
           "ok": {
@@ -66205,6 +69652,2522 @@
           "generated"
         ],
         "title": "QGetParameterV4NameResource"
+      },
+      "QGetPracticeAttemptV4AggregatedResults": {
+        "properties": {
+          "total_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Score"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "chats_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats Completed"
+          },
+          "total_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_score",
+          "total_possible_points",
+          "percentage",
+          "passed",
+          "chats_completed",
+          "total_chats"
+        ],
+        "title": "QGetPracticeAttemptV4AggregatedResults"
+      },
+      "QGetPracticeAttemptV4AllSimulationScenario": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "default_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Scenario"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Images"
+          },
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problem_statement",
+          "department_id",
+          "active",
+          "persona_id",
+          "persona_name",
+          "persona_icon",
+          "persona_color",
+          "created_at",
+          "updated_at",
+          "generated",
+          "default_scenario",
+          "copy_paste_allowed",
+          "text_enabled",
+          "audio_enabled",
+          "show_problem_statement",
+          "show_objectives",
+          "show_images",
+          "background_image",
+          "objectives"
+        ],
+        "title": "QGetPracticeAttemptV4AllSimulationScenario"
+      },
+      "QGetPracticeAttemptV4Attempt": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "simulation_id",
+          "infinite_mode",
+          "archived",
+          "profile_id"
+        ],
+        "title": "QGetPracticeAttemptV4Attempt"
+      },
+      "QGetPracticeAttemptV4AttemptProfile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "attempt_id",
+          "active"
+        ],
+        "title": "QGetPracticeAttemptV4AttemptProfile"
+      },
+      "QGetPracticeAttemptV4Chat": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at",
+          "title",
+          "scenario_id",
+          "parent_scenario_id",
+          "attempt_id",
+          "completed",
+          "completed_at",
+          "trace_id",
+          "document_ids"
+        ],
+        "title": "QGetPracticeAttemptV4Chat"
+      },
+      "QGetPracticeAttemptV4ChatData": {
+        "properties": {
+          "chat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4Chat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4Scenario"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages_entry": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4Message"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages Entry"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4HintsByMessage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4Grade"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grading_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4GradingState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dynamic_rubric": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetPracticeAttemptV4DynamicRubric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat",
+          "scenario",
+          "messages_entry",
+          "hints",
+          "grade",
+          "grading_state",
+          "dynamic_rubric",
+          "personas",
+          "content_type"
+        ],
+        "title": "QGetPracticeAttemptV4ChatData"
+      },
+      "QGetPracticeAttemptV4DynamicRubric": {
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "skill_scores": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4SkillScore"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Scores"
+          },
+          "skill_feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4SkillFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Feedbacks"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "score",
+          "passed",
+          "time_taken",
+          "skill_scores",
+          "skill_feedbacks",
+          "total_possible_points"
+        ],
+        "title": "QGetPracticeAttemptV4DynamicRubric"
+      },
+      "QGetPracticeAttemptV4Grade": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "simulation_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Chat Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "simulation_chat_id",
+          "rubric_id",
+          "description",
+          "passed",
+          "score",
+          "time_taken"
+        ],
+        "title": "QGetPracticeAttemptV4Grade"
+      },
+      "QGetPracticeAttemptV4GradingState": {
+        "properties": {
+          "achieved_standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4StandardAchievement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved Standards"
+          },
+          "passed_standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4StandardPass"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Standards"
+          },
+          "grade_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Description"
+          },
+          "feedback_by_standard_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4StandardFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback By Standard Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "achieved_standards",
+          "passed_standards",
+          "grade_description",
+          "feedback_by_standard_id"
+        ],
+        "title": "QGetPracticeAttemptV4GradingState"
+      },
+      "QGetPracticeAttemptV4HighlightsEntry": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "title": "QGetPracticeAttemptV4HighlightsEntry"
+      },
+      "QGetPracticeAttemptV4Hint": {
+        "properties": {
+          "simulation_message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Message Id"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_message_id",
+          "hint",
+          "idx",
+          "created_at"
+        ],
+        "title": "QGetPracticeAttemptV4Hint"
+      },
+      "QGetPracticeAttemptV4HintsByMessage": {
+        "properties": {
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4Hint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "hints"
+        ],
+        "title": "QGetPracticeAttemptV4HintsByMessage"
+      },
+      "QGetPracticeAttemptV4Message": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4MessageFeedback"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at",
+          "chat_id",
+          "content",
+          "type",
+          "completed",
+          "persona_id",
+          "feedbacks"
+        ],
+        "title": "QGetPracticeAttemptV4Message"
+      },
+      "QGetPracticeAttemptV4MessageFeedback": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "replaces": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4ReplacementsEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaces"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4HighlightsEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "replaces",
+          "highlights"
+        ],
+        "title": "QGetPracticeAttemptV4MessageFeedback"
+      },
+      "QGetPracticeAttemptV4Persona": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "color"
+        ],
+        "title": "QGetPracticeAttemptV4Persona"
+      },
+      "QGetPracticeAttemptV4ReplacementsEntry": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "replace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "replace"
+        ],
+        "title": "QGetPracticeAttemptV4ReplacementsEntry"
+      },
+      "QGetPracticeAttemptV4RubricStructure": {
+        "properties": {
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4StandardGroupStandards"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standard_groups_mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4StandardGroupMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups Mapping"
+          },
+          "standards_mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPracticeAttemptV4StandardMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_groups",
+          "standard_groups_mapping",
+          "standards_mapping"
+        ],
+        "title": "QGetPracticeAttemptV4RubricStructure"
+      },
+      "QGetPracticeAttemptV4Scenario": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "default_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Scenario"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Images"
+          },
+          "background_image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background Image"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problem_statement",
+          "department_id",
+          "active",
+          "persona_id",
+          "persona_name",
+          "persona_icon",
+          "persona_color",
+          "created_at",
+          "updated_at",
+          "generated",
+          "default_scenario",
+          "copy_paste_allowed",
+          "text_enabled",
+          "audio_enabled",
+          "show_problem_statement",
+          "show_objectives",
+          "show_images",
+          "background_image",
+          "objectives"
+        ],
+        "title": "QGetPracticeAttemptV4Scenario"
+      },
+      "QGetPracticeAttemptV4ScenarioDocument": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "type",
+          "updated_at",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "upload_id",
+          "field_ids"
+        ],
+        "title": "QGetPracticeAttemptV4ScenarioDocument"
+      },
+      "QGetPracticeAttemptV4Simulation": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "default_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Simulation"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Active"
+          },
+          "output_guardrail_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Active"
+          },
+          "image_input_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Input Active"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "department_id",
+          "active",
+          "default_simulation",
+          "practice_simulation",
+          "hints_enabled",
+          "objectives_enabled",
+          "input_guardrail_active",
+          "output_guardrail_active",
+          "image_input_active",
+          "copy_paste_allowed",
+          "time_limit",
+          "rubric_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QGetPracticeAttemptV4Simulation"
+      },
+      "QGetPracticeAttemptV4SkillFeedback": {
+        "properties": {
+          "skill_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Name"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill_name",
+          "feedback"
+        ],
+        "title": "QGetPracticeAttemptV4SkillFeedback"
+      },
+      "QGetPracticeAttemptV4SkillScore": {
+        "properties": {
+          "skill_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill_name",
+          "score"
+        ],
+        "title": "QGetPracticeAttemptV4SkillScore"
+      },
+      "QGetPracticeAttemptV4StandardAchievement": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "achieved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "achieved"
+        ],
+        "title": "QGetPracticeAttemptV4StandardAchievement"
+      },
+      "QGetPracticeAttemptV4StandardFeedback": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "feedback"
+        ],
+        "title": "QGetPracticeAttemptV4StandardFeedback"
+      },
+      "QGetPracticeAttemptV4StandardGroupMapping": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points"
+        ],
+        "title": "QGetPracticeAttemptV4StandardGroupMapping"
+      },
+      "QGetPracticeAttemptV4StandardGroupStandards": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "standard_ids"
+        ],
+        "title": "QGetPracticeAttemptV4StandardGroupStandards"
+      },
+      "QGetPracticeAttemptV4StandardMapping": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetPracticeAttemptV4StandardMapping"
+      },
+      "QGetPracticeAttemptV4StandardPass": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "passed"
+        ],
+        "title": "QGetPracticeAttemptV4StandardPass"
+      },
+      "QGetPracticeAttemptV4Timer": {
+        "properties": {
+          "elapsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "exceeded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exceeded"
+          },
+          "formatted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "elapsed",
+          "limit",
+          "exceeded",
+          "formatted"
+        ],
+        "title": "QGetPracticeAttemptV4Timer"
       },
       "QGetPracticeHistoryV4Attempt": {
         "properties": {

@@ -105,7 +105,7 @@ BEGIN
         IF NOT validate_department_update_permissions(
             (SELECT r.role::text FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
             ARRAY(SELECT department_id::text FROM model_departments_junction WHERE model_id = input_model_id AND active = true),
-            ARRAY(SELECT department_id::text FROM profile_departments_junction WHERE sessions_entry.profile_id = api_save_model_v4.profile_id AND sessions_entry.active = true)
+            ARRAY(SELECT department_id::text FROM profile_departments_junction WHERE view_sessions_entry.profile_id = api_save_model_v4.profile_id AND view_sessions_entry.active = true)
         ) THEN
             RAISE EXCEPTION 'Insufficient permissions to UPDATE model_artifact';
         END IF;

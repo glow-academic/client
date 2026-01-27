@@ -149,7 +149,7 @@ BEGIN
     INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_simulation_positions_v4.agent_id, v_run_id);
 
     -- Link call to run
-    UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
+    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_call_id;
 
     -- Link message to run
     UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;

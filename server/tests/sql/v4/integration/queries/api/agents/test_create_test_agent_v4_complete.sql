@@ -1,5 +1,5 @@
 -- Create a test agent for test setup
--- Returns agent_id for use in tests_entry
+-- Returns agent_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_agent_v4(uuid, text, text, text, boolean);
 

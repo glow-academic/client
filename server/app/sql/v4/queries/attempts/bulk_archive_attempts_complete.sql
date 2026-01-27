@@ -79,7 +79,7 @@ BEGIN
             ARRAY_AGG(DISTINCT sa.profile_id::text) FILTER (WHERE sa.profile_id IS NOT NULL),
             ARRAY[]::text[]
         ) INTO v_profile_ids
-        FROM attempts_entry
+        FROM view_attempts_entry
         WHERE id = ANY(attempt_ids);
     ELSE
         -- filter mode: Use the existing filter-based logic from bulk_archive_attempts_by_filters.sql
@@ -124,7 +124,7 @@ BEGIN
                 (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
                 sim.practice_simulation,
                 COALESCE(sdd.department_ids, NULL) as department_ids
-            FROM attempts_entry sa
+            FROM view_attempts_entry sa
             JOIN simulation_artifact sim ON sim.id = sa.simulation_id
             JOIN profile_artifact p_attempt ON p_attempt.id = sa.profile_id
             CROSS JOIN history_viewer_role hvr
@@ -195,7 +195,7 @@ BEGIN
             SELECT DISTINCT
                 sc.attempt_id,
                 ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
-            FROM chats_entry sc
+            FROM view_chats_entry sc
             WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
             GROUP BY sc.attempt_id
         ),
@@ -210,7 +210,7 @@ BEGIN
             SELECT
                 sc.attempt_id,
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
-            FROM chats_entry sc
+            FROM view_chats_entry sc
             JOIN scenarios_resource scn ON scn.id = sc.scenario_id
             LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = scn.id AND sp.active = TRUE
             WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)

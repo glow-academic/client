@@ -1,10 +1,10 @@
--- Dashboard bundle query - all metrics_entry in one query
+-- Dashboard bundle query - all view_metrics_entry in one query
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Parameters: start_date, end_date, cohort_ids, roles, simulation_filters, department_ids, profile_id
--- Returns: Complete dashboard bundle with header metrics_entry, primary metrics_entry, secondary metrics_entry, 
---          footer metrics_entry, history, insights, thresholds, and entity mappings (as arrays)
+-- Returns: Complete dashboard bundle with header view_metrics_entry, primary view_metrics_entry, secondary view_metrics_entry, 
+--          footer view_metrics_entry, history, insights, thresholds, and entity mappings (as arrays)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -59,14 +59,14 @@ END $$;
 -- Note: Using native PostgreSQL types (uuid, timestamptz) instead of text where appropriate
 -- Arrays of IDs use text[] for frontend compatibility
 
--- Trend data point (used in header metrics_entry)
+-- Trend data point (used in header view_metrics_entry)
 CREATE TYPE types.q_get_dashboard_bundle_v4_trend_data AS (
     date text,
     value float,
     count int
 );
 
--- Data point (used in header metrics_entry)
+-- Data point (used in header view_metrics_entry)
 CREATE TYPE types.q_get_dashboard_bundle_v4_data_point AS (
     profile_id text,
     date text,
@@ -77,7 +77,7 @@ CREATE TYPE types.q_get_dashboard_bundle_v4_data_point AS (
     count int
 );
 
--- Metric response (for header metrics_entry)
+-- Metric response (for header view_metrics_entry)
 CREATE TYPE types.q_get_dashboard_bundle_v4_metric_response AS (
     has_data boolean,
     method text,
@@ -90,7 +90,7 @@ CREATE TYPE types.q_get_dashboard_bundle_v4_metric_response AS (
     data_points types.q_get_dashboard_bundle_v4_data_point[]
 );
 
--- Header metrics_entry (10 metrics_entry)
+-- Header view_metrics_entry (10 view_metrics_entry)
 CREATE TYPE types.q_get_dashboard_bundle_v4_header_metrics AS (
     average_score types.q_get_dashboard_bundle_v4_metric_response,
     completion_percentage types.q_get_dashboard_bundle_v4_metric_response,
@@ -215,7 +215,7 @@ CREATE TYPE types.q_get_dashboard_bundle_v4_rubric_heatmap_response AS (
     status text
 );
 
--- Primary metrics_entry
+-- Primary view_metrics_entry
 CREATE TYPE types.q_get_dashboard_bundle_v4_primary_metrics AS (
     growth_data types.q_get_dashboard_bundle_v4_growth_data_response,
     persona_performance types.q_get_dashboard_bundle_v4_persona_performance_response,
@@ -328,7 +328,7 @@ CREATE TYPE types.q_get_dashboard_bundle_v4_skill_performance_response AS (
     status text
 );
 
--- Secondary metrics_entry
+-- Secondary view_metrics_entry
 CREATE TYPE types.q_get_dashboard_bundle_v4_secondary_metrics AS (
     attempt_improvement types.q_get_dashboard_bundle_v4_attempt_improvement_response,
     cohort_performance types.q_get_dashboard_bundle_v4_cohort_performance_response,
@@ -441,7 +441,7 @@ CREATE TYPE types.q_get_dashboard_bundle_v4_simulation_performance_response AS (
     status text
 );
 
--- Footer metrics_entry
+-- Footer view_metrics_entry
 CREATE TYPE types.q_get_dashboard_bundle_v4_footer_metrics AS (
     scenario_performance types.q_get_dashboard_bundle_v4_scenario_performance_response,
     scenario_stats types.q_get_dashboard_bundle_v4_scenario_stats_response,
@@ -575,7 +575,7 @@ AS $$
 -- Unified chats (general + practice)
 WITH all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
@@ -584,7 +584,7 @@ all_chat_scenarios AS (
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM simulation_attempts_entry
+    FROM view_simulation_attempts_entry
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
@@ -732,7 +732,7 @@ filt AS (
 ),
             
             -- =====================================================
-            -- HEADER METRICS (10 metrics_entry)
+            -- HEADER METRICS (10 view_metrics_entry)
             -- =====================================================
             
             -- Attempt normalization for average_score
@@ -871,7 +871,7 @@ filt AS (
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
                     TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = acs_stag.scenarios_id LIMIT 1), 0)) * 100.0, 2) AS norm
-                FROM grades_entry sg
+                FROM view_grades_entry sg
                 JOIN all_chats c_stag ON c_stag.id = sg.chat_id
                 JOIN all_chat_scenarios acs_stag ON acs_stag.chat_id = c_stag.id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
@@ -1355,10 +1355,10 @@ filt AS (
             ),
             
             -- Rubric Heatmap (FULL IMPLEMENTATION with correlation matrices)
-            -- Get all chats that have grades_entry in the date range (not filtered by analytics attempt_created_at)
+            -- Get all chats that have view_grades_entry in the date range (not filtered by analytics attempt_created_at)
             filtered_chats AS (
                 SELECT DISTINCT c.id AS chat_id
-                FROM grades_entry scg
+                FROM view_grades_entry scg
                 JOIN all_chats c ON c.id = scg.chat_id
                 JOIN all_attempts sa ON sa.id = c.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
@@ -1689,7 +1689,7 @@ filt AS (
                       OR NOT EXISTS (SELECT 1 FROM field_departments_junction fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
                   )
             ),
-            -- Helper CTEs for header metrics_entry - convert to composite types
+            -- Helper CTEs for header view_metrics_entry - convert to composite types
             header_avg_score_trend_agg AS (
                 SELECT COALESCE(
                     ARRAY_AGG((date, value, count)::types.q_get_dashboard_bundle_v4_trend_data ORDER BY date),
@@ -2014,7 +2014,7 @@ filt AS (
                     (SELECT (has_data, method, current_value, status, trend_analysis, value_field, key_field, trend_data, data_points)::types.q_get_dashboard_bundle_v4_metric_response FROM header_attempts_metric LIMIT 1)
                 )::types.q_get_dashboard_bundle_v4_header_metrics as header_metrics
             ),
-            -- Primary metrics_entry helper CTEs
+            -- Primary view_metrics_entry helper CTEs
             growth_chart_data_agg AS (
                 SELECT COALESCE(
                     ARRAY_AGG(

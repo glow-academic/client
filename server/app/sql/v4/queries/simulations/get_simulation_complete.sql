@@ -363,7 +363,7 @@ draft_payload_data AS (
         d.version as draft_version,
         (SELECT scenario_ids FROM draft_scenario_ids_data) as draft_scenario_ids
     FROM params x
-    JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN view_drafts_entry d ON d.id = x.draft_id
     JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
     LIMIT 1
@@ -375,10 +375,10 @@ draft_group_data AS (
         COALESCE(
             d.group_id,
             -- Fallback to most recent group for new simulations (same pattern as Cohort)
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -387,7 +387,7 @@ draft_group_data AS (
 draft_version_data AS (
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -615,9 +615,9 @@ scenario_statistics AS (
         OR scj_sc.scenario_id = ss.scenario_id
     )
     LEFT JOIN (
-        SELECT id, created_at, completed FROM simulation_chats_entry
+        SELECT id, created_at, completed FROM view_simulation_chats_entry
     ) sc ON sc.id = scj_sc.chat_id
-    LEFT JOIN grades_entry scg ON scg.chat_id = sc.id
+    LEFT JOIN view_grades_entry scg ON scg.chat_id = sc.id
     WHERE x.simulation_id IS NOT NULL
     GROUP BY ss.scenario_id
 ),
@@ -1270,8 +1270,8 @@ name_suggestions_data AS (
                            sn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -1308,8 +1308,8 @@ description_suggestions_data AS (
                            sd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -1345,8 +1345,8 @@ department_suggestions_data AS (
                            sd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -2195,8 +2195,8 @@ scenario_suggestions_data AS (
                        (
                            s.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM slugs_calls_connection WHERE slugs_id = s.id)
                                  AND r.group_id = dgd.group_id
                            )

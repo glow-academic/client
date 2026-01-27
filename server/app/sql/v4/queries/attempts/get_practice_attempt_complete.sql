@@ -252,7 +252,7 @@ CREATE TYPE types.q_get_practice_attempt_v4_chat AS (
 CREATE TYPE types.q_get_practice_attempt_v4_chat_data AS (
     chat types.q_get_practice_attempt_v4_chat,
     scenario types.q_get_practice_attempt_v4_scenario,
-    messages_entry types.q_get_practice_attempt_v4_message[],
+    messages types.q_get_practice_attempt_v4_message[],
     hints types.q_get_practice_attempt_v4_hints_by_message[],
     grade types.q_get_practice_attempt_v4_grade,
     grading_state types.q_get_practice_attempt_v4_grading_state,
@@ -387,10 +387,10 @@ params AS (
         attempt_id AS attempt_id,
         profile_id AS profile_id
 ),
--- Check if attempt exists in simulation_attempts_entry only
+-- Check if attempt exists in view_simulation_attempts_entry only
 attempt_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM simulation_attempts_entry WHERE id = (SELECT attempt_id FROM params) AND active = true
+        SELECT 1 FROM view_simulation_attempts_entry WHERE id = (SELECT attempt_id FROM params) AND active = true
     )::boolean as attempt_exists
 ),
 -- Get actor profile name
@@ -485,7 +485,7 @@ simulation_scenarios_list AS (
 chats_with_context AS (
     SELECT csc.*
     FROM view_chat_scenario_context_complete csc
-    JOIN simulation_chats_entry pce ON pce.id = csc.chat_id
+    JOIN view_simulation_chats_entry pce ON pce.id = csc.chat_id
     WHERE csc.attempt_id = (SELECT attempt_id FROM params)
       AND csc.chat_type = 'practice'
     ORDER BY csc.chat_created_at
@@ -515,12 +515,12 @@ messages_with_tree AS (
             0 as depth,
             m.id as path_root_id
         FROM chats_with_context cwc
-        JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
-        JOIN runs_entry r ON r.id = m.run_id
-        LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        JOIN view_simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+        JOIN view_runs_entry r ON r.id = m.run_id
+        LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
           AND NOT EXISTS (
-              SELECT 1 FROM message_tree_entry mt
+              SELECT 1 FROM view_message_tree_entry mt
               WHERE mt.parent_id = m.id AND mt.active = true
           )
 
@@ -537,11 +537,11 @@ messages_with_tree AS (
             NULL::uuid AS persona_id,
             mp.depth + 1 as depth,
             mp.path_root_id
-        FROM simulation_messages_entry m
-        LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-        JOIN message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
+        FROM view_simulation_messages_entry m
+        LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        JOIN view_message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
-        JOIN runs_entry r ON r.id = m.run_id
+        JOIN view_runs_entry r ON r.id = m.run_id
         WHERE mp.depth < 1000
           AND m.role IN ('user'::message_type, 'assistant'::message_type)
           AND m.active = true
@@ -559,12 +559,12 @@ messages_with_tree AS (
             -1 as depth,
             m.id as path_root_id
         FROM chats_with_context cwc
-        JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
-        JOIN runs_entry r ON r.id = m.run_id
-        LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        JOIN view_simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+        JOIN view_runs_entry r ON r.id = m.run_id
+        LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
           AND NOT EXISTS (
-              SELECT 1 FROM message_tree_entry mt
+              SELECT 1 FROM view_message_tree_entry mt
               WHERE mt.child_id = m.id AND mt.active = true
           )
           AND NOT EXISTS (
@@ -592,7 +592,7 @@ grades_data AS (
         )::types.q_get_practice_attempt_v4_grade as grade
     FROM chats_with_context cwc
     CROSS JOIN attempt_context ac
-    JOIN simulation_grades_entry pg ON pg.chat_id = cwc.chat_id AND pg.active = true
+    JOIN view_simulation_grades_entry pg ON pg.chat_id = cwc.chat_id AND pg.active = true
     LEFT JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = pg.id
     ORDER BY cwc.chat_id, pg.created_at DESC
 ),
@@ -605,12 +605,12 @@ message_feedbacks_data AS (
          '{}'::types.q_get_practice_attempt_v4_replacements_entry[],
          COALESCE(
              (SELECT ARRAY_AGG((mfh.section)::types.q_get_practice_attempt_v4_highlights_entry ORDER BY mfh.idx)
-              FROM highlights_entry mfh
+              FROM view_highlights_entry mfh
               WHERE mfh.message_feedback_id = se.id),
              '{}'::types.q_get_practice_attempt_v4_highlights_entry[]
          )
         )::types.q_get_practice_attempt_v4_message_feedback as feedback_data
-    FROM strengths_entry se
+    FROM view_strengths_entry se
     WHERE se.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
     UNION ALL
     SELECT
@@ -619,13 +619,13 @@ message_feedbacks_data AS (
         (ie.id, ie.name, ie.description,
          COALESCE(
              (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_practice_attempt_v4_replacements_entry ORDER BY mfr.idx)
-              FROM replacements_entry mfr
+              FROM view_replacements_entry mfr
               WHERE mfr.message_feedback_id = ie.id),
              '{}'::types.q_get_practice_attempt_v4_replacements_entry[]
          ),
          '{}'::types.q_get_practice_attempt_v4_highlights_entry[]
         )::types.q_get_practice_attempt_v4_message_feedback as feedback_data
-    FROM improvements_entry ie
+    FROM view_improvements_entry ie
     WHERE ie.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),
 message_feedbacks_grouped AS (
@@ -649,7 +649,7 @@ messages_grouped AS (
                 ORDER BY mwt.created_at
             ),
             '{}'::types.q_get_practice_attempt_v4_message[]
-        ) as messages_entry
+        ) as messages
     FROM messages_with_tree mwt
     LEFT JOIN message_feedbacks_grouped mfg ON mfg.message_id = mwt.id
     GROUP BY mwt.chat_id
@@ -666,7 +666,7 @@ hints_data AS (
                          (he.message_id, he.hint, he.idx, he.created_at)::types.q_get_practice_attempt_v4_hint
                          ORDER BY he.idx
                      )
-                     FROM hints_entry he
+                     FROM view_hints_entry he
                      WHERE he.message_id = m.id AND he.active = true),
                      '{}'::types.q_get_practice_attempt_v4_hint[]
                  )
@@ -675,8 +675,8 @@ hints_data AS (
             '{}'::types.q_get_practice_attempt_v4_hints_by_message[]
         ) as hints
     FROM chats_with_context cwc
-    JOIN simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
-    JOIN runs_entry r ON r.id = m.run_id
+    JOIN view_simulation_messages_entry m ON m.chat_id = cwc.chat_id AND m.active = true
+    JOIN view_runs_entry r ON r.id = m.run_id
     WHERE m.role IN ('user'::message_type, 'assistant'::message_type)
     GROUP BY cwc.chat_id
 ),
@@ -711,7 +711,7 @@ feedbacks_grouped AS (
             ),
             '{}'::types.q_get_practice_attempt_v4_feedback[]
         ) as feedbacks
-    FROM feedbacks_entry fe
+    FROM view_feedbacks_entry fe
     LEFT JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
     WHERE fe.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
     GROUP BY fe.grade_id
@@ -806,7 +806,7 @@ chats_with_all_data AS (
           cwc.chat_created_at, cwc.chat_updated_at, false, false, cwc.copy_paste_allowed,
           cwc.text_enabled, cwc.audio_enabled, cwc.show_problem_statement, cwc.show_objectives,
           cwc.show_images, cwc.background_image_upload_id, cwc.objectives)::types.q_get_practice_attempt_v4_scenario,
-         COALESCE(mg.messages_entry, '{}'::types.q_get_practice_attempt_v4_message[]),
+         COALESCE(mg.messages, '{}'::types.q_get_practice_attempt_v4_message[]),
          COALESCE(hd.hints, '{}'::types.q_get_practice_attempt_v4_hints_by_message[]),
          gd.grade,
          COALESCE(gspc.grading_state, NULL::types.q_get_practice_attempt_v4_grading_state),
@@ -852,7 +852,7 @@ scenario_documents_data AS (
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
     LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
-    LEFT JOIN uploads_entry u ON u.id = uuc.upload_id
+    LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id
     JOIN scenario_documents_junction sd ON sd.document_id = dr.id
     CROSS JOIN scenario_ids_list sil
     WHERE sd.scenario_id = ANY(sil.scenario_ids)

@@ -70,7 +70,7 @@ BEGIN
 
     SELECT pdj.profiles_id, d.group_id
     INTO v_draft_profile_id, v_group_id
-    FROM drafts_entry d
+    FROM view_drafts_entry d
     LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
     WHERE d.id = v_draft_id;
 
@@ -265,7 +265,7 @@ BEGIN
         FROM params p
     ),
     placeholder_call_id AS (
-        SELECT id FROM calls_entry LIMIT 1
+        SELECT id FROM view_calls_entry LIMIT 1
     ),
     -- Insert/update name in names table if provided
     name_resource AS (

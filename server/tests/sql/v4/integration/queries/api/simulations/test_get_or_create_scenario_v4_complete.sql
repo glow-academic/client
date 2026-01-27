@@ -1,5 +1,5 @@
 -- Get or create a test scenario for test setup
--- Returns scenario_id for use in tests_entry
+-- Returns scenario_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_scenario_v4();
 

@@ -81,16 +81,16 @@ user_profile AS (
 ),
 -- Header stats
 sessions_total AS (
-    SELECT COUNT(*) as cnt FROM sessions_entry
+    SELECT COUNT(*) as cnt FROM view_sessions_entry
 ),
 active_profiles_total AS (
     SELECT COUNT(DISTINCT profile_id) as cnt FROM profile_activity_junction
 ),
 logins_total AS (
-    SELECT COUNT(*) as cnt FROM logins_entry
+    SELECT COUNT(*) as cnt FROM view_logins_entry
 ),
 content_created_total AS (
-    SELECT COUNT(*) as cnt FROM audits_entry
+    SELECT COUNT(*) as cnt FROM view_audits_entry
     WHERE endpoint LIKE '%.saved' OR endpoint LIKE '%.created' OR endpoint LIKE '%.duplicated' OR endpoint LIKE '%.uploaded'
 ),
 -- Available events: distinct endpoints from last 90 days
@@ -99,7 +99,7 @@ event_counts AS (
         endpoint as id,
         INITCAP(REPLACE(endpoint, '.', ' ')) as name,
         COUNT(*)::integer as total_count
-    FROM audits_entry
+    FROM view_audits_entry
     WHERE created_at >= NOW() - INTERVAL '90 days'
       AND endpoint IS NOT NULL
       AND endpoint != ''
@@ -124,7 +124,7 @@ chart_points AS (
     CROSS JOIN event_counts ec
     LEFT JOIN (
         SELECT DATE(created_at) as date, endpoint, COUNT(*)::integer as cnt
-        FROM audits_entry
+        FROM view_audits_entry
         WHERE created_at >= NOW() - INTERVAL '90 days'
           AND endpoint IS NOT NULL
         GROUP BY DATE(created_at), endpoint
@@ -139,7 +139,7 @@ problems_list AS (
         pe.resolved,
         pe.created_at,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = ppj.profile_id LIMIT 1), 'Anonymous') as profile_name
-    FROM problems_entry pe
+    FROM view_problems_entry pe
     LEFT JOIN profile_problems_junction ppj ON ppj.problem_id = pe.id
     ORDER BY pe.created_at DESC
     LIMIT 50

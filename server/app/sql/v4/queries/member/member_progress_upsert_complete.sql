@@ -1,4 +1,4 @@
--- Upsert user message and run, link run to group, link system/developer messages_entry
+-- Upsert user message and run, link run to group, link system/developer view_messages_entry
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first
@@ -37,14 +37,14 @@ member_agent AS (
 all_chats AS (
     SELECT c.id, c.attempt_id, c.created_at, c.updated_at, c.title, c.completed, c.generated, c.mcp, c.active,
            a.practice AS is_practice_chat
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    FROM view_simulation_chats_entry c
+    JOIN view_simulation_attempts_entry a ON a.id = c.attempt_id
 ),
 -- Unified attempts CTE
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active,
            practice AS is_practice_attempt
-    FROM simulation_attempts_entry
+    FROM view_simulation_attempts_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
@@ -80,14 +80,14 @@ chat_context AS (
 chat_group AS (
     SELECT r.group_id
     FROM params p
-    JOIN messages_entry m ON m.chat_id = p.chat_id
-    JOIN runs_entry r ON r.id = m.run_id
+    JOIN view_messages_entry m ON m.chat_id = p.chat_id
+    JOIN view_runs_entry r ON r.id = m.run_id
     WHERE r.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = (SELECT profile_id FROM chat_context) AND active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE profile_id = (SELECT profile_id FROM chat_context) AND active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM chat_group)
     RETURNING id AS group_id
@@ -107,7 +107,7 @@ latest_run AS (
     SELECT r.id as run_id
     FROM params p
     JOIN target_group tg ON true
-    JOIN runs_entry r ON r.group_id = tg.group_id
+    JOIN view_runs_entry r ON r.group_id = tg.group_id
     JOIN chat_context cc ON true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
     LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
@@ -172,7 +172,7 @@ get_speak_tool_id AS (
 latest_user_message AS (
     SELECT m.id as message_id
     FROM upserted_run ur
-    JOIN messages_entry m ON m.run_id = ur.run_id
+    JOIN view_messages_entry m ON m.run_id = ur.run_id
     WHERE m.role = 'user'::message_type
     ORDER BY m.created_at DESC
     LIMIT 1
@@ -185,7 +185,7 @@ create_message_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING id as message_id, created_at, updated_at
 ),
--- Create synthetic tool call for new user messages_entry
+-- Create synthetic tool call for new user view_messages_entry
 user_tool_call AS (
     INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT
@@ -211,16 +211,16 @@ link_user_tool_call_to_tool AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING call_id
 ),
--- Get existing tool_call_id for existing user messages_entry (via calls_entry.run_id)
+-- Get existing tool_call_id for existing user view_messages_entry (via view_calls_entry.run_id)
 existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
-    JOIN contents_entry ce ON ce.message_id = lum.message_id AND ce.idx = 0
-    JOIN messages_entry m ON m.id = lum.message_id
-    JOIN calls_entry tc ON tc.run_id = m.run_id
+    JOIN view_contents_entry ce ON ce.message_id = lum.message_id AND ce.idx = 0
+    JOIN view_messages_entry m ON m.id = lum.message_id
+    JOIN view_calls_entry tc ON tc.run_id = m.run_id
     LIMIT 1
 ),
--- Combine new and existing tool calls_entry
+-- Combine new and existing tool view_calls_entry
 user_tool_call_id AS (
     SELECT tool_call_id FROM user_tool_call
     UNION ALL
@@ -276,7 +276,7 @@ create_audio_if_provided AS (
     WHERE p.upload_id IS NOT NULL
     RETURNING id as audio_id
 ),
--- Audio is now linked via audios_entry.call_id -> calls_entry.run_id (no junction table needed)
+-- Audio is now linked via view_audios_entry.call_id -> view_calls_entry.run_id (no junction table needed)
 link_audio_placeholder AS (
     SELECT 1 WHERE false  -- Placeholder CTE to maintain structure
 ),
@@ -284,7 +284,7 @@ link_audio_placeholder AS (
 latest_message_for_branch AS (
     SELECT m.id as parent_id
     FROM params p
-    JOIN messages_entry m ON m.chat_id = p.chat_id
+    JOIN view_messages_entry m ON m.chat_id = p.chat_id
     WHERE m.role IN ('user'::message_type, 'assistant'::message_type, 'system'::message_type, 'developer'::message_type)
     ORDER BY m.created_at DESC
     LIMIT 1
@@ -302,7 +302,7 @@ create_branch AS (
     WHERE lmb.parent_id IS NOT NULL
       AND lmb.parent_id != um.message_id  -- Prevent self-references
       AND NOT EXISTS (
-          SELECT 1 FROM message_tree_entry mt 
+          SELECT 1 FROM view_message_tree_entry mt 
           WHERE mt.parent_id = lmb.parent_id 
           AND mt.child_id = um.message_id 
           AND mt.active = true
@@ -311,7 +311,7 @@ create_branch AS (
         active = true,
         updated_at = NOW()
 ),
--- Get department_id for linking system/developer messages_entry
+-- Get department_id for linking system/developer view_messages_entry
 resolved_dept AS (
     SELECT COALESCE(
         (SELECT sd.department_id FROM chat_context cc
@@ -321,11 +321,11 @@ resolved_dept AS (
         (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
     ) as department_id
 ),
--- Link system/developer messages_entry to run (reuse logic from link_system_developer_messages_to_run.sql)
+-- Link system/developer view_messages_entry to run (reuse logic from link_system_developer_messages_to_run.sql)
 run_info AS (
     SELECT
         ur.run_id,
-        ur.run_id as agent_id,  -- Will be resolved FROM runs_entry.agent_id below
+        ur.run_id as agent_id,  -- Will be resolved FROM view_runs_entry.agent_id below
         (SELECT department_id FROM resolved_dept) as department_id
     FROM upserted_run ur
 ),
@@ -333,7 +333,7 @@ agent_system_prompt AS (
     SELECT
         pr_default.system_prompt as system_prompt
     FROM run_info ri
-    JOIN runs_entry r ON r.id = ri.run_id
+    JOIN view_runs_entry r ON r.id = ri.run_id
     JOIN agent_runs_junction arj ON arj.run_id = r.id
     JOIN agents_resource a ON a.id = arj.agent_id
     LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
@@ -351,8 +351,8 @@ system_message_hash AS (
 ),
 existing_system_message AS (
     SELECT m.id as system_message_id
-    FROM messages_entry m
-    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    FROM view_messages_entry m
+    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
     WHERE m.role = 'system'::message_type
     LIMIT 1
@@ -405,8 +405,8 @@ scenario_developer_hash AS (
 ),
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
-    FROM messages_entry m
-    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    FROM view_messages_entry m
+    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN scenario_developer_hash sdh ON message_content_hash(ce.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'::message_type
     LIMIT 1
@@ -451,7 +451,7 @@ link_system_to_developer AS (
     FROM link_system ls
     JOIN link_developer ld ON true
     WHERE NOT EXISTS (
-        SELECT 1 FROM message_tree_entry mt 
+        SELECT 1 FROM view_message_tree_entry mt 
         WHERE mt.parent_id = ls.system_message_id 
         AND mt.child_id = ld.developer_message_id 
         AND mt.active = true

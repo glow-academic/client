@@ -120,12 +120,12 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = input_draft_id;
 
         -- Create group if draft doesn't have one (safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+            VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -154,8 +154,7 @@ BEGIN
             IF name_id IS NOT NULL THEN
                 INSERT INTO names_drafts_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-                SET version = v_new_version;
+                ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF active_flag_id IS NOT NULL THEN
@@ -210,7 +209,7 @@ BEGIN
 
     -- Create new draft with group
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = v_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
     RETURNING id INTO v_group_id;
 
     INSERT INTO drafts_entry (artifact, group_id)

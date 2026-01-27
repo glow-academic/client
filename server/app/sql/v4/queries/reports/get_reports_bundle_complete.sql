@@ -1,10 +1,10 @@
--- Get reports bundle with aggregated metrics_entry per profile
+-- Get reports bundle with aggregated view_metrics_entry per profile
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Parameters: start_date, end_date, profile_id, cohort_ids, department_ids, roles, simulation_filters,
 --             profile_ids, simulation_ids, scenario_ids, search, sort_by, sort_order, page, page_size
--- Returns: Complete reports bundle with profile data, metrics_entry, filter options, and entity mappings (as arrays)
+-- Returns: Complete reports bundle with profile data, view_metrics_entry, filter options, and entity mappings (as arrays)
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -107,7 +107,7 @@ CREATE TYPE types.q_reports_bundle_v4_metric AS (
     status text
 );
 
--- Profile metrics_entry (all 10 metrics_entry)
+-- Profile view_metrics_entry (all 10 view_metrics_entry)
 CREATE TYPE types.q_reports_bundle_v4_profile_metrics AS (
     average_score types.q_reports_bundle_v4_metric,
     completion_percentage types.q_reports_bundle_v4_metric,
@@ -130,7 +130,7 @@ CREATE TYPE types.q_reports_bundle_v4_profile AS (
     role text,
     simulation_ids text[],
     scenario_ids text[],
-    metrics_entry types.q_reports_bundle_v4_profile_metrics
+    profile_metrics types.q_reports_bundle_v4_profile_metrics
 );
 
 -- Filter option
@@ -194,7 +194,7 @@ AS $$
 -- Unified chats (general + practice)
 WITH all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
 ),
 -- Unified chat→scenario connections
 all_chat_scenarios AS (
@@ -476,7 +476,7 @@ grade_stream_per_profile AS (
         c_bundle.id AS simulation_chat_id,
         sg.created_at,
         TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = acs_bundle.scenarios_id LIMIT 1), 0)) * 100.0, 2) AS norm
-    FROM grades_entry sg
+    FROM view_grades_entry sg
     JOIN all_chats c_bundle ON c_bundle.id = sg.chat_id
     JOIN all_chat_scenarios acs_bundle ON acs_bundle.chat_id = c_bundle.id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
@@ -880,7 +880,7 @@ paginated_metrics AS (
         (SELECT total_count FROM total_count_before_pagination) AS total_count
     FROM all_metrics am
 ),
--- Build metrics_entry with composite types
+-- Build view_metrics_entry with composite types
 profiles_with_metrics AS (
     SELECT
         pm.profile_id,
@@ -1262,7 +1262,7 @@ profiles_with_metrics AS (
         )::types.q_reports_bundle_v4_metric AS total_attempts
     FROM paginated_metrics pm
 ),
--- Build profile metrics_entry composite type
+-- Build profile view_metrics_entry composite type
 profiles_with_profile_metrics AS (
     SELECT
         pwm.profile_id,
@@ -1283,7 +1283,7 @@ profiles_with_profile_metrics AS (
             pwm.stagnation_rate,
             pwm.time_spent,
             pwm.total_attempts
-        )::types.q_reports_bundle_v4_profile_metrics AS metrics_entry
+        )::types.q_reports_bundle_v4_profile_metrics AS profile_metrics
     FROM profiles_with_metrics pwm
 ),
 -- Build final profile array
@@ -1297,7 +1297,7 @@ profiles_final AS (
              pwm.role,
              pwm.simulation_ids,
              pwm.scenario_ids,
-             pwm.metrics_entry
+             pwm.profile_metrics
             )::types.q_reports_bundle_v4_profile
             ORDER BY pwm.profile_id
         ) AS profiles_array

@@ -1,4 +1,4 @@
--- Create a test rubric for socket tests_entry
+-- Create a test rubric for socket view_tests_entry
 -- Returns rubric_id
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_rubric_v4(text, text, integer, integer);

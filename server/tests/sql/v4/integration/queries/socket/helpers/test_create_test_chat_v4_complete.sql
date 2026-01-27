@@ -1,6 +1,6 @@
--- Create a test chat for socket tests_entry
+-- Create a test chat for socket view_tests_entry
 -- Returns chat_id
--- Unified simulation_chats_entry (practice flag lives on attempt)
+-- Unified view_simulation_chats_entry (practice flag lives on attempt)
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_chat_v4(uuid, text);
 DROP FUNCTION IF EXISTS test_create_test_chat_v4(uuid, uuid, text, boolean);
@@ -19,7 +19,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     -- NOTE: chat table doesn't have trace_id column
-    -- trace_id is stored in groups_entry table, not chat
+    -- trace_id is stored in view_groups_entry table, not chat
     WITH scenario_resource AS (
         -- Get scenarios_resource.id for the connection table
         SELECT ssj.scenarios_id
@@ -29,7 +29,7 @@ AS $$
     ),
     new_chat AS (
         -- Create simulation chat
-        INSERT INTO simulation_chats_entry(title, completed, attempt_id)
+        INSERT INTO simulation_chats_entry (title, completed, attempt_id)
         SELECT 'Test Chat', false, test_create_test_chat_v4.attempt_id
         RETURNING id
     ),

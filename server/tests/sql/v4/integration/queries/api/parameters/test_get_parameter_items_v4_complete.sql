@@ -20,6 +20,6 @@ STABLE
 AS $$
     -- NOTE: parameter_items table does not exist in current schema
     -- Parameters don't have items in the current schema
-    -- This function returns empty result - tests_entry using this may need updating
+    -- This function returns empty result - view_tests_entry using this may need updating
     SELECT NULL::uuid AS parameter_item_id, NULL::uuid AS parameter_id, NULL::text AS name, NULL::text AS description, NULL::text AS value, NULL::timestamptz AS created_at WHERE false;
 $$;

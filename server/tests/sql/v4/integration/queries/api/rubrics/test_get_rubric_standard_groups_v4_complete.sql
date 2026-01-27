@@ -1,5 +1,5 @@
--- Get rubric standard groups_entry for test verification
--- Returns standard groups_entry ordered by name
+-- Get rubric standard view_groups_entry for test verification
+-- Returns standard view_groups_entry ordered by name
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_rubric_standard_groups_v4(uuid);
 
@@ -21,7 +21,7 @@ LANGUAGE sql
 STABLE
 AS $$
     -- NOTE: standard_groups table doesn't have rubric_id column
-    -- Standard groups_entry are linked to rubrics via rubric_standard_groups_junction table
+    -- Standard view_groups_entry are linked to rubrics via rubric_standard_groups_junction table
     SELECT 
         sg.id AS standard_group_id,
         rsg.rubric_id,

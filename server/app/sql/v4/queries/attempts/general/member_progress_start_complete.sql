@@ -34,22 +34,22 @@ chat_context AS (
          WHERE gap.attempt_id = ga.id
          LIMIT 1) as profile_id
     FROM params p
-    JOIN simulation_chats_entry gc ON gc.id = p.chat_id
-    JOIN simulation_attempts_entry ga ON ga.id = gc.attempt_id
+    JOIN view_simulation_chats_entry gc ON gc.id = p.chat_id
+    JOIN view_simulation_attempts_entry ga ON ga.id = gc.attempt_id
     LIMIT 1
 ),
 existing_group AS (
     SELECT r.group_id
     FROM params p
-    JOIN simulation_messages_entry m ON m.chat_id = p.chat_id
-    JOIN runs_entry r ON r.id = m.run_id
+    JOIN view_simulation_messages_entry m ON m.chat_id = p.chat_id
+    JOIN view_runs_entry r ON r.id = m.run_id
     WHERE r.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
     SELECT NOW(), NOW(),
-        (SELECT id FROM sessions_entry
+        (SELECT id FROM view_sessions_entry
          WHERE profile_id = (SELECT profile_id FROM chat_context)
            AND active = true
          ORDER BY created_at DESC

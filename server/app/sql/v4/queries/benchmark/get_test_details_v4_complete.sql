@@ -26,7 +26,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT t.id::text as test_id, t.group_id::text as group_id
-    FROM tests_entry t
+    FROM view_tests_entry t
     WHERE t.attempt_id = $1
       AND t.completed = false
     ORDER BY t.created_at DESC

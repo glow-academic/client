@@ -127,14 +127,14 @@ RETURNS TABLE (
     fields_required boolean,
     field_suggestions uuid[],
     fields types.q_get_document_v4_field[],
-    -- Multi-select resources: uploads_entry
+    -- Multi-select resources: view_uploads_entry
     upload_ids uuid[],
     upload_resources types.q_get_document_v4_upload[],
     show_uploads boolean,
     uploads_agent_id uuid,
     uploads_required boolean,
     upload_suggestions uuid[],
-    uploads_entry types.q_get_document_v4_upload[],
+    uploads types.q_get_document_v4_upload[],
     -- Single-select resources: active flag
     active_flag_id uuid,
     flag_resource types.q_get_document_v4_flag_resource,
@@ -174,10 +174,10 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -186,7 +186,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -271,8 +271,8 @@ field_suggestions_data AS (
                            df.generated = true
                            AND f.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM flags_calls_connection WHERE flags_id = f.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -404,7 +404,7 @@ ui_flags AS (
                     ELSE false
                 END
         END as show_fields,
-        -- Uploads: always show if tools exist (uploads_entry are always available)
+        -- Uploads: always show if tools exist (view_uploads_entry are always available)
         true as show_uploads
     FROM params x
     CROSS JOIN user_profile up
@@ -443,7 +443,7 @@ upload_ids_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Upload mapping data (uploads_resource + uploads_entry join)
+-- Upload mapping data (uploads_resource + view_uploads_entry join)
 upload_mapping_data AS (
     SELECT
         ur.id as uploads_id,
@@ -455,7 +455,7 @@ upload_mapping_data AS (
         NULL::uuid as group_id
     FROM uploads_resource ur
     JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
-    JOIN uploads_entry u ON u.id = uuc.upload_id
+    JOIN view_uploads_entry u ON u.id = uuc.upload_id
     WHERE ur.active = true
       AND u.active = true
 ),
@@ -469,7 +469,7 @@ upload_suggestions_data AS (
                  FROM document_uploads_resource dur
                  JOIN uploads_resource ur ON ur.id = dur.uploads_id
                  JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
-                 JOIN uploads_entry u ON u.id = uuc.upload_id
+                 JOIN view_uploads_entry u ON u.id = uuc.upload_id
                  CROSS JOIN draft_group_data dgd
                  WHERE dur.uploads_id IS NOT NULL
                    AND u.file_path IS NOT NULL
@@ -483,8 +483,8 @@ upload_suggestions_data AS (
                            (
                                ur.generated = true
                                AND EXISTS (
-                                   SELECT 1 FROM calls_entry c
-                                   JOIN runs_entry r ON r.id = c.run_id
+                                   SELECT 1 FROM view_calls_entry c
+                                   JOIN view_runs_entry r ON r.id = c.run_id
                                    WHERE c.id IN (SELECT call_id FROM uploads_calls_connection WHERE uploads_id = ur.id)
                                      AND r.group_id = dgd.group_id
                                )
@@ -536,8 +536,8 @@ name_suggestions_data AS (
                            dn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -575,8 +575,8 @@ description_suggestions_data AS (
                            dd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -613,8 +613,8 @@ department_suggestions_data AS (
                            dd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -1060,7 +1060,7 @@ fields_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
--- Agent selection for 'uploads_entry' resource
+-- Agent selection for '' resource
 uploads_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
@@ -1346,7 +1346,7 @@ missing_tools_check AS (
             CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
             CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END,
-            CASE WHEN NOT tec.uploads_has_tools AND uf.show_uploads THEN 'uploads_entry' ELSE NULL END
+            CASE WHEN NOT tec.uploads_has_tools AND uf.show_uploads THEN '' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
@@ -1530,9 +1530,9 @@ SELECT
         END,
         '{}'::types.q_get_document_v4_field[]
     ) as fields,
-    -- Multi-select resources: uploads_entry
+    -- Multi-select resources: view_uploads_entry
     uid.upload_ids,
-    -- Upload resources (selected uploads_entry filtered by upload_ids)
+    -- Upload resources (selected view_uploads_entry filtered by upload_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
             (umd.uploads_id, umd.upload_id, umd.file_path, umd.mime_type, umd.size, umd.generated, umd.group_id)::types.q_get_document_v4_upload
@@ -1552,7 +1552,7 @@ SELECT
     END as uploads_required,
     COALESCE((SELECT upload_suggestions FROM upload_suggestions_data), ARRAY[]::uuid[]) as upload_suggestions,
     COALESCE(
-        -- All available uploads_entry (all uploads_resource entries that are active)
+        -- All available view_uploads_entry (all uploads_resource entries that are active)
         (SELECT ARRAY_AGG(
             (umd.uploads_id, umd.upload_id, umd.file_path, umd.mime_type, umd.size, umd.generated, umd.group_id)::types.q_get_document_v4_upload
             ORDER BY 
@@ -1565,7 +1565,7 @@ SELECT
         ) umd
         CROSS JOIN upload_suggestions_data usd),
         '{}'::types.q_get_document_v4_upload[]
-    ) as uploads_entry,
+    ) as uploads,
     -- Single-select resources: active flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.document_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,

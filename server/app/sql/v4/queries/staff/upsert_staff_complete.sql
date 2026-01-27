@@ -150,7 +150,7 @@ profile_upsert_with_idx AS (
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pe.profile_idx AND rv.can_assign = true)
 ),
 placeholder_call_id AS (
-    SELECT id FROM calls_entry LIMIT 1
+    SELECT id FROM view_calls_entry LIMIT 1
 ),
 -- Insert all unique names INTO names_resource table
 names_resources AS (
@@ -170,7 +170,7 @@ new_groups AS (
 ),
 insert_groups AS (
     INSERT INTO groups_entry (id, created_at, updated_at, session_id)
-    SELECT ng.group_id, NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = current_profile_id AND active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT ng.group_id, NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE profile_id = current_profile_id AND active = true ORDER BY created_at DESC LIMIT 1)
     FROM new_groups ng
     RETURNING id
 ),

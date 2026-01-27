@@ -1,6 +1,6 @@
--- Create a test attempt for socket tests_entry
+-- Create a test attempt for socket view_tests_entry
 -- Returns attempt_id
--- Unified simulation_attempts_entry (practice flag determines type)
+-- Unified view_simulation_attempts_entry (practice flag determines type)
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_attempt_v4(uuid);
 DROP FUNCTION IF EXISTS test_create_test_attempt_v4(uuid, boolean);
@@ -25,7 +25,7 @@ AS $$
     ),
     new_attempt AS (
         -- Create simulation attempt (practice flag determines type)
-        INSERT INTO simulation_attempts_entry(archived, practice)
+        INSERT INTO simulation_attempts_entry (archived, practice)
         SELECT false, test_create_test_attempt_v4.is_practice
         RETURNING id
     ),

@@ -220,7 +220,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
             value = EXCLUDED.value
     ),
-    -- Insert or UPDATE eval_artifact groups_entry flag
+    -- Insert or UPDATE eval_artifact view_groups_entry flag
     insert_eval_groups_flag AS (
         INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at)
         SELECT 
@@ -231,7 +231,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'groups_entry'
+        WHERE f.name = ''
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
             value = EXCLUDED.value
     ),
@@ -261,7 +261,7 @@ BEGIN
         WHERE COALESCE(array_length(x.agent_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_agents_pkey DO NOTHING
     ),
-    -- Link model runs_entry (old ones already deleted above if update)
+    -- Link model view_runs_entry (old ones already deleted above if update)
     link_runs AS (
         INSERT INTO eval_runs_junction (eval_id, run_id, completed, created_at)
         SELECT 
@@ -276,7 +276,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT eval_runs_pkey DO UPDATE SET
             completed = false
     ),
-    -- Link groups_entry when using groups_entry
+    -- Link view_groups_entry when using view_groups_entry
     link_groups AS (
         INSERT INTO eval_groups_junction (eval_id, group_id, created_at)
         SELECT

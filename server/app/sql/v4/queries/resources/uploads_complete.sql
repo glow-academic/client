@@ -1,4 +1,4 @@
--- Create uploads_entry resource
+-- Create view_uploads_entry resource
 -- Get or create operation (returns existing ID if upload_id + group_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), upload_id (uuid)
 -- Returns: uploads_id (uuid)
@@ -59,7 +59,7 @@ BEGIN
     
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
-        RAISE EXCEPTION 'Agent % does not have tool for resource uploads_entry', agent_id;
+        RAISE EXCEPTION 'Agent % does not have tool for resource view_uploads_entry', agent_id;
     END IF;
     
     -- Validate agent has mcp flag when mcp=true
@@ -75,7 +75,7 @@ BEGIN
     END IF;
     
     -- Validate upload_id exists
-    IF NOT EXISTS (SELECT 1 FROM uploads_entry WHERE id = upload_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM view_uploads_entry WHERE id = upload_id) THEN
         RAISE EXCEPTION 'Upload % does not exist', upload_id;
     END IF;
     
@@ -91,7 +91,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Check if uploads_entry already exists (match on upload_id + group_id)
+    -- Check if view_uploads_entry already exists (match on upload_id + group_id)
     SELECT r.id INTO v_uploads_id
     FROM uploads_resource r
     WHERE r.upload_id = v_artifact_id

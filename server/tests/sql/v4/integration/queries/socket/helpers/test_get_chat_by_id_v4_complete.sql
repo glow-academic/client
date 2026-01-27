@@ -1,6 +1,6 @@
 -- Get chat by ID for test verification
 -- Returns chat details
--- Unified simulation_chats_entry (practice flag lives on attempt)
+-- Unified view_simulation_chats_entry (practice flag lives on attempt)
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_chat_by_id_v4(uuid);
 
@@ -17,6 +17,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, completed, created_at
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
     WHERE id = test_get_chat_by_id_v4.chat_id;
 $$;

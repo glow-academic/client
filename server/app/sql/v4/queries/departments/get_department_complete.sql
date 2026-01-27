@@ -210,7 +210,7 @@ draft_payload_data AS (
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
-    JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN view_drafts_entry d ON d.id = x.draft_id
     JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
     LIMIT 1
@@ -220,10 +220,10 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row
     WHERE TRUE
     LIMIT 1
@@ -338,8 +338,8 @@ name_suggestions_data AS (
                        (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -392,8 +392,8 @@ description_suggestions_data AS (
                        (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -893,7 +893,7 @@ model_key_associations AS (
 -- Additional detail endpoint CTEs
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs_entry mr
+    FROM view_runs_entry mr
     JOIN agent_runs_junction arj ON arj.run_id = mr.id
     JOIN agent_departments_junction ad ON ad.agent_id = arj.agent_id AND ad.active = true
     WHERE ad.department_id = (SELECT department_id FROM params) AND arj.agent_id IS NOT NULL
@@ -902,7 +902,7 @@ runs_for_department_via_agents AS (
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
@@ -918,9 +918,9 @@ model_run_costs AS (
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as cost
-    FROM run_pricing_entry rpu
+    FROM view_run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
-    JOIN runs_entry r ON r.id = rpu.run_id
+    JOIN view_runs_entry r ON r.id = rpu.run_id
     JOIN agent_runs_junction arj2 ON arj2.run_id = r.id
     JOIN agent_models_junction am ON am.agent_id = arj2.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true

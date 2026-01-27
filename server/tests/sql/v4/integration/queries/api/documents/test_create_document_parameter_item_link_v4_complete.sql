@@ -18,6 +18,6 @@ LANGUAGE sql
 VOLATILE
 AS $$
     -- NOTE: document_parameter_items table does not exist in current schema
-    -- This function returns empty result - tests_entry using this may need updating
+    -- This function returns empty result - view_tests_entry using this may need updating
     SELECT NULL::uuid AS document_id, NULL::uuid AS parameter_item_id, NULL::boolean AS active, NULL::timestamptz AS created_at WHERE false;
 $$;

@@ -12,8 +12,8 @@ STABLE
 AS $$
     SELECT EXISTS (
         SELECT 1
-        FROM simulation_chats_entry c
-        JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+        FROM view_simulation_chats_entry c
+        JOIN view_simulation_attempts_entry a ON a.id = c.attempt_id
         WHERE c.id = chat_id
           AND a.practice IS FALSE
     ) as is_general;

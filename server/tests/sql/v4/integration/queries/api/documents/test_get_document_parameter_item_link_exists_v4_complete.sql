@@ -15,6 +15,6 @@ LANGUAGE sql
 STABLE
 AS $$
     -- NOTE: document_parameter_items table does not exist in current schema
-    -- This function returns false - tests_entry using this may need updating
+    -- This function returns false - view_tests_entry using this may need updating
     SELECT false AS link_exists;
 $$;

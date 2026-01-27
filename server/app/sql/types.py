@@ -1910,7 +1910,7 @@ class QGetGeneralAttemptV4ChatData(BaseModel):
 
     chat: QGetGeneralAttemptV4Chat | None
     scenario: QGetGeneralAttemptV4Scenario | None
-    messages_entry: list[QGetGeneralAttemptV4Message] | None
+    messages: list[QGetGeneralAttemptV4Message] | None
     grade: QGetGeneralAttemptV4Grade | None
     grading_state: QGetGeneralAttemptV4GradingState | None
     dynamic_rubric: QGetGeneralAttemptV4DynamicRubric | None
@@ -2313,7 +2313,7 @@ class QGetPracticeAttemptV4ChatData(BaseModel):
 
     chat: QGetPracticeAttemptV4Chat | None
     scenario: QGetPracticeAttemptV4Scenario | None
-    messages_entry: list[QGetPracticeAttemptV4Message] | None
+    messages: list[QGetPracticeAttemptV4Message] | None
     hints: list[QGetPracticeAttemptV4HintsByMessage] | None
     grade: QGetPracticeAttemptV4Grade | None
     grading_state: QGetPracticeAttemptV4GradingState | None
@@ -2804,7 +2804,7 @@ class QGetSimulationAttemptV4ChatData(BaseModel):
 
     chat: QGetSimulationAttemptV4Chat | None
     scenario: QGetSimulationAttemptV4Scenario | None
-    messages_entry: list[QGetSimulationAttemptV4Message] | None
+    messages: list[QGetSimulationAttemptV4Message] | None
     hints: list[QGetSimulationAttemptV4HintsByMessage] | None
     grade: QGetSimulationAttemptV4Grade | None
     grading_state: QGetSimulationAttemptV4GradingState | None
@@ -6769,7 +6769,7 @@ class GetDocumentSqlRow(BaseModel):
     uploads_agent_id: UUID | None = None
     uploads_required: bool | None = None
     upload_suggestions: list[UUID] | None = None
-    uploads_entry: list[QGetDocumentV4Upload] | None = None
+    uploads: list[QGetDocumentV4Upload] | None = None
     active_flag_id: UUID | None = None
     flag_resource: QGetDocumentV4FlagResource | None = None
     show_flag: bool | None = None
@@ -6825,7 +6825,7 @@ class GetDocumentApiResponse(BaseModel):
     uploads_agent_id: UUID | None = None
     uploads_required: bool | None = None
     upload_suggestions: list[UUID] | None = None
-    uploads_entry: list[QGetDocumentV4Upload] | None = None
+    uploads: list[QGetDocumentV4Upload] | None = None
     active_flag_id: UUID | None = None
     flag_resource: QGetDocumentV4FlagResource | None = None
     show_flag: bool | None = None
@@ -8486,7 +8486,7 @@ class GetHealthSqlRow(BaseModel):
 
     actor_name: str | None = None
     health_kpis: QGetHealthBundleV4HealthKpis | None = None
-    metrics_entry: list[QGetHealthBundleV4MetricsDataPoint] | None = None
+    metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
 
 class GetHealthApiRequest(BaseModel):
 
@@ -8496,7 +8496,7 @@ class GetHealthApiResponse(BaseModel):
 
     actor_name: str | None = None
     health_kpis: QGetHealthBundleV4HealthKpis | None = None
-    metrics_entry: list[QGetHealthBundleV4MetricsDataPoint] | None = None
+    metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
 
 
 
@@ -8528,7 +8528,7 @@ class QGetHealthListV4Metric(BaseModel):
 class GetHealthListSqlRow(BaseModel):
 
     actor_name: str | None = None
-    metrics_entry: list[QGetHealthListV4Metric] | None = None
+    metrics: list[QGetHealthListV4Metric] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -8542,7 +8542,7 @@ class GetHealthListApiRequest(BaseModel):
 class GetHealthListApiResponse(BaseModel):
 
     actor_name: str | None = None
-    metrics_entry: list[QGetHealthListV4Metric] | None = None
+    metrics: list[QGetHealthListV4Metric] | None = None
     total_count: int | None = None
     page: int | None = None
     page_size: int | None = None
@@ -10177,7 +10177,7 @@ class QGetLeaderboardBundleV4Row(BaseModel):
     name: str | None
     simulation_ids: list[UUID] | None
     scenario_ids: list[UUID] | None
-    metrics_entry: QGetLeaderboardBundleV4Metrics | None
+    metrics: QGetLeaderboardBundleV4Metrics | None
 
 
 
@@ -10420,7 +10420,7 @@ class IGetMessagesByIdsV4Message(BaseModel):
 
 class GetMessagesByIdsSqlRow(BaseModel):
 
-    messages_entry: list[IGetMessagesByIdsV4Message] | None = None
+    messages: list[IGetMessagesByIdsV4Message] | None = None
 
 class GetMessagesByIdsApiRequest(BaseModel):
 
@@ -10428,7 +10428,7 @@ class GetMessagesByIdsApiRequest(BaseModel):
 
 class GetMessagesByIdsApiResponse(BaseModel):
 
-    messages_entry: list[IGetMessagesByIdsV4Message] | None = None
+    messages: list[IGetMessagesByIdsV4Message] | None = None
 
 
 
@@ -10445,7 +10445,7 @@ class GetMessagesByRunIdSqlParams(BaseModel):
 
 class GetMessagesByRunIdSqlRow(BaseModel):
 
-    messages_entry: list[IGetMessagesByIdsV4Message] | None = None
+    messages: list[IGetMessagesByIdsV4Message] | None = None
 
 class GetMessagesByRunIdApiRequest(BaseModel):
 
@@ -10453,7 +10453,7 @@ class GetMessagesByRunIdApiRequest(BaseModel):
 
 class GetMessagesByRunIdApiResponse(BaseModel):
 
-    messages_entry: list[IGetMessagesByIdsV4Message] | None = None
+    messages: list[IGetMessagesByIdsV4Message] | None = None
 
 
 
@@ -13430,7 +13430,7 @@ class QGetPricingAnalyticsV4ModelRun(BaseModel):
     profile_id: UUID | None
     agent_id: UUID | None
     run_cost: float | None
-    debug_info_entry: list[QGetPricingAnalyticsV4DebugInfo] | None
+    debug_info: list[QGetPricingAnalyticsV4DebugInfo] | None
 
 
 
@@ -13542,7 +13542,7 @@ class QGetPricingGroupDetailV4RunMetadata(BaseModel):
 class QGetPricingGroupDetailV4RunWithMessages(BaseModel):
 
     run: QGetPricingGroupDetailV4RunMetadata | None
-    messages_entry: list[QGetPricingGroupDetailV4Message] | None
+    messages: list[QGetPricingGroupDetailV4Message] | None
     previous_context_start_index: int | None
 
 class GetPricingGroupDetailSqlRow(BaseModel):
@@ -13550,7 +13550,7 @@ class GetPricingGroupDetailSqlRow(BaseModel):
     group_exists: bool | None = None
     group_id: UUID | None = None
     actor_name: str | None = None
-    runs_entry: list[QGetPricingGroupDetailV4RunWithMessages] | None = None
+    runs: list[QGetPricingGroupDetailV4RunWithMessages] | None = None
     models: list[QGetPricingGroupDetailV4Model] | None = None
     agents: list[QGetPricingGroupDetailV4Agent] | None = None
     profiles: list[QGetPricingGroupDetailV4Profile] | None = None
@@ -13564,7 +13564,7 @@ class GetPricingGroupDetailApiResponse(BaseModel):
     group_exists: bool | None = None
     group_id: UUID | None = None
     actor_name: str | None = None
-    runs_entry: list[QGetPricingGroupDetailV4RunWithMessages] | None = None
+    runs: list[QGetPricingGroupDetailV4RunWithMessages] | None = None
     models: list[QGetPricingGroupDetailV4Model] | None = None
     agents: list[QGetPricingGroupDetailV4Agent] | None = None
     profiles: list[QGetPricingGroupDetailV4Profile] | None = None
@@ -13643,7 +13643,7 @@ class QGetPricingRunsV4RunSummary(BaseModel):
     model_id: UUID | None
     profile_id: UUID | None
     agent_id: UUID | None
-    debug_info_entry: list[QGetPricingRunsV4DebugInfo] | None
+    debug_info: list[QGetPricingRunsV4DebugInfo] | None
 
 class QGetPricingRunsV4GroupRun(BaseModel):
 
@@ -13653,7 +13653,7 @@ class QGetPricingRunsV4GroupRun(BaseModel):
     total_input_tokens: int | None
     total_output_tokens: int | None
     total_cost: float | None
-    runs_entry: list[QGetPricingRunsV4RunSummary] | None
+    runs: list[QGetPricingRunsV4RunSummary] | None
 
 
 
@@ -15083,7 +15083,7 @@ class QPerSimulationMetricsV4Metric(BaseModel):
 
 class GetPerSimulationMetricsSqlRow(BaseModel):
 
-    metrics_entry: list[QPerSimulationMetricsV4Metric] | None = None
+    metrics: list[QPerSimulationMetricsV4Metric] | None = None
 
 class GetPerSimulationMetricsApiRequest(BaseModel):
 
@@ -15099,7 +15099,7 @@ class GetPerSimulationMetricsApiRequest(BaseModel):
 
 class GetPerSimulationMetricsApiResponse(BaseModel):
 
-    metrics_entry: list[QPerSimulationMetricsV4Metric] | None = None
+    metrics: list[QPerSimulationMetricsV4Metric] | None = None
 
 
 
@@ -15219,7 +15219,7 @@ class QReportsBundleV4Profile(BaseModel):
     role: str | None
     simulation_ids: list[str] | None
     scenario_ids: list[str] | None
-    metrics_entry: QReportsBundleV4ProfileMetrics | None
+    profile_metrics: QReportsBundleV4ProfileMetrics | None
 
 
 

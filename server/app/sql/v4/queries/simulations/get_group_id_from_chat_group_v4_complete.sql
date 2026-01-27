@@ -15,8 +15,8 @@ BEGIN
 END $$;
 
 -- 2) Recreate function
--- Uses unified chats from simulation_chats_entry and simulation_chats_entry
--- Path: chat.id -> messages_entry.chat_id -> messages_entry.run_id -> runs_entry.group_id
+-- Uses unified chats from view_simulation_chats_entry and view_simulation_chats_entry
+-- Path: chat.id -> view_messages_entry.chat_id -> view_messages_entry.run_id -> view_runs_entry.group_id
 CREATE OR REPLACE FUNCTION socket_get_group_id_from_chat_group_v4(
     chat_id uuid
 )
@@ -27,12 +27,12 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH all_chats AS (
-    SELECT id FROM simulation_chats_entry
+    SELECT id FROM view_simulation_chats_entry
     )
     SELECT r.group_id
     FROM all_chats c
-    JOIN messages_entry m ON m.chat_id = c.id
-    JOIN runs_entry r ON r.id = m.run_id
+    JOIN view_messages_entry m ON m.chat_id = c.id
+    JOIN view_runs_entry r ON r.id = m.run_id
     WHERE c.id = $1
     LIMIT 1
 $$;

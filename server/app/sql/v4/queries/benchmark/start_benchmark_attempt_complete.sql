@@ -30,7 +30,7 @@ eval_data AS (
     SELECT 
         e.id as eval_id,
         EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = TRUE) as dynamic,
-        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE) as use_groups
+        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = TRUE) as use_groups
     FROM eval_artifact e
     WHERE e.id = api_start_benchmark_attempt_v4.eval_id
 ),
@@ -46,10 +46,10 @@ pending_runs AS (
     WHERE er.eval_id = api_start_benchmark_attempt_v4.eval_id AND er.completed = false
 ),
 pending_groups AS (
-    SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM grades_entry gr JOIN runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id)) as pending_group_ids
+    SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM view_grades_entry gr JOIN view_runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id)) as pending_group_ids
     FROM eval_groups_junction eg
     WHERE eg.eval_id = api_start_benchmark_attempt_v4.eval_id
-      AND NOT EXISTS (SELECT 1 FROM grades_entry gr JOIN runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id)
+      AND NOT EXISTS (SELECT 1 FROM view_grades_entry gr JOIN view_runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id)
 )
 SELECT 
     na.attempt_id::text,

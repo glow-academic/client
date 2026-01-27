@@ -1,5 +1,5 @@
--- Get activity_entry by message for test assertions
--- Returns activity_entry data for assertions
+-- Get view_activity_entry by message for test assertions
+-- Returns view_activity_entry data for assertions
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_activity_by_message_v4(text);
 
@@ -19,7 +19,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT ae.id, ae.message, ae.endpoint, paj.profile_id, ae.error, ae.created_at
-    FROM audits_entry ae
+    FROM view_audits_entry ae
     LEFT JOIN profile_audits_junction paj ON paj.audit_id = ae.id
     WHERE ae.message = p_message
     ORDER BY ae.created_at DESC

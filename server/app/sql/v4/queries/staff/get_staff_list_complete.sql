@@ -152,7 +152,7 @@ recent_runs AS (
         prj.profile_id,
         COUNT(*) as run_count
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY prj.profile_id
 ),
@@ -161,7 +161,7 @@ profile_total_runs AS (
         prj.profile_id,
         COUNT(*) as total_requests
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     GROUP BY prj.profile_id
 ),
 user_profile AS (
@@ -258,7 +258,7 @@ total_requests_by_date AS (
         DATE(mr.created_at) as date,
         COUNT(*) as count
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY DATE(mr.created_at)
@@ -333,7 +333,7 @@ staff_rows AS (
     LEFT JOIN LATERAL (
         SELECT ae.last_active
         FROM profile_activity_junction pactj
-        JOIN activity_entry ae ON ae.id = pactj.activity_id
+        JOIN view_activity_entry ae ON ae.id = pactj.activity_id
         WHERE pactj.profile_id = p.id
         ORDER BY ae.created_at DESC
         LIMIT 1

@@ -50,7 +50,7 @@ get_tool_info AS (
     JOIN tool_tools_junction ttj ON ttj.tool_id = t.id
     JOIN tools_resource tr_res ON tr_res.id = ttj.tools_id
     JOIN agent_tools_junction at ON at.tool_id = tr_res.id
-    JOIN runs_entry r_run ON r_run.id = p.run_id
+    JOIN view_runs_entry r_run ON r_run.id = p.run_id
     JOIN agent_runs_junction arj ON arj.run_id = r_run.id
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = arj.agent_id
@@ -62,7 +62,7 @@ get_tool_info AS (
 existing_tool_call AS (
     SELECT tc.id as tool_call_id, tc.external_call_id
     FROM params p
-    JOIN calls_entry tc ON (
+    JOIN view_calls_entry tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
         OR (p.call_id IS NOT NULL AND tc.external_call_id = p.call_id)
     )
@@ -104,7 +104,7 @@ accumulate_arguments AS (
             WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
             WHEN p.progress_type = 'tool_call_progress' THEN 
                 COALESCE(
-                    (SELECT arguments_raw FROM calls_entry c 
+                    (SELECT arguments_raw FROM view_calls_entry c 
                      WHERE c.id = uuid(stc.tool_call_id)),
                     ''
                 ) || COALESCE(p.arguments_delta, '')
@@ -113,7 +113,7 @@ accumulate_arguments AS (
     FROM params p
     CROSS JOIN selected_tool_call stc
 ),
--- Update arguments_raw on calls_entry (arguments_raw is now a direct column)
+-- Update arguments_raw on view_calls_entry (arguments_raw is now a direct column)
 update_call_arguments AS (
     UPDATE calls_entry
     SET arguments_raw = (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1), updated_at = NOW()
@@ -130,4 +130,3 @@ SELECT
     (SELECT tool_name FROM get_tool_info LIMIT 1) as tool_name,
     (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
 $$;
-

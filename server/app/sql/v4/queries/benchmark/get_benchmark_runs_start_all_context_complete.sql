@@ -1,5 +1,5 @@
--- Get benchmark runs_entry start all context
--- Gets eval_id, use_groups, and all pending runs_entry/groups_entry
+-- Get benchmark view_runs_entry start all context
+-- Gets eval_id, use_groups, and all pending view_runs_entry/view_groups_entry
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -48,25 +48,25 @@ STABLE
 AS $$
     SELECT
         e.id::text as eval_id,
-        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE),
+        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = TRUE),
         CASE
-            WHEN EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE) THEN
+            WHEN EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = TRUE) THEN
                 ARRAY_AGG(eg.group_id::text) FILTER (
                     WHERE NOT EXISTS (
-                        SELECT 1 FROM grades_entry gr JOIN runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id
+                        SELECT 1 FROM view_grades_entry gr JOIN view_runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id
                     )
                 )
             ELSE
                 ARRAY_AGG(er.run_id::text) FILTER (WHERE er.completed = false)
         END as pending_ids
-    FROM benchmark_attempts_entry ea
+    FROM view_benchmark_attempts_entry ea
     JOIN benchmark_attempts_evals_connection eaj ON eaj.attempt_id = ea.id
     JOIN evals_resource e ON e.id = eaj.evals_id
     LEFT JOIN eval_runs_junction er ON er.eval_id = e.id AND er.completed = false
     LEFT JOIN eval_groups_junction eg ON eg.eval_id = e.id
         AND NOT EXISTS (
-            SELECT 1 FROM grades_entry gr JOIN runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id
+            SELECT 1 FROM view_grades_entry gr JOIN view_runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id
         )
     WHERE ea.id = socket_get_benchmark_runs_start_all_context_v4.attempt_id
-    GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE);
+    GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = '' AND ef.value = TRUE);
 $$;

@@ -56,7 +56,7 @@ BEGIN
 
     -- When agent_id is NULL, use a default call_id for the resource
     IF api_create_names_v4.agent_id IS NULL THEN
-        SELECT id INTO v_call_id FROM calls_entry LIMIT 1;
+        SELECT id INTO v_call_id FROM view_calls_entry LIMIT 1;
         IF v_call_id IS NULL THEN
             RAISE EXCEPTION 'No call_id found for names_resource insert';
         END IF;

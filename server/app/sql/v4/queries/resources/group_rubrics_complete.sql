@@ -45,7 +45,7 @@ DECLARE
     v_run_id uuid;
 BEGIN
     -- Validate group and rubric exist
-    IF NOT EXISTS (SELECT 1 FROM groups_entry WHERE id = api_create_group_rubrics_v4.target_group_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM view_groups_entry WHERE id = api_create_group_rubrics_v4.target_group_id) THEN
         RAISE EXCEPTION 'Group % does not exist', api_create_group_rubrics_v4.target_group_id;
     END IF;
 
@@ -159,7 +159,7 @@ BEGIN
     INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_group_rubrics_v4.agent_id, v_run_id);
 
     -- Link call to run
-    UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
+    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_call_id;
 
     -- Link message to run
     UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;

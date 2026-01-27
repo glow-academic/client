@@ -117,7 +117,7 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -125,13 +125,13 @@ runs_today AS (
 existing_group_from_param AS (
     SELECT g.id as group_id, g.trace_id
     FROM params p
-    JOIN groups_entry g ON g.id = p.group_id
+    JOIN view_groups_entry g ON g.id = p.group_id
     WHERE p.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = p_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = p_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id as group_id, trace_id

@@ -73,12 +73,12 @@ profile_rate_limit AS (
       AND p.profile_id IS NOT NULL
 ),
 runs_today AS (
-    -- Count model runs_entry for the profile since start of day (or 0 if profile_id is NULL)
+    -- Count model view_runs_entry for the profile since start of day (or 0 if profile_id is NULL)
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     CROSS JOIN params p
     WHERE prj.profile_id = p.profile_id
       AND p.profile_id IS NOT NULL

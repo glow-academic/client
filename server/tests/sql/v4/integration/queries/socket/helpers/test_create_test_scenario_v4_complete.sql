@@ -1,4 +1,4 @@
--- Create a test scenario for socket tests_entry
+-- Create a test scenario for socket view_tests_entry
 -- Returns scenario_id
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_scenario_v4(text);

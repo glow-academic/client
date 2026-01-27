@@ -1,5 +1,5 @@
 -- Get all data needed to run text generation agent for existing run
--- Takes run_id and returns full context (agent config, tools, messages_entry, etc.)
+-- Takes run_id and returns full context (agent config, tools, view_messages_entry, etc.)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- NOTE: The type i_get_text_run_context_and_create_run_v4_tool is already defined in
 -- get_text_run_context_and_create_run_complete.sql and reused here
@@ -35,7 +35,7 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_get_text_run_context_for_existing_run_v4(
     run_id uuid,
     agent_id uuid,
-    message_ids uuid[] DEFAULT NULL,  -- Includes user regeneration message (if created) + context messages_entry
+    message_ids uuid[] DEFAULT NULL,  -- Includes user regeneration message (if created) + context view_messages_entry
     group_id uuid DEFAULT NULL,
     resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: array of (resource_type, resource_ids) for fetching whitelisted resources
 )
@@ -83,10 +83,10 @@ existing_run AS (
         arj.agent_id,
         gd.group_id,
         gd.trace_id
-    FROM runs_entry r
+    FROM view_runs_entry r
     CROSS JOIN params p
     LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
-    LEFT JOIN groups_entry g ON g.id = r.group_id
+    LEFT JOIN view_groups_entry g ON g.id = r.group_id
     LEFT JOIN LATERAL (
         SELECT
             COALESCE(r.group_id, p.group_id) as group_id,
@@ -111,10 +111,10 @@ selected_agent AS (
       AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
--- Get profile FROM runs_entry
+-- Get profile FROM view_runs_entry
 run_profile AS (
     SELECT prj.profile_id
-    FROM runs_entry r
+    FROM view_runs_entry r
     JOIN profile_runs_junction prj ON prj.run_id = r.id
     CROSS JOIN params p
     WHERE r.id = p.run_id
@@ -132,7 +132,7 @@ runs_today AS (
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs_entry mr
+    FROM view_runs_entry mr
     JOIN profile_runs_junction prj2 ON prj2.run_id = mr.id
     CROSS JOIN run_profile rp
     WHERE prj2.profile_id = rp.profile_id
@@ -509,17 +509,17 @@ department_name_data AS (
     FROM department_data dd
     LEFT JOIN departments_resource d ON d.id = dd.department_id
 ),
--- Get upload info if exists (for audio input) - get FROM messages_entry linked to run
+-- Get upload info if exists (for audio input) - get FROM view_messages_entry linked to run
 upload_info AS (
     SELECT DISTINCT
         u.id as upload_id,
         u.file_path,
         u.mime_type
     FROM params p
-    JOIN messages_entry m ON m.run_id = p.run_id
-    JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
-    JOIN audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
-    JOIN uploads_entry u ON u.id = ar.upload_id
+    JOIN view_messages_entry m ON m.run_id = p.run_id
+    JOIN view_calls_entry c_audio ON c_audio.run_id = m.run_id
+    JOIN view_audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
+    JOIN view_uploads_entry u ON u.id = ar.upload_id
     LIMIT 1
 ),
 -- Context data with agent config
@@ -621,7 +621,7 @@ SELECT
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
-    -- Group ID and trace_id (from groups_entry table)
+    -- Group ID and trace_id (from view_groups_entry table)
     gd.group_id,
     gd.trace_id::text as trace_id,
     -- Tools array

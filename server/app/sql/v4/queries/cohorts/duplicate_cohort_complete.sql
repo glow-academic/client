@@ -52,7 +52,7 @@ original_cohort AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM calls_entry
+    FROM view_calls_entry
     LIMIT 1
 ),
 -- Insert title INTO names_resource table
@@ -90,7 +90,7 @@ description_resource AS (
 ),
 new_group AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = api_duplicate_cohort_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = api_duplicate_cohort_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
     RETURNING id
 ),
 new_cohort AS (

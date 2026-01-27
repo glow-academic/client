@@ -1,5 +1,5 @@
 -- Get first active model ID for test setup
--- Returns model_id for use in tests_entry
+-- Returns model_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_first_model_v4();
 

@@ -72,7 +72,7 @@ WITH params AS (
 create_group_if_needed AS (
     -- Create new group if group_id is NULL
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = socket_update_standard_descriptions_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = socket_update_standard_descriptions_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id as group_id, trace_id
@@ -81,11 +81,11 @@ group_data AS (
     -- Use existing group if provided, otherwise use newly created group
     SELECT 
         COALESCE(
-            (SELECT g.id FROM groups_entry g CROSS JOIN params p WHERE g.id = p.group_id),
+            (SELECT g.id FROM view_groups_entry g CROSS JOIN params p WHERE g.id = p.group_id),
             (SELECT cg.group_id FROM create_group_if_needed cg)
         ) as group_id,
         COALESCE(
-            (SELECT g.trace_id FROM groups_entry g CROSS JOIN params p WHERE g.id = p.group_id),
+            (SELECT g.trace_id FROM view_groups_entry g CROSS JOIN params p WHERE g.id = p.group_id),
             (SELECT cg.trace_id FROM create_group_if_needed cg)
         ) as trace_id
 ),

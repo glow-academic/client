@@ -84,7 +84,7 @@ BEGIN
         RAISE EXCEPTION 'draft_id is required';
     END IF;
 
-    SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = v_draft_id;
+    SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = v_draft_id;
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
     END IF;

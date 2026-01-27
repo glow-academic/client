@@ -9,7 +9,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 -- Create function
--- Creates debug_info_entry record with run_id directly (no junction table)
+-- Creates view_debug_info_entry record with run_id directly (no junction table)
 CREATE OR REPLACE FUNCTION infra_insert_debug_info_v4(
     run_id uuid,
     content text

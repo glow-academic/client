@@ -40,7 +40,7 @@ WITH params AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM calls_entry
+    FROM view_calls_entry
     LIMIT 1
 ),
 actor_profile AS (
@@ -97,15 +97,15 @@ get_images_enabled_flag AS (
 ),
 ensure_group AS (
     INSERT INTO groups_entry (id, created_at, updated_at, session_id)
-    SELECT p.group_id, NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = api_duplicate_scenario_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT p.group_id, NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = api_duplicate_scenario_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM groups_entry g WHERE g.id = p.group_id)
+      AND NOT EXISTS (SELECT 1 FROM view_groups_entry g WHERE g.id = p.group_id)
     RETURNING id
 ),
 new_group AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = api_duplicate_scenario_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = api_duplicate_scenario_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id

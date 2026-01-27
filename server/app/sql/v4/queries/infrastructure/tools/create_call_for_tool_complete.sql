@@ -1,4 +1,4 @@
--- Create calls_entry row for tool execution
+-- Create view_calls_entry row for tool execution
 DROP FUNCTION IF EXISTS infra_create_call_for_tool_v4(text, uuid, uuid, text);
 
 CREATE OR REPLACE FUNCTION infra_create_call_for_tool_v4(

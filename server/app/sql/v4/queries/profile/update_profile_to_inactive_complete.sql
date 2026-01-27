@@ -1,4 +1,4 @@
--- UPDATE profile_artifact to inactive and insert activity_entry in a single transaction
+-- UPDATE profile_artifact to inactive and insert view_activity_entry in a single transaction
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -54,7 +54,7 @@ update_profile AS (
     SELECT profile_id FROM insert_or_update_flag
 ),
 insert_activity AS (
-    -- Insert activity_entry record
+    -- Insert view_activity_entry record
     INSERT INTO activity_entry (last_active)
     SELECT last_active
     FROM update_profile up

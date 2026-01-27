@@ -55,7 +55,7 @@ original_departments AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM calls_entry
+    FROM view_calls_entry
     LIMIT 1
 ),
 -- Insert name INTO names_resource table

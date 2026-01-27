@@ -25,5 +25,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT created_at FROM messages_entry WHERE id = message_id
+SELECT created_at FROM view_messages_entry WHERE id = message_id
 $$;

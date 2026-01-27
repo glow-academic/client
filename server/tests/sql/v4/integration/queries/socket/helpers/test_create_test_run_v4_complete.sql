@@ -1,5 +1,5 @@
--- Create a test run for socket tests_entry
--- Returns run_id for use in tests_entry
+-- Create a test run for socket view_tests_entry
+-- Returns run_id for use in view_tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_run_v4(uuid, uuid, uuid, text, uuid, uuid);
 

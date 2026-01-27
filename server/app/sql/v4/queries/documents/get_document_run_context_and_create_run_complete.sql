@@ -114,7 +114,7 @@ WITH params AS (
 create_group_if_needed AS (
     -- Create new group if group_id is NULL (always NULL for first generation)
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = socket_get_document_run_context_and_create_run_v4.profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
+    SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = socket_get_document_run_context_and_create_run_v4.profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.department_id IS NOT NULL  -- Always create group for document generation
     RETURNING id as group_id, trace_id
@@ -155,12 +155,12 @@ profile_rate_limit AS (
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
-    -- Count model runs_entry for the profile since start of day
+    -- Count model view_runs_entry for the profile since start of day
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM profile_runs_junction prj
-    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN view_runs_entry mr ON mr.id = prj.run_id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -472,7 +472,7 @@ link_run_to_profile AS (
     WHERE cd.profile_id IS NOT NULL
 ),
 link_group AS (
-    -- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)
+    -- Dummy CTE to maintain compatibility (view_runs_entry now have group_id directly)
     SELECT cr.id as run_id
     FROM create_run cr
 ),
@@ -498,8 +498,8 @@ existing_developer_message AS (
         m.id,
         m.created_at,
         dmh.run_id
-    FROM messages_entry m
-    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    FROM view_messages_entry m
+    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN developer_message_hash dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     LIMIT 1
@@ -538,7 +538,7 @@ update_existing_developer_message_run AS (
     RETURNING m.id as message_id, m.run_id
 ),
 link_developer_message_to_run AS (
-    -- Combine existing (updated) and new developer messages_entry
+    -- Combine existing (updated) and new developer view_messages_entry
     SELECT message_id, run_id FROM update_existing_developer_message_run
     UNION ALL
     SELECT nm.id as message_id, (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
@@ -563,7 +563,7 @@ SELECT
     cd.earliest_run_created_at,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
-    -- Group ID and trace_id (from groups_entry table)
+    -- Group ID and trace_id (from view_groups_entry table)
     gd.group_id,
     gd.trace_id::text as trace_id,
     -- Tools array

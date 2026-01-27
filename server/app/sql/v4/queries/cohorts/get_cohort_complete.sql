@@ -179,10 +179,10 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -190,7 +190,7 @@ draft_group_data AS (
 draft_version_data AS (
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -336,8 +336,8 @@ name_suggestions_data AS (
                            cn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -373,8 +373,8 @@ description_suggestions_data AS (
                            cd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -450,8 +450,8 @@ descriptions_data AS (
                 (
                     d.generated = true
                     AND EXISTS (
-                        SELECT 1 FROM calls_entry c
-                        JOIN runs_entry r ON r.id = c.run_id
+                        SELECT 1 FROM view_calls_entry c
+                        JOIN view_runs_entry r ON r.id = c.run_id
                         WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                           AND r.group_id = dgd.group_id
                     )
@@ -515,8 +515,8 @@ department_suggestions_data AS (
                            cd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls_entry c
-                               JOIN runs_entry r ON r.id = c.run_id
+                               SELECT 1 FROM view_calls_entry c
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
                                  AND r.group_id = dgd.group_id
                            )
@@ -670,8 +670,8 @@ simulation_suggestions_data AS (
                            AND EXISTS (
                                SELECT 1 FROM simulations_resource sr
                                JOIN simulation_simulations_junction ssj ON ssj.simulations_id = sr.id
-                               JOIN simulations_calls_connection srcc ON srcc.simulations_id = sr.id JOIN calls_entry c ON c.id = srcc.call_id
-                               JOIN runs_entry r ON r.id = c.run_id
+                               JOIN simulations_calls_connection srcc ON srcc.simulations_id = sr.id JOIN view_calls_entry c ON c.id = srcc.call_id
+                               JOIN view_runs_entry r ON r.id = c.run_id
                                WHERE ssj.simulation_id = cs.simulation_id
                                  AND sr.generated = true
                                  AND r.group_id = dgd.group_id

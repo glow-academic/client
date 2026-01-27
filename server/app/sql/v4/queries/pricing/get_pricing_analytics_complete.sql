@@ -18,13 +18,13 @@ BEGIN
 END $$;
 
 -- 2) Drop types WITHOUT CASCADE
--- Drop types in dependency order: drop dependent types first (model_run depends on debug_info_entry)
+-- Drop types in dependency order: drop dependent types first (model_run depends on view_debug_info_entry)
 -- Use prefix pattern to find all types, but drop in correct order
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    -- Drop model_run first (depends on debug_info_entry)
+    -- Drop model_run first (depends on view_debug_info_entry)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
@@ -60,7 +60,7 @@ CREATE TYPE types.q_get_pricing_analytics_v4_model_run AS (
     profile_id uuid,
     agent_id uuid,
     run_cost numeric,
-    debug_info_entry types.q_get_pricing_analytics_v4_debug_info[]
+    debug_info types.q_get_pricing_analytics_v4_debug_info[]
 );
 
 CREATE TYPE types.q_get_pricing_analytics_v4_model AS (
@@ -126,14 +126,14 @@ user_profile AS (
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
--- Pre-aggregate token counts from run_pricing_entry (avoids correlated subqueries)
+-- Pre-aggregate token counts from view_run_pricing_entry (avoids correlated subqueries)
 run_token_agg AS (
     SELECT
         rpu.run_id,
         SUM(CASE WHEN rpu.pricing_type = 'input'::pricing_type THEN rpu.count END)::int as input_tokens,
         SUM(CASE WHEN rpu.pricing_type = 'output'::pricing_type THEN rpu.count END)::int as output_tokens
-    FROM run_pricing_entry rpu
-    JOIN runs_entry r ON r.id = rpu.run_id
+    FROM view_run_pricing_entry rpu
+    JOIN view_runs_entry r ON r.id = rpu.run_id
     WHERE r.created_at >= (SELECT start_date FROM params)
       AND r.created_at <= (SELECT end_date FROM params)
     GROUP BY rpu.run_id
@@ -141,11 +141,11 @@ run_token_agg AS (
 -- Unified chats and attempts
 all_chats AS (
     SELECT c.id, c.attempt_id, a.practice AS is_practice_chat
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    FROM view_simulation_chats_entry c
+    JOIN view_simulation_attempts_entry a ON a.id = c.attempt_id
 ),
 all_attempts AS (
-    SELECT id, archived, practice AS is_practice_attempt FROM simulation_attempts_entry
+    SELECT id, archived, practice AS is_practice_attempt FROM view_simulation_attempts_entry
 ),
 all_attempt_simulations AS (
     SELECT attempt_id, simulations_id FROM simulation_attempts_simulations_connection
@@ -161,14 +161,14 @@ runs_base AS (
         arj.agent_id,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         sa.archived
-    FROM runs_entry mr
+    FROM view_runs_entry mr
     LEFT JOIN run_token_agg rta ON rta.run_id = mr.id
     LEFT JOIN agent_runs_junction arj ON arj.run_id = mr.id
     LEFT JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    -- Join to simulations via runs_entry.group_id -> groups_entry -> messages_entry.chat_id -> unified chats/attempts
-    LEFT JOIN groups_entry g ON g.id = mr.group_id
-    LEFT JOIN messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
+    -- Join to simulations via view_runs_entry.group_id -> view_groups_entry -> view_messages_entry.chat_id -> unified chats/attempts
+    LEFT JOIN view_groups_entry g ON g.id = mr.group_id
+    LEFT JOIN view_messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
     LEFT JOIN all_chats c ON c.id = msg.chat_id
     LEFT JOIN all_attempts sa ON sa.id = c.attempt_id
     LEFT JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
@@ -217,8 +217,8 @@ runs_base AS (
             )
         )
         -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
-        -- If no filters provided (NULL or empty), include all runs_entry (runs_entry not linked to simulations are included)
-        -- If filters provided, only include runs_entry that match the filter OR runs_entry not linked to simulations (treat as "general")
+        -- If no filters provided (NULL or empty), include all view_runs_entry (view_runs_entry not linked to simulations are included)
+        -- If filters provided, only include view_runs_entry that match the filter OR view_runs_entry not linked to simulations (treat as "general")
         AND (
             p.simulation_filters IS NULL
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
@@ -237,15 +237,15 @@ runs_base AS (
             OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
--- Calculate run costs using run_pricing_entry (source of truth for pricing, date-filtered)
+-- Calculate run costs using view_run_pricing_entry (source of truth for pricing, date-filtered)
 run_costs AS (
     SELECT
         rpu.run_id,
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
-    FROM run_pricing_entry rpu
-    JOIN runs_entry r ON r.id = rpu.run_id
+    FROM view_run_pricing_entry rpu
+    JOIN view_runs_entry r ON r.id = rpu.run_id
     JOIN agent_runs_junction arj ON arj.run_id = r.id
     JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
@@ -274,10 +274,10 @@ runs_with_debug AS (
                 ORDER BY di.created_at
             ) FILTER (WHERE di.id IS NOT NULL),
             '{}'::types.q_get_pricing_analytics_v4_debug_info[]
-        ) as debug_info_entry
+        ) as debug_info
     FROM runs_base mrb
     LEFT JOIN run_costs rc ON rc.run_id = mrb.run_id
-    LEFT JOIN debug_info_entry di ON di.run_id = mrb.run_id
+    LEFT JOIN view_debug_info_entry di ON di.run_id = mrb.run_id
     GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, rc.run_cost
 ),
 model_pricing_aggregated AS (
@@ -296,7 +296,7 @@ SELECT
     COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.run_cost, mrb.debug_info_entry)::types.q_get_pricing_analytics_v4_model_run
+            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.run_cost, mrb.debug_info)::types.q_get_pricing_analytics_v4_model_run
             ORDER BY mrb.created_at DESC
         ),
         '{}'::types.q_get_pricing_analytics_v4_model_run[]

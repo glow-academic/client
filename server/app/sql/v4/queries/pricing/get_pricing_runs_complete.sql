@@ -1,4 +1,4 @@
--- Get pricing runs_entry - paginated, filtered, searched, sorted group runs_entry
+-- Get pricing view_runs_entry - paginated, filtered, searched, sorted group view_runs_entry
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- EARLY PAGINATION: filters + search first, lightweight grouping, then LIMIT/OFFSET, then expensive aggregations only for page
@@ -19,7 +19,7 @@ BEGIN
 END $$;
 
 -- 2) Drop types WITHOUT CASCADE
--- Drop types in dependency order: drop dependent types first (group_run -> run_summary -> debug_info_entry)
+-- Drop types in dependency order: drop dependent types first (group_run -> run_summary -> view_debug_info_entry)
 -- Use prefix pattern to find all types, but drop in correct order
 DO $$
 DECLARE
@@ -34,7 +34,7 @@ BEGIN
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
     END LOOP;
-    -- Drop run_summary next (depends on debug_info_entry)
+    -- Drop run_summary next (depends on view_debug_info_entry)
     FOR r IN
         SELECT typname
         FROM pg_type
@@ -70,7 +70,7 @@ CREATE TYPE types.q_get_pricing_runs_v4_run_summary AS (
     model_id uuid,
     profile_id uuid,
     agent_id uuid,
-    debug_info_entry types.q_get_pricing_runs_v4_debug_info[]
+    debug_info types.q_get_pricing_runs_v4_debug_info[]
 );
 
 CREATE TYPE types.q_get_pricing_runs_v4_group_run AS (
@@ -80,7 +80,7 @@ CREATE TYPE types.q_get_pricing_runs_v4_group_run AS (
     total_input_tokens int,
     total_output_tokens int,
     total_cost numeric,
-    runs_entry types.q_get_pricing_runs_v4_run_summary[]
+    runs types.q_get_pricing_runs_v4_run_summary[]
 );
 
 CREATE TYPE types.q_get_pricing_runs_v4_filter_option AS (
@@ -145,12 +145,12 @@ AS $$
 -- Unified chats (general + practice)
 WITH all_chats AS (
     SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
-    FROM simulation_chats_entry
+    FROM view_simulation_chats_entry
 ),
 -- Unified attempts (general + practice)
 all_attempts AS (
     SELECT id, created_at, updated_at, infinite_mode, archived, generated, mcp, active
-    FROM simulation_attempts_entry
+    FROM view_simulation_attempts_entry
 ),
 -- Unified attempt→simulation connections
 all_attempt_simulations AS (
@@ -212,12 +212,12 @@ runs_base AS (
         prj.profile_id,
         arj.agent_id,
         mr.group_id
-    FROM runs_entry mr
+    FROM view_runs_entry mr
     LEFT JOIN agent_runs_junction arj ON arj.run_id = mr.id
     LEFT JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    -- Join to simulations via messages_entry.chat_id -> all_chats.attempt_id -> all_attempt_simulations
-    LEFT JOIN messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
+    -- Join to simulations via view_messages_entry.chat_id -> all_chats.attempt_id -> all_attempt_simulations
+    LEFT JOIN view_messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
     LEFT JOIN all_chats c ON c.id = msg.chat_id
     LEFT JOIN all_attempts sa ON sa.id = c.attempt_id
     LEFT JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id
@@ -335,7 +335,7 @@ runs_with_search AS (
         OR LOWER(anl.name) LIKE '%' || LOWER(p.search) || '%'
         OR LOWER(COALESCE(pnl.name, '')) LIKE '%' || LOWER(p.search) || '%'
         OR EXISTS (
-            SELECT 1 FROM debug_info_entry di
+            SELECT 1 FROM view_debug_info_entry di
             WHERE di.run_id = rb.run_id
               AND LOWER(di.content) LIKE '%' || LOWER(p.search) || '%'
         )
@@ -395,7 +395,7 @@ group_cost AS (
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as total_cost
     FROM runs_filtered rf
-    JOIN run_pricing_entry rpu ON rpu.run_id = rf.run_id
+    JOIN view_run_pricing_entry rpu ON rpu.run_id = rf.run_id
     JOIN agent_models_junction am ON am.agent_id = rf.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
@@ -461,8 +461,8 @@ run_costs AS (
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
-    FROM run_pricing_entry rpu
-    JOIN runs_entry r ON r.id = rpu.run_id
+    FROM view_run_pricing_entry rpu
+    JOIN view_runs_entry r ON r.id = rpu.run_id
     JOIN agent_runs_junction arj ON arj.run_id = r.id
     JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
@@ -484,9 +484,9 @@ runs_with_debug AS (
                 ORDER BY di.created_at
             ) FILTER (WHERE di.id IS NOT NULL),
             '{}'::types.q_get_pricing_runs_v4_debug_info[]
-        ) as debug_info_entry
+        ) as debug_info
     FROM paginated_run_ids pri
-    LEFT JOIN debug_info_entry di ON di.run_id = pri.run_id
+    LEFT JOIN view_debug_info_entry di ON di.run_id = pri.run_id
     GROUP BY pri.run_id
 ),
 -- Build full group composites with nested run arrays (only ~10 groups)
@@ -501,9 +501,9 @@ groups_with_full_detail AS (
         ARRAY_AGG(
             (pri.run_id, pri.created_at, pri.input_tokens, pri.output_tokens,
              COALESCE(rc.run_cost, 0), pri.model_id, pri.profile_id, pri.agent_id,
-             COALESCE(rwd.debug_info_entry, '{}'::types.q_get_pricing_runs_v4_debug_info[]))::types.q_get_pricing_runs_v4_run_summary
+             COALESCE(rwd.debug_info, '{}'::types.q_get_pricing_runs_v4_debug_info[]))::types.q_get_pricing_runs_v4_run_summary
             ORDER BY pri.created_at
-        ) as runs_entry
+        ) as group_runs
     FROM paginated_run_ids pri
     JOIN group_lightweight gl ON gl.group_id = pri.group_id
     LEFT JOIN group_cost gc ON gc.group_id = pri.group_id
@@ -516,7 +516,7 @@ groups_with_full_detail AS (
 -- PHASE 5: Options + reference data (unchanged)
 -- ═══════════════════════════════════════════════════════════════
 
--- Get all unique model options from filtered runs_entry (before pagination)
+-- Get all unique model options from filtered view_runs_entry (before pagination)
 model_options_cte AS (
     SELECT
         m.id AS model_id,
@@ -528,7 +528,7 @@ model_options_cte AS (
     GROUP BY m.id, (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
     ORDER BY model_name
 ),
--- Get all unique profile options from filtered runs_entry (before pagination)
+-- Get all unique profile options from filtered view_runs_entry (before pagination)
 profile_options_cte AS (
     SELECT
         p.id AS profile_id,
@@ -540,7 +540,7 @@ profile_options_cte AS (
     GROUP BY p.id, (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
     ORDER BY profile_name
 ),
--- Get all unique actor options (agents) from filtered runs_entry (before pagination)
+-- Get all unique actor options (agents) from filtered view_runs_entry (before pagination)
 actor_options_cte AS (
     SELECT
         a.id AS actor_id,
@@ -569,7 +569,7 @@ SELECT
     COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (gwfd.group_id, gwfd.created_at, gwfd.run_count, gwfd.total_input_tokens, gwfd.total_output_tokens, gwfd.total_cost, gwfd.runs_entry)::types.q_get_pricing_runs_v4_group_run
+            (gwfd.group_id, gwfd.created_at, gwfd.run_count, gwfd.total_input_tokens, gwfd.total_output_tokens, gwfd.total_cost, gwfd.group_runs)::types.q_get_pricing_runs_v4_group_run
             ORDER BY
                 CASE
                     WHEN (SELECT sort_by FROM params) = 'createdAt' THEN

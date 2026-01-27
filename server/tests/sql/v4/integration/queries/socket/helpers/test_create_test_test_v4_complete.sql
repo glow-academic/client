@@ -1,6 +1,6 @@
--- Create a test test for benchmark tests_entry
+-- Create a test test for benchmark view_tests_entry
 -- Returns test_id
--- Note: tests_entry table requires group_id, so we need to create a group first
+-- Note: view_tests_entry table requires group_id, so we need to create a group first
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_test_v4(text, uuid);
 
@@ -15,7 +15,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO tests_entry(title, group_id, completed, trace_id)
+    INSERT INTO tests_entry (title, group_id, completed, trace_id)
     VALUES (
         test_create_test_test_v4.title,
         COALESCE(test_create_test_test_v4.group_id, gen_random_uuid()),

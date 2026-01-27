@@ -37,7 +37,7 @@ WITH params AS (
 ),
 upload_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM uploads_entry WHERE id = (SELECT upload_id FROM params)
+        SELECT 1 FROM view_uploads_entry WHERE id = (SELECT upload_id FROM params)
     )::boolean as upload_exists
 ),
 upload_info AS (
@@ -46,7 +46,7 @@ upload_info AS (
         u.file_path,
         u.mime_type,
         u.size
-    FROM uploads_entry u
+    FROM view_uploads_entry u
     WHERE u.id = (SELECT upload_id FROM params)
 ),
 actor_profile AS (

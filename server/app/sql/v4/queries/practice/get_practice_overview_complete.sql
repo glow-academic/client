@@ -161,7 +161,7 @@ draft_payload_data AS (
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
-    JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN view_drafts_entry d ON d.id = x.draft_id
     JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id AND pdj.profiles_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
 
@@ -287,7 +287,7 @@ activity_by_profile_sim AS (
     SELECT
         profile_id,
         simulation_id,
-        COUNT(DISTINCT chat_id) AS chats_entry,
+        COUNT(DISTINCT chat_id) AS view_chats_entry,
         BOOL_OR(passed) AS any_passed
     FROM filt_all
     GROUP BY profile_id, simulation_id
@@ -324,11 +324,11 @@ sim_pass_pct AS (
       )
     ORDER BY s.id
 ),
--- 8) Standard groups_entry/standards for rubrics
+-- 8) Standard view_groups_entry/standards for rubrics
 all_rubric_ids AS (
     SELECT DISTINCT rubric_id FROM sim_meta WHERE rubric_id IS NOT NULL
 ),
--- Standard groups_entry as array
+-- Standard view_groups_entry as array
 standard_groups_array AS (
     SELECT 
         (sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_get_practice_overview_v4_standard_group AS standard_group
@@ -359,7 +359,7 @@ items_with_standard_groups AS (
         sm.updated_at,
         spm.color,
         spm.icon,
-        COALESCE(aps.chats_entry, 0) AS chats_entry,
+        COALESCE(aps.view_chats_entry, 0) AS view_chats_entry,
         COALESCE((
             SELECT ROUND(MAX(ap.avg_score_completed))::int
             FROM attempt_progress ap, resolve_profile_id rpi
@@ -383,7 +383,7 @@ items_with_standard_groups AS (
                 WHERE ap.profile_id = rpi.resolved_profile_id
                   AND ap.simulation_id = sm.simulation_id
               ), false) THEN 'passed'
-            WHEN COALESCE(aps.chats_entry, 0) > 0 THEN 'in-progress'
+            WHEN COALESCE(aps.view_chats_entry, 0) > 0 THEN 'in-progress'
             ELSE 'not-started'
         END AS status,
         COALESCE((
@@ -441,7 +441,7 @@ items_rows AS (
          NULL::text,  -- cohort_name
          iwsg.updated_at,
          iwsg.last_activity_ts,
-         (iwsg.chats_entry > 0)::boolean,
+         (iwsg.view_chats_entry > 0)::boolean,
          -- Use standard_groups_ids array directly (no JSONB conversion)
          COALESCE(iwsg.standard_groups_ids, ARRAY[]::text[])
         )::types.q_get_practice_overview_v4_practice_simulation AS item,

@@ -17,6 +17,6 @@ STABLE
 AS $$
     -- NOTE: persona_department_prompts table does not exist in current schema
     -- Personas don't have direct prompt links in the current schema
-    -- This function returns false - tests_entry using this may need updating
+    -- This function returns false - view_tests_entry using this may need updating
     SELECT false AS link_exists;
 $$;
