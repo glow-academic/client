@@ -15335,6 +15335,8 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
+            /** Conditional Parameter Id */
+            conditional_parameter_id: string | null;
         };
         /** QGetParameterV4Department */
         QGetParameterV4Department: {
@@ -15413,6 +15415,8 @@ export interface components {
             scenario_parameter: boolean | null;
             /** Video Parameter */
             video_parameter: boolean | null;
+            /** Conditional */
+            conditional: boolean | null;
         };
         /** QGetPersonaResourceV4Item */
         QGetPersonaResourceV4Item: {

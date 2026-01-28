@@ -70,7 +70,10 @@ from app.api.v4.resources.instructions.search import search_instructions_interna
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
-from app.api.v4.resources.parameters.search import search_parameters_internal
+from app.api.v4.resources.parameters.search import (
+    search_conditional_parameters_internal,
+    search_parameters_internal,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -384,12 +387,12 @@ async def get_persona(
                 )
                 return (selected, suggestions)
 
-        async def fetch_parameter_fields(all_persona_parameter_ids: list[UUID]):
+        async def fetch_parameter_fields(param_ids: list[UUID]):
             async with pool.acquire() as c:
                 selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
-                # Get all available fields for ALL persona parameters (not just selected ones)
+                # Get all available fields for ALL parameters (persona + conditional)
                 # This enables instant UI when user selects a parameter
-                available = await search_parameter_fields_internal(c, all_persona_parameter_ids, bypass_cache)
+                available = await search_parameter_fields_internal(c, param_ids, bypass_cache)
                 return (selected, available)
 
         async def fetch_examples():
@@ -434,7 +437,7 @@ async def get_persona(
                 return (selected, suggestions)
 
         # === TWO-PHASE FETCH ===
-        # Phase 1: Fetch parameters FIRST to get all persona parameter IDs
+        # Phase 1a: Fetch persona parameters FIRST to get all persona parameter IDs
         # This is needed because parameter_fields needs to know which parameters to scope to
         (parameters_selected, parameters_suggestions) = await fetch_parameters()
 
@@ -443,6 +446,21 @@ async def get_persona(
             {p.parameter_id for p in parameters_selected}
             | {p.parameter_id for p in parameters_suggestions}
         )
+
+        # Phase 1b: Fetch ALL conditional parameters transitively
+        # This uses a recursive approach to find the full chain (e.g., Persona Type -> Temperament -> Intensity)
+        async def fetch_conditional_parameters():
+            async with pool.acquire() as c:
+                return await search_conditional_parameters_internal(
+                    c, [pid for pid in all_persona_parameter_ids if pid is not None], bypass_cache
+                )
+
+        conditional_params = await fetch_conditional_parameters()
+
+        # Combine ALL parameter IDs for Phase 2 (includes transitive conditional params)
+        all_parameter_ids = list(set(
+            all_persona_parameter_ids + [p.parameter_id for p in conditional_params if p.parameter_id]
+        ))
 
         # Phase 2: Fetch remaining resources in parallel (including parameter_fields with proper IDs)
         (
@@ -463,7 +481,7 @@ async def get_persona(
             fetch_instructions(),
             fetch_flags(),
             fetch_departments(),
-            fetch_parameter_fields(all_persona_parameter_ids),
+            fetch_parameter_fields([pid for pid in all_parameter_ids if pid is not None]),
             fetch_examples(),
         )
 
@@ -480,7 +498,11 @@ async def get_persona(
         )
         parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "id")
         examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
-        parameters = _dedupe_by_id(parameters_selected + parameters_suggestions, "parameter_id")
+        # Combine persona parameters with conditional parameters (conditional params have conditional=true)
+        parameters = _dedupe_by_id(
+            parameters_selected + parameters_suggestions + conditional_params,
+            "parameter_id"
+        )
 
         # Find selected resources
         name_resource = next(

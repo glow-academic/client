@@ -1258,6 +1258,70 @@ function PersonaComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  // Handle conditional parameter auto-select/deselect when a field triggers it
+  // This supports transitive chains: when a field's conditional parameter is deselected,
+  // we also deselect any conditional parameters that were triggered by that parameter's fields
+  const handleConditionalParameterToggle = useCallback(
+    (conditionalParameterId: string, selected: boolean) => {
+      setFormState((prev) => {
+        if (selected) {
+          // Auto-add conditional parameter if not present
+          if (!prev.parameter_ids.includes(conditionalParameterId)) {
+            return {
+              ...prev,
+              parameter_ids: [...prev.parameter_ids, conditionalParameterId],
+            };
+          }
+        } else {
+          // Auto-remove conditional parameter and handle chain cleanup
+          // Build a set of parameters to remove (starts with the one being deselected)
+          const toRemove = new Set<string>([conditionalParameterId]);
+
+          // Get all available fields from personaData to find chain dependencies
+          const allFields = personaDataRef.current?.parameter_fields ?? [];
+
+          // Recursively find conditional params that should also be removed
+          // (parameters whose trigger fields belong to parameters being removed)
+          let changed = true;
+          while (changed) {
+            changed = false;
+            for (const field of allFields) {
+              // If this field belongs to a parameter we're removing
+              // and it has a conditional_parameter_id
+              if (
+                field.parameter_id &&
+                toRemove.has(field.parameter_id) &&
+                field.conditional_parameter_id &&
+                !toRemove.has(field.conditional_parameter_id)
+              ) {
+                toRemove.add(field.conditional_parameter_id);
+                changed = true;
+              }
+            }
+          }
+
+          // Also find fields that should be deselected (fields of removed parameters)
+          const fieldsToRemove = new Set<string>();
+          for (const field of allFields) {
+            if (field.parameter_id && toRemove.has(field.parameter_id) && field.id) {
+              fieldsToRemove.add(field.id);
+            }
+          }
+
+          return {
+            ...prev,
+            parameter_ids: prev.parameter_ids.filter((id) => !toRemove.has(id)),
+            parameter_field_ids: prev.parameter_field_ids.filter(
+              (id) => !fieldsToRemove.has(id)
+            ),
+          };
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
   // GenericForm will manage URL state via nuqs parsers
   // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
@@ -1958,6 +2022,7 @@ function PersonaComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
                   }
+                  onConditionalParameterToggle={handleConditionalParameterToggle}
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.parameter_fields_agent_id ?? null}
                   required={currentPersonaData?.parameter_fields_required ?? false}
@@ -2371,6 +2436,7 @@ function PersonaComponent({
       handleGenerateColors,
       handleGenerateIcons,
       handleGenerateParameters,
+      handleConditionalParameterToggle,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation

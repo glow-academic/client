@@ -47,7 +47,8 @@ SELECT COALESCE(
             q.persona_parameter,
             q.document_parameter,
             q.scenario_parameter,
-            q.video_parameter
+            q.video_parameter,
+            q.conditional
         )::types.q_get_parameters_v4_item
         ORDER BY q.name
     ),
@@ -63,7 +64,11 @@ FROM (
         COALESCE(p.persona_parameter, false) AS persona_parameter,
         COALESCE(p.document_parameter, false) AS document_parameter,
         COALESCE(p.scenario_parameter, false) AS scenario_parameter,
-        COALESCE(p.video_parameter, false) AS video_parameter
+        COALESCE(p.video_parameter, false) AS video_parameter,
+        EXISTS (
+            SELECT 1 FROM conditional_parameters_resource cpr
+            WHERE cpr.parameter_id = p.id AND cpr.active = true
+        ) AS conditional
     FROM parameters_resource p
     WHERE p.active = true
       AND p.name IS NOT NULL

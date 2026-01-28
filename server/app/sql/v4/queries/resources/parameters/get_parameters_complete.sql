@@ -33,6 +33,21 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Drop search_conditional_parameters function if exists (avoids type dependency conflicts)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_search_conditional_parameters_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_search_conditional_parameters_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
 -- Drop types WITHOUT CASCADE
 DO $$
 DECLARE
@@ -58,7 +73,8 @@ CREATE TYPE types.q_get_parameters_v4_item AS (
     persona_parameter boolean,
     document_parameter boolean,
     scenario_parameter boolean,
-    video_parameter boolean
+    video_parameter boolean,
+    conditional boolean
 );
 
 -- Create function
@@ -87,7 +103,11 @@ SELECT COALESCE(
             COALESCE(p.persona_parameter, false),
             COALESCE(p.document_parameter, false),
             COALESCE(p.scenario_parameter, false),
-            COALESCE(p.video_parameter, false)
+            COALESCE(p.video_parameter, false),
+            EXISTS (
+                SELECT 1 FROM conditional_parameters_resource cpr
+                WHERE cpr.parameter_id = p.id AND cpr.active = true
+            )
         )::types.q_get_parameters_v4_item
         ORDER BY array_position(ids, p.id)
     ),

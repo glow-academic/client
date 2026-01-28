@@ -55,7 +55,8 @@ CREATE TYPE types.q_get_parameter_fields_v4_item AS (
     parameter_id uuid,
     name text,
     description text,
-    generated boolean
+    generated boolean,
+    conditional_parameter_id uuid
 );
 
 -- Create function
@@ -76,7 +77,8 @@ SELECT COALESCE(
             pfr.parameter_id,
             (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
             COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''),
-            COALESCE(pfr.generated, false)
+            COALESCE(pfr.generated, false),
+            cp_lookup.conditional_parameter_id
         )::types.q_get_parameter_fields_v4_item
         ORDER BY array_position(ids, pfr.id)
     ),
@@ -84,6 +86,12 @@ SELECT COALESCE(
 ) as items
 FROM parameter_fields_resource pfr
 JOIN field_fields_junction ffj ON ffj.fields_id = pfr.field_id
+LEFT JOIN (
+    SELECT fcpj.field_id, cpr.parameter_id as conditional_parameter_id
+    FROM field_conditional_parameters_junction fcpj
+    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
+    WHERE fcpj.active = true AND cpr.active = true
+) cp_lookup ON cp_lookup.field_id = ffj.field_id
 WHERE pfr.id = ANY(ids)
   AND pfr.active = true
   AND EXISTS (

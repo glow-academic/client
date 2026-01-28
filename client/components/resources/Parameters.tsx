@@ -33,19 +33,21 @@ export interface ParametersItem {
 export interface ParametersProps {
   parameter_ids?: string[]; // Current parameters artifact IDs (standardized prop name)
   parameter_resources?: Array<{
-    parameter_id: string | null;
-    name: string | null;
+    parameter_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
+    conditional?: boolean | null;
   }>; // Selected parameters resources (each includes generated field)
   show_parameters?: boolean; // Whether to show this resource picker
   parameter_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   parameters?: Array<{
-    parameter_id: string | null;
-    name: string | null;
+    parameter_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
-  }>; // All available parameters from API (each includes generated field)
+    conditional?: boolean | null;
+  }>; // All available parameters from API (each includes generated and conditional fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update parameter_ids in form state
   label?: string;
@@ -120,9 +122,10 @@ export function Parameters({
   }, [ids]);
 
   // Convert parameters array to ParametersItem format for GenericPicker
+  // Filter out conditional parameters - they are auto-selected via field selection
   const parametersItems = useMemo(() => {
     return allParameters
-      .filter((p) => p.parameter_id && p.name) // Filter out nulls
+      .filter((p) => p.parameter_id && p.name && !p.conditional) // Filter out nulls and conditional params
       .map((p) => ({
         id: p.parameter_id!,
         name: p.name!,

@@ -33,36 +33,41 @@ type CreateDraftParameterFieldsOut = OutputOf<
 export interface ParameterFieldsProps {
   parameter_field_ids?: string[];
   parameter_field_resources?: Array<{
-    id: string | null;
-    field_id: string | null;
-    parameter_id: string | null;
-    name: string | null;
+    id?: string | null;
+    field_id?: string | null;
+    parameter_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
+    conditional_parameter_id?: string | null;
   }>;
   show_parameter_fields?: boolean;
   parameter_fields?: Array<{
-    id: string | null;
-    field_id: string | null;
-    parameter_id: string | null;
-    name: string | null;
+    id?: string | null;
+    field_id?: string | null;
+    parameter_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
+    conditional_parameter_id?: string | null;
   }>;
   parameter_ids?: string[];
   parameters?: Array<{
-    parameter_id: string | null;
-    name: string | null;
+    parameter_id?: string | null;
+    name?: string | null;
     description?: string | null;
+    conditional?: boolean | null;
   }>;
   parameter_resources?: Array<{
-    parameter_id: string | null;
-    name: string | null;
+    parameter_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
+    conditional?: boolean | null;
   }>;
   disabled?: boolean;
   onChange: (ids: string[]) => void;
+  onConditionalParameterToggle?: (parameterId: string, selected: boolean) => void;
   label?: string;
   id?: string;
   required?: boolean;
@@ -84,6 +89,7 @@ type AvailableFieldOption = {
   parameter_id: string;
   name: string;
   description?: string;
+  conditional_parameter_id?: string | null; // The parameter this field unlocks when selected
 };
 
 export function ParameterFields({
@@ -96,6 +102,7 @@ export function ParameterFields({
   parameter_resources,
   disabled = false,
   onChange,
+  onConditionalParameterToggle,
   label = "Parameter Fields",
   id = "parameter_fields",
   required = false,
@@ -249,8 +256,13 @@ export function ParameterFields({
           });
         }
       }
+
+      // Handle conditional parameter auto-select/deselect
+      if (option.conditional_parameter_id && onConditionalParameterToggle) {
+        onConditionalParameterToggle(option.conditional_parameter_id, checked);
+      }
     },
-    [selectedFieldKeyToResourceId, createParameterField, emitAllIds]
+    [selectedFieldKeyToResourceId, createParameterField, emitAllIds, onConditionalParameterToggle]
   );
 
   // Check if a field is currently selected
@@ -279,6 +291,7 @@ export function ParameterFields({
           parameter_id: parameterId,
           name: field.name as string,
           description: field.description ?? "",
+          conditional_parameter_id: field.conditional_parameter_id ?? null,
         });
       });
 

@@ -72900,6 +72900,18 @@
               }
             ],
             "title": "Generated"
+          },
+          "conditional_parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Id"
           }
         },
         "type": "object",
@@ -72909,7 +72921,8 @@
           "parameter_id",
           "name",
           "description",
-          "generated"
+          "generated",
+          "conditional_parameter_id"
         ],
         "title": "QGetParameterFieldsV4Item"
       },
@@ -73314,6 +73327,17 @@
               }
             ],
             "title": "Video Parameter"
+          },
+          "conditional": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional"
           }
         },
         "type": "object",
@@ -73326,7 +73350,8 @@
           "persona_parameter",
           "document_parameter",
           "scenario_parameter",
-          "video_parameter"
+          "video_parameter",
+          "conditional"
         ],
         "title": "QGetParametersV4Item"
       },

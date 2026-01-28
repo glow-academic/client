@@ -17437,6 +17437,7 @@ class QGetParameterFieldsV4Item(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
+    conditional_parameter_id: UUID | None
 
 class GetParameterFieldsSqlRow(BaseModel):
 
@@ -17507,6 +17508,7 @@ class QGetParametersV4Item(BaseModel):
     document_parameter: bool | None
     scenario_parameter: bool | None
     video_parameter: bool | None
+    conditional: bool | None
 
 class GetParametersSqlRow(BaseModel):
 
@@ -17521,6 +17523,31 @@ class GetParametersApiRequest(BaseModel):
     p_video_parameter: bool | None = None
 
 class GetParametersApiResponse(BaseModel):
+
+    items: list[QGetParametersV4Item] | None = None
+
+
+
+# Generated from: search_conditional_parameters
+
+class SearchConditionalParametersSqlParams(BaseModel):
+
+    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.parameter_ids,
+        )
+
+class SearchConditionalParametersSqlRow(BaseModel):
+
+    items: list[QGetParametersV4Item] | None = None
+
+class SearchConditionalParametersApiRequest(BaseModel):
+
+    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchConditionalParametersApiResponse(BaseModel):
 
     items: list[QGetParametersV4Item] | None = None
 
@@ -25150,6 +25177,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParametersApiRequest",
         "GetParametersApiResponse",
     ),
+    "app/sql/v4/queries/resources/parameters/search_conditional_parameters_complete.sql": (
+        "SearchConditionalParametersSqlParams",
+        "SearchConditionalParametersSqlRow",
+        "SearchConditionalParametersApiRequest",
+        "SearchConditionalParametersApiResponse",
+    ),
     "app/sql/v4/queries/resources/parameters/search_parameters_complete.sql": (
         "SearchParametersSqlParams",
         "SearchParametersSqlRow",
@@ -27273,6 +27306,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameters/get_parameters_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/parameters/search_conditional_parameters_complete.sql"]
     ) -> SqlString: ...
 
     @overload

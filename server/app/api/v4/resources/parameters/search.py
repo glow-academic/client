@@ -8,6 +8,8 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     QGetParametersV4Item,
+    SearchConditionalParametersSqlParams,
+    SearchConditionalParametersSqlRow,
     SearchParametersApiRequest,
     SearchParametersApiResponse,
     SearchParametersSqlParams,
@@ -21,6 +23,7 @@ from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 SQL_PATH = "app/sql/v4/queries/resources/parameters/search_parameters_complete.sql"
+CONDITIONAL_SQL_PATH = "app/sql/v4/queries/resources/parameters/search_conditional_parameters_complete.sql"
 
 router = APIRouter()
 
@@ -79,6 +82,56 @@ async def search_parameters_internal(
     result = cast(
         SearchParametersSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+
+    items: list[QGetParametersV4Item] = result.items if result and result.items else []
+
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items
+
+
+async def search_conditional_parameters_internal(
+    conn: asyncpg.Connection,
+    parameter_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[QGetParametersV4Item]:
+    """Fetch all conditional parameters transitively from the given parameter IDs.
+
+    Uses a recursive CTE to find all conditional parameters in the chain.
+    For example, if Persona Type -> Temperament -> Intensity, this returns
+    both Temperament and Intensity when given Persona Type.
+    """
+    if not parameter_ids:
+        return []
+
+    tags = ["resources", "parameters", "conditional"]
+    cache_key_val = cache_key(
+        "/api/v4/resources/parameters/search_conditional",
+        {
+            "parameter_ids": [str(id) for id in parameter_ids],
+        },
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                QGetParametersV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
+
+    params = SearchConditionalParametersSqlParams(
+        parameter_ids=parameter_ids,
+    )
+    result = cast(
+        SearchConditionalParametersSqlRow,
+        await execute_sql_typed(conn, CONDITIONAL_SQL_PATH, params=params),
     )
 
     items: list[QGetParametersV4Item] = result.items if result and result.items else []
