@@ -47,7 +47,7 @@ CREATE TYPE types.q_get_video_resource_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_video_resource_v4(
-    id uuid
+    video_id uuid
 )
 RETURNS TABLE (
     item types.q_get_video_resource_v4_item
@@ -61,12 +61,14 @@ SELECT
         v.name,
         v.length_seconds,
         COALESCE(v.completed, false),
-        v.file_path,
-        v.mime_type,
-        v.upload_id,
+        COALESCE(u.file_path, ''),
+        COALESCE(u.mime_type, ''),
+        COALESCE(vuc.upload_id, v.id),
         COALESCE(v.generated, false)
     )::types.q_get_video_resource_v4_item as item
 FROM videos_resource v
-WHERE v.id = id
+LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
+LEFT JOIN view_uploads_entry u ON u.id = vuc.upload_id
+WHERE v.id = video_id
   AND v.active = true;
 $$;

@@ -45,7 +45,7 @@ CREATE TYPE types.q_get_document_resource_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_document_resource_v4(
-    id uuid
+    document_id uuid
 )
 RETURNS TABLE (
     item types.q_get_document_resource_v4_item
@@ -57,12 +57,16 @@ SELECT
     (
         d.id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        COALESCE((SELECT desc.description FROM document_descriptions_junction dd JOIN descriptions_resource desc ON dd.description_id = desc.id WHERE dd.document_id = d.id LIMIT 1), ''),
-        d.file_path,
-        d.mime_type,
+        COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = d.id LIMIT 1), ''),
+        COALESCE(u.file_path, ''),
+        COALESCE(u.mime_type, ''),
         COALESCE(d.generated, false)
     )::types.q_get_document_resource_v4_item as item
 FROM documents_resource d
-WHERE d.id = id
+LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id
+WHERE d.id = document_id
   AND d.active = true;
 $$;

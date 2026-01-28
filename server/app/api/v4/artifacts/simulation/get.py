@@ -4,15 +4,19 @@ Unified endpoint that handles both new (simulation_id = NULL) and detail (simula
 Uses two-pass architecture with Python-computed permissions.
 """
 
+import asyncio
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
+    GetSimulationAccessSqlParams,
+    GetSimulationAccessSqlRow,
     GetSimulationApiRequest,
     GetSimulationApiResponse,
     GetSimulationSqlParams,
@@ -34,6 +38,11 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_flag_required,
     compute_scenarios_required,
 )
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -41,6 +50,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/simulations/get_simulation_complete.sql"
+ACCESS_SQL_PATH = "app/sql/v4/queries/simulations/get_simulation_access_complete.sql"
 
 
 router = APIRouter()
@@ -113,6 +123,25 @@ async def get_simulation(
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
 
+        # === QUERY 1: Access Check ===
+        access_params = GetSimulationAccessSqlParams(
+            profile_id=profile_id,
+            simulation_id=simulation_id,
+            draft_id=draft_id,
+        )
+        access_result = cast(
+            GetSimulationAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        user_role = access_result.user_role
+        user_department_ids = access_result.user_department_ids or []
+        simulation_department_ids = access_result.simulation_department_ids or []
+
         # Convert API request to SQL params (add profile_id and mcp from header)
         params = GetSimulationSqlParams(
             profile_id=profile_id,
@@ -146,10 +175,6 @@ async def get_simulation(
                 }
             audit_set(http_request, **audit_ctx)
 
-        # Extract user context for Python permission computation
-        user_role = getattr(result, "user_role", None)
-        user_department_ids = getattr(result, "user_department_ids", None) or []
-        simulation_department_ids = getattr(result, "simulation_department_ids", None) or []
         cohort_usage_count = getattr(result, "cohort_usage_count", 0) or 0
 
         # Conditional validation based on mode
@@ -165,7 +190,7 @@ async def get_simulation(
                 )
         else:
             # Detail mode: check if simulation exists and has access
-            if result.simulation_exists is False:
+            if access_result.simulation_exists is False:
                 raise HTTPException(
                     status_code=404, detail=f"Simulation {simulation_id} not found"
                 )
@@ -177,19 +202,12 @@ async def get_simulation(
                     detail="You don't have access to this simulation. It may be restricted to other departments.",
                 )
 
-            if not result.name_resource or not result.name_resource.name:
-                # Simulation exists but user doesn't have access
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this simulation. It may be restricted to other departments.",
-                )
-
         # Compute permissions in Python using permissions.py
         can_edit = compute_can_edit(user_role, simulation_department_ids, cohort_usage_count)
         disabled_reason = compute_disabled_reason(user_role, simulation_department_ids, cohort_usage_count)
 
         # Get tools flags for show computation
-        names_has_tools = getattr(result, "names_has_tools", True) or True
+        names_has_tools = bool(getattr(result, "names_has_tools", False))
         departments_count = len(result.departments or [])
         scenarios_count = len(result.scenarios or [])
 
@@ -207,22 +225,118 @@ async def get_simulation(
         flag_required = compute_flag_required()
         scenarios_required = compute_scenarios_required()
 
+        # === RESOURCE FETCHING (by IDs for cache reuse) ===
+        pool = await get_pool()
+
+        def _ids_from_resource_list(items: list[Any] | None, id_attr: str) -> list[UUID]:
+            if not items:
+                return []
+            return [getattr(item, id_attr) for item in items if getattr(item, id_attr, None)]
+
+        def _order_by_ids(items: list[Any], id_attr: str, ordered_ids: list[UUID]) -> list[Any]:
+            by_id = {getattr(item, id_attr): item for item in items if getattr(item, id_attr, None)}
+            return [by_id[i] for i in ordered_ids if i in by_id]
+
+        async def _run_with_pool(fn, *args):
+            async with pool.acquire() as pooled_conn:
+                return await fn(pooled_conn, *args, bypass_cache=bypass_cache)
+
+        # Selected resource IDs
+        name_ids = [result.name_id] if result.name_id else []
+        description_ids = [result.description_id] if result.description_id else []
+        flag_ids = [result.active_flag_id] if result.active_flag_id else []
+        department_ids = result.department_ids or []
+        scenario_ids = result.scenario_ids or []
+        scenario_flag_ids = result.scenario_flag_ids or []
+        scenario_position_ids = result.scenario_position_ids or []
+        scenario_rubric_ids = result.scenario_rubric_ids or []
+        scenario_time_limit_ids = result.scenario_time_limit_ids or []
+
+        # Search result IDs from SQL (for options lists)
+        name_option_ids = _ids_from_resource_list(result.names, "id")
+        description_option_ids = _ids_from_resource_list(result.descriptions, "id")
+        department_option_ids = _ids_from_resource_list(result.departments, "department_id")
+        scenario_option_ids = _ids_from_resource_list(result.scenarios, "scenario_id")
+
+        (
+            name_items,
+            description_items,
+            flag_items,
+            department_items,
+            scenario_items,
+            name_options,
+            description_options,
+            department_options,
+            scenario_options,
+        ) = await asyncio.gather(
+            _run_with_pool(get_names_internal, name_ids),
+            _run_with_pool(get_descriptions_internal, description_ids),
+            _run_with_pool(get_flags_internal, flag_ids),
+            _run_with_pool(get_departments_internal, department_ids),
+            _run_with_pool(get_scenarios_internal, scenario_ids),
+            _run_with_pool(get_names_internal, name_option_ids),
+            _run_with_pool(get_descriptions_internal, description_option_ids),
+            _run_with_pool(get_departments_internal, department_option_ids),
+            _run_with_pool(get_scenarios_internal, scenario_option_ids),
+        )
+
+        name_resource = name_items[0] if name_items else None
+        description_resource = description_items[0] if description_items else None
+        flag_resource = flag_items[0] if flag_items else None
+
+        names = _order_by_ids(name_options, "id", name_option_ids)
+        descriptions = _order_by_ids(description_options, "id", description_option_ids)
+        departments = _order_by_ids(
+            department_options, "department_id", department_option_ids
+        )
+        scenarios = _order_by_ids(
+            scenario_options, "scenario_id", scenario_option_ids
+        )
+
+        show_scenario_flags = bool(scenario_ids or scenario_flag_ids)
+        show_scenario_positions = bool(scenario_ids or scenario_position_ids)
+        show_scenario_rubrics = bool(scenario_ids or scenario_rubric_ids)
+        show_scenario_time_limits = bool(scenario_ids or scenario_time_limit_ids)
+
         # Build response with Python-computed permissions
         result_dict = result.model_dump(mode="json")
-
-        # Override SQL-computed permissions with Python-computed ones
-        result_dict["can_edit"] = can_edit
-        result_dict["disabled_reason"] = disabled_reason
-        result_dict["show_name"] = show_name
-        result_dict["show_description"] = show_description
-        result_dict["show_departments"] = show_departments
-        result_dict["show_flag"] = show_flag
-        result_dict["show_scenarios"] = show_scenarios
-        result_dict["name_required"] = name_required
-        result_dict["description_required"] = description_required
-        result_dict["departments_required"] = departments_required
-        result_dict["flag_required"] = flag_required
-        result_dict["scenarios_required"] = scenarios_required
+        result_dict.update(
+            {
+                "can_edit": can_edit,
+                "disabled_reason": disabled_reason,
+                "show_name": show_name,
+                "show_description": show_description,
+                "show_departments": show_departments,
+                "show_flag": show_flag,
+                "show_scenarios": show_scenarios,
+                "show_scenario_flags": show_scenario_flags,
+                "show_scenario_positions": show_scenario_positions,
+                "show_scenario_rubrics": show_scenario_rubrics,
+                "show_scenario_time_limits": show_scenario_time_limits,
+                "name_required": name_required,
+                "description_required": description_required,
+                "departments_required": departments_required,
+                "flag_required": flag_required,
+                "scenarios_required": scenarios_required,
+                "scenario_flags_required": False,
+                "scenario_positions_required": False,
+                "scenario_rubrics_required": True,
+                "scenario_time_limits_required": False,
+                "name_resource": name_resource,
+                "description_resource": description_resource,
+                "flag_resource": flag_resource,
+                "department_resources": _order_by_ids(
+                    department_items, "department_id", department_ids
+                ),
+                "scenario_resources": _order_by_ids(
+                    scenario_items, "scenario_id", scenario_ids
+                ),
+                "names": names,
+                "descriptions": descriptions,
+                "departments": departments,
+                "scenarios": scenarios,
+            }
+        )
 
         # Convert SQL result to API response
         response_data = GetSimulationApiResponse.model_validate(result_dict)

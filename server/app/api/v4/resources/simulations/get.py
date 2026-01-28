@@ -41,6 +41,10 @@ class GetSimulationV4Item(BaseModel):
     generated: bool | None = None
 
 
+# Alias for backward compatibility with search.py
+GetSimulationsV4Item = GetSimulationV4Item
+
+
 class GetSimulationApiRequest(BaseModel):
     """Request for getting a simulation by ID."""
 

@@ -159,8 +159,8 @@ filtered_scenarios AS (
         WHERE p.suggest_source = 'recent'
     ) sub
 ),
--- Apply pagination
-paginated_scenarios AS (
+-- Final result with pagination
+final_result AS (
     SELECT
         fs.scenario_id,
         fs.title,
@@ -171,17 +171,18 @@ paginated_scenarios AS (
         fs.persona_id,
         fs.persona_name
     FROM filtered_scenarios fs
-    CROSS JOIN params p
     ORDER BY fs.title ASC
-    LIMIT p.limit_val
-    OFFSET p.offset_val
 )
-SELECT
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (ps.scenario_id, ps.title, ps.description, ps.active, ps.generated, ps.department_id, ps.persona_id, ps.persona_name)::types.q_get_scenarios_v4_item
-            ORDER BY ps.title
-        ) FROM paginated_scenarios ps),
-        '{}'::types.q_get_scenarios_v4_item[]
-    ) as items;
+SELECT COALESCE(
+    ARRAY_AGG(
+        (q.scenario_id, q.title, q.description, q.active, q.generated, q.department_id, q.persona_id, q.persona_name)::types.q_get_scenarios_v4_item
+        ORDER BY q.title
+    ),
+    ARRAY[]::types.q_get_scenarios_v4_item[]
+) as items
+FROM (
+    SELECT * FROM final_result
+    LIMIT limit_count
+    OFFSET offset_count
+) q;
 $$;

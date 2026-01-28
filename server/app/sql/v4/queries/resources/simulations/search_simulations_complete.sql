@@ -118,11 +118,10 @@ recent_simulations AS (
     CROSS JOIN params p
     WHERE p.group_id IS NOT NULL
     AND EXISTS (
-        SELECT 1 FROM simulations_resource sr
-        JOIN calls_entry c ON c.id = sr.call_id
-        JOIN messages_entry m ON m.id = c.message_id
-        JOIN runs_entry r ON r.id = m.run_id
-        WHERE sr.simulation_id = a.simulation_id
+        SELECT 1 FROM simulations_calls_connection scc
+        JOIN calls_entry c ON c.id = scc.call_id
+        JOIN runs_entry r ON r.id = c.run_id
+        WHERE scc.simulations_id = a.simulation_id
           AND r.group_id = p.group_id
     )
 ),
@@ -149,8 +148,8 @@ filtered_simulations AS (
         WHERE p.suggest_source = 'recent'
     ) sub
 ),
--- Apply pagination
-paginated_simulations AS (
+-- Final result with ordering
+final_result AS (
     SELECT
         fs.simulation_id,
         fs.name,
@@ -158,17 +157,18 @@ paginated_simulations AS (
         fs.time_limit,
         fs.generated
     FROM filtered_simulations fs
-    CROSS JOIN params p
     ORDER BY fs.name ASC
-    LIMIT p.limit_val
-    OFFSET p.offset_val
 )
-SELECT
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (ps.simulation_id, ps.name, ps.description, ps.time_limit, ps.generated)::types.q_get_simulations_v4_item
-            ORDER BY ps.name
-        ) FROM paginated_simulations ps),
-        '{}'::types.q_get_simulations_v4_item[]
-    ) as items;
+SELECT COALESCE(
+    ARRAY_AGG(
+        (q.simulation_id, q.name, q.description, q.time_limit, q.generated)::types.q_get_simulations_v4_item
+        ORDER BY q.name
+    ),
+    ARRAY[]::types.q_get_simulations_v4_item[]
+) as items
+FROM (
+    SELECT * FROM final_result
+    LIMIT limit_count
+    OFFSET offset_count
+) q;
 $$;

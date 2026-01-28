@@ -27,7 +27,7 @@ BEGIN
         WHERE typname LIKE 'q_get_simulation_positions_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
@@ -62,7 +62,6 @@ position_data AS (
     FROM params p
     CROSS JOIN LATERAL unnest(p.sim_ids) AS sid
     JOIN simulation_positions_resource spr ON spr.simulation_id = sid
-    WHERE spr.active = true
 )
 SELECT
     COALESCE(

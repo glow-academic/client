@@ -1,19 +1,49 @@
 """Cohort get endpoint - v4 API following DHH principles.
 Unified endpoint that handles both new (cohort_id = NULL) and detail (cohort_id provided).
+Two-pass architecture with Python-computed permissions.
 """
 
+import asyncio
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 from app.sql.types import (
+    GetCohortAccessSqlParams,
+    GetCohortAccessSqlRow,
     GetCohortApiRequest,
     GetCohortApiResponse,
     GetCohortSqlParams,
     GetCohortSqlRow,
     load_sql_query,
+)
+from app.api.v4.artifacts.cohort.permissions import (
+    compute_can_edit,
+    compute_disabled_reason,
+    compute_show_departments,
+    compute_show_description,
+    compute_show_flag,
+    compute_show_name,
+    compute_show_simulation_positions,
+    compute_show_simulations,
+    compute_departments_required,
+    compute_description_required,
+    compute_flag_required,
+    compute_name_required,
+    compute_simulation_positions_required,
+    compute_simulations_required,
+    has_access,
+)
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.simulations.get import get_simulation_internal
+from app.api.v4.resources.simulation_positions.get import (
+    get_simulation_positions_internal,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.cache_key import cache_key
@@ -23,6 +53,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_complete.sql"
+ACCESS_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"
 
 
 router = APIRouter()
@@ -46,10 +77,12 @@ async def get_cohort(
 ) -> GetCohortApiResponse:
     """Get cohort information - handles both new (cohort_id = NULL) and detail (cohort_id provided).
     
-    Validation Logic:
-    - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-    - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-    - Frontend components check agent_id before showing generate button
+    Two-pass architecture:
+    - Query 1: access check (role + department access)
+    - Query 2: ID + search data (resource IDs + suggestions)
+    - Pass 2: resource fetching by IDs for cache reuse
+
+    Permissions + UI flags computed in Python.
     """
     tags = ["cohorts"]  # From router tags
 
@@ -91,6 +124,25 @@ async def get_cohort(
 
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
+
+        # === QUERY 1: Access Check ===
+        access_params = GetCohortAccessSqlParams(
+            profile_id=profile_id,
+            cohort_id=cohort_id,
+            draft_id=draft_id,
+        )
+        access_result = cast(
+            GetCohortAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        user_role = access_result.user_role
+        user_department_ids = access_result.user_department_ids or []
+        cohort_department_ids = access_result.cohort_department_ids or []
 
         # Convert API request to SQL params (add profile_id and mcp from header)
         params = GetCohortSqlParams(
@@ -139,24 +191,162 @@ async def get_cohort(
                 )
         else:
             # Detail mode: check if cohort exists and has access
-            if result.cohort_exists is False:
+            if access_result.cohort_exists is False:
                 raise HTTPException(
                     status_code=404, detail=f"Cohort {cohort_id} not found"
                 )
 
-            if not result.name_resource or not result.name_resource.name:
-                # Cohort exists but user doesn't have access
+            if not has_access(user_role, user_department_ids, cohort_department_ids):
                 raise HTTPException(
                     status_code=403,
                     detail="You don't have access to this cohort. It may be restricted to other departments.",
                 )
 
-        # Convert SQL result to API response
-        response_data = GetCohortApiResponse.model_validate(
+        # === PYTHON PERMISSIONS & UI FLAGS ===
+        can_edit = compute_can_edit(user_role, cohort_department_ids)
+        disabled_reason = compute_disabled_reason(user_role, cohort_department_ids)
+
+        # Show flags based on available resources
+        departments_count = len(result.departments or [])
+        simulations_count = len(result.simulations or [])
+        simulation_positions_count = len(result.simulation_positions or [])
+
+        show_name = compute_show_name()
+        show_description = compute_show_description()
+        show_flag = compute_show_flag()
+        show_departments = compute_show_departments(departments_count)
+        show_simulations = compute_show_simulations(simulations_count)
+        show_simulation_positions = compute_show_simulation_positions(
+            simulation_positions_count
+        )
+
+        # Required flags
+        name_required = compute_name_required()
+        description_required = compute_description_required()
+        flag_required = compute_flag_required()
+        departments_required = compute_departments_required(show_departments)
+        simulations_required = compute_simulations_required()
+        simulation_positions_required = compute_simulation_positions_required()
+
+        # === RESOURCE FETCHING (by IDs for cache reuse) ===
+        pool = await get_pool()
+
+        def _ids_from_resource_list(items: list[Any] | None, id_attr: str) -> list[UUID]:
+            if not items:
+                return []
+            return [getattr(item, id_attr) for item in items if getattr(item, id_attr, None)]
+
+        def _order_by_ids(items: list[Any], id_attr: str, ordered_ids: list[UUID]) -> list[Any]:
+            by_id = {getattr(item, id_attr): item for item in items if getattr(item, id_attr, None)}
+            return [by_id[i] for i in ordered_ids if i in by_id]
+
+        async def _run_with_pool(fn, *args):
+            async with pool.acquire() as pooled_conn:
+                return await fn(pooled_conn, *args, bypass_cache=bypass_cache)
+
+        # Selected resource IDs
+        name_ids = [result.name_id] if result.name_id else []
+        description_ids = [result.description_id] if result.description_id else []
+        flag_ids = [result.active_flag_id] if result.active_flag_id else []
+        department_ids = result.department_ids or []
+        simulation_ids = result.simulation_ids or []
+
+        # Search result IDs from SQL (for options lists)
+        name_option_ids = _ids_from_resource_list(result.names, "id")
+        description_option_ids = _ids_from_resource_list(result.descriptions, "id")
+        department_option_ids = _ids_from_resource_list(result.departments, "department_id")
+        simulation_option_ids = _ids_from_resource_list(result.simulations, "simulation_id")
+
+        # Fetch resources in parallel
+        (
+            name_items,
+            description_items,
+            flag_items,
+            department_items,
+            simulation_items,
+            name_options,
+            description_options,
+            department_options,
+            simulation_options,
+            simulation_positions,
+        ) = await asyncio.gather(
+            _run_with_pool(get_names_internal, name_ids),
+            _run_with_pool(get_descriptions_internal, description_ids),
+            _run_with_pool(get_flags_internal, flag_ids),
+            _run_with_pool(get_departments_internal, department_ids),
+            asyncio.gather(
+                *[
+                    _run_with_pool(get_simulation_internal, sim_id)
+                    for sim_id in simulation_ids
+                ]
+            ),
+            _run_with_pool(get_names_internal, name_option_ids),
+            _run_with_pool(get_descriptions_internal, description_option_ids),
+            _run_with_pool(get_departments_internal, department_option_ids),
+            asyncio.gather(
+                *[
+                    _run_with_pool(get_simulation_internal, sim_id)
+                    for sim_id in simulation_option_ids
+                ]
+            ),
+            _run_with_pool(get_simulation_positions_internal, simulation_ids),
+        )
+
+        # Normalize single-resource selections
+        name_resource = name_items[0] if name_items else None
+        description_resource = description_items[0] if description_items else None
+        flag_resource = flag_items[0] if flag_items else None
+
+        # Ordered option lists
+        names = _order_by_ids(name_options, "id", name_option_ids)
+        descriptions = _order_by_ids(description_options, "id", description_option_ids)
+        departments = _order_by_ids(
+            department_options, "department_id", department_option_ids
+        )
+        simulations = _order_by_ids(
+            [item for item in simulation_options if item],
+            "simulation_id",
+            simulation_option_ids,
+        )
+
+        # Build response with Python-computed permissions and fetched resources
+        result_dict = result.model_dump(mode="json")
+        result_dict.update(
             {
-                **result.model_dump(),
+                "can_edit": can_edit,
+                "disabled_reason": disabled_reason,
+                "show_name": show_name,
+                "show_description": show_description,
+                "show_flag": show_flag,
+                "show_departments": show_departments,
+                "show_simulations": show_simulations,
+                "show_simulation_positions": show_simulation_positions,
+                "name_required": name_required,
+                "description_required": description_required,
+                "flag_required": flag_required,
+                "departments_required": departments_required,
+                "simulations_required": simulations_required,
+                "simulation_positions_required": simulation_positions_required,
+                "name_resource": name_resource,
+                "description_resource": description_resource,
+                "flag_resource": flag_resource,
+                "department_resources": _order_by_ids(
+                    department_items, "department_id", department_ids
+                ),
+                "simulation_resources": _order_by_ids(
+                    [item for item in simulation_items if item],
+                    "simulation_id",
+                    simulation_ids,
+                ),
+                "simulation_positions": simulation_positions or [],
+                "names": names,
+                "descriptions": descriptions,
+                "departments": departments,
+                "simulations": simulations,
             }
         )
+
+        response_data = GetCohortApiResponse.model_validate(result_dict)
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

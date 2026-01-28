@@ -16,6 +16,30 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Drop type if exists
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_get_simulation_positions_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
+    END LOOP;
+END $$;
+
+-- Create composite type for simulation position items
+CREATE TYPE types.q_get_simulation_positions_v4_item AS (
+    id uuid,
+    simulation_id uuid,
+    value integer,
+    generated boolean,
+    mcp boolean
+);
+
 CREATE OR REPLACE FUNCTION api_search_simulation_positions_v4(
     simulation_id uuid DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -35,7 +59,7 @@ WITH params AS (
         COALESCE(offset_count, 0) AS offset_val,
         COALESCE(exclude_ids, ARRAY[]::uuid[]) AS exclude_ids
 ),
--- All active simulation positions with filtering
+-- All simulation positions with filtering
 position_data AS (
     SELECT
         spr.id,
@@ -45,21 +69,22 @@ position_data AS (
         COALESCE(spr.mcp, false) as mcp
     FROM simulation_positions_resource spr
     CROSS JOIN params p
-    WHERE spr.active = true
     -- Filter by simulation_id if provided
-    AND (p.sim_id IS NULL OR spr.simulation_id = p.sim_id)
+    WHERE (p.sim_id IS NULL OR spr.simulation_id = p.sim_id)
     -- Exclude specified IDs
     AND NOT spr.id = ANY(p.exclude_ids)
     ORDER BY spr.value, spr.simulation_id
-    LIMIT p.limit_val
-    OFFSET p.offset_val
 )
-SELECT
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pd.id, pd.simulation_id, pd.value, pd.generated, pd.mcp)::types.q_get_simulation_positions_v4_item
-            ORDER BY pd.value, pd.simulation_id
-        ) FROM position_data pd),
-        '{}'::types.q_get_simulation_positions_v4_item[]
-    ) as items;
+SELECT COALESCE(
+    ARRAY_AGG(
+        (q.id, q.simulation_id, q.value, q.generated, q.mcp)::types.q_get_simulation_positions_v4_item
+        ORDER BY q.value, q.simulation_id
+    ),
+    ARRAY[]::types.q_get_simulation_positions_v4_item[]
+) as items
+FROM (
+    SELECT * FROM position_data
+    LIMIT limit_count
+    OFFSET offset_count
+) q;
 $$;

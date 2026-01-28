@@ -500,20 +500,20 @@ def _get_resource_create_handler_name(resource_name: str) -> str | None:
 
 def discover_resource_handlers(resource_name: str) -> dict[str, Any]:
     """Discover handlers for a resource dynamically.
-    
+
     Args:
         resource_name: Plural resource name (e.g., "agents", "args")
-    
+
     Returns:
         Dictionary with "create" and optionally "docs" handlers.
     """
     handlers: dict[str, Any] = {}
-    
+
     # Create handler
     try:
         module = importlib.import_module(f"app.api.v4.resources.{resource_name}.create")
         func_name = _get_resource_create_handler_name(resource_name)
-        
+
         if func_name and hasattr(module, func_name):
             handlers["create"] = getattr(module, func_name)
         else:
@@ -522,18 +522,20 @@ def discover_resource_handlers(resource_name: str) -> dict[str, Any]:
                 if attr_name.startswith("create_") and callable(getattr(module, attr_name)):
                     handlers["create"] = getattr(module, attr_name)
                     break
-    except ImportError:
+    except (ImportError, KeyError):
+        # KeyError can occur if parent package not in sys.modules yet
         pass
-    
+
     # Docs handler
     try:
         module = importlib.import_module(f"app.api.v4.resources.{resource_name}.docs")
         func_name = f"get_{resource_name}_docs"
         if hasattr(module, func_name):
             handlers["docs"] = getattr(module, func_name)
-    except ImportError:
+    except (ImportError, KeyError):
+        # KeyError can occur if parent package not in sys.modules yet
         pass
-    
+
     return handlers
 
 # ============================================================================

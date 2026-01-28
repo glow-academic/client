@@ -45,7 +45,7 @@ CREATE TYPE types.q_get_image_resource_v4_item AS (
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_get_image_resource_v4(
-    id uuid
+    image_id uuid
 )
 RETURNS TABLE (
     item types.q_get_image_resource_v4_item
@@ -57,12 +57,14 @@ SELECT
     (
         i.id,
         i.name,
-        i.file_path,
-        i.mime_type,
-        i.upload_id,
+        COALESCE(u.file_path, ''),
+        COALESCE(u.mime_type, ''),
+        COALESCE(iuc.upload_id, i.id),
         COALESCE(i.generated, false)
     )::types.q_get_image_resource_v4_item as item
 FROM images_resource i
-WHERE i.id = id
+LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
+LEFT JOIN view_uploads_entry u ON u.id = iuc.upload_id
+WHERE i.id = image_id
   AND i.active = true;
 $$;

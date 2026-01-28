@@ -65,7 +65,7 @@ WITH params AS (
 name_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT nd.names_id FROM names_draft nd WHERE nd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
+        (SELECT nd.names_id FROM names_drafts_connection nd WHERE nd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
         -- From simulation
         (SELECT sn.name_id FROM simulation_names_junction sn WHERE sn.simulation_id = (SELECT p_simulation_id FROM params) LIMIT 1)
     ) as name_id
@@ -74,7 +74,7 @@ name_data AS (
 description_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
+        (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
         -- From simulation
         (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = (SELECT p_simulation_id FROM params) LIMIT 1)
     ) as description_id
@@ -83,7 +83,7 @@ description_data AS (
 flag_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT fd.flags_id FROM flags_draft fd WHERE fd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
+        (SELECT fd.flags_id FROM flags_drafts_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
         -- From simulation
         (SELECT sf.flag_id FROM simulation_flags_junction sf
          JOIN flags_resource f ON sf.flag_id = f.id
@@ -96,7 +96,7 @@ flag_data AS (
 department_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT ARRAY_AGG(dd.departments_id) FROM departments_draft dd WHERE dd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(dd.departments_id) FROM departments_drafts_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params)),
         -- From simulation
         (SELECT ARRAY_AGG(sd.department_id) FROM simulation_departments_junction sd WHERE sd.simulation_id = (SELECT p_simulation_id FROM params) AND sd.active = true),
         ARRAY[]::uuid[]
@@ -106,7 +106,7 @@ department_data AS (
 scenario_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT ARRAY_AGG(sd.scenarios_id) FROM scenarios_draft sd WHERE sd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(sd.scenarios_id) FROM scenarios_drafts_connection sd WHERE sd.draft_id = (SELECT p_draft_id FROM params)),
         -- From simulation
         (SELECT ARRAY_AGG(ss.scenario_id) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = (SELECT p_simulation_id FROM params) AND ss.active = true),
         ARRAY[]::uuid[]
@@ -116,7 +116,7 @@ scenario_data AS (
 scenario_flag_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT ARRAY_AGG(sfd.scenario_flags_id) FROM scenario_flags_draft sfd WHERE sfd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(sfd.scenario_flags_id) FROM scenario_flags_drafts_connection sfd WHERE sfd.draft_id = (SELECT p_draft_id FROM params)),
         -- From simulation
         (SELECT ARRAY_AGG(ssf.scenario_flag_id) FROM simulation_scenario_flags_junction ssf WHERE ssf.simulation_id = (SELECT p_simulation_id FROM params) AND ssf.value = true),
         ARRAY[]::uuid[]
@@ -126,9 +126,9 @@ scenario_flag_data AS (
 scenario_position_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT ARRAY_AGG(spd.scenario_positions_id) FROM scenario_positions_draft spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(spd.scenario_positions_id) FROM scenario_positions_drafts_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
         -- From simulation
-        (SELECT ARRAY_AGG(ssp.id) FROM simulation_scenario_positions_junction ssp WHERE ssp.simulation_id = (SELECT p_simulation_id FROM params) AND ssp.active = true),
+        (SELECT ARRAY_AGG(ssp.scenario_position_id) FROM simulation_scenario_positions_junction ssp WHERE ssp.simulation_id = (SELECT p_simulation_id FROM params) AND ssp.active = true),
         ARRAY[]::uuid[]
     ) as scenario_position_ids
 ),
@@ -136,7 +136,7 @@ scenario_position_data AS (
 scenario_rubric_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT ARRAY_AGG(srd.scenario_rubrics_id) FROM scenario_rubrics_draft srd WHERE srd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(srd.scenario_rubrics_id) FROM scenario_rubrics_drafts_connection srd WHERE srd.draft_id = (SELECT p_draft_id FROM params)),
         -- From simulation
         (SELECT ARRAY_AGG(ssr.scenario_rubric_id) FROM simulation_scenario_rubrics_junction ssr WHERE ssr.simulation_id = (SELECT p_simulation_id FROM params) AND ssr.active = true),
         ARRAY[]::uuid[]
@@ -146,7 +146,7 @@ scenario_rubric_data AS (
 scenario_time_limit_data AS (
     SELECT COALESCE(
         -- From draft
-        (SELECT ARRAY_AGG(stld.scenario_time_limits_id) FROM scenario_time_limits_draft stld WHERE stld.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(stld.scenario_time_limits_id) FROM scenario_time_limits_drafts_connection stld WHERE stld.draft_id = (SELECT p_draft_id FROM params)),
         -- From simulation
         (SELECT ARRAY_AGG(sstl.scenario_time_limit_id) FROM simulation_scenario_time_limits_junction sstl WHERE sstl.simulation_id = (SELECT p_simulation_id FROM params) AND sstl.active = true),
         ARRAY[]::uuid[]
@@ -159,75 +159,85 @@ agent_data AS (
         (SELECT a.id FROM agent_artifact a
          JOIN agent_tools_junction at ON at.agent_id = a.id
          JOIN tools_resource tr ON tr.id = at.tool_id
-         JOIN tool_artifact t ON t.id = tr.tool_id
+         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+         JOIN tool_artifact t ON t.id = ttj.tool_id
          JOIN resource_tools_relation rt ON rt.tool_id = t.id
          WHERE rt.resource = 'names'::resource_type
            AND at.active = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af
+               JOIN flags_resource f ON f.id = af.flag_id
+               WHERE af.agent_id = a.id
+                 AND f.name = 'agent_active'
+                 AND af.value = true
            )
          LIMIT 1) as name_agent_id,
         -- Description agent
         (SELECT a.id FROM agent_artifact a
          JOIN agent_tools_junction at ON at.agent_id = a.id
          JOIN tools_resource tr ON tr.id = at.tool_id
-         JOIN tool_artifact t ON t.id = tr.tool_id
+         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+         JOIN tool_artifact t ON t.id = ttj.tool_id
          JOIN resource_tools_relation rt ON rt.tool_id = t.id
          WHERE rt.resource = 'descriptions'::resource_type
            AND at.active = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af
+               JOIN flags_resource f ON f.id = af.flag_id
+               WHERE af.agent_id = a.id
+                 AND f.name = 'agent_active'
+                 AND af.value = true
            )
          LIMIT 1) as description_agent_id,
         -- Flag agent
         (SELECT a.id FROM agent_artifact a
          JOIN agent_tools_junction at ON at.agent_id = a.id
          JOIN tools_resource tr ON tr.id = at.tool_id
-         JOIN tool_artifact t ON t.id = tr.tool_id
+         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+         JOIN tool_artifact t ON t.id = ttj.tool_id
          JOIN resource_tools_relation rt ON rt.tool_id = t.id
          WHERE rt.resource = 'flags'::resource_type
            AND at.active = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af
+               JOIN flags_resource f ON f.id = af.flag_id
+               WHERE af.agent_id = a.id
+                 AND f.name = 'agent_active'
+                 AND af.value = true
            )
          LIMIT 1) as flag_agent_id,
         -- Departments agent
         (SELECT a.id FROM agent_artifact a
          JOIN agent_tools_junction at ON at.agent_id = a.id
          JOIN tools_resource tr ON tr.id = at.tool_id
-         JOIN tool_artifact t ON t.id = tr.tool_id
+         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+         JOIN tool_artifact t ON t.id = ttj.tool_id
          JOIN resource_tools_relation rt ON rt.tool_id = t.id
          WHERE rt.resource = 'departments'::resource_type
            AND at.active = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af
+               JOIN flags_resource f ON f.id = af.flag_id
+               WHERE af.agent_id = a.id
+                 AND f.name = 'agent_active'
+                 AND af.value = true
            )
          LIMIT 1) as departments_agent_id,
         -- Scenarios agent
         (SELECT a.id FROM agent_artifact a
          JOIN agent_tools_junction at ON at.agent_id = a.id
          JOIN tools_resource tr ON tr.id = at.tool_id
-         JOIN tool_artifact t ON t.id = tr.tool_id
+         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+         JOIN tool_artifact t ON t.id = ttj.tool_id
          JOIN resource_tools_relation rt ON rt.tool_id = t.id
          WHERE rt.resource = 'scenarios'::resource_type
            AND at.active = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af
+               JOIN flags_resource f ON f.id = af.flag_id
+               WHERE af.agent_id = a.id
+                 AND f.name = 'agent_active'
+                 AND af.value = true
            )
          LIMIT 1) as scenarios_agent_id,
         -- Basic agent (simulation basic agent)
@@ -237,10 +247,11 @@ agent_data AS (
          WHERE f.name = 'agent_simulation_basic'
            AND af.value = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af2
+               JOIN flags_resource f2 ON f2.id = af2.flag_id
+               WHERE af2.agent_id = a.id
+                 AND f2.name = 'agent_active'
+                 AND af2.value = true
            )
          LIMIT 1) as basic_agent_id,
         -- General agent (simulation general agent)
@@ -250,10 +261,11 @@ agent_data AS (
          WHERE f.name = 'agent_simulation_general'
            AND af.value = true
            AND EXISTS (
-               SELECT 1 FROM groups_agents_junction ga
-               WHERE ga.group_id = (SELECT p_group_id FROM params)
-                 AND ga.agent_id = a.id
-                 AND ga.active = true
+               SELECT 1 FROM agent_flags_junction af2
+               JOIN flags_resource f2 ON f2.id = af2.flag_id
+               WHERE af2.agent_id = a.id
+                 AND f2.name = 'agent_active'
+                 AND af2.value = true
            )
          LIMIT 1) as general_agent_id
 ),

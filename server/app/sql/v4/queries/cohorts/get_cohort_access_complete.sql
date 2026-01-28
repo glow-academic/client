@@ -1,5 +1,5 @@
--- Access check for simulation get (lightweight)
--- Returns user context + simulation access context only
+-- Access check for cohort get (lightweight)
+-- Returns user context + cohort access context only
 
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -9,30 +9,30 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_simulation_access_v4'
+        WHERE proname = 'api_get_cohort_access_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_simulation_access_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_cohort_access_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_get_simulation_access_v4(
+CREATE OR REPLACE FUNCTION api_get_cohort_access_v4(
     profile_id uuid,
-    simulation_id uuid DEFAULT NULL,
+    cohort_id uuid DEFAULT NULL,
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
     user_role text,
     user_department_ids uuid[],
-    simulation_department_ids uuid[],
-    simulation_exists boolean
+    cohort_department_ids uuid[],
+    cohort_exists boolean
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT profile_id, simulation_id, draft_id
+    SELECT profile_id, cohort_id, draft_id
 ),
 user_profile AS (
     SELECT actor_name, role
@@ -45,28 +45,28 @@ user_departments AS (
     WHERE pd.profile_id = (SELECT profile_id FROM params)
       AND pd.active = true
 ),
-simulation_departments AS (
-    SELECT DISTINCT sd.department_id
-    FROM simulation_departments_junction sd
-    WHERE sd.simulation_id = (SELECT simulation_id FROM params)
-      AND sd.active = true
+cohort_departments AS (
+    SELECT DISTINCT cd.department_id
+    FROM cohort_departments_junction cd
+    WHERE cd.cohort_id = (SELECT cohort_id FROM params)
+      AND cd.active = true
 )
 SELECT
     up.actor_name,
     up.role::text as user_role,
     COALESCE(ARRAY_AGG(DISTINCT ud.department_id), ARRAY[]::uuid[]) as user_department_ids,
     CASE
-        WHEN (SELECT simulation_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-        ELSE COALESCE(ARRAY_AGG(DISTINCT sd.department_id), ARRAY[]::uuid[])
-    END as simulation_department_ids,
+        WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+        ELSE COALESCE(ARRAY_AGG(DISTINCT cd.department_id), ARRAY[]::uuid[])
+    END as cohort_department_ids,
     CASE
-        WHEN (SELECT simulation_id FROM params) IS NULL THEN NULL::boolean
+        WHEN (SELECT cohort_id FROM params) IS NULL THEN NULL::boolean
         ELSE EXISTS(
-            SELECT 1 FROM simulation_artifact sa WHERE sa.id = (SELECT simulation_id FROM params)
+            SELECT 1 FROM cohort_artifact ca WHERE ca.id = (SELECT cohort_id FROM params)
         )::boolean
-    END as simulation_exists
+    END as cohort_exists
 FROM user_profile up
 LEFT JOIN user_departments ud ON TRUE
-LEFT JOIN simulation_departments sd ON TRUE
+LEFT JOIN cohort_departments cd ON TRUE
 GROUP BY up.actor_name, up.role;
 $$;

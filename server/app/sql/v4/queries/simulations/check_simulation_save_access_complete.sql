@@ -79,7 +79,7 @@ cohort_usage AS (
 -- Get department IDs from draft (for create mode validation)
 draft_departments AS (
     SELECT ARRAY_AGG(dd.departments_id) as department_ids
-    FROM departments_draft dd
+    FROM departments_drafts_connection dd
     WHERE dd.draft_id = (SELECT p_draft_id FROM params)
 )
 SELECT
