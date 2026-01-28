@@ -1,7 +1,6 @@
 // app/providers.tsx
 "use client";
 
-import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -25,9 +24,7 @@ export function Providers({
         refetchOnWindowFocus={false}
         refetchWhenOffline={false}
       >
-        <TooltipProvider delayDuration={0}>
-          {children}
-        </TooltipProvider>
+        {children}
         <Toaster />
       </SessionProvider>
     </NuqsAdapter>
