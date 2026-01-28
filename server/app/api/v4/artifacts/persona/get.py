@@ -59,8 +59,7 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.examples.get import get_examples_internal
 from app.api.v4.resources.examples.search import search_examples_internal
-from app.api.v4.resources.fields.get import get_fields_internal
-from app.api.v4.resources.fields.search import search_fields_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.get import get_icons_internal
@@ -386,21 +385,9 @@ async def get_persona(
 
         async def fetch_parameter_fields():
             async with pool.acquire() as c:
-                selected = await get_fields_internal(c, parameter_field_ids, bypass_cache)
-                parameter_field_source = "all" if request.persona_id is None else "recent"
-                suggestions = await search_fields_internal(
-                    c,
-                    search=request.parameter_field_search,
-                    limit_count=20,
-                    offset_count=0,
-                    user_department_ids=user_department_ids,
-                    group_id=access_result.group_id,
-                    suggest_source=parameter_field_source,
-                    exclude_ids=parameter_field_ids,
-                    parameter_id=None,
-                    bypass_cache=bypass_cache,
-                )
-                return (selected, suggestions)
+                selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
+                # No suggestions - fields are shown grouped by parameter on frontend
+                return (selected, [])
 
         async def fetch_examples():
             async with pool.acquire() as c:
@@ -478,7 +465,7 @@ async def get_persona(
         departments = _dedupe_by_id(
             departments_selected + departments_suggestions, "department_id"
         )
-        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
+        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "id")
         examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
         parameters = _dedupe_by_id(parameters_selected + parameters_suggestions, "parameter_id")
 
@@ -514,7 +501,7 @@ async def get_persona(
             d for d in departments if d.department_id in selected_department_ids
         ]
         parameter_field_resources = [
-            f for f in parameter_fields if f.field_id in selected_parameter_field_ids
+            f for f in parameter_fields if f.id in selected_parameter_field_ids
         ]
         example_resources = [
             e for e in examples if e.id in selected_example_ids
@@ -529,7 +516,7 @@ async def get_persona(
         icon_suggestions = [i.id for i in icons_suggestions]
         instructions_suggestions = [i.id for i in instructions_suggestions]
         department_suggestions = [d.department_id for d in departments_suggestions]
-        parameter_field_suggestions = [f.field_id for f in parameter_fields_suggestions]
+        parameter_field_suggestions = [f.id for f in parameter_fields_suggestions]
         example_suggestions = [e.id for e in examples_suggestions]
         parameter_suggestions = [p.parameter_id for p in parameters_suggestions]
 

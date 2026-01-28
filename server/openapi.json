@@ -684,7 +684,7 @@
           "scenarios"
         ],
         "summary": "Get Scenario",
-        "description": "Get scenario information - handles both new (scenario_id = NULL) and detail (scenario_id provided).\n\nValidation Logic:\n- New mode: Check for valid departments\n- Detail mode: Check scenario_exists and access",
+        "description": "Get scenario information using two-pass architecture.\n\nQuery 1: Access check (user role, departments, scenario state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
         "operationId": "get_scenario_api_v4_scenarios_get_post",
         "parameters": [
           {
@@ -1266,7 +1266,7 @@
           "simulations"
         ],
         "summary": "Get Simulation",
-        "description": "Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided).\n\nUses two-pass architecture:\n1. SQL fetches raw data and context\n2. Python computes permissions using permissions.py functions\n\nValidation Logic:\n- Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)\n- Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)\n- Frontend components check agent_id before showing generate button",
+        "description": "Get simulation information using two-pass architecture.\n\nQuery 1: Access check (user role, departments, simulation state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
         "operationId": "get_simulation_api_v4_simulations_get_post",
         "parameters": [
           {
@@ -11547,6 +11547,200 @@
         ],
         "summary": "Search Fields",
         "operationId": "search_fields_api_v4_resources_fields_search_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchFieldsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchFieldsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/parameter_fields/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Parameter Fields",
+        "description": "Get parameter fields resources by IDs.\n\nHTTP wrapper that delegates to internal function for caching and data fetching.",
+        "operationId": "get_parameter_fields_api_v4_resources_parameter_fields_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetParameterFieldsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetParameterFieldsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/parameter_fields/search": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Search Parameter Fields",
+        "description": "Search parameter fields resources.",
+        "operationId": "search_parameter_fields_api_v4_resources_parameter_fields_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -39211,6 +39405,47 @@
         "type": "object",
         "title": "GetParameterApiResponse"
       },
+      "GetParameterFieldsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetParameterFieldsApiRequest"
+      },
+      "GetParameterFieldsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetParameterFieldsApiResponse"
+      },
       "GetParametersApiRequest": {
         "properties": {
           "ids": {
@@ -39472,17 +39707,6 @@
             ],
             "title": "Instructions Search"
           },
-          "field_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Search"
-          },
           "parameter_search": {
             "anyOf": [
               {
@@ -39515,17 +39739,6 @@
               }
             ],
             "title": "Icon Show Selected"
-          },
-          "field_show_selected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Show Selected"
           },
           "parameter_show_selected": {
             "anyOf": [
@@ -40199,7 +40412,7 @@
             ],
             "title": "Departments"
           },
-          "field_ids": {
+          "parameter_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -40212,13 +40425,13 @@
                 "type": "null"
               }
             ],
-            "title": "Field Ids"
+            "title": "Parameter Field Ids"
           },
-          "field_resources": {
+          "parameter_field_resources": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetFieldsV4Item"
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
                 },
                 "type": "array"
               },
@@ -40226,9 +40439,9 @@
                 "type": "null"
               }
             ],
-            "title": "Field Resources"
+            "title": "Parameter Field Resources"
           },
-          "show_fields": {
+          "show_parameter_fields": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -40237,9 +40450,9 @@
                 "type": "null"
               }
             ],
-            "title": "Show Fields"
+            "title": "Show Parameter Fields"
           },
-          "fields_agent_id": {
+          "parameter_fields_agent_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -40249,9 +40462,9 @@
                 "type": "null"
               }
             ],
-            "title": "Fields Agent Id"
+            "title": "Parameter Fields Agent Id"
           },
-          "fields_required": {
+          "parameter_fields_required": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -40260,9 +40473,9 @@
                 "type": "null"
               }
             ],
-            "title": "Fields Required"
+            "title": "Parameter Fields Required"
           },
-          "field_suggestions": {
+          "parameter_field_suggestions": {
             "anyOf": [
               {
                 "items": {
@@ -40275,13 +40488,13 @@
                 "type": "null"
               }
             ],
-            "title": "Field Suggestions"
+            "title": "Parameter Field Suggestions"
           },
-          "fields": {
+          "parameter_fields": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetFieldsV4Item"
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
                 },
                 "type": "array"
               },
@@ -40289,7 +40502,7 @@
                 "type": "null"
               }
             ],
-            "title": "Fields"
+            "title": "Parameter Fields"
           },
           "example_ids": {
             "anyOf": [
@@ -46676,160 +46889,6 @@
             ],
             "title": "Departments"
           },
-          "persona_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Field Ids"
-          },
-          "persona_field_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Field Resources"
-          },
-          "show_persona_fields": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Persona Fields"
-          },
-          "persona_fields_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Fields Agent Id"
-          },
-          "persona_fields_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Fields Required"
-          },
-          "persona_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Fields"
-          },
-          "document_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Field Ids"
-          },
-          "document_field_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Field Resources"
-          },
-          "show_document_fields": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Document Fields"
-          },
-          "document_fields_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Fields Agent Id"
-          },
-          "document_fields_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Fields Required"
-          },
-          "document_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Fields"
-          },
           "parameter_field_ids": {
             "anyOf": [
               {
@@ -52184,7 +52243,7 @@
             ],
             "title": "Scenario Ids"
           },
-          "field_ids": {
+          "parameter_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -52197,7 +52256,7 @@
                 "type": "null"
               }
             ],
-            "title": "Field Ids"
+            "title": "Parameter Field Ids"
           },
           "reasoning": {
             "anyOf": [
@@ -54985,7 +55044,7 @@
             ],
             "title": "Department Ids"
           },
-          "field_ids": {
+          "parameter_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -54998,7 +55057,7 @@
                 "type": "null"
               }
             ],
-            "title": "Field Ids"
+            "title": "Parameter Field Ids"
           },
           "example_ids": {
             "anyOf": [
@@ -66495,18 +66554,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
           }
         },
         "type": "object",
@@ -66514,8 +66561,7 @@
           "field_id",
           "name",
           "description",
-          "generated",
-          "parameter_id"
+          "generated"
         ],
         "title": "QGetFieldsV4Item"
       },
@@ -72783,6 +72829,89 @@
           "generated"
         ],
         "title": "QGetNamesV4Item"
+      },
+      "QGetParameterFieldsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "field_id",
+          "parameter_id",
+          "name",
+          "description",
+          "generated"
+        ],
+        "title": "QGetParameterFieldsV4Item"
       },
       "QGetParameterV4Department": {
         "properties": {
@@ -97603,7 +97732,7 @@
             ],
             "title": "Department Ids"
           },
-          "field_ids": {
+          "parameter_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -97616,7 +97745,7 @@
                 "type": "null"
               }
             ],
-            "title": "Field Ids"
+            "title": "Parameter Field Ids"
           },
           "example_ids": {
             "anyOf": [
@@ -100337,18 +100466,6 @@
               }
             ],
             "title": "Exclude Ids"
-          },
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
           }
         },
         "type": "object",

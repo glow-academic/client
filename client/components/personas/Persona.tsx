@@ -1876,10 +1876,13 @@ function PersonaComponent({
                   showSelectedFilter={parameterShowSelected}
                 />
                 <ParameterFields
-                  field_ids={formState.parameter_field_ids}
-                  field_resources={currentPersonaData?.parameter_field_resources ?? []}
-                  show_fields={currentPersonaData?.show_parameter_fields ?? false}
-                  fields={currentPersonaData?.parameter_fields ?? []}
+                  parameter_field_ids={formState.parameter_field_ids}
+                  parameter_field_resources={currentPersonaData?.parameter_field_resources ?? []}
+                  show_parameter_fields={currentPersonaData?.show_parameter_fields ?? false}
+                  parameter_fields={currentPersonaData?.parameter_fields ?? []}
+                  parameter_ids={formState.parameter_ids}
+                  parameters={currentPersonaData?.parameters ?? []}
+                  parameter_resources={currentPersonaData?.parameter_resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))

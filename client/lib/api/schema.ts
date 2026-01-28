@@ -167,11 +167,11 @@ export interface paths {
         put?: never;
         /**
          * Get Scenario
-         * @description Get scenario information - handles both new (scenario_id = NULL) and detail (scenario_id provided).
+         * @description Get scenario information using two-pass architecture.
          *
-         *     Validation Logic:
-         *     - New mode: Check for valid departments
-         *     - Detail mode: Check scenario_exists and access
+         *     Query 1: Access check (user role, departments, scenario state)
+         *     Query 2: ID fetching (resource IDs, suggestions, agents)
+         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_scenario_api_v4_scenarios_get_post"];
         delete?: never;
@@ -291,16 +291,11 @@ export interface paths {
         put?: never;
         /**
          * Get Simulation
-         * @description Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided).
+         * @description Get simulation information using two-pass architecture.
          *
-         *     Uses two-pass architecture:
-         *     1. SQL fetches raw data and context
-         *     2. Python computes permissions using permissions.py functions
-         *
-         *     Validation Logic:
-         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
-         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
-         *     - Frontend components check agent_id before showing generate button
+         *     Query 1: Access check (user role, departments, simulation state)
+         *     Query 2: ID fetching (resource IDs, suggestions, agents)
+         *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
         post: operations["get_simulation_api_v4_simulations_get_post"];
         delete?: never;
@@ -2494,6 +2489,48 @@ export interface paths {
         put?: never;
         /** Search Fields */
         post: operations["search_fields_api_v4_resources_fields_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/parameter_fields/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Parameter Fields
+         * @description Get parameter fields resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_parameter_fields_api_v4_resources_parameter_fields_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/parameter_fields/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Parameter Fields
+         * @description Search parameter fields resources.
+         */
+        post: operations["search_parameter_fields_api_v4_resources_parameter_fields_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8783,6 +8820,16 @@ export interface components {
             /** Fields */
             fields?: components["schemas"]["QGetParameterV4Field"][] | null;
         };
+        /** GetParameterFieldsApiRequest */
+        GetParameterFieldsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetParameterFieldsApiResponse */
+        GetParameterFieldsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
         /** GetParametersApiRequest */
         GetParametersApiRequest: {
             /** Ids */
@@ -8837,16 +8884,12 @@ export interface components {
             descriptions_search?: string | null;
             /** Instructions Search */
             instructions_search?: string | null;
-            /** Field Search */
-            field_search?: string | null;
             /** Parameter Search */
             parameter_search?: string | null;
             /** Color Show Selected */
             color_show_selected?: boolean | null;
             /** Icon Show Selected */
             icon_show_selected?: boolean | null;
-            /** Field Show Selected */
-            field_show_selected?: boolean | null;
             /** Parameter Show Selected */
             parameter_show_selected?: boolean | null;
         };
@@ -8957,20 +9000,20 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Field Resources */
-            field_resources?: components["schemas"]["QGetFieldsV4Item"][] | null;
-            /** Show Fields */
-            show_fields?: boolean | null;
-            /** Fields Agent Id */
-            fields_agent_id?: string | null;
-            /** Fields Required */
-            fields_required?: boolean | null;
-            /** Field Suggestions */
-            field_suggestions?: string[] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetFieldsV4Item"][] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Parameter Field Resources */
+            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Show Parameter Fields */
+            show_parameter_fields?: boolean | null;
+            /** Parameter Fields Agent Id */
+            parameter_fields_agent_id?: string | null;
+            /** Parameter Fields Required */
+            parameter_fields_required?: boolean | null;
+            /** Parameter Field Suggestions */
+            parameter_field_suggestions?: string[] | null;
+            /** Parameter Fields */
+            parameter_fields?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Example Ids */
             example_ids?: string[] | null;
             /** Example Resources */
@@ -10162,30 +10205,6 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["ScenarioDepartment"][] | null;
-            /** Persona Field Ids */
-            persona_field_ids?: string[] | null;
-            /** Persona Field Resources */
-            persona_field_resources?: components["schemas"]["ScenarioField"][] | null;
-            /** Show Persona Fields */
-            show_persona_fields?: boolean | null;
-            /** Persona Fields Agent Id */
-            persona_fields_agent_id?: string | null;
-            /** Persona Fields Required */
-            persona_fields_required?: boolean | null;
-            /** Persona Fields */
-            persona_fields?: components["schemas"]["ScenarioField"][] | null;
-            /** Document Field Ids */
-            document_field_ids?: string[] | null;
-            /** Document Field Resources */
-            document_field_resources?: components["schemas"]["ScenarioField"][] | null;
-            /** Show Document Fields */
-            show_document_fields?: boolean | null;
-            /** Document Fields Agent Id */
-            document_fields_agent_id?: string | null;
-            /** Document Fields Required */
-            document_fields_required?: boolean | null;
-            /** Document Fields */
-            document_fields?: components["schemas"]["ScenarioField"][] | null;
             /** Parameter Field Ids */
             parameter_field_ids?: string[] | null;
             /** Parameter Field Resources */
@@ -11325,8 +11344,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
             /** Reasoning */
             reasoning?: string | null;
             /** Temperature Display */
@@ -11945,8 +11964,8 @@ export interface components {
             active_flag_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
             /** Example Ids */
             example_ids?: string[] | null;
             /** Parameter Ids */
@@ -14175,8 +14194,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Parameter Id */
-            parameter_id: string | null;
         };
         /** QGetFlagsV4Item */
         QGetFlagsV4Item: {
@@ -15299,6 +15316,21 @@ export interface components {
             id: string | null;
             /** Name */
             name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetParameterFieldsV4Item */
+        QGetParameterFieldsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Field Id */
+            field_id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -19971,8 +20003,8 @@ export interface components {
             active_flag_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
             /** Example Ids */
             example_ids?: string[] | null;
             /** Parameter Ids */
@@ -20692,8 +20724,6 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
-            /** Parameter Id */
-            parameter_id?: string | null;
         };
         /** SearchFieldsApiResponse */
         SearchFieldsApiResponse: {
@@ -25772,6 +25802,80 @@ export interface operations {
         };
     };
     search_fields_api_v4_resources_fields_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_parameter_fields_api_v4_resources_parameter_fields_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetParameterFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetParameterFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_parameter_fields_api_v4_resources_parameter_fields_search_post: {
         parameters: {
             query?: never;
             header?: {

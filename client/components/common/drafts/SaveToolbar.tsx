@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSaveContext } from "@/contexts/save-context";
 import { useProfile } from "@/contexts/profile-context";
-import { Check, FileText, Loader2, Plus } from "lucide-react";
+import { FileText, Loader2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
@@ -179,11 +179,6 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               Saving draft...
-            </>
-          ) : saveStatus === "saved" ? (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              Saved
             </>
           ) : hasUnsavedChanges ? (
             "Save draft"

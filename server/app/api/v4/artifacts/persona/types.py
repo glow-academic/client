@@ -10,11 +10,11 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetExamplesV4Item,
-    QGetFieldsV4Item,
     QGetFlagsV4Item,
     QGetIconsV4Item,
     QGetInstructionsV4Item,
     QGetNamesV4Item,
+    QGetParameterFieldsV4Item,
     QGetParametersV4Item,
 )
 
@@ -29,12 +29,10 @@ class GetPersonaApiRequest(BaseModel):
     icon_search: str | None = None
     descriptions_search: str | None = None
     instructions_search: str | None = None
-    parameter_field_search: str | None = None
     parameter_search: str | None = None
     # Show selected filters
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
-    parameter_field_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
 
 
@@ -115,12 +113,12 @@ class GetPersonaApiResponse(BaseModel):
 
     # Multi-select resources: parameter_fields
     parameter_field_ids: list[UUID] | None = None
-    parameter_field_resources: list[QGetFieldsV4Item] | None = None
+    parameter_field_resources: list[QGetParameterFieldsV4Item] | None = None
     show_parameter_fields: bool | None = None
     parameter_fields_agent_id: UUID | None = None
     parameter_fields_required: bool | None = None
     parameter_field_suggestions: list[UUID] | None = None
-    parameter_fields: list[QGetFieldsV4Item] | None = None
+    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
 
     # Multi-select resources: examples
     example_ids: list[UUID] | None = None
