@@ -25,9 +25,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSaveContext } from "@/contexts/save-context";
 import { useProfile } from "@/contexts/profile-context";
-import { FileText, Loader2, Plus } from "lucide-react";
+import { useSaveContext } from "@/contexts/save-context";
+import { FileText, Loader2, Plus, Save } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
@@ -63,32 +63,29 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
   );
 
   // Get draft name for display
-  const getDraftName = useCallback(
-    (draft: (typeof drafts)[0]): string => {
-      const payload = draft.payload as Record<string, unknown> | null;
-      if (!payload || typeof payload !== "object") {
-        return draft.updated_at
-          ? new Date(draft.updated_at).toLocaleDateString()
-          : "Draft";
-      }
-      if (
-        typeof payload["name"] === "string" &&
-        (payload["name"] as string).trim()
-      ) {
-        return payload["name"] as string;
-      }
-      if (
-        typeof payload["title"] === "string" &&
-        (payload["title"] as string).trim()
-      ) {
-        return payload["title"] as string;
-      }
+  const getDraftName = useCallback((draft: (typeof drafts)[0]): string => {
+    const payload = draft.payload as Record<string, unknown> | null;
+    if (!payload || typeof payload !== "object") {
       return draft.updated_at
         ? new Date(draft.updated_at).toLocaleDateString()
         : "Draft";
-    },
-    []
-  );
+    }
+    if (
+      typeof payload["name"] === "string" &&
+      (payload["name"] as string).trim()
+    ) {
+      return payload["name"] as string;
+    }
+    if (
+      typeof payload["title"] === "string" &&
+      (payload["title"] as string).trim()
+    ) {
+      return payload["title"] as string;
+    }
+    return draft.updated_at
+      ? new Date(draft.updated_at).toLocaleDateString()
+      : "Draft";
+  }, []);
 
   // Handle Save button click
   const handleSaveClick = useCallback(() => {
@@ -172,7 +169,9 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
         {/* Only render after hydration to prevent flicker */}
         {isAutosaveLoaded && (
           <Button
-            variant={!hasUnsavedChanges && !isAutosaveEnabled ? "secondary" : "default"}
+            variant={
+              !hasUnsavedChanges && !isAutosaveEnabled ? "outline" : "default"
+            }
             size="sm"
             className="h-8"
             onClick={handleSaveClick}
@@ -181,14 +180,23 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
             {saveStatus === "saving" ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Saving draft...
+                Saving...
               </>
             ) : hasUnsavedChanges ? (
-              "Save draft"
+              <>
+                <Save className="h-4 w-4" />
+                Save
+              </>
             ) : isAutosaveEnabled ? (
-              "Autosave on"
+              <>
+                <Save className="h-4 w-4" />
+                Autosave
+              </>
             ) : (
-              "Autosave off"
+              <>
+                <Save className="h-4 w-4" />
+                Autosave
+              </>
             )}
           </Button>
         )}
@@ -196,7 +204,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
         {/* Draft Picker Icon Button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="default" size="icon" className="h-8 w-8">
               <FileText className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -236,7 +244,6 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
       </div>
 
       {/* Discard Changes Confirmation Dialog */}

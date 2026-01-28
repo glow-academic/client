@@ -51,7 +51,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface CohortsProps {
@@ -83,7 +82,6 @@ export default function Cohorts({
   departmentSearch,
 }: CohortsProps) {
   const { socket, isConnected } = useProfile();
-  const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -101,27 +99,9 @@ export default function Cohorts({
   const [modalInstructions, setModalInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Set GenerationCapability from list response
-  useEffect(() => {
-    if (serverListData?.general_agent_id) {
-      setGenerationCapability({
-        artifactType: "cohort",
-        canGenerate: true,
-        agentId: serverListData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "cohort",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [serverListData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
-
   // Handle opening the generate modal
-  const handleOpenGenerateModal = useCallback(() => {
-    if (!serverListData?.general_agent_id) return;
+  const handleOpenGenerateModal = useCallback((agentId?: string) => {
+    if (!agentId) return;
     const resources: GenerateRegenerateModalResource[] = [
       { id: "names", label: "Name", active: true },
       { id: "descriptions", label: "Description", active: true },
@@ -133,12 +113,27 @@ export default function Cohorts({
     setModalResources(resources);
     setModalInstructions("");
     setShowGenerateModal(true);
-  }, [serverListData?.general_agent_id]);
+  }, []);
 
   // Listen for full-page-generate event
   useEffect(() => {
-    window.addEventListener("full-page-generate", handleOpenGenerateModal);
-    return () => window.removeEventListener("full-page-generate", handleOpenGenerateModal);
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
+        handleOpenGenerateModal(agentId);
+      }
+    };
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
   }, [handleOpenGenerateModal]);
 
   // Handle modal generate (create new cohort + generate)

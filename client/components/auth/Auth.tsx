@@ -26,7 +26,6 @@ import { Names } from "@/components/resources/Names";
 import { Protocols } from "@/components/resources/Protocols";
 import { Slugs } from "@/components/resources/Slugs";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { parseAsString, type Parser } from "nuqs";
@@ -98,8 +97,6 @@ function AuthComponent({
   const { profile, selectedDraftId, setSelectedDraftId } =
     useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -460,18 +457,6 @@ function AuthComponent({
     }
     return () => clearEntityMetadata();
   }, [authData, authId, isEditMode, setEntityMetadata, clearEntityMetadata]);
-
-  // Set generation capability when auth data is loaded
-  useEffect(() => {
-    // Auth doesn't have general_agent_id like personas, so we'll check individual resource agents
-    // For now, we'll set canGenerate to false - can be enhanced later with WebSocket support
-    setGenerationCapability({
-      artifactType: "auth",
-      canGenerate: false,
-      agentId: null,
-    });
-    return () => clearGenerationCapability();
-  }, [setGenerationCapability, clearGenerationCapability]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(

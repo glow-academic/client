@@ -32,7 +32,6 @@ import { Values } from "@/components/resources/Values";
 import { Voices } from "@/components/resources/Voices";
 import { Label } from "@/components/ui/label";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -188,8 +187,6 @@ function ModelComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -977,35 +974,6 @@ function ModelComponent({
   ]);
 
   // Set generation capability when model data is loaded
-  useEffect(() => {
-    // Note: models may not have general_agent_id - check for alternative agent ID field
-    // For now, check if any agent_id exists to enable generation
-    const hasAgentId =
-      modelData?.name_agent_id ||
-      modelData?.description_agent_id ||
-      modelData?.value_agent_id;
-    if (hasAgentId) {
-      setGenerationCapability({
-        artifactType: "model",
-        canGenerate: true,
-        agentId: modelData?.name_agent_id || null,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "model",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    modelData?.name_agent_id,
-    modelData?.description_agent_id,
-    modelData?.value_agent_id,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
   // Step-to-resources mapping for multi-generation
   // Note: Some resource types may not be in ResourceType enum - using type assertions where needed
   const stepResources: Record<string, ResourceType[]> = useMemo(
@@ -1034,12 +1002,11 @@ function ModelComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      const hasAgentId =
-        modelData?.name_agent_id ||
-        modelData?.description_agent_id ||
-        modelData?.value_agent_id;
-      if (hasAgentId) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         // For now, generate basic resources directly
         // In future, can open modal similar to Persona pattern
         handleGenerateResources(
@@ -1048,17 +1015,16 @@ function ModelComponent({
         );
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [
-    modelData?.name_agent_id,
-    modelData?.description_agent_id,
-    modelData?.value_agent_id,
-    handleGenerateResources,
-    stepResources,
-    determineAgentType,
-  ]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleGenerateResources, stepResources, determineAgentType]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(

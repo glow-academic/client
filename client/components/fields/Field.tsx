@@ -38,7 +38,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -125,8 +124,6 @@ function FieldComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -658,36 +655,6 @@ function FieldComponent({
   // Set generation capability when field data is loaded
   // Check if any agent_id exists for generation capability
   useEffect(() => {
-    const hasAnyAgent =
-      fieldData?.name_agent_id ||
-      fieldData?.description_agent_id ||
-      fieldData?.active_flag_agent_id ||
-      fieldData?.departments_agent_id ||
-      fieldData?.parameters_agent_id;
-    if (hasAnyAgent) {
-      setGenerationCapability({
-        artifactType: "field",
-        canGenerate: true,
-        agentId: hasAnyAgent,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "field",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    fieldData?.name_agent_id,
-    fieldData?.description_agent_id,
-    fieldData?.active_flag_agent_id,
-    fieldData?.departments_agent_id,
-    fieldData?.parameters_agent_id,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
@@ -772,28 +739,24 @@ function FieldComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      const hasAnyAgent =
-        fieldData?.name_agent_id ||
-        fieldData?.description_agent_id ||
-        fieldData?.active_flag_agent_id ||
-        fieldData?.departments_agent_id ||
-        fieldData?.parameters_agent_id;
-      if (hasAnyAgent) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [
-    fieldData?.name_agent_id,
-    fieldData?.description_agent_id,
-    fieldData?.active_flag_agent_id,
-    fieldData?.departments_agent_id,
-    fieldData?.parameters_agent_id,
-    handleOpenStepCardModal,
-  ]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   // Steps configuration
   const steps = useMemo(

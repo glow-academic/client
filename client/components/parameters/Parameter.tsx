@@ -34,7 +34,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -120,8 +119,6 @@ function ParameterComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -846,17 +843,6 @@ function ParameterComponent({
     clearEntityMetadata,
   ]);
 
-  // Set generation capability when parameter data is loaded
-  // Parameters don't have general_agent_id, so generation is not available
-  useEffect(() => {
-    setGenerationCapability({
-      artifactType: "parameter",
-      canGenerate: false,
-      agentId: null,
-    });
-    return () => clearGenerationCapability();
-  }, [setGenerationCapability, clearGenerationCapability]);
-
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -1050,12 +1036,21 @@ function ParameterComponent({
   // Listen for full-page-generate event from layout
   // Parameters don't support full-page generation (no general_agent_id)
   useEffect(() => {
-    const handleFullPageGenerate = () => {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
       // Parameters don't support full-page generation
+      // agentId will be null/undefined since no agent configured for parameters
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
   }, []);
 
   // Steps configuration for GenericForm

@@ -43,7 +43,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -140,8 +139,6 @@ function PersonaComponent({
   const isEditMode = !!personaId;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
   const { isAutosaveEnabled } = useSaveContext();
 
   // Registry of flush callbacks from creatable resource components
@@ -1358,29 +1355,6 @@ function PersonaComponent({
     clearEntityMetadata,
   ]);
 
-  // Set generation capability when persona data is loaded
-  useEffect(() => {
-    if (personaData?.general_agent_id && personaData?.can_edit !== false) {
-      setGenerationCapability({
-        artifactType: "persona",
-        canGenerate: true,
-        agentId: personaData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "persona",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    personaData?.general_agent_id,
-    personaData?.can_edit,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -1632,16 +1606,25 @@ function PersonaComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (personaData?.general_agent_id) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         // Open modal instead of directly generating
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [personaData?.general_agent_id, handleOpenStepCardModal]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(() => {

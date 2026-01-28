@@ -25,7 +25,6 @@ import type {
   SimulationsListOut,
 } from "@/app/(main)/create/simulations/page";
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -84,7 +83,6 @@ export function Simulations({
   departmentSearch,
 }: SimulationsProps) {
   const { socket, isConnected } = useProfile();
-  const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -102,27 +100,9 @@ export function Simulations({
   const [modalInstructions, setModalInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Set GenerationCapability from list response
-  useEffect(() => {
-    if (serverListData?.general_agent_id) {
-      setGenerationCapability({
-        artifactType: "simulation",
-        canGenerate: true,
-        agentId: serverListData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "simulation",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [serverListData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
-
   // Handle opening the generate modal
-  const handleOpenGenerateModal = useCallback(() => {
-    if (!serverListData?.general_agent_id) return;
+  const handleOpenGenerateModal = useCallback((agentId?: string) => {
+    if (!agentId) return;
     const resources: GenerateRegenerateModalResource[] = [
       { id: "names", label: "Name", active: true },
       { id: "descriptions", label: "Description", active: true },
@@ -137,12 +117,27 @@ export function Simulations({
     setModalResources(resources);
     setModalInstructions("");
     setShowGenerateModal(true);
-  }, [serverListData?.general_agent_id]);
+  }, []);
 
   // Listen for full-page-generate event
   useEffect(() => {
-    window.addEventListener("full-page-generate", handleOpenGenerateModal);
-    return () => window.removeEventListener("full-page-generate", handleOpenGenerateModal);
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
+        handleOpenGenerateModal(agentId);
+      }
+    };
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
   }, [handleOpenGenerateModal]);
 
   // Handle modal generate (create new simulation + generate)

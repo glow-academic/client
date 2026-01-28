@@ -40,7 +40,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Sparkles } from "lucide-react";
@@ -255,8 +254,6 @@ function ScenarioComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
   const scenarioData = isEditMode
@@ -1047,28 +1044,6 @@ function ScenarioComponent({
   }, [scenarioData]);
 
   useEffect(() => {
-    if (scenarioData?.general_agent_id && scenarioData?.can_edit !== false) {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: true,
-        agentId: scenarioData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    scenarioData?.general_agent_id,
-    scenarioData?.can_edit,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
-  useEffect(() => {
     if (!socket || !isConnected) return;
 
     const currentGroupId = scenarioData?.group_id;
@@ -1700,16 +1675,26 @@ function ScenarioComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (scenarioData?.general_agent_id) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [scenarioData?.general_agent_id, handleOpenStepCardModal]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   const steps = useMemo(() => {
     const items = [

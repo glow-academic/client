@@ -127,6 +127,9 @@ interface ProfileContextType {
     simulation_id?: string | null;
     profile_id?: string | null;
   }) => void;
+
+  // Artifact agent IDs for generation capability (from profile context SSR)
+  artifactAgentIds: Record<string, string | null>;
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -477,6 +480,9 @@ export function ProfileProviderClient({
     setStartingEvalId,
     emitStartSimulation,
     emitCreatePracticeScenario,
+
+    // Artifact agent IDs for generation capability (from profile context SSR)
+    artifactAgentIds: initial?.artifact_agent_ids ?? {},
   };
 
   return (

@@ -40,7 +40,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -202,8 +201,6 @@ function EvalComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   const evalData = isEditMode ? evalDetail : evalDetailDefault;
 
@@ -471,23 +468,6 @@ function EvalComponent({
     evalData?.agents_agent_id ||
     evalData?.rubrics_agent_id ||
     null;
-
-  useEffect(() => {
-    if (generationAgentId) {
-      setGenerationCapability({
-        artifactType: "eval",
-        canGenerate: true,
-        agentId: generationAgentId,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "eval",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [generationAgentId, setGenerationCapability, clearGenerationCapability]);
 
   // Readonly logic using server-provided can_edit flag
   const disabled = useMemo(() => {
@@ -948,15 +928,24 @@ function EvalComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (generationAgentId) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [generationAgentId, handleOpenStepCardModal]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   // Submit handler
   const handleSubmit = useCallback(

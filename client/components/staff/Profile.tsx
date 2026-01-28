@@ -36,7 +36,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -125,8 +124,6 @@ function ProfileComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   const [generatingResources, setGeneratingResources] = useState<
     Set<ResourceType>
@@ -867,25 +864,26 @@ function ProfileComponent({
     return () => clearEntityMetadata();
   }, [staffData, staffId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
+  // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (staffData?.general_agent_id || staffId) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [staffData?.general_agent_id, staffId, handleOpenStepCardModal]);
-
-  useEffect(() => {
-    setGenerationCapability({
-      artifactType: "profile",
-      canGenerate: false,
-      agentId: null,
-    });
-    return () => clearGenerationCapability();
-  }, [setGenerationCapability, clearGenerationCapability]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {

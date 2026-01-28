@@ -43,7 +43,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import type { ResourceType } from "@/lib/resources/types";
@@ -145,8 +144,6 @@ export default function Agent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
   const isSuperadmin = profile?.role === "superadmin";
 
   // Generation state for AI workflows
@@ -518,55 +515,6 @@ export default function Agent({
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
-  ]);
-
-  // Set generation capability when agent data is loaded
-  // Only update when values actually change (canonical pattern)
-  const lastCapabilityRef = React.useRef<{
-    artifactType: string;
-    canGenerate: boolean;
-    agentId: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    // For agents, we need to determine if any agent_id is available for generation
-    // Use the first available agent_id from resource types
-    const availableAgentId =
-      agentData?.name_agent_id ||
-      agentData?.description_agent_id ||
-      agentData?.models_agent_id ||
-      agentData?.prompts_agent_id ||
-      agentData?.instructions_agent_id ||
-      agentData?.flag_agent_id ||
-      agentData?.departments_agent_id ||
-      null;
-
-    const newCapability = {
-      artifactType: "agent",
-      canGenerate: !!availableAgentId,
-      agentId: availableAgentId,
-    };
-
-    // Only update if capability actually changed
-    if (
-      !lastCapabilityRef.current ||
-      lastCapabilityRef.current.canGenerate !== newCapability.canGenerate ||
-      lastCapabilityRef.current.agentId !== newCapability.agentId
-    ) {
-      lastCapabilityRef.current = newCapability;
-      setGenerationCapability(newCapability);
-    }
-    return () => clearGenerationCapability();
-  }, [
-    agentData?.name_agent_id,
-    agentData?.description_agent_id,
-    agentData?.models_agent_id,
-    agentData?.prompts_agent_id,
-    agentData?.instructions_agent_id,
-    agentData?.flag_agent_id,
-    agentData?.departments_agent_id,
-    setGenerationCapability,
-    clearGenerationCapability,
   ]);
 
   // handleInputChange removed - use setDraftState directly
@@ -1085,17 +1033,25 @@ export default function Agent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      // Check if generation is available (agent has generation capability)
-      if (agentId) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const eventAgentId = event.detail?.agentId;
+      if (eventAgentId) {
         // Open modal instead of directly generating
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [agentId, handleOpenStepCardModal]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   // WebSocket handlers for AI generation
   // Use refs to minimize dependencies and prevent stale closures (canonical pattern)

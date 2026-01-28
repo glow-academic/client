@@ -32,7 +32,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -94,8 +93,6 @@ function ToolComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -639,26 +636,6 @@ function ToolComponent({
     return () => clearEntityMetadata();
   }, [toolData, toolId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
-  // Set generation capability when tool data is loaded
-  useEffect(() => {
-    const canGenerate = !!(
-      toolData?.args_agent_id || toolData?.args_outputs_agent_id
-    );
-    const agentId =
-      toolData?.args_agent_id || toolData?.args_outputs_agent_id || null;
-    setGenerationCapability({
-      artifactType: "tool",
-      canGenerate,
-      agentId,
-    });
-    return () => clearGenerationCapability();
-  }, [
-    toolData?.args_agent_id,
-    toolData?.args_outputs_agent_id,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
   // Submit handler for GenericForm
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -811,20 +788,25 @@ function ToolComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (toolData?.args_agent_id || toolData?.args_outputs_agent_id) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         // Open modal instead of directly generating
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [
-    toolData?.args_agent_id,
-    toolData?.args_outputs_agent_id,
-    handleOpenStepCardModal,
-  ]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(

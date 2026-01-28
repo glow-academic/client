@@ -25,7 +25,6 @@ import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
 import { Input } from "@/components/ui/input";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -127,8 +126,6 @@ function RubricComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -733,29 +730,6 @@ function RubricComponent({
     clearEntityMetadata,
   ]);
 
-  // Set generation capability when rubric data is loaded
-  useEffect(() => {
-    // Use standard_groups_agent_id as the general agent for rubrics
-    if (rubricData?.standard_groups_agent_id) {
-      setGenerationCapability({
-        artifactType: "rubric",
-        canGenerate: true,
-        agentId: rubricData.standard_groups_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "rubric",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    rubricData?.standard_groups_agent_id,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
   // Submit handler for GenericForm
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -982,15 +956,24 @@ function RubricComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (rubricData?.standard_groups_agent_id) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         handleGenerateStandardGroups();
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [rubricData?.standard_groups_agent_id, handleGenerateStandardGroups]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleGenerateStandardGroups]);
 
   // Render step function
   const renderStep = useCallback(

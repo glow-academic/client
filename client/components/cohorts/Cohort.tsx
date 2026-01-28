@@ -37,7 +37,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -109,8 +108,6 @@ function CohortComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { setGenerationCapability, clearGenerationCapability } =
-    useGenerationContext();
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -973,29 +970,6 @@ function CohortComponent({
     clearEntityMetadata,
   ]);
 
-  // Set generation capability when cohort data is loaded
-  useEffect(() => {
-    if (cohortData?.general_agent_id && cohortData?.can_edit !== false) {
-      setGenerationCapability({
-        artifactType: "cohort",
-        canGenerate: true,
-        agentId: cohortData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "cohort",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    cohortData?.general_agent_id,
-    cohortData?.can_edit,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -1187,16 +1161,25 @@ function CohortComponent({
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (cohortData?.general_agent_id) {
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
         // Open modal instead of directly generating
         handleOpenStepCardModal("all", "generate");
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
     return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [cohortData?.general_agent_id, handleOpenStepCardModal]);
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
+  }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(

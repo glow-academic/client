@@ -21,7 +21,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { GenerateRegenerateModal, type GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 
 import type {
@@ -109,7 +108,6 @@ export function Scenarios({
 
   // Generation modal state
   const { socket, isConnected } = useProfile();
-  const { setGenerationCapability, clearGenerationCapability } = useGenerationContext();
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [modalResources, setModalResources] = useState<GenerateRegenerateModalResource[]>([]);
   const [modalInstructions, setModalInstructions] = useState("");
@@ -585,27 +583,9 @@ export function Scenarios({
     });
   }, [updateScenariosParams]);
 
-  // Set GenerationCapability from list response
-  useEffect(() => {
-    if (serverListData?.general_agent_id) {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: true,
-        agentId: serverListData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [serverListData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
-
   // Listen for full-page-generate event
-  const handleOpenGenerateModal = useCallback(() => {
-    if (!serverListData?.general_agent_id) return;
+  const handleOpenGenerateModal = useCallback((agentId?: string) => {
+    if (!agentId) return;
     const resources: GenerateRegenerateModalResource[] = [
       { id: "names", label: "Name", active: true },
       { id: "descriptions", label: "Description", active: true },
@@ -625,11 +605,26 @@ export function Scenarios({
     setModalResources(resources);
     setModalInstructions("");
     setShowGenerateModal(true);
-  }, [serverListData?.general_agent_id]);
+  }, []);
 
   useEffect(() => {
-    window.addEventListener("full-page-generate", handleOpenGenerateModal);
-    return () => window.removeEventListener("full-page-generate", handleOpenGenerateModal);
+    const handleFullPageGenerate = (
+      event: CustomEvent<{ agentId?: string }>
+    ) => {
+      const agentId = event.detail?.agentId;
+      if (agentId) {
+        handleOpenGenerateModal(agentId);
+      }
+    };
+    window.addEventListener(
+      "full-page-generate",
+      handleFullPageGenerate as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "full-page-generate",
+        handleFullPageGenerate as EventListener
+      );
   }, [handleOpenGenerateModal]);
 
   // Handle modal generate (create new scenario + generate)
