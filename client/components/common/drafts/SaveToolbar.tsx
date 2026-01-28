@@ -169,7 +169,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
       <div className="flex items-center gap-2 pr-4">
         {/* Save Button - consolidated with status indicator */}
         <Button
-          variant="default"
+          variant={!hasUnsavedChanges && !isAutosaveEnabled ? "secondary" : "default"}
           size="sm"
           className="h-8"
           onClick={handleSaveClick}
@@ -185,8 +185,12 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
               <Check className="h-4 w-4 mr-2" />
               Saved
             </>
-          ) : (
+          ) : hasUnsavedChanges ? (
             "Save"
+          ) : isAutosaveEnabled ? (
+            "Autosave on"
+          ) : (
+            "Autosave off"
           )}
         </Button>
 

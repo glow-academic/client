@@ -8,7 +8,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -26,9 +32,9 @@ import { Examples } from "@/components/resources/Examples";
 import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
-import { Parameters } from "@/components/resources/Parameters";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
+import { Parameters } from "@/components/resources/Parameters";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -120,12 +126,7 @@ function PersonaComponent({
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
-  const {
-    profile,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
@@ -538,18 +539,21 @@ function PersonaComponent({
   const lastSyncedDraftIdRef = React.useRef<string | null>(null);
 
   // Memoized callback to sync draftId from GenericForm - only update if value changed
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    // Store formData for access in handleGenerateResources
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
+  const onFormDataChange = React.useCallback(
+    (fd: Record<string, unknown>) => {
+      // Store formData for access in handleGenerateResources
+      formDataRef.current = fd;
+      const next = (fd["draftId"] as string | undefined) ?? null;
+      setDraftId((prev) => (prev === next ? prev : next));
 
-    // One-way sync to profile context (no effect dependency on selectedDraftId)
-    if (next !== lastSyncedDraftIdRef.current) {
-      lastSyncedDraftIdRef.current = next;
-      setSelectedDraftId(next);
-    }
-  }, [setSelectedDraftId]);
+      // One-way sync to profile context (no effect dependency on selectedDraftId)
+      if (next !== lastSyncedDraftIdRef.current) {
+        lastSyncedDraftIdRef.current = next;
+        setSelectedDraftId(next);
+      }
+    },
+    [setSelectedDraftId]
+  );
 
   // Use ref to stabilize patchPersonaDraftAction to prevent effect recreation when prop reference changes
   const patchPersonaDraftActionRef = React.useRef(patchPersonaDraftAction);
@@ -624,7 +628,10 @@ function PersonaComponent({
 
     // Wait for version sync before patching to prevent race conditions
     // Only block if there's an actual numeric version to sync (not null for new personas)
-    if (typeof personaData?.draft_version === "number" && !versionSyncedRef.current) {
+    if (
+      typeof personaData?.draft_version === "number" &&
+      !versionSyncedRef.current
+    ) {
       console.debug("[Persona Draft] Waiting for version sync");
       return;
     }
@@ -659,7 +666,9 @@ function PersonaComponent({
         console.debug("[Persona Draft] Calling patch API", {
           input_draft_id: draftId,
           expected_version: lastSavedVersionRef.current,
-          fields: Object.keys(formState).filter(k => formState[k as keyof typeof formState]),
+          fields: Object.keys(formState).filter(
+            (k) => formState[k as keyof typeof formState]
+          ),
         });
 
         const result = await patchPersonaDraftActionRef.current({
@@ -713,7 +722,8 @@ function PersonaComponent({
         console.error("[Persona Draft] Patch failed:", error);
         // Show user feedback
         toast.error("Failed to save draft", {
-          description: "Your changes may not have been saved. Please try again.",
+          description:
+            "Your changes may not have been saved. Please try again.",
         });
         // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
@@ -746,7 +756,10 @@ function PersonaComponent({
 
   // Emit unsaved-changes event when draftPatchKey changes
   useEffect(() => {
-    const hasChanges = lastPatchedKeyRef.current !== draftPatchKey;
+    // Only report changes after we've established a baseline (ref is not null)
+    const hasChanges =
+      lastPatchedKeyRef.current !== null &&
+      lastPatchedKeyRef.current !== draftPatchKey;
     window.dispatchEvent(
       new CustomEvent("unsaved-changes", { detail: { hasChanges } })
     );
@@ -1389,11 +1402,12 @@ function PersonaComponent({
             const parameterId = stepId.replace("fields-", "");
             if (!hasName || !hasDescription) return "pending";
             // Check if any fields for this parameter are selected
-            const fieldsForParam = personaData?.fields?.filter(
-              (f) => f.parameter_id === parameterId
-            ) ?? [];
-            const hasFieldsForParam = formState.field_ids.some(
-              (fid) => fieldsForParam.some((f) => f.field_id === fid)
+            const fieldsForParam =
+              personaData?.fields?.filter(
+                (f) => f.parameter_id === parameterId
+              ) ?? [];
+            const hasFieldsForParam = formState.field_ids.some((fid) =>
+              fieldsForParam.some((f) => f.field_id === fid)
             );
             return hasFieldsForParam ? "completed" : "active";
           }
@@ -1507,22 +1521,29 @@ function PersonaComponent({
         id: "parameters",
         title: "Parameters",
         description: "Select parameters for this persona.",
-        resetFields: ["parameter_ids", "parameterSearch", "parameterShowSelected"],
+        resetFields: [
+          "parameter_ids",
+          "parameterSearch",
+          "parameterShowSelected",
+        ],
       },
     ];
 
     // Generate a step for each selected parameter
-    const parameterFieldSteps = (formState.parameter_ids ?? []).map((parameterId) => {
-      const param = personaData?.parameters?.find(
-        (p) => p.parameter_id === parameterId
-      );
-      return {
-        id: `fields-${parameterId}`,
-        title: param?.name ?? "Fields",
-        description: param?.description ?? "Select fields for this parameter.",
-        resetFields: [] as string[], // field_ids managed globally
-      };
-    });
+    const parameterFieldSteps = (formState.parameter_ids ?? []).map(
+      (parameterId) => {
+        const param = personaData?.parameters?.find(
+          (p) => p.parameter_id === parameterId
+        );
+        return {
+          id: `fields-${parameterId}`,
+          title: param?.name ?? "Fields",
+          description:
+            param?.description ?? "Select fields for this parameter.",
+          resetFields: [] as string[], // field_ids managed globally
+        };
+      }
+    );
 
     const endSteps = [
       {
@@ -1818,10 +1839,13 @@ function PersonaComponent({
 
         case "parameters": {
           const parameterSearchTerm =
-            (stepFormData["parameterSearch"] as string | null | undefined) || "";
+            (stepFormData["parameterSearch"] as string | null | undefined) ||
+            "";
           const parameterShowSelected =
-            (stepFormData["parameterShowSelected"] as boolean | null | undefined) ??
-            false;
+            (stepFormData["parameterShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1845,15 +1869,23 @@ function PersonaComponent({
                     setStepFormData({ parameterShowSelected: value || null }),
                 },
               ]}
-              resetFields={["parameter_ids", "parameterSearch", "parameterShowSelected"]}
+              resetFields={[
+                "parameter_ids",
+                "parameterSearch",
+                "parameterShowSelected",
+              ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               <Parameters
                 parameter_ids={formState.parameter_ids ?? []}
-                parameter_resources={currentPersonaData?.parameter_resources ?? []}
+                parameter_resources={
+                  currentPersonaData?.parameter_resources ?? []
+                }
                 show_parameters={currentPersonaData?.show_parameters ?? false}
-                parameter_suggestions={currentPersonaData?.parameter_suggestions ?? []}
+                parameter_suggestions={
+                  currentPersonaData?.parameter_suggestions ?? []
+                }
                 parameters={currentPersonaData?.parameters ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -2257,8 +2289,10 @@ function PersonaComponent({
             const fieldSearchTerm =
               (stepFormData["fieldSearch"] as string | null | undefined) || "";
             const fieldShowSelected =
-              (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
-              false;
+              (stepFormData["fieldShowSelected"] as
+                | boolean
+                | null
+                | undefined) ?? false;
             return (
               <StepCard
                 stepStatus={stepStatus}
@@ -2290,7 +2324,9 @@ function PersonaComponent({
                   field_ids={formState.field_ids ?? []}
                   field_resources={currentPersonaData?.field_resources ?? []}
                   show_fields={currentPersonaData?.show_fields ?? false}
-                  field_suggestions={currentPersonaData?.field_suggestions ?? []}
+                  field_suggestions={
+                    currentPersonaData?.field_suggestions ?? []
+                  }
                   fields={currentPersonaData?.fields ?? []}
                   parameterIdFilter={parameterId}
                   disabled={disabled}

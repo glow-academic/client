@@ -105,8 +105,6 @@ export function Names({
   const initialValue = resourceName || defaultName || "";
   const [internalValue, setInternalValue] = useState(initialValue);
 
-  // Debug: log renders
-  console.log('[Names] render', { resourceName, defaultName, internalValue, registerFlush: !!registerFlush });
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
@@ -148,7 +146,6 @@ export function Names({
 
   // Register flush callback with parent
   useEffect(() => {
-    console.log('[Names] registerFlush effect running');
     if (registerFlush) {
       registerFlush(() => flushRef.current?.() ?? Promise.resolve());
     }
@@ -197,11 +194,9 @@ export function Names({
 
   // Update internal value when name_resource changes
   useEffect(() => {
-    console.log('[Names] sync effect running', { resourceName, defaultName, internalValue });
     if (resourceName) {
       // Only update if value actually changed to prevent unnecessary re-renders
       if (internalValue !== resourceName) {
-        console.log('[Names] updating internalValue to resourceName:', resourceName);
         setInternalValue(resourceName);
       }
       lastSavedValueRef.current = resourceName;
@@ -209,7 +204,6 @@ export function Names({
       // If no resource name but defaultName exists, use defaultName
       // Only update if value actually changed
       if (internalValue !== defaultName) {
-        console.log('[Names] updating internalValue to defaultName:', defaultName);
         setInternalValue(defaultName);
       }
       lastSavedValueRef.current = defaultName;

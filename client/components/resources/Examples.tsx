@@ -146,6 +146,7 @@ export function Examples({
 
   const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const lastSavedTextsRef = useRef<string[]>(internalTexts);
+  const lastReportedIdsRef = useRef<string[]>(ids); // Track last IDs reported to parent
   const isInitialMountRef = useRef(true);
   const exampleIdMapRef = useRef<Map<string, string>>(new Map()); // Maps example text -> example_id
   const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
@@ -190,6 +191,7 @@ export function Examples({
       .map((t) => exampleIdMapRef.current.get(t))
       .filter((id): id is string => id !== undefined);
 
+    lastReportedIdsRef.current = allIds;
     onChangeRef.current(allIds);
     lastSavedTextsRef.current = internalTexts;
   };
@@ -208,13 +210,22 @@ export function Examples({
         .map((id) => effectiveExampleMapping[id] || "")
         .filter((text) => text.trim() !== "");
       if (texts.length > 0) {
-        setInternalTexts(texts.length > 0 ? texts : [""]);
+        // Only update if texts actually changed to prevent infinite loops
+        const newTexts = texts.length > 0 ? texts : [""];
+        setInternalTexts((prev) => {
+          const prevStr = JSON.stringify(prev);
+          const newStr = JSON.stringify(newTexts);
+          if (prevStr === newStr) return prev;
+          return newTexts;
+        });
         // Update mapping
         ids.forEach((id, idx) => {
           if (texts[idx]) {
             exampleIdMapRef.current.set(texts[idx], id);
           }
         });
+        // Keep lastReportedIdsRef in sync with external ids
+        lastReportedIdsRef.current = ids;
       }
     }
   }, [ids, effectiveExampleMapping]);
@@ -243,12 +254,18 @@ export function Examples({
     );
 
     if (!hasTextsToCreate) {
-      // All texts already have IDs, just update parent with current IDs
+      // All texts already have IDs, update parent only if IDs changed (reorder/delete)
       const allIds = internalTexts
         .filter((t) => t.trim())
         .map((t) => exampleIdMapRef.current.get(t))
         .filter((id): id is string => id !== undefined);
-      onChangeRef.current(allIds);
+      // Only call onChange if IDs actually changed to prevent infinite loops
+      const lastReportedStr = JSON.stringify(lastReportedIdsRef.current);
+      const newIdsStr = JSON.stringify(allIds);
+      if (lastReportedStr !== newIdsStr) {
+        lastReportedIdsRef.current = allIds;
+        onChangeRef.current(allIds);
+      }
       return;
     }
 
