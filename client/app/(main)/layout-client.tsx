@@ -478,6 +478,7 @@ export function MainLayoutClient({
   sessionSnapshot,
   attemptData,
   activeSettings,
+  initialAutosave,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
@@ -488,6 +489,8 @@ export function MainLayoutClient({
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveClient | null;
+  /** Initial autosave preference from SSR cookie */
+  initialAutosave?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -541,7 +544,7 @@ export function MainLayoutClient({
       >
         <BreadcrumbProvider>
           <GenerationProvider>
-            <SaveProvider>
+            <SaveProvider initialAutosave={initialAutosave}>
               <AnalyticsProvider>
                 <MainLayoutContent
                   attemptData={attemptData}

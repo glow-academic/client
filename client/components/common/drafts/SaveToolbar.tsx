@@ -38,6 +38,7 @@ interface SaveToolbarProps {
 export function SaveToolbar({ artifactType }: SaveToolbarProps) {
   const {
     isAutosaveEnabled,
+    isAutosaveLoaded,
     setAutosaveEnabled,
     saveStatus,
     hasUnsavedChanges,
@@ -168,26 +169,29 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
     <>
       <div className="flex items-center gap-2 pr-4">
         {/* Save Button - consolidated with status indicator */}
-        <Button
-          variant={!hasUnsavedChanges && !isAutosaveEnabled ? "secondary" : "default"}
-          size="sm"
-          className="h-8"
-          onClick={handleSaveClick}
-          disabled={saveStatus === "saving"}
-        >
-          {saveStatus === "saving" ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Saving draft...
-            </>
-          ) : hasUnsavedChanges ? (
-            "Save draft"
-          ) : isAutosaveEnabled ? (
-            "Autosave on"
-          ) : (
-            "Autosave off"
-          )}
-        </Button>
+        {/* Only render after hydration to prevent flicker */}
+        {isAutosaveLoaded && (
+          <Button
+            variant={!hasUnsavedChanges && !isAutosaveEnabled ? "secondary" : "default"}
+            size="sm"
+            className="h-8"
+            onClick={handleSaveClick}
+            disabled={saveStatus === "saving"}
+          >
+            {saveStatus === "saving" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Saving draft...
+              </>
+            ) : hasUnsavedChanges ? (
+              "Save draft"
+            ) : isAutosaveEnabled ? (
+              "Autosave on"
+            ) : (
+              "Autosave off"
+            )}
+          </Button>
+        )}
 
         {/* Draft Picker Icon Button */}
         <DropdownMenu>

@@ -8,7 +8,7 @@ import { getSession } from "@/auth";
 import { AppShell } from "@/components/common/layout/AppShell";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { checkRouteAccess } from "@/lib/auth-helpers";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
@@ -19,6 +19,8 @@ import {
   switchEffectiveProfile,
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
+
+const AUTOSAVE_COOKIE = "glow_autosave";
 
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation
@@ -32,6 +34,13 @@ export default async function MainLayout({
   const session = await getSession();
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
+
+  // Read autosave preference from cookie for SSR
+  const cookieStore = await cookies();
+  const autosaveCookie = cookieStore.get(AUTOSAVE_COOKIE);
+  const initialAutosave = autosaveCookie
+    ? autosaveCookie.value === "true"
+    : undefined;
 
   // Check route access server-side
   const accessResult = await checkRouteAccess(pathname, session);
@@ -72,6 +81,7 @@ export default async function MainLayout({
           sessionSnapshot={snapshot}
           attemptData={attemptData}
           activeSettings={activeSettings}
+          initialAutosave={initialAutosave}
           switchEffectiveProfileAction={switchEffectiveProfile}
           createFeedbackAction={createFeedback}
           refreshAnalyticsAction={refreshAnalytics}
@@ -127,6 +137,7 @@ export default async function MainLayout({
         sessionSnapshot={snapshot}
         attemptData={attemptData}
         activeSettings={activeSettings}
+        initialAutosave={initialAutosave}
         switchEffectiveProfileAction={switchEffectiveProfile}
         createFeedbackAction={createFeedback}
         refreshAnalyticsAction={refreshAnalytics}

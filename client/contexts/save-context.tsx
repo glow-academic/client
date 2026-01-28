@@ -20,6 +20,8 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 interface SaveContextType {
   /** Whether autosave is enabled (persisted in localStorage) */
   isAutosaveEnabled: boolean;
+  /** Whether the autosave preference has been loaded from localStorage */
+  isAutosaveLoaded: boolean;
   /** Toggle autosave on/off */
   setAutosaveEnabled: (enabled: boolean) => void;
   /** Current save status for UI indicator */
@@ -32,26 +34,40 @@ interface SaveContextType {
 
 const SaveContext = createContext<SaveContextType | undefined>(undefined);
 
-const AUTOSAVE_KEY = "glow_autosave_enabled";
+const AUTOSAVE_COOKIE = "glow_autosave";
 
-export function SaveProvider({ children }: { children: React.ReactNode }) {
-  // Initialize from localStorage (default: true for backwards compatibility)
-  const [isAutosaveEnabled, setIsAutosaveEnabledState] = useState(true);
+interface SaveProviderProps {
+  children: React.ReactNode;
+  /** Initial autosave value from SSR (read from cookie) */
+  initialAutosave?: boolean;
+}
+
+export function SaveProvider({ children, initialAutosave }: SaveProviderProps) {
+  // Initialize from SSR prop (cookie), falling back to true
+  const [isAutosaveEnabled, setIsAutosaveEnabledState] = useState(
+    initialAutosave ?? true
+  );
+  // If we have SSR value, we're already "loaded"; otherwise wait for useEffect
+  const [isAutosaveLoaded, setIsAutosaveLoaded] = useState(
+    initialAutosave !== undefined
+  );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Load from localStorage on mount
+  // For first-time visitors (no cookie), set the default cookie and mark as loaded
   useEffect(() => {
-    const stored = localStorage.getItem(AUTOSAVE_KEY);
-    if (stored !== null) {
-      setIsAutosaveEnabledState(stored === "true");
+    if (initialAutosave === undefined) {
+      // First visit - set default cookie (true) for future SSR
+      document.cookie = `${AUTOSAVE_COOKIE}=true; path=/; max-age=31536000; SameSite=Lax`;
+      setIsAutosaveLoaded(true);
     }
-  }, []);
+  }, [initialAutosave]);
 
-  // Persist autosave preference
+  // Persist autosave preference to cookie
   const setAutosaveEnabled = useCallback((enabled: boolean) => {
     setIsAutosaveEnabledState(enabled);
-    localStorage.setItem(AUTOSAVE_KEY, String(enabled));
+    // Set cookie for SSR access (1 year expiry)
+    document.cookie = `${AUTOSAVE_COOKIE}=${enabled}; path=/; max-age=31536000; SameSite=Lax`;
     toast.info(enabled ? "Autosave enabled" : "Autosave disabled");
   }, []);
 
@@ -85,6 +101,7 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
     <SaveContext.Provider
       value={{
         isAutosaveEnabled,
+        isAutosaveLoaded,
         setAutosaveEnabled,
         saveStatus,
         hasUnsavedChanges,
