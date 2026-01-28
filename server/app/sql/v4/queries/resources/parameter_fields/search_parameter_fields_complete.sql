@@ -1,7 +1,8 @@
--- Search parameter fields resources by parameter IDs
--- Gets all available parameter_fields for given parameters
+-- Search available fields per parameter via parameter_fields_junction
+-- Gets all AVAILABLE fields for given parameters (what user can select)
+-- Note: This queries parameter_fields_junction (available), NOT parameter_fields_resource (already created)
 -- Parameters: parameter_ids (uuid[])
--- Returns: items (array of parameter field resources with parameter_id)
+-- Returns: items (array of available fields with parameter_id for grouping)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -31,21 +32,28 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            pfr.id,
-            pfr.field_id,
-            pfr.parameter_id,
+            -- id: Use field_resource_id as the unique identifier for this available field
+            pfj.field_resource_id,
+            -- field_id: The underlying field definition
+            pfj.field_resource_id,
+            -- parameter_id: Which parameter this field belongs to
+            pfj.parameter_id,
+            -- name: Get field name via field_fields_junction
             (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
+            -- description: Get field description via field_fields_junction
             COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''),
-            COALESCE(pfr.generated, false)
+            -- generated: Available fields are not generated (this refers to base field definition)
+            false
         )::types.q_get_parameter_fields_v4_item
-        ORDER BY pfr.parameter_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)
+        ORDER BY pfj.parameter_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)
     ),
     ARRAY[]::types.q_get_parameter_fields_v4_item[]
 ) as items
-FROM parameter_fields_resource pfr
-JOIN field_fields_junction ffj ON ffj.fields_id = pfr.field_id
-WHERE pfr.active = true
-  AND pfr.parameter_id = ANY(parameter_ids)
+FROM parameter_fields_junction pfj
+JOIN fields_resource fr ON fr.id = pfj.field_resource_id
+JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
+WHERE pfj.active = true
+  AND pfj.parameter_id = ANY(parameter_ids)
   AND EXISTS (
       SELECT 1 FROM field_flags_junction ff
       JOIN flags_resource fl ON ff.flag_id = fl.id

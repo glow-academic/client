@@ -41,6 +41,14 @@ type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
+type CreateDraftParameterFieldsIn = InputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
+type CreateDraftParameterFieldsOut = OutputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -141,6 +149,14 @@ async function createDraftExamples(
   return api.post("/resources/examples", input);
 }
 
+async function createDraftParameterFields(
+  input: CreateDraftParameterFieldsIn
+): Promise<CreateDraftParameterFieldsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/parameter_fields", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({
   params,
@@ -217,6 +233,7 @@ export default async function PersonaEditPage({
           createInstructionsAction={createDraftInstructions}
           createColorsAction={createDraftColors}
           createExamplesAction={createDraftExamples}
+          createParameterFieldsAction={createDraftParameterFields}
         />
       </div>
     );

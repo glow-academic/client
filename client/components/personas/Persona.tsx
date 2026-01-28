@@ -78,6 +78,14 @@ type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
+type CreateDraftParameterFieldsIn = InputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
+type CreateDraftParameterFieldsOut = OutputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
@@ -111,6 +119,9 @@ export interface PersonaProps {
   createDocumentsAction?: (
     input: CreateDraftDocumentsIn
   ) => Promise<CreateDraftDocumentsOut>;
+  createParameterFieldsAction?: (
+    input: CreateDraftParameterFieldsIn
+  ) => Promise<CreateDraftParameterFieldsOut>;
 }
 
 function PersonaComponent({
@@ -123,6 +134,7 @@ function PersonaComponent({
   createColorsAction,
   createInstructionsAction,
   createExamplesAction,
+  createParameterFieldsAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -538,13 +550,24 @@ function PersonaComponent({
   // Track last synced draftId to prevent redundant profile context updates
   const lastSyncedDraftIdRef = React.useRef<string | null>(null);
 
+  // Track when we're syncing from server data (to reset baseline, not trigger save)
+  // Defined early so it's available for onFormDataChange and formState sync effect
+  const serverSyncPendingRef = React.useRef(false);
+
   // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback(
     (fd: Record<string, unknown>) => {
       // Store formData for access in handleGenerateResources
       formDataRef.current = fd;
       const next = (fd["draftId"] as string | undefined) ?? null;
-      setDraftId((prev) => (prev === next ? prev : next));
+      setDraftId((prev) => {
+        // If draftId is changing on initial load (null → value), mark as server sync
+        // to prevent triggering autosave for URL-based draft loading
+        if (prev === null && next !== null) {
+          serverSyncPendingRef.current = true;
+        }
+        return prev === next ? prev : next;
+      });
 
       // One-way sync to profile context (no effect dependency on selectedDraftId)
       if (next !== lastSyncedDraftIdRef.current) {
@@ -595,8 +618,6 @@ function PersonaComponent({
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
   const isFirstPatchRef = React.useRef(true);
-  // Track when we're syncing from server data (to reset baseline, not trigger save)
-  const serverSyncPendingRef = React.useRef(false);
 
   // Track if there are pending changes for beforeunload warning
   const hasPendingChangesRef = React.useRef(false);
@@ -802,6 +823,9 @@ function PersonaComponent({
 
   // Flush all resources and patch draft (for manual save)
   const flushAllAndSave = useCallback(async () => {
+    const startTime = Date.now();
+    const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
+
     window.dispatchEvent(
       new CustomEvent("save-status-change", { detail: { status: "saving" } })
     );
@@ -817,6 +841,7 @@ function PersonaComponent({
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       // 3. Patch draft with all resource IDs
+      let isNewDraft = false;
       if (patchPersonaDraftActionRef.current) {
         const result = await patchPersonaDraftActionRef.current({
           body: {
@@ -845,8 +870,14 @@ function PersonaComponent({
         // Update URL if draft was created
         if (!draftId && result.draft_id) {
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
-          toast.success("Draft created");
+          isNewDraft = true;
         }
+      }
+
+      // Ensure minimum display duration for manual save
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_SAVING_DURATION) {
+        await new Promise((resolve) => setTimeout(resolve, MIN_SAVING_DURATION - elapsed));
       }
 
       window.dispatchEvent(
@@ -857,6 +888,9 @@ function PersonaComponent({
       );
 
       hasPendingChangesRef.current = false;
+
+      // Show success toast for manual save
+      toast.success(isNewDraft ? "Draft created" : "Draft saved");
     } catch (error) {
       console.error("[Persona] Save failed:", error);
       window.dispatchEvent(
@@ -1927,6 +1961,7 @@ function PersonaComponent({
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.parameter_fields_agent_id ?? null}
                   required={currentPersonaData?.parameter_fields_required ?? false}
+                  createParameterFieldsAction={createParameterFieldsAction}
                 />
               </div>
             </StepCard>
@@ -2460,7 +2495,8 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     prevProps.createColorsAction !== nextProps.createColorsAction ||
     prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
     prevProps.createExamplesAction !== nextProps.createExamplesAction ||
-    prevProps.createDocumentsAction !== nextProps.createDocumentsAction
+    prevProps.createDocumentsAction !== nextProps.createDocumentsAction ||
+    prevProps.createParameterFieldsAction !== nextProps.createParameterFieldsAction
   ) {
     return false; // Function props changed, re-render
   }

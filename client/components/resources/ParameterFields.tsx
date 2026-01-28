@@ -78,9 +78,10 @@ export interface ParameterFieldsProps {
   isGenerating?: boolean;
 }
 
-type ParameterFieldOption = {
-  id: string;
-  field_id: string;
+// Represents an available field option from parameter_fields_junction
+type AvailableFieldOption = {
+  field_id: string; // fields_resource.id (used to create parameter_fields_resource)
+  parameter_id: string;
   name: string;
   description?: string;
 };
@@ -106,8 +107,10 @@ export function ParameterFields({
   isGenerating = false,
 }: ParameterFieldsProps) {
   const show = show_parameter_fields ?? false;
-  const allFields = useMemo(() => parameter_fields ?? [], [parameter_fields]);
-  const currentResources = useMemo(
+  // Available fields from parameter_fields_junction (what user CAN select)
+  const availableFields = useMemo(() => parameter_fields ?? [], [parameter_fields]);
+  // Already selected/created parameter_fields_resource entries
+  const selectedResources = useMemo(
     () => parameter_field_resources ?? [],
     [parameter_field_resources]
   );
@@ -139,58 +142,51 @@ export function ParameterFields({
     return map;
   }, [parameters, parameter_resources]);
 
-  // Multi-select: maps parameterId → Set of selected field resource IDs
-  const [selectedFieldsByParameter, setSelectedFieldsByParameter] = useState<
-    Map<string, Set<string>>
-  >(new Map());
-  // Maps parameter_field_resource ID → itself (for emitting)
-  const [_parameterFieldResourceIds, setParameterFieldResourceIds] = useState<
-    Map<string, string>
-  >(new Map());
-  const createdFieldKeysRef = useRef<Set<string>>(new Set());
+  // Map: "parameterId:fieldId" → parameter_fields_resource.id (for already-selected fields)
+  const selectedFieldKeyToResourceId = useMemo(() => {
+    const map = new Map<string, string>();
+    selectedResources.forEach((resource) => {
+      if (resource.parameter_id && resource.field_id && resource.id) {
+        const key = `${resource.parameter_id}:${resource.field_id}`;
+        map.set(key, resource.id);
+      }
+    });
+    return map;
+  }, [selectedResources]);
 
+  // Track parameter_fields_resource IDs to emit (starts from selected resources)
+  const [resourceIds, setResourceIds] = useState<Map<string, string>>(new Map());
+  // Track pending creations to prevent duplicates
+  const creatingKeysRef = useRef<Set<string>>(new Set());
+
+  // Initialize resourceIds from selected resources
   useEffect(() => {
-    const nextSelected = new Map<string, Set<string>>();
     const nextResourceIds = new Map<string, string>();
-
-    currentResources.forEach((resource) => {
-      if (resource.parameter_id && resource.id) {
-        if (!nextSelected.has(resource.parameter_id)) {
-          nextSelected.set(resource.parameter_id, new Set());
-        }
-        nextSelected.get(resource.parameter_id)!.add(resource.id);
+    selectedResources.forEach((resource) => {
+      if (resource.id) {
         nextResourceIds.set(resource.id, resource.id);
       }
     });
-
-    parameter_ids.forEach((parameterId) => {
-      if (!nextSelected.has(parameterId)) {
-        nextSelected.set(parameterId, new Set());
-      }
-    });
-
-    setSelectedFieldsByParameter(nextSelected);
-    setParameterFieldResourceIds(nextResourceIds);
-  }, [currentResources, parameter_ids]);
+    setResourceIds(nextResourceIds);
+  }, [selectedResources]);
 
   const emitAllIds = useCallback(
-    (resourceIds: Map<string, string>) => {
-      const ids = Array.from(resourceIds.values());
-      onChange(ids);
+    (ids: Map<string, string>) => {
+      onChange(Array.from(ids.values()));
     },
     [onChange]
   );
 
   const createParameterField = useCallback(
-    async (parameterId: string, fieldId: string, resourceId: string) => {
+    async (parameterId: string, fieldId: string) => {
       if (!createParameterFieldsAction || !agent_id || !group_id) {
-        return;
+        return null;
       }
       const key = `${parameterId}:${fieldId}`;
-      if (createdFieldKeysRef.current.has(key)) {
-        return;
+      if (creatingKeysRef.current.has(key)) {
+        return null;
       }
-      createdFieldKeysRef.current.add(key);
+      creatingKeysRef.current.add(key);
 
       try {
         const result = await createParameterFieldsAction({
@@ -204,99 +200,94 @@ export function ParameterFields({
         });
 
         if (!result?.parameter_fields_id) {
-          return;
+          creatingKeysRef.current.delete(key);
+          return null;
         }
 
         const resultId = result.parameter_fields_id as string;
-        setParameterFieldResourceIds((prev) => {
+        setResourceIds((prev) => {
           const next = new Map(prev);
           next.set(resultId, resultId);
           emitAllIds(next);
           return next;
         });
-
-        // Update selected fields with new resource ID
-        setSelectedFieldsByParameter((prev) => {
-          const next = new Map(prev);
-          const fields = new Set(prev.get(parameterId) ?? []);
-          fields.delete(resourceId); // Remove temporary ID
-          fields.add(resultId); // Add real ID
-          next.set(parameterId, fields);
-          return next;
-        });
+        return resultId;
       } catch {
-        // Resource creation errors are handled by API; keep UI state intact.
+        creatingKeysRef.current.delete(key);
+        return null;
       }
     },
     [createParameterFieldsAction, agent_id, group_id, emitAllIds]
   );
 
   const handleToggle = useCallback(
-    (parameterId: string, fieldOption: ParameterFieldOption, checked: boolean) => {
-      const resourceId = fieldOption.id;
-
-      setSelectedFieldsByParameter((prev) => {
-        const next = new Map(prev);
-        const fields = new Set(prev.get(parameterId) ?? []);
-        if (checked) {
-          fields.add(resourceId);
-        } else {
-          fields.delete(resourceId);
-        }
-        next.set(parameterId, fields);
-        return next;
-      });
+    (option: AvailableFieldOption, checked: boolean) => {
+      const key = `${option.parameter_id}:${option.field_id}`;
+      const existingResourceId = selectedFieldKeyToResourceId.get(key);
 
       if (checked) {
-        // If the resource already exists, just add it to our tracking
-        if (resourceId && !resourceId.startsWith("temp_")) {
-          setParameterFieldResourceIds((prev) => {
+        if (existingResourceId) {
+          // Field was already selected, just add to tracking
+          setResourceIds((prev) => {
             const next = new Map(prev);
-            next.set(resourceId, resourceId);
+            next.set(existingResourceId, existingResourceId);
             emitAllIds(next);
             return next;
           });
         } else {
-          // Create new resource
-          void createParameterField(parameterId, fieldOption.field_id, resourceId);
+          // Need to create a new parameter_fields_resource
+          void createParameterField(option.parameter_id, option.field_id);
         }
       } else {
-        setParameterFieldResourceIds((prev) => {
-          const next = new Map(prev);
-          next.delete(resourceId);
-          emitAllIds(next);
-          return next;
-        });
+        // Remove from selection
+        if (existingResourceId) {
+          setResourceIds((prev) => {
+            const next = new Map(prev);
+            next.delete(existingResourceId);
+            emitAllIds(next);
+            return next;
+          });
+        }
       }
     },
-    [createParameterField, emitAllIds]
+    [selectedFieldKeyToResourceId, createParameterField, emitAllIds]
   );
 
-  // Group fields by parameter_id
-  const fieldOptionsByParameter = useMemo(() => {
-    const map = new Map<string, ParameterFieldOption[]>();
+  // Check if a field is currently selected
+  const isFieldSelected = useCallback(
+    (parameterId: string, fieldId: string): boolean => {
+      const key = `${parameterId}:${fieldId}`;
+      const resourceId = selectedFieldKeyToResourceId.get(key);
+      return resourceId ? resourceIds.has(resourceId) : false;
+    },
+    [selectedFieldKeyToResourceId, resourceIds]
+  );
 
-    allFields
-      .filter((field) => field.id && field.field_id && field.name && field.parameter_id)
+  // Group available fields by parameter_id
+  const fieldOptionsByParameter = useMemo(() => {
+    const map = new Map<string, AvailableFieldOption[]>();
+
+    availableFields
+      .filter((field) => field.field_id && field.name && field.parameter_id)
       .forEach((field) => {
         const parameterId = field.parameter_id as string;
         if (!map.has(parameterId)) {
           map.set(parameterId, []);
         }
         map.get(parameterId)!.push({
-          id: field.id as string,
           field_id: field.field_id as string,
+          parameter_id: parameterId,
           name: field.name as string,
           description: field.description ?? "",
         });
       });
 
     return map;
-  }, [allFields]);
+  }, [availableFields]);
 
   const hasGenerated = useMemo(() => {
-    return currentResources.some((field) => field.generated);
-  }, [currentResources]);
+    return selectedResources.some((field) => field.generated);
+  }, [selectedResources]);
 
   if (!show) {
     return null;
@@ -346,8 +337,6 @@ export function ParameterFields({
         {parameter_ids.map((parameterId) => {
           const labelText =
             parameterLabelMap.get(parameterId) ?? parameterId.slice(0, 8);
-          const selectedFields =
-            selectedFieldsByParameter.get(parameterId) ?? new Set<string>();
           const parameterOptions = fieldOptionsByParameter.get(parameterId) ?? [];
           return (
             <div
@@ -359,10 +348,10 @@ export function ParameterFields({
               </Label>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                 {parameterOptions.map((option) => {
-                  const isSelected = selectedFields.has(option.id);
+                  const isSelected = isFieldSelected(option.parameter_id, option.field_id);
                   return (
                     <div
-                      key={option.id}
+                      key={`${option.parameter_id}:${option.field_id}`}
                       className={cn(
                         "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
                         isSelected && "border-primary/50 bg-accent/40"
@@ -379,7 +368,7 @@ export function ParameterFields({
                       <Switch
                         checked={isSelected}
                         onCheckedChange={(checked) => {
-                          handleToggle(parameterId, option, checked);
+                          handleToggle(option, checked);
                         }}
                         disabled={disabled}
                         className="shrink-0"

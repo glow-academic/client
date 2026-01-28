@@ -42,6 +42,14 @@ type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
+type CreateDraftParameterFieldsIn = InputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
+type CreateDraftParameterFieldsOut = OutputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -119,6 +127,14 @@ async function createDraftDocuments(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/documents", input);
+}
+
+async function createDraftParameterFields(
+  input: CreateDraftParameterFieldsIn
+): Promise<CreateDraftParameterFieldsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/parameter_fields", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -200,6 +216,7 @@ export default async function NewPersonaPage({
         createColorsAction={createDraftColors}
         createExamplesAction={createDraftExamples}
         createDocumentsAction={createDraftDocuments}
+        createParameterFieldsAction={createDraftParameterFields}
       />
     </div>
   );

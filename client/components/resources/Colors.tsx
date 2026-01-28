@@ -243,6 +243,28 @@ export function Colors({
     }
   }, [resourceId, resource]);
 
+  // Track and report pending changes (for manual save mode only)
+  useEffect(() => {
+    // Only report pending changes when autosave is disabled
+    // When autosave is enabled, Persona.tsx handles the "saving" state directly
+    if (isAutosaveEnabled) {
+      return;
+    }
+
+    // Skip on initial mount
+    if (isInitialMountRef.current) {
+      return;
+    }
+
+    const hasPendingChanges = internalValue !== lastSavedValueRef.current;
+    if (hasPendingChanges) {
+      // Notify save context that there are unsaved changes
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
+      );
+    }
+  }, [internalValue, isAutosaveEnabled]);
+
   // Debounced resource creation - only when autosave is enabled
   useEffect(() => {
     // Skip if autosave is disabled (manual save mode)
