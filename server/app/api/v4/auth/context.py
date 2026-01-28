@@ -1,44 +1,271 @@
-"""Profile context endpoint - get consolidated profile context."""
+"""Profile context endpoint - get consolidated profile context.
 
+2-Pass Architecture:
+- Pass 1 (Light Query): Fast access check returning only IDs
+- Pass 2 (Parallel Fetch): Concurrent fetching of full resources using asyncio.gather
+"""
+
+import asyncio
+import time
+from datetime import datetime
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg
+from pydantic import BaseModel, Field
+
+from app.api.v4.resources.cohorts.get import QGetCohortsV4Item, get_cohorts_internal
+from app.api.v4.resources.departments.get import (
+    QGetDepartmentsV4Item,
+    get_departments_internal,
+)
+from app.api.v4.resources.roles.get import QGetRolesV4Item, get_roles_internal
+from app.api.v4.resources.settings.get import QGetSettingsV4Item, get_settings_internal
+from app.api.v4.resources.simulations.get import (
+    GetSimulationsBatchV4Item,
+    get_simulations_batch_internal,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.drafts.get import QGetDraftsV4Item, get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (GetProfileContextApiRequest,
-                           GetProfileContextApiResponse,
-                           GetProfileContextSqlParams, GetProfileContextSqlRow,
-                           QGetProfileContextV4ThemeTokens, load_sql_query)
+from app.main import get_db, get_pool
+from app.sql.types import (
+    GetProfileContextApiRequest,
+    GetProfileContextApiResponse as BaseGetProfileContextApiResponse,
+    GetProfileContextAccessSqlParams,
+    GetProfileContextAccessSqlRow,
+    QGetProfileContextAccessV4ArtifactAgent,
+    QGetProfileContextV4Auth,
+    QGetProfileContextV4Cohort,
+    QGetProfileContextV4Department,
+    QGetProfileContextV4Draft,
+    QGetProfileContextV4Provider,
+    QGetProfileContextV4RoleResource,
+    QGetProfileContextV4Simulation,
+    QGetProfileContextV4ThemeTokens,
+    load_sql_query,
+)
+
+
+class GetProfileContextApiResponse(BaseGetProfileContextApiResponse):
+    """Extended profile context response with artifact_agent_ids."""
+
+    artifact_agent_ids: dict[str, UUID | None] | None = None
 from app.utils.sql_helper import execute_sql_typed
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/profile/get_profile_context_complete.sql"
+# Load SQL with types at module level
+SQL_ACCESS_PATH = "app/sql/v4/queries/profile/get_profile_context_access_complete.sql"
 
 router = APIRouter()
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
+def normalize_color_to_oklch(color: str) -> str:
+    """Normalize color input to oklch format."""
+    color_trimmed = color.strip()
+    if color_trimmed.startswith("oklch("):
+        return color_trimmed
+    hex_clean = color_trimmed.lstrip("#")
+    if len(hex_clean) != 6 or not all(c in "0123456789ABCDEFabcdef" for c in hex_clean):
+        raise ValueError(
+            f"Invalid color format: {color}. Expected hex (e.g., '#ffffff') or oklch (e.g., 'oklch(1 0 0)')"
+        )
+    return hex_to_oklch(f"#{hex_clean}")
+
+
+def derive_theme_tokens(primitives: dict[str, str]) -> QGetProfileContextV4ThemeTokens:
+    """Derive full ThemeTokens from user-editable ThemePrimitives."""
+    # Normalize all color inputs to oklch format
+    background = normalize_color_to_oklch(primitives.get("background", ""))
+    surface = normalize_color_to_oklch(primitives.get("surface", ""))
+    primary = normalize_color_to_oklch(primitives.get("primary", ""))
+    accent = normalize_color_to_oklch(primitives.get("accent", ""))
+    sidebar_bg = normalize_color_to_oklch(primitives.get("sidebar_background", ""))
+    sidebar_primary = normalize_color_to_oklch(primitives.get("sidebar_primary", ""))
+    success = normalize_color_to_oklch(primitives.get("success", ""))
+    warning = normalize_color_to_oklch(primitives.get("warning", ""))
+    error = normalize_color_to_oklch(primitives.get("error", ""))
+
+    # Foregrounds based on contrast
+    foreground = ensure_contrast(background, "oklch(0.145 0 0)")
+    primary_fg = ensure_contrast(primary, "oklch(0.985 0 0)")
+    accent_fg = ensure_contrast(accent, "oklch(0.205 0 0)")
+    surface_fg = ensure_contrast(surface, foreground)
+
+    # Status foregrounds
+    success_fg = ensure_contrast(success, "oklch(0.985 0 0)")
+    warning_fg = ensure_contrast(warning, "oklch(0.145 0 0)")
+    error_fg = ensure_contrast(error, "oklch(0.985 0 0)")
+
+    # Info derived from primary
+    info_color = tint(primary, 0.05)
+    info_fg = ensure_contrast(info_color, foreground)
+
+    # Derived colors
+    muted_color = shade(background, 0.03)
+    muted_fg = shade(foreground, 0.2)
+    border_color = shade(background, 0.078)
+    input_color = shade(background, 0.078)
+    ring_color = shade(primary, 0.05)
+
+    # Sidebar derived colors
+    sidebar_fg = ensure_contrast(sidebar_bg, surface_fg)
+    sidebar_primary_fg = ensure_contrast(sidebar_primary, surface_fg)
+    sidebar_accent = shade(sidebar_bg, 0.015)
+    sidebar_accent_fg = ensure_contrast(sidebar_accent, surface_fg)
+    sidebar_border = shade(sidebar_bg, 0.064)
+    sidebar_ring = shade(sidebar_primary, 0.05)
+
+    return QGetProfileContextV4ThemeTokens(
+        background=background,
+        foreground=foreground,
+        card=surface,
+        card_foreground=surface_fg,
+        popover=surface,
+        popover_foreground=surface_fg,
+        primary_color=primary,
+        primary_foreground=primary_fg,
+        secondary=accent,
+        secondary_foreground=accent_fg,
+        muted=muted_color,
+        muted_foreground=muted_fg,
+        accent=accent,
+        accent_foreground=accent_fg,
+        destructive=error,
+        border=border_color,
+        input=input_color,
+        ring=ring_color,
+        success=success,
+        success_foreground=success_fg,
+        warning=warning,
+        warning_foreground=warning_fg,
+        info=info_color,
+        info_foreground=info_fg,
+        chart1=normalize_color_to_oklch(primitives.get("chart1", "")),
+        chart2=normalize_color_to_oklch(primitives.get("chart2", "")),
+        chart3=normalize_color_to_oklch(primitives.get("chart3", "")),
+        chart4=normalize_color_to_oklch(primitives.get("chart4", "")),
+        chart5=normalize_color_to_oklch(primitives.get("chart5", "")),
+        sidebar=sidebar_bg,
+        sidebar_foreground=sidebar_fg,
+        sidebar_primary=sidebar_primary,
+        sidebar_primary_foreground=sidebar_primary_fg,
+        sidebar_accent=sidebar_accent,
+        sidebar_accent_foreground=sidebar_accent_fg,
+        sidebar_border=sidebar_border,
+        sidebar_ring=sidebar_ring,
+    )
+
+
+def convert_department(item: QGetDepartmentsV4Item) -> QGetProfileContextV4Department:
+    """Convert departments resource item to profile context department."""
+    return QGetProfileContextV4Department(
+        department_id=item.department_id,
+        title=item.name,
+        description=item.description,
+        active=True,  # Only active departments are returned
+        is_primary=False,  # Will be set after conversion
+    )
+
+
+def convert_cohort(item: QGetCohortsV4Item) -> QGetProfileContextV4Cohort:
+    """Convert cohorts resource item to profile context cohort."""
+    return QGetProfileContextV4Cohort(
+        cohort_id=item.cohort_id,
+        title=item.title,
+        description=item.description,
+        active=item.active,
+        department_ids=item.department_ids,
+    )
+
+
+def convert_simulation(item: GetSimulationsBatchV4Item) -> QGetProfileContextV4Simulation:
+    """Convert simulations batch item to profile context simulation."""
+    return QGetProfileContextV4Simulation(
+        simulation_id=item.simulation_id,
+        title=item.title,
+        description=item.description,
+        department_ids=item.department_ids,
+        time_limit=item.time_limit,
+        active=item.active,
+        practice_simulation=item.practice_simulation,
+    )
+
+
+def convert_draft(item: QGetDraftsV4Item) -> QGetProfileContextV4Draft:
+    """Convert draft item to profile context draft."""
+    return QGetProfileContextV4Draft(
+        id=item.id,
+        artifact_type=item.artifact_type,
+        payload=item.payload,
+        version=item.version,
+        updated_at=item.updated_at.isoformat() if item.updated_at else None,
+    )
+
+
+def convert_role(item: QGetRolesV4Item) -> QGetProfileContextV4RoleResource:
+    """Convert role item to profile context role."""
+    return QGetProfileContextV4RoleResource(
+        role=item.role,
+        name=item.name,
+        description=item.description,
+        icon_value=item.icon_value,
+        color_hex=item.color_hex,
+    )
+
+
+def convert_auth(auth: Any) -> QGetProfileContextV4Auth:
+    """Convert settings auth item to profile context auth."""
+    return QGetProfileContextV4Auth(
+        auth_id=auth.auth_id,
+        name=auth.name,
+        description=auth.description,
+        slug=auth.slug,
+    )
+
+
+def convert_provider(provider: Any) -> QGetProfileContextV4Provider:
+    """Convert settings provider item to profile context provider."""
+    return QGetProfileContextV4Provider(
+        provider_id=provider.provider_id,
+        name=provider.name,
+        description=provider.description,
+        value=provider.value,
+    )
+
+
+# =============================================================================
+# Main Endpoint
+# =============================================================================
 
 
 @router.post(
     "/context",
     response_model=GetProfileContextApiResponse,
-    dependencies=[
-        audit_activity("profile.context", "{{ actor.name }} viewed profile context")
-    ],
+    dependencies=[audit_activity("profile.context", "{{ actor.name }} viewed profile context")],
 )
 async def get_profile_context(
     request: GetProfileContextApiRequest,
     http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetProfileContextApiResponse:
     """
     Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
 
+    Uses 2-pass architecture:
+    - Pass 1: Light query returning IDs for access check
+    - Pass 2: Parallel fetching of full resources
+
     NOTE: Theme derivation stays in Python because it requires complex color math utilities
     (hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.
-    All other business logic is handled in SQL (see get_profile_context_complete.sql).
     """
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -48,8 +275,7 @@ async def get_profile_context(
 
         logger = get_logger(__name__)
 
-        # Read profile ID from request.state (set by router-level dependencies)
-        # Can be None for unauthenticated requests (cookie-based auth)
+        # Read profile ID from request.state
         try:
             profile_id = http_request.state.profile_id
         except AttributeError:
@@ -57,222 +283,255 @@ async def get_profile_context(
 
         # Get pathname from request URL
         pathname = http_request.url.path
-        logger.info(
-            f"Request: pathname={pathname}, profileId={profile_id}"
-        )
+        logger.info(f"Request: pathname={pathname}, profileId={profile_id}")
 
         # Read department-id cookie for settings resolution
         department_id_cookie = http_request.cookies.get("department-id")
 
-        # Get all context data with emulation validation and authorization checks in single query
-        sql_query = load_sql_query(SQL_PATH)
+        # Check for cache bypass header
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        # Convert API request to SQL params
-        from uuid import UUID
+        # =================================================================
+        # PASS 1: Light Query (Access Check + IDs)
+        # =================================================================
+        pass1_start = time.time()
 
-        params = GetProfileContextSqlParams(
+        sql_query = load_sql_query(SQL_ACCESS_PATH)
+        params = GetProfileContextAccessSqlParams(
             profile_id=cast(UUID | None, profile_id),
             department_id=department_id_cookie if department_id_cookie else None,
         )
-        sql_params = params.to_tuple()
 
-        # Execute SQL with typed helper
-        result = cast(
-            GetProfileContextSqlRow | None,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
+        access_result = cast(
+            GetProfileContextAccessSqlRow | None,
+            await execute_sql_typed(conn, SQL_ACCESS_PATH, params=params),
         )
 
-        # Handle case where we're fetching settings without a profile (e.g., login page)
-        # Only treat as settings-only request if we have a department_id (for login page theme)
-        is_settings_only_request = (
-            not profile_id
-            and department_id_cookie is not None
-        )
+        pass1_time = (time.time() - pass1_start) * 1000  # ms
+
+        # Handle authorization checks
+        is_settings_only_request = not profile_id and department_id_cookie is not None
 
         if is_settings_only_request:
-            if result is None or result.settings_id is None:
+            if access_result is None or access_result.settings_id is None:
                 raise HTTPException(
                     status_code=404,
                     detail="Settings not available for this department. Please select a different department.",
                 )
-            pass
         elif not profile_id and not department_id_cookie:
-            # No profile ID and no department_id
             raise HTTPException(
                 status_code=404,
                 detail="Profile context not found: Could not resolve profile. Please try logging in again.",
             )
 
-        # Check that we got a valid result for profile requests
         if (
             not is_settings_only_request
             and profile_id
-            and (not result or not result.is_authorized)
+            and (not access_result or not access_result.is_authorized)
         ):
             raise HTTPException(
                 status_code=404,
                 detail=f"Profile context not found: {profile_id}",
             )
 
-        # Note: available_sections, redirect_path, department_ids, cohort_ids, simulation_ids
-        # are now computed in SQL and returned in result
+        if not access_result:
+            raise HTTPException(status_code=404, detail="Profile context not found")
 
-        # Derive theme tokens from primitives (Python-only due to color math utilities)
-        def normalize_color_to_oklch(color: str) -> str:
-            """Normalize color input to oklch format."""
-            color_trimmed = color.strip()
-            if color_trimmed.startswith("oklch("):
-                return color_trimmed
-            hex_clean = color_trimmed.lstrip("#")
-            if len(hex_clean) != 6 or not all(
-                c in "0123456789ABCDEFabcdef" for c in hex_clean
-            ):
-                raise ValueError(
-                    f"Invalid color format: {color}. Expected hex (e.g., '#ffffff') or oklch (e.g., 'oklch(1 0 0)')"
-                )
-            return hex_to_oklch(f"#{hex_clean}")
+        # =================================================================
+        # PASS 2: Parallel Resource Fetching
+        # =================================================================
+        pass2_start = time.time()
 
-        def derive_theme_tokens(
-            primitives: dict[str, str],
-        ) -> QGetProfileContextV4ThemeTokens:
-            """Derive full ThemeTokens from user-editable ThemePrimitives."""
-            # Normalize all color inputs to oklch format
-            background = normalize_color_to_oklch(primitives.get("background", ""))
-            surface = normalize_color_to_oklch(primitives.get("surface", ""))
-            primary = normalize_color_to_oklch(primitives.get("primary", ""))
-            accent = normalize_color_to_oklch(primitives.get("accent", ""))
-            sidebar_bg = normalize_color_to_oklch(
-                primitives.get("sidebar_background", "")
-            )
-            sidebar_primary = normalize_color_to_oklch(
-                primitives.get("sidebar_primary", "")
-            )
-            success = normalize_color_to_oklch(primitives.get("success", ""))
-            warning = normalize_color_to_oklch(primitives.get("warning", ""))
-            error = normalize_color_to_oklch(primitives.get("error", ""))
+        pool = get_pool()
+        if not pool:
+            raise HTTPException(status_code=500, detail="Database pool not available")
 
-            # Foregrounds based on contrast
-            foreground = ensure_contrast(background, "oklch(0.145 0 0)")
-            primary_fg = ensure_contrast(primary, "oklch(0.985 0 0)")
-            accent_fg = ensure_contrast(accent, "oklch(0.205 0 0)")
-            surface_fg = ensure_contrast(surface, foreground)
+        # Extract IDs from Pass 1 result
+        department_ids = access_result.department_ids or []
+        cohort_ids = access_result.cohort_ids or []
+        simulation_ids = access_result.simulation_ids or []
+        settings_id = access_result.settings_id
+        draft_ids = access_result.draft_ids or []
 
-            # Status foregrounds
-            success_fg = ensure_contrast(success, "oklch(0.985 0 0)")
-            warning_fg = ensure_contrast(warning, "oklch(0.145 0 0)")
-            error_fg = ensure_contrast(error, "oklch(0.985 0 0)")
+        # Define parallel fetch functions
+        async def fetch_departments() -> list[QGetDepartmentsV4Item]:
+            if not department_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_departments_internal(c, department_ids, bypass_cache)
 
-            # Info derived from primary
-            info_color = tint(primary, 0.05)
-            info_fg = ensure_contrast(info_color, foreground)
+        async def fetch_cohorts() -> list[QGetCohortsV4Item]:
+            if not cohort_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_cohorts_internal(c, cohort_ids, bypass_cache)
 
-            # Derived colors
-            muted_color = shade(background, 0.03)
-            muted_fg = shade(foreground, 0.2)
-            border_color = shade(background, 0.078)
-            input_color = shade(background, 0.078)
-            ring_color = shade(primary, 0.05)
+        async def fetch_simulations() -> list[GetSimulationsBatchV4Item]:
+            if not simulation_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_simulations_batch_internal(c, simulation_ids, bypass_cache)
 
-            # Sidebar derived colors
-            sidebar_fg = ensure_contrast(sidebar_bg, surface_fg)
-            sidebar_primary_fg = ensure_contrast(sidebar_primary, surface_fg)
-            sidebar_accent = shade(sidebar_bg, 0.015)
-            sidebar_accent_fg = ensure_contrast(sidebar_accent, surface_fg)
-            sidebar_border = shade(sidebar_bg, 0.064)
-            sidebar_ring = shade(sidebar_primary, 0.05)
+        async def fetch_settings() -> QGetSettingsV4Item | None:
+            if not settings_id:
+                return None
+            async with pool.acquire() as c:
+                return await get_settings_internal(c, settings_id, bypass_cache)
 
-            return QGetProfileContextV4ThemeTokens(
-                background=background,
-                foreground=foreground,
-                card=surface,
-                card_foreground=surface_fg,
-                popover=surface,
-                popover_foreground=surface_fg,
-                primary_color=primary,
-                primary_foreground=primary_fg,
-                secondary=accent,
-                secondary_foreground=accent_fg,
-                muted=muted_color,
-                muted_foreground=muted_fg,
-                accent=accent,
-                accent_foreground=accent_fg,
-                destructive=error,
-                border=border_color,
-                input=input_color,
-                ring=ring_color,
-                success=success,
-                success_foreground=success_fg,
-                warning=warning,
-                warning_foreground=warning_fg,
-                info=info_color,
-                info_foreground=info_fg,
-                chart1=normalize_color_to_oklch(primitives.get("chart1", "")),
-                chart2=normalize_color_to_oklch(primitives.get("chart2", "")),
-                chart3=normalize_color_to_oklch(primitives.get("chart3", "")),
-                chart4=normalize_color_to_oklch(primitives.get("chart4", "")),
-                chart5=normalize_color_to_oklch(primitives.get("chart5", "")),
-                sidebar=sidebar_bg,
-                sidebar_foreground=sidebar_fg,
-                sidebar_primary=sidebar_primary,
-                sidebar_primary_foreground=sidebar_primary_fg,
-                sidebar_accent=sidebar_accent,
-                sidebar_accent_foreground=sidebar_accent_fg,
-                sidebar_border=sidebar_border,
-                sidebar_ring=sidebar_ring,
-            )
+        async def fetch_drafts() -> list[QGetDraftsV4Item]:
+            if not draft_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_drafts_internal(c, draft_ids, bypass_cache)
 
-        # Parse settings and derive theme tokens
-        if not result.settings_id:
-            raise HTTPException(
-                status_code=500, detail="Settings not found in profile context"
-            )
+        async def fetch_roles() -> list[QGetRolesV4Item]:
+            async with pool.acquire() as c:
+                return await get_roles_internal(c, bypass_cache)
 
-        # Access result fields directly instead of manual dict construction
+        # Execute all fetches in parallel
+        (
+            departments_raw,
+            cohorts_raw,
+            simulations_raw,
+            settings,
+            drafts_raw,
+            roles_raw,
+        ) = await asyncio.gather(
+            fetch_departments(),
+            fetch_cohorts(),
+            fetch_simulations(),
+            fetch_settings(),
+            fetch_drafts(),
+            fetch_roles(),
+        )
+
+        pass2_time = (time.time() - pass2_start) * 1000  # ms
+
+        # =================================================================
+        # Assemble Response
+        # =================================================================
+
+        # Convert to profile context types
+        departments = [convert_department(d) for d in departments_raw]
+        # Mark primary department
+        if access_result.primary_department_id:
+            for dept in departments:
+                if dept.department_id == access_result.primary_department_id:
+                    dept.is_primary = True
+
+        cohorts = [convert_cohort(c) for c in cohorts_raw]
+        simulations = [convert_simulation(s) for s in simulations_raw]
+        drafts = [convert_draft(d) for d in drafts_raw]
+        role_resources = [convert_role(r) for r in roles_raw]
+
+        # Derive theme tokens from settings
+        if not settings or not settings.settings_id:
+            raise HTTPException(status_code=500, detail="Settings not found in profile context")
+
         theme_primitives = {
-            "primary": result.settings_primary_color
-            if result.settings_primary_color
-            else "",
-            "accent": result.settings_accent if result.settings_accent else "",
-            "background": result.settings_background
-            if result.settings_background
-            else "",
-            "surface": result.settings_surface if result.settings_surface else "",
-            "success": result.settings_success if result.settings_success else "",
-            "warning": result.settings_warning if result.settings_warning else "",
-            "error": result.settings_error if result.settings_error else "",
-            "sidebar_background": result.settings_sidebar_background
-            if result.settings_sidebar_background
-            else "",
-            "sidebar_primary": result.settings_sidebar_primary
-            if result.settings_sidebar_primary
-            else "",
-            "chart1": result.settings_chart1 if result.settings_chart1 else "",
-            "chart2": result.settings_chart2 if result.settings_chart2 else "",
-            "chart3": result.settings_chart3 if result.settings_chart3 else "",
-            "chart4": result.settings_chart4 if result.settings_chart4 else "",
-            "chart5": result.settings_chart5 if result.settings_chart5 else "",
+            "primary": settings.primary_color or "",
+            "accent": settings.accent or "",
+            "background": settings.background or "",
+            "surface": settings.surface or "",
+            "success": settings.success or "",
+            "warning": settings.warning or "",
+            "error": settings.error or "",
+            "sidebar_background": settings.sidebar_background or "",
+            "sidebar_primary": settings.sidebar_primary or "",
+            "chart1": settings.chart1 or "",
+            "chart2": settings.chart2 or "",
+            "chart3": settings.chart3 or "",
+            "chart4": settings.chart4 or "",
+            "chart5": settings.chart5 or "",
         }
-
         theme_tokens = derive_theme_tokens(theme_primitives)
 
+        # Convert settings auths and providers
+        settings_auths = [convert_auth(a) for a in (settings.auths or [])]
+        settings_providers = [convert_provider(p) for p in (settings.providers or [])]
+
+        # Build artifact_agent_ids map
+        artifact_agent_ids_map: dict[str, UUID | None] = {}
+        if access_result.artifact_agent_ids:
+            for item in access_result.artifact_agent_ids:
+                if item.artifact:
+                    artifact_agent_ids_map[item.artifact] = item.general_agent_id
+
         # Set audit context
-        actor_profile_id = profile_id
-        actor_name = result.actor_name
+        if access_result.actor_name and profile_id:
+            audit_set(
+                http_request,
+                actor={"name": access_result.actor_name, "id": profile_id},
+            )
 
-        if actor_name and actor_profile_id:
-            audit_set(http_request, actor={"name": actor_name, "id": actor_profile_id})
+        # Add observability headers
+        response.headers["X-Two-Pass"] = "1"
+        response.headers["X-Pass1-Time"] = f"{pass1_time:.1f}"
+        response.headers["X-Pass2-Time"] = f"{pass2_time:.1f}"
 
-        # Construct response properly with computed theme tokens (no manual dict manipulation)
+        # Build response
         api_response = GetProfileContextApiResponse(
-            **result.model_dump(exclude={"settings_tokens"}),
+            is_authorized=access_result.is_authorized,
+            id=access_result.id,
+            name=access_result.name,
+            emails=None,  # Not fetched in 2-pass (add to Pass 1 if needed)
+            primary_email=None,  # Not fetched in 2-pass
+            role=access_result.role,
+            active=access_result.active,
+            req_per_day=None,  # Not fetched in 2-pass
+            last_login=None,  # Not fetched in 2-pass
+            last_active=None,  # Not fetched in 2-pass
+            created_at=None,  # Not fetched in 2-pass
+            updated_at=None,  # Not fetched in 2-pass
+            primary_department_id=access_result.primary_department_id,
+            departments=departments,
+            cohorts=cohorts,
+            simulations=simulations,
+            earliest_attempt_date=None,  # Not fetched in 2-pass
+            scoped_roles=access_result.scoped_roles,
+            role_resources=role_resources,
+            settings_id=settings.settings_id,
+            settings_created_at=settings.created_at.isoformat() if settings.created_at else None,
+            settings_active=settings.active,
+            settings_name=settings.name,
+            settings_description=settings.description,
+            settings_primary_color=settings.primary_color,
+            settings_accent=settings.accent,
+            settings_background=settings.background,
+            settings_surface=settings.surface,
+            settings_success=settings.success,
+            settings_warning=settings.warning,
+            settings_error=settings.error,
+            settings_sidebar_background=settings.sidebar_background,
+            settings_sidebar_primary=settings.sidebar_primary,
+            settings_chart1=settings.chart1,
+            settings_chart2=settings.chart2,
+            settings_chart3=settings.chart3,
+            settings_chart4=settings.chart4,
+            settings_chart5=settings.chart5,
+            settings_guest_login_enabled=settings.guest_login_enabled,
+            settings_success_threshold=settings.success_threshold,
+            settings_warning_threshold=settings.warning_threshold,
+            settings_danger_threshold=settings.danger_threshold,
+            settings_auth_ids=settings.auth_ids,
+            settings_auths=settings_auths,
+            settings_provider_ids=settings.provider_ids,
+            settings_providers=settings_providers,
+            available_sections=access_result.available_sections,
+            available_routes=access_result.available_routes,
+            redirect_path=access_result.redirect_path,
+            department_ids=[str(d) for d in department_ids] if department_ids else [],
+            cohort_ids=[str(c) for c in cohort_ids] if cohort_ids else [],
+            simulation_ids=[str(s) for s in simulation_ids] if simulation_ids else [],
+            drafts=drafts,
             settings_tokens=theme_tokens,
+            actor_name=access_result.actor_name,
+            session_id=access_result.session_id,
+            artifact_agent_ids=artifact_agent_ids_map,
         )
 
         return api_response
+
     except HTTPException:
         raise
     except Exception as e:

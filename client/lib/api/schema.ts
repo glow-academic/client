@@ -2180,6 +2180,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/cohorts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Cohorts
+         * @description Get cohorts resources by IDs.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_cohorts_api_v4_resources_cohorts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/colors": {
         parameters: {
             query?: never;
@@ -3177,6 +3199,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/roles/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Roles
+         * @description Get all roles.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_roles_api_v4_resources_roles_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/run_positions": {
         parameters: {
             query?: never;
@@ -3337,6 +3381,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/settings/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Settings
+         * @description Get settings resource by ID.
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         */
+        post: operations["get_settings_api_v4_resources_settings_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/simulation_positions": {
         parameters: {
             query?: never;
@@ -3411,6 +3477,29 @@ export interface paths {
          * @description Get simulation by ID.
          */
         post: operations["get_simulation_api_v4_resources_simulations_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/simulations/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Simulations Batch
+         * @description Get simulations by IDs (batch).
+         *
+         *     HTTP wrapper that delegates to internal function for caching and data fetching.
+         *     Used by profile context 2-pass architecture.
+         */
+        post: operations["get_simulations_batch_api_v4_resources_simulations_batch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4506,9 +4595,12 @@ export interface paths {
          * Get Profile Context
          * @description Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
          *
+         *     Uses 2-pass architecture:
+         *     - Pass 1: Light query returning IDs for access check
+         *     - Pass 2: Parallel fetching of full resources
+         *
          *     NOTE: Theme derivation stays in Python because it requires complex color math utilities
          *     (hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.
-         *     All other business logic is handled in SQL (see get_profile_context_complete.sql).
          */
         post: operations["get_profile_context_api_v4_auth_context_post"];
         delete?: never;
@@ -7273,6 +7365,22 @@ export interface components {
             /** General Agent Id */
             general_agent_id?: string | null;
         };
+        /**
+         * GetCohortsApiRequest
+         * @description Request for getting cohorts by IDs.
+         */
+        GetCohortsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /**
+         * GetCohortsApiResponse
+         * @description Response for getting cohorts.
+         */
+        GetCohortsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetCohortsV4Item"][] | null;
+        };
         /** GetCohortsListApiRequest */
         GetCohortsListApiRequest: {
             /** Search */
@@ -9545,7 +9653,10 @@ export interface components {
             /** Department Id */
             department_id?: string | null;
         };
-        /** GetProfileContextApiResponse */
+        /**
+         * GetProfileContextApiResponse
+         * @description Extended profile context response with artifact_agent_ids.
+         */
         GetProfileContextApiResponse: {
             /** Is Authorized */
             is_authorized?: boolean | null;
@@ -9658,6 +9769,10 @@ export interface components {
             actor_name?: string | null;
             /** Session Id */
             session_id?: string | null;
+            /** Artifact Agent Ids */
+            artifact_agent_ids?: {
+                [key: string]: string | null;
+            } | null;
         };
         /** GetProviderApiRequest */
         GetProviderApiRequest: {
@@ -9885,6 +10000,19 @@ export interface components {
             parameters?: components["schemas"]["QReportsOverviewV4Parameter"][] | null;
             /** Fields */
             fields?: components["schemas"]["QReportsOverviewV4Field"][] | null;
+        };
+        /**
+         * GetRolesApiRequest
+         * @description Request for getting all roles.
+         */
+        GetRolesApiRequest: Record<string, never>;
+        /**
+         * GetRolesApiResponse
+         * @description Response for getting roles.
+         */
+        GetRolesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRolesV4Item"][] | null;
         };
         /** GetRubricApiRequest */
         GetRubricApiRequest: {
@@ -10582,6 +10710,24 @@ export interface components {
             /** Role Routes */
             role_routes?: components["schemas"]["QGetSettingV4RoleRoute"][] | null;
         };
+        /**
+         * GetSettingsApiRequest
+         * @description Request for getting settings by ID.
+         */
+        GetSettingsApiRequest: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /**
+         * GetSettingsApiResponse
+         * @description Response for getting settings.
+         */
+        GetSettingsApiResponse: {
+            item?: components["schemas"]["QGetSettingsV4Item"] | null;
+        };
         /** GetSettingsListApiRequest */
         GetSettingsListApiRequest: Record<string, never>;
         /** GetSettingsListApiResponse */
@@ -10691,6 +10837,42 @@ export interface components {
             time_limit?: number | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * GetSimulationsBatchApiRequest
+         * @description Request for getting simulations by IDs (batch).
+         */
+        GetSimulationsBatchApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /**
+         * GetSimulationsBatchApiResponse
+         * @description Response for getting simulations batch.
+         */
+        GetSimulationsBatchApiResponse: {
+            /** Items */
+            items?: components["schemas"]["GetSimulationsBatchV4Item"][] | null;
+        };
+        /**
+         * GetSimulationsBatchV4Item
+         * @description Simulation batch item with full context data.
+         */
+        GetSimulationsBatchV4Item: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Active */
+            active?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
         };
         /** GetSimulationsListApiRequest */
         GetSimulationsListApiRequest: {
@@ -12995,6 +13177,22 @@ export interface components {
             generated: boolean | null;
             /** Mcp */
             mcp: boolean | null;
+        };
+        /**
+         * QGetCohortsV4Item
+         * @description Cohort item returned from get endpoint.
+         */
+        QGetCohortsV4Item: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /** QGetColorsV4Item */
         QGetColorsV4Item: {
@@ -16657,6 +16855,22 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /**
+         * QGetRolesV4Item
+         * @description Role item returned from get endpoint.
+         */
+        QGetRolesV4Item: {
+            /** Role */
+            role?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Icon Value */
+            icon_value?: string | null;
+            /** Color Hex */
+            color_hex?: string | null;
+        };
         /** QGetRubricV4Department */
         QGetRubricV4Department: {
             /** Department Id */
@@ -17055,6 +17269,94 @@ export interface components {
             description: string | null;
             /** Department Ids */
             department_ids: string[] | null;
+        };
+        /**
+         * QGetSettingsV4Auth
+         * @description Auth item in settings.
+         */
+        QGetSettingsV4Auth: {
+            /** Auth Id */
+            auth_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Slug */
+            slug?: string | null;
+        };
+        /**
+         * QGetSettingsV4Item
+         * @description Settings item returned from get endpoint.
+         */
+        QGetSettingsV4Item: {
+            /** Settings Id */
+            settings_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Primary Color */
+            primary_color?: string | null;
+            /** Accent */
+            accent?: string | null;
+            /** Background */
+            background?: string | null;
+            /** Surface */
+            surface?: string | null;
+            /** Success */
+            success?: string | null;
+            /** Warning */
+            warning?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Sidebar Background */
+            sidebar_background?: string | null;
+            /** Sidebar Primary */
+            sidebar_primary?: string | null;
+            /** Chart1 */
+            chart1?: string | null;
+            /** Chart2 */
+            chart2?: string | null;
+            /** Chart3 */
+            chart3?: string | null;
+            /** Chart4 */
+            chart4?: string | null;
+            /** Chart5 */
+            chart5?: string | null;
+            /** Guest Login Enabled */
+            guest_login_enabled?: boolean | null;
+            /** Success Threshold */
+            success_threshold?: number | null;
+            /** Warning Threshold */
+            warning_threshold?: number | null;
+            /** Danger Threshold */
+            danger_threshold?: number | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Auths */
+            auths?: components["schemas"]["QGetSettingsV4Auth"][] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
+        };
+        /**
+         * QGetSettingsV4Provider
+         * @description Provider item in settings.
+         */
+        QGetSettingsV4Provider: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
         };
         /** QGetSimulationAttemptV4AggregatedResults */
         QGetSimulationAttemptV4AggregatedResults: {
@@ -25315,6 +25617,43 @@ export interface operations {
             };
         };
     };
+    get_cohorts_api_v4_resources_cohorts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetCohortsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetCohortsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_colors_api_v4_resources_colors_post: {
         parameters: {
             query?: never;
@@ -27165,6 +27504,43 @@ export interface operations {
             };
         };
     };
+    get_roles_api_v4_resources_roles_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRolesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRolesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_run_positions_api_v4_resources_run_positions_post: {
         parameters: {
             query?: never;
@@ -27461,6 +27837,43 @@ export interface operations {
             };
         };
     };
+    get_settings_api_v4_resources_settings_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSettingsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSettingsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_simulation_positions_api_v4_resources_simulation_positions_post: {
         parameters: {
             query?: never;
@@ -27596,6 +28009,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["app__api__v4__resources__simulations__get__GetSimulationApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_simulations_batch_api_v4_resources_simulations_batch_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSimulationsBatchApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSimulationsBatchApiResponse"];
                 };
             };
             /** @description Validation Error */

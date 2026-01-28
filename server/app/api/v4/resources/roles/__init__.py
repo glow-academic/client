@@ -1,0 +1,1 @@
+"""Roles resource endpoints."""

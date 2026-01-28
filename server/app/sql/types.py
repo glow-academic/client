@@ -672,6 +672,38 @@ class GetAgentsListApiResponse(BaseModel):
 
 
 
+# Generated from: get_artifact_agent_ids
+
+class GetArtifactAgentIdsSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.user_department_ids,
+        )
+
+class QGetArtifactAgentIdsV4Item(BaseModel):
+
+    artifact: str | None
+    general_agent_id: UUID | None
+
+class GetArtifactAgentIdsSqlRow(BaseModel):
+
+    items: list[QGetArtifactAgentIdsV4Item] | None = None
+
+class GetArtifactAgentIdsApiRequest(BaseModel):
+
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetArtifactAgentIdsApiResponse(BaseModel):
+
+    items: list[QGetArtifactAgentIdsV4Item] | None = None
+
+
+
 # Generated from: patch_agent_draft
 
 class PatchAgentDraftSqlParams(BaseModel):
@@ -9071,6 +9103,39 @@ class GetResourceTableColumnsApiResponse(BaseModel):
 
 
 
+# Generated from: get_drafts
+
+class GetDraftsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetDraftsV4Item(BaseModel):
+
+    id: UUID | None
+    artifact_type: str | None
+    payload: Any | None
+    version: int | None
+    updated_at: str | None
+
+class GetDraftsSqlRow(BaseModel):
+
+    items: list[QGetDraftsV4Item] | None = None
+
+class GetDraftsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetDraftsApiResponse(BaseModel):
+
+    items: list[QGetDraftsV4Item] | None = None
+
+
+
 # Generated from: infra_activity_get_profile_name_for_logging
 
 class InfraActivityGetProfileNameForLoggingSqlParams(BaseModel):
@@ -14238,6 +14303,72 @@ class GetProfileApiResponse(BaseModel):
 
 
 
+# Generated from: get_profile_context_access
+
+class GetProfileContextAccessSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    department_id: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+        )
+
+class QGetProfileContextAccessV4ArtifactAgent(BaseModel):
+
+    artifact: str | None
+    general_agent_id: UUID | None
+
+class GetProfileContextAccessSqlRow(BaseModel):
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    primary_department_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    settings_id: UUID | None = None
+    draft_ids: list[UUID] | None = None
+    session_id: UUID | None = None
+    scoped_roles: list[str] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    actor_name: str | None = None
+    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
+
+class GetProfileContextAccessApiRequest(BaseModel):
+
+    department_id: str | None = None
+
+class GetProfileContextAccessApiResponse(BaseModel):
+
+    is_authorized: bool | None = None
+    id: UUID | None = None
+    name: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    primary_department_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    settings_id: UUID | None = None
+    draft_ids: list[UUID] | None = None
+    session_id: UUID | None = None
+    scoped_roles: list[str] | None = None
+    available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
+    redirect_path: str | None = None
+    actor_name: str | None = None
+    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
+
+
+
 # Generated from: get_profile_context
 
 class GetProfileContextSqlParams(BaseModel):
@@ -16186,6 +16317,39 @@ class ArgsOutputsApiResponse(BaseModel):
 
 
 
+# Generated from: get_cohorts
+
+class GetCohortsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetCohortsV4Item(BaseModel):
+
+    cohort_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+
+class GetCohortsSqlRow(BaseModel):
+
+    items: list[QGetCohortsV4Item] | None = None
+
+class GetCohortsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetCohortsApiResponse(BaseModel):
+
+    items: list[QGetCohortsV4Item] | None = None
+
+
+
 # Generated from: get_colors
 
 class GetColorsSqlParams(BaseModel):
@@ -18022,6 +18186,34 @@ class RoleRoutesApiResponse(BaseModel):
 
 
 
+# Generated from: get_roles
+
+class GetRolesSqlParams(BaseModel):
+
+    pass
+
+class QGetRolesV4Item(BaseModel):
+
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+
+class GetRolesSqlRow(BaseModel):
+
+    items: list[QGetRolesV4Item] | None = None
+
+class GetRolesApiRequest(BaseModel):
+
+    pass
+
+class GetRolesApiResponse(BaseModel):
+
+    items: list[QGetRolesV4Item] | None = None
+
+
+
 # Generated from: run_positions
 
 class RunPositionsSqlParams(BaseModel):
@@ -18280,6 +18472,78 @@ class SearchScenariosApiResponse(BaseModel):
 
 
 
+# Generated from: get_settings
+
+class GetSettingsSqlParams(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id_param,
+        )
+
+class QGetSettingsV4Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    slug: str | None
+
+
+
+
+class QGetSettingsV4Provider(BaseModel):
+
+    provider_id: str | None
+    name: str | None
+    description: str | None
+    value: str | None
+
+class QGetSettingsV4Item(BaseModel):
+
+    settings_id: str | None
+    created_at: str | None
+    active: bool | None
+    name: str | None
+    description: str | None
+    primary_color: str | None
+    accent: str | None
+    background: str | None
+    surface: str | None
+    success: str | None
+    warning: str | None
+    error: str | None
+    sidebar_background: str | None
+    sidebar_primary: str | None
+    chart1: str | None
+    chart2: str | None
+    chart3: str | None
+    chart4: str | None
+    chart5: str | None
+    guest_login_enabled: bool | None
+    success_threshold: int | None
+    warning_threshold: int | None
+    danger_threshold: int | None
+    auth_ids: list[str] | None
+    auths: list[QGetSettingsV4Auth] | None
+    provider_ids: list[str] | None
+    providers: list[QGetSettingsV4Provider] | None
+
+class GetSettingsSqlRow(BaseModel):
+
+    item: QGetSettingsV4Item | None = None
+
+class GetSettingsApiRequest(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+class GetSettingsApiResponse(BaseModel):
+
+    item: QGetSettingsV4Item | None = None
+
+
+
 # Generated from: get_simulation_positions
 
 class GetSimulationPositionsSqlParams(BaseModel):
@@ -18381,6 +18645,41 @@ class SimulationPositionsApiRequest(BaseModel):
 class SimulationPositionsApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: get_simulations_batch
+
+class GetSimulationsBatchSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetSimulationsBatchV4Item(BaseModel):
+
+    simulation_id: UUID | None
+    title: str | None
+    description: str | None
+    department_ids: list[str] | None
+    time_limit: int | None
+    active: bool | None
+    practice_simulation: bool | None
+
+class GetSimulationsBatchSqlRow(BaseModel):
+
+    items: list[QGetSimulationsBatchV4Item] | None = None
+
+class GetSimulationsBatchApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetSimulationsBatchApiResponse(BaseModel):
+
+    items: list[QGetSimulationsBatchV4Item] | None = None
 
 
 
@@ -23564,6 +23863,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentsListApiRequest",
         "GetAgentsListApiResponse",
     ),
+    "app/sql/v4/queries/agents/get_artifact_agent_ids_complete.sql": (
+        "GetArtifactAgentIdsSqlParams",
+        "GetArtifactAgentIdsSqlRow",
+        "GetArtifactAgentIdsApiRequest",
+        "GetArtifactAgentIdsApiResponse",
+    ),
     "app/sql/v4/queries/agents/patch_agent_draft_complete.sql": (
         "PatchAgentDraftSqlParams",
         "PatchAgentDraftSqlRow",
@@ -24308,6 +24613,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetResourceTableColumnsApiRequest",
         "GetResourceTableColumnsApiResponse",
     ),
+    "app/sql/v4/queries/infra/drafts/get_drafts_complete.sql": (
+        "GetDraftsSqlParams",
+        "GetDraftsSqlRow",
+        "GetDraftsApiRequest",
+        "GetDraftsApiResponse",
+    ),
     "app/sql/v4/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql": (
         "InfraActivityGetProfileNameForLoggingSqlParams",
         "InfraActivityGetProfileNameForLoggingSqlRow",
@@ -24860,6 +25171,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileApiRequest",
         "GetProfileApiResponse",
     ),
+    "app/sql/v4/queries/profile/get_profile_context_access_complete.sql": (
+        "GetProfileContextAccessSqlParams",
+        "GetProfileContextAccessSqlRow",
+        "GetProfileContextAccessApiRequest",
+        "GetProfileContextAccessApiResponse",
+    ),
     "app/sql/v4/queries/profile/get_profile_context_complete.sql": (
         "GetProfileContextSqlParams",
         "GetProfileContextSqlRow",
@@ -24985,6 +25302,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ArgsOutputsSqlRow",
         "ArgsOutputsApiRequest",
         "ArgsOutputsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql": (
+        "GetCohortsSqlParams",
+        "GetCohortsSqlRow",
+        "GetCohortsApiRequest",
+        "GetCohortsApiResponse",
     ),
     "app/sql/v4/queries/resources/colors/get_colors_complete.sql": (
         "GetColorsSqlParams",
@@ -25298,6 +25621,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RoleRoutesApiRequest",
         "RoleRoutesApiResponse",
     ),
+    "app/sql/v4/queries/resources/roles/get_roles_complete.sql": (
+        "GetRolesSqlParams",
+        "GetRolesSqlRow",
+        "GetRolesApiRequest",
+        "GetRolesApiResponse",
+    ),
     "app/sql/v4/queries/resources/run_positions_complete.sql": (
         "RunPositionsSqlParams",
         "RunPositionsSqlRow",
@@ -25340,6 +25669,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchScenariosApiRequest",
         "SearchScenariosApiResponse",
     ),
+    "app/sql/v4/queries/resources/settings/get_settings_complete.sql": (
+        "GetSettingsSqlParams",
+        "GetSettingsSqlRow",
+        "GetSettingsApiRequest",
+        "GetSettingsApiResponse",
+    ),
     "app/sql/v4/queries/resources/simulation_positions/get_simulation_positions_complete.sql": (
         "GetSimulationPositionsSqlParams",
         "GetSimulationPositionsSqlRow",
@@ -25357,6 +25692,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SimulationPositionsSqlRow",
         "SimulationPositionsApiRequest",
         "SimulationPositionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/simulations/get_simulations_batch_complete.sql": (
+        "GetSimulationsBatchSqlParams",
+        "GetSimulationsBatchSqlRow",
+        "GetSimulationsBatchApiRequest",
+        "GetSimulationsBatchApiResponse",
     ),
     "app/sql/v4/queries/resources/simulations/get_simulations_complete.sql": (
         "GetSimulationsSqlParams",
@@ -25974,6 +26315,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/get_agents_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/agents/get_artifact_agent_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -26598,6 +26944,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/infra/drafts/get_drafts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql"]
     ) -> SqlString: ...
 
@@ -27058,6 +27409,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_context_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/profile/get_profile_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -27159,6 +27515,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/args_outputs_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27423,6 +27784,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/roles/get_roles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/run_positions_complete.sql"]
     ) -> SqlString: ...
 
@@ -27458,6 +27824,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/settings/get_settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/simulation_positions/get_simulation_positions_complete.sql"]
     ) -> SqlString: ...
 
@@ -27469,6 +27840,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/simulation_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/simulations/get_simulations_batch_complete.sql"]
     ) -> SqlString: ...
 
     @overload

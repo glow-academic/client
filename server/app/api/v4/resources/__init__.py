@@ -17,6 +17,10 @@ router.include_router(args_outputs_router)
 # NOTE: audios removed - converted to audios_entry (migration 328)
 # NOTE: auths removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for profile context two-pass architecture
+from app.api.v4.resources.cohorts.get import router as cohorts_get_router
+
+router.include_router(cohorts_get_router)
 from app.api.v4.resources.colors.create import router as colors_router
 from app.api.v4.resources.colors.get import router as colors_get_router
 from app.api.v4.resources.colors.search import router as colors_search_router
@@ -188,6 +192,11 @@ from app.api.v4.resources.request_limits.create import \
 
 router.include_router(request_limits_router)
 # NOTE: responses removed - converted to entry table (migration 305)
+# NOTE: roles removed - non-creatable (migration 328)
+# GET endpoint available for profile context two-pass architecture
+from app.api.v4.resources.roles.get import router as roles_get_router
+
+router.include_router(roles_get_router)
 # NOTE: rubrics removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.run_positions.create import \
     router as run_positions_router
@@ -221,6 +230,10 @@ from app.api.v4.resources.scenarios import router as scenarios_router
 
 router.include_router(scenarios_router)
 # NOTE: settings removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for profile context two-pass architecture
+from app.api.v4.resources.settings.get import router as settings_get_router
+
+router.include_router(settings_get_router)
 from app.api.v4.resources.simulation_positions.create import \
     router as simulation_positions_router
 from app.api.v4.resources.simulation_positions.get import \

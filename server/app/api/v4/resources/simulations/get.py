@@ -1,6 +1,7 @@
 """Simulations get endpoint - v4 API.
 
-Provides get endpoint for fetching a single simulation by ID.
+Provides get endpoint for fetching a single simulation by ID,
+and batch endpoint for fetching multiple simulations by IDs.
 """
 
 from typing import Annotated, Any, cast
@@ -8,7 +9,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -21,6 +22,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/resources/simulations/get_simulations_complete.sql"
+SQL_BATCH_PATH = "app/sql/v4/queries/resources/simulations/get_simulations_batch_complete.sql"
 
 
 router = APIRouter()
@@ -188,5 +190,148 @@ async def get_simulation(
             operation="get_simulation",
             sql_query=sql_query,
             sql_params=sql_params,
+            request=http_request,
+        )
+
+
+# =============================================================================
+# Batch Types (for profile context 2-pass architecture)
+# =============================================================================
+
+
+class GetSimulationsBatchV4Item(BaseModel):
+    """Simulation batch item with full context data."""
+
+    simulation_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    time_limit: int | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+
+
+class GetSimulationsBatchApiRequest(BaseModel):
+    """Request for getting simulations by IDs (batch)."""
+
+    ids: list[UUID] | None = Field(default_factory=list)
+
+
+class GetSimulationsBatchApiResponse(BaseModel):
+    """Response for getting simulations batch."""
+
+    items: list[GetSimulationsBatchV4Item] | None = None
+
+
+class GetSimulationsBatchSqlParams(BaseModel):
+    """SQL parameters for get simulations batch."""
+
+    ids: list[UUID] | None = Field(default_factory=list)
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.ids,)
+
+
+class GetSimulationsBatchSqlRow(BaseModel):
+    """SQL row for get simulations batch."""
+
+    items: list[GetSimulationsBatchV4Item] | None = None
+
+
+# =============================================================================
+# Batch Internal Function
+# =============================================================================
+
+
+async def get_simulations_batch_internal(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[GetSimulationsBatchV4Item]:
+    """Internal function for fetching multiple simulations by IDs.
+
+    Can be called directly from other routes without HTTP overhead.
+
+    Args:
+        conn: Database connection
+        ids: List of simulation IDs to fetch
+        bypass_cache: Whether to bypass cache
+
+    Returns:
+        List of simulation items
+    """
+    if not ids:
+        return []
+
+    tags = ["resources", "simulations"]
+    cache_key_val = cache_key(
+        "/api/v4/resources/simulations/batch",
+        {"ids": [str(id) for id in ids]},
+    )
+
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [GetSimulationsBatchV4Item.model_validate(item) for item in cached.get("items", [])]
+
+    # Execute SQL
+    params = GetSimulationsBatchSqlParams(ids=ids)
+    result = cast(
+        GetSimulationsBatchSqlRow,
+        await execute_sql_typed(conn, SQL_BATCH_PATH, params=params),
+    )
+
+    items: list[GetSimulationsBatchV4Item] = result.items if result and result.items else []
+
+    # Cache result
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items
+
+
+# =============================================================================
+# Batch HTTP Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/simulations/batch",
+    response_model=GetSimulationsBatchApiResponse,
+)
+async def get_simulations_batch(
+    request: GetSimulationsBatchApiRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetSimulationsBatchApiResponse:
+    """Get simulations by IDs (batch).
+
+    HTTP wrapper that delegates to internal function for caching and data fetching.
+    Used by profile context 2-pass architecture.
+    """
+    tags = ["resources", "simulations"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    try:
+        items = await get_simulations_batch_internal(conn, request.ids or [], bypass_cache)
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return GetSimulationsBatchApiResponse(items=items)
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_simulations_batch",
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )
