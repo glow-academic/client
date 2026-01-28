@@ -107,8 +107,8 @@ BEGIN
     INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
     
     -- INSERT INTO examples_resource table (always insert, never update)
-    INSERT INTO examples_resource(example, active, mcp)
-    VALUES (example, true, mcp)
+    INSERT INTO examples_resource(example, mcp)
+    VALUES (example, mcp)
     RETURNING id INTO v_example_id;
     
         
