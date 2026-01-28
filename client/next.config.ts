@@ -20,8 +20,6 @@ module.exports = {
     config: WebpackConfig,
     { isServer, webpack }: WebpackConfigContext
   ): WebpackConfig => {
-    // Removed @radix-ui/react-compose-refs patch
-
     if (!isServer) {
       config.resolve = {
         ...config.resolve,

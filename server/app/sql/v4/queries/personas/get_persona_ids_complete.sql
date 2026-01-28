@@ -2,6 +2,21 @@
 -- Fetches all resource IDs using user context from Query 1
 -- This query runs AFTER access check, BEFORE parallel resource fetching
 
+-- Create composite type for candidate agents (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'persona_candidate_agent') THEN
+        CREATE TYPE persona_candidate_agent AS (
+            agent_id uuid,
+            agent_name text,
+            tool_resources text[],
+            department_ids uuid[],
+            updated_at timestamptz,
+            is_mcp boolean
+        );
+    END IF;
+END $$;
+
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -51,20 +66,8 @@ RETURNS TABLE (
     example_suggestions uuid[],
     parameter_suggestions uuid[],
 
-    -- Agent IDs (for generate buttons)
-    name_agent_id uuid,
-    description_agent_id uuid,
-    color_agent_id uuid,
-    icon_agent_id uuid,
-    instructions_agent_id uuid,
-    flag_agent_id uuid,
-    departments_agent_id uuid,
-    fields_agent_id uuid,
-    examples_agent_id uuid,
-    parameters_agent_id uuid,
-    basic_agent_id uuid,
-    content_agent_id uuid,
-    general_agent_id uuid,
+    -- Candidate agents (for Python-side agent scoring)
+    candidate_agents persona_candidate_agent[],
 
     -- Tools existence (for Python to compute show_* flags)
     names_has_tools boolean,
@@ -269,181 +272,38 @@ flag_resource_data AS (
     ) as active_flag_id
     FROM params
 ),
--- Agent IDs for each resource (simplified selection - first eligible agent)
-name_agent_data AS (
-    SELECT a.id as agent_id
+-- Candidate agents data (for Python-side agent scoring)
+candidate_agents_data AS (
+    SELECT
+        a.id as agent_id,
+        n.name as agent_name,
+        COALESCE(ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL), ARRAY[]::text[]) as tool_resources,
+        COALESCE(ARRAY_AGG(DISTINCT ad.department_id) FILTER (WHERE ad.department_id IS NOT NULL), ARRAY[]::uuid[]) as department_ids,
+        a.updated_at,
+        COALESCE(af_mcp.value, false) as is_mcp
     FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'names'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
+    JOIN agent_names_junction anj ON anj.agent_id = a.id
+    JOIN names_resource n ON n.id = anj.name_id
+    LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
+    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_artifact ta ON ta.id = ttj.tool_id
+    LEFT JOIN resource_tools_relation rt ON rt.tool_id = ta.id
+    LEFT JOIN tool_flags_junction tf ON tf.tool_id = ta.id
+    LEFT JOIN flags_resource f_tool ON f_tool.id = tf.flag_id AND f_tool.name = 'tool_active'
+    LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_flags_junction af_active ON af_active.agent_id = a.id
+    LEFT JOIN flags_resource f_active ON f_active.id = af_active.flag_id AND f_active.name = 'agent_active'
+    LEFT JOIN agent_flags_junction af_mcp ON af_mcp.agent_id = a.id
+    LEFT JOIN flags_resource f_mcp ON f_mcp.id = af_mcp.flag_id AND f_mcp.name = 'mcp'
+    WHERE COALESCE(af_active.value, false) = true
+      AND (tf.tool_id IS NULL OR COALESCE(f_tool.id, NULL) IS NULL OR COALESCE(tf.value, false) = true)
+      AND (
+          NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+          OR EXISTS (SELECT 1 FROM agent_departments_junction ad3 WHERE ad3.agent_id = a.id AND ad3.active = true AND ad3.department_id = ANY(user_department_ids))
+      )
+    GROUP BY a.id, n.name, a.updated_at, af_mcp.value
 ),
-description_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'descriptions'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-color_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'colors'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-icon_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'icons'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-instructions_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'instructions'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-flag_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'flags'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-departments_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'departments'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-fields_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'fields'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-examples_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'examples'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
-parameters_agent_data AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (
-        SELECT 1 FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_artifact t ON t.id = ttj.tool_id
-        JOIN resource_tools_relation rt ON rt.tool_id = t.id
-        WHERE at.agent_id = a.id AND at.active = true
-          AND rt.resource = 'parameters'::resource_type
-          AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    )
-    ORDER BY a.updated_at DESC
-    LIMIT 1
-),
--- Multi-resource agent IDs (basic, content, general)
-basic_agent_data AS (SELECT NULL::uuid as agent_id),
-content_agent_data AS (SELECT NULL::uuid as agent_id),
-general_agent_data AS (SELECT NULL::uuid as agent_id),
 -- Tools existence check
 tools_existence_check AS (
     SELECT
@@ -483,20 +343,11 @@ SELECT
     ARRAY[]::uuid[] as example_suggestions,
     ARRAY[]::uuid[] as parameter_suggestions,
 
-    -- Agent IDs
-    (SELECT agent_id FROM name_agent_data) as name_agent_id,
-    (SELECT agent_id FROM description_agent_data) as description_agent_id,
-    (SELECT agent_id FROM color_agent_data) as color_agent_id,
-    (SELECT agent_id FROM icon_agent_data) as icon_agent_id,
-    (SELECT agent_id FROM instructions_agent_data) as instructions_agent_id,
-    (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
-    (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
-    (SELECT agent_id FROM fields_agent_data) as fields_agent_id,
-    (SELECT agent_id FROM examples_agent_data) as examples_agent_id,
-    (SELECT agent_id FROM parameters_agent_data) as parameters_agent_id,
-    (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
-    (SELECT agent_id FROM content_agent_data) as content_agent_id,
-    (SELECT agent_id FROM general_agent_data) as general_agent_id,
+    -- Candidate agents (for Python-side agent scoring)
+    (SELECT COALESCE(
+        ARRAY_AGG(ROW(ca.agent_id, ca.agent_name, ca.tool_resources, ca.department_ids, ca.updated_at, ca.is_mcp)::persona_candidate_agent),
+        ARRAY[]::persona_candidate_agent[]
+    ) FROM candidate_agents_data ca) as candidate_agents,
 
     -- Tools existence
     tec.names_has_tools,

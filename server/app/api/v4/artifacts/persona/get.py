@@ -9,6 +9,7 @@ Business logic (permissions, UI flags) is computed in Python.
 """
 
 import asyncio
+from datetime import datetime
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -16,6 +17,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import (
+    CandidateAgent,
+    PERSONA_BASIC_RESOURCES,
+    PERSONA_CONTENT_RESOURCES,
+    PERSONA_RESOURCES,
     compute_can_edit,
     compute_color_required,
     compute_departments_required,
@@ -39,6 +44,8 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_name,
     compute_show_parameters,
     has_access,
+    select_agents_for_artifact,
+    select_multi_resource_agent,
 )
 from app.api.v4.artifacts.persona.types import (
     GetPersonaApiRequest,
@@ -79,7 +86,6 @@ from app.utils.sql_helper import execute_sql_typed
 # SQL paths
 QUERY1_SQL_PATH = "app/sql/v4/queries/personas/get_persona_access_complete.sql"
 QUERY2_SQL_PATH = "app/sql/v4/queries/personas/get_persona_ids_complete.sql"
-
 
 router = APIRouter()
 
@@ -186,6 +192,55 @@ async def get_persona(
         colors_has_tools = ids_result.colors_has_tools or False
         icons_has_tools = ids_result.icons_has_tools or False
         instructions_has_tools = ids_result.instructions_has_tools or False
+
+        # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
+        # Composite type returns as Record with named fields
+        candidate_agents = [
+            CandidateAgent(
+                agent_id=ca["agent_id"],
+                agent_name=ca["agent_name"],
+                tool_resources=set(ca["tool_resources"] or []),
+                department_ids=set(ca["department_ids"] or []),
+                updated_at=ca["updated_at"],
+                is_active=True,  # Query 2 only returns active agents
+                is_mcp=ca["is_mcp"] or False,
+            )
+            for ca in (ids_result.candidate_agents or [])
+        ]
+
+        # Use Python scoring to select best agents for each resource
+        user_dept_set = set(user_department_ids) if user_department_ids else None
+        resources_needed = list(PERSONA_RESOURCES)
+        agent_ids = select_agents_for_artifact(
+            candidates=candidate_agents,
+            artifact_resources=PERSONA_RESOURCES,
+            resources_needed=resources_needed,
+            user_department_ids=user_dept_set,
+            require_mcp=False,
+        )
+
+        # Extract agent IDs for each resource
+        name_agent_id = agent_ids.get("names")
+        description_agent_id = agent_ids.get("descriptions")
+        color_agent_id = agent_ids.get("colors")
+        icon_agent_id = agent_ids.get("icons")
+        instructions_agent_id = agent_ids.get("instructions")
+        flag_agent_id = agent_ids.get("flags")
+        departments_agent_id = agent_ids.get("departments")
+        fields_agent_id = agent_ids.get("fields")
+        examples_agent_id = agent_ids.get("examples")
+        parameters_agent_id = agent_ids.get("parameters")
+
+        # Multi-resource agent IDs
+        basic_agent_id = select_multi_resource_agent(
+            candidate_agents, PERSONA_BASIC_RESOURCES, PERSONA_RESOURCES, user_dept_set
+        )
+        content_agent_id = select_multi_resource_agent(
+            candidate_agents, PERSONA_CONTENT_RESOURCES, PERSONA_RESOURCES, user_dept_set
+        )
+        general_agent_id = select_multi_resource_agent(
+            candidate_agents, PERSONA_RESOURCES, PERSONA_RESOURCES, user_dept_set
+        )
 
         # === PYTHON BUSINESS LOGIC ===
 
@@ -529,7 +584,7 @@ async def get_persona(
             name_id=ids_result.name_id,
             name_resource=name_resource,
             show_name=show_name,
-            name_agent_id=ids_result.name_agent_id,
+            name_agent_id=name_agent_id,  # Python-computed
             name_required=compute_name_required(),
             name_suggestions=name_suggestions,
             names=names,
@@ -537,7 +592,7 @@ async def get_persona(
             description_id=ids_result.description_id,
             description_resource=description_resource,
             show_description=show_description_flag,
-            description_agent_id=ids_result.description_agent_id,
+            description_agent_id=description_agent_id,  # Python-computed
             description_required=compute_description_required(),
             description_suggestions=description_suggestions,
             descriptions=descriptions,
@@ -545,7 +600,7 @@ async def get_persona(
             color_id=ids_result.color_id,
             color_resource=color_resource,
             show_color=show_color,
-            color_agent_id=ids_result.color_agent_id,
+            color_agent_id=color_agent_id,  # Python-computed
             color_required=compute_color_required(),
             color_suggestions=color_suggestions,
             colors=colors,
@@ -553,7 +608,7 @@ async def get_persona(
             icon_id=ids_result.icon_id,
             icon_resource=icon_resource,
             show_icon=show_icon,
-            icon_agent_id=ids_result.icon_agent_id,
+            icon_agent_id=icon_agent_id,  # Python-computed
             icon_required=compute_icon_required(),
             icon_suggestions=icon_suggestions,
             icons=icons,
@@ -561,7 +616,7 @@ async def get_persona(
             instructions_id=ids_result.instructions_id,
             instructions_resource=instructions_resource,
             show_instructions=show_instructions_flag,
-            instructions_agent_id=ids_result.instructions_agent_id,
+            instructions_agent_id=instructions_agent_id,  # Python-computed
             instructions_required=compute_instructions_required(),
             instructions_suggestions=instructions_suggestions,
             instructions=instructions_list,
@@ -569,14 +624,14 @@ async def get_persona(
             active_flag_id=ids_result.active_flag_id,
             flag_resource=flag_resource,
             show_flag=show_flag,
-            flag_agent_id=ids_result.flag_agent_id,
+            flag_agent_id=flag_agent_id,  # Python-computed
             flag_required=compute_flag_required(),
             flags=flags,
             # Departments
             department_ids=ids_result.department_ids,
             department_resources=department_resources,
             show_departments=show_departments_flag,
-            departments_agent_id=ids_result.departments_agent_id,
+            departments_agent_id=departments_agent_id,  # Python-computed
             departments_required=compute_departments_required(),
             department_suggestions=department_suggestions,
             departments=departments,
@@ -584,7 +639,7 @@ async def get_persona(
             field_ids=ids_result.field_ids,
             field_resources=field_resources,
             show_fields=show_fields_flag,
-            fields_agent_id=ids_result.fields_agent_id,
+            fields_agent_id=fields_agent_id,  # Python-computed
             fields_required=compute_fields_required(),
             field_suggestions=field_suggestions,
             fields=fields,
@@ -592,7 +647,7 @@ async def get_persona(
             example_ids=ids_result.example_ids,
             example_resources=example_resources,
             show_examples=show_examples_flag,
-            examples_agent_id=ids_result.examples_agent_id,
+            examples_agent_id=examples_agent_id,  # Python-computed
             examples_required=compute_examples_required(),
             example_suggestions=example_suggestions,
             examples=examples,
@@ -600,14 +655,14 @@ async def get_persona(
             parameter_ids=ids_result.parameter_ids,
             parameter_resources=parameter_resources,
             show_parameters=show_parameters_flag,
-            parameters_agent_id=ids_result.parameters_agent_id,
+            parameters_agent_id=parameters_agent_id,  # Python-computed
             parameters_required=compute_parameters_required(),
             parameter_suggestions=parameter_suggestions,
             parameters=parameters,
-            # Multi-resource agent IDs
-            basic_agent_id=ids_result.basic_agent_id,
-            content_agent_id=ids_result.content_agent_id,
-            general_agent_id=ids_result.general_agent_id,
+            # Multi-resource agent IDs (Python-computed)
+            basic_agent_id=basic_agent_id,
+            content_agent_id=content_agent_id,
+            general_agent_id=general_agent_id,
         )
 
         # No global cache for this response - individual resources are cached

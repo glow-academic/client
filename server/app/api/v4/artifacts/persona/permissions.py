@@ -5,6 +5,8 @@ These functions compute permissions, UI flags, and access control based on
 data fetched from the Pass 1 SQL query.
 """
 
+from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 
@@ -340,3 +342,196 @@ def compute_can_draft(user_role: str | None) -> bool:
     - Only admin/instructional/superadmin can create/edit drafts
     """
     return user_role in ("admin", "instructional", "superadmin")
+
+
+# ========== Agent Scoring Functions ==========
+
+
+@dataclass
+class CandidateAgent:
+    """Represents a candidate agent with its tool coverage data."""
+
+    agent_id: UUID
+    agent_name: str
+    tool_resources: set[str]  # Resources this agent has tools for
+    department_ids: set[UUID]  # Departments this agent belongs to
+    updated_at: datetime
+    is_active: bool
+    is_mcp: bool = False
+
+
+# Persona-specific resource definitions (hardcoded, rarely changes)
+PERSONA_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "colors",
+    "icons",
+    "instructions",
+    "flags",
+    "departments",
+    "fields",
+    "examples",
+    "parameters",
+}
+
+# Multi-resource agent definitions for persona
+PERSONA_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
+PERSONA_CONTENT_RESOURCES: set[str] = {"instructions", "examples"}
+PERSONA_GENERAL_RESOURCES: set[str] = PERSONA_RESOURCES  # All resources
+
+
+def score_agent_for_artifact(
+    agent: CandidateAgent,
+    artifact_resources: set[str],
+    user_department_ids: set[UUID] | None = None,
+) -> tuple[int, int, int, datetime, UUID]:
+    """Score an agent for a specific artifact context.
+
+    Returns a tuple for sorting (designed so higher values = better agent):
+    - matched_artifact_count: How many artifact resources this agent covers
+    - negative extra_outside_count: Fewer non-artifact resources = better
+    - negative dept_preference: 0 if matches user department, -1 otherwise
+    - updated_at: More recent = better (tiebreaker)
+    - agent_id: Final tiebreaker for determinism
+    """
+    # Count how many artifact resources this agent covers
+    matched_artifact_count = len(agent.tool_resources & artifact_resources)
+
+    # Count resources outside the artifact (penalty for being too general)
+    extra_outside_count = len(agent.tool_resources - artifact_resources)
+
+    # Department preference (0 = matches or no restriction, -1 = no match)
+    dept_preference = 0
+    if user_department_ids and agent.department_ids:
+        if not (agent.department_ids & user_department_ids):
+            dept_preference = -1
+    # Agents with no department restrictions get neutral preference (0)
+
+    return (
+        matched_artifact_count,  # More coverage = better
+        -extra_outside_count,  # Fewer extras = better
+        dept_preference,  # Matching dept = better
+        agent.updated_at,  # More recent = better
+        agent.agent_id,  # Tiebreaker for determinism
+    )
+
+
+def select_best_agent_for_resource(
+    candidates: list[CandidateAgent],
+    artifact_resources: set[str],
+    target_resource: str,
+    user_department_ids: set[UUID] | None = None,
+    require_mcp: bool = False,
+) -> UUID | None:
+    """Select the best agent for a specific resource within an artifact context.
+
+    Scoring criteria (in order of priority):
+    1. Must have a tool for the target resource
+    2. More tools matching artifact resources = better (specialist)
+    3. Fewer tools outside artifact resources = better (not too general)
+    4. Matching user department = better
+    5. More recently updated = better (tiebreaker)
+
+    Args:
+        candidates: List of candidate agents with their tool data
+        artifact_resources: Set of resources that belong to this artifact type
+        target_resource: The specific resource we need a tool for (e.g., "names")
+        user_department_ids: User's department IDs for preference scoring
+        require_mcp: If True, only consider MCP-enabled agents
+
+    Returns:
+        The best agent's ID, or None if no suitable agent found
+    """
+    # Filter to active agents that have the target resource
+    eligible = [
+        agent
+        for agent in candidates
+        if agent.is_active
+        and target_resource in agent.tool_resources
+        and (not require_mcp or agent.is_mcp)
+    ]
+
+    if not eligible:
+        return None
+
+    # Score and sort candidates (higher scores first)
+    scored = sorted(
+        eligible,
+        key=lambda a: score_agent_for_artifact(a, artifact_resources, user_department_ids),
+        reverse=True,
+    )
+
+    return scored[0].agent_id if scored else None
+
+
+def select_agents_for_artifact(
+    candidates: list[CandidateAgent],
+    artifact_resources: set[str],
+    resources_needed: list[str],
+    user_department_ids: set[UUID] | None = None,
+    require_mcp: bool = False,
+) -> dict[str, UUID | None]:
+    """Select the best agent for each resource in an artifact.
+
+    Args:
+        candidates: List of candidate agents
+        artifact_resources: Set of resources that belong to this artifact type
+        resources_needed: List of resources that need agents
+        user_department_ids: User's department IDs
+        require_mcp: If True, only consider MCP-enabled agents
+
+    Returns:
+        Dict mapping resource name to best agent ID (or None)
+    """
+    return {
+        resource: select_best_agent_for_resource(
+            candidates, artifact_resources, resource, user_department_ids, require_mcp
+        )
+        for resource in resources_needed
+    }
+
+
+def select_multi_resource_agent(
+    candidates: list[CandidateAgent],
+    required_resources: set[str],
+    artifact_resources: set[str],
+    user_department_ids: set[UUID] | None = None,
+    require_mcp: bool = False,
+) -> UUID | None:
+    """Select an agent that has tools for ALL required_resources.
+
+    Scoring:
+    1. Must have ALL required_resources
+    2. More artifact resources covered = better
+    3. Fewer extra resources = better (specialist)
+    4. Department preference
+    5. Most recent (tiebreaker)
+
+    Args:
+        candidates: List of candidate agents
+        required_resources: Set of resources the agent MUST have tools for
+        artifact_resources: Set of all resources for the artifact type
+        user_department_ids: User's department IDs for preference scoring
+        require_mcp: If True, only consider MCP-enabled agents
+
+    Returns:
+        The best agent's ID, or None if no suitable agent found
+    """
+    eligible = [
+        agent
+        for agent in candidates
+        if agent.is_active
+        and required_resources.issubset(agent.tool_resources)
+        and (not require_mcp or agent.is_mcp)
+    ]
+
+    if not eligible:
+        return None
+
+    scored = sorted(
+        eligible,
+        key=lambda a: score_agent_for_artifact(a, artifact_resources, user_department_ids),
+        reverse=True,
+    )
+
+    return scored[0].agent_id if scored else None
