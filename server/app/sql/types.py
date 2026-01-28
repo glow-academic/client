@@ -18544,6 +18544,63 @@ class GetSettingsApiResponse(BaseModel):
 
 
 
+# Generated from: get_settings_theme
+
+class GetSettingsThemeSqlParams(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id_param,
+        )
+
+class GetSettingsThemeSqlRow(BaseModel):
+
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+
+class GetSettingsThemeApiRequest(BaseModel):
+
+    settings_id_param: UUID | None = None
+
+class GetSettingsThemeApiResponse(BaseModel):
+
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+
+
+
 # Generated from: get_simulation_positions
 
 class GetSimulationPositionsSqlParams(BaseModel):
@@ -25675,6 +25732,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingsApiRequest",
         "GetSettingsApiResponse",
     ),
+    "app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql": (
+        "GetSettingsThemeSqlParams",
+        "GetSettingsThemeSqlRow",
+        "GetSettingsThemeApiRequest",
+        "GetSettingsThemeApiResponse",
+    ),
     "app/sql/v4/queries/resources/simulation_positions/get_simulation_positions_complete.sql": (
         "GetSimulationPositionsSqlParams",
         "GetSimulationPositionsSqlRow",
@@ -27825,6 +27888,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/settings/get_settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql"]
     ) -> SqlString: ...
 
     @overload

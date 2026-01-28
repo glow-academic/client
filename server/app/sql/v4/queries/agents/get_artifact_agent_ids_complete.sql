@@ -87,6 +87,10 @@ eligible_agents AS (
     )
 ),
 -- Get tool resources for each eligible agent
+-- Path: agent_tools_junction.tool_id -> tools_resource.id
+--       tool_tools_junction.tools_id -> tools_resource.id
+--       tool_tools_junction.tool_id -> tool_artifact.id
+--       resource_tools_relation.tool_id -> tool_artifact.id
 agent_tool_resources AS (
     SELECT
         ea.agent_id,
@@ -97,7 +101,8 @@ agent_tool_resources AS (
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-    LEFT JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id AND rt.active = true
+    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
+    LEFT JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id AND rt.active = true
     GROUP BY ea.agent_id, ea.updated_at
 ),
 -- Score and select best agent per artifact

@@ -20,7 +20,6 @@ from app.api.v4.resources.departments.get import (
     get_departments_internal,
 )
 from app.api.v4.resources.roles.get import QGetRolesV4Item, get_roles_internal
-from app.api.v4.resources.settings.get import QGetSettingsV4Item, get_settings_internal
 from app.api.v4.resources.simulations.get import (
     GetSimulationsBatchV4Item,
     get_simulations_batch_internal,
@@ -34,6 +33,8 @@ from app.sql.types import (
     GetProfileContextApiResponse as BaseGetProfileContextApiResponse,
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,
+    GetSettingsThemeSqlParams,
+    GetSettingsThemeSqlRow,
     QGetProfileContextAccessV4ArtifactAgent,
     QGetProfileContextV4Auth,
     QGetProfileContextV4Cohort,
@@ -45,19 +46,20 @@ from app.sql.types import (
     QGetProfileContextV4ThemeTokens,
     load_sql_query,
 )
+from app.utils.sql_helper import execute_sql_typed
 
 
 class GetProfileContextApiResponse(BaseGetProfileContextApiResponse):
     """Extended profile context response with artifact_agent_ids."""
 
     artifact_agent_ids: dict[str, UUID | None] | None = None
-from app.utils.sql_helper import execute_sql_typed
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level
 SQL_ACCESS_PATH = "app/sql/v4/queries/profile/get_profile_context_access_complete.sql"
+SQL_SETTINGS_THEME_PATH = "app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql"
 
 router = APIRouter()
 
@@ -372,11 +374,15 @@ async def get_profile_context(
             async with pool.acquire() as c:
                 return await get_simulations_batch_internal(c, simulation_ids, bypass_cache)
 
-        async def fetch_settings() -> QGetSettingsV4Item | None:
+        async def fetch_settings_theme() -> GetSettingsThemeSqlRow | None:
             if not settings_id:
                 return None
             async with pool.acquire() as c:
-                return await get_settings_internal(c, settings_id, bypass_cache)
+                params = GetSettingsThemeSqlParams(settings_id_param=settings_id)
+                return cast(
+                    GetSettingsThemeSqlRow | None,
+                    await execute_sql_typed(c, SQL_SETTINGS_THEME_PATH, params=params),
+                )
 
         async def fetch_drafts() -> list[QGetDraftsV4Item]:
             if not draft_ids:
@@ -393,14 +399,14 @@ async def get_profile_context(
             departments_raw,
             cohorts_raw,
             simulations_raw,
-            settings,
+            settings_theme,
             drafts_raw,
             roles_raw,
         ) = await asyncio.gather(
             fetch_departments(),
             fetch_cohorts(),
             fetch_simulations(),
-            fetch_settings(),
+            fetch_settings_theme(),
             fetch_drafts(),
             fetch_roles(),
         )
@@ -424,31 +430,27 @@ async def get_profile_context(
         drafts = [convert_draft(d) for d in drafts_raw]
         role_resources = [convert_role(r) for r in roles_raw]
 
-        # Derive theme tokens from settings
-        if not settings or not settings.settings_id:
-            raise HTTPException(status_code=500, detail="Settings not found in profile context")
+        # Derive theme tokens from settings (using lightweight theme query)
+        if not settings_theme or not settings_theme.primary_color:
+            raise HTTPException(status_code=500, detail="Settings theme not found in profile context")
 
         theme_primitives = {
-            "primary": settings.primary_color or "",
-            "accent": settings.accent or "",
-            "background": settings.background or "",
-            "surface": settings.surface or "",
-            "success": settings.success or "",
-            "warning": settings.warning or "",
-            "error": settings.error or "",
-            "sidebar_background": settings.sidebar_background or "",
-            "sidebar_primary": settings.sidebar_primary or "",
-            "chart1": settings.chart1 or "",
-            "chart2": settings.chart2 or "",
-            "chart3": settings.chart3 or "",
-            "chart4": settings.chart4 or "",
-            "chart5": settings.chart5 or "",
+            "primary": settings_theme.primary_color or "",
+            "accent": settings_theme.accent or "",
+            "background": settings_theme.background or "",
+            "surface": settings_theme.surface or "",
+            "success": settings_theme.success or "",
+            "warning": settings_theme.warning or "",
+            "error": settings_theme.error or "",
+            "sidebar_background": settings_theme.sidebar_background or "",
+            "sidebar_primary": settings_theme.sidebar_primary or "",
+            "chart1": settings_theme.chart1 or "",
+            "chart2": settings_theme.chart2 or "",
+            "chart3": settings_theme.chart3 or "",
+            "chart4": settings_theme.chart4 or "",
+            "chart5": settings_theme.chart5 or "",
         }
         theme_tokens = derive_theme_tokens(theme_primitives)
-
-        # Convert settings auths and providers
-        settings_auths = [convert_auth(a) for a in (settings.auths or [])]
-        settings_providers = [convert_provider(p) for p in (settings.providers or [])]
 
         # Build artifact_agent_ids map
         artifact_agent_ids_map: dict[str, UUID | None] = {}
@@ -474,7 +476,7 @@ async def get_profile_context(
             is_authorized=access_result.is_authorized,
             id=access_result.id,
             name=access_result.name,
-            emails=None,  # Not fetched in 2-pass (add to Pass 1 if needed)
+            emails=None,  # Not fetched in 2-pass
             primary_email=None,  # Not fetched in 2-pass
             role=access_result.role,
             active=access_result.active,
@@ -490,33 +492,34 @@ async def get_profile_context(
             earliest_attempt_date=None,  # Not fetched in 2-pass
             scoped_roles=access_result.scoped_roles,
             role_resources=role_resources,
-            settings_id=settings.settings_id,
-            settings_created_at=settings.created_at.isoformat() if settings.created_at else None,
-            settings_active=settings.active,
-            settings_name=settings.name,
-            settings_description=settings.description,
-            settings_primary_color=settings.primary_color,
-            settings_accent=settings.accent,
-            settings_background=settings.background,
-            settings_surface=settings.surface,
-            settings_success=settings.success,
-            settings_warning=settings.warning,
-            settings_error=settings.error,
-            settings_sidebar_background=settings.sidebar_background,
-            settings_sidebar_primary=settings.sidebar_primary,
-            settings_chart1=settings.chart1,
-            settings_chart2=settings.chart2,
-            settings_chart3=settings.chart3,
-            settings_chart4=settings.chart4,
-            settings_chart5=settings.chart5,
-            settings_guest_login_enabled=settings.guest_login_enabled,
-            settings_success_threshold=settings.success_threshold,
-            settings_warning_threshold=settings.warning_threshold,
-            settings_danger_threshold=settings.danger_threshold,
-            settings_auth_ids=settings.auth_ids,
-            settings_auths=settings_auths,
-            settings_provider_ids=settings.provider_ids,
-            settings_providers=settings_providers,
+            # Settings - ID from Pass 1, colors/thresholds from lightweight theme query
+            settings_id=str(access_result.settings_id) if access_result.settings_id else None,
+            settings_created_at=None,  # Not fetched in lightweight query
+            settings_active=None,  # Not fetched in lightweight query
+            settings_name=None,  # Not fetched in lightweight query
+            settings_description=None,  # Not fetched in lightweight query
+            settings_primary_color=settings_theme.primary_color,
+            settings_accent=settings_theme.accent,
+            settings_background=settings_theme.background,
+            settings_surface=settings_theme.surface,
+            settings_success=settings_theme.success,
+            settings_warning=settings_theme.warning,
+            settings_error=settings_theme.error,
+            settings_sidebar_background=settings_theme.sidebar_background,
+            settings_sidebar_primary=settings_theme.sidebar_primary,
+            settings_chart1=settings_theme.chart1,
+            settings_chart2=settings_theme.chart2,
+            settings_chart3=settings_theme.chart3,
+            settings_chart4=settings_theme.chart4,
+            settings_chart5=settings_theme.chart5,
+            settings_guest_login_enabled=None,  # Not fetched in lightweight query
+            settings_success_threshold=settings_theme.success_threshold,
+            settings_warning_threshold=settings_theme.warning_threshold,
+            settings_danger_threshold=settings_theme.danger_threshold,
+            settings_auth_ids=None,  # Not fetched in lightweight query
+            settings_auths=None,  # Not fetched in lightweight query
+            settings_provider_ids=None,  # Not fetched in lightweight query
+            settings_providers=None,  # Not fetched in lightweight query
             available_sections=access_result.available_sections,
             available_routes=access_result.available_routes,
             redirect_path=access_result.redirect_path,

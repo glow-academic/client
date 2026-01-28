@@ -311,7 +311,8 @@ artifact_agent_ids_data AS (
             ) as tool_resources
         FROM eligible_agents ea
         LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id AND rt.active = true
+        LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
+        LEFT JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id AND rt.active = true
         GROUP BY ea.agent_id, ea.updated_at
     ),
     scored_agents AS (
