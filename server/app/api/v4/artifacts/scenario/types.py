@@ -516,10 +516,37 @@ class ListScenarioApiResponse(BaseModel):
 
 
 class SaveScenarioApiRequest(BaseModel):
-    """Request for saving a scenario."""
+    """Request for saving a scenario - accepts form data directly (no draft_id)."""
 
-    draft_id: UUID
-    input_scenario_id: UUID | None = None
+    # Context
+    group_id: UUID  # REQUIRED - which group to save to
+    input_scenario_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
 
 
 class SaveScenarioApiResponse(BaseModel):
