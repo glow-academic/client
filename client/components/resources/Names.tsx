@@ -116,9 +116,15 @@ export function Names({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ name_id: string | null } | void> => {
-    // Skip if no change or no action
-    if (internalValue === lastSavedValueRef.current) return;
-    if (!createNamesAction || !group_id) return;
+    // Skip if no action available
+    if (!createNamesAction || !group_id) {
+      return;
+    }
+
+    // Skip if no change AND we already have a resource for this value
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { name_id: resourceId };
+    }
 
     try {
       if (internalValue.trim()) {
@@ -153,14 +159,6 @@ export function Names({
       registerFlush(() => flushRef.current?.() ?? Promise.resolve());
     }
   }, [registerFlush]);
-
-  // Use resourceId for validation/debugging
-  useEffect(() => {
-    if (resourceId && !resource?.id) {
-      // Handle mismatch case - resourceId exists but resource doesn't match
-      // This can happen during transitions
-    }
-  }, [resourceId, resource]);
 
   // Convert name_suggestions UUIDs to name strings for autocomplete
   const suggestionNames = useMemo(() => {

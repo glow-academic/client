@@ -645,14 +645,6 @@ function PersonaComponent({
       formState.example_ids.length > 0 ||
       formState.parameter_ids.length > 0;
 
-    // Debug logging at effect start
-    console.debug("[Persona Draft] Effect triggered", {
-      hasResourceIds,
-      isAutosaveEnabled,
-      draftPatchKey: draftPatchKey.substring(0, 100) + "...",
-      lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
-    });
-
     if (!hasResourceIds || !patchPersonaDraftActionRef.current) {
       return;
     }
@@ -663,7 +655,6 @@ function PersonaComponent({
       typeof personaData?.draft_version === "number" &&
       !versionSyncedRef.current
     ) {
-      console.debug("[Persona Draft] Waiting for version sync");
       return;
     }
 
@@ -679,7 +670,6 @@ function PersonaComponent({
     if (serverSyncPendingRef.current) {
       serverSyncPendingRef.current = false;
       lastPatchedKeyRef.current = draftPatchKey;
-      console.debug("[Persona Draft] Server sync detected, resetting baseline");
       return;
     }
 
@@ -693,7 +683,6 @@ function PersonaComponent({
 
     // Skip autosave if disabled (manual save mode)
     if (!isAutosaveEnabled) {
-      console.debug("[Persona Draft] Autosave disabled, skipping auto-patch");
       return;
     }
 
@@ -706,15 +695,6 @@ function PersonaComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchPersonaDraftActionRef.current) return;
-
-        // Debug logging before API call
-        console.debug("[Persona Draft] Calling patch API", {
-          input_draft_id: draftId,
-          expected_version: lastSavedVersionRef.current,
-          fields: Object.keys(formState).filter(
-            (k) => formState[k as keyof typeof formState]
-          ),
-        });
 
         const result = await patchPersonaDraftActionRef.current({
           body: {
@@ -746,12 +726,6 @@ function PersonaComponent({
           // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
-
-        // Debug logging after success
-        console.debug("[Persona Draft] Patch succeeded", {
-          draft_id: result.draft_id,
-          new_version: result.new_version,
-        });
 
         // This can stay as state (for UI), but it won't re-trigger patching
         // because the effect is gated by payload changes.
@@ -829,7 +803,24 @@ function PersonaComponent({
     );
   }, [draftPatchKey]);
 
-  // Flush all resources and patch draft (for manual save)
+  // Flush all resources without saving to draft - returns the created IDs
+  // Used by handleSubmit when autosave is off to get IDs before final save
+  const flushAllResources = useCallback(async (): Promise<FlushResult> => {
+    const flushPromises = Array.from(flushRegistryRef.current.values()).map(
+      (flush) => flush()
+    );
+    const flushResults = await Promise.all(flushPromises);
+
+    // Merge all flush results into a single object (filter out void results)
+    const mergedFlushResults = flushResults.reduce<FlushResult>(
+      (acc, result) => (result ? { ...acc, ...result } : acc),
+      {}
+    );
+
+    return mergedFlushResults;
+  }, []);
+
+  // Flush all resources and patch draft (for manual save via Save toolbar)
   const flushAllAndSave = useCallback(async () => {
     const startTime = Date.now();
     const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
@@ -1387,30 +1378,53 @@ function PersonaComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
+      // When autosave is disabled, flush all resources first to create them
+      // This gets the IDs directly without saving to draft
+      let flushResults: FlushResult = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      // Get the current form state and merge with flush results
+      // Flush results take precedence (they're freshly created)
+      const baseFormState = formStateRef.current;
+      const effectiveFormState = {
+        name_id: flushResults.name_id !== undefined ? flushResults.name_id : baseFormState.name_id,
+        description_id: flushResults.description_id !== undefined ? flushResults.description_id : baseFormState.description_id,
+        color_id: flushResults.color_id !== undefined ? flushResults.color_id : baseFormState.color_id,
+        icon_id: baseFormState.icon_id,
+        instructions_id: flushResults.instructions_id !== undefined ? flushResults.instructions_id : baseFormState.instructions_id,
+        active_flag_id: baseFormState.active_flag_id,
+        department_ids: baseFormState.department_ids,
+        parameter_field_ids: flushResults.parameter_field_ids !== undefined ? flushResults.parameter_field_ids : baseFormState.parameter_field_ids,
+        example_ids: flushResults.example_ids !== undefined ? flushResults.example_ids : baseFormState.example_ids,
+        parameter_ids: baseFormState.parameter_ids,
+      };
+
       // Validate required resource IDs using {resource}_required flags from personaData
-      if (personaData?.name_required && !formState.name_id) {
+      if (personaData?.name_required && !effectiveFormState.name_id) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
 
-      if (personaData?.color_required && !formState.color_id) {
+      if (personaData?.color_required && !effectiveFormState.color_id) {
         toast.error("Persona color is required");
         throw new Error("Persona color is required");
       }
 
-      if (personaData?.icon_required && !formState.icon_id) {
+      if (personaData?.icon_required && !effectiveFormState.icon_id) {
         toast.error("Persona icon is required");
         throw new Error("Persona icon is required");
       }
 
-      if (personaData?.instructions_required && !formState.instructions_id) {
+      if (personaData?.instructions_required && !effectiveFormState.instructions_id) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
 
       if (
         personaData?.departments_required &&
-        (!formState.department_ids || formState.department_ids.length === 0)
+        (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
@@ -1418,7 +1432,7 @@ function PersonaComponent({
 
       if (
         personaData?.parameter_fields_required &&
-        (!formState.parameter_field_ids || formState.parameter_field_ids.length === 0)
+        (!effectiveFormState.parameter_field_ids || effectiveFormState.parameter_field_ids.length === 0)
       ) {
         toast.error("Parameter fields are required");
         throw new Error("Parameter fields are required");
@@ -1426,7 +1440,7 @@ function PersonaComponent({
 
       if (
         personaData?.examples_required &&
-        (!formState.example_ids || formState.example_ids.length === 0)
+        (!effectiveFormState.example_ids || effectiveFormState.example_ids.length === 0)
       ) {
         toast.error("Examples are required");
         throw new Error("Examples are required");
@@ -1452,10 +1466,10 @@ function PersonaComponent({
 
       // Ensure required fields are present (TypeScript guard)
       if (
-        !formState.name_id ||
-        !formState.color_id ||
-        !formState.icon_id ||
-        !formState.instructions_id
+        !effectiveFormState.name_id ||
+        !effectiveFormState.color_id ||
+        !effectiveFormState.icon_id ||
+        !effectiveFormState.instructions_id
       ) {
         toast.error("Required fields are missing");
         throw new Error("Required fields are missing");
@@ -1469,29 +1483,29 @@ function PersonaComponent({
             input_persona_id: isEditMode && personaId ? personaId : null,
 
             // Required single-select
-            name_id: formState.name_id,
-            color_id: formState.color_id,
-            icon_id: formState.icon_id,
-            instructions_id: formState.instructions_id,
+            name_id: effectiveFormState.name_id,
+            color_id: effectiveFormState.color_id,
+            icon_id: effectiveFormState.icon_id,
+            instructions_id: effectiveFormState.instructions_id,
 
             // Optional single-select
-            description_id: formState.description_id ?? undefined,
-            active_flag_id: formState.active_flag_id ?? undefined,
+            description_id: effectiveFormState.description_id ?? undefined,
+            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
 
             // Optional multi-select
             department_ids:
-              formState.department_ids.length > 0
-                ? formState.department_ids
+              effectiveFormState.department_ids.length > 0
+                ? effectiveFormState.department_ids
                 : undefined,
             field_ids:
-              formState.parameter_field_ids.length > 0 ? formState.parameter_field_ids : undefined,
+              effectiveFormState.parameter_field_ids.length > 0 ? effectiveFormState.parameter_field_ids : undefined,
             example_ids:
-              formState.example_ids.length > 0
-                ? formState.example_ids
+              effectiveFormState.example_ids.length > 0
+                ? effectiveFormState.example_ids
                 : undefined,
             parameter_ids:
-              formState.parameter_ids.length > 0
-                ? formState.parameter_ids
+              effectiveFormState.parameter_ids.length > 0
+                ? effectiveFormState.parameter_ids
                 : undefined,
           },
         });
@@ -1507,7 +1521,8 @@ function PersonaComponent({
       }
     },
     [
-      formState,
+      isAutosaveEnabled,
+      flushAllResources,
       isEditMode,
       personaId,
       profile?.id,

@@ -119,9 +119,14 @@ export function Instructions({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ instructions_id: string | null } | void> => {
-    // Skip if no change or no action
-    if (internalValue === lastSavedValueRef.current) return;
+    // Skip if no action available
     if (!createInstructionsAction || !agent_id || !group_id) return;
+
+    // Skip if no change AND we already have a resource for this value
+    // If resourceId is null, we still need to create the resource even if value hasn't changed
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { instructions_id: resourceId };
+    }
 
     const seq = ++saveSeqRef.current;
     try {
@@ -161,14 +166,6 @@ export function Instructions({
       registerFlush(() => flushRef.current?.() ?? Promise.resolve());
     }
   }, [registerFlush]);
-
-  // Use resourceId for validation/debugging
-  useEffect(() => {
-    if (resourceId && !resource?.id) {
-      // Handle mismatch case - resourceId exists but resource doesn't match
-      // This can happen during transitions
-    }
-  }, [resourceId, resource]);
 
   const instructionsById = useMemo(() => {
     const mapping: Record<string, string> = {};

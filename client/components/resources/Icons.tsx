@@ -1,7 +1,8 @@
 /**
  * Icons.tsx
  * Resource component for icon picker fields
- * Full UI component with Label + Icon picker (SelectableGrid)
+ * Uses SelectableGrid to display icons as horizontal scrollable cards
+ * Manages icon_id and reports to parent (pre-defined icons, no resource creation needed)
  */
 
 "use client";
@@ -15,14 +16,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 
-type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
-type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
+export interface IconItem {
+  id: string;
+  name: string;
+  value: string;
+  description?: string;
+}
 
 export interface IconsProps {
   icon_id?: string | null; // Current icon_id (standardized prop name)
@@ -48,15 +52,6 @@ export interface IconsProps {
   id?: string;
   required?: boolean;
   searchTerm?: string;
-  onSearchChange?: (term: string) => void;
-  searchPlaceholder?: string;
-  showSelectedFilter?: boolean;
-  onShowSelectedChange?: (value: boolean) => void;
-  group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createIconsAction?:
-    | ((input: CreateDraftIconsIn) => Promise<CreateDraftIconsOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // Legacy props for backward compatibility
@@ -85,13 +80,6 @@ export function Icons({
   id = "icon",
   required = false,
   searchTerm = "",
-  onSearchChange,
-  searchPlaceholder = "Search icons...",
-  showSelectedFilter = false,
-  onShowSelectedChange,
-  group_id,
-  agent_id,
-  createIconsAction,
   onGenerate,
   isGenerating = false,
   // Legacy props for backward compatibility
@@ -103,157 +91,82 @@ export function Icons({
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;
+  const currentId = icon_id ?? _iconId ?? null;
   const show = show_icon ?? false;
-  const suggestionsListMemo = useMemo(
+  const suggestionsList = useMemo(
     () => icon_suggestions ?? iconSuggestions ?? [],
     [icon_suggestions, iconSuggestions]
   );
+  const allIconsArray = useMemo(() => icons ?? [], [icons]);
 
-  // Convert icons array from API format to string array (extract value field)
-  const allIconsList = useMemo(() => {
-    if (icons && icons.length > 0) {
-      return icons
-        .map((i) => i.value)
-        .filter((v): v is string => v !== null && v !== undefined);
+  // Convert icons array to IconItem format for SelectableGrid
+  const iconItems = useMemo(() => {
+    if (allIconsArray.length > 0) {
+      return allIconsArray
+        .filter((i) => i.id && i.value) // Filter out nulls
+        .map((i) => ({
+          id: i.id!,
+          name: i.name ?? i.value!,
+          value: i.value!,
+          ...(i.description ? { description: i.description } : {}),
+        }));
     }
-    return allIcons ?? [];
-  }, [icons, allIcons]);
+    // Fallback for legacy allIcons prop (array of icon names/values)
+    if (allIcons && allIcons.length > 0) {
+      return allIcons.map((iconName) => ({
+        id: iconName,
+        name: iconName,
+        value: iconName,
+      }));
+    }
+    return [];
+  }, [allIconsArray, allIcons]);
 
-  // Get suggested icon values from icon_suggestions (UUIDs) by looking up in icons array
-  const suggestedIconsList = useMemo(() => {
-    if (suggestionsListMemo.length > 0 && icons) {
-      return suggestionsListMemo
-        .map((id) => icons.find((i) => i.id === id)?.value)
-        .filter((v): v is string => v !== null && v !== undefined);
+  // Get suggested icon IDs
+  const suggestedIconIds = useMemo(() => {
+    if (suggestionsList.length > 0) {
+      return new Set(suggestionsList);
     }
-    return suggestedIcons ?? [];
-  }, [suggestionsListMemo, icons, suggestedIcons]);
+    // Legacy: suggestedIcons are icon values, need to map to IDs
+    if (suggestedIcons.length > 0 && iconItems.length > 0) {
+      const ids = new Set<string>();
+      suggestedIcons.forEach((iconValue) => {
+        const item = iconItems.find((i) => i.value === iconValue);
+        if (item) ids.add(item.id);
+      });
+      return ids;
+    }
+    return new Set<string>();
+  }, [suggestionsList, suggestedIcons, iconItems]);
 
-  // Handle nullable resource properties
-  const resourceValue = resource?.value ?? null;
-  // Use icon_id to find initial value if resource is not available
-  const initialValue = useMemo(() => {
-    if (resourceValue) return resourceValue;
-    if (icon_id && icons) {
-      const icon = icons.find((i) => i.id === icon_id);
-      return icon?.value || "";
-    }
-    return "";
-  }, [resourceValue, icon_id, icons]);
-  const [internalValue, setInternalValue] = useState(initialValue);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(initialValue);
-  const isInitialMountRef = useRef(true);
-
-  // Update internal value when icon_resource or icon_id changes
-  useEffect(() => {
-    if (initialValue) {
-      setInternalValue(initialValue);
-      lastSavedValueRef.current = initialValue;
-    }
-  }, [initialValue]);
-
-  // Handle search term changes
-  useEffect(() => {
-    if (onSearchChange && searchTerm !== undefined) {
-      onSearchChange(searchTerm);
-    }
-  }, [searchTerm, onSearchChange]);
-
-  // Handle showSelected filter changes
-  useEffect(() => {
-    if (onShowSelectedChange && showSelectedFilter !== undefined) {
-      onShowSelectedChange(showSelectedFilter);
-    }
-  }, [showSelectedFilter, onShowSelectedChange]);
+  // Check if an icon is suggested
+  const isSuggested = useCallback(
+    (iconId: string) => suggestedIconIds.has(iconId),
+    [suggestedIconIds]
+  );
 
   // Filter icons based on search term
-  const filteredIcons = useMemo(() => {
+  const displayIcons = useMemo(() => {
     if (!searchTerm.trim()) {
-      return allIconsList;
+      return iconItems;
     }
     const searchLower = searchTerm.toLowerCase();
-    return allIconsList.filter((icon) =>
-      icon.toLowerCase().includes(searchLower)
+    return iconItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(searchLower) ||
+        item.value.toLowerCase().includes(searchLower)
     );
-  }, [allIconsList, searchTerm]);
+  }, [iconItems, searchTerm]);
 
-  // Filter by showSelected if enabled
-  const displayIcons = useMemo(() => {
-    if (!showSelectedFilter) {
-      return filteredIcons;
-    }
-    return filteredIcons.filter((icon) => icon === internalValue);
-  }, [filteredIcons, showSelectedFilter, internalValue]);
-
-  // Debounced resource creation
-  useEffect(() => {
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedValueRef.current = internalValue;
-      return;
-    }
-
-    // Skip if value hasn't changed
-    if (internalValue === lastSavedValueRef.current) {
-      return;
-    }
-
-    // Skip if no action or empty value
-    if (!createIconsAction || !internalValue) {
-      if (!internalValue) {
-        // Clear resource ID if value is empty
-        onIconIdChange(null);
-      }
-      return;
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        // Find index of icon for value (or use 0)
-        const iconIndex = allIconsList.indexOf(internalValue);
-        if (!agent_id || !group_id) {
-          return;
-        }
-        const result = await createIconsAction({
-          body: {
-            agent_id: agent_id,
-            group_id: group_id,
-            name: internalValue,
-            description: `Icon: ${internalValue}`,
-            value: iconIndex >= 0 ? iconIndex : 0,
-          },
-        });
-        if (result && typeof result === "object" && "icon_id" in result) {
-          const iconId = (result as { icon_id?: string | null }).icon_id;
-          if (iconId) {
-            onIconIdChange(iconId);
-          }
-        }
-        lastSavedValueRef.current = internalValue;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create icon resource:", error);
-      }
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [internalValue, createIconsAction, allIconsList, onIconIdChange, agent_id, group_id]);
-
-  const handleChange = useCallback((newValue: string) => {
-    setInternalValue(newValue);
-  }, []);
+  // Handle icon selection - just update parent state directly
+  const handleSelect = useCallback(
+    (iconId: string) => {
+      // Toggle selection (single-select)
+      const newId = iconId === currentId ? null : iconId;
+      onIconIdChange(newId);
+    },
+    [currentId, onIconIdChange]
+  );
 
   // Check if any icon resource is generated
   const hasGenerated = useMemo(() => {
@@ -267,51 +180,49 @@ export function Icons({
 
   return (
     <div className="space-y-4 min-w-0 w-full">
-      <div className="flex items-center gap-2">
-        <Label htmlFor={id} className="flex items-center gap-1">
-          {label}
-          {required && <span className="text-destructive">*</span>}
-        </Label>
-        {onGenerate && agent_id && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+      {label && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
+          {onGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      )}
 
-      <SelectableGrid
+      <SelectableGrid<IconItem>
         items={displayIcons}
-        selectedId={internalValue || ""}
-        onSelect={(icon) => {
-          handleChange(icon === internalValue ? "" : icon);
-        }}
-        getId={(icon) => icon}
-        renderItem={(iconName, isSelected) => {
+        selectedId={currentId}
+        onSelect={(iconId) => handleSelect(iconId)}
+        getId={(item) => item.id}
+        renderItem={(item, isSelected) => {
           const IconComponent =
-            PERSONA_ICON_MAP[iconName as keyof typeof PERSONA_ICON_MAP];
+            PERSONA_ICON_MAP[item.value as keyof typeof PERSONA_ICON_MAP];
           if (!IconComponent) return null;
-
-          const isSuggested = suggestedIconsList.includes(iconName);
 
           return (
             <div
@@ -330,7 +241,7 @@ export function Icons({
               )}
 
               {/* Suggested badge - top right */}
-              {isSuggested && !isSelected && (
+              {isSuggested(item.id) && !isSelected && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                   Suggested
                 </div>
@@ -339,7 +250,7 @@ export function Icons({
               <div className="flex flex-col items-center justify-center gap-1 flex-1 overflow-hidden">
                 <IconComponent className="h-7 w-7 text-foreground shrink-0" />
                 <span className="text-xs font-medium text-center truncate w-full">
-                  {iconName}
+                  {item.name}
                 </span>
               </div>
             </div>

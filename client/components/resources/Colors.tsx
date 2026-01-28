@@ -182,14 +182,35 @@ export function Colors({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ color_id: string | null } | void> => {
-    // Skip if no change or no action
-    if (internalValue === lastSavedValueRef.current) return;
-    if (!createColorsAction || !agent_id || !group_id || !internalValue) return;
+    // Skip if no color value
+    if (!internalValue) return;
+
+    // Skip if no change AND we already have a resource for this value
+    // (pre-defined colors will have resourceId set via handleChange)
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { color_id: resourceId };
+    }
+
+    const hexCode = internalValue.toLowerCase().startsWith("#")
+      ? internalValue.toLowerCase()
+      : `#${internalValue.toLowerCase()}`;
+
+    // Check if this is a pre-defined color (safety net in case handleChange didn't catch it)
+    if (colors) {
+      const existingColor = colors.find((c) => c.hex_code?.toLowerCase() === hexCode);
+      if (existingColor?.id) {
+        if (onColorIdChange) {
+          onColorIdChange(existingColor.id);
+        }
+        lastSavedValueRef.current = internalValue;
+        return { color_id: existingColor.id };
+      }
+    }
+
+    // Custom color - need to create a resource
+    if (!createColorsAction || !agent_id || !group_id) return;
 
     try {
-      const hexCode = internalValue.toLowerCase().startsWith("#")
-        ? internalValue.toLowerCase()
-        : `#${internalValue.toLowerCase()}`;
       const colorName = getColorName(hexCode);
       const result = await createColorsAction({
         body: {
@@ -239,14 +260,6 @@ export function Colors({
       : `#${internalValue.toLowerCase()}`;
   }, [internalValue]);
 
-  // Use resourceId for validation/debugging
-  useEffect(() => {
-    if (resourceId && !resource?.id) {
-      // Handle mismatch case - resourceId exists but resource doesn't match
-      // This can happen during transitions
-    }
-  }, [resourceId, resource]);
-
   // Track and report pending changes (for manual save mode only)
   useEffect(() => {
     // Only report pending changes when autosave is disabled
@@ -269,9 +282,9 @@ export function Colors({
     }
   }, [internalValue, isAutosaveEnabled]);
 
-  // Debounced resource creation - only when autosave is enabled
+  // Debounced resource creation - only for custom colors not in the pre-defined list
   useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
+    // Skip if autosave is disabled (manual save mode - flush handles it)
     if (!isAutosaveEnabled) {
       return;
     }
@@ -290,11 +303,20 @@ export function Colors({
 
     // Skip if no action or empty value
     if (!createColorsAction || !internalValue) {
-      if (!internalValue && onColorIdChange) {
-        // Clear resource ID if value is empty
-        onColorIdChange(null);
-      }
       return;
+    }
+
+    // Skip if this is a pre-defined color with an existing ID
+    // (handleChange already set the ID immediately)
+    if (colors) {
+      const normalizedValue = internalValue.toLowerCase().startsWith("#")
+        ? internalValue.toLowerCase()
+        : `#${internalValue.toLowerCase()}`;
+      const existingColor = colors.find((c) => c.hex_code?.toLowerCase() === normalizedValue);
+      if (existingColor?.id) {
+        lastSavedValueRef.current = internalValue;
+        return;
+      }
     }
 
     // Clear existing timer
@@ -302,7 +324,7 @@ export function Colors({
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Set new timer
+    // Set new timer - only for custom colors that need to be created
     debounceTimerRef.current = setTimeout(() => {
       flushRef.current?.();
     }, 1000);
@@ -312,11 +334,30 @@ export function Colors({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createColorsAction, onColorIdChange, isAutosaveEnabled]);
+  }, [internalValue, createColorsAction, isAutosaveEnabled, colors]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
-  }, []);
+
+    // Look up the color's existing ID from the colors array and update formState immediately
+    // Pre-defined colors have IDs, so we just need to find the matching one
+    if (newValue && colors) {
+      const normalizedValue = newValue.toLowerCase().startsWith("#")
+        ? newValue.toLowerCase()
+        : `#${newValue.toLowerCase()}`;
+      const selectedColor = colors.find((c) => c.hex_code?.toLowerCase() === normalizedValue);
+      if (selectedColor?.id && onColorIdChange) {
+        onColorIdChange(selectedColor.id);
+        lastSavedValueRef.current = newValue; // Mark as saved so flush knows no creation needed
+        return;
+      }
+    }
+
+    // If no value, clear the selection
+    if (!newValue && onColorIdChange) {
+      onColorIdChange(null);
+    }
+  }, [colors, onColorIdChange]);
 
   // Map suggestion UUIDs to hex codes
   const suggestedHexCodes = useMemo(() => {

@@ -112,14 +112,6 @@ export function Flags({
   const isInitialMountRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Use resourceId for validation/debugging
-  useEffect(() => {
-    if (resourceId && !resource?.id) {
-      // Handle mismatch case - resourceId exists but resource doesn't match
-      // This can happen during transitions
-    }
-  }, [resourceId, resource]);
-
   // Update internal value when flag_id changes
   React.useEffect(() => {
     const newValue = resourceId !== null && resourceId !== undefined;

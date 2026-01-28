@@ -220,9 +220,13 @@ export function ParameterFields({
 
   // Update flush function when dependencies change (for manual save mode)
   flushRef.current = async (): Promise<{ parameter_field_ids: string[] } | void> => {
-    // Skip if no pending selections or no action or missing required params
-    if (pendingSelections.size === 0) return;
+    // Skip if no action or missing required params
     if (!createParameterFieldsAction || !group_id || !agent_id) return;
+
+    // If no pending selections, return current IDs
+    if (pendingSelections.size === 0) {
+      return { parameter_field_ids: Array.from(resourceIds.values()) };
+    }
 
     const promises: Promise<string | null>[] = [];
     pendingSelections.forEach((key) => {
@@ -266,9 +270,11 @@ export function ParameterFields({
     const results = await Promise.all(promises);
     setPendingSelections(new Set());
 
-    // Return all created IDs (filter out nulls)
-    const createdIds = results.filter((id): id is string => id !== null);
-    return { parameter_field_ids: createdIds };
+    // Return all IDs: existing resourceIds + newly created IDs
+    const newlyCreatedIds = results.filter((id): id is string => id !== null);
+    const existingIds = Array.from(resourceIds.values());
+    const allIds = [...new Set([...existingIds, ...newlyCreatedIds])];
+    return { parameter_field_ids: allIds };
   };
 
   // Register flush callback with parent

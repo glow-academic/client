@@ -155,7 +155,7 @@ BEGIN
         DELETE FROM persona_icons_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_instructions_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_departments_junction WHERE persona_id = v_persona_id;
-        DELETE FROM persona_fields_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_parameter_fields_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_examples_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_parameters_junction WHERE persona_id = v_persona_id;
         -- Update existing active flag if it exists
@@ -280,7 +280,7 @@ BEGIN
     ),
     -- Link parameter fields (old ones already deleted above if update)
     link_parameter_fields AS (
-        INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at)
+        INSERT INTO persona_parameter_fields_junction (persona_id, parameter_field_id, active, created_at)
         SELECT
             x.persona_id,
             field_id,
@@ -289,7 +289,7 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.parameter_field_ids) as field_id
         WHERE COALESCE(array_length(x.parameter_field_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT persona_fields_pkey DO UPDATE SET
+        ON CONFLICT (persona_id, parameter_field_id) DO UPDATE SET
             active = true
     ),
     -- Examples with index (old ones already deleted above if update)
