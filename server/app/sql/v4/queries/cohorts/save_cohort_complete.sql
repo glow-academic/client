@@ -1,14 +1,14 @@
--- Unified save cohort function - draft-first for create/update
--- Converted to function
+-- Unified save cohort function - handles both create (input_cohort_id = NULL) and update (input_cohort_id provided)
+-- Accepts form fields directly (no draft_id dependency)
+
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_cohort_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -16,10 +16,21 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 2) Recreate function with direct form data parameters (no draft_id)
 CREATE OR REPLACE FUNCTION api_save_cohort_v4(
-    draft_id uuid,
     profile_id uuid,
-    input_cohort_id uuid DEFAULT NULL
+    group_id uuid,
+    input_cohort_id uuid DEFAULT NULL,
+    -- Required form data
+    name_id uuid DEFAULT NULL,
+    -- Optional single-select form data
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select form data
+    department_ids uuid[] DEFAULT NULL,
+    simulation_ids uuid[] DEFAULT NULL,
+    -- Special: simulation position values for ordering
+    simulation_position_values int[] DEFAULT NULL
 )
 RETURNS TABLE (
     cohort_id uuid,
@@ -33,8 +44,6 @@ DECLARE
     v_cohort_id uuid;
     v_default_call_id uuid;
     v_group_id uuid;
-    v_draft_profile_id uuid;
-    v_draft_id uuid;
     v_profile_id uuid;
     v_input_cohort_id uuid;
     v_name_id uuid;
@@ -42,61 +51,25 @@ DECLARE
     v_active_flag_id uuid;
     v_department_ids uuid[];
     v_simulation_ids uuid[];
+    v_simulation_position_values int[];
     is_create boolean;
 BEGIN
-    v_draft_id := draft_id;
+    -- Assign parameters to local variables
     v_profile_id := profile_id;
+    v_group_id := group_id;
     v_input_cohort_id := input_cohort_id;
+    v_name_id := name_id;
+    v_description_id := description_id;
+    v_active_flag_id := active_flag_id;
+    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
+    v_simulation_ids := COALESCE(simulation_ids, ARRAY[]::uuid[]);
+    v_simulation_position_values := COALESCE(simulation_position_values, ARRAY[]::int[]);
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'Draft ID is required';
-    END IF;
-
-    SELECT pdj.profiles_id, d.group_id
-    INTO v_draft_profile_id, v_group_id
-    FROM view_drafts_entry d
-    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
-    WHERE d.id = v_draft_id;
-
-    IF v_draft_profile_id IS NULL THEN
-        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
-    END IF;
-
-    IF v_draft_profile_id <> v_profile_id THEN
-        RAISE EXCEPTION 'Draft does not belong to profile';
-    END IF;
-
+    -- Validate required fields
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+        RAISE EXCEPTION 'group_id is required';
     END IF;
 
-    -- Load draft resources (single-select + arrays)
-    SELECT dn.names_id INTO v_name_id
-    FROM names_drafts_connection dn
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    WHERE df.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
-    INTO v_department_ids
-    FROM departments_drafts_connection ddp
-    WHERE ddp.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), ARRAY[]::uuid[])
-    INTO v_simulation_ids
-    FROM simulations_drafts_connection ds
-    WHERE ds.draft_id = v_draft_id;
-
-    -- Validate required resource IDs exist
     IF v_name_id IS NULL THEN
         RAISE EXCEPTION 'Name resource is required';
     END IF;
@@ -175,10 +148,10 @@ BEGIN
             v_name_id AS name_id,
             v_description_id AS description_id,
             v_active_flag_id AS active_flag_id,
-            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
-            COALESCE(v_simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
+            v_department_ids AS department_ids,
+            v_simulation_ids AS simulation_ids,
+            v_simulation_position_values AS simulation_position_values,
             v_profile_id AS profile_id,
-            v_draft_id AS draft_id,
             v_default_call_id AS default_call_id
     ),
     department_resource_ids AS (
@@ -205,8 +178,8 @@ BEGIN
             p.active_flag_id,
             COALESCE(dra.department_ids, ARRAY[]::uuid[]) AS department_ids,
             p.simulation_ids,
+            p.simulation_position_values,
             p.profile_id,
-            p.draft_id,
             p.default_call_id
         FROM params p
         CROSS JOIN department_resource_ids_agg dra
@@ -228,8 +201,8 @@ BEGIN
         WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params_with_departments p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN (SELECT p.cohort_id FROM params_with_departments p) IS NULL THEN
                     -- Validate create permissions
                     (SELECT validate_department_create_permissions(
@@ -248,7 +221,7 @@ BEGIN
             END as validation_passed
     ),
     actor_profile AS (
-        SELECT 
+        SELECT
             x.profile_id,
             up.actor_name
         FROM params_with_departments x
@@ -257,7 +230,7 @@ BEGIN
     -- Link cohort to name
     link_cohort_name AS (
         INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.cohort_id,
             x.name_id,
             NOW()
@@ -268,7 +241,7 @@ BEGIN
     -- Link cohort to description
     link_cohort_description AS (
         INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at)
-        SELECT 
+        SELECT
             x.cohort_id,
             x.description_id,
             NOW()
@@ -285,14 +258,14 @@ BEGIN
         FROM params_with_departments x
         CROSS JOIN flags_resource f
         WHERE f.name = 'cohort_active'
-        ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET 
+        ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET
             flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags_junction.flag_id),
             value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
         INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
-        SELECT 
+        SELECT
             x.cohort_id,
             dri.department_resource_id,
             true,
@@ -303,32 +276,21 @@ BEGIN
         ON CONFLICT ON CONSTRAINT cohort_departments_pkey DO UPDATE SET
             active = true
     ),
-    simulation_positions_draft_data AS (
-        SELECT
-            spr.simulation_id,
-            dsp.value
-        FROM params_with_departments x
-        JOIN simulation_positions_drafts_connection dsp ON dsp.draft_id = x.draft_id
-        JOIN simulation_positions_resource spr ON spr.id = dsp.simulation_positions_id
-    ),
-    -- Simulations with implicit ordering (positions stored separately)
+    -- Simulations with positions from form data
     simulations_with_order AS (
-        SELECT 
-            dsp.simulation_id as sim_id,
-            dsp.value as position
-        FROM simulation_positions_draft_data dsp
-        UNION ALL
-        SELECT 
-            sim_list.sim_id,
-            sim_list.ordinality as position
+        SELECT
+            sim_id,
+            COALESCE(
+                v_simulation_position_values[sim_list.ordinality::int],
+                sim_list.ordinality::int
+            ) as position
         FROM params_with_departments x
         CROSS JOIN UNNEST(x.simulation_ids) WITH ORDINALITY AS sim_list(sim_id, ordinality)
-        WHERE NOT EXISTS (SELECT 1 FROM simulation_positions_draft_data)
-          AND COALESCE(array_length(x.simulation_ids, 1), 0) > 0
+        WHERE COALESCE(array_length(x.simulation_ids, 1), 0) > 0
     ),
     link_simulations AS (
         INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active)
-        SELECT 
+        SELECT
             x.cohort_id,
             swo.sim_id,
             true

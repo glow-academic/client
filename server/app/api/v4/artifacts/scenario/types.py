@@ -946,18 +946,65 @@ class GetScenariosListApiRequest(BaseModel):
 
 
 class SaveScenarioSqlParams(BaseModel):
-    """SQL parameters for save scenario."""
+    """SQL parameters for save scenario - accepts form data directly (no draft_id)."""
 
-    draft_id: UUID
-    profile_id: UUID
-    input_scenario_id: UUID | None = None
+    # Context
+    profile_id: UUID  # Added from header
+    group_id: UUID  # REQUIRED - which group to save to
+    input_scenario_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert to tuple for SQL execution."""
         return (
-            self.draft_id,
             self.profile_id,
+            self.group_id,
             self.input_scenario_id,
+            self.name_id,
+            self.description_id,
+            self.problem_statement_id,
+            self.active_flag_id,
+            self.objectives_enabled_flag_id,
+            self.images_enabled_flag_id,
+            self.video_enabled_flag_id,
+            self.questions_enabled_flag_id,
+            self.problem_statement_enabled_flag_id,
+            self.use_templates_flag_id,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.template_document_ids,
+            self.parameter_ids,
+            self.field_ids,
+            self.image_ids,
+            self.objective_ids,
+            self.video_ids,
+            self.question_ids,
         )
 
 

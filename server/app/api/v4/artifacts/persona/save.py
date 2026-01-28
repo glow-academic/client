@@ -14,6 +14,8 @@ from app.api.v4.artifacts.persona.permissions import (
 from app.api.v4.artifacts.persona.types import (
     SavePersonaApiRequest,
     SavePersonaApiResponse,
+    SavePersonaSqlParams,
+    SavePersonaSqlRow,
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -21,8 +23,6 @@ from app.main import get_db
 from app.sql.types import (
     CheckPersonaSaveAccessSqlParams,
     CheckPersonaSaveAccessSqlRow,
-    SavePersonaSqlParams,
-    SavePersonaSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

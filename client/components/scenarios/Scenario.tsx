@@ -2071,9 +2071,9 @@ function ScenarioComponent({
         throw new Error("Save action not available");
       }
 
-      if (!draftId) {
-        toast.error("Draft not found. Please try again.");
-        throw new Error("Draft ID is required for save");
+      if (!scenarioData?.group_id) {
+        toast.error("Group not found. Please try again.");
+        throw new Error("Group ID is required for save");
       }
 
       if (!formState.name_id) {
@@ -2084,8 +2084,65 @@ function ScenarioComponent({
       try {
         await saveScenarioAction({
           body: {
-            draft_id: draftId,
+            // Context
+            group_id: scenarioData.group_id,
             input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
+
+            // Required single-select
+            name_id: formState.name_id,
+
+            // Optional single-select
+            description_id: formState.description_id ?? undefined,
+            problem_statement_id: formState.problem_statement_id ?? undefined,
+            active_flag_id: formState.active_flag_id ?? undefined,
+            objectives_enabled_flag_id:
+              formState.objectives_enabled_flag_id ?? undefined,
+            images_enabled_flag_id:
+              formState.images_enabled_flag_id ?? undefined,
+            video_enabled_flag_id:
+              formState.video_enabled_flag_id ?? undefined,
+            questions_enabled_flag_id:
+              formState.questions_enabled_flag_id ?? undefined,
+            problem_statement_enabled_flag_id:
+              formState.problem_statement_enabled_flag_id ?? undefined,
+            use_templates_flag_id:
+              formState.use_templates_flag_id ?? undefined,
+
+            // Optional multi-select
+            department_ids:
+              formState.department_ids.length > 0
+                ? formState.department_ids
+                : undefined,
+            persona_ids:
+              formState.persona_ids.length > 0
+                ? formState.persona_ids
+                : undefined,
+            document_ids:
+              formState.document_ids.length > 0
+                ? formState.document_ids
+                : undefined,
+            template_document_ids:
+              formState.template_document_ids.length > 0
+                ? formState.template_document_ids
+                : undefined,
+            parameter_ids:
+              formState.parameter_ids.length > 0
+                ? formState.parameter_ids
+                : undefined,
+            field_ids:
+              formState.field_ids.length > 0 ? formState.field_ids : undefined,
+            image_ids:
+              formState.image_ids.length > 0 ? formState.image_ids : undefined,
+            objective_ids:
+              formState.objective_ids.length > 0
+                ? formState.objective_ids
+                : undefined,
+            video_ids:
+              formState.video_ids.length > 0 ? formState.video_ids : undefined,
+            question_ids:
+              formState.question_ids.length > 0
+                ? formState.question_ids
+                : undefined,
           },
         });
 
@@ -2114,9 +2171,9 @@ function ScenarioComponent({
       scenarioData?.images_required,
       scenarioData?.videos_required,
       scenarioData?.questions_required,
+      scenarioData?.group_id,
       profile?.id,
       saveScenarioAction,
-      draftId,
       isEditMode,
       scenarioId,
       router,

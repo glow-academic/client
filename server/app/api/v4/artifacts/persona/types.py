@@ -1,5 +1,6 @@
 """Handcrafted types for persona GET endpoint."""
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -217,10 +218,27 @@ class ListPersonaApiResponse(BaseModel):
 
 
 class SavePersonaApiRequest(BaseModel):
-    """Request model for save persona endpoint."""
+    """Request model for save persona endpoint - accepts form data directly (no draft_id)."""
 
-    draft_id: UUID
-    input_persona_id: UUID | None = None
+    # Context
+    group_id: UUID  # REQUIRED - which group to save to
+    input_persona_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+    color_id: UUID  # REQUIRED
+    icon_id: UUID  # REQUIRED
+    instructions_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
 
 class SavePersonaApiResponse(BaseModel):
@@ -229,6 +247,56 @@ class SavePersonaApiResponse(BaseModel):
     success: bool
     persona_id: UUID
     message: str
+
+
+class SavePersonaSqlParams(BaseModel):
+    """SQL parameters for save persona - accepts form data directly (no draft_id)."""
+
+    # Context
+    profile_id: UUID  # Added from header
+    group_id: UUID  # REQUIRED - which group to save to
+    input_persona_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+    color_id: UUID  # REQUIRED
+    icon_id: UUID  # REQUIRED
+    instructions_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple:
+        """Convert to tuple for SQL execution."""
+        return (
+            self.profile_id,
+            self.group_id,
+            self.input_persona_id,
+            self.name_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.field_ids,
+            self.example_ids,
+            self.parameter_ids,
+        )
+
+
+class SavePersonaSqlRow(BaseModel):
+    """SQL row for save persona."""
+
+    persona_id: UUID | None = None
+    actor_name: str | None = None
 
 
 # ========== Delete Endpoint Types ==========

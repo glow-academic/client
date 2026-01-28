@@ -1278,6 +1278,11 @@ function PersonaComponent({
         throw new Error("Save action not available");
       }
 
+      if (!personaData?.group_id) {
+        toast.error("Group not found. Please try again.");
+        throw new Error("Group ID is required for save");
+      }
+
       // Ensure required fields are present (TypeScript guard)
       if (
         !formState.name_id ||
@@ -1289,16 +1294,38 @@ function PersonaComponent({
         throw new Error("Required fields are missing");
       }
 
-      if (!draftId) {
-        toast.error("Draft not found. Please try again.");
-        throw new Error("Draft ID is required for save");
-      }
-
       try {
         await savePersonaAction({
           body: {
-            draft_id: draftId,
+            // Context
+            group_id: personaData.group_id,
             input_persona_id: isEditMode && personaId ? personaId : null,
+
+            // Required single-select
+            name_id: formState.name_id,
+            color_id: formState.color_id,
+            icon_id: formState.icon_id,
+            instructions_id: formState.instructions_id,
+
+            // Optional single-select
+            description_id: formState.description_id ?? undefined,
+            active_flag_id: formState.active_flag_id ?? undefined,
+
+            // Optional multi-select
+            department_ids:
+              formState.department_ids.length > 0
+                ? formState.department_ids
+                : undefined,
+            field_ids:
+              formState.field_ids.length > 0 ? formState.field_ids : undefined,
+            example_ids:
+              formState.example_ids.length > 0
+                ? formState.example_ids
+                : undefined,
+            parameter_ids:
+              formState.parameter_ids.length > 0
+                ? formState.parameter_ids
+                : undefined,
           },
         });
         toast.success(
@@ -1318,7 +1345,7 @@ function PersonaComponent({
       personaId,
       profile?.id,
       savePersonaAction,
-      draftId,
+      personaData?.group_id,
       router,
       personaData?.name_required,
       personaData?.color_required,

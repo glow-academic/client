@@ -1,14 +1,14 @@
--- Unified save persona function - handles both create (persona_id = NULL) and update (persona_id provided)
--- Converted to function
+-- Unified save persona function - handles both create (input_persona_id = NULL) and update (input_persona_id provided)
+-- Accepts form fields directly (no draft_id dependency)
+
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_persona_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -16,10 +16,24 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 2) Recreate function with direct form data parameters (no draft_id)
 CREATE OR REPLACE FUNCTION api_save_persona_v4(
-    draft_id uuid,
     profile_id uuid,
-    input_persona_id uuid DEFAULT NULL
+    group_id uuid,
+    input_persona_id uuid DEFAULT NULL,
+    -- Required form data
+    name_id uuid DEFAULT NULL,
+    color_id uuid DEFAULT NULL,
+    icon_id uuid DEFAULT NULL,
+    instructions_id uuid DEFAULT NULL,
+    -- Optional single-select form data
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select form data
+    department_ids uuid[] DEFAULT NULL,
+    field_ids uuid[] DEFAULT NULL,
+    example_ids uuid[] DEFAULT NULL,
+    parameter_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     persona_id uuid,
@@ -33,8 +47,6 @@ DECLARE
     v_persona_id uuid;
     v_actor_name text;
     v_group_id uuid;
-    v_draft_profile_id uuid;
-    v_draft_id uuid;
     v_profile_id uuid;
     v_input_persona_id uuid;
     is_create boolean;
@@ -47,82 +59,47 @@ DECLARE
     v_department_ids uuid[];
     v_example_ids uuid[];
     v_field_ids uuid[];
+    v_parameter_ids uuid[];
 BEGIN
-    v_draft_id := draft_id;
+    -- Assign parameters to local variables
     v_profile_id := profile_id;
+    v_group_id := group_id;
     v_input_persona_id := input_persona_id;
+    v_name_id := name_id;
+    v_color_id := color_id;
+    v_icon_id := icon_id;
+    v_instructions_id := instructions_id;
+    v_description_id := description_id;
+    v_active_flag_id := active_flag_id;
+    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
+    v_field_ids := COALESCE(field_ids, ARRAY[]::uuid[]);
+    v_example_ids := COALESCE(example_ids, ARRAY[]::uuid[]);
+    v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'Draft ID is required';
-    END IF;
-
-    SELECT pdj.profiles_id, d.group_id
-    INTO v_draft_profile_id, v_group_id
-    FROM view_drafts_entry d
-    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
-    WHERE d.id = v_draft_id;
-
-    IF v_draft_profile_id IS NULL THEN
-        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
-    END IF;
-
-    IF v_draft_profile_id <> v_profile_id THEN
-        RAISE EXCEPTION 'Draft does not belong to profile';
-    END IF;
-
+    -- Validate required fields
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+        RAISE EXCEPTION 'group_id is required';
     END IF;
 
-    -- Load draft resources
-    SELECT dn.names_id INTO v_name_id
-    FROM names_drafts_connection dn
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
 
-    SELECT dd.descriptions_id INTO v_description_id
-    FROM descriptions_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-    LIMIT 1;
+    IF v_color_id IS NULL THEN
+        RAISE EXCEPTION 'Color resource is required';
+    END IF;
 
-    SELECT dc.colors_id INTO v_color_id
-    FROM colors_drafts_connection dc
-    WHERE dc.draft_id = v_draft_id
-    LIMIT 1;
+    IF v_icon_id IS NULL THEN
+        RAISE EXCEPTION 'Icon resource is required';
+    END IF;
 
-    SELECT di.icons_id INTO v_icon_id
-    FROM icons_drafts_connection di
-    WHERE di.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT din.instructions_id INTO v_instructions_id
-    FROM instructions_drafts_connection din
-    WHERE din.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT df.flags_id INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    WHERE df.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
-    INTO v_department_ids
-    FROM departments_drafts_connection ddp
-    WHERE ddp.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), ARRAY[]::uuid[])
-    INTO v_example_ids
-    FROM examples_drafts_connection de
-    WHERE de.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dfld.fields_id ORDER BY dfld.created_at), ARRAY[]::uuid[])
-    INTO v_field_ids
-    FROM fields_drafts_connection dfld
-    WHERE dfld.draft_id = v_draft_id;
+    IF v_instructions_id IS NULL THEN
+        RAISE EXCEPTION 'Instructions resource is required';
+    END IF;
 
     -- Determine if create or update
     is_create := (v_input_persona_id IS NULL);
-    
+
     -- Create or UPDATE persona_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
@@ -144,48 +121,32 @@ BEGIN
         VALUES (v_persona_id, v_group_id)
         ON CONFLICT DO NOTHING;
     END IF;
-    
-    -- Validate required resource IDs exist (same for both)
-    IF v_name_id IS NULL THEN
-        RAISE EXCEPTION 'Name resource is required';
-    END IF;
 
+    -- Validate resource IDs exist
     IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
-    
+
     IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', v_description_id;
-    END IF;
-    
-    IF v_color_id IS NULL THEN
-        RAISE EXCEPTION 'Color resource is required';
     END IF;
 
     IF v_color_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM colors_resource WHERE id = v_color_id) THEN
         RAISE EXCEPTION 'Color resource not found: %', v_color_id;
     END IF;
-    
-    IF v_icon_id IS NULL THEN
-        RAISE EXCEPTION 'Icon resource is required';
-    END IF;
 
     IF v_icon_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM icons_resource WHERE id = v_icon_id) THEN
         RAISE EXCEPTION 'Icon resource not found: %', v_icon_id;
-    END IF;
-    
-    IF v_instructions_id IS NULL THEN
-        RAISE EXCEPTION 'Instructions resource is required';
     END IF;
 
     IF v_instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions_resource WHERE id = v_instructions_id) THEN
         RAISE EXCEPTION 'Instructions resource not found: %', v_instructions_id;
     END IF;
-    
+
     IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
-    
+
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
         DELETE FROM persona_names_junction WHERE persona_id = v_persona_id;
@@ -196,14 +157,14 @@ BEGIN
         DELETE FROM persona_departments_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_fields_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_examples_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_parameters_junction WHERE persona_id = v_persona_id;
         -- Update existing active flag if it exists
         UPDATE persona_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, persona_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
-        WHERE persona_id = v_persona_id
-          ;
+        WHERE persona_id = v_persona_id;
     END IF;
-    
+
     -- Continue with persona save using SQL (persona already created/updated above)
     RETURN QUERY
     WITH params AS (
@@ -215,10 +176,11 @@ BEGIN
             v_icon_id AS icon_id,
             v_instructions_id AS instructions_id,
             v_active_flag_id AS active_flag_id,
-            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
+            v_department_ids AS department_ids,
             v_profile_id AS profile_id,
-            COALESCE(v_example_ids, ARRAY[]::uuid[]) AS example_ids,
-            COALESCE(v_field_ids, ARRAY[]::uuid[]) AS field_ids
+            v_example_ids AS example_ids,
+            v_field_ids AS field_ids,
+            v_parameter_ids AS parameter_ids
     ),
     user_profile AS (
         SELECT role, actor_name
@@ -228,7 +190,7 @@ BEGIN
     -- Permission validation is now handled in Python (permissions.py)
     -- See compute_can_create and compute_can_save functions
     actor_profile AS (
-        SELECT 
+        SELECT
             x.profile_id,
             up.actor_name
         FROM params x
@@ -237,7 +199,7 @@ BEGIN
     -- Link persona to name
     link_persona_name AS (
         INSERT INTO persona_names_junction (persona_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             x.name_id,
             NOW()
@@ -248,7 +210,7 @@ BEGIN
     -- Link persona to description
     link_persona_description AS (
         INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             x.description_id,
             NOW()
@@ -259,7 +221,7 @@ BEGIN
     -- Link persona to color
     link_persona_color AS (
         INSERT INTO persona_colors_junction (persona_id, color_id, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             x.color_id,
             NOW()
@@ -270,7 +232,7 @@ BEGIN
     -- Link persona to icon
     link_persona_icon AS (
         INSERT INTO persona_icons_junction (persona_id, icon_id, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             x.icon_id,
             NOW()
@@ -281,7 +243,7 @@ BEGIN
     -- Link persona to instructions
     link_persona_instruction AS (
         INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             x.instructions_id,
             NOW()
@@ -305,7 +267,7 @@ BEGIN
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
         INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             dept_id,
             true,
@@ -319,7 +281,7 @@ BEGIN
     -- Link fields (old ones already deleted above if update)
     link_fields AS (
         INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at)
-        SELECT 
+        SELECT
             x.persona_id,
             field_id,
             true,
@@ -332,7 +294,7 @@ BEGIN
     ),
     -- Examples with index (old ones already deleted above if update)
     examples_with_index AS (
-        SELECT 
+        SELECT
             ex_id,
             ROW_NUMBER() OVER () - 1 as idx
         FROM params x
@@ -353,6 +315,20 @@ BEGIN
             idx = EXCLUDED.idx,
             active = true,
             created_at = EXCLUDED.created_at
+    ),
+    -- Link parameters (old ones already deleted above if update)
+    link_parameters AS (
+        INSERT INTO persona_parameters_junction (persona_id, parameter_id, active, created_at)
+        SELECT
+            x.persona_id,
+            param_id,
+            true,
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.parameter_ids) as param_id
+        WHERE COALESCE(array_length(x.parameter_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT persona_parameters_pkey DO UPDATE SET
+            active = true
     ),
     -- Sync linked resources with name/description
     sync_artifact_resources AS (

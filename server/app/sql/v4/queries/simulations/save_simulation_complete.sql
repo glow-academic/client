@@ -1,14 +1,14 @@
 -- Unified save simulation function - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided)
--- Converted to function following personas/save_persona_complete.sql pattern
+-- Accepts form fields directly (no draft_id dependency)
+
 -- 1) Drop function first (breaks dependency on types)
--- Drop all versions of the function using DO block to handle signature variations
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_simulation_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -16,11 +16,23 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function with direct form data parameters (no draft_id)
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
-    draft_id uuid,
     profile_id uuid,
-    input_simulation_id uuid DEFAULT NULL
+    group_id uuid,
+    input_simulation_id uuid DEFAULT NULL,
+    -- Required form data
+    name_id uuid DEFAULT NULL,
+    -- Optional single-select form data
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select form data
+    department_ids uuid[] DEFAULT NULL,
+    scenario_ids uuid[] DEFAULT NULL,
+    scenario_flag_ids uuid[] DEFAULT NULL,
+    scenario_position_ids uuid[] DEFAULT NULL,
+    scenario_rubric_ids uuid[] DEFAULT NULL,
+    scenario_time_limit_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_id uuid,
@@ -34,15 +46,12 @@ DECLARE
     v_simulation_id uuid;
     v_actor_name text;
     v_group_id uuid;
-    v_draft_profile_id uuid;
-    v_draft_id uuid;
     v_profile_id uuid;
     v_input_simulation_id uuid;
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
-    v_practice_flag_id uuid;
     v_department_ids uuid[];
     v_scenario_ids uuid[];
     v_scenario_flag_ids uuid[];
@@ -50,89 +59,28 @@ DECLARE
     v_scenario_rubric_ids uuid[];
     v_scenario_time_limit_ids uuid[];
 BEGIN
-    v_draft_id := draft_id;
+    -- Assign parameters to local variables
     v_profile_id := profile_id;
+    v_group_id := group_id;
     v_input_simulation_id := input_simulation_id;
+    v_name_id := name_id;
+    v_description_id := description_id;
+    v_active_flag_id := active_flag_id;
+    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
+    v_scenario_ids := COALESCE(scenario_ids, ARRAY[]::uuid[]);
+    v_scenario_flag_ids := COALESCE(scenario_flag_ids, ARRAY[]::uuid[]);
+    v_scenario_position_ids := COALESCE(scenario_position_ids, ARRAY[]::uuid[]);
+    v_scenario_rubric_ids := COALESCE(scenario_rubric_ids, ARRAY[]::uuid[]);
+    v_scenario_time_limit_ids := COALESCE(scenario_time_limit_ids, ARRAY[]::uuid[]);
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'draft_id is required';
-    END IF;
-
-    SELECT pdj.profiles_id, d.group_id
-    INTO v_draft_profile_id, v_group_id
-    FROM view_drafts_entry d
-    LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
-    WHERE d.id = v_draft_id;
-
-    IF v_draft_profile_id IS NULL THEN
-        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
-    END IF;
-
-    IF v_draft_profile_id <> v_profile_id THEN
-        RAISE EXCEPTION 'Draft does not belong to profile';
-    END IF;
-
+    -- Validate required fields
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+        RAISE EXCEPTION 'group_id is required';
     END IF;
 
-    SELECT dn.names_id
-    INTO v_name_id
-    FROM names_drafts_connection dn
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT dd.descriptions_id
-    INTO v_description_id
-    FROM descriptions_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id
-      AND f.name = 'active'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_practice_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id
-      AND f.name = 'practice'
-    LIMIT 1;
-
-    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
-    INTO v_department_ids
-    FROM departments_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[])
-    INTO v_scenario_ids
-    FROM scenarios_drafts_connection ds
-    WHERE ds.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dsf.scenario_flags_id ORDER BY dsf.created_at), ARRAY[]::uuid[])
-    INTO v_scenario_flag_ids
-    FROM scenario_flags_drafts_connection dsf
-    WHERE dsf.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dsp.scenario_positions_id ORDER BY dsp.created_at), ARRAY[]::uuid[])
-    INTO v_scenario_position_ids
-    FROM scenario_positions_drafts_connection dsp
-    WHERE dsp.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dsr.scenario_rubrics_id ORDER BY dsr.created_at), ARRAY[]::uuid[])
-    INTO v_scenario_rubric_ids
-    FROM scenario_rubrics_drafts_connection dsr
-    WHERE dsr.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dstl.scenario_time_limits_id ORDER BY dstl.created_at), ARRAY[]::uuid[])
-    INTO v_scenario_time_limit_ids
-    FROM scenario_time_limits_drafts_connection dstl
-    WHERE dstl.draft_id = v_draft_id;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'name_id is required';
+    END IF;
 
     -- Determine if create or update
     is_create := (v_input_simulation_id IS NULL);
@@ -175,10 +123,6 @@ BEGIN
 
     IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
-    END IF;
-
-    IF v_practice_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_practice_flag_id) THEN
-        RAISE EXCEPTION 'Practice flag resource not found: %', v_practice_flag_id;
     END IF;
 
     IF array_length(v_scenario_ids, 1) > 0 THEN
@@ -247,13 +191,12 @@ BEGIN
             v_name_id AS name_id,
             v_description_id AS description_id,
             v_active_flag_id AS active_flag_id,
-            v_practice_flag_id AS practice_flag_id,
-            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
-            COALESCE(v_scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
-            COALESCE(v_scenario_flag_ids, ARRAY[]::uuid[]) AS scenario_flag_ids,
-            COALESCE(v_scenario_position_ids, ARRAY[]::uuid[]) AS scenario_position_ids,
-            COALESCE(v_scenario_rubric_ids, ARRAY[]::uuid[]) AS scenario_rubric_ids,
-            COALESCE(v_scenario_time_limit_ids, ARRAY[]::uuid[]) AS scenario_time_limit_ids,
+            v_department_ids AS department_ids,
+            v_scenario_ids AS scenario_ids,
+            v_scenario_flag_ids AS scenario_flag_ids,
+            v_scenario_position_ids AS scenario_position_ids,
+            v_scenario_rubric_ids AS scenario_rubric_ids,
+            v_scenario_time_limit_ids AS scenario_time_limit_ids,
             v_profile_id AS profile_id
     ),
     user_profile AS (
@@ -273,8 +216,8 @@ BEGIN
         WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN (SELECT p.simulation_id FROM params p) IS NULL THEN
                     -- Validate create permissions
                     (SELECT validate_department_create_permissions(
@@ -298,7 +241,7 @@ BEGIN
         WHERE validation_passed = true
     ),
     actor_profile AS (
-        SELECT 
+        SELECT
             x.profile_id,
             up.actor_name
         FROM params x
@@ -307,7 +250,7 @@ BEGIN
     -- Link simulation name (resource ID already validated)
     link_simulation_name AS (
         INSERT INTO simulation_names_junction (simulation_id, name_id, created_at)
-        SELECT 
+        SELECT
             x.simulation_id,
             x.name_id,
             NOW()
@@ -318,7 +261,7 @@ BEGIN
     -- Link simulation description (resource ID already validated)
     link_simulation_description AS (
         INSERT INTO simulation_descriptions_junction (simulation_id, description_id, created_at)
-        SELECT 
+        SELECT
             x.simulation_id,
             x.description_id,
             NOW()
@@ -329,7 +272,7 @@ BEGIN
     -- Link simulation flags (resource ID already validated)
     link_simulation_active_flag AS (
         INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp)
-        SELECT 
+        SELECT
             x.simulation_id,
             x.active_flag_id,
             true,
@@ -340,22 +283,9 @@ BEGIN
         WHERE x.active_flag_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value
     ),
-    link_simulation_practice_flag AS (
-        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp)
-        SELECT 
-            x.simulation_id,
-            x.practice_flag_id,
-            true,
-            NOW(),
-            false,
-            false
-        FROM params x
-        WHERE x.practice_flag_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value
-    ),
     link_departments AS (
         INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at)
-        SELECT 
+        SELECT
             x.simulation_id,
             dept_id,
             true,
@@ -368,7 +298,7 @@ BEGIN
     ),
     link_scenarios AS (
         INSERT INTO simulation_scenarios_junction (simulation_id, scenario_id, active, created_at)
-        SELECT 
+        SELECT
             x.simulation_id,
             scenario_id,
             true,
@@ -389,7 +319,7 @@ BEGIN
             mcp,
             active
         )
-        SELECT 
+        SELECT
             x.simulation_id,
             scenario_flag_id,
             true,
@@ -427,7 +357,7 @@ BEGIN
     ),
     link_scenario_rubrics AS (
         INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, created_at, generated, mcp, active)
-        SELECT 
+        SELECT
             x.simulation_id,
             scenario_rubric_id,
             NOW(),

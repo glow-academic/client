@@ -1026,9 +1026,9 @@ function CohortComponent({
         throw new Error("Save action not available");
       }
 
-      if (!draftId) {
-        toast.error("Draft not ready. Please wait a moment and try again.");
-        throw new Error("Draft ID is required");
+      if (!cohortData?.group_id) {
+        toast.error("Group not found. Please try again.");
+        throw new Error("Group ID is required for save");
       }
 
       // Ensure required fields are present (TypeScript guard)
@@ -1040,8 +1040,33 @@ function CohortComponent({
       try {
         await saveCohortAction({
           body: {
+            // Context
+            group_id: cohortData.group_id,
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
-            draft_id: draftId,
+
+            // Required single-select
+            name_id: formState.name_id,
+
+            // Optional single-select
+            description_id: formState.description_id ?? undefined,
+            active_flag_id: formState.active_flag_id ?? undefined,
+
+            // Optional multi-select
+            department_ids:
+              formState.department_ids.length > 0
+                ? formState.department_ids
+                : undefined,
+            simulation_ids:
+              formState.simulation_ids.length > 0
+                ? formState.simulation_ids
+                : undefined,
+
+            // Special: simulation position values
+            simulation_position_values:
+              formState.simulation_position_values &&
+              formState.simulation_position_values.length > 0
+                ? formState.simulation_position_values
+                : undefined,
           },
         });
         toast.success(
@@ -1059,7 +1084,7 @@ function CohortComponent({
       formState,
       isEditMode,
       cohortId,
-      draftId,
+      cohortData?.group_id,
       profile?.id,
       saveCohortAction,
       router,

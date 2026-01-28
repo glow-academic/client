@@ -5169,15 +5169,27 @@ class PatchCohortDraftApiResponse(BaseModel):
 
 class SaveCohortSqlParams(BaseModel):
 
-    draft_id: UUID
     profile_id: UUID
+    group_id: UUID
     input_cohort_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_values: list[int] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.draft_id,
             self.profile_id,
+            self.group_id,
             self.input_cohort_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.simulation_ids,
+            self.simulation_position_values,
         )
 
 class SaveCohortSqlRow(BaseModel):
@@ -5187,8 +5199,14 @@ class SaveCohortSqlRow(BaseModel):
 
 class SaveCohortApiRequest(BaseModel):
 
-    draft_id: UUID
+    group_id: UUID
     input_cohort_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_values: list[int] | None = None
 
 class SaveCohortApiResponse(BaseModel):
 
@@ -13028,15 +13046,35 @@ class PatchPersonaDraftApiResponse(BaseModel):
 
 class SavePersonaSqlParams(BaseModel):
 
-    draft_id: UUID
     profile_id: UUID
+    group_id: UUID
     input_persona_id: UUID | None = None
+    name_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.draft_id,
             self.profile_id,
+            self.group_id,
             self.input_persona_id,
+            self.name_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.field_ids,
+            self.example_ids,
+            self.parameter_ids,
         )
 
 class SavePersonaSqlRow(BaseModel):
@@ -13046,8 +13084,18 @@ class SavePersonaSqlRow(BaseModel):
 
 class SavePersonaApiRequest(BaseModel):
 
-    draft_id: UUID
+    group_id: UUID
     input_persona_id: UUID | None = None
+    name_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
 class SavePersonaApiResponse(BaseModel):
 
@@ -16451,7 +16499,16 @@ class DescriptionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_document
+# Generated from: get_document_resource
+
+class GetDocumentResourceSqlParams(BaseModel):
+
+    document_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+        )
 
 class QGetDocumentResourceV4Item(BaseModel):
 
@@ -16461,6 +16518,19 @@ class QGetDocumentResourceV4Item(BaseModel):
     file_path: str | None
     mime_type: str | None
     generated: bool | None
+
+class GetDocumentResourceSqlRow(BaseModel):
+
+    item: QGetDocumentResourceV4Item | None = None
+
+class GetDocumentResourceApiRequest(BaseModel):
+
+    document_id: UUID
+
+class GetDocumentResourceApiResponse(BaseModel):
+
+    item: QGetDocumentResourceV4Item | None = None
+
 
 
 # Generated from: emails
@@ -17470,7 +17540,16 @@ class SearchParametersApiResponse(BaseModel):
 
 
 
-# Generated from: get_persona
+# Generated from: get_persona_resource
+
+class GetPersonaResourceSqlParams(BaseModel):
+
+    id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.id,
+        )
 
 class QGetPersonaResourceV4Item(BaseModel):
 
@@ -17481,6 +17560,19 @@ class QGetPersonaResourceV4Item(BaseModel):
     icon: str | None
     image_model: bool | None
     generated: bool | None
+
+class GetPersonaResourceSqlRow(BaseModel):
+
+    item: QGetPersonaResourceV4Item | None = None
+
+class GetPersonaResourceApiRequest(BaseModel):
+
+    id: UUID
+
+class GetPersonaResourceApiResponse(BaseModel):
+
+    item: QGetPersonaResourceV4Item | None = None
+
 
 
 # Generated from: points
@@ -20351,15 +20443,55 @@ class PatchScenarioDraftApiResponse(BaseModel):
 
 class SaveScenarioSqlParams(BaseModel):
 
-    draft_id: UUID
     profile_id: UUID
+    group_id: UUID
     input_scenario_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.draft_id,
             self.profile_id,
+            self.group_id,
             self.input_scenario_id,
+            self.name_id,
+            self.description_id,
+            self.problem_statement_id,
+            self.active_flag_id,
+            self.objectives_enabled_flag_id,
+            self.images_enabled_flag_id,
+            self.video_enabled_flag_id,
+            self.questions_enabled_flag_id,
+            self.problem_statement_enabled_flag_id,
+            self.use_templates_flag_id,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.template_document_ids,
+            self.parameter_ids,
+            self.field_ids,
+            self.image_ids,
+            self.objective_ids,
+            self.video_ids,
+            self.question_ids,
         )
 
 class SaveScenarioSqlRow(BaseModel):
@@ -20369,8 +20501,28 @@ class SaveScenarioSqlRow(BaseModel):
 
 class SaveScenarioApiRequest(BaseModel):
 
-    draft_id: UUID
+    group_id: UUID
     input_scenario_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
 
 class SaveScenarioApiResponse(BaseModel):
 
@@ -22219,15 +22371,33 @@ class PatchSimulationDraftApiResponse(BaseModel):
 
 class SaveSimulationSqlParams(BaseModel):
 
-    draft_id: UUID
     profile_id: UUID
+    group_id: UUID
     input_simulation_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.draft_id,
             self.profile_id,
+            self.group_id,
             self.input_simulation_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.scenario_ids,
+            self.scenario_flag_ids,
+            self.scenario_position_ids,
+            self.scenario_rubric_ids,
+            self.scenario_time_limit_ids,
         )
 
 class SaveSimulationSqlRow(BaseModel):
@@ -22237,8 +22407,17 @@ class SaveSimulationSqlRow(BaseModel):
 
 class SaveSimulationApiRequest(BaseModel):
 
-    draft_id: UUID
+    group_id: UUID
     input_simulation_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
 
 class SaveSimulationApiResponse(BaseModel):
 
@@ -25168,11 +25347,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DescriptionsApiRequest",
         "DescriptionsApiResponse",
     ),
-    "app/sql/v4/queries/resources/documents/get_document_complete.sql": (
-        "GetDocumentSqlParams",
-        "GetDocumentSqlRow",
-        "GetDocumentApiRequest",
-        "GetDocumentApiResponse",
+    "app/sql/v4/queries/resources/documents/get_document_resource_complete.sql": (
+        "GetDocumentResourceSqlParams",
+        "GetDocumentResourceSqlRow",
+        "GetDocumentResourceApiRequest",
+        "GetDocumentResourceApiResponse",
     ),
     "app/sql/v4/queries/resources/emails_complete.sql": (
         "EmailsSqlParams",
@@ -25342,11 +25521,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchParametersApiRequest",
         "SearchParametersApiResponse",
     ),
-    "app/sql/v4/queries/resources/personas/get_persona_complete.sql": (
-        "GetPersonaSqlParams",
-        "GetPersonaSqlRow",
-        "GetPersonaApiRequest",
-        "GetPersonaApiResponse",
+    "app/sql/v4/queries/resources/personas/get_persona_resource_complete.sql": (
+        "GetPersonaResourceSqlParams",
+        "GetPersonaResourceSqlRow",
+        "GetPersonaResourceApiRequest",
+        "GetPersonaResourceApiResponse",
     ),
     "app/sql/v4/queries/resources/points_complete.sql": (
         "PointsSqlParams",
@@ -27313,7 +27492,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/documents/get_document_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/documents/get_document_resource_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27458,7 +27637,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/personas/get_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/personas/get_persona_resource_complete.sql"]
     ) -> SqlString: ...
 
     @overload

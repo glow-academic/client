@@ -1,6 +1,6 @@
 -- Unified save scenario function - handles both create (input_scenario_id = NULL) and update (input_scenario_id provided)
 -- Resource-ID only contract (no text creation)
--- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Accepts form fields directly (no draft_id dependency)
 
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -8,9 +8,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_save_scenario_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -23,9 +23,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
+    FOR r IN
+        SELECT typname
+        FROM pg_type
         WHERE typname LIKE 'q_save_scenario_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
@@ -33,11 +33,34 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3) Recreate function
+-- 3) Recreate function with direct form data parameters (no draft_id)
 CREATE OR REPLACE FUNCTION api_save_scenario_v4(
-    draft_id uuid,
     profile_id uuid,
-    input_scenario_id uuid DEFAULT NULL
+    group_id uuid,
+    input_scenario_id uuid DEFAULT NULL,
+    -- Required form data
+    name_id uuid DEFAULT NULL,
+    -- Optional single-select form data
+    description_id uuid DEFAULT NULL,
+    problem_statement_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    objectives_enabled_flag_id uuid DEFAULT NULL,
+    images_enabled_flag_id uuid DEFAULT NULL,
+    video_enabled_flag_id uuid DEFAULT NULL,
+    questions_enabled_flag_id uuid DEFAULT NULL,
+    problem_statement_enabled_flag_id uuid DEFAULT NULL,
+    use_templates_flag_id uuid DEFAULT NULL,
+    -- Optional multi-select form data
+    department_ids uuid[] DEFAULT NULL,
+    persona_ids uuid[] DEFAULT NULL,
+    document_ids uuid[] DEFAULT NULL,
+    template_document_ids uuid[] DEFAULT NULL,
+    parameter_ids uuid[] DEFAULT NULL,
+    field_ids uuid[] DEFAULT NULL,
+    image_ids uuid[] DEFAULT NULL,
+    objective_ids uuid[] DEFAULT NULL,
+    video_ids uuid[] DEFAULT NULL,
+    question_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_id uuid,
@@ -52,7 +75,6 @@ DECLARE
     v_actor_name text;
     is_create boolean;
     v_group_id uuid;
-    v_draft_id uuid;
     v_profile_id uuid;
     v_input_scenario_id uuid;
     v_name_id uuid;
@@ -76,135 +98,39 @@ DECLARE
     v_video_ids uuid[];
     v_question_ids uuid[];
 BEGIN
-    v_draft_id := draft_id;
+    -- Assign parameters to local variables
     v_profile_id := profile_id;
+    v_group_id := group_id;
     v_input_scenario_id := input_scenario_id;
+    v_name_id := name_id;
+    v_description_id := description_id;
+    v_problem_statement_id := problem_statement_id;
+    v_active_flag_id := active_flag_id;
+    v_objectives_enabled_flag_id := objectives_enabled_flag_id;
+    v_images_enabled_flag_id := images_enabled_flag_id;
+    v_video_enabled_flag_id := video_enabled_flag_id;
+    v_questions_enabled_flag_id := questions_enabled_flag_id;
+    v_problem_statement_enabled_flag_id := problem_statement_enabled_flag_id;
+    v_use_templates_flag_id := use_templates_flag_id;
+    v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
+    v_persona_ids := COALESCE(persona_ids, ARRAY[]::uuid[]);
+    v_document_ids := COALESCE(document_ids, ARRAY[]::uuid[]);
+    v_template_document_ids := COALESCE(template_document_ids, ARRAY[]::uuid[]);
+    v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
+    v_field_ids := COALESCE(field_ids, ARRAY[]::uuid[]);
+    v_image_ids := COALESCE(image_ids, ARRAY[]::uuid[]);
+    v_objective_ids := COALESCE(objective_ids, ARRAY[]::uuid[]);
+    v_video_ids := COALESCE(video_ids, ARRAY[]::uuid[]);
+    v_question_ids := COALESCE(question_ids, ARRAY[]::uuid[]);
 
-    IF v_draft_id IS NULL THEN
-        RAISE EXCEPTION 'draft_id is required';
-    END IF;
-
-    SELECT group_id INTO v_group_id FROM view_drafts_entry WHERE id = v_draft_id;
+    -- Validate required fields
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+        RAISE EXCEPTION 'group_id is required';
     END IF;
 
-    SELECT dn.names_id
-    INTO v_name_id
-    FROM names_drafts_connection dn
-    WHERE dn.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT dd.descriptions_id
-    INTO v_description_id
-    FROM descriptions_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT dps.problem_statements_id
-    INTO v_problem_statement_id
-    FROM problem_statements_drafts_connection dps
-    WHERE dps.draft_id = v_draft_id
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_active_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'active'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_objectives_enabled_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'objectives_enabled'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_images_enabled_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'images_enabled'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_video_enabled_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'video_enabled'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_questions_enabled_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'questions_enabled'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_problem_statement_enabled_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'problem_statement_enabled'
-    LIMIT 1;
-
-    SELECT df.flags_id
-    INTO v_use_templates_flag_id
-    FROM flags_drafts_connection df
-    JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = v_draft_id AND f.name = 'use_templates'
-    LIMIT 1;
-
-    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
-    INTO v_department_ids
-    FROM departments_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dp.personas_id ORDER BY dp.created_at), ARRAY[]::uuid[])
-    INTO v_persona_ids
-    FROM personas_drafts_connection dp
-    WHERE dp.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dd.documents_id ORDER BY dd.created_at), ARRAY[]::uuid[])
-    INTO v_document_ids
-    FROM documents_drafts_connection dd
-    WHERE dd.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dt.templates_id ORDER BY dt.created_at), ARRAY[]::uuid[])
-    INTO v_template_document_ids
-    FROM templates_drafts_connection dt
-    WHERE dt.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), ARRAY[]::uuid[])
-    INTO v_parameter_ids
-    FROM parameters_drafts_connection dp
-    WHERE dp.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), ARRAY[]::uuid[])
-    INTO v_field_ids
-    FROM fields_drafts_connection df
-    WHERE df.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(di.images_id ORDER BY di.created_at), ARRAY[]::uuid[])
-    INTO v_image_ids
-    FROM images_drafts_connection di
-    WHERE di.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(doj.objectives_id ORDER BY doj.created_at), ARRAY[]::uuid[])
-    INTO v_objective_ids
-    FROM objectives_drafts_connection doj
-    WHERE doj.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dv.videos_id ORDER BY dv.created_at), ARRAY[]::uuid[])
-    INTO v_video_ids
-    FROM videos_drafts_connection dv
-    WHERE dv.draft_id = v_draft_id;
-
-    SELECT COALESCE(ARRAY_AGG(dq.questions_id ORDER BY dq.created_at), ARRAY[]::uuid[])
-    INTO v_question_ids
-    FROM questions_drafts_connection dq
-    WHERE dq.draft_id = v_draft_id;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'name_id is required';
+    END IF;
 
     -- Determine if create or update
     is_create := (v_input_scenario_id IS NULL);
@@ -295,7 +221,7 @@ BEGIN
         DELETE FROM scenario_questions_junction WHERE scenario_id = v_scenario_id;
     END IF;
 
-    -- Link resources
+    -- Link resources (using parameters directly - no draft queries!)
     IF v_name_id IS NOT NULL THEN
         INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)
         VALUES (v_scenario_id, v_name_id, NOW())
@@ -438,7 +364,7 @@ BEGIN
 
     -- Return saved scenario
     RETURN QUERY
-    SELECT 
+    SELECT
         v_scenario_id,
         COALESCE(
             (SELECT (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)

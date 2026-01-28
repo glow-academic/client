@@ -54,10 +54,10 @@ simulation_departments AS (
 SELECT
     up.actor_name,
     up.role::text as user_role,
-    COALESCE(ARRAY_AGG(DISTINCT ud.department_id), ARRAY[]::uuid[]) as user_department_ids,
+    COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT ud.department_id), NULL), ARRAY[]::uuid[]) as user_department_ids,
     CASE
         WHEN (SELECT simulation_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-        ELSE COALESCE(ARRAY_AGG(DISTINCT sd.department_id), ARRAY[]::uuid[])
+        ELSE COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT sd.department_id), NULL), ARRAY[]::uuid[])
     END as simulation_department_ids,
     CASE
         WHEN (SELECT simulation_id FROM params) IS NULL THEN NULL::boolean

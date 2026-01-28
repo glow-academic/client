@@ -1261,9 +1261,9 @@ function SimulationComponent({
         throw new Error("Save action not available");
       }
 
-      if (!draftId) {
-        toast.error("Draft not found. Please try again.");
-        throw new Error("Draft ID is required for save");
+      if (!simulationData?.group_id) {
+        toast.error("Group not found. Please try again.");
+        throw new Error("Group ID is required for save");
       }
 
       // Ensure required fields are present (TypeScript guard)
@@ -1275,9 +1275,43 @@ function SimulationComponent({
       try {
         await saveSimulationAction({
           body: {
-            draft_id: draftId,
+            // Context
+            group_id: simulationData.group_id,
             input_simulation_id:
               isEditMode && simulationId ? simulationId : null,
+
+            // Required single-select
+            name_id: formState.name_id,
+
+            // Optional single-select
+            description_id: formState.description_id ?? undefined,
+            active_flag_id: formState.active_flag_id ?? undefined,
+
+            // Optional multi-select
+            department_ids:
+              formState.department_ids.length > 0
+                ? formState.department_ids
+                : undefined,
+            scenario_ids:
+              formState.scenario_ids.length > 0
+                ? formState.scenario_ids
+                : undefined,
+            scenario_flag_ids:
+              formState.scenario_flag_ids.length > 0
+                ? formState.scenario_flag_ids
+                : undefined,
+            scenario_position_ids:
+              formState.scenario_position_ids.length > 0
+                ? formState.scenario_position_ids
+                : undefined,
+            scenario_rubric_ids:
+              formState.scenario_rubric_ids.length > 0
+                ? formState.scenario_rubric_ids
+                : undefined,
+            scenario_time_limit_ids:
+              formState.scenario_time_limit_ids.length > 0
+                ? formState.scenario_time_limit_ids
+                : undefined,
           },
         });
         toast.success(
@@ -1297,7 +1331,7 @@ function SimulationComponent({
       simulationId,
       profile?.id,
       saveSimulationAction,
-      draftId,
+      simulationData?.group_id,
       router,
       simulationData?.name_required,
       simulationData?.description_required,

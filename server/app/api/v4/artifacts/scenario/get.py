@@ -199,6 +199,10 @@ async def get_scenario(
             valid_department_ids = [
                 d.department_id for d in departments_list if d.department_id
             ]
+            if user_role == "superadmin":
+                valid_department_ids = valid_department_ids or user_department_ids
+            if not valid_department_ids and user_department_ids:
+                valid_department_ids = user_department_ids
             if not valid_department_ids:
                 raise HTTPException(
                     status_code=400, detail="No accessible departments found for user"
@@ -304,6 +308,8 @@ async def get_scenario(
         problem_statement_enabled_flag_ids = [result.problem_statement_enabled_flag_id] if result.problem_statement_enabled_flag_id else []
         use_templates_flag_ids = [result.use_templates_flag_id] if result.use_templates_flag_id else []
         department_ids = result.department_ids or []
+        if scenario_id is None and not department_ids and user_department_ids:
+            department_ids = user_department_ids
         persona_field_ids = result.persona_field_ids or []
         document_field_ids = result.document_field_ids or []
         parameter_field_ids = result.parameter_field_ids or []
@@ -320,6 +326,8 @@ async def get_scenario(
         description_option_ids = _ids_from_resource_list(result.descriptions, "id")
         problem_statement_option_ids = _ids_from_resource_list(result.problem_statements, "id")
         department_option_ids = _ids_from_resource_list(result.departments, "department_id")
+        if scenario_id is None and not department_option_ids and user_department_ids:
+            department_option_ids = user_department_ids
         persona_option_ids = _ids_from_resource_list(result.personas, "persona_id")
         document_option_ids = _ids_from_resource_list(result.documents, "document_id")
         parameter_option_ids = _ids_from_resource_list(result.parameters, "parameter_id")
@@ -401,41 +409,91 @@ async def get_scenario(
             _gather_single(get_template_internal, template_option_ids, "id"),
         )
 
+        def _to_dict(item: Any) -> dict[str, Any]:
+            if hasattr(item, "model_dump"):
+                return item.model_dump()
+            return dict(item)
+
         # Normalize single-resource selections
-        name_resource = name_items[0] if name_items else None
-        description_resource = description_items[0] if description_items else None
-        problem_statement_resource = problem_statement_items[0] if problem_statement_items else None
-        active_flag_resource = flag_items[0] if flag_items else None
-        objectives_enabled_flag_resource = objectives_enabled_flag_items[0] if objectives_enabled_flag_items else None
-        images_enabled_flag_resource = images_enabled_flag_items[0] if images_enabled_flag_items else None
-        video_enabled_flag_resource = video_enabled_flag_items[0] if video_enabled_flag_items else None
-        questions_enabled_flag_resource = questions_enabled_flag_items[0] if questions_enabled_flag_items else None
+        name_resource = _to_dict(name_items[0]) if name_items else None
+        description_resource = _to_dict(description_items[0]) if description_items else None
+        problem_statement_resource = (
+            _to_dict(problem_statement_items[0]) if problem_statement_items else None
+        )
+        active_flag_resource = _to_dict(flag_items[0]) if flag_items else None
+        objectives_enabled_flag_resource = (
+            _to_dict(objectives_enabled_flag_items[0])
+            if objectives_enabled_flag_items
+            else None
+        )
+        images_enabled_flag_resource = (
+            _to_dict(images_enabled_flag_items[0]) if images_enabled_flag_items else None
+        )
+        video_enabled_flag_resource = (
+            _to_dict(video_enabled_flag_items[0]) if video_enabled_flag_items else None
+        )
+        questions_enabled_flag_resource = (
+            _to_dict(questions_enabled_flag_items[0])
+            if questions_enabled_flag_items
+            else None
+        )
         problem_statement_enabled_flag_resource = (
-            problem_statement_enabled_flag_items[0]
+            _to_dict(problem_statement_enabled_flag_items[0])
             if problem_statement_enabled_flag_items
             else None
         )
         use_templates_flag_resource = (
-            use_templates_flag_items[0] if use_templates_flag_items else None
+            _to_dict(use_templates_flag_items[0]) if use_templates_flag_items else None
         )
 
         # Ordered option lists
-        names = _order_by_ids(name_options, "id", name_option_ids)
-        descriptions = _order_by_ids(description_options, "id", description_option_ids)
-        problem_statements = _order_by_ids(
-            problem_statement_options, "id", problem_statement_option_ids
-        )
-        departments = _order_by_ids(
-            department_options, "department_id", department_option_ids
-        )
-        personas = _order_by_ids(persona_options, "persona_id", persona_option_ids)
-        documents = _order_by_ids(document_options, "document_id", document_option_ids)
-        parameters = _order_by_ids(parameter_options, "parameter_id", parameter_option_ids)
-        objectives = _order_by_ids(objective_options, "id", objective_option_ids)
-        images = _order_by_ids(image_options, "id", image_option_ids)
-        videos = _order_by_ids(video_options, "id", video_option_ids)
-        questions = _order_by_ids(question_options, "id", question_option_ids)
-        templates = _order_by_ids(template_options, "id", template_option_ids)
+        names = [_to_dict(item) for item in _order_by_ids(name_options, "id", name_option_ids)]
+        descriptions = [
+            _to_dict(item)
+            for item in _order_by_ids(description_options, "id", description_option_ids)
+        ]
+        problem_statements = [
+            _to_dict(item)
+            for item in _order_by_ids(
+                problem_statement_options, "id", problem_statement_option_ids
+            )
+        ]
+        departments = [
+            _to_dict(item)
+            for item in _order_by_ids(
+                department_options, "department_id", department_option_ids
+            )
+        ]
+        personas = [
+            _to_dict(item)
+            for item in _order_by_ids(persona_options, "persona_id", persona_option_ids)
+        ]
+        documents = [
+            _to_dict(item)
+            for item in _order_by_ids(
+                document_options, "document_id", document_option_ids
+            )
+        ]
+        parameters = [
+            _to_dict(item)
+            for item in _order_by_ids(
+                parameter_options, "parameter_id", parameter_option_ids
+            )
+        ]
+        objectives = [
+            _to_dict(item)
+            for item in _order_by_ids(objective_options, "id", objective_option_ids)
+        ]
+        images = [_to_dict(item) for item in _order_by_ids(image_options, "id", image_option_ids)]
+        videos = [_to_dict(item) for item in _order_by_ids(video_options, "id", video_option_ids)]
+        questions = [
+            _to_dict(item)
+            for item in _order_by_ids(question_options, "id", question_option_ids)
+        ]
+        templates = [
+            _to_dict(item)
+            for item in _order_by_ids(template_options, "id", template_option_ids)
+        ]
 
         # Build response with Python-computed permissions and fetched resources
         result_dict = result.model_dump(mode="json")
@@ -497,38 +555,62 @@ async def get_scenario(
                 "questions_enabled_flag_resource": questions_enabled_flag_resource,
                 "problem_statement_enabled_flag_resource": problem_statement_enabled_flag_resource,
                 "use_templates_flag_resource": use_templates_flag_resource,
-                "department_resources": _order_by_ids(
-                    department_items, "department_id", department_ids
-                ),
-                "persona_field_resources": _order_by_ids(
-                    persona_field_items, "field_id", persona_field_ids
-                ),
-                "document_field_resources": _order_by_ids(
-                    document_field_items, "field_id", document_field_ids
-                ),
-                "parameter_field_resources": _order_by_ids(
-                    parameter_field_items, "field_id", parameter_field_ids
-                ),
-                "objective_resources": _order_by_ids(
-                    objective_items, "id", objective_ids
-                ),
-                "image_resources": _order_by_ids(image_items, "id", image_ids),
-                "video_resources": _order_by_ids(video_items, "id", video_ids),
-                "question_resources": _order_by_ids(
-                    question_items, "id", question_ids
-                ),
-                "template_resources": _order_by_ids(
-                    template_items, "id", template_ids
-                ),
-                "persona_resources": _order_by_ids(
-                    persona_items, "persona_id", persona_ids
-                ),
-                "document_resources": _order_by_ids(
-                    document_items, "document_id", document_ids
-                ),
-                "parameter_resources": _order_by_ids(
-                    parameter_items, "parameter_id", parameter_ids
-                ),
+                "department_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        department_items, "department_id", department_ids
+                    )
+                ],
+                "persona_field_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        persona_field_items, "field_id", persona_field_ids
+                    )
+                ],
+                "document_field_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        document_field_items, "field_id", document_field_ids
+                    )
+                ],
+                "parameter_field_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        parameter_field_items, "field_id", parameter_field_ids
+                    )
+                ],
+                "objective_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(objective_items, "id", objective_ids)
+                ],
+                "image_resources": [
+                    _to_dict(item) for item in _order_by_ids(image_items, "id", image_ids)
+                ],
+                "video_resources": [
+                    _to_dict(item) for item in _order_by_ids(video_items, "id", video_ids)
+                ],
+                "question_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(question_items, "id", question_ids)
+                ],
+                "template_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(template_items, "id", template_ids)
+                ],
+                "persona_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(persona_items, "persona_id", persona_ids)
+                ],
+                "document_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(document_items, "document_id", document_ids)
+                ],
+                "parameter_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        parameter_items, "parameter_id", parameter_ids
+                    )
+                ],
                 "names": names,
                 "descriptions": descriptions,
                 "problem_statements": problem_statements,

@@ -8,63 +8,25 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_sql_query
+from app.sql.types import (
+    GetPersonaResourceApiRequest,
+    GetPersonaResourceApiResponse,
+    GetPersonaResourceSqlParams,
+    GetPersonaResourceSqlRow,
+    QGetPersonaResourceV4Item,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/resources/personas/get_persona_complete.sql"
+SQL_PATH = "app/sql/v4/queries/resources/personas/get_persona_resource_complete.sql"
 
 router = APIRouter()
-
-
-# =============================================================================
-# Types
-# =============================================================================
-
-
-class GetPersonaV4Item(BaseModel):
-    """Persona item returned from get endpoint."""
-
-    persona_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    color: str | None = None
-    icon: str | None = None
-    image_model: bool | None = None
-    generated: bool | None = None
-
-
-class GetPersonaApiRequest(BaseModel):
-    """Request for getting a persona by ID."""
-
-    id: UUID
-
-
-class GetPersonaApiResponse(BaseModel):
-    """Response for getting a persona."""
-
-    item: GetPersonaV4Item | None = None
-
-
-class GetPersonaSqlParams(BaseModel):
-    """SQL parameters for get persona."""
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.id,)
-
-
-class GetPersonaSqlRow(BaseModel):
-    """SQL row for get persona."""
-
-    item: GetPersonaV4Item | None = None
 
 
 # =============================================================================
@@ -76,7 +38,7 @@ async def get_persona_internal(
     conn: asyncpg.Connection,
     id: UUID,
     bypass_cache: bool = False,
-) -> GetPersonaV4Item | None:
+) -> QGetPersonaResourceV4Item | None:
     """Internal function for fetching a single persona.
 
     Args:
@@ -94,12 +56,12 @@ async def get_persona_internal(
         if cached:
             item_data = cached.get("data")
             if item_data:
-                return GetPersonaV4Item.model_validate(item_data)
+                return QGetPersonaResourceV4Item.model_validate(item_data)
             return None
 
-    params = GetPersonaSqlParams(id=id)
+    params = GetPersonaResourceSqlParams(id=id)
     result = cast(
-        GetPersonaSqlRow,
+        GetPersonaResourceSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
@@ -122,14 +84,14 @@ async def get_persona_internal(
 
 @router.post(
     "/personas/get",
-    response_model=GetPersonaApiResponse,
+    response_model=GetPersonaResourceApiResponse,
 )
 async def get_persona(
-    request: GetPersonaApiRequest,
+    request: GetPersonaResourceApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetPersonaApiResponse:
+) -> GetPersonaResourceApiResponse:
     """Get persona by ID."""
     tags = ["resources", "personas"]
 
@@ -137,7 +99,7 @@ async def get_persona(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         item = await get_persona_internal(conn, request.id, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetPersonaApiResponse(item=item)
+        return GetPersonaResourceApiResponse(item=item)
     except HTTPException:
         raise
     except ValueError as e:

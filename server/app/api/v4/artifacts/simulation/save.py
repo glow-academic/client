@@ -13,13 +13,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetNameByIdSqlParams,
-    GetNameByIdSqlRow,
+from app.api.v4.artifacts.simulation.types import (
     SaveSimulationApiRequest,
     SaveSimulationApiResponse,
     SaveSimulationSqlParams,
     SaveSimulationSqlRow,
+)
+from app.sql.types import (
+    GetNameByIdSqlParams,
+    GetNameByIdSqlRow,
     load_sql_query,
 )
 from app.api.v4.artifacts.simulation.permissions import (

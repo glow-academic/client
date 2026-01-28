@@ -41,8 +41,6 @@ from app.api.v4.artifacts.simulation.permissions import (
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -245,7 +243,6 @@ async def get_simulation(
         name_ids = [result.name_id] if result.name_id else []
         description_ids = [result.description_id] if result.description_id else []
         flag_ids = [result.active_flag_id] if result.active_flag_id else []
-        department_ids = result.department_ids or []
         scenario_ids = result.scenario_ids or []
         scenario_flag_ids = result.scenario_flag_ids or []
         scenario_position_ids = result.scenario_position_ids or []
@@ -255,43 +252,39 @@ async def get_simulation(
         # Search result IDs from SQL (for options lists)
         name_option_ids = _ids_from_resource_list(result.names, "id")
         description_option_ids = _ids_from_resource_list(result.descriptions, "id")
-        department_option_ids = _ids_from_resource_list(result.departments, "department_id")
-        scenario_option_ids = _ids_from_resource_list(result.scenarios, "scenario_id")
 
         (
             name_items,
             description_items,
             flag_items,
-            department_items,
-            scenario_items,
             name_options,
             description_options,
-            department_options,
-            scenario_options,
         ) = await asyncio.gather(
             _run_with_pool(get_names_internal, name_ids),
             _run_with_pool(get_descriptions_internal, description_ids),
             _run_with_pool(get_flags_internal, flag_ids),
-            _run_with_pool(get_departments_internal, department_ids),
-            _run_with_pool(get_scenarios_internal, scenario_ids),
             _run_with_pool(get_names_internal, name_option_ids),
             _run_with_pool(get_descriptions_internal, description_option_ids),
-            _run_with_pool(get_departments_internal, department_option_ids),
-            _run_with_pool(get_scenarios_internal, scenario_option_ids),
         )
 
-        name_resource = name_items[0] if name_items else None
-        description_resource = description_items[0] if description_items else None
-        flag_resource = flag_items[0] if flag_items else None
+        def _to_dict(item: Any) -> dict[str, Any]:
+            if hasattr(item, "model_dump"):
+                return item.model_dump()
+            return dict(item)
 
-        names = _order_by_ids(name_options, "id", name_option_ids)
-        descriptions = _order_by_ids(description_options, "id", description_option_ids)
-        departments = _order_by_ids(
-            department_options, "department_id", department_option_ids
+        name_resource = _to_dict(name_items[0]) if name_items else None
+        description_resource = (
+            _to_dict(description_items[0]) if description_items else None
         )
-        scenarios = _order_by_ids(
-            scenario_options, "scenario_id", scenario_option_ids
-        )
+        flag_resource = _to_dict(flag_items[0]) if flag_items else None
+
+        names = [_to_dict(item) for item in _order_by_ids(name_options, "id", name_option_ids)]
+        descriptions = [
+            _to_dict(item)
+            for item in _order_by_ids(description_options, "id", description_option_ids)
+        ]
+        departments = result.departments or []
+        scenarios = result.scenarios or []
 
         show_scenario_flags = bool(scenario_ids or scenario_flag_ids)
         show_scenario_positions = bool(scenario_ids or scenario_position_ids)
@@ -325,12 +318,8 @@ async def get_simulation(
                 "name_resource": name_resource,
                 "description_resource": description_resource,
                 "flag_resource": flag_resource,
-                "department_resources": _order_by_ids(
-                    department_items, "department_id", department_ids
-                ),
-                "scenario_resources": _order_by_ids(
-                    scenario_items, "scenario_id", scenario_ids
-                ),
+                "department_resources": result.department_resources or [],
+                "scenario_resources": result.scenario_resources or [],
                 "names": names,
                 "descriptions": descriptions,
                 "departments": departments,

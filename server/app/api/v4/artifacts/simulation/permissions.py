@@ -123,8 +123,8 @@ def compute_can_delete(
     Returns:
         True if user can delete the simulation
     """
-    # Only superadmins and admins can delete
-    if user_role not in ("superadmin", "admin"):
+    # Only admins, instructional, and superadmins can delete
+    if user_role not in ("superadmin", "admin", "instructional"):
         return False
 
     # Cannot delete if used by cohorts

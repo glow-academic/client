@@ -38,6 +38,11 @@ export function SelectableGrid<T>({
     const id = getId(item);
     onSelect(id);
   };
+  const idCounts = new Map<string, number>();
+  for (const item of items) {
+    const id = getId(item);
+    idCounts.set(id, (idCounts.get(id) ?? 0) + 1);
+  }
 
   if (horizontal) {
     return (
@@ -52,14 +57,15 @@ export function SelectableGrid<T>({
             {emptyMessage}
           </div>
         ) : (
-          items.map((item) => {
+          items.map((item, index) => {
             const id = getId(item);
             const isSelected =
               selectedId === id || (selectedIds?.includes(id) ?? false);
+            const key = (idCounts.get(id) ?? 0) > 1 ? `${id}-${index}` : id;
 
             return (
               <button
-                key={id}
+                key={key}
                 type="button"
                 onClick={() => handleSelect(item)}
                 disabled={disabled ?? false}
@@ -90,14 +96,15 @@ export function SelectableGrid<T>({
           {emptyMessage}
         </div>
       ) : (
-        items.map((item) => {
+        items.map((item, index) => {
           const id = getId(item);
           const isSelected =
             selectedId === id || (selectedIds?.includes(id) ?? false);
+          const key = (idCounts.get(id) ?? 0) > 1 ? `${id}-${index}` : id;
 
           return (
             <button
-              key={id}
+              key={key}
               type="button"
               onClick={() => handleSelect(item)}
               disabled={disabled ?? false}

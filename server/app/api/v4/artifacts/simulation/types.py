@@ -385,14 +385,78 @@ class ListSimulationApiResponse(BaseModel):
 
 
 class SaveSimulationApiRequest(BaseModel):
-    """Request for saving a simulation."""
+    """Request for saving a simulation - accepts form data directly (no draft_id)."""
 
-    draft_id: UUID
-    input_simulation_id: UUID | None = None
+    # Context
+    group_id: UUID  # REQUIRED - which group to save to
+    input_simulation_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
 
 
 class SaveSimulationApiResponse(BaseModel):
     """Response for saving a simulation."""
+
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
+
+
+class SaveSimulationSqlParams(BaseModel):
+    """SQL parameters for save simulation - accepts form data directly (no draft_id)."""
+
+    # Context
+    profile_id: UUID  # Added from header
+    group_id: UUID  # REQUIRED - which group to save to
+    input_simulation_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        """Convert to tuple for SQL execution."""
+        return (
+            self.profile_id,
+            self.group_id,
+            self.input_simulation_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.scenario_ids,
+            self.scenario_flag_ids,
+            self.scenario_position_ids,
+            self.scenario_rubric_ids,
+            self.scenario_time_limit_ids,
+        )
+
+
+class SaveSimulationSqlRow(BaseModel):
+    """SQL row for save simulation."""
 
     simulation_id: UUID | None = None
     actor_name: str | None = None

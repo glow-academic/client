@@ -7527,23 +7527,123 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
         };
-        /**
-         * GetDocumentV4Item
-         * @description Document item returned from get endpoint.
-         */
-        GetDocumentV4Item: {
+        /** GetDocumentApiRequest */
+        GetDocumentApiRequest: {
             /** Document Id */
             document_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Generated */
-            generated?: boolean | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetDocumentApiResponse */
+        GetDocumentApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Document Exists */
+            document_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetDocumentV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetDocumentV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetDocumentV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDocumentV4DescriptionResource"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDocumentV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDocumentV4Department"][] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Field Resources */
+            field_resources?: components["schemas"]["QGetDocumentV4Field"][] | null;
+            /** Show Fields */
+            show_fields?: boolean | null;
+            /** Fields Agent Id */
+            fields_agent_id?: string | null;
+            /** Fields Required */
+            fields_required?: boolean | null;
+            /** Field Suggestions */
+            field_suggestions?: string[] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetDocumentV4Field"][] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Upload Resources */
+            upload_resources?: components["schemas"]["QGetDocumentV4Upload"][] | null;
+            /** Show Uploads */
+            show_uploads?: boolean | null;
+            /** Uploads Agent Id */
+            uploads_agent_id?: string | null;
+            /** Uploads Required */
+            uploads_required?: boolean | null;
+            /** Upload Suggestions */
+            upload_suggestions?: string[] | null;
+            /** Uploads */
+            uploads?: components["schemas"]["QGetDocumentV4Upload"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetDocumentV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
+        };
+        /** GetDocumentResourceApiRequest */
+        GetDocumentResourceApiRequest: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+        };
+        /** GetDocumentResourceApiResponse */
+        GetDocumentResourceApiResponse: {
+            item?: components["schemas"]["QGetDocumentResourceV4Item"] | null;
         };
         /** GetDocumentsListApiRequest */
         GetDocumentsListApiRequest: Record<string, never>;
@@ -8721,24 +8821,202 @@ export interface components {
             document_options?: components["schemas"]["QListParametersV4DocumentOption"][] | null;
         };
         /**
-         * GetPersonaV4Item
-         * @description Persona item returned from get endpoint.
+         * GetPersonaApiRequest
+         * @description Request model for get persona endpoint.
          */
-        GetPersonaV4Item: {
+        GetPersonaApiRequest: {
             /** Persona Id */
             persona_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Image Model */
-            image_model?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Color Search */
+            color_search?: string | null;
+            /** Icon Search */
+            icon_search?: string | null;
+            /** Descriptions Search */
+            descriptions_search?: string | null;
+            /** Instructions Search */
+            instructions_search?: string | null;
+            /** Field Search */
+            field_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Color Show Selected */
+            color_show_selected?: boolean | null;
+            /** Icon Show Selected */
+            icon_show_selected?: boolean | null;
+            /** Field Show Selected */
+            field_show_selected?: boolean | null;
+            /** Parameter Show Selected */
+            parameter_show_selected?: boolean | null;
+        };
+        /**
+         * GetPersonaApiResponse
+         * @description Response model for get persona endpoint.
+         */
+        GetPersonaApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Persona Exists */
+            persona_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Color Id */
+            color_id?: string | null;
+            color_resource?: components["schemas"]["QGetColorsV4Item"] | null;
+            /** Show Color */
+            show_color?: boolean | null;
+            /** Color Agent Id */
+            color_agent_id?: string | null;
+            /** Color Required */
+            color_required?: boolean | null;
+            /** Color Suggestions */
+            color_suggestions?: string[] | null;
+            /** Colors */
+            colors?: components["schemas"]["QGetColorsV4Item"][] | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            icon_resource?: components["schemas"]["QGetIconsV4Item"] | null;
+            /** Show Icon */
+            show_icon?: boolean | null;
+            /** Icon Agent Id */
+            icon_agent_id?: string | null;
+            /** Icon Required */
+            icon_required?: boolean | null;
+            /** Icon Suggestions */
+            icon_suggestions?: string[] | null;
+            /** Icons */
+            icons?: components["schemas"]["QGetIconsV4Item"][] | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            instructions_resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
+            /** Show Instructions */
+            show_instructions?: boolean | null;
+            /** Instructions Agent Id */
+            instructions_agent_id?: string | null;
+            /** Instructions Required */
+            instructions_required?: boolean | null;
+            /** Instructions Suggestions */
+            instructions_suggestions?: string[] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetFlagsV4Item"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Field Resources */
+            field_resources?: components["schemas"]["QGetFieldsV4Item"][] | null;
+            /** Show Fields */
+            show_fields?: boolean | null;
+            /** Fields Agent Id */
+            fields_agent_id?: string | null;
+            /** Fields Required */
+            fields_required?: boolean | null;
+            /** Field Suggestions */
+            field_suggestions?: string[] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetFieldsV4Item"][] | null;
+            /** Example Ids */
+            example_ids?: string[] | null;
+            /** Example Resources */
+            example_resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
+            /** Show Examples */
+            show_examples?: boolean | null;
+            /** Examples Agent Id */
+            examples_agent_id?: string | null;
+            /** Examples Required */
+            examples_required?: boolean | null;
+            /** Example Suggestions */
+            example_suggestions?: string[] | null;
+            /** Examples */
+            examples?: components["schemas"]["QGetExamplesV4Item"][] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Resources */
+            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Show Parameters */
+            show_parameters?: boolean | null;
+            /** Parameters Agent Id */
+            parameters_agent_id?: string | null;
+            /** Parameters Required */
+            parameters_required?: boolean | null;
+            /** Parameter Suggestions */
+            parameter_suggestions?: string[] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Basic Agent Id */
+            basic_agent_id?: string | null;
+            /** Content Agent Id */
+            content_agent_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
+        };
+        /** GetPersonaResourceApiRequest */
+        GetPersonaResourceApiRequest: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** GetPersonaResourceApiResponse */
+        GetPersonaResourceApiResponse: {
+            item?: components["schemas"]["QGetPersonaResourceV4Item"] | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: {
@@ -13534,6 +13812,21 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetDocumentResourceV4Item */
+        QGetDocumentResourceV4Item: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetDocumentV4Department */
         QGetDocumentV4Department: {
             /** Department Id */
@@ -15086,6 +15379,23 @@ export interface components {
             scenario_parameter: boolean | null;
             /** Video Parameter */
             video_parameter: boolean | null;
+        };
+        /** QGetPersonaResourceV4Item */
+        QGetPersonaResourceV4Item: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Image Model */
+            image_model: boolean | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetPracticeAttemptV4AggregatedResults */
         QGetPracticeAttemptV4AggregatedResults: {
@@ -19379,17 +19689,38 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveCohortApiRequest */
+        /**
+         * SaveCohortApiRequest
+         * @description Request for saving a cohort - accepts form data directly (no draft_id).
+         */
         SaveCohortApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Cohort Id */
             input_cohort_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Simulation Position Values */
+            simulation_position_values?: number[] | null;
         };
-        /** SaveCohortApiResponse */
+        /**
+         * SaveCohortApiResponse
+         * @description Response for saving a cohort.
+         */
         SaveCohortApiResponse: {
             /** Cohort Id */
             cohort_id?: string | null;
@@ -19604,16 +19935,48 @@ export interface components {
         };
         /**
          * SavePersonaApiRequest
-         * @description Request model for save persona endpoint.
+         * @description Request model for save persona endpoint - accepts form data directly (no draft_id).
          */
         SavePersonaApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Persona Id */
             input_persona_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /**
+             * Color Id
+             * Format: uuid
+             */
+            color_id: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+            /**
+             * Instructions Id
+             * Format: uuid
+             */
+            instructions_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Example Ids */
+            example_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
         };
         /**
          * SavePersonaApiResponse
@@ -19685,16 +20048,59 @@ export interface components {
         };
         /**
          * SaveScenarioApiRequest
-         * @description Request for saving a scenario.
+         * @description Request for saving a scenario - accepts form data directly (no draft_id).
          */
         SaveScenarioApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Scenario Id */
             input_scenario_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Objectives Enabled Flag Id */
+            objectives_enabled_flag_id?: string | null;
+            /** Images Enabled Flag Id */
+            images_enabled_flag_id?: string | null;
+            /** Video Enabled Flag Id */
+            video_enabled_flag_id?: string | null;
+            /** Questions Enabled Flag Id */
+            questions_enabled_flag_id?: string | null;
+            /** Problem Statement Enabled Flag Id */
+            problem_statement_enabled_flag_id?: string | null;
+            /** Use Templates Flag Id */
+            use_templates_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
         };
         /**
          * SaveScenarioApiResponse
@@ -19743,17 +20149,44 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** SaveSimulationApiRequest */
+        /**
+         * SaveSimulationApiRequest
+         * @description Request for saving a simulation - accepts form data directly (no draft_id).
+         */
         SaveSimulationApiRequest: {
             /**
-             * Draft Id
+             * Group Id
              * Format: uuid
              */
-            draft_id: string;
+            group_id: string;
             /** Input Simulation Id */
             input_simulation_id?: string | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
         };
-        /** SaveSimulationApiResponse */
+        /**
+         * SaveSimulationApiResponse
+         * @description Response for saving a simulation.
+         */
         SaveSimulationApiResponse: {
             /** Simulation Id */
             simulation_id?: string | null;
@@ -20751,228 +21184,6 @@ export interface components {
             voices_id?: string | null;
         };
         /**
-         * GetPersonaApiRequest
-         * @description Request model for get persona endpoint.
-         */
-        app__api__v4__artifacts__persona__types__GetPersonaApiRequest: {
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Color Search */
-            color_search?: string | null;
-            /** Icon Search */
-            icon_search?: string | null;
-            /** Descriptions Search */
-            descriptions_search?: string | null;
-            /** Instructions Search */
-            instructions_search?: string | null;
-            /** Field Search */
-            field_search?: string | null;
-            /** Parameter Search */
-            parameter_search?: string | null;
-            /** Color Show Selected */
-            color_show_selected?: boolean | null;
-            /** Icon Show Selected */
-            icon_show_selected?: boolean | null;
-            /** Field Show Selected */
-            field_show_selected?: boolean | null;
-            /** Parameter Show Selected */
-            parameter_show_selected?: boolean | null;
-        };
-        /**
-         * GetPersonaApiResponse
-         * @description Response model for get persona endpoint.
-         */
-        app__api__v4__artifacts__persona__types__GetPersonaApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Persona Exists */
-            persona_exists?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Disabled Reason */
-            disabled_reason?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Color Id */
-            color_id?: string | null;
-            color_resource?: components["schemas"]["QGetColorsV4Item"] | null;
-            /** Show Color */
-            show_color?: boolean | null;
-            /** Color Agent Id */
-            color_agent_id?: string | null;
-            /** Color Required */
-            color_required?: boolean | null;
-            /** Color Suggestions */
-            color_suggestions?: string[] | null;
-            /** Colors */
-            colors?: components["schemas"]["QGetColorsV4Item"][] | null;
-            /** Icon Id */
-            icon_id?: string | null;
-            icon_resource?: components["schemas"]["QGetIconsV4Item"] | null;
-            /** Show Icon */
-            show_icon?: boolean | null;
-            /** Icon Agent Id */
-            icon_agent_id?: string | null;
-            /** Icon Required */
-            icon_required?: boolean | null;
-            /** Icon Suggestions */
-            icon_suggestions?: string[] | null;
-            /** Icons */
-            icons?: components["schemas"]["QGetIconsV4Item"][] | null;
-            /** Instructions Id */
-            instructions_id?: string | null;
-            instructions_resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
-            /** Show Instructions */
-            show_instructions?: boolean | null;
-            /** Instructions Agent Id */
-            instructions_agent_id?: string | null;
-            /** Instructions Required */
-            instructions_required?: boolean | null;
-            /** Instructions Suggestions */
-            instructions_suggestions?: string[] | null;
-            /** Instructions */
-            instructions?: components["schemas"]["QGetInstructionsV4Item"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetFlagsV4Item"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Field Resources */
-            field_resources?: components["schemas"]["QGetFieldsV4Item"][] | null;
-            /** Show Fields */
-            show_fields?: boolean | null;
-            /** Fields Agent Id */
-            fields_agent_id?: string | null;
-            /** Fields Required */
-            fields_required?: boolean | null;
-            /** Field Suggestions */
-            field_suggestions?: string[] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetFieldsV4Item"][] | null;
-            /** Example Ids */
-            example_ids?: string[] | null;
-            /** Example Resources */
-            example_resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
-            /** Show Examples */
-            show_examples?: boolean | null;
-            /** Examples Agent Id */
-            examples_agent_id?: string | null;
-            /** Examples Required */
-            examples_required?: boolean | null;
-            /** Example Suggestions */
-            example_suggestions?: string[] | null;
-            /** Examples */
-            examples?: components["schemas"]["QGetExamplesV4Item"][] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Resources */
-            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
-            /** Show Parameters */
-            show_parameters?: boolean | null;
-            /** Parameters Agent Id */
-            parameters_agent_id?: string | null;
-            /** Parameters Required */
-            parameters_required?: boolean | null;
-            /** Parameter Suggestions */
-            parameter_suggestions?: string[] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
-            /** Basic Agent Id */
-            basic_agent_id?: string | null;
-            /** Content Agent Id */
-            content_agent_id?: string | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
-        };
-        /**
-         * GetDocumentApiRequest
-         * @description Request for getting a document by ID.
-         */
-        app__api__v4__resources__documents__get__GetDocumentApiRequest: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-        };
-        /**
-         * GetDocumentApiResponse
-         * @description Response for getting a document.
-         */
-        app__api__v4__resources__documents__get__GetDocumentApiResponse: {
-            item?: components["schemas"]["GetDocumentV4Item"] | null;
-        };
-        /**
-         * GetPersonaApiRequest
-         * @description Request for getting a persona by ID.
-         */
-        app__api__v4__resources__personas__get__GetPersonaApiRequest: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-        };
-        /**
-         * GetPersonaApiResponse
-         * @description Response for getting a persona.
-         */
-        app__api__v4__resources__personas__get__GetPersonaApiResponse: {
-            item?: components["schemas"]["GetPersonaV4Item"] | null;
-        };
-        /**
          * GetSimulationApiRequest
          * @description Request for getting a simulation by ID.
          */
@@ -20989,112 +21200,6 @@ export interface components {
          */
         app__api__v4__resources__simulations__get__GetSimulationApiResponse: {
             item?: components["schemas"]["GetSimulationV4Item"] | null;
-        };
-        /** GetDocumentApiRequest */
-        app__sql__types__GetDocumentApiRequest: {
-            /** Document Id */
-            document_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** GetDocumentApiResponse */
-        app__sql__types__GetDocumentApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Document Exists */
-            document_exists?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Disabled Reason */
-            disabled_reason?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetDocumentV4NameResource"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetDocumentV4NameResource"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetDocumentV4DescriptionResource"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDocumentV4DescriptionResource"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDocumentV4Department"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDocumentV4Department"][] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Field Resources */
-            field_resources?: components["schemas"]["QGetDocumentV4Field"][] | null;
-            /** Show Fields */
-            show_fields?: boolean | null;
-            /** Fields Agent Id */
-            fields_agent_id?: string | null;
-            /** Fields Required */
-            fields_required?: boolean | null;
-            /** Field Suggestions */
-            field_suggestions?: string[] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetDocumentV4Field"][] | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
-            /** Upload Resources */
-            upload_resources?: components["schemas"]["QGetDocumentV4Upload"][] | null;
-            /** Show Uploads */
-            show_uploads?: boolean | null;
-            /** Uploads Agent Id */
-            uploads_agent_id?: string | null;
-            /** Uploads Required */
-            uploads_required?: boolean | null;
-            /** Upload Suggestions */
-            upload_suggestions?: string[] | null;
-            /** Uploads */
-            uploads?: components["schemas"]["QGetDocumentV4Upload"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetDocumentV4FlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /** GetSimulationApiRequest */
         app__sql__types__GetSimulationApiRequest: {
@@ -21276,7 +21381,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__artifacts__persona__types__GetPersonaApiRequest"];
+                "application/json": components["schemas"]["GetPersonaApiRequest"];
             };
         };
         responses: {
@@ -21286,7 +21391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__artifacts__persona__types__GetPersonaApiResponse"];
+                    "application/json": components["schemas"]["GetPersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22014,7 +22119,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types__GetDocumentApiRequest"];
+                "application/json": components["schemas"]["GetDocumentApiRequest"];
             };
         };
         responses: {
@@ -22024,7 +22129,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types__GetDocumentApiResponse"];
+                    "application/json": components["schemas"]["GetDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25418,7 +25523,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__resources__documents__get__GetDocumentApiRequest"];
+                "application/json": components["schemas"]["GetDocumentResourceApiRequest"];
             };
         };
         responses: {
@@ -25428,7 +25533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__resources__documents__get__GetDocumentApiResponse"];
+                    "application/json": components["schemas"]["GetDocumentResourceApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26491,7 +26596,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__resources__personas__get__GetPersonaApiRequest"];
+                "application/json": components["schemas"]["GetPersonaResourceApiRequest"];
             };
         };
         responses: {
@@ -26501,7 +26606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__resources__personas__get__GetPersonaApiResponse"];
+                    "application/json": components["schemas"]["GetPersonaResourceApiResponse"];
                 };
             };
             /** @description Validation Error */

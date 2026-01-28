@@ -90,6 +90,14 @@ async def get_simulation_positions_internal(
     """
     if not simulation_ids:
         return []
+    # Normalize to UUIDs (SQL function expects uuid[])
+    simulation_ids = [
+        UUID(sid) if isinstance(sid, str) else sid
+        for sid in simulation_ids
+        if sid is not None
+    ]
+    if not simulation_ids:
+        return []
 
     # Generate cache key
     cache_key_val = cache_key(

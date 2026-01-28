@@ -185,6 +185,10 @@ async def get_cohort(
             valid_department_ids = [
                 d.department_id for d in departments_list if d.department_id
             ]
+            if user_role == "superadmin":
+                valid_department_ids = valid_department_ids or user_department_ids
+            if not valid_department_ids and user_department_ids:
+                valid_department_ids = user_department_ids
             if not valid_department_ids:
                 raise HTTPException(
                     status_code=400, detail="No accessible departments found for user"
@@ -249,7 +253,12 @@ async def get_cohort(
         description_ids = [result.description_id] if result.description_id else []
         flag_ids = [result.active_flag_id] if result.active_flag_id else []
         department_ids = result.department_ids or []
-        simulation_ids = result.simulation_ids or []
+        simulation_ids_raw = result.simulation_ids or []
+        simulation_ids = [
+            UUID(sid) if isinstance(sid, str) else sid
+            for sid in simulation_ids_raw
+            if sid is not None
+        ]
 
         # Search result IDs from SQL (for options lists)
         name_option_ids = _ids_from_resource_list(result.names, "id")
@@ -293,21 +302,37 @@ async def get_cohort(
         )
 
         # Normalize single-resource selections
-        name_resource = name_items[0] if name_items else None
-        description_resource = description_items[0] if description_items else None
-        flag_resource = flag_items[0] if flag_items else None
+        def _to_dict(item: Any) -> dict[str, Any]:
+            if hasattr(item, "model_dump"):
+                return item.model_dump()
+            return dict(item)
+
+        name_resource = _to_dict(name_items[0]) if name_items else None
+        description_resource = (
+            _to_dict(description_items[0]) if description_items else None
+        )
+        flag_resource = _to_dict(flag_items[0]) if flag_items else None
 
         # Ordered option lists
-        names = _order_by_ids(name_options, "id", name_option_ids)
-        descriptions = _order_by_ids(description_options, "id", description_option_ids)
-        departments = _order_by_ids(
-            department_options, "department_id", department_option_ids
-        )
-        simulations = _order_by_ids(
-            [item for item in simulation_options if item],
-            "simulation_id",
-            simulation_option_ids,
-        )
+        names = [_to_dict(item) for item in _order_by_ids(name_options, "id", name_option_ids)]
+        descriptions = [
+            _to_dict(item)
+            for item in _order_by_ids(description_options, "id", description_option_ids)
+        ]
+        departments = [
+            _to_dict(item)
+            for item in _order_by_ids(
+                department_options, "department_id", department_option_ids
+            )
+        ]
+        simulations = [
+            _to_dict(item)
+            for item in _order_by_ids(
+                [item for item in simulation_options if item],
+                "simulation_id",
+                simulation_option_ids,
+            )
+        ]
 
         # Build response with Python-computed permissions and fetched resources
         result_dict = result.model_dump(mode="json")
@@ -330,14 +355,20 @@ async def get_cohort(
                 "name_resource": name_resource,
                 "description_resource": description_resource,
                 "flag_resource": flag_resource,
-                "department_resources": _order_by_ids(
-                    department_items, "department_id", department_ids
-                ),
-                "simulation_resources": _order_by_ids(
-                    [item for item in simulation_items if item],
-                    "simulation_id",
-                    simulation_ids,
-                ),
+                "department_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        department_items, "department_id", department_ids
+                    )
+                ],
+                "simulation_resources": [
+                    _to_dict(item)
+                    for item in _order_by_ids(
+                        [item for item in simulation_items if item],
+                        "simulation_id",
+                        simulation_ids,
+                    )
+                ],
                 "simulation_positions": simulation_positions or [],
                 "names": names,
                 "descriptions": descriptions,

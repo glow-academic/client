@@ -240,14 +240,73 @@ class ListCohortApiResponse(BaseModel):
 
 
 class SaveCohortApiRequest(BaseModel):
-    """Request for saving a cohort."""
+    """Request for saving a cohort - accepts form data directly (no draft_id)."""
 
-    draft_id: UUID
-    input_cohort_id: UUID | None = None
+    # Context
+    group_id: UUID  # REQUIRED - which group to save to
+    input_cohort_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+
+    # Special: simulation position values for ordering
+    simulation_position_values: list[int] | None = None
 
 
 class SaveCohortApiResponse(BaseModel):
     """Response for saving a cohort."""
+
+    cohort_id: UUID | None = None
+    actor_name: str | None = None
+
+
+class SaveCohortSqlParams(BaseModel):
+    """SQL parameters for save cohort - accepts form data directly (no draft_id)."""
+
+    # Context
+    profile_id: UUID  # Added from header
+    group_id: UUID  # REQUIRED - which group to save to
+    input_cohort_id: UUID | None = None  # For update mode
+
+    # Required single-select resources
+    name_id: UUID  # REQUIRED
+
+    # Optional single-select resources
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Optional multi-select resources
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+
+    # Special: simulation position values for ordering
+    simulation_position_values: list[int] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        """Convert to tuple for SQL execution."""
+        return (
+            self.profile_id,
+            self.group_id,
+            self.input_cohort_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.simulation_ids,
+            self.simulation_position_values,
+        )
+
+
+class SaveCohortSqlRow(BaseModel):
+    """SQL row for save cohort."""
 
     cohort_id: UUID | None = None
     actor_name: str | None = None
