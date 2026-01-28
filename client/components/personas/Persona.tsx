@@ -60,8 +60,6 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
-type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
 type CreateDraftInstructionsIn = InputOf<
   "/api/v4/resources/instructions",
   "post"
@@ -70,22 +68,10 @@ type CreateDraftInstructionsOut = OutputOf<
   "/api/v4/resources/instructions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
-type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
@@ -110,27 +96,15 @@ export interface PersonaProps {
   createColorsAction?: (
     input: CreateDraftColorsIn
   ) => Promise<CreateDraftColorsOut>;
-  createIconsAction?: (
-    input: CreateDraftIconsIn
-  ) => Promise<CreateDraftIconsOut>;
   createInstructionsAction?: (
     input: CreateDraftInstructionsIn
   ) => Promise<CreateDraftInstructionsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
   createExamplesAction?: (
     input: CreateDraftExamplesIn
   ) => Promise<CreateDraftExamplesOut>;
-  createFieldsAction?: (
-    input: CreateDraftFieldsIn
-  ) => Promise<CreateDraftFieldsOut>;
   createDocumentsAction?: (
     input: CreateDraftDocumentsIn
   ) => Promise<CreateDraftDocumentsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
 }
 
 function PersonaComponent({
@@ -141,12 +115,8 @@ function PersonaComponent({
   createNamesAction,
   createDescriptionsAction,
   createColorsAction,
-  createIconsAction,
   createInstructionsAction,
-  createFlagsAction,
   createExamplesAction,
-  createFieldsAction,
-  createDepartmentsAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -1764,7 +1734,6 @@ function PersonaComponent({
                   required={currentPersonaData?.departments_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.departments_agent_id ?? null}
-                  createDepartmentsAction={createDepartmentsAction}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1791,7 +1760,6 @@ function PersonaComponent({
                     iconId: (formState.icon_id ||
                       currentPersonaData?.flag_resource?.icon_id) as string,
                   })}
-                  createFlagsAction={createFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1944,7 +1912,6 @@ function PersonaComponent({
                 required={currentPersonaData?.fields_required ?? false}
                 group_id={currentPersonaData?.group_id ?? null}
                 agent_id={currentPersonaData?.fields_agent_id ?? null}
-                createFieldsAction={createFieldsAction}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
               />
@@ -2162,7 +2129,6 @@ function PersonaComponent({
                 }
                 group_id={currentPersonaData?.group_id ?? null}
                 agent_id={currentPersonaData?.icon_agent_id ?? null}
-                createIconsAction={createIconsAction}
                 required={currentPersonaData?.icon_required ?? false}
               />
             </StepCard>
@@ -2366,12 +2332,8 @@ function PersonaComponent({
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
-      createIconsAction,
       createInstructionsAction,
-      createFlagsAction,
       createExamplesAction,
-      createFieldsAction,
-      createDepartmentsAction,
       canRegenerate,
       handleOpenStepCardModal,
       isAutosaveEnabled,
@@ -2473,13 +2435,9 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
     prevProps.createColorsAction !== nextProps.createColorsAction ||
-    prevProps.createIconsAction !== nextProps.createIconsAction ||
     prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
-    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
     prevProps.createExamplesAction !== nextProps.createExamplesAction ||
-    prevProps.createFieldsAction !== nextProps.createFieldsAction ||
-    prevProps.createDocumentsAction !== nextProps.createDocumentsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
+    prevProps.createDocumentsAction !== nextProps.createDocumentsAction
   ) {
     return false; // Function props changed, re-render
   }

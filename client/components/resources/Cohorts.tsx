@@ -238,6 +238,7 @@ export function Cohorts({
         </div>
       )}
       <SelectableGrid<CohortItem>
+        horizontal
         items={displayCohorts}
         selectedId={null}
         selectedIds={ids}

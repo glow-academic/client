@@ -31,7 +31,7 @@ async def search_departments_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     user_department_ids: list[UUID] | None = None,
-    use_recent: bool | None = None,
+    suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetDepartmentsV4Item]:
@@ -46,7 +46,7 @@ async def search_departments_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "user_department_ids": [str(id) for id in (user_department_ids or [])],
-            "use_recent": use_recent,
+            "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
         },
     )
@@ -64,7 +64,7 @@ async def search_departments_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         user_department_ids=user_department_ids or [],
-        use_recent=use_recent,
+        suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
     )
     result = cast(
@@ -104,7 +104,7 @@ async def search_departments(
             request.limit_count,
             request.offset_count,
             request.user_department_ids,
-            request.use_recent,
+            request.suggest_source,
             request.exclude_ids,
             bypass_cache,
         )

@@ -98061,17 +98061,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98164,17 +98163,16 @@
             ],
             "title": "User Department Ids"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98264,17 +98262,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98391,17 +98388,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98506,17 +98502,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98682,17 +98677,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98782,17 +98776,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -98882,17 +98875,16 @@
             ],
             "title": "Group Id"
           },
-          "use_recent": {
+          "suggest_source": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Use Recent",
-            "default": false
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [
@@ -99013,6 +99005,17 @@
               }
             ],
             "title": "Video Parameter"
+          },
+          "suggest_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggest Source"
           },
           "exclude_ids": {
             "anyOf": [

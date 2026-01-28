@@ -57,24 +57,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftSimulationsIn = InputOf<
-  "/api/v4/resources/simulations",
-  "post"
->;
-type CreateDraftSimulationsOut = OutputOf<
-  "/api/v4/resources/simulations",
-  "post"
->;
 type CreateDraftSimulationPositionsIn = InputOf<
   "/api/v4/resources/simulation_positions",
   "post"
@@ -104,15 +86,6 @@ export interface CohortProps {
   createDescriptionsAction?: (
     input: CreateDraftDescriptionsIn
   ) => Promise<CreateDraftDescriptionsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
-  createSimulationsAction?: (
-    input: CreateDraftSimulationsIn
-  ) => Promise<CreateDraftSimulationsOut>;
   createSimulationPositionsAction?: (
     input: CreateDraftSimulationPositionsIn
   ) => Promise<CreateDraftSimulationPositionsOut>;
@@ -125,9 +98,6 @@ function CohortComponent({
   patchCohortDraftAction,
   createNamesAction,
   createDescriptionsAction,
-  createFlagsAction,
-  createDepartmentsAction,
-  createSimulationsAction,
   createSimulationPositionsAction,
 }: CohortProps) {
   const router = useRouter();
@@ -1461,7 +1431,6 @@ function CohortComponent({
                   required={currentCohortData?.departments_required ?? false}
                   group_id={currentCohortData?.group_id ?? null}
                   agent_id={currentCohortData?.departments_agent_id ?? null}
-                  createDepartmentsAction={createDepartmentsAction}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1483,7 +1452,6 @@ function CohortComponent({
                   required={currentCohortData?.flag_required ?? false}
                   group_id={currentCohortData?.group_id ?? null}
                   agent_id={currentCohortData?.flag_agent_id ?? null}
-                  createFlagsAction={createFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1603,7 +1571,6 @@ function CohortComponent({
                 agent_id={currentCohortData?.simulations_agent_id ?? null}
                 searchTerm={simulationSearchTerm}
                 showSelectedFilter={simulationShowSelected}
-                createSimulationsAction={createSimulationsAction}
               />
               <SimulationPositions
                 simulation_ids={formState.simulation_ids ?? []}
@@ -1676,9 +1643,6 @@ function CohortComponent({
       formState.simulation_ids,
       createNamesAction,
       createDescriptionsAction,
-      createFlagsAction,
-      createDepartmentsAction,
-      createSimulationsAction,
       createSimulationPositionsAction,
       canRegenerate,
       handleOpenStepCardModal,
@@ -1771,9 +1735,6 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
     prevProps.patchCohortDraftAction !== nextProps.patchCohortDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
-    prevProps.createSimulationsAction !== nextProps.createSimulationsAction ||
     prevProps.createSimulationPositionsAction !== nextProps.createSimulationPositionsAction
   ) {
     return false; // Function props changed, re-render

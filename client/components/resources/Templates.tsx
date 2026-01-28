@@ -408,6 +408,7 @@ export function Templates({
               ]
             : filteredTemplates
         }
+        horizontal
         selectedId={null}
         selectedIds={ids}
         onSelect={(templateId) => {

@@ -34,6 +34,7 @@ async def search_parameters_internal(
     document_parameter: bool | None = None,
     scenario_parameter: bool | None = None,
     video_parameter: bool | None = None,
+    suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetParametersV4Item]:
@@ -51,6 +52,7 @@ async def search_parameters_internal(
             "document_parameter": document_parameter,
             "scenario_parameter": scenario_parameter,
             "video_parameter": video_parameter,
+            "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
         },
     )
@@ -71,6 +73,7 @@ async def search_parameters_internal(
         document_parameter=document_parameter,
         scenario_parameter=scenario_parameter,
         video_parameter=video_parameter,
+        suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
     )
     result = cast(
@@ -113,6 +116,7 @@ async def search_parameters(
             request.document_parameter,
             request.scenario_parameter,
             request.video_parameter,
+            request.suggest_source,
             request.exclude_ids,
             bypass_cache,
         )

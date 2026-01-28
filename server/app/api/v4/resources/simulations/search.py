@@ -1,0 +1,232 @@
+"""Simulations search endpoint - v4 API.
+
+Provides search endpoint for simulations with suggest_source pattern.
+"""
+
+from typing import Annotated, Any, Literal, cast
+from uuid import UUID
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, Field
+
+from app.api.v4.resources.simulations.get import GetSimulationsV4Item
+from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import load_sql_query
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v4/queries/resources/simulations/search_simulations_complete.sql"
+
+
+router = APIRouter()
+
+
+# =============================================================================
+# Types
+# =============================================================================
+
+
+SuggestSource = Literal["all", "linked", "recent"]
+
+
+class SearchSimulationsApiRequest(BaseModel):
+    """Request for searching simulations."""
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    suggest_source: SuggestSource | None = "all"
+    exclude_ids: list[UUID] | None = Field(default_factory=list)
+
+
+class SearchSimulationsApiResponse(BaseModel):
+    """Response for searching simulations."""
+
+    items: list[GetSimulationsV4Item] | None = Field(default_factory=list)
+
+
+class SearchSimulationsSqlParams(BaseModel):
+    """SQL parameters for search simulations."""
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+    suggest_source: str | None = "all"
+    exclude_ids: list[UUID] | None = Field(default_factory=list)
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+            self.suggest_source,
+            self.exclude_ids or [],
+        )
+
+
+class SearchSimulationsSqlRow(BaseModel):
+    """SQL row for search simulations."""
+
+    items: list[GetSimulationsV4Item] | None = None
+
+
+# =============================================================================
+# Internal Function
+# =============================================================================
+
+
+async def search_simulations_internal(
+    conn: asyncpg.Connection,
+    search: str | None = None,
+    limit_count: int | None = 20,
+    offset_count: int | None = 0,
+    group_id: UUID | None = None,
+    suggest_source: str | None = "all",
+    exclude_ids: list[UUID] | None = None,
+    bypass_cache: bool = False,
+) -> list[GetSimulationsV4Item]:
+    """Internal function for searching simulations.
+
+    Args:
+        conn: Database connection
+        search: Search term to filter by name/description
+        limit_count: Maximum number of results
+        offset_count: Offset for pagination
+        group_id: Optional group ID for filtering by recent usage
+        suggest_source: Source for suggestions ('all', 'linked', 'recent')
+        exclude_ids: IDs to exclude from results
+        bypass_cache: Whether to bypass cache
+
+    Returns:
+        List of simulation items
+    """
+    # Generate cache key
+    cache_key_val = cache_key(
+        "simulations/search",
+        {
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "group_id": str(group_id) if group_id else None,
+            "suggest_source": suggest_source,
+            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+        },
+    )
+
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                GetSimulationsV4Item.model_validate(item)
+                for item in cached.get("data", [])
+            ]
+
+    # Execute SQL
+    params = SearchSimulationsSqlParams(
+        search=search,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        group_id=group_id,
+        suggest_source=suggest_source,
+        exclude_ids=exclude_ids or [],
+    )
+
+    result = cast(
+        SearchSimulationsSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+    items = result.items or []
+
+    # Cache response
+    await set_cached(
+        cache_key_val,
+        {"data": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=["simulations"],
+    )
+
+    return items
+
+
+# =============================================================================
+# HTTP Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/simulations/search",
+    response_model=SearchSimulationsApiResponse,
+    dependencies=[
+        audit_activity(
+            "simulations.search",
+            "{{ actor.name }} searched simulations",
+        )
+    ],
+)
+async def search_simulations(
+    request: SearchSimulationsApiRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> SearchSimulationsApiResponse:
+    """Search simulations with optional filters."""
+    tags = ["resources", "simulations"]
+
+    sql_query = load_sql_query(SQL_PATH)
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        # Get profile_id from header
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Check for cache bypass header
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        # Use internal function
+        items = await search_simulations_internal(
+            conn=conn,
+            search=request.search,
+            limit_count=request.limit_count,
+            offset_count=request.offset_count,
+            group_id=request.group_id,
+            suggest_source=request.suggest_source,
+            exclude_ids=request.exclude_ids,
+            bypass_cache=bypass_cache,
+        )
+
+        api_response = SearchSimulationsApiResponse(items=items)
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+
+        return api_response
+    except HTTPException:
+        raise
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="search_simulations",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )

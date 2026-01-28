@@ -1,5 +1,5 @@
 -- Search parameters resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), persona_parameter, document_parameter, scenario_parameter, video_parameter (boolean filters), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), persona_parameter, document_parameter, scenario_parameter, video_parameter (boolean filters), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of parameter resources)
 
 -- Drop function if exists (handles signature variations)
@@ -26,6 +26,7 @@ CREATE OR REPLACE FUNCTION api_search_parameters_v4(
     document_parameter boolean DEFAULT NULL,
     scenario_parameter boolean DEFAULT NULL,
     video_parameter boolean DEFAULT NULL,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (

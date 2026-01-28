@@ -1,0 +1,495 @@
+"""Simulation API types - handcrafted types for simulation endpoints.
+
+These types are used for the simulation API endpoints and include
+Python-computed permissions and UI flags.
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+
+# =============================================================================
+# Resource Types (imported from SQL types for reuse)
+# =============================================================================
+
+
+class SimulationNameResource(BaseModel):
+    """Name resource for simulation."""
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class SimulationDescriptionResource(BaseModel):
+    """Description resource for simulation."""
+
+    id: UUID | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class SimulationFlagResource(BaseModel):
+    """Flag resource for simulation."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    icon_id: UUID | None = None
+    generated: bool | None = None
+
+
+class SimulationDepartment(BaseModel):
+    """Department for simulation."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class SimulationScenario(BaseModel):
+    """Scenario for simulation."""
+
+    scenario_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    generated: bool | None = None
+    department_id: UUID | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+    position: int | None = None
+    time_limit_seconds: int | None = None
+    flag_id: UUID | None = None
+    rubric_id: UUID | None = None
+
+
+class SimulationScenarioPosition(BaseModel):
+    """Scenario position for simulation."""
+
+    scenario_id: UUID | None = None
+    value: int | None = None
+    generated: bool | None = None
+
+
+# =============================================================================
+# Access Check Types (Query 1)
+# =============================================================================
+
+
+class GetSimulationAccessSqlParams(BaseModel):
+    """Parameters for simulation access check query."""
+
+    profile_id: UUID
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.profile_id, self.simulation_id, self.draft_id)
+
+
+class GetSimulationAccessSqlRow(BaseModel):
+    """Row returned from simulation access check query."""
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+    cohort_usage_count: int | None = None
+
+
+# =============================================================================
+# ID Fetching Types (Query 2)
+# =============================================================================
+
+
+class GetSimulationIdsSqlParams(BaseModel):
+    """Parameters for simulation ID fetching query."""
+
+    profile_id: UUID
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+
+class GetSimulationIdsSqlRow(BaseModel):
+    """Row returned from simulation ID fetching query."""
+
+    # Single-select IDs
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    # Multi-select IDs
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+
+    # Agent IDs
+    name_agent_id: UUID | None = None
+    description_agent_id: UUID | None = None
+    flag_agent_id: UUID | None = None
+    departments_agent_id: UUID | None = None
+    scenarios_agent_id: UUID | None = None
+    basic_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
+
+    # Tools existence flags
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    scenarios_has_tools: bool | None = None
+
+
+# =============================================================================
+# Scenarios Resource Types
+# =============================================================================
+
+
+class QGetScenariosV4Item(BaseModel):
+    """Scenario item from scenarios resource query."""
+
+    scenario_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    generated: bool | None = None
+    department_id: UUID | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+
+
+class GetScenariosSqlParams(BaseModel):
+    """Parameters for getting scenarios by IDs."""
+
+    ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.ids,)
+
+
+class GetScenariosSqlRow(BaseModel):
+    """Row returned from scenarios get query."""
+
+    items: list[QGetScenariosV4Item] | None = None
+
+
+class SearchScenariosSqlParams(BaseModel):
+    """Parameters for searching scenarios."""
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] | None = None
+    suggest_source: str | None = None
+    exclude_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.user_department_ids,
+            self.suggest_source,
+            self.exclude_ids,
+        )
+
+
+class SearchScenariosSqlRow(BaseModel):
+    """Row returned from scenarios search query."""
+
+    items: list[QGetScenariosV4Item] | None = None
+
+
+# API Request/Response types for scenarios resource
+class GetScenariosApiRequest(BaseModel):
+    """Request for getting scenarios by IDs."""
+
+    ids: list[UUID]
+
+
+class GetScenariosApiResponse(BaseModel):
+    """Response for getting scenarios by IDs."""
+
+    items: list[QGetScenariosV4Item] | None = None
+
+
+class SearchScenariosApiRequest(BaseModel):
+    """Request for searching scenarios."""
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    user_department_ids: list[UUID] | None = None
+    suggest_source: str | None = None
+    exclude_ids: list[UUID] | None = None
+
+
+class SearchScenariosApiResponse(BaseModel):
+    """Response for searching scenarios."""
+
+    items: list[QGetScenariosV4Item] | None = None
+
+
+# =============================================================================
+# GET Endpoint Types
+# =============================================================================
+
+
+class GetSimulationApiRequest(BaseModel):
+    """Request for getting a single simulation."""
+
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+    scenario_search: str | None = None
+    scenario_show_selected: bool | None = None
+    filter_scenario_ids: list[UUID] | None = None
+
+
+class GetSimulationApiResponse(BaseModel):
+    """Response for getting a single simulation."""
+
+    # Required metadata fields
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+
+    # Name resource
+    name_id: UUID | None = None
+    name_resource: SimulationNameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[SimulationNameResource] | None = None
+
+    # Description resource
+    description_id: UUID | None = None
+    description_resource: SimulationDescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[SimulationDescriptionResource] | None = None
+
+    # Flag resource
+    active_flag_id: UUID | None = None
+    flag_resource: SimulationFlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+
+    # Departments
+    department_ids: list[UUID] | None = None
+    department_resources: list[SimulationDepartment] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[SimulationDepartment] | None = None
+
+    # Scenarios
+    scenario_ids: list[UUID] | None = None
+    scenario_resources: list[SimulationScenario] | None = None
+    show_scenarios: bool | None = None
+    scenarios_agent_id: UUID | None = None
+    scenarios_required: bool | None = None
+    scenario_suggestions: list[UUID] | None = None
+    scenarios: list[SimulationScenario] | None = None
+
+    # Scenario positions
+    scenario_positions: list[SimulationScenarioPosition] | None = None
+
+    # Multi-resource combination agent IDs
+    basic_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
+
+
+# =============================================================================
+# LIST Endpoint Types
+# =============================================================================
+
+
+class ListSimulationApiSimulation(BaseModel):
+    """Simulation item in list response with Python-computed permissions."""
+
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    scenario_ids: list[str] | None = None
+    usage_count: int | None = None
+    updated_at: str | None = None
+
+    # Python-computed permissions
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_duplicate: bool | None = None
+
+
+class ListSimulationApiScenario(BaseModel):
+    """Scenario in list response."""
+
+    scenario_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    persona_ids: list[str] | None = None
+
+
+class ListSimulationApiDepartment(BaseModel):
+    """Department in list response."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+class ListSimulationApiResponse(BaseModel):
+    """Response for listing simulations."""
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    simulations: list[ListSimulationApiSimulation] | None = None
+    scenarios: list[ListSimulationApiScenario] | None = None
+    departments: list[ListSimulationApiDepartment] | None = None
+
+
+# =============================================================================
+# SAVE Endpoint Types
+# =============================================================================
+
+
+class SaveSimulationApiRequest(BaseModel):
+    """Request for saving a simulation."""
+
+    draft_id: UUID
+    input_simulation_id: UUID | None = None
+
+
+class SaveSimulationApiResponse(BaseModel):
+    """Response for saving a simulation."""
+
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
+
+
+# =============================================================================
+# DELETE Endpoint Types
+# =============================================================================
+
+
+class DeleteSimulationApiRequest(BaseModel):
+    """Request for deleting a simulation."""
+
+    simulation_id: UUID
+
+
+class DeleteSimulationApiResponse(BaseModel):
+    """Response for deleting a simulation."""
+
+    usage_count: int | None = None
+    deleted: bool | None = None
+    title: str | None = None
+    actor_name: str | None = None
+
+
+# =============================================================================
+# DUPLICATE Endpoint Types
+# =============================================================================
+
+
+class DuplicateSimulationApiRequest(BaseModel):
+    """Request for duplicating a simulation."""
+
+    simulation_id: UUID
+
+
+class DuplicateSimulationApiResponse(BaseModel):
+    """Response for duplicating a simulation."""
+
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    actor_name: str | None = None
+
+
+# =============================================================================
+# DRAFT Endpoint Types
+# =============================================================================
+
+
+class PatchSimulationDraftApiRequest(BaseModel):
+    """Request for patching a simulation draft."""
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+
+class PatchSimulationDraftApiResponse(BaseModel):
+    """Response for patching a simulation draft."""
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+# =============================================================================
+# SQL Row Types (for internal use)
+# =============================================================================
+
+
+class ListSimulationSqlSimulation(BaseModel):
+    """Raw simulation from SQL without computed permissions."""
+
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    scenario_ids: list[str] | None = None
+    usage_count: int | None = None
+    updated_at: str | None = None
+
+
+class ListSimulationSqlRow(BaseModel):
+    """Raw SQL row for list simulations."""
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulations: list[ListSimulationSqlSimulation] | None = None
+    scenarios: list[ListSimulationApiScenario] | None = None
+    departments: list[ListSimulationApiDepartment] | None = None

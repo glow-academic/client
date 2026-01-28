@@ -28,14 +28,12 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
+type CreateDraftSimulationPositionsIn = InputOf<
+  "/api/v4/resources/simulation_positions",
   "post"
 >;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
+type CreateDraftSimulationPositionsOut = OutputOf<
+  "/api/v4/resources/simulation_positions",
   "post"
 >;
 
@@ -84,20 +82,12 @@ async function createDraftDescriptions(
   return api.post("/resources/descriptions", input);
 }
 
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
+async function createDraftSimulationPositions(
+  input: CreateDraftSimulationPositionsIn
+): Promise<CreateDraftSimulationPositionsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
+  return api.post("/resources/simulation_positions", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -167,8 +157,7 @@ export default async function NewCohortPage({
         patchCohortDraftAction={patchCohortDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
-        createFlagsAction={createDraftFlags}
-        createDepartmentsAction={createDraftDepartments}
+        createSimulationPositionsAction={createDraftSimulationPositions}
       />
     </div>
   );

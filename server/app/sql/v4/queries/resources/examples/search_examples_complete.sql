@@ -1,5 +1,5 @@
 -- Search examples resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), persona_id (uuid, optional), user_department_ids (uuid[]), group_id (uuid, optional), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), persona_id (uuid, optional), user_department_ids (uuid[]), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of example resources)
 
 -- Drop function if exists (handles signature variations)
@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_examples_v4(
     persona_id uuid DEFAULT NULL,
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     group_id uuid DEFAULT NULL,
-    use_recent boolean DEFAULT false,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -51,8 +51,7 @@ base AS (
     LEFT JOIN LATERAL (
         SELECT MAX(pe.created_at) AS recent_at
         FROM persona_examples_junction pe
-        WHERE use_recent = true
-          AND pe.example_id = e.id
+        WHERE pe.example_id = e.id
           AND (
               persona_id IS NULL
               OR EXISTS (
@@ -60,7 +59,21 @@ base AS (
                   WHERE ap.persona_id = pe.persona_id
               )
           )
-    ) recent ON true
+          AND (
+              pe.active = true
+              OR (
+                  pe.generated = true
+                  AND e.generated = true
+                  AND group_id IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM view_calls_entry c
+                      JOIN view_runs_entry r ON r.id = c.run_id
+                      WHERE c.id IN (SELECT call_id FROM examples_calls_connection WHERE examples_id = e.id)
+                        AND r.group_id = group_id
+                  )
+              )
+          )
+    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE e.example IS NOT NULL
       AND e.example != ''
       AND (search IS NULL OR search = '' OR LOWER(e.example) LIKE '%' || LOWER(search) || '%')
@@ -87,6 +100,10 @@ base AS (
               WHERE pe.example_id = e.id
           )
       )
+      AND (
+          suggest_source = 'all'
+          OR recent.recent_at IS NOT NULL
+      )
 )
 SELECT COALESCE(
     ARRAY_AGG(
@@ -98,7 +115,7 @@ SELECT COALESCE(
 FROM (
     SELECT * FROM base
     ORDER BY
-        CASE WHEN use_recent THEN recent_at END DESC NULLS LAST,
+        CASE WHEN suggest_source = 'recent' THEN recent_at END DESC NULLS LAST,
         example
     LIMIT limit_count
     OFFSET offset_count

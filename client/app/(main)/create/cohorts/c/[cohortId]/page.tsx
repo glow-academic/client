@@ -29,24 +29,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftSimulationsIn = InputOf<
-  "/api/v4/resources/simulations",
-  "post"
->;
-type CreateDraftSimulationsOut = OutputOf<
-  "/api/v4/resources/simulations",
-  "post"
->;
 type CreateDraftSimulationPositionsIn = InputOf<
   "/api/v4/resources/simulation_positions",
   "post"
@@ -135,29 +117,6 @@ async function createDraftDescriptions(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
-}
-
-async function createDraftSimulations(
-  input: CreateDraftSimulationsIn
-): Promise<CreateDraftSimulationsOut> {
-  "use server";
-  return api.post("/resources/simulations", input);
 }
 
 async function createDraftSimulationPositions(
@@ -250,9 +209,6 @@ export default async function CohortEditPage({
         patchCohortDraftAction={patchCohortDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
-        createFlagsAction={createDraftFlags}
-        createDepartmentsAction={createDraftDepartments}
-        createSimulationsAction={createDraftSimulations}
         createSimulationPositionsAction={createDraftSimulationPositions}
       />
     </div>

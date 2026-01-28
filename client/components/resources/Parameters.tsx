@@ -249,6 +249,7 @@ export function Parameters({
         </div>
       )}
       <SelectableGrid<ParametersItem>
+        horizontal
         items={filteredParameters}
         selectedId={null}
         selectedIds={ids}

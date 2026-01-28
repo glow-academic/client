@@ -39,10 +39,8 @@ type CreateDraftInstructionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
-type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
+type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -135,20 +133,12 @@ async function createDraftColors(
   return api.post("/resources/colors", input);
 }
 
-async function createDraftIcons(
-  input: CreateDraftIconsIn
-): Promise<CreateDraftIconsOut> {
+async function createDraftExamples(
+  input: CreateDraftExamplesIn
+): Promise<CreateDraftExamplesOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/icons", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
+  return api.post("/resources/examples", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -226,8 +216,7 @@ export default async function PersonaEditPage({
           createDescriptionsAction={createDraftDescriptions}
           createInstructionsAction={createDraftInstructions}
           createColorsAction={createDraftColors}
-          createIconsAction={createDraftIcons}
-          createFlagsAction={createDraftFlags}
+          createExamplesAction={createDraftExamples}
         />
       </div>
     );

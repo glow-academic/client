@@ -1,5 +1,5 @@
 -- Search descriptions resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of description resources)
 
 -- Drop function if exists (handles signature variations)
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_descriptions_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     group_id uuid DEFAULT NULL,
-    use_recent boolean DEFAULT false,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -45,9 +45,22 @@ FROM (
     LEFT JOIN LATERAL (
         SELECT MAX(pd.created_at) AS recent_at
         FROM persona_descriptions_junction pd
-        WHERE use_recent = true
-          AND pd.description_id = d.id
-    ) recent ON true
+        WHERE pd.description_id = d.id
+          AND (
+              pd.generated = false
+              OR (
+                  pd.generated = true
+                  AND d.generated = true
+                  AND group_id IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM view_calls_entry c
+                      JOIN view_runs_entry r ON r.id = c.run_id
+                      WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
+                        AND r.group_id = group_id
+                  )
+              )
+          )
+    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE d.description IS NOT NULL
       AND d.description != ''
       AND (search IS NULL OR search = '' OR LOWER(d.description) LIKE '%' || LOWER(search) || '%')
@@ -65,8 +78,12 @@ FROM (
               )
           )
       )
+      AND (
+          suggest_source = 'all'
+          OR recent.recent_at IS NOT NULL
+      )
     ORDER BY
-        CASE WHEN use_recent THEN recent.recent_at END DESC NULLS LAST,
+        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         d.description
     LIMIT limit_count
     OFFSET offset_count

@@ -1,0 +1,194 @@
+"""Simulation positions get endpoint - v4 API.
+
+Provides get endpoint for fetching simulation positions by simulation IDs.
+"""
+
+from typing import Annotated, Any, cast
+from uuid import UUID
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, Field
+
+from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import load_sql_query
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v4/queries/resources/simulation_positions/get_simulation_positions_complete.sql"
+
+
+router = APIRouter()
+
+
+# =============================================================================
+# Types
+# =============================================================================
+
+
+class GetSimulationPositionsV4Item(BaseModel):
+    """Simulation position item returned from get endpoint."""
+
+    id: UUID | None = None
+    simulation_id: UUID | None = None
+    value: int | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+
+
+class GetSimulationPositionsApiRequest(BaseModel):
+    """Request for getting simulation positions by simulation IDs."""
+
+    simulation_ids: list[UUID]
+
+
+class GetSimulationPositionsApiResponse(BaseModel):
+    """Response for getting simulation positions."""
+
+    items: list[GetSimulationPositionsV4Item] | None = Field(default_factory=list)
+
+
+class GetSimulationPositionsSqlParams(BaseModel):
+    """SQL parameters for get simulation positions."""
+
+    simulation_ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (self.simulation_ids,)
+
+
+class GetSimulationPositionsSqlRow(BaseModel):
+    """SQL row for get simulation positions."""
+
+    items: list[GetSimulationPositionsV4Item] | None = None
+
+
+# =============================================================================
+# Internal Function
+# =============================================================================
+
+
+async def get_simulation_positions_internal(
+    conn: asyncpg.Connection,
+    simulation_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[GetSimulationPositionsV4Item]:
+    """Internal function for parallel fetching from cohort endpoint.
+
+    Args:
+        conn: Database connection
+        simulation_ids: List of simulation IDs to fetch positions for
+        bypass_cache: Whether to bypass cache
+
+    Returns:
+        List of simulation position items
+    """
+    if not simulation_ids:
+        return []
+
+    # Generate cache key
+    cache_key_val = cache_key(
+        "simulation_positions/get",
+        {"simulation_ids": [str(id) for id in simulation_ids]},
+    )
+
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                GetSimulationPositionsV4Item.model_validate(item)
+                for item in cached.get("data", [])
+            ]
+
+    # Execute SQL
+    params = GetSimulationPositionsSqlParams(simulation_ids=simulation_ids)
+    result = cast(
+        GetSimulationPositionsSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        ),
+    )
+
+    items = result.items or []
+
+    # Cache response
+    await set_cached(
+        cache_key_val,
+        {"data": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=["simulation_positions"],
+    )
+
+    return items
+
+
+# =============================================================================
+# HTTP Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/simulation_positions/get",
+    response_model=GetSimulationPositionsApiResponse,
+    dependencies=[
+        audit_activity(
+            "simulation_positions.get",
+            "{{ actor.name }} fetched simulation positions",
+        )
+    ],
+)
+async def get_simulation_positions(
+    request: GetSimulationPositionsApiRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetSimulationPositionsApiResponse:
+    """Get simulation positions by simulation IDs."""
+    tags = ["resources", "simulation_positions"]
+
+    sql_query = load_sql_query(SQL_PATH)
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        # Get profile_id from header
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Check for cache bypass header
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        # Use internal function
+        items = await get_simulation_positions_internal(
+            conn=conn,
+            simulation_ids=request.simulation_ids,
+            bypass_cache=bypass_cache,
+        )
+
+        api_response = GetSimulationPositionsApiResponse(items=items)
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+
+        return api_response
+    except HTTPException:
+        raise
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_simulation_positions",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )

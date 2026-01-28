@@ -44,10 +44,7 @@ CREATE TYPE types.q_list_cohorts_v4_cohort AS (
     simulation_ids text[],
     usage_count bigint,
     num_members int,
-    can_edit boolean,
-    can_delete boolean,
-    can_duplicate boolean,
-    can_leave boolean,
+    is_member boolean,
     updated_at timestamptz
 );
 
@@ -102,6 +99,7 @@ CREATE OR REPLACE FUNCTION api_list_cohorts_v4(
 )
 RETURNS TABLE (
     actor_name text,
+    user_role text,
     cohorts types.q_list_cohorts_v4_cohort[],
     profiles types.q_list_cohorts_v4_profile[],
     simulations types.q_list_cohorts_v4_simulation[],
@@ -183,20 +181,9 @@ cohorts_data AS (
         COALESCE(ces.usage_count, 0) as usage_count,
         COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
         CASE
-            WHEN ces.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
-            ELSE false
-        END as can_edit,
-        CASE
-            WHEN ces.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) AND COALESCE(ces.usage_count, 0) = 0 THEN true
-            ELSE false
-        END as can_delete,
-        true as can_duplicate,
-        CASE
             WHEN uic.cohort_id IS NOT NULL THEN true
             ELSE false
-        END as can_leave
+        END as is_member
     FROM params x
     JOIN cohort_artifact c ON true
     LEFT JOIN cohort_departments_junction cd ON cd.cohort_id = c.id AND cd.active = true
@@ -434,13 +421,14 @@ general_agent_for_user AS (
 )
 SELECT
     up.actor_name,
+    up.role::text as user_role,
     -- Aggregate cohorts (from paginated set)
     COALESCE(
         (SELECT ARRAY_AGG(
             (cd.cohort_id, cd.name, cd.description, cd.active, cd.department_ids,
              ARRAY(SELECT unnest(cd.profile_ids)::text),
              ARRAY(SELECT unnest(cd.simulation_ids)::text),
-             cd.usage_count, cd.num_members, cd.can_edit, cd.can_delete, cd.can_duplicate, cd.can_leave, cd.updated_at)::types.q_list_cohorts_v4_cohort
+             cd.usage_count, cd.num_members, cd.is_member, cd.updated_at)::types.q_list_cohorts_v4_cohort
             ORDER BY cd.updated_at DESC NULLS LAST
         ) FROM paginated_cohorts cd),
         '{}'::types.q_list_cohorts_v4_cohort[]

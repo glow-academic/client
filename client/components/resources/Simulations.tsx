@@ -254,6 +254,7 @@ export function Simulations({
         </div>
       )}
       <SelectableGrid<SimulationItem>
+        horizontal
         items={filteredSimulationItems}
         selectedId={null}
         selectedIds={ids}

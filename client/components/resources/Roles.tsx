@@ -379,6 +379,7 @@ export function Roles({
         </Label>
       )}
       <SelectableGrid
+        horizontal
         items={filteredRoles}
         selectedId={multiSelect ? null : (role ?? null)}
         {...(multiSelect ? { selectedIds: role_ids ?? [] } : {})}

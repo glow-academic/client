@@ -202,6 +202,7 @@ export function Runs({
         </div>
       )}
       <SelectableGrid
+        horizontal
         items={runItems}
         selectedId={null}
         selectedIds={ids}

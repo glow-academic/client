@@ -121,6 +121,7 @@ export function Routes({
         </div>
       )}
       <SelectableGrid
+        horizontal
         items={filteredRoutes}
         selectedId={null}
         selectedIds={ids}

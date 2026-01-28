@@ -2,19 +2,35 @@
 
 import uuid
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.artifacts.cohort.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+    compute_can_leave,
+)
+from app.api.v4.artifacts.cohort.types import (
+    ListCohortApiCohort,
+    ListCohortApiResponse,
+    ListCohortSqlCohort,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetCohortsListApiRequest, GetCohortsListApiResponse,
-                           GetCohortsListSqlParams, GetCohortsListSqlRow,
-                           load_sql_query)
+from app.sql.types import (
+    GetCohortsListApiRequest,
+    GetCohortsListSqlParams,
+    GetCohortsListSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/cohorts/get_cohorts_list_complete.sql"
@@ -25,7 +41,7 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=GetCohortsListApiResponse,
+    response_model=ListCohortApiResponse,
     dependencies=[
         audit_activity("cohorts.list", "{{ actor.name }} visited the Cohorts page")
     ],
@@ -35,7 +51,7 @@ async def get_cohort_list(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetCohortsListApiResponse:
+) -> ListCohortApiResponse:
     """Get cohorts list with permissions and relationships."""
     tags = ["cohorts"]  # From router tags
 
@@ -52,7 +68,7 @@ async def get_cohort_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetCohortsListApiResponse.model_validate(cached["data"])
+            return ListCohortApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -82,15 +98,63 @@ async def get_cohort_list(
             ),
         )
 
-        # Get actor name from SQL result
+        # Get actor name and user_role from SQL result
         actor_name = result.actor_name
+        user_role = getattr(result, "user_role", "member") or "member"
 
         # Set audit context
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Convert SQL result to API response (no manual conversion needed - SQL returns arrays)
-        api_response = GetCohortsListApiResponse.model_validate(result.model_dump())
+        # Convert raw SQL cohorts to API cohorts with Python-computed permissions
+        api_cohorts: list[ListCohortApiCohort] = []
+        for sql_cohort in result.cohorts or []:
+            # Parse raw cohort data
+            raw = ListCohortSqlCohort.model_validate(sql_cohort)
+
+            # Parse department_ids (string array from SQL)
+            cohort_department_ids: list[UUID] | None = None
+            if raw.department_ids:
+                cohort_department_ids = [UUID(d) for d in raw.department_ids if d]
+
+            # Compute permissions in Python
+            can_edit = compute_can_edit(user_role, cohort_department_ids)
+            can_delete = compute_can_delete(
+                user_role, cohort_department_ids, raw.usage_count or 0
+            )
+            can_duplicate = compute_can_duplicate(user_role)
+            can_leave = compute_can_leave(raw.is_member or False)
+
+            # Build API cohort with computed permissions
+            api_cohort = ListCohortApiCohort(
+                cohort_id=raw.cohort_id,
+                name=raw.name,
+                description=raw.description,
+                active=raw.active,
+                department_ids=raw.department_ids,
+                profile_ids=raw.profile_ids,
+                simulation_ids=raw.simulation_ids,
+                usage_count=raw.usage_count,
+                num_members=raw.num_members,
+                updated_at=raw.updated_at,
+                can_edit=can_edit,
+                can_delete=can_delete,
+                can_duplicate=can_duplicate,
+                can_leave=can_leave,
+            )
+            api_cohorts.append(api_cohort)
+
+        # Build API response with computed permissions
+        api_response = ListCohortApiResponse(
+            actor_name=actor_name,
+            user_role=user_role,
+            cohorts=api_cohorts,
+            profiles=result.profiles,
+            simulations=result.simulations,
+            scenarios=result.scenarios,
+            simulation_scenario_mapping=result.simulation_scenario_mapping,
+            departments=result.departments,
+        )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

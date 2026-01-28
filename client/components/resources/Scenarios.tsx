@@ -255,6 +255,7 @@ export function Scenarios({
         </div>
       )}
       <SelectableGrid<ScenarioItem>
+        horizontal
         items={filteredScenarioItems}
         selectedId={null}
         selectedIds={ids}

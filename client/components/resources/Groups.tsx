@@ -201,6 +201,7 @@ export function Groups({
         </div>
       )}
       <SelectableGrid
+        horizontal
         items={groupItems}
         selectedId={null}
         selectedIds={ids}

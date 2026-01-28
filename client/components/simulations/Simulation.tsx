@@ -56,18 +56,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/scenario_flags",
   "post"
@@ -124,15 +112,6 @@ export interface SimulationProps {
   createDescriptionsAction?: (
     input: CreateDraftDescriptionsIn
   ) => Promise<CreateDraftDescriptionsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
-  createScenariosAction?: (
-    input: CreateDraftScenariosIn
-  ) => Promise<CreateDraftScenariosOut>;
   createScenarioFlagsAction?: (
     input: CreateDraftScenarioFlagsIn
   ) => Promise<CreateDraftScenarioFlagsOut>;
@@ -154,9 +133,6 @@ function SimulationComponent({
   patchSimulationDraftAction,
   createNamesAction,
   createDescriptionsAction,
-  createFlagsAction,
-  createDepartmentsAction,
-  createScenariosAction,
   createScenarioFlagsAction,
   createScenarioPositionsAction,
   createScenarioRubricsAction,
@@ -1738,7 +1714,6 @@ function SimulationComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
-                  createDepartmentsAction={createDepartmentsAction}
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
                   group_id={currentSimulationData.group_id ?? null}
@@ -1756,7 +1731,6 @@ function SimulationComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  createFlagsAction={createFlagsAction}
                   group_id={currentSimulationData.group_id ?? null}
                   agent_id={currentSimulationData.flag_agent_id ?? null}
                   required={currentSimulationData.flag_required ?? false}
@@ -1884,7 +1858,6 @@ function SimulationComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, scenario_ids: ids }))
                   }
-                  createScenariosAction={createScenariosAction}
                   onGenerate={handleGenerateScenarios}
                   isGenerating={isGenerating("scenarios")}
                   group_id={currentSimulationData.group_id ?? null}
@@ -2073,9 +2046,6 @@ function SimulationComponent({
       handleOpenStepCardModal,
       createNamesAction,
       createDescriptionsAction,
-      createFlagsAction,
-      createDepartmentsAction,
-      createScenariosAction,
       createScenarioFlagsAction,
       createScenarioPositionsAction,
       createScenarioRubricsAction,
@@ -2184,9 +2154,6 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
       nextProps.patchSimulationDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
-    prevProps.createScenariosAction !== nextProps.createScenariosAction ||
     prevProps.createScenarioFlagsAction !==
       nextProps.createScenarioFlagsAction ||
     prevProps.createScenarioPositionsAction !==

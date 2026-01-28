@@ -310,6 +310,7 @@ export function StandardGroups({
         </div>
       )}
       <SelectableGrid<StandardGroupItem>
+        horizontal
         items={displayStandardGroups}
         selectedId={null}
         selectedIds={ids}

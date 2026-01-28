@@ -167,7 +167,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
   return (
     <>
       <div className="flex items-center gap-2 pr-4">
-        {/* Save Button */}
+        {/* Save Button - consolidated with status indicator */}
         <Button
           variant="default"
           size="sm"
@@ -175,10 +175,19 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
           onClick={handleSaveClick}
           disabled={saveStatus === "saving"}
         >
-          {saveStatus === "saving" && (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          {saveStatus === "saving" ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Saving...
+            </>
+          ) : saveStatus === "saved" ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Saved
+            </>
+          ) : (
+            "Save"
           )}
-          Save
         </Button>
 
         {/* Draft Picker Icon Button */}
@@ -225,27 +234,6 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Save Status Indicator */}
-        <div className="text-sm min-w-[80px] text-right">
-          {saveStatus === "saving" && (
-            <span className="flex items-center justify-end gap-1.5 text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Saving...
-            </span>
-          )}
-          {saveStatus === "saved" && (
-            <span className="flex items-center justify-end gap-1.5 text-green-600">
-              <Check className="h-3 w-3" />
-              Saved
-            </span>
-          )}
-          {saveStatus === "error" && (
-            <span className="text-destructive text-xs">Save failed</span>
-          )}
-          {saveStatus === "idle" && !isAutosaveEnabled && (
-            <span className="text-xs text-amber-600">Manual save</span>
-          )}
-        </div>
       </div>
 
       {/* Discard Changes Confirmation Dialog */}

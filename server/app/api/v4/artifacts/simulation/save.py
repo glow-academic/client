@@ -1,24 +1,39 @@
 """Simulation save endpoint - v4 API following DHH principles.
+
 Unified endpoint that handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).
+Uses two-pass architecture with Python-computed permissions.
 """
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetNameByIdSqlParams, GetNameByIdSqlRow,
-                           SaveSimulationApiRequest, SaveSimulationApiResponse,
-                           SaveSimulationSqlParams, SaveSimulationSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (
+    GetNameByIdSqlParams,
+    GetNameByIdSqlRow,
+    SaveSimulationApiRequest,
+    SaveSimulationApiResponse,
+    SaveSimulationSqlParams,
+    SaveSimulationSqlRow,
+    load_sql_query,
+)
+from app.api.v4.artifacts.simulation.permissions import (
+    has_access,
+    compute_can_create,
+    compute_can_save,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/simulations/save_simulation_complete.sql"
 GET_NAME_SQL_PATH = "app/sql/v4/queries/simulations/get_name_by_id_complete.sql"
+ACCESS_SQL_PATH = "app/sql/v4/queries/simulations/check_simulation_save_access_complete.sql"
 
 
 router = APIRouter()
@@ -40,7 +55,12 @@ async def save_simulation(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveSimulationApiResponse:
-    """Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided)."""
+    """Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).
+
+    Uses two-pass architecture:
+    1. Check access and permissions in Python
+    2. Execute save if permitted
+    """
     tags = ["simulations"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -55,6 +75,73 @@ async def save_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Pass 1: Check access using access query
+        from pydantic import BaseModel
+
+        class CheckSaveAccessSqlParams(BaseModel):
+            profile_id: UUID
+            simulation_id: UUID | None
+            draft_id: UUID | None
+
+            def to_tuple(self) -> tuple[Any, ...]:
+                return (self.profile_id, self.simulation_id, self.draft_id)
+
+        access_params = CheckSaveAccessSqlParams(
+            profile_id=profile_id,
+            simulation_id=request.input_simulation_id,
+            draft_id=request.draft_id,
+        )
+
+        access_result = await execute_sql_typed(
+            conn, ACCESS_SQL_PATH, params=access_params
+        )
+
+        if access_result:
+            # Extract permission context
+            user_role = getattr(access_result, "user_role", None)
+            user_department_ids = getattr(access_result, "user_department_ids", None) or []
+            simulation_department_ids = getattr(access_result, "simulation_department_ids", None) or []
+            cohort_usage_count = getattr(access_result, "cohort_usage_count", 0) or 0
+            simulation_exists = getattr(access_result, "simulation_exists", None)
+            draft_department_ids = getattr(access_result, "draft_department_ids", None) or []
+
+            if request.input_simulation_id:
+                # Update mode
+                # Check if simulation exists
+                if simulation_exists is False:
+                    raise HTTPException(
+                        status_code=404, detail=f"Simulation {request.input_simulation_id} not found"
+                    )
+
+                # Check access permission
+                if not has_access(user_role, user_department_ids, simulation_department_ids):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You don't have access to this simulation.",
+                    )
+
+                # Check save permission using Python
+                if not compute_can_save(user_role, user_department_ids, simulation_department_ids, cohort_usage_count):
+                    if cohort_usage_count > 0 and user_role == "staff":
+                        raise HTTPException(
+                            status_code=403,
+                            detail=f"Simulation is used by {cohort_usage_count} cohort(s). Only admins can edit.",
+                        )
+                    else:
+                        raise HTTPException(
+                            status_code=403,
+                            detail="You don't have permission to save this simulation.",
+                        )
+            else:
+                # Create mode
+                # Check create permission using Python
+                if not compute_can_create(user_role, draft_department_ids):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You don't have permission to create simulations.",
+                    )
+
+        # Pass 2: Execute save
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
             # Map input_simulation_id from API request (already correct field name)

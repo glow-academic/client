@@ -33,7 +33,7 @@ async def search_examples_internal(
     persona_id: UUID | None = None,
     user_department_ids: list[UUID] | None = None,
     group_id: UUID | None = None,
-    use_recent: bool | None = None,
+    suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetExamplesV4Item]:
@@ -50,7 +50,7 @@ async def search_examples_internal(
             "persona_id": str(persona_id) if persona_id else None,
             "user_department_ids": [str(id) for id in (user_department_ids or [])],
             "group_id": str(group_id) if group_id else None,
-            "use_recent": use_recent,
+            "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
         },
     )
@@ -67,7 +67,7 @@ async def search_examples_internal(
         persona_id=persona_id,
         user_department_ids=user_department_ids or [],
         group_id=group_id,
-        use_recent=use_recent,
+        suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
     )
     result = cast(
@@ -109,7 +109,7 @@ async def search_examples(
             request.persona_id,
             request.user_department_ids,
             request.group_id,
-            request.use_recent,
+            request.suggest_source,
             request.exclude_ids,
             bypass_cache,
         )

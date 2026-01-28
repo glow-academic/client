@@ -6,10 +6,13 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetScenariosListApiRequest,
-                           GetScenariosListApiResponse,
-                           GetScenariosListSqlParams, GetScenariosListSqlRow,
-                           load_sql_query)
+from app.api.v4.artifacts.scenario.types import (
+    GetScenariosListApiRequest,
+    GetScenariosListSqlParams,
+    ListScenarioApiResponse,
+    ListScenarioSqlRow,
+)
+from app.sql.types import load_sql_query
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -25,7 +28,7 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=GetScenariosListApiResponse,
+    response_model=ListScenarioApiResponse,
     dependencies=[
         audit_activity("scenarios.list", "{{ actor.name }} visited the Scenarios page")
     ],
@@ -35,7 +38,7 @@ async def get_scenario_list(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetScenariosListApiResponse:
+) -> ListScenarioApiResponse:
     """Get scenarios list with all relationships."""
     tags = ["scenarios"]  # From router tags
 
@@ -52,7 +55,7 @@ async def get_scenario_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetScenariosListApiResponse.model_validate(cached["data"])
+            return ListScenarioApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -74,7 +77,7 @@ async def get_scenario_list(
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            GetScenariosListSqlRow,
+            ListScenarioSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -87,7 +90,7 @@ async def get_scenario_list(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert SQL result to API response
-        api_response = GetScenariosListApiResponse.model_validate(result.model_dump())
+        api_response = ListScenarioApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

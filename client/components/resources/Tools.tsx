@@ -175,6 +175,7 @@ export function Tools({
         {required && <span className="text-destructive">*</span>}
       </Label>
       <SelectableGrid<ToolsItem>
+        horizontal
         items={displayTools}
         selectedId={null}
         selectedIds={ids}

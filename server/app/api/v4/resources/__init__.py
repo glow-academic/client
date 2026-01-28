@@ -44,6 +44,10 @@ router.include_router(descriptions_router)
 router.include_router(descriptions_get_router)
 router.include_router(descriptions_search_router)
 # NOTE: documents removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for scenarios two-pass architecture
+from app.api.v4.resources.documents.get import router as documents_get_router
+
+router.include_router(documents_get_router)
 from app.api.v4.resources.emails.create import router as emails_router
 
 router.include_router(emails_router)
@@ -94,8 +98,10 @@ from app.api.v4.resources.icons.search import router as icons_search_router
 router.include_router(icons_get_router)
 router.include_router(icons_search_router)
 from app.api.v4.resources.images.create import router as images_router
+from app.api.v4.resources.images.get import router as images_get_router
 
 router.include_router(images_router)
+router.include_router(images_get_router)
 # NOTE: improvements removed - converted to entry table (migration 305)
 from app.api.v4.resources.instructions.create import \
     router as instructions_router
@@ -123,8 +129,10 @@ router.include_router(names_router)
 router.include_router(names_get_router)
 router.include_router(names_search_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
+from app.api.v4.resources.objectives.get import router as objectives_get_router
 
 router.include_router(objectives_router)
+router.include_router(objectives_get_router)
 from app.api.v4.resources.options.create import router as options_router
 
 router.include_router(options_router)
@@ -136,6 +144,10 @@ from app.api.v4.resources.parameters.search import router as parameters_search_r
 router.include_router(parameters_get_router)
 router.include_router(parameters_search_router)
 # NOTE: personas removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for scenarios two-pass architecture
+from app.api.v4.resources.personas.get import router as personas_get_router
+
+router.include_router(personas_get_router)
 from app.api.v4.resources.points.create import router as points_router
 
 router.include_router(points_router)
@@ -144,8 +156,11 @@ from app.api.v4.resources.pricing.create import router as pricing_router
 router.include_router(pricing_router)
 from app.api.v4.resources.problem_statements.create import \
     router as problem_statements_router
+from app.api.v4.resources.problem_statements.get import \
+    router as problem_statements_get_router
 
 router.include_router(problem_statements_router)
+router.include_router(problem_statements_get_router)
 # NOTE: profiles removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.prompts.create import router as prompts_router
 
@@ -156,8 +171,10 @@ router.include_router(protocols_router)
 # NOTE: providers removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: qualities removed - non-creatable (migration 328)
 from app.api.v4.resources.questions.create import router as questions_router
+from app.api.v4.resources.questions.get import router as questions_get_router
 
 router.include_router(questions_router)
+router.include_router(questions_get_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
 from app.api.v4.resources.request_limits.create import \
     router as request_limits_router
@@ -192,12 +209,28 @@ from app.api.v4.resources.scenario_time_limits.create import \
 
 router.include_router(scenario_time_limits_router)
 # NOTE: scenarios removed - non-creatable, sync via artifact save (migration 328)
+# GET/Search endpoints available for simulations two-pass architecture
+from app.api.v4.resources.scenarios import router as scenarios_router
+
+router.include_router(scenarios_router)
 # NOTE: settings removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.simulation_positions.create import \
     router as simulation_positions_router
+from app.api.v4.resources.simulation_positions.get import \
+    router as simulation_positions_get_router
+from app.api.v4.resources.simulation_positions.search import \
+    router as simulation_positions_search_router
 
 router.include_router(simulation_positions_router)
+router.include_router(simulation_positions_get_router)
+router.include_router(simulation_positions_search_router)
 # NOTE: simulations removed - non-creatable, sync via artifact save (migration 328)
+# GET/Search endpoints available for cohorts two-pass architecture
+from app.api.v4.resources.simulations.get import router as simulations_get_router
+from app.api.v4.resources.simulations.search import router as simulations_search_router
+
+router.include_router(simulations_get_router)
+router.include_router(simulations_search_router)
 from app.api.v4.resources.slugs.create import router as slugs_router
 
 router.include_router(slugs_router)
@@ -209,8 +242,10 @@ router.include_router(standard_groups_router)
 # NOTE: strengths removed - converted to entry table (migration 305)
 # NOTE: temperature_levels removed - non-creatable (migration 328)
 from app.api.v4.resources.templates.create import router as templates_router
+from app.api.v4.resources.templates.get import router as templates_get_router
 
 router.include_router(templates_router)
+router.include_router(templates_get_router)
 # NOTE: thresholds removed - non-creatable (migration 328)
 # NOTE: times removed - converted to entry table (migration 305)
 # NOTE: tools removed - non-creatable, sync via artifact save (migration 328)
@@ -218,8 +253,10 @@ from app.api.v4.resources.values.create import router as values_router
 
 router.include_router(values_router)
 from app.api.v4.resources.videos.create import router as videos_router
+from app.api.v4.resources.videos.get import router as videos_get_router
 
 router.include_router(videos_router)
+router.include_router(videos_get_router)
 from app.api.v4.resources.voices.create import router as voices_router
 
 router.include_router(voices_router)

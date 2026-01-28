@@ -367,6 +367,7 @@ export function ScenarioRubrics({
                 {labelText}
               </Label>
               <SelectableGrid<ScenarioRubricOption>
+                horizontal
                 items={gridOptions}
                 selectedId={selectedValue}
                 onSelect={(optionId) => {

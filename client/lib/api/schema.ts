@@ -19857,11 +19857,8 @@ export interface components {
             offset_count: number | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -19886,11 +19883,8 @@ export interface components {
             offset_count: number | null;
             /** User Department Ids */
             user_department_ids?: string[] | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -19915,11 +19909,8 @@ export interface components {
             offset_count: number | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -19948,11 +19939,8 @@ export interface components {
             user_department_ids?: string[] | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -19979,11 +19967,8 @@ export interface components {
             user_department_ids?: string[] | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -20030,11 +20015,8 @@ export interface components {
             offset_count: number | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -20059,11 +20041,8 @@ export interface components {
             offset_count: number | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -20088,11 +20067,8 @@ export interface components {
             offset_count: number | null;
             /** Group Id */
             group_id?: string | null;
-            /**
-             * Use Recent
-             * @default false
-             */
-            use_recent: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -20123,6 +20099,8 @@ export interface components {
             scenario_parameter?: boolean | null;
             /** Video Parameter */
             video_parameter?: boolean | null;
+            /** Suggest Source */
+            suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };

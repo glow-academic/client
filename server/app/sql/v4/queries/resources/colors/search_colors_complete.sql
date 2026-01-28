@@ -1,5 +1,5 @@
 -- Search colors resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of color resources)
 
 -- Drop function if exists (handles signature variations)
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_colors_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     group_id uuid DEFAULT NULL,
-    use_recent boolean DEFAULT false,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -45,9 +45,22 @@ FROM (
     LEFT JOIN LATERAL (
         SELECT MAX(pc.created_at) AS recent_at
         FROM persona_colors_junction pc
-        WHERE use_recent = true
-          AND pc.color_id = c.id
-    ) recent ON true
+        WHERE pc.color_id = c.id
+          AND (
+              pc.generated = false
+              OR (
+                  pc.generated = true
+                  AND c.generated = true
+                  AND group_id IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM view_calls_entry c2
+                      JOIN view_runs_entry r ON r.id = c2.run_id
+                      WHERE c2.id IN (SELECT call_id FROM colors_calls_connection WHERE colors_id = c.id)
+                        AND r.group_id = group_id
+                  )
+              )
+          )
+    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE c.active = true
       AND (search IS NULL OR search = '' OR
            LOWER(c.name) LIKE '%' || LOWER(search) || '%' OR
@@ -66,8 +79,12 @@ FROM (
               )
           )
       )
+      AND (
+          suggest_source = 'all'
+          OR recent.recent_at IS NOT NULL
+      )
     ORDER BY
-        CASE WHEN use_recent THEN recent.recent_at END DESC NULLS LAST,
+        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         c.name
     LIMIT limit_count
     OFFSET offset_count

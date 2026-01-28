@@ -10,13 +10,13 @@ from app.utils.sql_helper import execute_sql_typed
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
+from app.api.v4.artifacts.scenario.types import (
     DeleteScenarioApiRequest,
     DeleteScenarioApiResponse,
     DeleteScenarioSqlParams,
     DeleteScenarioSqlRow,
-    load_sql_query,
 )
+from app.sql.types import load_sql_query
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenario/delete_scenario_complete.sql"

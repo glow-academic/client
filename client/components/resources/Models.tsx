@@ -171,6 +171,7 @@ export function Models({
       </Label>
 
       <SelectableGrid<(typeof modelsItems)[0]>
+        horizontal
         items={displayModels}
         selectedId={resourceId || null}
         onSelect={handleSelect}

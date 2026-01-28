@@ -38,16 +38,10 @@ type CreateDraftInstructionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
-type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
+type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDepartmentsIn = InputOf<"/api/v4/resources/departments", "post">;
-type CreateDraftDepartmentsOut = OutputOf<"/api/v4/resources/departments", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -111,28 +105,12 @@ async function createDraftColors(
   return api.post("/resources/colors", input);
 }
 
-async function createDraftIcons(
-  input: CreateDraftIconsIn
-): Promise<CreateDraftIconsOut> {
+async function createDraftExamples(
+  input: CreateDraftExamplesIn
+): Promise<CreateDraftExamplesOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/icons", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftFields(
-  input: CreateDraftFieldsIn
-): Promise<CreateDraftFieldsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/fields", input);
+  return api.post("/resources/examples", input);
 }
 
 async function createDraftDocuments(
@@ -141,14 +119,6 @@ async function createDraftDocuments(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/documents", input);
-}
-
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -228,11 +198,8 @@ export default async function NewPersonaPage({
         createDescriptionsAction={createDraftDescriptions}
         createInstructionsAction={createDraftInstructions}
         createColorsAction={createDraftColors}
-        createIconsAction={createDraftIcons}
-        createFlagsAction={createDraftFlags}
-        createFieldsAction={createDraftFields}
+        createExamplesAction={createDraftExamples}
         createDocumentsAction={createDraftDocuments}
-        createDepartmentsAction={createDraftDepartments}
       />
     </div>
   );

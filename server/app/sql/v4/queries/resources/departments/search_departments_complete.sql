@@ -1,5 +1,5 @@
 -- Search departments resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of department resources)
 
 -- Drop function if exists (handles signature variations)
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_departments_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    use_recent boolean DEFAULT false,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -52,9 +52,12 @@ FROM (
     LEFT JOIN LATERAL (
         SELECT MAX(pd.created_at) AS recent_at
         FROM persona_departments_junction pd
-        WHERE use_recent = true
-          AND pd.department_id = d.id
-    ) recent ON true
+        WHERE pd.department_id = d.id
+          AND (
+              pd.active = true
+              OR (pd.generated = true AND d.generated = true)
+          )
+    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE EXISTS (
           SELECT 1 FROM department_flags_junction df
           JOIN flags_resource f ON df.flag_id = f.id
@@ -66,10 +69,14 @@ FROM (
           COALESCE(array_length(user_department_ids, 1), 0) = 0
           OR d.id = ANY(user_department_ids)
       )
+      AND (
+          suggest_source = 'all'
+          OR recent.recent_at IS NOT NULL
+      )
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
       AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) LIKE '%' || LOWER(search) || '%')
     ORDER BY
-        CASE WHEN use_recent THEN recent.recent_at END DESC NULLS LAST,
+        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         name
     LIMIT limit_count
     OFFSET offset_count

@@ -316,6 +316,7 @@ export function Points({
         value: number | null;
         generated?: boolean | null;
       }>
+        horizontal
         items={displayPoints}
         selectedId={resourceId ?? null}
         onSelect={handleSelect}

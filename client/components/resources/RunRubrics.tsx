@@ -87,6 +87,7 @@ export function RunRubrics({
         )}
       </div>
       <SelectableGrid
+        horizontal
         items={filteredRubrics}
         selectedId={null}
         selectedIds={selectedIds}

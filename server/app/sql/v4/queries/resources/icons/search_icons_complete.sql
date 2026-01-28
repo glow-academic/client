@@ -1,5 +1,5 @@
 -- Search icons resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of icon resources)
 
 -- Drop function if exists (handles signature variations)
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION api_search_icons_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     group_id uuid DEFAULT NULL,
-    use_recent boolean DEFAULT false,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -45,9 +45,22 @@ FROM (
     LEFT JOIN LATERAL (
         SELECT MAX(pi.created_at) AS recent_at
         FROM persona_icons_junction pi
-        WHERE use_recent = true
-          AND pi.icon_id = i.id
-    ) recent ON true
+        WHERE pi.icon_id = i.id
+          AND (
+              pi.generated = false
+              OR (
+                  pi.generated = true
+                  AND i.generated = true
+                  AND group_id IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM view_calls_entry c
+                      JOIN view_runs_entry r ON r.id = c.run_id
+                      WHERE c.id IN (SELECT call_id FROM icons_calls_connection WHERE icons_id = i.id)
+                        AND r.group_id = group_id
+                  )
+              )
+          )
+    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE i.active = true
       AND (search IS NULL OR search = '' OR
            LOWER(i.name) LIKE '%' || LOWER(search) || '%' OR
@@ -66,8 +79,12 @@ FROM (
               )
           )
       )
+      AND (
+          suggest_source = 'all'
+          OR recent.recent_at IS NOT NULL
+      )
     ORDER BY
-        CASE WHEN use_recent THEN recent.recent_at END DESC NULLS LAST,
+        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         i.name
     LIMIT limit_count
     OFFSET offset_count

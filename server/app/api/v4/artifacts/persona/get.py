@@ -232,7 +232,7 @@ async def get_persona(
                     20,
                     0,
                     access_result.group_id,
-                    True,
+                    "recent",
                     name_ids,
                     bypass_cache,
                 )
@@ -247,7 +247,7 @@ async def get_persona(
                     20,
                     0,
                     access_result.group_id,
-                    True,
+                    "recent",
                     description_ids,
                     bypass_cache,
                 )
@@ -262,7 +262,7 @@ async def get_persona(
                     20,
                     0,
                     access_result.group_id,
-                    True,
+                    "recent",
                     color_ids,
                     bypass_cache,
                 )
@@ -277,7 +277,7 @@ async def get_persona(
                     20,
                     0,
                     access_result.group_id,
-                    True,
+                    "recent",
                     icon_ids,
                     bypass_cache,
                 )
@@ -294,7 +294,7 @@ async def get_persona(
                     20,
                     0,
                     access_result.group_id,
-                    True,
+                    "recent",
                     instructions_ids,
                     bypass_cache,
                 )
@@ -316,13 +316,14 @@ async def get_persona(
         async def fetch_departments():
             async with pool.acquire() as c:
                 selected = await get_departments_internal(c, department_ids, bypass_cache)
+                dept_source = "all" if request.persona_id is None else "recent"
                 suggestions = await search_departments_internal(
                     c,
                     None,
                     20,
                     0,
                     user_department_ids,
-                    True,
+                    dept_source,
                     department_ids,
                     bypass_cache,
                 )
@@ -331,6 +332,7 @@ async def get_persona(
         async def fetch_fields():
             async with pool.acquire() as c:
                 selected = await get_fields_internal(c, field_ids, bypass_cache)
+                field_source = "all" if request.persona_id is None else "recent"
                 suggestions = await search_fields_internal(
                     c,
                     request.field_search,
@@ -338,7 +340,7 @@ async def get_persona(
                     0,
                     user_department_ids,
                     access_result.group_id,
-                    True,
+                    field_source,
                     field_ids,
                     bypass_cache,
                 )
@@ -347,6 +349,7 @@ async def get_persona(
         async def fetch_examples():
             async with pool.acquire() as c:
                 selected = await get_examples_internal(c, example_ids, bypass_cache)
+                example_source = "all" if request.persona_id is None else "recent"
                 suggestions = await search_examples_internal(
                     c,
                     None,
@@ -355,7 +358,7 @@ async def get_persona(
                     request.persona_id,
                     user_department_ids,
                     access_result.group_id,
-                    True,
+                    example_source,
                     example_ids,
                     bypass_cache,
                 )
@@ -378,6 +381,7 @@ async def get_persona(
                     None,
                     None,
                     None,
+                    "all",
                     parameter_ids,
                     bypass_cache,
                 )

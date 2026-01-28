@@ -29,18 +29,6 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v4/resources/descriptions",
   "post"
 >;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/scenario_flags",
   "post"
@@ -176,30 +164,6 @@ async function createDraftDescriptions(
   return api.post("/resources/descriptions", input);
 }
 
-async function createDraftDepartments(
-  input: CreateDraftDepartmentsIn
-): Promise<CreateDraftDepartmentsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/departments", input);
-}
-
-async function createDraftFlags(
-  input: CreateDraftFlagsIn
-): Promise<CreateDraftFlagsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/flags", input);
-}
-
-async function createDraftScenarios(
-  input: CreateDraftScenariosIn
-): Promise<CreateDraftScenariosOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/scenarios", input);
-}
-
 async function createDraftScenarioFlags(
   input: CreateDraftScenarioFlagsIn
 ): Promise<CreateDraftScenarioFlagsOut> {
@@ -294,9 +258,6 @@ export default async function EditSimulationPage({
           patchSimulationDraftAction={patchSimulationDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
-          createDepartmentsAction={createDraftDepartments}
-          createFlagsAction={createDraftFlags}
-          createScenariosAction={createDraftScenarios}
           createScenarioFlagsAction={createDraftScenarioFlags}
           createScenarioPositionsAction={createDraftScenarioPositions}
           createScenarioRubricsAction={

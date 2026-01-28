@@ -4975,10 +4975,7 @@ class QListCohortsV4Cohort(BaseModel):
     simulation_ids: list[str] | None
     usage_count: int | None
     num_members: int | None
-    can_edit: bool | None
-    can_delete: bool | None
-    can_duplicate: bool | None
-    can_leave: bool | None
+    is_member: bool | None
     updated_at: str | None
 
 
@@ -5035,6 +5032,7 @@ class QListCohortsV4Simulation(BaseModel):
 class GetCohortsListSqlRow(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     cohorts: list[QListCohortsV4Cohort] | None = None
     profiles: list[QListCohortsV4Profile] | None = None
     simulations: list[QListCohortsV4Simulation] | None = None
@@ -5062,6 +5060,7 @@ class GetCohortsListApiRequest(BaseModel):
 class GetCohortsListApiResponse(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     cohorts: list[QListCohortsV4Cohort] | None = None
     profiles: list[QListCohortsV4Profile] | None = None
     simulations: list[QListCohortsV4Simulation] | None = None
@@ -16165,7 +16164,7 @@ class SearchColorsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16174,7 +16173,7 @@ class SearchColorsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16188,7 +16187,7 @@ class SearchColorsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchColorsApiResponse(BaseModel):
@@ -16277,7 +16276,7 @@ class SearchDepartmentsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16286,7 +16285,7 @@ class SearchDepartmentsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.user_department_ids,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16300,7 +16299,7 @@ class SearchDepartmentsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchDepartmentsApiResponse(BaseModel):
@@ -16348,7 +16347,7 @@ class SearchDescriptionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16357,7 +16356,7 @@ class SearchDescriptionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16371,7 +16370,7 @@ class SearchDescriptionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchDescriptionsApiResponse(BaseModel):
@@ -16521,7 +16520,7 @@ class SearchExamplesSqlParams(BaseModel):
     persona_id: UUID | None = None
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16532,7 +16531,7 @@ class SearchExamplesSqlParams(BaseModel):
             self.persona_id,
             self.user_department_ids,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16548,7 +16547,7 @@ class SearchExamplesApiRequest(BaseModel):
     persona_id: UUID | None = None
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchExamplesApiResponse(BaseModel):
@@ -16633,7 +16632,7 @@ class SearchFieldsSqlParams(BaseModel):
     offset_count: int | None = 0
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16643,7 +16642,7 @@ class SearchFieldsSqlParams(BaseModel):
             self.offset_count,
             self.user_department_ids,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16658,7 +16657,7 @@ class SearchFieldsApiRequest(BaseModel):
     offset_count: int | None = 0
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchFieldsApiResponse(BaseModel):
@@ -16843,7 +16842,7 @@ class SearchIconsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16852,7 +16851,7 @@ class SearchIconsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16866,7 +16865,7 @@ class SearchIconsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchIconsApiResponse(BaseModel):
@@ -16951,7 +16950,7 @@ class SearchInstructionsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16960,7 +16959,7 @@ class SearchInstructionsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -16974,7 +16973,7 @@ class SearchInstructionsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchInstructionsApiResponse(BaseModel):
@@ -17121,7 +17120,7 @@ class SearchNamesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -17130,7 +17129,7 @@ class SearchNamesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.group_id,
-            self.use_recent,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -17144,7 +17143,7 @@ class SearchNamesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    use_recent: bool | None = False
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchNamesApiResponse(BaseModel):
@@ -17318,6 +17317,7 @@ class SearchParametersSqlParams(BaseModel):
     document_parameter: bool | None = None
     scenario_parameter: bool | None = None
     video_parameter: bool | None = None
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -17329,6 +17329,7 @@ class SearchParametersSqlParams(BaseModel):
             self.document_parameter,
             self.scenario_parameter,
             self.video_parameter,
+            self.suggest_source,
             self.exclude_ids,
         )
 
@@ -17345,6 +17346,7 @@ class SearchParametersApiRequest(BaseModel):
     document_parameter: bool | None = None
     scenario_parameter: bool | None = None
     video_parameter: bool | None = None
+    suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SearchParametersApiResponse(BaseModel):
@@ -17819,6 +17821,42 @@ class ScenarioTimeLimitsApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenarios
+
+class GetScenariosSqlParams(BaseModel):
+
+    ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetScenariosV4Item(BaseModel):
+
+    scenario_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    generated: bool | None
+    department_id: UUID | None
+    persona_id: UUID | None
+    persona_name: str | None
+
+class GetScenariosSqlRow(BaseModel):
+
+    items: list[QGetScenariosV4Item] | None = None
+
+class GetScenariosApiRequest(BaseModel):
+
+    ids: list[UUID]
+
+class GetScenariosApiResponse(BaseModel):
+
+    items: list[QGetScenariosV4Item] | None = None
+
+
+
 # Generated from: simulation_positions
 
 class SimulationPositionsSqlParams(BaseModel):
@@ -17853,6 +17891,39 @@ class SimulationPositionsApiRequest(BaseModel):
 class SimulationPositionsApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: get_simulations
+
+class GetSimulationsSqlParams(BaseModel):
+
+    ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetSimulationsV4Item(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    generated: bool | None
+
+class GetSimulationsSqlRow(BaseModel):
+
+    items: list[QGetSimulationsV4Item] | None = None
+
+class GetSimulationsApiRequest(BaseModel):
+
+    ids: list[UUID]
+
+class GetSimulationsApiResponse(BaseModel):
+
+    items: list[QGetSimulationsV4Item] | None = None
 
 
 
@@ -20579,6 +20650,82 @@ class CheckNextIncompleteScenarioApiResponse(BaseModel):
 
 
 
+# Generated from: check_simulation_delete_access
+
+class CheckSimulationDeleteAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    simulation_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+        )
+
+class CheckSimulationDeleteAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    simulation_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+    cohort_usage_count: int | None = None
+
+class CheckSimulationDeleteAccessApiRequest(BaseModel):
+
+    simulation_id: UUID
+
+class CheckSimulationDeleteAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    simulation_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+    cohort_usage_count: int | None = None
+
+
+
+# Generated from: check_simulation_duplicate_access
+
+class CheckSimulationDuplicateAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    simulation_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+        )
+
+class CheckSimulationDuplicateAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    simulation_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+
+class CheckSimulationDuplicateAccessApiRequest(BaseModel):
+
+    simulation_id: UUID
+
+class CheckSimulationDuplicateAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    simulation_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+
+
+
 # Generated from: delete_simulation
 
 class DeleteSimulationSqlParams(BaseModel):
@@ -20690,6 +20837,50 @@ class GetNameByIdApiRequest(BaseModel):
 class GetNameByIdApiResponse(BaseModel):
 
     name: str | None = None
+
+
+
+# Generated from: get_simulation_access
+
+class GetSimulationAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+            self.draft_id,
+        )
+
+class GetSimulationAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+    cohort_usage_count: int | None = None
+
+class GetSimulationAccessApiRequest(BaseModel):
+
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetSimulationAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    simulation_department_ids: list[UUID] | None = None
+    cohort_usage_count: int | None = None
 
 
 
@@ -24571,11 +24762,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ScenarioTimeLimitsApiRequest",
         "ScenarioTimeLimitsApiResponse",
     ),
+    "app/sql/v4/queries/resources/scenarios/get_scenarios_complete.sql": (
+        "GetScenariosSqlParams",
+        "GetScenariosSqlRow",
+        "GetScenariosApiRequest",
+        "GetScenariosApiResponse",
+    ),
     "app/sql/v4/queries/resources/simulation_positions_complete.sql": (
         "SimulationPositionsSqlParams",
         "SimulationPositionsSqlRow",
         "SimulationPositionsApiRequest",
         "SimulationPositionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/simulations/get_simulations_complete.sql": (
+        "GetSimulationsSqlParams",
+        "GetSimulationsSqlRow",
+        "GetSimulationsApiRequest",
+        "GetSimulationsApiResponse",
     ),
     "app/sql/v4/queries/resources/slugs_complete.sql": (
         "SlugsSqlParams",
@@ -24787,6 +24990,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckNextIncompleteScenarioApiRequest",
         "CheckNextIncompleteScenarioApiResponse",
     ),
+    "app/sql/v4/queries/simulations/check_simulation_delete_access_complete.sql": (
+        "CheckSimulationDeleteAccessSqlParams",
+        "CheckSimulationDeleteAccessSqlRow",
+        "CheckSimulationDeleteAccessApiRequest",
+        "CheckSimulationDeleteAccessApiResponse",
+    ),
+    "app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql": (
+        "CheckSimulationDuplicateAccessSqlParams",
+        "CheckSimulationDuplicateAccessSqlRow",
+        "CheckSimulationDuplicateAccessApiRequest",
+        "CheckSimulationDuplicateAccessApiResponse",
+    ),
     "app/sql/v4/queries/simulations/delete_simulation_complete.sql": (
         "DeleteSimulationSqlParams",
         "DeleteSimulationSqlRow",
@@ -24810,6 +25025,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetNameByIdSqlRow",
         "GetNameByIdApiRequest",
         "GetNameByIdApiResponse",
+    ),
+    "app/sql/v4/queries/simulations/get_simulation_access_complete.sql": (
+        "GetSimulationAccessSqlParams",
+        "GetSimulationAccessSqlRow",
+        "GetSimulationAccessApiRequest",
+        "GetSimulationAccessApiResponse",
     ),
     "app/sql/v4/queries/simulations/get_simulation_complete.sql": (
         "GetSimulationSqlParams",
@@ -26540,7 +26761,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/scenarios/get_scenarios_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/simulation_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/simulations/get_simulations_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -26720,6 +26951,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/check_simulation_delete_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/delete_simulation_complete.sql"]
     ) -> SqlString: ...
 
@@ -26736,6 +26977,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/get_name_by_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload

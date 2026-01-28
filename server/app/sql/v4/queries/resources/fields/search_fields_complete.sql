@@ -1,5 +1,5 @@
 -- Search fields resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid, optional), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of field resources)
 
 -- Drop function if exists (handles signature variations)
@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_fields_v4(
     offset_count int DEFAULT 0,
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     group_id uuid DEFAULT NULL,
-    use_recent boolean DEFAULT false,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -53,9 +53,22 @@ FROM (
     LEFT JOIN LATERAL (
         SELECT MAX(pf.created_at) AS recent_at
         FROM persona_fields_junction pf
-        WHERE use_recent = true
-          AND pf.field_id = ffj.field_id
-    ) recent ON true
+        WHERE pf.field_id = ffj.field_id
+          AND (
+              pf.active = true
+              OR (
+                  pf.generated = true
+                  AND f.generated = true
+                  AND group_id IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM view_calls_entry c
+                      JOIN view_runs_entry r ON r.id = c.run_id
+                      WHERE c.id IN (SELECT call_id FROM fields_calls_connection WHERE fields_id = f.id)
+                        AND r.group_id = group_id
+                  )
+              )
+          )
+    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE EXISTS (
           SELECT 1 FROM field_flags_junction ff
           JOIN flags_resource fl ON ff.flag_id = fl.id
@@ -90,10 +103,14 @@ FROM (
               )
           )
       )
+      AND (
+          suggest_source = 'all'
+          OR recent.recent_at IS NOT NULL
+      )
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
       AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)) LIKE '%' || LOWER(search) || '%')
     ORDER BY
-        CASE WHEN use_recent THEN recent.recent_at END DESC NULLS LAST,
+        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         name
     LIMIT limit_count
     OFFSET offset_count
