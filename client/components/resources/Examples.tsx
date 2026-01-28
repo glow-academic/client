@@ -58,8 +58,8 @@ export interface ExamplesProps {
   exampleMapping?: Record<string, string>;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<void>) => void;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ example_ids: string[] } | void>) => void;
   // Legacy props for backward compatibility
   exampleIds?: string[];
   suggestions?: string[]; // History suggestions for autocomplete (legacy)
@@ -153,10 +153,10 @@ export function Examples({
   onChangeRef.current = onChange;
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ example_ids: string[] } | void>) | undefined>(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async () => {
+  flushRef.current = async (): Promise<{ example_ids: string[] } | void> => {
     if (!createExamplesAction || !agent_id || !group_id) return;
 
     // Find texts that need creation (have text but no ID)
@@ -194,6 +194,8 @@ export function Examples({
     lastReportedIdsRef.current = allIds;
     onChangeRef.current(allIds);
     lastSavedTextsRef.current = internalTexts;
+
+    return { example_ids: allIds };
   };
 
   // Register flush callback with parent

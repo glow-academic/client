@@ -141,12 +141,22 @@ function PersonaComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { isAutosaveEnabled } = useSaveContext();
 
+  // Type for flush results - each resource returns its created ID(s)
+  type FlushResult = {
+    name_id?: string | null;
+    description_id?: string | null;
+    color_id?: string | null;
+    instructions_id?: string | null;
+    example_ids?: string[];
+    parameter_field_ids?: string[];
+  };
+
   // Registry of flush callbacks from creatable resource components
-  const flushRegistryRef = useRef<Map<string, () => Promise<void>>>(new Map());
+  const flushRegistryRef = useRef<Map<string, () => Promise<FlushResult | void>>>(new Map());
 
   // Create stable registerFlush callback
   const createRegisterFlush = useCallback((key: string) => {
-    return (flush: () => Promise<void>) => {
+    return (flush: () => Promise<FlushResult | void>) => {
       flushRegistryRef.current.set(key, flush);
     };
   }, []);
@@ -159,6 +169,7 @@ function PersonaComponent({
       instructions: createRegisterFlush("instructions"),
       examples: createRegisterFlush("examples"),
       colors: createRegisterFlush("colors"),
+      parameter_fields: createRegisterFlush("parameter_fields"),
     }),
     [createRegisterFlush]
   );
@@ -828,31 +839,49 @@ function PersonaComponent({
     );
 
     try {
-      // 1. Flush all creatable resource components
+      // 1. Flush all creatable resource components and collect returned IDs
       const flushPromises = Array.from(flushRegistryRef.current.values()).map(
         (flush) => flush()
       );
-      await Promise.all(flushPromises);
+      const flushResults = await Promise.all(flushPromises);
 
-      // 2. Small delay to allow state updates to propagate
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // 2. Merge all flush results into a single object (filter out void results)
+      const mergedFlushResults = flushResults.reduce<FlushResult>(
+        (acc, result) => (result ? { ...acc, ...result } : acc),
+        {}
+      );
 
-      // 3. Patch draft with all resource IDs
+      // 3. Patch draft with all resource IDs - use flush results with fallback to current formState
+      // This avoids the stale closure problem by using freshly returned IDs
       let isNewDraft = false;
       if (patchPersonaDraftActionRef.current) {
+        const currentFormState = formStateRef.current;
         const result = await patchPersonaDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            color_id: formState.color_id,
-            icon_id: formState.icon_id,
-            instructions_id: formState.instructions_id,
-            active_flag_id: formState.active_flag_id,
-            department_ids: formState.department_ids,
-            parameter_field_ids: formState.parameter_field_ids,
-            example_ids: formState.example_ids,
-            parameter_ids: formState.parameter_ids,
+            // Use flush results (fresh) with fallback to formState (for non-flushed resources)
+            name_id: mergedFlushResults.name_id !== undefined
+              ? mergedFlushResults.name_id
+              : currentFormState.name_id,
+            description_id: mergedFlushResults.description_id !== undefined
+              ? mergedFlushResults.description_id
+              : currentFormState.description_id,
+            color_id: mergedFlushResults.color_id !== undefined
+              ? mergedFlushResults.color_id
+              : currentFormState.color_id,
+            icon_id: currentFormState.icon_id,
+            instructions_id: mergedFlushResults.instructions_id !== undefined
+              ? mergedFlushResults.instructions_id
+              : currentFormState.instructions_id,
+            active_flag_id: currentFormState.active_flag_id,
+            department_ids: currentFormState.department_ids,
+            parameter_field_ids: mergedFlushResults.parameter_field_ids !== undefined
+              ? mergedFlushResults.parameter_field_ids
+              : currentFormState.parameter_field_ids,
+            example_ids: mergedFlushResults.example_ids !== undefined
+              ? mergedFlushResults.example_ids
+              : currentFormState.example_ids,
+            parameter_ids: currentFormState.parameter_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -895,7 +924,7 @@ function PersonaComponent({
       );
       toast.error("Failed to save draft");
     }
-  }, [draftId, formState, draftPatchKey]);
+  }, [draftId, draftPatchKey]);
 
   // Listen for save trigger from layout
   useEffect(() => {
@@ -2018,6 +2047,8 @@ function PersonaComponent({
                   createParameterFieldsAction={createParameterFieldsAction}
                   onGenerate={handleGenerateParameterFields}
                   isGenerating={isGenerating("parameter_fields")}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.parameter_fields}
                 />
               </div>
             </StepCard>

@@ -83,8 +83,8 @@ export interface ParameterFieldsProps {
   isGenerating?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<void>) => void;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ parameter_field_ids: string[] } | void>) => void;
 }
 
 // Represents an available field option from parameter_fields_junction
@@ -180,7 +180,7 @@ export function ParameterFields({
   // Track the last emitted IDs to avoid duplicate emissions
   const lastEmittedRef = useRef<string>("");
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ parameter_field_ids: string[] } | void>) | undefined>(undefined);
 
   // Sync resourceIds with selected resources from server
   // IMPORTANT: Merge server data with local state, don't replace
@@ -219,7 +219,7 @@ export function ParameterFields({
   }, [resourceIds, onChange]);
 
   // Update flush function when dependencies change (for manual save mode)
-  flushRef.current = async () => {
+  flushRef.current = async (): Promise<{ parameter_field_ids: string[] } | void> => {
     // Skip if no pending selections or no action or missing required params
     if (pendingSelections.size === 0) return;
     if (!createParameterFieldsAction || !group_id || !agent_id) return;
@@ -263,8 +263,12 @@ export function ParameterFields({
       }
     });
 
-    await Promise.all(promises);
+    const results = await Promise.all(promises);
     setPendingSelections(new Set());
+
+    // Return all created IDs (filter out nulls)
+    const createdIds = results.filter((id): id is string => id !== null);
+    return { parameter_field_ids: createdIds };
   };
 
   // Register flush callback with parent

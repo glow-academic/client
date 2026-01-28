@@ -80,8 +80,8 @@ export interface ColorsProps {
     | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<void>) => void;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ color_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   colorResource?: {
     id: string;
@@ -178,10 +178,10 @@ export function Colors({
   const isInitialMountRef = useRef(true);
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ color_id: string | null } | void>) | undefined>(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async () => {
+  flushRef.current = async (): Promise<{ color_id: string | null } | void> => {
     // Skip if no change or no action
     if (internalValue === lastSavedValueRef.current) return;
     if (!createColorsAction || !agent_id || !group_id || !internalValue) return;
@@ -201,10 +201,14 @@ export function Colors({
           mcp: false,
         },
       });
-      if (result.color_id && onColorIdChange) {
-        onColorIdChange(result.color_id);
+      if (result.color_id) {
+        if (onColorIdChange) {
+          onColorIdChange(result.color_id);
+        }
+        lastSavedValueRef.current = internalValue;
+        return { color_id: result.color_id };
       }
-      lastSavedValueRef.current = internalValue;
+      return { color_id: null };
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Failed to create color resource:", error);

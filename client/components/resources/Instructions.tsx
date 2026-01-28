@@ -58,8 +58,8 @@ export interface InstructionsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<void>) => void;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ instructions_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
@@ -115,10 +115,10 @@ export function Instructions({
   const lastServerTextRef = useRef<string>(resourceTemplate);
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ instructions_id: string | null } | void>) | undefined>(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async () => {
+  flushRef.current = async (): Promise<{ instructions_id: string | null } | void> => {
     // Skip if no change or no action
     if (internalValue === lastSavedValueRef.current) return;
     if (!createInstructionsAction || !agent_id || !group_id) return;
@@ -137,13 +137,17 @@ export function Instructions({
         if (seq !== saveSeqRef.current) return;
         if (result.instruction_id) {
           onInstructionsIdChange(result.instruction_id);
+          lastSavedValueRef.current = internalValue;
+          isDirtyRef.current = false;
+          return { instructions_id: result.instruction_id };
         }
       } else {
         if (seq !== saveSeqRef.current) return;
         onInstructionsIdChange(null);
+        lastSavedValueRef.current = internalValue;
+        isDirtyRef.current = false;
+        return { instructions_id: null };
       }
-      lastSavedValueRef.current = internalValue;
-      isDirtyRef.current = false;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Failed to create instructions resource:", error);

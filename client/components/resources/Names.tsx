@@ -52,8 +52,8 @@ export interface NamesProps {
     | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<void>) => void;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ name_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   nameResource?: {
     id: string;
@@ -112,10 +112,10 @@ export function Names({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ name_id: string | null } | void>) | undefined>(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async () => {
+  flushRef.current = async (): Promise<{ name_id: string | null } | void> => {
     // Skip if no change or no action
     if (internalValue === lastSavedValueRef.current) return;
     if (!createNamesAction || !group_id) return;
@@ -132,11 +132,14 @@ export function Names({
         });
         if (result.name_id) {
           onNameIdChange(result.name_id);
+          lastSavedValueRef.current = internalValue;
+          return { name_id: result.name_id };
         }
       } else {
         onNameIdChange(null);
+        lastSavedValueRef.current = internalValue;
+        return { name_id: null };
       }
-      lastSavedValueRef.current = internalValue;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Failed to create name resource:", error);

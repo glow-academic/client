@@ -66,8 +66,8 @@ export interface DescriptionsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<void>) => void;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ description_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   descriptionResource?: {
     id: string;
@@ -131,10 +131,10 @@ export function Descriptions({
   const lastServerTextRef = useRef<string>(resourceDescription);
 
   // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const flushRef = useRef<(() => Promise<{ description_id: string | null } | void>) | undefined>(undefined);
 
   // Update flush function when dependencies change
-  flushRef.current = async () => {
+  flushRef.current = async (): Promise<{ description_id: string | null } | void> => {
     // Skip if no change or no action
     if (internalValue === lastSavedValueRef.current) return;
     if (!createDescriptionsAction || !agent_id || !group_id) return;
@@ -153,13 +153,17 @@ export function Descriptions({
         if (seq !== saveSeqRef.current) return;
         if (result.description_id) {
           onDescriptionIdChange(result.description_id);
+          lastSavedValueRef.current = internalValue;
+          isDirtyRef.current = false;
+          return { description_id: result.description_id };
         }
       } else {
         if (seq !== saveSeqRef.current) return;
         onDescriptionIdChange(null);
+        lastSavedValueRef.current = internalValue;
+        isDirtyRef.current = false;
+        return { description_id: null };
       }
-      lastSavedValueRef.current = internalValue;
-      isDirtyRef.current = false;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Failed to create description resource:", error);
