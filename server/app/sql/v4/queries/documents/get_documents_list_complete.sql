@@ -144,12 +144,13 @@ document_scenarios AS (
     GROUP BY sd.document_id
 ),
 document_fields_cte AS (
-    SELECT 
-        df.document_id,
-        ARRAY_AGG(df.field_id) as field_ids
-    FROM document_fields_junction df
-    WHERE df.active = true
-    GROUP BY df.document_id
+    SELECT
+        dpfj.document_id,
+        ARRAY_AGG(pfr.field_id) as field_ids
+    FROM document_parameter_fields_junction dpfj
+    JOIN parameter_fields_resource pfr ON pfr.id = dpfj.parameter_field_id
+    WHERE dpfj.active = true
+    GROUP BY dpfj.document_id
 ),
 document_departments_data AS (
     SELECT 

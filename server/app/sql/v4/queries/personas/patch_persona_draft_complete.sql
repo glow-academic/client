@@ -27,7 +27,7 @@ CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     instructions_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
-    field_ids uuid[] DEFAULT NULL,
+    parameter_field_ids uuid[] DEFAULT NULL,
     example_ids uuid[] DEFAULT NULL,
     parameter_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
@@ -92,12 +92,12 @@ BEGIN
         END IF;
     END IF;
 
-    IF field_ids IS NOT NULL THEN
+    IF parameter_field_ids IS NOT NULL THEN
         IF EXISTS (
-            SELECT 1 FROM UNNEST(field_ids) as fid
+            SELECT 1 FROM UNNEST(parameter_field_ids) as fid
             WHERE NOT EXISTS (SELECT 1 FROM fields_resource WHERE id = fid)
         ) THEN
-            RAISE EXCEPTION 'One or more field resource IDs not found in fields_resource';
+            RAISE EXCEPTION 'One or more parameter field resource IDs not found in fields_resource';
         END IF;
     END IF;
 
@@ -207,11 +207,11 @@ BEGIN
                 SET version = v_new_version;
             END IF;
             
-            IF field_ids IS NOT NULL THEN
+            IF parameter_field_ids IS NOT NULL THEN
                 DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
                 INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, field_id, v_new_version
-                FROM UNNEST(field_ids) as field_id
+                FROM UNNEST(parameter_field_ids) as field_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
@@ -306,10 +306,10 @@ BEGIN
         SET version = v_new_version;
     END IF;
     
-    IF field_ids IS NOT NULL THEN
+    IF parameter_field_ids IS NOT NULL THEN
         INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
         SELECT v_draft_id, field_id, v_new_version
-        FROM UNNEST(field_ids) as field_id
+        FROM UNNEST(parameter_field_ids) as field_id
         ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;

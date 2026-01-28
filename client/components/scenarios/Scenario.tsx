@@ -21,9 +21,7 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Documents } from "@/components/resources/Documents";
-import { DocumentFields } from "@/components/resources/DocumentFields";
 import { ParameterFields } from "@/components/resources/ParameterFields";
-import { PersonaFields } from "@/components/resources/PersonaFields";
 import { Flags } from "@/components/resources/Flags";
 import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
@@ -106,16 +104,6 @@ type CreateDraftTemplatesOut = OutputOf<
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
 type CreateDraftParametersOut = OutputOf<
   "/api/v4/resources/parameters",
-  "post"
->;
-type CreateDraftPersonaFieldsIn = InputOf<"/api/v4/resources/persona_fields", "post">;
-type CreateDraftPersonaFieldsOut = OutputOf<
-  "/api/v4/resources/persona_fields",
-  "post"
->;
-type CreateDraftDocumentFieldsIn = InputOf<"/api/v4/resources/document_fields", "post">;
-type CreateDraftDocumentFieldsOut = OutputOf<
-  "/api/v4/resources/document_fields",
   "post"
 >;
 type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields", "post">;
@@ -223,12 +211,6 @@ export interface ScenarioProps {
   createParametersAction?: (
     input: CreateDraftParametersIn
   ) => Promise<CreateDraftParametersOut>;
-  createPersonaFieldsAction?: (
-    input: CreateDraftPersonaFieldsIn
-  ) => Promise<CreateDraftPersonaFieldsOut>;
-  createDocumentFieldsAction?: (
-    input: CreateDraftDocumentFieldsIn
-  ) => Promise<CreateDraftDocumentFieldsOut>;
   createParameterFieldsAction?: (
     input: CreateDraftParameterFieldsIn
   ) => Promise<CreateDraftParameterFieldsOut>;
@@ -259,8 +241,6 @@ function ScenarioComponent({
   createDocumentsAction,
   createTemplatesAction,
   createParametersAction,
-  createPersonaFieldsAction,
-  createDocumentFieldsAction,
   createParameterFieldsAction,
   createImagesAction,
   createVideosAction,
@@ -2903,26 +2883,6 @@ function ScenarioComponent({
                   onGenerate={handleGeneratePersonas}
                   isGenerating={isGenerating("personas")}
                 />
-                <PersonaFields
-                  field_ids={formState.persona_field_ids}
-                  field_resources={currentScenarioData?.persona_field_resources ?? []}
-                  show_fields={currentScenarioData?.show_persona_fields ?? false}
-                  fields={currentScenarioData?.persona_fields ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, persona_field_ids: ids }))
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.persona_fields_agent_id ?? null}
-                  required={currentScenarioData?.persona_fields_required ?? false}
-                  createPersonaFieldsAction={
-                    createPersonaFieldsAction as
-                      | ((
-                          input: CreateDraftPersonaFieldsIn
-                        ) => Promise<CreateDraftPersonaFieldsOut>)
-                      | undefined
-                  }
-                />
               </div>
             </StepCard>
           );
@@ -2999,26 +2959,6 @@ function ScenarioComponent({
                   }
                   onGenerate={handleGenerateDocuments}
                   isGenerating={isGenerating("documents")}
-                />
-                <DocumentFields
-                  field_ids={formState.document_field_ids}
-                  field_resources={currentScenarioData?.document_field_resources ?? []}
-                  show_fields={currentScenarioData?.show_document_fields ?? false}
-                  fields={currentScenarioData?.document_fields ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, document_field_ids: ids }))
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.document_fields_agent_id ?? null}
-                  required={currentScenarioData?.document_fields_required ?? false}
-                  createDocumentFieldsAction={
-                    createDocumentFieldsAction as
-                      | ((
-                          input: CreateDraftDocumentFieldsIn
-                        ) => Promise<CreateDraftDocumentFieldsOut>)
-                      | undefined
-                  }
                 />
               </div>
             </StepCard>
@@ -3416,8 +3356,6 @@ function ScenarioComponent({
       createDocumentsAction,
       createTemplatesAction,
       createParametersAction,
-      createPersonaFieldsAction,
-      createDocumentFieldsAction,
       createParameterFieldsAction,
       createImagesAction,
       createVideosAction,

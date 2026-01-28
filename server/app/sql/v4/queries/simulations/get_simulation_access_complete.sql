@@ -26,7 +26,10 @@ RETURNS TABLE (
     user_role text,
     user_department_ids uuid[],
     simulation_department_ids uuid[],
-    simulation_exists boolean
+    simulation_exists boolean,
+    group_id uuid,
+    draft_version int,
+    cohort_usage_count int
 )
 LANGUAGE sql
 STABLE
@@ -50,6 +53,26 @@ simulation_departments AS (
     FROM simulation_departments_junction sd
     WHERE sd.simulation_id = (SELECT simulation_id FROM params)
       AND sd.active = true
+),
+simulation_data AS (
+    SELECT
+        d.group_id,
+        d.version as draft_version
+    FROM simulation_artifact sa
+    LEFT JOIN view_drafts_entry d ON d.id = (SELECT draft_id FROM params)
+    WHERE sa.id = (SELECT simulation_id FROM params)
+    LIMIT 1
+),
+cohort_usage AS (
+    SELECT COUNT(DISTINCT c.id) as usage_count
+    FROM cohort_artifact c
+    JOIN cohort_simulations_junction csj ON csj.cohort_id = c.id
+    JOIN cohort_flags_junction cfj ON cfj.cohort_id = c.id
+    JOIN flags_resource f ON f.id = cfj.flag_id
+    WHERE csj.simulation_id = (SELECT simulation_id FROM params)
+      AND csj.active = true
+      AND f.name = 'cohort_active'
+      AND cfj.value = true
 )
 SELECT
     up.actor_name,
@@ -64,7 +87,10 @@ SELECT
         ELSE EXISTS(
             SELECT 1 FROM simulation_artifact sa WHERE sa.id = (SELECT simulation_id FROM params)
         )::boolean
-    END as simulation_exists
+    END as simulation_exists,
+    COALESCE((SELECT group_id FROM simulation_data), (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)) as group_id,
+    (SELECT draft_version FROM simulation_data) as draft_version,
+    COALESCE((SELECT usage_count FROM cohort_usage), 0)::int as cohort_usage_count
 FROM user_profile up
 LEFT JOIN user_departments ud ON TRUE
 LEFT JOIN simulation_departments sd ON TRUE

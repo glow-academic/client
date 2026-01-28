@@ -178,7 +178,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
           {saveStatus === "saving" ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Saving...
+              Saving draft...
             </>
           ) : saveStatus === "saved" ? (
             <>
@@ -186,7 +186,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
               Saved
             </>
           ) : hasUnsavedChanges ? (
-            "Save"
+            "Save draft"
           ) : isAutosaveEnabled ? (
             "Autosave on"
           ) : (

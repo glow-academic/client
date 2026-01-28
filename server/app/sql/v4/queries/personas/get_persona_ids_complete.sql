@@ -51,7 +51,7 @@ RETURNS TABLE (
 
     -- Multi-select resource IDs
     department_ids uuid[],
-    field_ids uuid[],
+    parameter_field_ids uuid[],
     example_ids uuid[],
     parameter_ids uuid[],
 
@@ -62,7 +62,7 @@ RETURNS TABLE (
     icon_suggestions uuid[],
     instructions_suggestions uuid[],
     department_suggestions uuid[],
-    field_suggestions uuid[],
+    parameter_field_suggestions uuid[],
     example_suggestions uuid[],
     parameter_suggestions uuid[],
 
@@ -75,7 +75,7 @@ RETURNS TABLE (
     icons_has_tools boolean,
     instructions_has_tools boolean,
     departments_has_tools boolean,
-    fields_has_tools boolean,
+    parameter_fields_has_tools boolean,
     examples_has_tools boolean,
     parameters_has_tools boolean
 )
@@ -97,8 +97,8 @@ draft_departments_data AS (
     LEFT JOIN departments_drafts_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
 ),
-draft_fields_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as field_ids
+draft_parameter_fields_data AS (
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as parameter_field_ids
     FROM params x
     LEFT JOIN fields_drafts_connection df ON df.draft_id = x.draft_id
     LIMIT 1
@@ -130,17 +130,17 @@ persona_departments_junction_data AS (
     FROM params
     LIMIT 1
 ),
-persona_fields_junction_data AS (
+persona_parameter_fields_junction_data AS (
     SELECT
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
-                 FROM persona_fields_junction pf
-                 WHERE pf.persona_id = (SELECT persona_id FROM params) AND pf.active = true),
+                (SELECT ARRAY_AGG(ppfj.parameter_field_id ORDER BY ppfj.created_at)
+                 FROM persona_parameter_fields_junction ppfj
+                 WHERE ppfj.persona_id = (SELECT persona_id FROM params) AND ppfj.active = true),
                 ARRAY[]::uuid[]
             )
-        END as field_ids
+        END as parameter_field_ids
     FROM params
     LIMIT 1
 ),
@@ -190,16 +190,16 @@ persona_departments_combined_data AS (
     FROM params
     LIMIT 1
 ),
-persona_fields_combined_data AS (
+persona_parameter_fields_combined_data AS (
     SELECT
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT field_ids FROM draft_fields_data), 1), 0) > 0
-                THEN (SELECT field_ids FROM draft_fields_data)
-            WHEN COALESCE(array_length((SELECT field_ids FROM persona_fields_junction_data), 1), 0) > 0
-                THEN (SELECT field_ids FROM persona_fields_junction_data)
+                AND COALESCE(array_length((SELECT parameter_field_ids FROM draft_parameter_fields_data), 1), 0) > 0
+                THEN (SELECT parameter_field_ids FROM draft_parameter_fields_data)
+            WHEN COALESCE(array_length((SELECT parameter_field_ids FROM persona_parameter_fields_junction_data), 1), 0) > 0
+                THEN (SELECT parameter_field_ids FROM persona_parameter_fields_junction_data)
             ELSE ARRAY[]::uuid[]
-        END as field_ids
+        END as parameter_field_ids
     FROM params
     LIMIT 1
 ),
@@ -312,7 +312,7 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'icons'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as icons_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'instructions'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as instructions_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'departments'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as departments_has_tools,
-        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'fields'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as fields_has_tools,
+        EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'parameter_fields'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as parameter_fields_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'examples'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as examples_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'parameters'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as parameters_has_tools
     FROM params x
@@ -328,7 +328,7 @@ SELECT
 
     -- Multi-select resource IDs
     (SELECT department_ids FROM persona_departments_combined_data) as department_ids,
-    (SELECT field_ids FROM persona_fields_combined_data) as field_ids,
+    (SELECT parameter_field_ids FROM persona_parameter_fields_combined_data) as parameter_field_ids,
     (SELECT example_ids FROM persona_examples_combined_data) as example_ids,
     (SELECT parameter_ids FROM persona_parameters_combined_data) as parameter_ids,
 
@@ -339,7 +339,7 @@ SELECT
     ARRAY[]::uuid[] as icon_suggestions,
     ARRAY[]::uuid[] as instructions_suggestions,
     ARRAY[]::uuid[] as department_suggestions,
-    ARRAY[]::uuid[] as field_suggestions,
+    ARRAY[]::uuid[] as parameter_field_suggestions,
     ARRAY[]::uuid[] as example_suggestions,
     ARRAY[]::uuid[] as parameter_suggestions,
 
@@ -355,7 +355,7 @@ SELECT
     tec.icons_has_tools,
     tec.instructions_has_tools,
     tec.departments_has_tools,
-    tec.fields_has_tools,
+    tec.parameter_fields_has_tools,
     tec.examples_has_tools,
     tec.parameters_has_tools
 FROM params x

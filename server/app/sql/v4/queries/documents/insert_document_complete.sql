@@ -136,9 +136,10 @@ insert_depts AS (
     RETURNING document_id
 ),
 insert_fields AS (
-    INSERT INTO document_fields_junction (document_id, field_id, active, created_at)
-    SELECT document_id, field_id, true, NOW()
-    FROM unnest(field_ids) as field_id
+    INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
+    SELECT document_id, pfr.id, true, NOW()
+    FROM unnest(field_ids) as field_resource_id
+    JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
     WHERE cardinality(field_ids) > 0
     RETURNING document_id
 )

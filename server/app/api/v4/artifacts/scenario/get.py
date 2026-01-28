@@ -1,86 +1,354 @@
-"""Scenario get endpoint - v4 API following DHH principles.
-Unified endpoint that handles both new (scenario_id = NULL) and detail (scenario_id provided).
-Two-pass architecture with Python-computed permissions.
+"""Scenario get endpoint - Two-pass architecture.
+
+This implements the refactored two-pass approach:
+1. Query 1: Access check (user context, scenario state)
+2. Query 2: ID fetching (resource IDs, agents metadata)
+3. Pass 2: Parallel resource fetching (per-resource caching)
+
+Business logic (permissions, UI flags) is computed in Python.
 """
 
 import asyncio
+from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.artifacts.scenario.permissions import (
+    compute_can_edit,
+    compute_disabled_reason,
+    compute_show_departments,
+    compute_show_description,
+    compute_show_documents,
+    compute_show_fields,
+    compute_show_flag,
+    compute_show_images,
+    compute_show_name,
+    compute_show_objectives,
+    compute_show_parameters,
+    compute_show_personas,
+    compute_show_problem_statement,
+    compute_show_questions,
+    compute_show_templates,
+    compute_show_videos,
+    compute_departments_required,
+    compute_description_required,
+    compute_documents_required,
+    compute_fields_required,
+    compute_flag_required,
+    compute_images_required,
+    compute_name_required,
+    compute_objectives_required,
+    compute_parameters_required,
+    compute_personas_required,
+    compute_problem_statement_required,
+    compute_questions_required,
+    compute_templates_required,
+    compute_videos_required,
+    has_access,
+)
 from app.api.v4.artifacts.scenario.types import (
     GetScenarioApiRequest,
     GetScenarioApiResponse,
-    GetScenarioSqlParams,
-    GetScenarioSqlRow,
 )
-from app.sql.types import load_sql_query
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.departments.search import search_departments_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.descriptions.search import search_descriptions_internal
+from app.api.v4.resources.documents.get import get_document_internal
+from app.api.v4.resources.fields.get import get_fields_internal
+from app.api.v4.resources.fields.search import search_fields_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.images.get import get_image_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.objectives.get import get_objective_internal
+from app.api.v4.resources.parameters.get import get_parameters_internal
+from app.api.v4.resources.parameters.search import search_parameters_internal
+from app.api.v4.resources.personas.get import get_persona_internal
+from app.api.v4.resources.problem_statements.get import get_problem_statement_internal
+from app.api.v4.resources.questions.get import get_question_internal
+from app.api.v4.resources.templates.get import get_template_internal
+from app.api.v4.resources.videos.get import get_video_internal
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db, get_pool
 from app.sql.types import (
     GetScenarioAccessSqlParams,
     GetScenarioAccessSqlRow,
+    GetScenarioIdsSqlParams,
+    GetScenarioIdsSqlRow,
+    load_sql_query,
 )
-from app.api.v4.artifacts.scenario.permissions import (
-    has_access,
-    compute_can_edit,
-    compute_disabled_reason,
-    compute_show_name,
-    compute_show_description,
-    compute_show_flag,
-    compute_show_departments,
-    compute_show_personas,
-    compute_show_documents,
-    compute_show_parameters,
-    compute_show_fields,
-    compute_show_objectives,
-    compute_show_images,
-    compute_show_videos,
-    compute_show_questions,
-    compute_show_templates,
-    compute_show_problem_statement,
-    compute_name_required,
-    compute_description_required,
-    compute_flag_required,
-    compute_departments_required,
-    compute_personas_required,
-    compute_documents_required,
-    compute_parameters_required,
-    compute_fields_required,
-    compute_objectives_required,
-    compute_images_required,
-    compute_videos_required,
-    compute_questions_required,
-    compute_templates_required,
-    compute_problem_statement_required,
-)
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
-from app.api.v4.resources.problem_statements.get import get_problem_statement_internal
-from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.personas.get import get_persona_internal
-from app.api.v4.resources.documents.get import get_document_internal
-from app.api.v4.resources.parameters.get import get_parameters_internal
-from app.api.v4.resources.fields.get import get_fields_internal
-from app.api.v4.resources.objectives.get import get_objective_internal
-from app.api.v4.resources.images.get import get_image_internal
-from app.api.v4.resources.videos.get import get_video_internal
-from app.api.v4.resources.questions.get import get_question_internal
-from app.api.v4.resources.templates.get import get_template_internal
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_complete.sql"
-ACCESS_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"
-
+# SQL paths
+QUERY1_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"
+QUERY2_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_ids_complete.sql"
 
 router = APIRouter()
+
+
+@dataclass
+class CandidateAgent:
+    """Represents a candidate agent for resource selection."""
+
+    agent_id: UUID
+    agent_name: str
+    tool_resources: set[str]
+    department_ids: set[UUID]
+    updated_at: Any
+    is_active: bool
+    is_mcp: bool
+
+
+# Resource sets for scenario agent selection
+SCENARIO_RESOURCES = {
+    "names",
+    "descriptions",
+    "problem_statements",
+    "objectives",
+    "flags",
+    "images",
+    "videos",
+    "questions",
+    "departments",
+    "fields",
+    "personas",
+    "documents",
+    "parameters",
+    "templates",
+}
+
+SCENARIO_BASIC_RESOURCES = {
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+}
+
+SCENARIO_CONTENT_RESOURCES = {
+    "personas",
+    "documents",
+    "parameters",
+    "fields",
+    "templates",
+    "objectives",
+    "images",
+    "videos",
+    "questions",
+    "problem_statements",
+}
+
+
+def _score_agent(
+    agent: CandidateAgent,
+    artifact_resources: set[str],
+    user_department_ids: set[UUID] | None,
+) -> tuple[int, int, int, Any]:
+    """Score an agent for artifact selection.
+
+    Returns tuple for sorting: (coverage, -extra_resources, dept_match, updated_at)
+    Higher is better.
+    """
+    # How many artifact resources does this agent cover?
+    coverage = len(agent.tool_resources & artifact_resources)
+
+    # Fewer extra resources = more specialist = better (negative for sorting)
+    extra = len(agent.tool_resources - artifact_resources)
+
+    # Department match bonus
+    dept_match = 0
+    if user_department_ids and agent.department_ids:
+        dept_match = len(agent.department_ids & user_department_ids)
+
+    return (coverage, -extra, dept_match, agent.updated_at)
+
+
+def _select_best_agent(
+    candidates: list[CandidateAgent],
+    required_resources: set[str],
+    artifact_resources: set[str],
+    user_department_ids: set[UUID] | None,
+) -> UUID | None:
+    """Select an agent that has tools for ALL required_resources."""
+    eligible = [
+        agent
+        for agent in candidates
+        if agent.is_active and required_resources.issubset(agent.tool_resources)
+    ]
+
+    if not eligible:
+        return None
+
+    scored = sorted(
+        eligible,
+        key=lambda a: _score_agent(a, artifact_resources, user_department_ids),
+        reverse=True,
+    )
+
+    return scored[0].agent_id if scored else None
+
+
+def _select_single_resource_agent(
+    candidates: list[CandidateAgent],
+    resource: str,
+    artifact_resources: set[str],
+    user_department_ids: set[UUID] | None,
+) -> UUID | None:
+    """Select an agent with a single resource tool."""
+    return _select_best_agent(
+        candidates, {resource}, artifact_resources, user_department_ids
+    )
+
+
+@dataclass
+class ScenarioGenerationContext:
+    """Context needed for scenario generation."""
+
+    group_id: UUID | None
+    name_agent_id: UUID | None
+    description_agent_id: UUID | None
+    basic_agent_id: UUID | None
+    content_agent_id: UUID | None
+    general_agent_id: UUID | None
+    # Resource IDs organized by type
+    resource_ids: dict[str, list[UUID]]
+
+
+async def get_scenario_generation_context(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    scenario_id: UUID | None,
+    draft_id: UUID | None = None,
+) -> ScenarioGenerationContext | None:
+    """Get minimal context needed for scenario generation.
+
+    This is used by generate.py to get agent IDs and resource IDs
+    without fetching full resource data.
+
+    Args:
+        conn: Database connection
+        profile_id: Profile ID making the request
+        scenario_id: Scenario ID (for existing scenario)
+        draft_id: Draft ID (for draft scenario)
+
+    Returns:
+        ScenarioGenerationContext with agent IDs and resource IDs,
+        or None if access denied
+    """
+    # Query 1: Access check
+    query1_params = GetScenarioAccessSqlParams(
+        profile_id=profile_id,
+        scenario_id=scenario_id,
+        draft_id=draft_id,
+    )
+
+    access_result = cast(
+        GetScenarioAccessSqlRow,
+        await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
+    )
+
+    # Extract user context
+    user_role = access_result.user_role
+    user_department_ids = access_result.user_department_ids or []
+    scenario_department_ids = access_result.scenario_department_ids or []
+
+    # Check access
+    if scenario_id is not None:
+        if access_result.scenario_exists is False:
+            return None
+
+        if not has_access(user_role, user_department_ids, scenario_department_ids):
+            return None
+
+    # Query 2: IDs + candidate_agents
+    query2_params = GetScenarioIdsSqlParams(
+        profile_id=profile_id,
+        scenario_id=scenario_id,
+        draft_id=draft_id,
+        group_id=access_result.group_id,
+        user_department_ids=user_department_ids,
+    )
+
+    ids_result = cast(
+        GetScenarioIdsSqlRow,
+        await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
+    )
+
+    # Parse candidate_agents
+    candidate_agents = [
+        CandidateAgent(
+            agent_id=ca["agent_id"],
+            agent_name=ca["agent_name"],
+            tool_resources=set(ca["tool_resources"] or []),
+            department_ids=set(ca["department_ids"] or []),
+            updated_at=ca["updated_at"],
+            is_active=True,
+            is_mcp=ca["is_mcp"] or False,
+        )
+        for ca in (ids_result.candidate_agents or [])
+    ]
+
+    # Select agents
+    user_dept_set = set(user_department_ids) if user_department_ids else None
+
+    name_agent_id = _select_single_resource_agent(
+        candidate_agents, "names", SCENARIO_RESOURCES, user_dept_set
+    )
+    description_agent_id = _select_single_resource_agent(
+        candidate_agents, "descriptions", SCENARIO_RESOURCES, user_dept_set
+    )
+    basic_agent_id = _select_best_agent(
+        candidate_agents, SCENARIO_BASIC_RESOURCES, SCENARIO_RESOURCES, user_dept_set
+    )
+    content_agent_id = _select_best_agent(
+        candidate_agents, SCENARIO_CONTENT_RESOURCES, SCENARIO_RESOURCES, user_dept_set
+    )
+    general_agent_id = _select_best_agent(
+        candidate_agents, SCENARIO_RESOURCES, SCENARIO_RESOURCES, user_dept_set
+    )
+
+    # Build resource IDs dict
+    resource_ids: dict[str, list[UUID]] = {
+        "names": [ids_result.name_id] if ids_result.name_id else [],
+        "descriptions": [ids_result.description_id] if ids_result.description_id else [],
+        "problem_statements": [ids_result.problem_statement_id] if ids_result.problem_statement_id else [],
+        "objectives": ids_result.objective_ids or [],
+        "departments": ids_result.department_ids or [],
+        "fields": ids_result.parameter_field_ids or [],
+        "personas": ids_result.persona_ids or [],
+        "documents": ids_result.document_ids or [],
+        "parameters": ids_result.parameter_ids or [],
+        "templates": ids_result.template_ids or [],
+        "images": ids_result.image_ids or [],
+        "videos": ids_result.video_ids or [],
+        "questions": ids_result.question_ids or [],
+    }
+
+    return ScenarioGenerationContext(
+        group_id=access_result.group_id,
+        name_agent_id=name_agent_id,
+        description_agent_id=description_agent_id,
+        basic_agent_id=basic_agent_id,
+        content_agent_id=content_agent_id,
+        general_agent_id=general_agent_id,
+        resource_ids=resource_ids,
+    )
+
+
+def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
+    """Preserve order while deduplicating by id attribute."""
+    seen: set[UUID] = set()
+    output: list[Any] = []
+    for item in items:
+        item_id = getattr(item, id_attr, None)
+        if item_id and item_id not in seen:
+            seen.add(item_id)
+            output.append(item)
+    return output
 
 
 @router.post(
@@ -99,31 +367,16 @@ async def get_scenario(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetScenarioApiResponse:
-    """Get scenario information - handles both new (scenario_id = NULL) and detail (scenario_id provided).
-    
-    Validation Logic:
-    - New mode: Check for valid departments
-    - Detail mode: Check scenario_exists and access
-    """
-    tags = ["scenarios"]  # From router tags
+    """Get scenario information using two-pass architecture.
 
-    # Check for cache bypass header (for hard refresh)
+    Query 1: Access check (user role, departments, scenario state)
+    Query 2: ID fetching (resource IDs, suggestions, agents)
+    Pass 2: Parallel resource fetching (each resource type has own cache)
+    """
+    # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Generate cache key from path and parsed body
-    # Use mode='json' to serialize UUIDs to strings for JSON compatibility
-    body_dict = request.model_dump(mode="json")
-    cache_key_val = cache_key(http_request.url.path, body_dict)
-
-    # Try cache (unless bypassed)
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            response.headers["X-Cache-Tags"] = ",".join(tags)
-            response.headers["X-Cache-Hit"] = "1"
-            return GetScenarioApiResponse.model_validate(cached["data"])
-
-    sql_query = load_sql_query(SQL_PATH)
+    sql_query = load_sql_query(QUERY1_SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -135,508 +388,605 @@ async def get_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Get mcp flag from header (set by router-level dependency)
-        mcp = getattr(http_request.state, "mcp", False) or False
-
-        scenario_id = request.scenario_id  # Used for audit/context decisions
-
-        # === QUERY 1: Access Check ===
-        access_params = GetScenarioAccessSqlParams(
+        # === QUERY 1: Access Check (always fresh, no cache) ===
+        query1_params = GetScenarioAccessSqlParams(
             profile_id=profile_id,
-            scenario_id=scenario_id,
+            scenario_id=request.scenario_id,
             draft_id=request.draft_id,
         )
+        sql_params = query1_params.to_tuple()
+
         access_result = cast(
             GetScenarioAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_SQL_PATH,
-                params=access_params,
-            ),
+            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
         )
 
+        # Extract user context from Query 1
         user_role = access_result.user_role
         user_department_ids = access_result.user_department_ids or []
         scenario_department_ids = access_result.scenario_department_ids or []
+        active_simulation_count = access_result.active_simulation_count or 0
 
-        # Convert API request to SQL params (double star pattern)
-        # Add profile_id and mcp from header; SQL signature is the source of truth
-        request_dict = request.model_dump()
-        request_dict["profile_id"] = profile_id
-        request_dict["mcp"] = mcp
-        params = GetScenarioSqlParams(**request_dict)
-        sql_params = params.to_tuple()
-
-        # Execute SQL with typed helper
-        result = cast(
-            GetScenarioSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
-        )
-
-        # Set audit context
-        scenario_name = (
-            result.name_resource.name if result.name_resource else None
-        )
-
-        if result.actor_name:
-            audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-            # Only add scenario to audit context if scenario_id was provided (detail mode)
-            if scenario_id and scenario_name:
-                audit_ctx["scenario"] = {
-                    "name": scenario_name,
-                    "id": str(scenario_id),
-                }
-            audit_set(http_request, **audit_ctx)
-
-        # Conditional validation based on mode
-        if scenario_id is None:
-            # New mode: check for valid departments (derive from departments array)
-            departments_list = result.departments or []
-            valid_department_ids = [
-                d.department_id for d in departments_list if d.department_id
-            ]
-            if user_role == "superadmin":
-                valid_department_ids = valid_department_ids or user_department_ids
-            if not valid_department_ids and user_department_ids:
-                valid_department_ids = user_department_ids
-            if not valid_department_ids:
-                raise HTTPException(
-                    status_code=400, detail="No accessible departments found for user"
-                )
-        else:
-            # Detail mode: check if scenario exists and has access
+        # Early validation: check scenario exists
+        if request.scenario_id is not None:
             if access_result.scenario_exists is False:
                 raise HTTPException(
-                    status_code=404, detail=f"Scenario {scenario_id} not found"
+                    status_code=404,
+                    detail=f"Scenario {request.scenario_id} not found",
                 )
 
+            # Check access
             if not has_access(user_role, user_department_ids, scenario_department_ids):
                 raise HTTPException(
                     status_code=403,
                     detail="You don't have access to this scenario. It may be restricted to other departments.",
                 )
 
-        # === PYTHON PERMISSIONS & UI FLAGS ===
-        usage_count = getattr(result, "active_usage_count", 0) or 0
-        can_edit = compute_can_edit(user_role, scenario_department_ids, usage_count)
-        disabled_reason = compute_disabled_reason(
-            user_role, scenario_department_ids, usage_count
+        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
+        query2_params = GetScenarioIdsSqlParams(
+            profile_id=profile_id,
+            scenario_id=request.scenario_id,
+            draft_id=request.draft_id,
+            group_id=access_result.group_id,
+            user_department_ids=user_department_ids,
         )
 
-        # Counts for show flags
-        departments_count = len(result.departments or [])
-        personas_count = len(result.personas or [])
-        documents_count = len(result.documents or [])
-        parameters_count = len(result.parameters or [])
-        persona_fields_count = len(result.persona_fields or [])
-        document_fields_count = len(result.document_fields or [])
-        parameter_fields_count = len(result.parameter_fields or [])
-        objectives_count = len(result.objectives or [])
-        images_count = len(result.images or [])
-        videos_count = len(result.videos or [])
-        questions_count = len(result.questions or [])
-        templates_count = len(result.templates or [])
+        ids_result = cast(
+            GetScenarioIdsSqlRow,
+            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
+        )
 
-        show_name = compute_show_name()
-        show_description = compute_show_description()
-        show_flag = compute_show_flag()
-        show_departments = compute_show_departments(departments_count)
-        show_personas = compute_show_personas(personas_count)
-        show_documents = compute_show_documents(documents_count)
-        show_parameters = compute_show_parameters(parameters_count)
-        show_persona_fields = compute_show_fields(persona_fields_count)
-        show_document_fields = compute_show_fields(document_fields_count)
-        show_parameter_fields = compute_show_fields(parameter_fields_count)
-        show_objectives = compute_show_objectives(objectives_count)
-        show_images = compute_show_images(images_count)
-        show_videos = compute_show_videos(videos_count)
-        show_questions = compute_show_questions(questions_count)
-        show_templates = compute_show_templates(templates_count)
-        show_problem_statement = compute_show_problem_statement()
+        # === PYTHON BUSINESS LOGIC ===
 
-        # Required flags
-        name_required = compute_name_required()
-        description_required = compute_description_required()
-        flag_required = compute_flag_required()
-        departments_required = compute_departments_required()
-        personas_required = compute_personas_required()
-        documents_required = compute_documents_required()
-        parameters_required = compute_parameters_required()
-        fields_required = compute_fields_required()
-        objectives_required = compute_objectives_required()
-        images_required = compute_images_required()
-        videos_required = compute_videos_required()
-        questions_required = compute_questions_required()
-        templates_required = compute_templates_required()
-        problem_statement_required = compute_problem_statement_required()
+        # Compute permissions
+        can_edit = compute_can_edit(
+            user_role=user_role,
+            scenario_department_ids=scenario_department_ids,
+            usage_count=active_simulation_count,
+        )
 
-        # === RESOURCE FETCHING (by IDs for cache reuse) ===
-        pool = await get_pool()
+        disabled_reason = compute_disabled_reason(
+            user_role=user_role,
+            scenario_department_ids=scenario_department_ids,
+            usage_count=active_simulation_count,
+        )
 
-        def _ids_from_resource_list(items: list[Any] | None, id_attr: str) -> list[UUID]:
-            if not items:
-                return []
-            return [getattr(item, id_attr) for item in items if getattr(item, id_attr, None)]
+        # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 
-        def _order_by_ids(items: list[Any], id_attr: str, ordered_ids: list[UUID]) -> list[Any]:
-            by_id = {getattr(item, id_attr): item for item in items if getattr(item, id_attr, None)}
-            return [by_id[i] for i in ordered_ids if i in by_id]
-
-        async def _run_with_pool(fn, *args):
-            async with pool.acquire() as pooled_conn:
-                return await fn(pooled_conn, *args, bypass_cache=bypass_cache)
-
-        async def _gather_single(fn, ids: list[UUID], id_attr: str) -> list[Any]:
-            if not ids:
-                return []
-            items = await asyncio.gather(*[_run_with_pool(fn, _id) for _id in ids])
-            return [item for item in items if item is not None]
-
-        # Selected resource IDs
-        name_ids = [result.name_id] if result.name_id else []
-        description_ids = [result.description_id] if result.description_id else []
-        problem_statement_ids = [result.problem_statement_id] if result.problem_statement_id else []
-        flag_ids = [result.active_flag_id] if result.active_flag_id else []
-        objectives_enabled_flag_ids = [result.objectives_enabled_flag_id] if result.objectives_enabled_flag_id else []
-        images_enabled_flag_ids = [result.images_enabled_flag_id] if result.images_enabled_flag_id else []
-        video_enabled_flag_ids = [result.video_enabled_flag_id] if result.video_enabled_flag_id else []
-        questions_enabled_flag_ids = [result.questions_enabled_flag_id] if result.questions_enabled_flag_id else []
-        problem_statement_enabled_flag_ids = [result.problem_statement_enabled_flag_id] if result.problem_statement_enabled_flag_id else []
-        use_templates_flag_ids = [result.use_templates_flag_id] if result.use_templates_flag_id else []
-        department_ids = result.department_ids or []
-        if scenario_id is None and not department_ids and user_department_ids:
+        # Selected IDs for fetching
+        name_ids = [ids_result.name_id] if ids_result.name_id else []
+        description_ids = [ids_result.description_id] if ids_result.description_id else []
+        problem_statement_ids = [ids_result.problem_statement_id] if ids_result.problem_statement_id else []
+        active_flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
+        objectives_enabled_flag_ids = [ids_result.objectives_enabled_flag_id] if ids_result.objectives_enabled_flag_id else []
+        images_enabled_flag_ids = [ids_result.images_enabled_flag_id] if ids_result.images_enabled_flag_id else []
+        video_enabled_flag_ids = [ids_result.video_enabled_flag_id] if ids_result.video_enabled_flag_id else []
+        questions_enabled_flag_ids = [ids_result.questions_enabled_flag_id] if ids_result.questions_enabled_flag_id else []
+        problem_statement_enabled_flag_ids = [ids_result.problem_statement_enabled_flag_id] if ids_result.problem_statement_enabled_flag_id else []
+        use_templates_flag_ids = [ids_result.use_templates_flag_id] if ids_result.use_templates_flag_id else []
+        department_ids = ids_result.department_ids or []
+        # For new scenario, use user's departments if scenario has none
+        if request.scenario_id is None and not department_ids and user_department_ids:
             department_ids = user_department_ids
-        persona_field_ids = result.persona_field_ids or []
-        document_field_ids = result.document_field_ids or []
-        parameter_field_ids = result.parameter_field_ids or []
-        objective_ids = result.objective_ids or []
-        image_ids = result.image_ids or []
-        video_ids = result.video_ids or []
-        question_ids = result.question_ids or []
-        template_ids = result.template_ids or []
-        persona_ids = result.persona_ids or []
-        document_ids = result.document_ids or []
-        parameter_ids = result.parameter_ids or []
-        # Search result IDs from SQL (for options lists)
-        name_option_ids = _ids_from_resource_list(result.names, "id")
-        description_option_ids = _ids_from_resource_list(result.descriptions, "id")
-        problem_statement_option_ids = _ids_from_resource_list(result.problem_statements, "id")
-        department_option_ids = _ids_from_resource_list(result.departments, "department_id")
-        if scenario_id is None and not department_option_ids and user_department_ids:
-            department_option_ids = user_department_ids
-        persona_option_ids = _ids_from_resource_list(result.personas, "persona_id")
-        document_option_ids = _ids_from_resource_list(result.documents, "document_id")
-        parameter_option_ids = _ids_from_resource_list(result.parameters, "parameter_id")
-        objective_option_ids = _ids_from_resource_list(result.objectives, "id")
-        image_option_ids = _ids_from_resource_list(result.images, "id")
-        video_option_ids = _ids_from_resource_list(result.videos, "id")
-        question_option_ids = _ids_from_resource_list(result.questions, "id")
-        template_option_ids = _ids_from_resource_list(result.templates, "id")
+        persona_ids = ids_result.persona_ids or []
+        document_ids = ids_result.document_ids or []
+        parameter_ids = ids_result.parameter_ids or []
+        parameter_field_ids = ids_result.parameter_field_ids or []
+        objective_ids = ids_result.objective_ids or []
+        image_ids = ids_result.image_ids or []
+        video_ids = ids_result.video_ids or []
+        question_ids = ids_result.question_ids or []
+        template_ids = ids_result.template_ids or []
+
+        # Parallel fetch all resources
+        # NOTE: Each query needs its own connection from the pool because
+        # asyncpg connections cannot handle concurrent operations.
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
+        async def fetch_names():
+            async with pool.acquire() as c:
+                selected = await get_names_internal(c, name_ids, bypass_cache)
+                suggestions = await search_names_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    access_result.group_id,
+                    "recent",
+                    name_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
+
+        async def fetch_descriptions():
+            async with pool.acquire() as c:
+                selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+                suggestions = await search_descriptions_internal(
+                    c,
+                    request.description_search,
+                    20,
+                    0,
+                    access_result.group_id,
+                    "recent",
+                    description_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
+
+        async def fetch_problem_statements():
+            async with pool.acquire() as c:
+                selected = []
+                for ps_id in problem_statement_ids:
+                    item = await get_problem_statement_internal(c, ps_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for problem_statements - return empty suggestions
+                return (selected, [])
+
+        async def fetch_active_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, active_flag_ids, bypass_cache)
+
+        async def fetch_objectives_enabled_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, objectives_enabled_flag_ids, bypass_cache)
+
+        async def fetch_images_enabled_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, images_enabled_flag_ids, bypass_cache)
+
+        async def fetch_video_enabled_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, video_enabled_flag_ids, bypass_cache)
+
+        async def fetch_questions_enabled_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, questions_enabled_flag_ids, bypass_cache)
+
+        async def fetch_problem_statement_enabled_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, problem_statement_enabled_flag_ids, bypass_cache)
+
+        async def fetch_use_templates_flags():
+            async with pool.acquire() as c:
+                return await get_flags_internal(c, use_templates_flag_ids, bypass_cache)
+
+        async def fetch_departments():
+            async with pool.acquire() as c:
+                selected = await get_departments_internal(c, department_ids, bypass_cache)
+                dept_source = "all" if request.scenario_id is None else "recent"
+                suggestions = await search_departments_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    user_department_ids,
+                    dept_source,
+                    department_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
+
+        async def fetch_personas():
+            async with pool.acquire() as c:
+                selected = []
+                for persona_id in persona_ids:
+                    item = await get_persona_internal(c, persona_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for personas - return empty suggestions
+                return (selected, [])
+
+        async def fetch_documents():
+            async with pool.acquire() as c:
+                selected = []
+                for doc_id in document_ids:
+                    item = await get_document_internal(c, doc_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for documents - return empty suggestions
+                return (selected, [])
+
+        async def fetch_parameters():
+            async with pool.acquire() as c:
+                selected = await get_parameters_internal(
+                    c,
+                    parameter_ids,
+                    bypass_cache,
+                    scenario_parameter=True,
+                )
+                suggestions = await search_parameters_internal(
+                    c,
+                    request.parameter_search,
+                    20,
+                    0,
+                    None,
+                    None,
+                    True,
+                    None,
+                    "all",
+                    parameter_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
+
+        async def fetch_parameter_fields():
+            async with pool.acquire() as c:
+                selected = await get_fields_internal(c, parameter_field_ids, bypass_cache)
+                field_source = "all" if request.scenario_id is None else "recent"
+                suggestions = await search_fields_internal(
+                    c,
+                    search=None,
+                    limit_count=20,
+                    offset_count=0,
+                    user_department_ids=user_department_ids,
+                    group_id=access_result.group_id,
+                    suggest_source=field_source,
+                    exclude_ids=parameter_field_ids,
+                    parameter_id=None,
+                    bypass_cache=bypass_cache,
+                )
+                return (selected, suggestions)
+
+        async def fetch_objectives():
+            async with pool.acquire() as c:
+                selected = []
+                for obj_id in objective_ids:
+                    item = await get_objective_internal(c, obj_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for objectives - return empty suggestions
+                return (selected, [])
+
+        async def fetch_images():
+            async with pool.acquire() as c:
+                selected = []
+                for img_id in image_ids:
+                    item = await get_image_internal(c, img_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for images - return empty suggestions
+                return (selected, [])
+
+        async def fetch_videos():
+            async with pool.acquire() as c:
+                selected = []
+                for vid_id in video_ids:
+                    item = await get_video_internal(c, vid_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for videos - return empty suggestions
+                return (selected, [])
+
+        async def fetch_questions():
+            async with pool.acquire() as c:
+                selected = []
+                for q_id in question_ids:
+                    item = await get_question_internal(c, q_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for questions - return empty suggestions
+                return (selected, [])
+
+        async def fetch_templates():
+            async with pool.acquire() as c:
+                selected = []
+                for tmpl_id in template_ids:
+                    item = await get_template_internal(c, tmpl_id, bypass_cache)
+                    if item:
+                        selected.append(item)
+                # No search endpoint for templates - return empty suggestions
+                return (selected, [])
 
         (
-            name_items,
-            description_items,
-            problem_statement_items,
-            flag_items,
+            (names_selected, names_suggestions),
+            (descriptions_selected, descriptions_suggestions),
+            (problem_statements_selected, _),
+            active_flag_items,
             objectives_enabled_flag_items,
             images_enabled_flag_items,
             video_enabled_flag_items,
             questions_enabled_flag_items,
             problem_statement_enabled_flag_items,
             use_templates_flag_items,
-            department_items,
-            persona_field_items,
-            document_field_items,
-            parameter_field_items,
-            objective_items,
-            image_items,
-            video_items,
-            question_items,
-            template_items,
-            persona_items,
-            document_items,
-            parameter_items,
-            name_options,
-            description_options,
-            problem_statement_options,
-            department_options,
-            persona_options,
-            document_options,
-            parameter_options,
-            objective_options,
-            image_options,
-            video_options,
-            question_options,
-            template_options,
+            (departments_selected, departments_suggestions),
+            (personas_selected, _),
+            (documents_selected, _),
+            (parameters_selected, parameters_suggestions),
+            (parameter_fields_selected, parameter_fields_suggestions),
+            (objectives_selected, _),
+            (images_selected, _),
+            (videos_selected, _),
+            (questions_selected, _),
+            (templates_selected, _),
         ) = await asyncio.gather(
-            _run_with_pool(get_names_internal, name_ids),
-            _run_with_pool(get_descriptions_internal, description_ids),
-            _gather_single(get_problem_statement_internal, problem_statement_ids, "id"),
-            _run_with_pool(get_flags_internal, flag_ids),
-            _run_with_pool(get_flags_internal, objectives_enabled_flag_ids),
-            _run_with_pool(get_flags_internal, images_enabled_flag_ids),
-            _run_with_pool(get_flags_internal, video_enabled_flag_ids),
-            _run_with_pool(get_flags_internal, questions_enabled_flag_ids),
-            _run_with_pool(get_flags_internal, problem_statement_enabled_flag_ids),
-            _run_with_pool(get_flags_internal, use_templates_flag_ids),
-            _run_with_pool(get_departments_internal, department_ids),
-            _run_with_pool(get_fields_internal, persona_field_ids),
-            _run_with_pool(get_fields_internal, document_field_ids),
-            _run_with_pool(get_fields_internal, parameter_field_ids),
-            _gather_single(get_objective_internal, objective_ids, "id"),
-            _gather_single(get_image_internal, image_ids, "id"),
-            _gather_single(get_video_internal, video_ids, "id"),
-            _gather_single(get_question_internal, question_ids, "id"),
-            _gather_single(get_template_internal, template_ids, "id"),
-            _gather_single(get_persona_internal, persona_ids, "persona_id"),
-            _gather_single(get_document_internal, document_ids, "document_id"),
-            _run_with_pool(get_parameters_internal, parameter_ids),
-            _run_with_pool(get_names_internal, name_option_ids),
-            _run_with_pool(get_descriptions_internal, description_option_ids),
-            _gather_single(get_problem_statement_internal, problem_statement_option_ids, "id"),
-            _run_with_pool(get_departments_internal, department_option_ids),
-            _gather_single(get_persona_internal, persona_option_ids, "persona_id"),
-            _gather_single(get_document_internal, document_option_ids, "document_id"),
-            _run_with_pool(get_parameters_internal, parameter_option_ids),
-            _gather_single(get_objective_internal, objective_option_ids, "id"),
-            _gather_single(get_image_internal, image_option_ids, "id"),
-            _gather_single(get_video_internal, video_option_ids, "id"),
-            _gather_single(get_question_internal, question_option_ids, "id"),
-            _gather_single(get_template_internal, template_option_ids, "id"),
+            fetch_names(),
+            fetch_descriptions(),
+            fetch_problem_statements(),
+            fetch_active_flags(),
+            fetch_objectives_enabled_flags(),
+            fetch_images_enabled_flags(),
+            fetch_video_enabled_flags(),
+            fetch_questions_enabled_flags(),
+            fetch_problem_statement_enabled_flags(),
+            fetch_use_templates_flags(),
+            fetch_departments(),
+            fetch_personas(),
+            fetch_documents(),
+            fetch_parameters(),
+            fetch_parameter_fields(),
+            fetch_objectives(),
+            fetch_images(),
+            fetch_videos(),
+            fetch_questions(),
+            fetch_templates(),
         )
 
+        # Combine selected and suggestions (dedupe)
+        names = _dedupe_by_id(names_selected + names_suggestions, "id")
+        descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
+        problem_statements = problem_statements_selected  # No suggestions
+        departments = _dedupe_by_id(departments_selected + departments_suggestions, "department_id")
+        personas = personas_selected  # No suggestions
+        documents = documents_selected  # No suggestions
+        parameters = _dedupe_by_id(parameters_selected + parameters_suggestions, "parameter_id")
+        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
+        objectives = objectives_selected  # No suggestions
+        images = images_selected  # No suggestions
+        videos = videos_selected  # No suggestions
+        questions = questions_selected  # No suggestions
+        templates = templates_selected  # No suggestions
+
+        # Find selected resources
+        name_resource = next(
+            (n for n in names if n.id == ids_result.name_id), None
+        )
+        description_resource = next(
+            (d for d in descriptions if d.id == ids_result.description_id),
+            None,
+        )
+        problem_statement_resource = next(
+            (ps for ps in problem_statements if ps.id == ids_result.problem_statement_id),
+            None,
+        )
+        active_flag_resource = active_flag_items[0] if active_flag_items else None
+        objectives_enabled_flag_resource = objectives_enabled_flag_items[0] if objectives_enabled_flag_items else None
+        images_enabled_flag_resource = images_enabled_flag_items[0] if images_enabled_flag_items else None
+        video_enabled_flag_resource = video_enabled_flag_items[0] if video_enabled_flag_items else None
+        questions_enabled_flag_resource = questions_enabled_flag_items[0] if questions_enabled_flag_items else None
+        problem_statement_enabled_flag_resource = problem_statement_enabled_flag_items[0] if problem_statement_enabled_flag_items else None
+        use_templates_flag_resource = use_templates_flag_items[0] if use_templates_flag_items else None
+
+        # Selected multi-select resources
+        department_resources = [
+            d for d in departments if d.department_id in department_ids
+        ]
+        persona_resources = personas_selected
+        document_resources = documents_selected
+        parameter_resources = [
+            p for p in parameters if p.parameter_id in parameter_ids
+        ]
+        parameter_field_resources = [
+            f for f in parameter_fields if f.field_id in parameter_field_ids
+        ]
+        objective_resources = objectives_selected
+        image_resources = images_selected
+        video_resources = videos_selected
+        question_resources = questions_selected
+        template_resources = templates_selected
+
+        # Suggestion IDs
+        name_suggestions_ids = [n.id for n in names_suggestions]
+        description_suggestions_ids = [d.id for d in descriptions_suggestions]
+        department_suggestions_ids = [d.department_id for d in departments_suggestions]
+        parameter_suggestions_ids = [p.parameter_id for p in parameters_suggestions]
+
+        # Compute final show flags based on actual data
+        show_name = compute_show_name()
+        show_description = compute_show_description()
+        show_problem_statement = compute_show_problem_statement()
+        show_flag = compute_show_flag()
+        show_departments = compute_show_departments(len(departments))
+        show_personas = compute_show_personas(len(personas))
+        show_documents = compute_show_documents(len(documents))
+        show_parameters = compute_show_parameters(len(parameters))
+        show_parameter_fields = compute_show_fields(len(parameter_fields))
+        show_objectives = compute_show_objectives(len(objectives))
+        show_images = compute_show_images(len(images))
+        show_videos = compute_show_videos(len(videos))
+        show_questions = compute_show_questions(len(questions))
+        show_templates = compute_show_templates(len(templates))
+
+        # Set audit context
+        if access_result.actor_name:
+            audit_ctx: dict[str, Any] = {
+                "actor": {"name": access_result.actor_name, "id": profile_id}
+            }
+            if request.scenario_id and name_resource and name_resource.name:
+                audit_ctx["scenario"] = {
+                    "name": name_resource.name,
+                    "id": str(request.scenario_id),
+                }
+            audit_set(http_request, **audit_ctx)
+
+        # Validation for new mode
+        if request.scenario_id is None:
+            # New mode: check for valid departments
+            if not departments:
+                raise HTTPException(
+                    status_code=400, detail="No accessible departments found for user"
+                )
+
+        # === Construct Response ===
         def _to_dict(item: Any) -> dict[str, Any]:
             if hasattr(item, "model_dump"):
                 return item.model_dump()
             return dict(item)
 
-        # Normalize single-resource selections
-        name_resource = _to_dict(name_items[0]) if name_items else None
-        description_resource = _to_dict(description_items[0]) if description_items else None
-        problem_statement_resource = (
-            _to_dict(problem_statement_items[0]) if problem_statement_items else None
-        )
-        active_flag_resource = _to_dict(flag_items[0]) if flag_items else None
-        objectives_enabled_flag_resource = (
-            _to_dict(objectives_enabled_flag_items[0])
-            if objectives_enabled_flag_items
-            else None
-        )
-        images_enabled_flag_resource = (
-            _to_dict(images_enabled_flag_items[0]) if images_enabled_flag_items else None
-        )
-        video_enabled_flag_resource = (
-            _to_dict(video_enabled_flag_items[0]) if video_enabled_flag_items else None
-        )
-        questions_enabled_flag_resource = (
-            _to_dict(questions_enabled_flag_items[0])
-            if questions_enabled_flag_items
-            else None
-        )
-        problem_statement_enabled_flag_resource = (
-            _to_dict(problem_statement_enabled_flag_items[0])
-            if problem_statement_enabled_flag_items
-            else None
-        )
-        use_templates_flag_resource = (
-            _to_dict(use_templates_flag_items[0]) if use_templates_flag_items else None
-        )
-
-        # Ordered option lists
-        names = [_to_dict(item) for item in _order_by_ids(name_options, "id", name_option_ids)]
-        descriptions = [
-            _to_dict(item)
-            for item in _order_by_ids(description_options, "id", description_option_ids)
-        ]
-        problem_statements = [
-            _to_dict(item)
-            for item in _order_by_ids(
-                problem_statement_options, "id", problem_statement_option_ids
-            )
-        ]
-        departments = [
-            _to_dict(item)
-            for item in _order_by_ids(
-                department_options, "department_id", department_option_ids
-            )
-        ]
-        personas = [
-            _to_dict(item)
-            for item in _order_by_ids(persona_options, "persona_id", persona_option_ids)
-        ]
-        documents = [
-            _to_dict(item)
-            for item in _order_by_ids(
-                document_options, "document_id", document_option_ids
-            )
-        ]
-        parameters = [
-            _to_dict(item)
-            for item in _order_by_ids(
-                parameter_options, "parameter_id", parameter_option_ids
-            )
-        ]
-        objectives = [
-            _to_dict(item)
-            for item in _order_by_ids(objective_options, "id", objective_option_ids)
-        ]
-        images = [_to_dict(item) for item in _order_by_ids(image_options, "id", image_option_ids)]
-        videos = [_to_dict(item) for item in _order_by_ids(video_options, "id", video_option_ids)]
-        questions = [
-            _to_dict(item)
-            for item in _order_by_ids(question_options, "id", question_option_ids)
-        ]
-        templates = [
-            _to_dict(item)
-            for item in _order_by_ids(template_options, "id", template_option_ids)
-        ]
-
-        # Build response with Python-computed permissions and fetched resources
-        result_dict = result.model_dump(mode="json")
-        result_dict.update(
-            {
-                "can_edit": can_edit,
-                "disabled_reason": disabled_reason,
-                "show_name": show_name,
-                "show_description": show_description,
-                "show_active_flag": show_flag,
-                "show_objectives_enabled_flag": show_flag,
-                "show_images_enabled_flag": show_flag,
-                "show_video_enabled_flag": show_flag,
-                "show_questions_enabled_flag": show_flag,
-                "show_problem_statement_enabled_flag": show_flag,
-                "show_use_templates_flag": show_flag,
-                "show_departments": show_departments,
-                "show_personas": show_personas,
-                "show_documents": show_documents,
-                "show_parameters": show_parameters,
-                "show_persona_fields": show_persona_fields,
-                "show_document_fields": show_document_fields,
-                "show_parameter_fields": show_parameter_fields,
-                "show_objectives": show_objectives,
-                "show_images": show_images,
-                "show_videos": show_videos,
-                "show_questions": show_questions,
-                "show_templates": show_templates,
-                "show_problem_statement": show_problem_statement,
-                "name_required": name_required,
-                "description_required": description_required,
-                "active_flag_required": flag_required,
-                "objectives_enabled_flag_required": flag_required,
-                "images_enabled_flag_required": flag_required,
-                "video_enabled_flag_required": flag_required,
-                "questions_enabled_flag_required": flag_required,
-                "problem_statement_enabled_flag_required": flag_required,
-                "use_templates_flag_required": flag_required,
-                "departments_required": departments_required,
-                "personas_required": personas_required,
-                "documents_required": documents_required,
-                "parameters_required": parameters_required,
-                "persona_fields_required": fields_required,
-                "document_fields_required": fields_required,
-                "parameter_fields_required": fields_required,
-                "objectives_required": objectives_required,
-                "images_required": images_required,
-                "videos_required": videos_required,
-                "questions_required": questions_required,
-                "templates_required": templates_required,
-                "problem_statement_required": problem_statement_required,
-                "name_resource": name_resource,
-                "description_resource": description_resource,
-                "problem_statement_resource": problem_statement_resource,
-                "active_flag_resource": active_flag_resource,
-                "objectives_enabled_flag_resource": objectives_enabled_flag_resource,
-                "images_enabled_flag_resource": images_enabled_flag_resource,
-                "video_enabled_flag_resource": video_enabled_flag_resource,
-                "questions_enabled_flag_resource": questions_enabled_flag_resource,
-                "problem_statement_enabled_flag_resource": problem_statement_enabled_flag_resource,
-                "use_templates_flag_resource": use_templates_flag_resource,
-                "department_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(
-                        department_items, "department_id", department_ids
-                    )
-                ],
-                "persona_field_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(
-                        persona_field_items, "field_id", persona_field_ids
-                    )
-                ],
-                "document_field_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(
-                        document_field_items, "field_id", document_field_ids
-                    )
-                ],
-                "parameter_field_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(
-                        parameter_field_items, "field_id", parameter_field_ids
-                    )
-                ],
-                "objective_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(objective_items, "id", objective_ids)
-                ],
-                "image_resources": [
-                    _to_dict(item) for item in _order_by_ids(image_items, "id", image_ids)
-                ],
-                "video_resources": [
-                    _to_dict(item) for item in _order_by_ids(video_items, "id", video_ids)
-                ],
-                "question_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(question_items, "id", question_ids)
-                ],
-                "template_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(template_items, "id", template_ids)
-                ],
-                "persona_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(persona_items, "persona_id", persona_ids)
-                ],
-                "document_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(document_items, "document_id", document_ids)
-                ],
-                "parameter_resources": [
-                    _to_dict(item)
-                    for item in _order_by_ids(
-                        parameter_items, "parameter_id", parameter_ids
-                    )
-                ],
-                "names": names,
-                "descriptions": descriptions,
-                "problem_statements": problem_statements,
-                "departments": departments,
-                "personas": personas,
-                "documents": documents,
-                "parameters": parameters,
-                "objectives": objectives,
-                "images": images,
-                "videos": videos,
-                "questions": questions,
-                "templates": templates,
-            }
+        response_data = GetScenarioApiResponse(
+            # Required fields
+            actor_name=access_result.actor_name,
+            scenario_exists=access_result.scenario_exists,
+            can_edit=can_edit,
+            disabled_reason=disabled_reason,
+            group_id=access_result.group_id,
+            # Name
+            name_id=ids_result.name_id,
+            name_resource=_to_dict(name_resource) if name_resource else None,
+            show_name=show_name,
+            name_agent_id=None,  # Agent IDs computed in Python if needed
+            name_required=compute_name_required(),
+            name_suggestions=name_suggestions_ids,
+            names=[_to_dict(n) for n in names],
+            # Description
+            description_id=ids_result.description_id,
+            description_resource=_to_dict(description_resource) if description_resource else None,
+            show_description=show_description,
+            description_agent_id=None,
+            description_required=compute_description_required(),
+            description_suggestions=description_suggestions_ids,
+            descriptions=[_to_dict(d) for d in descriptions],
+            # Problem statement
+            problem_statement_id=ids_result.problem_statement_id,
+            problem_statement_resource=_to_dict(problem_statement_resource) if problem_statement_resource else None,
+            show_problem_statement=show_problem_statement,
+            problem_statement_agent_id=None,
+            problem_statement_required=compute_problem_statement_required(),
+            problem_statement_suggestions=[],
+            problem_statements=[_to_dict(ps) for ps in problem_statements],
+            # Active flag
+            active_flag_id=ids_result.active_flag_id,
+            active_flag_resource=_to_dict(active_flag_resource) if active_flag_resource else None,
+            show_active_flag=show_flag,
+            active_flag_agent_id=None,
+            active_flag_required=compute_flag_required(),
+            # Objectives enabled flag
+            objectives_enabled_flag_id=ids_result.objectives_enabled_flag_id,
+            objectives_enabled_flag_resource=_to_dict(objectives_enabled_flag_resource) if objectives_enabled_flag_resource else None,
+            show_objectives_enabled_flag=show_flag,
+            objectives_enabled_flag_agent_id=None,
+            objectives_enabled_flag_required=compute_flag_required(),
+            # Images enabled flag
+            images_enabled_flag_id=ids_result.images_enabled_flag_id,
+            images_enabled_flag_resource=_to_dict(images_enabled_flag_resource) if images_enabled_flag_resource else None,
+            show_images_enabled_flag=show_flag,
+            images_enabled_flag_agent_id=None,
+            images_enabled_flag_required=compute_flag_required(),
+            # Video enabled flag
+            video_enabled_flag_id=ids_result.video_enabled_flag_id,
+            video_enabled_flag_resource=_to_dict(video_enabled_flag_resource) if video_enabled_flag_resource else None,
+            show_video_enabled_flag=show_flag,
+            video_enabled_flag_agent_id=None,
+            video_enabled_flag_required=compute_flag_required(),
+            # Questions enabled flag
+            questions_enabled_flag_id=ids_result.questions_enabled_flag_id,
+            questions_enabled_flag_resource=_to_dict(questions_enabled_flag_resource) if questions_enabled_flag_resource else None,
+            show_questions_enabled_flag=show_flag,
+            questions_enabled_flag_agent_id=None,
+            questions_enabled_flag_required=compute_flag_required(),
+            # Problem statement enabled flag
+            problem_statement_enabled_flag_id=ids_result.problem_statement_enabled_flag_id,
+            problem_statement_enabled_flag_resource=_to_dict(problem_statement_enabled_flag_resource) if problem_statement_enabled_flag_resource else None,
+            show_problem_statement_enabled_flag=show_flag,
+            problem_statement_enabled_flag_agent_id=None,
+            problem_statement_enabled_flag_required=compute_flag_required(),
+            # Use templates flag
+            use_templates_flag_id=ids_result.use_templates_flag_id,
+            use_templates_flag_resource=_to_dict(use_templates_flag_resource) if use_templates_flag_resource else None,
+            show_use_templates_flag=show_flag,
+            use_templates_flag_agent_id=None,
+            use_templates_flag_required=compute_flag_required(),
+            # Departments
+            department_ids=department_ids,
+            department_resources=[_to_dict(d) for d in department_resources],
+            show_departments=show_departments,
+            departments_agent_id=None,
+            departments_required=compute_departments_required(),
+            department_suggestions=department_suggestions_ids,
+            departments=[_to_dict(d) for d in departments],
+            # Parameter fields
+            parameter_field_ids=parameter_field_ids,
+            parameter_field_resources=[_to_dict(f) for f in parameter_field_resources],
+            show_parameter_fields=show_parameter_fields,
+            parameter_fields_agent_id=None,
+            parameter_fields_required=compute_fields_required(),
+            parameter_fields=[_to_dict(f) for f in parameter_fields],
+            # Objectives
+            objective_ids=objective_ids,
+            objective_resources=[_to_dict(o) for o in objective_resources],
+            show_objectives=show_objectives,
+            objectives_agent_id=None,
+            objectives_required=compute_objectives_required(),
+            objective_suggestions=[],
+            objectives=[_to_dict(o) for o in objectives],
+            # Images
+            image_ids=image_ids,
+            image_resources=[_to_dict(i) for i in image_resources],
+            show_images=show_images,
+            images_agent_id=None,
+            images_required=compute_images_required(),
+            image_suggestions=[],
+            images=[_to_dict(i) for i in images],
+            # Videos
+            video_ids=video_ids,
+            video_resources=[_to_dict(v) for v in video_resources],
+            show_videos=show_videos,
+            videos_agent_id=None,
+            videos_required=compute_videos_required(),
+            video_suggestions=[],
+            videos=[_to_dict(v) for v in videos],
+            # Questions
+            question_ids=question_ids,
+            question_resources=[_to_dict(q) for q in question_resources],
+            show_questions=show_questions,
+            questions_agent_id=None,
+            questions_required=compute_questions_required(),
+            question_suggestions=[],
+            questions=[_to_dict(q) for q in questions],
+            # Templates
+            template_ids=template_ids,
+            template_resources=[_to_dict(t) for t in template_resources],
+            show_templates=show_templates,
+            templates_agent_id=None,
+            templates_required=compute_templates_required(),
+            template_suggestions=[],
+            templates=[_to_dict(t) for t in templates],
+            # Personas
+            persona_ids=persona_ids,
+            persona_resources=[_to_dict(p) for p in persona_resources],
+            show_personas=show_personas,
+            personas_agent_id=None,
+            personas_required=compute_personas_required(),
+            persona_suggestions=[],
+            personas=[_to_dict(p) for p in personas],
+            # Documents
+            document_ids=document_ids,
+            document_resources=[_to_dict(d) for d in document_resources],
+            show_documents=show_documents,
+            documents_agent_id=None,
+            documents_required=compute_documents_required(),
+            document_suggestions=[],
+            documents=[_to_dict(d) for d in documents],
+            # Parameters
+            parameter_ids=parameter_ids,
+            parameter_resources=[_to_dict(p) for p in parameter_resources],
+            show_parameters=show_parameters,
+            parameters_agent_id=None,
+            parameters_required=compute_parameters_required(),
+            parameter_suggestions=parameter_suggestions_ids,
+            parameters=[_to_dict(p) for p in parameters],
+            # Multi-resource agent IDs (computed in Python if needed)
+            basic_agent_id=None,
+            content_agent_id=None,
+            general_agent_id=None,
         )
 
-        response_data = GetScenarioApiResponse.model_validate(result_dict)
-
-        # Cache response (use mode='json' to serialize UUIDs and other types)
-        await set_cached(
-            cache_key_val,
-            {"data": response_data.model_dump(mode="json")},
-            ttl=60,
-            tags=tags,
-        )
-        response.headers["X-Cache-Tags"] = ",".join(tags)
+        # No global cache for this response - individual resources are cached
+        response.headers["X-Cache-Tags"] = "scenarios"
         response.headers["X-Cache-Hit"] = "0"
+        response.headers["X-Two-Pass"] = "1"
 
         return response_data
     except HTTPException:

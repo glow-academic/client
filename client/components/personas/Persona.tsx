@@ -29,7 +29,7 @@ import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Examples } from "@/components/resources/Examples";
-import { Fields } from "@/components/resources/Fields";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
@@ -185,12 +185,10 @@ function PersonaComponent({
       iconSearch: parseAsString,
       descriptionSearch: parseAsString,
       instructionsSearch: parseAsString,
-      fieldSearch: parseAsString,
       parameterSearch: parseAsString,
       // Filter params (URL-backed)
       colorShowSelected: parseAsBoolean,
       iconShowSelected: parseAsBoolean,
-      fieldShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
     }),
     []
@@ -232,12 +230,12 @@ function PersonaComponent({
       show_flag: personaData.show_flag,
       flag_required: personaData.flag_required,
       flag_agent_id: personaData.flag_agent_id,
-      field_resources: personaData.field_resources,
-      show_fields: personaData.show_fields,
-      field_suggestions: personaData.field_suggestions,
-      fields_required: personaData.fields_required,
-      fields_agent_id: personaData.fields_agent_id,
-      fields: personaData.fields,
+      parameter_field_resources: personaData.parameter_field_resources,
+      show_parameter_fields: personaData.show_parameter_fields,
+      parameter_field_suggestions: personaData.parameter_field_suggestions,
+      parameter_fields_required: personaData.parameter_fields_required,
+      parameter_fields_agent_id: personaData.parameter_fields_agent_id,
+      parameter_fields: personaData.parameter_fields,
       color_resource: personaData.color_resource,
       show_color: personaData.show_color,
       color_suggestions: personaData.color_suggestions,
@@ -298,12 +296,12 @@ function PersonaComponent({
     personaData?.show_flag,
     personaData?.flag_required,
     personaData?.flag_agent_id,
-    personaData?.field_resources,
-    personaData?.show_fields,
-    personaData?.field_suggestions,
-    personaData?.fields_required,
-    personaData?.fields_agent_id,
-    personaData?.fields,
+    personaData?.parameter_field_resources,
+    personaData?.show_parameter_fields,
+    personaData?.parameter_field_suggestions,
+    personaData?.parameter_fields_required,
+    personaData?.parameter_fields_agent_id,
+    personaData?.parameter_fields,
     personaData?.color_resource,
     personaData?.show_color,
     personaData?.color_suggestions,
@@ -366,9 +364,9 @@ function PersonaComponent({
               (d) => d.generated
             ) ?? false
           );
-        case "fields":
+        case "parameter_fields":
           return (
-            stablePersonaDataFields.field_resources?.some((f) => f.generated) ??
+            stablePersonaDataFields.parameter_field_resources?.some((f) => f.generated) ??
             false
           );
         case "examples":
@@ -395,7 +393,7 @@ function PersonaComponent({
         instructions_id: null as string | null,
         active_flag_id: null as string | null,
         department_ids: [] as string[],
-        field_ids: [] as string[],
+        parameter_field_ids: [] as string[],
         example_ids: [] as string[],
         parameter_ids: [] as string[],
       };
@@ -410,7 +408,7 @@ function PersonaComponent({
       instructions_id: data.instructions_id ?? null,
       active_flag_id: data.active_flag_id ?? null,
       department_ids: data.department_ids ?? [],
-      field_ids: data.field_ids ?? [],
+      parameter_field_ids: data.parameter_field_ids ?? [],
       example_ids: data.example_ids ?? [],
       parameter_ids: data.parameter_ids ?? [],
     };
@@ -429,9 +427,9 @@ function PersonaComponent({
     () => JSON.stringify(personaData?.department_ids ?? []),
     [personaData?.department_ids]
   );
-  const fieldIdsStr = React.useMemo(
-    () => JSON.stringify(personaData?.field_ids ?? []),
-    [personaData?.field_ids]
+  const parameterFieldIdsStr = React.useMemo(
+    () => JSON.stringify(personaData?.parameter_field_ids ?? []),
+    [personaData?.parameter_field_ids]
   );
   const exampleIdsStr = React.useMemo(
     () => JSON.stringify(personaData?.example_ids ?? []),
@@ -447,9 +445,9 @@ function PersonaComponent({
     () => JSON.stringify(formState.department_ids),
     [formState.department_ids]
   );
-  const formStateFieldIdsStr = React.useMemo(
-    () => JSON.stringify(formState.field_ids),
-    [formState.field_ids]
+  const formStateParameterFieldIdsStr = React.useMemo(
+    () => JSON.stringify(formState.parameter_field_ids),
+    [formState.parameter_field_ids]
   );
   const formStateExampleIdsStr = React.useMemo(
     () => JSON.stringify(formState.example_ids),
@@ -475,7 +473,7 @@ function PersonaComponent({
         prev.active_flag_id !== newState.active_flag_id ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(newState.parameter_field_ids) ||
         JSON.stringify(prev.example_ids) !==
           JSON.stringify(newState.example_ids) ||
         JSON.stringify(prev.parameter_ids) !==
@@ -496,7 +494,7 @@ function PersonaComponent({
     personaData?.instructions_id,
     personaData?.active_flag_id,
     departmentIdsStr,
-    fieldIdsStr,
+    parameterFieldIdsStr,
     exampleIdsStr,
     parameterIdsStr,
   ]);
@@ -572,7 +570,7 @@ function PersonaComponent({
       instructions_id: formState.instructions_id,
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
-      field_ids: formState.field_ids,
+      parameter_field_ids: formState.parameter_field_ids,
       example_ids: formState.example_ids,
       parameter_ids: formState.parameter_ids,
     });
@@ -587,7 +585,7 @@ function PersonaComponent({
     formState.instructions_id,
     formState.active_flag_id,
     formStateDepartmentIdsStr,
-    formStateFieldIdsStr,
+    formStateParameterFieldIdsStr,
     formStateExampleIdsStr,
     formStateParameterIdsStr,
   ]);
@@ -610,7 +608,7 @@ function PersonaComponent({
       formState.instructions_id ||
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
-      formState.field_ids.length > 0 ||
+      formState.parameter_field_ids.length > 0 ||
       formState.example_ids.length > 0 ||
       formState.parameter_ids.length > 0;
 
@@ -681,7 +679,7 @@ function PersonaComponent({
             instructions_id: formState.instructions_id,
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
-            field_ids: formState.field_ids,
+            parameter_field_ids: formState.parameter_field_ids,
             example_ids: formState.example_ids,
             parameter_ids: formState.parameter_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
@@ -793,7 +791,7 @@ function PersonaComponent({
             instructions_id: formState.instructions_id,
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
-            field_ids: formState.field_ids,
+            parameter_field_ids: formState.parameter_field_ids,
             example_ids: formState.example_ids,
             parameter_ids: formState.parameter_ids,
             expected_version: lastSavedVersionRef.current,
@@ -879,7 +877,7 @@ function PersonaComponent({
         "instructions",
         "flags",
         "examples",
-        "fields",
+        "parameter_fields",
         "departments",
       ];
       if (
@@ -898,12 +896,12 @@ function PersonaComponent({
           if (data.instructions_id)
             updates.instructions_id = data.instructions_id;
           if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.field_ids && data.field_ids.length > 0) {
+          if (data.parameter_field_ids && data.parameter_field_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
-            const newFieldIds = data.field_ids.filter(
-              (id) => !prev.field_ids.includes(id)
+            const newParameterFieldIds = data.parameter_field_ids.filter(
+              (id) => !prev.parameter_field_ids.includes(id)
             );
-            updates.field_ids = [...prev.field_ids, ...newFieldIds];
+            updates.parameter_field_ids = [...prev.parameter_field_ids, ...newParameterFieldIds];
           }
           if (data.department_ids && data.department_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
@@ -981,7 +979,7 @@ function PersonaComponent({
         "instructions",
         "flags",
         "examples",
-        "fields",
+        "parameter_fields",
         "departments",
       ];
       const resourceTypes =
@@ -1028,7 +1026,7 @@ function PersonaComponent({
         "icons",
         "instructions",
         "flags",
-        "fields",
+        "parameter_fields",
         "departments",
         "examples",
       ];
@@ -1059,7 +1057,7 @@ function PersonaComponent({
           instructions: "instructions",
           flags: "flags",
           departments: "departments",
-          fields: "fields",
+          parameter_fields: "parameter_fields",
           examples: "examples",
         };
         const firstType = resourceTypes[0];
@@ -1100,14 +1098,10 @@ function PersonaComponent({
         (formData["descriptionSearch"] as string | undefined) ?? null;
       const instructionsSearch =
         (formData["instructionsSearch"] as string | undefined) ?? null;
-      const fieldSearch =
-        (formData["fieldSearch"] as string | undefined) ?? null;
       const colorShowSelected =
         (formData["colorShowSelected"] as boolean | undefined) ?? false;
       const iconShowSelected =
         (formData["iconShowSelected"] as boolean | undefined) ?? false;
-      const fieldShowSelected =
-        (formData["fieldShowSelected"] as boolean | undefined) ?? false;
 
       // Emit persona_generate event with GetPersonaApiRequest fields
       socket.emit("persona_generate", {
@@ -1120,10 +1114,8 @@ function PersonaComponent({
         icon_search: iconSearch || null,
         descriptions_search: descriptionSearch || null,
         instructions_search: instructionsSearch || null,
-        field_search: fieldSearch || null,
         color_show_selected: colorShowSelected || false,
         icon_show_selected: iconShowSelected || false,
-        field_show_selected: fieldShowSelected || false,
         mcp: false,
         persona_id: personaId || null,
       });
@@ -1192,12 +1184,6 @@ function PersonaComponent({
   const handleGenerateParameters = useCallback(
     async () =>
       handleGenerateResources(["parameters"], determineAgentType(["parameters"])),
-    [handleGenerateResources, determineAgentType]
-  );
-
-  const handleGenerateFields = useCallback(
-    async () =>
-      handleGenerateResources(["fields"], determineAgentType(["fields"])),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -1287,11 +1273,11 @@ function PersonaComponent({
       }
 
       if (
-        personaData?.fields_required &&
-        (!formState.field_ids || formState.field_ids.length === 0)
+        personaData?.parameter_fields_required &&
+        (!formState.parameter_field_ids || formState.parameter_field_ids.length === 0)
       ) {
-        toast.error("Fields are required");
-        throw new Error("Fields are required");
+        toast.error("Parameter fields are required");
+        throw new Error("Parameter fields are required");
       }
 
       if (
@@ -1354,7 +1340,7 @@ function PersonaComponent({
                 ? formState.department_ids
                 : undefined,
             field_ids:
-              formState.field_ids.length > 0 ? formState.field_ids : undefined,
+              formState.parameter_field_ids.length > 0 ? formState.parameter_field_ids : undefined,
             example_ids:
               formState.example_ids.length > 0
                 ? formState.example_ids
@@ -1389,7 +1375,7 @@ function PersonaComponent({
       personaData?.icon_required,
       personaData?.instructions_required,
       personaData?.departments_required,
-      personaData?.fields_required,
+      personaData?.parameter_fields_required,
       personaData?.examples_required,
     ]
   );
@@ -1421,32 +1407,17 @@ function PersonaComponent({
           if (!hasName || !hasDescription) return "pending";
           return hasInstructions ? "completed" : "active";
         default:
-          // Handle dynamic fields-{parameter_id} steps
-          if (stepId.startsWith("fields-")) {
-            const parameterId = stepId.replace("fields-", "");
-            if (!hasName || !hasDescription) return "pending";
-            // Check if any fields for this parameter are selected
-            const fieldsForParam =
-              personaData?.fields?.filter(
-                (f) => f.parameter_id === parameterId
-              ) ?? [];
-            const hasFieldsForParam = formState.field_ids.some((fid) =>
-              fieldsForParam.some((f) => f.field_id === fid)
-            );
-            return hasFieldsForParam ? "completed" : "active";
-          }
           return "pending";
       }
     },
-    [formState, personaData?.fields]
+    [formState]
   );
 
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
-      parameters: ["parameters"],
-      fields: ["fields"],
+      parameters: ["parameters", "parameter_fields"],
       color: ["colors"],
       icon: ["icons"],
       content: ["instructions", "examples"],
@@ -1458,7 +1429,7 @@ function PersonaComponent({
         "instructions",
         "flags",
         "parameters",
-        "fields",
+        "parameter_fields",
         "departments",
         "examples",
       ], // All resources for full-page generation
@@ -1476,7 +1447,7 @@ function PersonaComponent({
       instructions: "Instructions",
       flags: "Flags",
       examples: "Examples",
-      fields: "Fields",
+      parameter_fields: "Parameter Fields",
       departments: "Departments",
     }),
     []
@@ -1531,9 +1502,9 @@ function PersonaComponent({
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [personaData?.general_agent_id, handleOpenStepCardModal]);
 
-  // Steps configuration for GenericForm - dynamic based on selected parameters
+  // Steps configuration for GenericForm
   const steps = useMemo(() => {
-    const baseSteps = [
+    return [
       {
         id: "basic",
         title: "Basic Information",
@@ -1544,32 +1515,14 @@ function PersonaComponent({
       {
         id: "parameters",
         title: "Parameters",
-        description: "Select parameters for this persona.",
+        description: "Select parameters and parameter fields for this persona.",
         resetFields: [
           "parameter_ids",
+          "parameter_field_ids",
           "parameterSearch",
           "parameterShowSelected",
         ],
       },
-    ];
-
-    // Generate a step for each selected parameter
-    const parameterFieldSteps = (formState.parameter_ids ?? []).map(
-      (parameterId) => {
-        const param = personaData?.parameters?.find(
-          (p) => p.parameter_id === parameterId
-        );
-        return {
-          id: `fields-${parameterId}`,
-          title: param?.name ?? "Fields",
-          description:
-            param?.description ?? "Select fields for this parameter.",
-          resetFields: [] as string[], // field_ids managed globally
-        };
-      }
-    );
-
-    const endSteps = [
       {
         id: "color",
         title: "Color",
@@ -1590,9 +1543,7 @@ function PersonaComponent({
         resetFields: ["instructions", "examples"],
       },
     ];
-
-    return [...baseSteps, ...parameterFieldSteps, ...endSteps];
-  }, [formState.parameter_ids, personaData?.parameters]);
+  }, []);
 
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
@@ -1604,7 +1555,7 @@ function PersonaComponent({
       "instructions",
       "active",
       "department_ids",
-      "field_ids",
+      "parameter_field_ids",
       "parameter_ids",
       "examples",
     ],
@@ -1618,8 +1569,6 @@ function PersonaComponent({
         return "Basic information reset";
       case "parameters":
         return "Parameters reset";
-      case "fields":
-        return "Fields reset";
       case "color":
         return "Color reset";
       case "icon":
@@ -1895,35 +1844,51 @@ function PersonaComponent({
               ]}
               resetFields={[
                 "parameter_ids",
+                "parameter_field_ids",
                 "parameterSearch",
                 "parameterShowSelected",
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <Parameters
-                parameter_ids={formState.parameter_ids ?? []}
-                parameter_resources={
-                  currentPersonaData?.parameter_resources ?? []
-                }
-                show_parameters={currentPersonaData?.show_parameters ?? false}
-                parameter_suggestions={
-                  currentPersonaData?.parameter_suggestions ?? []
-                }
-                parameters={currentPersonaData?.parameters ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, parameter_ids: ids }))
-                }
-                onGenerate={handleGenerateParameters}
-                isGenerating={isGenerating("parameters")}
-                label="Parameters"
-                required={currentPersonaData?.parameters_required ?? false}
-                group_id={currentPersonaData?.group_id ?? null}
-                agent_id={currentPersonaData?.parameters_agent_id ?? null}
-                searchTerm={parameterSearchTerm}
-                showSelectedFilter={parameterShowSelected}
-              />
+              <div className="space-y-6">
+                <Parameters
+                  parameter_ids={formState.parameter_ids ?? []}
+                  parameter_resources={
+                    currentPersonaData?.parameter_resources ?? []
+                  }
+                  show_parameters={currentPersonaData?.show_parameters ?? false}
+                  parameter_suggestions={
+                    currentPersonaData?.parameter_suggestions ?? []
+                  }
+                  parameters={currentPersonaData?.parameters ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, parameter_ids: ids }))
+                  }
+                  onGenerate={handleGenerateParameters}
+                  isGenerating={isGenerating("parameters")}
+                  label="Parameters"
+                  required={currentPersonaData?.parameters_required ?? false}
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.parameters_agent_id ?? null}
+                  searchTerm={parameterSearchTerm}
+                  showSelectedFilter={parameterShowSelected}
+                />
+                <ParameterFields
+                  field_ids={formState.parameter_field_ids}
+                  field_resources={currentPersonaData?.parameter_field_resources ?? []}
+                  show_fields={currentPersonaData?.show_parameter_fields ?? false}
+                  fields={currentPersonaData?.parameter_fields ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
+                  }
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.parameter_fields_agent_id ?? null}
+                  required={currentPersonaData?.parameter_fields_required ?? false}
+                />
+              </div>
             </StepCard>
           );
         }
@@ -2313,68 +2278,6 @@ function PersonaComponent({
           );
 
         default:
-          // Handle dynamic fields-{parameter_id} steps
-          if (stepId.startsWith("fields-")) {
-            const parameterId = stepId.replace("fields-", "");
-            const fieldSearchTerm =
-              (stepFormData["fieldSearch"] as string | null | undefined) || "";
-            const fieldShowSelected =
-              (stepFormData["fieldShowSelected"] as
-                | boolean
-                | null
-                | undefined) ?? false;
-            return (
-              <StepCard
-                stepStatus={stepStatus}
-                stepNumber={stepNumber}
-                stepTitle={stepTitle}
-                stepDescription={stepDescription}
-                isReadonly={disabled}
-                isEditMode={isEditMode}
-                searchTerm={fieldSearchTerm}
-                onSearchChange={(term: string) =>
-                  setStepFormData({ fieldSearch: term || null })
-                }
-                searchPlaceholder="Search fields..."
-                debounceMs={300}
-                filters={[
-                  {
-                    key: "showSelected",
-                    label: "Show selected",
-                    value: fieldShowSelected,
-                    onChange: (value: boolean) =>
-                      setStepFormData({ fieldShowSelected: value || null }),
-                  },
-                ]}
-                resetFields={[]}
-                {...(onReset ? { onReset } : {})}
-                resetLabel="Reset"
-              >
-                <Fields
-                  field_ids={formState.field_ids ?? []}
-                  field_resources={currentPersonaData?.field_resources ?? []}
-                  show_fields={currentPersonaData?.show_fields ?? false}
-                  field_suggestions={
-                    currentPersonaData?.field_suggestions ?? []
-                  }
-                  fields={currentPersonaData?.fields ?? []}
-                  parameterIdFilter={parameterId}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, field_ids: ids }))
-                  }
-                  onGenerate={handleGenerateFields}
-                  isGenerating={isGenerating("fields")}
-                  label=""
-                  required={false}
-                  group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.fields_agent_id ?? null}
-                  searchTerm={fieldSearchTerm}
-                  showSelectedFilter={fieldShowSelected}
-                />
-              </StepCard>
-            );
-          }
           return null;
       }
     },
@@ -2393,7 +2296,6 @@ function PersonaComponent({
       handleGenerateColors,
       handleGenerateIcons,
       handleGenerateParameters,
-      handleGenerateFields,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation
@@ -2407,7 +2309,7 @@ function PersonaComponent({
       // Include arrays - they're used in the callback, but the formState sync effect ensures
       // they only change when content actually changes (not just reference)
       formState.department_ids,
-      formState.field_ids,
+      formState.parameter_field_ids,
       formState.example_ids,
       formState.parameter_ids,
       createNamesAction,
@@ -2486,7 +2388,7 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     instructions_id: prevProps.personaData?.instructions_id,
     active_flag_id: prevProps.personaData?.active_flag_id,
     department_ids: prevProps.personaData?.department_ids,
-    field_ids: prevProps.personaData?.field_ids,
+    parameter_field_ids: prevProps.personaData?.parameter_field_ids,
     example_ids: prevProps.personaData?.example_ids,
   };
   const nextIds = {
@@ -2497,7 +2399,7 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     instructions_id: nextProps.personaData?.instructions_id,
     active_flag_id: nextProps.personaData?.active_flag_id,
     department_ids: nextProps.personaData?.department_ids,
-    field_ids: nextProps.personaData?.field_ids,
+    parameter_field_ids: nextProps.personaData?.parameter_field_ids,
     example_ids: nextProps.personaData?.example_ids,
   };
 

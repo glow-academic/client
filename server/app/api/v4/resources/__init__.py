@@ -70,6 +70,12 @@ from app.api.v4.resources.fields.search import router as fields_search_router
 
 router.include_router(fields_get_router)
 router.include_router(fields_search_router)
+# Parameter fields endpoints for personas two-pass architecture
+from app.api.v4.resources.parameter_fields.get import router as parameter_fields_get_router
+from app.api.v4.resources.parameter_fields.search import router as parameter_fields_search_router
+
+router.include_router(parameter_fields_get_router)
+router.include_router(parameter_fields_search_router)
 # NOTE: persona_fields removed - non-creatable (migration 328)
 # NOTE: document_fields removed - non-creatable (migration 328)
 # NOTE: parameter_fields removed - non-creatable (migration 328)

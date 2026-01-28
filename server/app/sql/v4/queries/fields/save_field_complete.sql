@@ -189,27 +189,36 @@ BEGIN
         ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value
     ),
+    -- Ensure conditional_parameters_resource entries exist for each parameter
+    ensure_conditional_parameters AS (
+        INSERT INTO conditional_parameters_resource (parameter_id, created_at, updated_at)
+        SELECT cond_param_id::uuid, NOW(), NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.conditional_parameter_ids) as cond_param_id
+        WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
+        ON CONFLICT (parameter_id) DO NOTHING
+        RETURNING id, parameter_id
+    ),
     -- Conditional: Delete existing conditional parameters (only for update)
     delete_existing_conditional_parameters AS (
-        UPDATE field_parameters_junction 
+        UPDATE field_conditional_parameters_junction
         SET active = false
         WHERE field_id = (SELECT field_id FROM params)
-          AND type = 'conditional'::parameter_type
           AND NOT (SELECT is_create FROM params)
     ),
     -- Link conditional parameters
     link_conditional_parameters AS (
-        INSERT INTO field_parameters_junction (field_id, parameter_id, type, active, created_at)
-        SELECT 
+        INSERT INTO field_conditional_parameters_junction (field_id, conditional_parameter_id, active, created_at)
+        SELECT
             x.field_id,
-            cond_param_id::uuid,
-            'conditional'::parameter_type,
+            cpr.id,
             true,
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.conditional_parameter_ids) as cond_param_id
+        JOIN conditional_parameters_resource cpr ON cpr.parameter_id = cond_param_id::uuid
         WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
-        ON CONFLICT (field_id, parameter_id, type) DO UPDATE SET
+        ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
             active = true
     ),
     -- Conditional: Delete existing departments (only for update)

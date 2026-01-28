@@ -137,13 +137,14 @@ persona_departments_data AS (
 ),
 persona_fields_data AS (
     SELECT
-        pf.persona_id,
+        ppfj.persona_id,
         ARRAY_AGG(DISTINCT ffj.field_id) as field_ids
-    FROM persona_fields_junction pf
-    JOIN fields_resource fr ON fr.id = pf.field_id
+    FROM persona_parameter_fields_junction ppfj
+    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+    JOIN fields_resource fr ON fr.id = pfr.field_id
     JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
-    WHERE pf.active = true
-    GROUP BY pf.persona_id
+    WHERE ppfj.active = true
+    GROUP BY ppfj.persona_id
 ),
 persona_data_base AS (
     SELECT

@@ -74,8 +74,8 @@ def get_missing_tools(
     instructions_has_tools: bool,
     show_departments: bool,
     departments_has_tools: bool,
-    show_fields: bool,
-    fields_has_tools: bool,
+    show_parameter_fields: bool,
+    parameter_fields_has_tools: bool,
     show_examples: bool,
     examples_has_tools: bool,
 ) -> list[str]:
@@ -92,8 +92,8 @@ def get_missing_tools(
         missing.append("instructions")
     if show_departments and not departments_has_tools:
         missing.append("departments")
-    if show_fields and not fields_has_tools:
-        missing.append("fields")
+    if show_parameter_fields and not parameter_fields_has_tools:
+        missing.append("parameter_fields")
     if show_examples and not examples_has_tools:
         missing.append("examples")
 
@@ -165,9 +165,9 @@ def compute_show_departments(departments_count: int) -> bool:
     return departments_count > 0
 
 
-def compute_show_fields(fields_count: int) -> bool:
-    """Determine if fields picker should be shown."""
-    return fields_count > 0
+def compute_show_parameter_fields(parameter_fields_count: int) -> bool:
+    """Determine if parameter_fields picker should be shown."""
+    return parameter_fields_count > 0
 
 
 def compute_show_examples(examples_count: int) -> bool:
@@ -216,8 +216,8 @@ def compute_departments_required() -> bool:
     return False
 
 
-def compute_fields_required() -> bool:
-    """Determine if fields is required."""
+def compute_parameter_fields_required() -> bool:
+    """Determine if parameter_fields is required."""
     return False
 
 
@@ -369,7 +369,7 @@ PERSONA_RESOURCES: set[str] = {
     "instructions",
     "flags",
     "departments",
-    "fields",
+    "parameter_fields",
     "examples",
     "parameters",
 }

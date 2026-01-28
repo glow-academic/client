@@ -52,10 +52,10 @@ original_departments AS (
     JOIN document_departments_junction dd ON dd.document_id = x.document_id AND dd.active = true
 ),
 original_fields AS (
-    -- Get field IDs from original document
-    SELECT field_id
+    -- Get parameter_field IDs from original document
+    SELECT dpfj.parameter_field_id
     FROM params x
-    JOIN document_fields_junction df ON df.document_id = x.document_id AND df.active = true
+    JOIN document_parameter_fields_junction dpfj ON dpfj.document_id = x.document_id AND dpfj.active = true
 ),
 original_flags AS (
     -- Get flag IDs from original document
@@ -152,11 +152,11 @@ copy_departments AS (
     RETURNING document_id
 ),
 copy_fields AS (
-    -- Copy field links from original document
-    INSERT INTO document_fields_junction (document_id, field_id, active, created_at)
-    SELECT 
+    -- Copy parameter_field links from original document
+    INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
+    SELECT
         nd.id,
-        of.field_id,
+        of.parameter_field_id,
         true,
         NOW()
     FROM new_document nd

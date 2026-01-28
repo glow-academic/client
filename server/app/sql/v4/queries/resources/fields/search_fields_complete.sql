@@ -1,5 +1,5 @@
 -- Search fields resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[]), parameter_id (uuid, optional)
+-- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of field resources)
 
 -- Drop function if exists (handles signature variations)
@@ -25,8 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_fields_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     group_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    parameter_id uuid DEFAULT NULL
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     items types.q_get_fields_v4_item[]
@@ -36,7 +35,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.field_id, q.name, q.description, q.generated, q.parameter_id)::types.q_get_fields_v4_item
+        (q.field_id, q.name, q.description, q.generated)::types.q_get_fields_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_fields_v4_item[]
@@ -47,18 +46,18 @@ FROM (
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1) AS name,
         COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), '') AS description,
         COALESCE(f.generated, false) AS generated,
-        f.parameter_id AS parameter_id,
         recent.recent_at
     FROM fields_resource f
     JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     LEFT JOIN LATERAL (
-        SELECT MAX(pf.created_at) AS recent_at
-        FROM persona_fields_junction pf
-        WHERE pf.field_id = ffj.field_id
+        SELECT MAX(ppfj.created_at) AS recent_at
+        FROM persona_parameter_fields_junction ppfj
+        JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+        WHERE pfr.field_id = f.id
           AND (
-              pf.active = true
+              ppfj.active = true
               OR (
-                  pf.generated = true
+                  ppfj.generated = true
                   AND f.generated = true
                   AND group_id IS NOT NULL
                   AND EXISTS (
@@ -110,7 +109,6 @@ FROM (
       )
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
       AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)) LIKE '%' || LOWER(search) || '%')
-      AND (parameter_id IS NULL OR f.parameter_id = parameter_id)
     ORDER BY
         CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         name

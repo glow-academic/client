@@ -253,22 +253,23 @@ department_mapping_data AS (
 field_suggestions_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(df.field_id ORDER BY df.created_at DESC)
+            (SELECT ARRAY_AGG(pfr.field_id ORDER BY dpfj.created_at DESC)
              FROM (
-                 SELECT DISTINCT df.field_id, MAX(df.created_at) as created_at
-                 FROM document_fields_junction df
-                 JOIN fields_resource f ON f.id = df.field_id
+                 SELECT DISTINCT pfr.field_id, MAX(dpfj.created_at) as created_at
+                 FROM document_parameter_fields_junction dpfj
+                 JOIN parameter_fields_resource pfr ON pfr.id = dpfj.parameter_field_id
+                 JOIN fields_resource f ON f.id = pfr.field_id
                  JOIN field_fields_junction ffj ON ffj.fields_id = f.id
                  CROSS JOIN draft_group_data dgd
-                 WHERE df.field_id IS NOT NULL
+                 WHERE pfr.field_id IS NOT NULL
                    AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
                    AND (
                        -- Option 1: Linked to documents with active=true
-                       df.active = true
+                       dpfj.active = true
                        OR
                        -- Option 2: Linked to same group with generated=true
                        (
-                           df.generated = true
+                           dpfj.generated = true
                            AND f.generated = true
                            AND EXISTS (
                                SELECT 1 FROM view_calls_entry c
@@ -278,10 +279,11 @@ field_suggestions_data AS (
                            )
                        )
                    )
-                 GROUP BY df.field_id
-                 ORDER BY MAX(df.created_at) DESC
+                 GROUP BY pfr.field_id
+                 ORDER BY MAX(dpfj.created_at) DESC
                  LIMIT 20
-             ) df),
+             ) dpfj
+             JOIN parameter_fields_resource pfr ON pfr.field_id = dpfj.field_id),
             ARRAY[]::uuid[]
         ) as field_suggestions
     FROM params
@@ -308,7 +310,7 @@ field_mapping_data AS (
         f.id as field_id,
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
         COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), '') as description,
-        (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1),
+        (SELECT pf.parameter_id FROM parameter_fields_resource pf WHERE pf.field_id = f.id LIMIT 1),
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pmd.parameter_id LIMIT 1) as parameter_name,
         COALESCE(f.generated, false) as generated,
         -- Add sort priority: suggested fields first (1), then others (2)
@@ -318,9 +320,9 @@ field_mapping_data AS (
         END as sort_priority
     FROM parameter_mapping_data pmd
     CROSS JOIN field_suggestions_data fsd_for_map
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) = pmd.parameter_id
+    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_resource pf WHERE pf.field_id = f.id LIMIT 1) = pmd.parameter_id
     JOIN field_fields_junction ffj ON ffj.fields_id = f.id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
-    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1)
+    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_resource pf WHERE pf.field_id = f.id LIMIT 1)
     WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = true)
 ),
 -- Valid fields data for new documents (based on departments, similar to personas endpoint)
@@ -329,8 +331,8 @@ valid_fields_data AS (
         f.id as field_id,
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
         COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), '') as description,
-        (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) as parameter_id,
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_resource_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
+        (SELECT pf.parameter_id FROM parameter_fields_resource pf WHERE pf.field_id = f.id LIMIT 1) as parameter_id,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields_resource pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
         COALESCE(f.generated, false) as generated,
         -- Add sort priority: suggested fields first (1), then others (2)
         CASE
@@ -340,12 +342,12 @@ valid_fields_data AS (
     FROM params x
     CROSS JOIN user_profile up
     CROSS JOIN field_suggestions_data fsd_for_sort
-    LEFT JOIN parameter_fields_junction pf_pf ON pf_pf.parameter_id IN (
+    LEFT JOIN parameter_fields_resource pf_pf ON pf_pf.parameter_id IN (
         SELECT p.id FROM parameter_artifact p
         WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE)
           AND EXISTS (SELECT 1 FROM parameter_flags_junction pf2 JOIN flags_resource f ON pf2.flag_id = f.id WHERE pf2.parameter_id = p.id AND f.name = 'document_parameter' AND pf2.value = TRUE)
     )
-    LEFT JOIN fields_resource f ON f.id = pf_pf.field_resource_id
+    LEFT JOIN fields_resource f ON f.id = pf_pf.field_id
     LEFT JOIN field_fields_junction ffj ON ffj.fields_id = f.id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
     LEFT JOIN field_departments_junction fd ON fd.field_id = ffj.field_id AND fd.active = true
     WHERE x.document_id IS NULL
@@ -411,14 +413,15 @@ ui_flags AS (
 ),
 -- Field IDs (selected field IDs for document)
 field_ids_data AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(df.field_id ORDER BY df.created_at)
-                 FROM document_fields_junction df
-                 WHERE df.document_id = (SELECT document_id FROM params)
-                   AND df.active = true),
+                (SELECT ARRAY_AGG(pfr.field_id ORDER BY dpfj.created_at)
+                 FROM document_parameter_fields_junction dpfj
+                 JOIN parameter_fields_resource pfr ON pfr.id = dpfj.parameter_field_id
+                 WHERE dpfj.document_id = (SELECT document_id FROM params)
+                   AND dpfj.active = true),
                 ARRAY[]::uuid[]
             )
         END as field_ids

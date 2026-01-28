@@ -58,10 +58,6 @@ type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
-type CreateDraftPersonaFieldsIn = InputOf<"/api/v4/resources/persona_fields", "post">;
-type CreateDraftPersonaFieldsOut = OutputOf<"/api/v4/resources/persona_fields", "post">;
-type CreateDraftDocumentFieldsIn = InputOf<"/api/v4/resources/document_fields", "post">;
-type CreateDraftDocumentFieldsOut = OutputOf<"/api/v4/resources/document_fields", "post">;
 type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields", "post">;
 type CreateDraftParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields", "post">;
 // GenerateAIScenario types - using WebSocket event types
@@ -255,20 +251,6 @@ async function createDraftVideos(
 ): Promise<CreateDraftVideosOut> {
   "use server";
   return api.post("/resources/videos", input);
-}
-
-async function createDraftPersonaFields(
-  input: CreateDraftPersonaFieldsIn
-): Promise<CreateDraftPersonaFieldsOut> {
-  "use server";
-  return api.post("/resources/persona_fields", input);
-}
-
-async function createDraftDocumentFields(
-  input: CreateDraftDocumentFieldsIn
-): Promise<CreateDraftDocumentFieldsOut> {
-  "use server";
-  return api.post("/resources/document_fields", input);
 }
 
 async function createDraftParameterFields(
@@ -489,8 +471,6 @@ export default async function EditScenarioPage({
           createTemplatesAction={createDraftTemplates}
           createImagesAction={createDraftImages}
           createVideosAction={createDraftVideos}
-          createPersonaFieldsAction={createDraftPersonaFields}
-          createDocumentFieldsAction={createDraftDocumentFields}
           createParameterFieldsAction={createDraftParameterFields}
         />
       </div>

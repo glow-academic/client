@@ -29,12 +29,12 @@ class GetPersonaApiRequest(BaseModel):
     icon_search: str | None = None
     descriptions_search: str | None = None
     instructions_search: str | None = None
-    field_search: str | None = None
+    parameter_field_search: str | None = None
     parameter_search: str | None = None
     # Show selected filters
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
-    field_show_selected: bool | None = None
+    parameter_field_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
 
 
@@ -113,14 +113,14 @@ class GetPersonaApiResponse(BaseModel):
     department_suggestions: list[UUID] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
 
-    # Multi-select resources: fields
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetFieldsV4Item] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetFieldsV4Item] | None = None
+    # Multi-select resources: parameter_fields
+    parameter_field_ids: list[UUID] | None = None
+    parameter_field_resources: list[QGetFieldsV4Item] | None = None
+    show_parameter_fields: bool | None = None
+    parameter_fields_agent_id: UUID | None = None
+    parameter_fields_required: bool | None = None
+    parameter_field_suggestions: list[UUID] | None = None
+    parameter_fields: list[QGetFieldsV4Item] | None = None
 
     # Multi-select resources: examples
     example_ids: list[UUID] | None = None
@@ -159,7 +159,7 @@ class ListPersonaApiPersona(BaseModel):
     icon: str | None = None
     department_ids: list[str] | None = None
     scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     reasoning: str | None = None
     temperature_display: str | None = None
     is_inactive: bool | None = None
@@ -236,7 +236,7 @@ class SavePersonaApiRequest(BaseModel):
 
     # Optional multi-select resources
     department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
 
@@ -269,7 +269,7 @@ class SavePersonaSqlParams(BaseModel):
 
     # Optional multi-select resources
     department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
 
@@ -286,7 +286,7 @@ class SavePersonaSqlParams(BaseModel):
             self.description_id,
             self.active_flag_id,
             self.department_ids,
-            self.field_ids,
+            self.parameter_field_ids,
             self.example_ids,
             self.parameter_ids,
         )
@@ -346,7 +346,7 @@ class PatchPersonaDraftApiRequest(BaseModel):
     instructions_id: UUID | None = None
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
     expected_version: int = 0

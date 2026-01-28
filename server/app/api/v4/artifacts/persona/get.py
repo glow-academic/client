@@ -27,7 +27,7 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_description_required,
     compute_disabled_reason,
     compute_examples_required,
-    compute_fields_required,
+    compute_parameter_fields_required,
     compute_flag_required,
     compute_icon_required,
     compute_instructions_required,
@@ -37,7 +37,7 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_departments,
     compute_show_description,
     compute_show_examples,
-    compute_show_fields,
+    compute_show_parameter_fields,
     compute_show_flag,
     compute_show_icon,
     compute_show_instructions,
@@ -227,7 +227,7 @@ async def get_persona(
         instructions_agent_id = agent_ids.get("instructions")
         flag_agent_id = agent_ids.get("flags")
         departments_agent_id = agent_ids.get("departments")
-        fields_agent_id = agent_ids.get("fields")
+        parameter_fields_agent_id = agent_ids.get("parameter_fields")
         examples_agent_id = agent_ids.get("examples")
         parameters_agent_id = agent_ids.get("parameters")
 
@@ -267,7 +267,7 @@ async def get_persona(
         instructions_ids = [ids_result.instructions_id] if ids_result.instructions_id else []
         flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
         department_ids = ids_result.department_ids or []
-        field_ids = ids_result.field_ids or []
+        parameter_field_ids = ids_result.parameter_field_ids or []
         example_ids = ids_result.example_ids or []
         parameter_ids = ids_result.parameter_ids or []
 
@@ -384,20 +384,21 @@ async def get_persona(
                 )
                 return (selected, suggestions)
 
-        async def fetch_fields():
+        async def fetch_parameter_fields():
             async with pool.acquire() as c:
-                selected = await get_fields_internal(c, field_ids, bypass_cache)
-                field_source = "all" if request.persona_id is None else "recent"
+                selected = await get_fields_internal(c, parameter_field_ids, bypass_cache)
+                parameter_field_source = "all" if request.persona_id is None else "recent"
                 suggestions = await search_fields_internal(
                     c,
-                    request.field_search,
-                    20,
-                    0,
-                    user_department_ids,
-                    access_result.group_id,
-                    field_source,
-                    field_ids,
-                    bypass_cache,
+                    search=request.parameter_field_search,
+                    limit_count=20,
+                    offset_count=0,
+                    user_department_ids=user_department_ids,
+                    group_id=access_result.group_id,
+                    suggest_source=parameter_field_source,
+                    exclude_ids=parameter_field_ids,
+                    parameter_id=None,
+                    bypass_cache=bypass_cache,
                 )
                 return (selected, suggestions)
 
@@ -450,7 +451,7 @@ async def get_persona(
             (instructions_selected, instructions_suggestions),
             (flags_selected, flags_suggestions),
             (departments_selected, departments_suggestions),
-            (fields_selected, fields_suggestions),
+            (parameter_fields_selected, parameter_fields_suggestions),
             (examples_selected, examples_suggestions),
             (parameters_selected, parameters_suggestions),
         ) = await asyncio.gather(
@@ -461,7 +462,7 @@ async def get_persona(
             fetch_instructions(),
             fetch_flags(),
             fetch_departments(),
-            fetch_fields(),
+            fetch_parameter_fields(),
             fetch_examples(),
             fetch_parameters(),
         )
@@ -477,7 +478,7 @@ async def get_persona(
         departments = _dedupe_by_id(
             departments_selected + departments_suggestions, "department_id"
         )
-        fields = _dedupe_by_id(fields_selected + fields_suggestions, "field_id")
+        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
         examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
         parameters = _dedupe_by_id(parameters_selected + parameters_suggestions, "parameter_id")
 
@@ -503,17 +504,17 @@ async def get_persona(
             (f for f in flags if f.id == ids_result.active_flag_id), None
         )
 
-        # Selected department/field/example/parameter resources
+        # Selected department/parameter_field/example/parameter resources
         selected_department_ids = ids_result.department_ids or []
-        selected_field_ids = ids_result.field_ids or []
+        selected_parameter_field_ids = ids_result.parameter_field_ids or []
         selected_example_ids = ids_result.example_ids or []
         selected_parameter_ids = ids_result.parameter_ids or []
 
         department_resources = [
             d for d in departments if d.department_id in selected_department_ids
         ]
-        field_resources = [
-            f for f in fields if f.field_id in selected_field_ids
+        parameter_field_resources = [
+            f for f in parameter_fields if f.field_id in selected_parameter_field_ids
         ]
         example_resources = [
             e for e in examples if e.id in selected_example_ids
@@ -528,7 +529,7 @@ async def get_persona(
         icon_suggestions = [i.id for i in icons_suggestions]
         instructions_suggestions = [i.id for i in instructions_suggestions]
         department_suggestions = [d.department_id for d in departments_suggestions]
-        field_suggestions = [f.field_id for f in fields_suggestions]
+        parameter_field_suggestions = [f.field_id for f in parameter_fields_suggestions]
         example_suggestions = [e.id for e in examples_suggestions]
         parameter_suggestions = [p.parameter_id for p in parameters_suggestions]
 
@@ -540,7 +541,7 @@ async def get_persona(
         show_instructions_flag = compute_show_instructions(instructions_has_tools)
         show_flag = compute_show_flag()
         show_departments_flag = compute_show_departments(len(departments))
-        show_fields_flag = compute_show_fields(len(fields))
+        show_parameter_fields_flag = compute_show_parameter_fields(len(parameter_fields))
         show_examples_flag = compute_show_examples(len(examples))
         show_parameters_flag = compute_show_parameters(len(parameters))
 
@@ -635,14 +636,14 @@ async def get_persona(
             departments_required=compute_departments_required(),
             department_suggestions=department_suggestions,
             departments=departments,
-            # Fields
-            field_ids=ids_result.field_ids,
-            field_resources=field_resources,
-            show_fields=show_fields_flag,
-            fields_agent_id=fields_agent_id,  # Python-computed
-            fields_required=compute_fields_required(),
-            field_suggestions=field_suggestions,
-            fields=fields,
+            # Parameter Fields
+            parameter_field_ids=ids_result.parameter_field_ids,
+            parameter_field_resources=parameter_field_resources,
+            show_parameter_fields=show_parameter_fields_flag,
+            parameter_fields_agent_id=parameter_fields_agent_id,  # Python-computed
+            parameter_fields_required=compute_parameter_fields_required(),
+            parameter_field_suggestions=parameter_field_suggestions,
+            parameter_fields=parameter_fields,
             # Examples
             example_ids=ids_result.example_ids,
             example_resources=example_resources,

@@ -1407,9 +1407,10 @@ scenario_documents_data AS (
              u.mime_type,
              uuc.upload_id,
              COALESCE(
-                 (SELECT array_agg(DISTINCT df.field_id::text)
-                  FROM document_fields_junction df
-                  WHERE df.document_id = d.id AND df.active = true),
+                 (SELECT array_agg(DISTINCT pfr.field_id::text)
+                  FROM document_parameter_fields_junction dpfj
+                  JOIN parameter_fields_resource pfr ON pfr.id = dpfj.parameter_field_id
+                  WHERE dpfj.document_id = d.id AND dpfj.active = true),
                  ARRAY[]::text[]
              )
             )::types.q_get_simulation_attempt_v4_scenario_document

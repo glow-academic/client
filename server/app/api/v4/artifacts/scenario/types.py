@@ -298,22 +298,6 @@ class GetScenarioApiResponse(BaseModel):
     department_suggestions: list[UUID] | None = None
     departments: list[ScenarioDepartment] | None = None
 
-    # Persona fields
-    persona_field_ids: list[UUID] | None = None
-    persona_field_resources: list[ScenarioField] | None = None
-    show_persona_fields: bool | None = None
-    persona_fields_agent_id: UUID | None = None
-    persona_fields_required: bool | None = None
-    persona_fields: list[ScenarioField] | None = None
-
-    # Document fields
-    document_field_ids: list[UUID] | None = None
-    document_field_resources: list[ScenarioField] | None = None
-    show_document_fields: bool | None = None
-    document_fields_agent_id: UUID | None = None
-    document_fields_required: bool | None = None
-    document_fields: list[ScenarioField] | None = None
-
     # Parameter fields
     parameter_field_ids: list[UUID] | None = None
     parameter_field_resources: list[ScenarioField] | None = None
@@ -822,18 +806,6 @@ class GetScenarioSqlRow(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[ScenarioDepartment] | None = None
-    persona_field_ids: list[UUID] | None = None
-    persona_field_resources: list[ScenarioField] | None = None
-    show_persona_fields: bool | None = None
-    persona_fields_agent_id: UUID | None = None
-    persona_fields_required: bool | None = None
-    persona_fields: list[ScenarioField] | None = None
-    document_field_ids: list[UUID] | None = None
-    document_field_resources: list[ScenarioField] | None = None
-    show_document_fields: bool | None = None
-    document_fields_agent_id: UUID | None = None
-    document_fields_required: bool | None = None
-    document_fields: list[ScenarioField] | None = None
     parameter_field_ids: list[UUID] | None = None
     parameter_field_resources: list[ScenarioField] | None = None
     show_parameter_fields: bool | None = None

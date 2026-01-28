@@ -31,7 +31,7 @@ CREATE OR REPLACE FUNCTION api_save_persona_v4(
     active_flag_id uuid DEFAULT NULL,
     -- Optional multi-select form data
     department_ids uuid[] DEFAULT NULL,
-    field_ids uuid[] DEFAULT NULL,
+    parameter_field_ids uuid[] DEFAULT NULL,
     example_ids uuid[] DEFAULT NULL,
     parameter_ids uuid[] DEFAULT NULL
 )
@@ -58,7 +58,7 @@ DECLARE
     v_active_flag_id uuid;
     v_department_ids uuid[];
     v_example_ids uuid[];
-    v_field_ids uuid[];
+    v_parameter_field_ids uuid[];
     v_parameter_ids uuid[];
 BEGIN
     -- Assign parameters to local variables
@@ -72,7 +72,7 @@ BEGIN
     v_description_id := description_id;
     v_active_flag_id := active_flag_id;
     v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
-    v_field_ids := COALESCE(field_ids, ARRAY[]::uuid[]);
+    v_parameter_field_ids := COALESCE(parameter_field_ids, ARRAY[]::uuid[]);
     v_example_ids := COALESCE(example_ids, ARRAY[]::uuid[]);
     v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
 
@@ -179,7 +179,7 @@ BEGIN
             v_department_ids AS department_ids,
             v_profile_id AS profile_id,
             v_example_ids AS example_ids,
-            v_field_ids AS field_ids,
+            v_parameter_field_ids AS parameter_field_ids,
             v_parameter_ids AS parameter_ids
     ),
     user_profile AS (
@@ -278,8 +278,8 @@ BEGIN
         ON CONFLICT ON CONSTRAINT persona_departments_pkey DO UPDATE SET
             active = true
     ),
-    -- Link fields (old ones already deleted above if update)
-    link_fields AS (
+    -- Link parameter fields (old ones already deleted above if update)
+    link_parameter_fields AS (
         INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at)
         SELECT
             x.persona_id,
@@ -287,8 +287,8 @@ BEGIN
             true,
             NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.field_ids) as field_id
-        WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
+        CROSS JOIN UNNEST(x.parameter_field_ids) as field_id
+        WHERE COALESCE(array_length(x.parameter_field_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT persona_fields_pkey DO UPDATE SET
             active = true
     ),

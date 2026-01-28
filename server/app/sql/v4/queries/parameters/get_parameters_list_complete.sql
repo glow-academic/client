@@ -174,13 +174,17 @@ parameter_item_departments_for_filter AS (
     ) combined
 ),
 parameter_documents AS (
-    SELECT 
-        (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1),
-        ARRAY_AGG(DISTINCT df.document_id::text ORDER BY df.document_id::text) as document_ids
-    FROM field_artifact f
-    JOIN document_fields_junction df ON df.field_id = f.id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true) AND df.active = true AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
-    GROUP BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
+    SELECT
+        pfr.parameter_id,
+        ARRAY_AGG(DISTINCT dpfj.document_id::text ORDER BY dpfj.document_id::text) as document_ids
+    FROM parameter_fields_resource pfr
+    JOIN document_parameter_fields_junction dpfj ON dpfj.parameter_field_id = pfr.id
+    JOIN fields_resource f ON f.id = pfr.field_id
+    JOIN field_fields_junction ffj ON ffj.fields_id = f.id
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
+      AND dpfj.active = true
+      AND pfr.parameter_id IS NOT NULL
+    GROUP BY pfr.parameter_id
 ),
 filtered_parameters AS (
     SELECT 
