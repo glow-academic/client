@@ -48,7 +48,7 @@ export function SelectableGrid<T>({
     return (
       <div
         className={cn(
-          "flex gap-3 overflow-x-auto py-2 pb-3 w-0 min-w-full",
+          "flex gap-3 overflow-x-auto py-2 pb-3 px-2 w-0 min-w-full",
           className
         )}
       >
