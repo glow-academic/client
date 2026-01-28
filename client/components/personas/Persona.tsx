@@ -1177,6 +1177,24 @@ function PersonaComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateColors = useCallback(
+    async () =>
+      handleGenerateResources(["colors"], determineAgentType(["colors"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateIcons = useCallback(
+    async () =>
+      handleGenerateResources(["icons"], determineAgentType(["icons"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateParameters = useCallback(
+    async () =>
+      handleGenerateResources(["parameters"], determineAgentType(["parameters"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // GenericForm will manage URL state via nuqs parsers
   // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
@@ -1891,6 +1909,8 @@ function PersonaComponent({
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, parameter_ids: ids }))
                 }
+                onGenerate={handleGenerateParameters}
+                isGenerating={isGenerating("parameters")}
                 label="Parameters"
                 required={currentPersonaData?.parameters_required ?? false}
                 group_id={currentPersonaData?.group_id ?? null}
@@ -1990,6 +2010,8 @@ function PersonaComponent({
                 onColorIdChange={(colorId) =>
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
                 }
+                onGenerate={handleGenerateColors}
+                isGenerating={isGenerating("colors")}
                 searchTerm={
                   (stepFormData["colorSearch"] as string | null | undefined) ||
                   ""
@@ -2100,6 +2122,8 @@ function PersonaComponent({
                 onIconIdChange={(iconId) =>
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
                 }
+                onGenerate={handleGenerateIcons}
+                isGenerating={isGenerating("icons")}
                 searchTerm={
                   (stepFormData["iconSearch"] as string | null | undefined) ||
                   ""
@@ -2358,6 +2382,9 @@ function PersonaComponent({
       handleGenerateDepartments,
       handleGenerateFlags,
       handleGenerateExamples,
+      handleGenerateColors,
+      handleGenerateIcons,
+      handleGenerateParameters,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation

@@ -519,10 +519,37 @@ export function Colors({
   // Single-select mode (existing logic)
   return (
     <div className="space-y-4 min-w-0 w-full">
-      <Label htmlFor={id} className="flex items-center gap-1">
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {onGenerate && agent_id && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {resource?.generated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
 
       {/* Color Grid */}
       {displayColors.length > 0 && (

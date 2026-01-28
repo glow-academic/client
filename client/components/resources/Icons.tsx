@@ -7,11 +7,18 @@
 "use client";
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
-import { Check } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
@@ -50,6 +57,8 @@ export interface IconsProps {
   createIconsAction?:
     | ((input: CreateDraftIconsIn) => Promise<CreateDraftIconsOut>)
     | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // Legacy props for backward compatibility
   iconResource?: {
     id: string;
@@ -83,6 +92,8 @@ export function Icons({
   group_id,
   agent_id,
   createIconsAction,
+  onGenerate,
+  isGenerating = false,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,
@@ -244,6 +255,11 @@ export function Icons({
     setInternalValue(newValue);
   }, []);
 
+  // Check if any icon resource is generated
+  const hasGenerated = useMemo(() => {
+    return resource?.generated ?? false;
+  }, [resource]);
+
   // Don't render if show_icon is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -251,10 +267,37 @@ export function Icons({
 
   return (
     <div className="space-y-4 min-w-0 w-full">
-      <Label htmlFor={id} className="flex items-center gap-1">
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {onGenerate && agent_id && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasGenerated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
 
       <SelectableGrid
         items={displayIcons}
