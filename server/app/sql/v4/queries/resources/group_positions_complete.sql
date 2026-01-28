@@ -39,7 +39,6 @@ DECLARE
     v_arg_value text;
     v_args_jsonb jsonb := '{}'::jsonb;
     v_params_jsonb jsonb;
-    v_message_id uuid;
     v_run_id uuid;
 BEGIN
     -- Lookup tool_id from agent_tools_junction + resource_tools_relation
@@ -93,7 +92,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
     
     -- INSERT INTO group_positions_resource table (always insert, never update)
     -- Note: Column names and values need to be adjusted based on actual table schema
@@ -101,10 +100,6 @@ BEGIN
     VALUES (true, mcp)
     RETURNING id INTO v_group_positions_id;
     
-    -- Create message record (assistant role, not completed)
-    v_message_id := uuidv7();
-    INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
-    VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
 
     -- Create run record
     v_run_id := uuidv7();
@@ -117,8 +112,6 @@ BEGIN
     -- Link call to run
     UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
 
-    -- Link message to run
-    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
     
     
     RETURN QUERY SELECT v_group_positions_id;

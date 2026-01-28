@@ -16731,6 +16731,7 @@ class SearchFieldsSqlParams(BaseModel):
     group_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16741,6 +16742,7 @@ class SearchFieldsSqlParams(BaseModel):
             self.group_id,
             self.suggest_source,
             self.exclude_ids,
+            self.parameter_id,
         )
 
 class SearchFieldsSqlRow(BaseModel):
@@ -16756,6 +16758,7 @@ class SearchFieldsApiRequest(BaseModel):
     group_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_id: UUID | None = None
 
 class SearchFieldsApiResponse(BaseModel):
 

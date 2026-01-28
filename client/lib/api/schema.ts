@@ -20692,6 +20692,8 @@ export interface components {
             suggest_source?: string | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
         };
         /** SearchFieldsApiResponse */
         SearchFieldsApiResponse: {

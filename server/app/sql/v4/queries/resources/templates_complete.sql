@@ -40,7 +40,6 @@ DECLARE
     v_arg_value text;
     v_args_jsonb jsonb := '{}'::jsonb;
     v_params_jsonb jsonb;
-    v_message_id uuid;
     v_run_id uuid;
 BEGIN
     -- Lookup tool_id from agent_tools_junction + resource_tools_relation
@@ -111,10 +110,6 @@ BEGIN
     RETURNING id INTO v_template_id;
 
         
-    -- Create message record (assistant role, not completed)
-    v_message_id := uuidv7();
-    INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
-    VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
 
     -- Create run record
     v_run_id := uuidv7();
@@ -127,8 +122,6 @@ BEGIN
     -- Link call to run
     UPDATE calls_entry SET run_id = v_run_id WHERE id = v_call_id;
 
-    -- Link message to run
-    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
     
     
     RETURN QUERY SELECT v_template_id;

@@ -1195,6 +1195,12 @@ function PersonaComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateFields = useCallback(
+    async () =>
+      handleGenerateResources(["fields"], determineAgentType(["fields"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // GenericForm will manage URL state via nuqs parsers
   // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
@@ -2357,6 +2363,8 @@ function PersonaComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, field_ids: ids }))
                   }
+                  onGenerate={handleGenerateFields}
+                  isGenerating={isGenerating("fields")}
                   label=""
                   required={false}
                   group_id={currentPersonaData?.group_id ?? null}
@@ -2385,6 +2393,7 @@ function PersonaComponent({
       handleGenerateColors,
       handleGenerateIcons,
       handleGenerateParameters,
+      handleGenerateFields,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation

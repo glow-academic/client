@@ -37,7 +37,6 @@ DECLARE
     v_template_id uuid;
     v_arguments_raw text;
     v_args_jsonb jsonb := '{}'::jsonb;
-    v_message_id uuid;
     v_run_id uuid;
 BEGIN
     -- Validate role exists
@@ -104,7 +103,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
 
     -- INSERT INTO role_routes_resource table
     INSERT INTO role_routes_resource (
@@ -134,10 +133,6 @@ BEGIN
         updated_at = NOW()
     RETURNING id INTO v_role_routes_id;
 
-    -- Create message record (assistant role, not completed)
-    v_message_id := uuidv7();
-    INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
-    VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
 
     -- Create run record
     v_run_id := uuidv7();
@@ -148,10 +143,7 @@ BEGIN
     INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_role_routes_v4.agent_id, v_run_id);
 
     -- Link call to run
-    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_call_id;
 
-    -- Link message to run
-    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
 
     RETURN QUERY SELECT v_role_routes_id;
 END;

@@ -100337,6 +100337,18 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
           }
         },
         "type": "object",

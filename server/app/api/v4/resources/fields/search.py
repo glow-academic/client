@@ -34,6 +34,7 @@ async def search_fields_internal(
     group_id: UUID | None = None,
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
+    parameter_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetFieldsV4Item]:
     if limit_count is not None and limit_count <= 0:
@@ -50,6 +51,7 @@ async def search_fields_internal(
             "group_id": str(group_id) if group_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "parameter_id": str(parameter_id) if parameter_id else None,
         },
     )
 
@@ -66,6 +68,7 @@ async def search_fields_internal(
         group_id=group_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
+        parameter_id=parameter_id,
     )
     result = cast(
         SearchFieldsSqlRow,
@@ -107,6 +110,7 @@ async def search_fields(
             request.group_id,
             request.suggest_source,
             request.exclude_ids,
+            request.parameter_id,
             bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)

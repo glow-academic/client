@@ -1,5 +1,5 @@
 -- Search fields resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[]), parameter_id (uuid, optional)
 -- Returns: items (array of field resources)
 
 -- Drop function if exists (handles signature variations)
@@ -25,7 +25,8 @@ CREATE OR REPLACE FUNCTION api_search_fields_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     group_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    parameter_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     items types.q_get_fields_v4_item[]
@@ -109,6 +110,7 @@ FROM (
       )
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
       AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)) LIKE '%' || LOWER(search) || '%')
+      AND (parameter_id IS NULL OR f.parameter_id = parameter_id)
     ORDER BY
         CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
         name

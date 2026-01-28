@@ -8,10 +8,17 @@
 "use client";
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
@@ -53,6 +60,8 @@ export interface FieldsProps {
   createFieldsAction?:
     | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
     | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering fields
   showSelectedFilter?: boolean; // Whether to show only selected fields
   // Legacy props for backward compatibility
@@ -76,6 +85,8 @@ export function Fields({
   group_id,
   agent_id,
   createFieldsAction,
+  onGenerate,
+  isGenerating = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility
@@ -190,6 +201,11 @@ export function Fields({
     [ids, onChange, createFieldsAction, agent_id, group_id]
   );
 
+  // Check if any field resource is generated
+  const hasGenerated = useMemo(() => {
+    return _field_resources?.some((f) => f.generated) ?? false;
+  }, [_field_resources]);
+
   // Don't render if show_fields is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -198,15 +214,42 @@ export function Fields({
   return (
     <div className="space-y-2 min-w-0 w-full">
       {label && (
-        <Label htmlFor={id} className="flex items-center gap-1">
-          {label}
-          {required && <span className="text-destructive">*</span>}
-          {description && (
-            <span className="text-xs text-muted-foreground ml-2">
-              {description}
-            </span>
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+            {description && (
+              <span className="text-xs text-muted-foreground ml-2">
+                {description}
+              </span>
+            )}
+          </Label>
+          {onGenerate && agent_id && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
-        </Label>
+        </div>
       )}
       <SelectableGrid<FieldItem>
         items={filteredFields}

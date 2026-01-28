@@ -42,7 +42,6 @@ DECLARE
     v_arg_value text;
     v_args_jsonb jsonb := '{}'::jsonb;
     v_params_jsonb jsonb;
-    v_message_id uuid;
     v_run_id uuid;
     v_resource_id uuid;
 BEGIN
@@ -131,7 +130,7 @@ BEGIN
     );
 
     -- Link tool to call
-    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id);
+    INSERT INTO tool_calls_junction (tool_id, call_id) VALUES (v_tool_id, v_call_id);
     
     -- INSERT or UPDATE INTO scenario_positions_resource
     -- Use ON CONFLICT to update if position already exists for this scenario/value pair
@@ -159,10 +158,6 @@ BEGIN
         call_id = EXCLUDED.call_id
     RETURNING id INTO v_resource_id;
     
-    -- Create message record (assistant role, not completed)
-    v_message_id := uuidv7();
-    INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
-    VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
 
     -- Create run record
     v_run_id := uuidv7();
@@ -173,10 +168,7 @@ BEGIN
     INSERT INTO agent_runs_junction (agent_id, run_id) VALUES (api_create_scenario_positions_v4.agent_id, v_run_id);
     
     -- Link call to run
-    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_call_id;
 
-    -- Link message to run
-    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
     
     
     -- Return composite ID (for API compatibility)
