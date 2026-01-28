@@ -237,11 +237,16 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
                 ))
             )}
 
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={attemptCreateNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create new draft
-            </DropdownMenuItem>
+            {/* Only show "Create new draft" if we're currently editing an existing draft */}
+            {searchParams.get("draftId") && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={attemptCreateNew}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create new draft
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
