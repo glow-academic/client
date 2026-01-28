@@ -98,9 +98,9 @@ draft_departments_data AS (
     LIMIT 1
 ),
 draft_parameter_fields_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as parameter_field_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.parameter_fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as parameter_field_ids
     FROM params x
-    LEFT JOIN fields_drafts_connection df ON df.draft_id = x.draft_id
+    LEFT JOIN parameter_fields_drafts_connection df ON df.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_examples_data AS (

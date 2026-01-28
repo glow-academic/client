@@ -95,9 +95,9 @@ BEGIN
     IF parameter_field_ids IS NOT NULL THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(parameter_field_ids) as fid
-            WHERE NOT EXISTS (SELECT 1 FROM fields_resource WHERE id = fid)
+            WHERE NOT EXISTS (SELECT 1 FROM parameter_fields_resource WHERE id = fid)
         ) THEN
-            RAISE EXCEPTION 'One or more parameter field resource IDs not found in fields_resource';
+            RAISE EXCEPTION 'One or more parameter field resource IDs not found in parameter_fields_resource';
         END IF;
     END IF;
 
@@ -151,7 +151,7 @@ BEGIN
             DELETE FROM instructions_drafts_connection WHERE instructions_drafts_connection.draft_id = v_draft_id;
             DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
             DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
-            DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
+            DELETE FROM parameter_fields_drafts_connection WHERE parameter_fields_drafts_connection.draft_id = v_draft_id;
             DELETE FROM examples_drafts_connection WHERE examples_drafts_connection.draft_id = v_draft_id;
             DELETE FROM parameters_drafts_connection WHERE parameters_drafts_connection.draft_id = v_draft_id;
             
@@ -208,11 +208,11 @@ BEGIN
             END IF;
             
             IF parameter_field_ids IS NOT NULL THEN
-                DELETE FROM fields_drafts_connection WHERE fields_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+                DELETE FROM parameter_fields_drafts_connection WHERE parameter_fields_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO parameter_fields_drafts_connection (draft_id, parameter_fields_id, version)
                 SELECT v_draft_id, field_id, v_new_version
                 FROM UNNEST(parameter_field_ids) as field_id
-                ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT parameter_fields_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
@@ -307,10 +307,10 @@ BEGIN
     END IF;
     
     IF parameter_field_ids IS NOT NULL THEN
-        INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
+        INSERT INTO parameter_fields_drafts_connection (draft_id, parameter_fields_id, version)
         SELECT v_draft_id, field_id, v_new_version
         FROM UNNEST(parameter_field_ids) as field_id
-        ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT parameter_fields_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     

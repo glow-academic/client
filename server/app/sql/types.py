@@ -17453,6 +17453,43 @@ class GetParameterFieldsApiResponse(BaseModel):
 
 
 
+# Generated from: parameter_fields
+
+class ParameterFieldsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    parameter_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.parameter_id,
+            self.field_id,
+            self.mcp,
+        )
+
+class ParameterFieldsSqlRow(BaseModel):
+
+    parameter_fields_id: UUID | None = None
+
+class ParameterFieldsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    parameter_id: UUID
+    field_id: UUID
+    mcp: bool | None = False
+
+class ParameterFieldsApiResponse(BaseModel):
+
+    parameter_fields_id: UUID | None = None
+
+
+
 # Generated from: search_parameter_fields
 
 class SearchParameterFieldsSqlParams(BaseModel):
@@ -25165,6 +25202,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterFieldsApiRequest",
         "GetParameterFieldsApiResponse",
     ),
+    "app/sql/v4/queries/resources/parameter_fields/parameter_fields_complete.sql": (
+        "ParameterFieldsSqlParams",
+        "ParameterFieldsSqlRow",
+        "ParameterFieldsApiRequest",
+        "ParameterFieldsApiResponse",
+    ),
     "app/sql/v4/queries/resources/parameter_fields/search_parameter_fields_complete.sql": (
         "SearchParameterFieldsSqlParams",
         "SearchParameterFieldsSqlRow",
@@ -27296,6 +27339,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameter_fields/get_parameter_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/parameter_fields/parameter_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload

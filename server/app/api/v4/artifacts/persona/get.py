@@ -496,7 +496,9 @@ async def get_persona(
         departments = _dedupe_by_id(
             departments_selected + departments_suggestions, "department_id"
         )
-        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "id")
+        # Dedupe by field_id since selected resources use parameter_fields_resource.id
+        # while available fields use field_id as their id
+        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
         examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
         # Combine persona parameters with conditional parameters (conditional params have conditional=true)
         parameters = _dedupe_by_id(

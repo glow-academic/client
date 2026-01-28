@@ -2495,6 +2495,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/parameter_fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Parameter Fields
+         * @description Create parameter_fields resource (always INSERT).
+         */
+        post: operations["create_parameter_fields_api_v4_resources_parameter_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/parameter_fields/get": {
         parameters: {
             query?: never;
@@ -11647,6 +11667,39 @@ export interface components {
         OptionsApiResponse: {
             /** Option Id */
             option_id?: string | null;
+        };
+        /** ParameterFieldsApiRequest */
+        ParameterFieldsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Parameter Id
+             * Format: uuid
+             */
+            parameter_id: string;
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ParameterFieldsApiResponse */
+        ParameterFieldsApiResponse: {
+            /** Parameter Fields Id */
+            parameter_fields_id?: string | null;
         };
         /** PatchAgentDraftApiRequest */
         PatchAgentDraftApiRequest: {
@@ -25841,6 +25894,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_parameter_fields_api_v4_resources_parameter_fields_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParameterFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParameterFieldsApiResponse"];
                 };
             };
             /** @description Validation Error */

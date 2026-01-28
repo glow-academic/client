@@ -7,9 +7,9 @@
 
 "use client";
 
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftParameterFieldsIn = InputOf<
@@ -81,6 +81,10 @@ export interface ParameterFieldsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<void>) => void;
 }
 
 // Represents an available field option from parameter_fields_junction
@@ -112,6 +116,8 @@ export function ParameterFields({
   createParameterFieldsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: ParameterFieldsProps) {
   const show = show_parameter_fields ?? false;
   // Available fields from parameter_fields_junction (what user CAN select)
@@ -163,33 +169,129 @@ export function ParameterFields({
 
   // Track parameter_fields_resource IDs to emit (starts from selected resources)
   const [resourceIds, setResourceIds] = useState<Map<string, string>>(new Map());
+  // Track locally created field keys to resource IDs (for selection state before server sync)
+  const [localKeyToResourceId, setLocalKeyToResourceId] = useState<Map<string, string>>(new Map());
+  // Track pending selections (for manual save mode - fields selected but not yet created)
+  const [pendingSelections, setPendingSelections] = useState<Set<string>>(new Set());
   // Track pending creations to prevent duplicates
   const creatingKeysRef = useRef<Set<string>>(new Set());
+  // Track if we should emit changes (skip initial sync)
+  const hasInitializedRef = useRef(false);
+  // Track the last emitted IDs to avoid duplicate emissions
+  const lastEmittedRef = useRef<string>("");
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
-  // Initialize resourceIds from selected resources
+  // Sync resourceIds with selected resources from server
+  // IMPORTANT: Merge server data with local state, don't replace
+  // This preserves locally-created IDs that haven't synced to server yet
   useEffect(() => {
-    const nextResourceIds = new Map<string, string>();
-    selectedResources.forEach((resource) => {
-      if (resource.id) {
-        nextResourceIds.set(resource.id, resource.id);
-      }
+    setResourceIds((prev) => {
+      const next = new Map(prev);
+      // Add all server-confirmed IDs
+      selectedResources.forEach((resource) => {
+        if (resource.id) {
+          next.set(resource.id, resource.id);
+        }
+      });
+      // Keep any locally-created IDs that are in localKeyToResourceId
+      // (they'll be removed when explicitly deselected)
+      return next;
     });
-    setResourceIds(nextResourceIds);
   }, [selectedResources]);
 
-  const emitAllIds = useCallback(
-    (ids: Map<string, string>) => {
-      onChange(Array.from(ids.values()));
-    },
-    [onChange]
-  );
+  // Emit changes to parent via useEffect (not during render)
+  useEffect(() => {
+    // Skip the initial render to avoid emitting empty array
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      // Set initial lastEmitted to current state
+      lastEmittedRef.current = Array.from(resourceIds.values()).sort().join(",");
+      return;
+    }
+
+    // Only emit if IDs actually changed
+    const currentIds = Array.from(resourceIds.values()).sort().join(",");
+    if (currentIds !== lastEmittedRef.current) {
+      lastEmittedRef.current = currentIds;
+      onChange(Array.from(resourceIds.values()));
+    }
+  }, [resourceIds, onChange]);
+
+  // Update flush function when dependencies change (for manual save mode)
+  flushRef.current = async () => {
+    // Skip if no pending selections or no action or missing required params
+    if (pendingSelections.size === 0) return;
+    if (!createParameterFieldsAction || !group_id || !agent_id) return;
+
+    const promises: Promise<string | null>[] = [];
+    pendingSelections.forEach((key) => {
+      const [parameterId, fieldId] = key.split(":");
+      if (parameterId && fieldId) {
+        promises.push(
+          (async () => {
+            try {
+              const result = await createParameterFieldsAction({
+                body: {
+                  agent_id: agent_id,
+                  group_id: group_id,
+                  parameter_id: parameterId,
+                  field_id: fieldId,
+                  mcp: false,
+                },
+              });
+              if (result?.parameter_fields_id) {
+                const resultId = result.parameter_fields_id as string;
+                setLocalKeyToResourceId((prev) => {
+                  const next = new Map(prev);
+                  next.set(key, resultId);
+                  return next;
+                });
+                setResourceIds((prev) => {
+                  const next = new Map(prev);
+                  next.set(resultId, resultId);
+                  return next;
+                });
+                return resultId;
+              }
+              return null;
+            } catch {
+              return null;
+            }
+          })()
+        );
+      }
+    });
+
+    await Promise.all(promises);
+    setPendingSelections(new Set());
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const createParameterField = useCallback(
     async (parameterId: string, fieldId: string) => {
+      const key = `${parameterId}:${fieldId}`;
+
+      // In manual save mode, just track the pending selection
+      if (!isAutosaveEnabled) {
+        setPendingSelections((prev) => {
+          const next = new Set(prev);
+          next.add(key);
+          return next;
+        });
+        return null;
+      }
+
+      // Autosave mode: create resource immediately
       if (!createParameterFieldsAction || !agent_id || !group_id) {
         return null;
       }
-      const key = `${parameterId}:${fieldId}`;
       if (creatingKeysRef.current.has(key)) {
         return null;
       }
@@ -212,10 +314,16 @@ export function ParameterFields({
         }
 
         const resultId = result.parameter_fields_id as string;
+        // Track the local key→resourceId mapping for immediate selection state
+        setLocalKeyToResourceId((prev) => {
+          const next = new Map(prev);
+          next.set(key, resultId);
+          return next;
+        });
+        // Add to resourceIds - useEffect will emit the change
         setResourceIds((prev) => {
           const next = new Map(prev);
           next.set(resultId, resultId);
-          emitAllIds(next);
           return next;
         });
         return resultId;
@@ -224,21 +332,22 @@ export function ParameterFields({
         return null;
       }
     },
-    [createParameterFieldsAction, agent_id, group_id, emitAllIds]
+    [createParameterFieldsAction, agent_id, group_id, isAutosaveEnabled]
   );
 
   const handleToggle = useCallback(
     (option: AvailableFieldOption, checked: boolean) => {
       const key = `${option.parameter_id}:${option.field_id}`;
-      const existingResourceId = selectedFieldKeyToResourceId.get(key);
+      // Check both server-synced and locally-created mappings
+      const existingResourceId = selectedFieldKeyToResourceId.get(key) ?? localKeyToResourceId.get(key);
 
       if (checked) {
         if (existingResourceId) {
           // Field was already selected, just add to tracking
+          // useEffect will emit the change
           setResourceIds((prev) => {
             const next = new Map(prev);
             next.set(existingResourceId, existingResourceId);
-            emitAllIds(next);
             return next;
           });
         } else {
@@ -247,12 +356,28 @@ export function ParameterFields({
         }
       } else {
         // Remove from selection
-        if (existingResourceId) {
+        // First check if it's a pending selection (manual save mode)
+        if (pendingSelections.has(key)) {
+          setPendingSelections((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
+        } else if (existingResourceId) {
+          // useEffect will emit the change
           setResourceIds((prev) => {
             const next = new Map(prev);
             next.delete(existingResourceId);
-            emitAllIds(next);
             return next;
+          });
+          // Also clean up local mapping if it was locally created
+          setLocalKeyToResourceId((prev) => {
+            if (prev.has(key)) {
+              const next = new Map(prev);
+              next.delete(key);
+              return next;
+            }
+            return prev;
           });
         }
       }
@@ -262,17 +387,22 @@ export function ParameterFields({
         onConditionalParameterToggle(option.conditional_parameter_id, checked);
       }
     },
-    [selectedFieldKeyToResourceId, createParameterField, emitAllIds, onConditionalParameterToggle]
+    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField, onConditionalParameterToggle]
   );
 
   // Check if a field is currently selected
   const isFieldSelected = useCallback(
     (parameterId: string, fieldId: string): boolean => {
       const key = `${parameterId}:${fieldId}`;
-      const resourceId = selectedFieldKeyToResourceId.get(key);
+      // Check pending selections (manual save mode)
+      if (pendingSelections.has(key)) {
+        return true;
+      }
+      // Check both server-synced and locally-created mappings
+      const resourceId = selectedFieldKeyToResourceId.get(key) ?? localKeyToResourceId.get(key);
       return resourceId ? resourceIds.has(resourceId) : false;
     },
-    [selectedFieldKeyToResourceId, resourceIds]
+    [selectedFieldKeyToResourceId, localKeyToResourceId, resourceIds, pendingSelections]
   );
 
   // Group available fields by parameter_id
@@ -302,12 +432,13 @@ export function ParameterFields({
     return selectedResources.some((field) => field.generated);
   }, [selectedResources]);
 
-  if (!show) {
+  // Don't render if show is false or no parameters selected
+  if (!show || parameter_ids.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 min-w-0 w-full">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">
@@ -346,63 +477,67 @@ export function ParameterFields({
           )}
         </div>
       )}
-      <div className="space-y-2">
+      <div className="space-y-4 pl-4">
         {parameter_ids.map((parameterId) => {
           const labelText =
             parameterLabelMap.get(parameterId) ?? parameterId.slice(0, 8);
           const parameterOptions = fieldOptionsByParameter.get(parameterId) ?? [];
+
+          // Get selected IDs for this parameter's fields
+          const selectedFieldIds = parameterOptions
+            .filter((opt) => isFieldSelected(opt.parameter_id, opt.field_id))
+            .map((opt) => opt.field_id);
+
           return (
-            <div
-              key={parameterId}
-              className="space-y-2 rounded-lg border p-2"
-            >
+            <div key={parameterId} className="space-y-2">
               <Label className="text-sm font-medium" title={labelText}>
                 {labelText}
               </Label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-                {parameterOptions.map((option) => {
-                  const isSelected = isFieldSelected(option.parameter_id, option.field_id);
-                  return (
-                    <div
-                      key={`${option.parameter_id}:${option.field_id}`}
-                      className={cn(
-                        "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
-                        isSelected && "border-primary/50 bg-accent/40"
-                      )}
-                    >
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-medium">{option.name}</div>
-                        {option.description && (
-                          <div className="text-[11px] text-muted-foreground leading-snug">
-                            {option.description}
-                          </div>
-                        )}
+              <SelectableGrid<AvailableFieldOption>
+                items={parameterOptions}
+                selectedId={null}
+                selectedIds={selectedFieldIds}
+                onSelect={(fieldId) => {
+                  const option = parameterOptions.find((opt) => opt.field_id === fieldId);
+                  if (option) {
+                    const isSelected = isFieldSelected(option.parameter_id, option.field_id);
+                    handleToggle(option, !isSelected);
+                  }
+                }}
+                getId={(item) => item.field_id}
+                renderItem={(item, isSelected) => (
+                  <div
+                    className={cn(
+                      "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                      "hover:shadow-md hover:bg-accent/50",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      isSelected && "ring-2 ring-primary bg-accent"
+                    )}
+                  >
+                    {/* Check icon - top right */}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="h-3 w-3 text-primary-foreground" />
                       </div>
-                      <Switch
-                        checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          handleToggle(option, checked);
-                        }}
-                        disabled={disabled}
-                        className="shrink-0"
-                      />
+                    )}
+
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <h3 className="font-medium text-sm leading-tight truncate pr-8">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {item.description}
+                        </p>
+                      )}
                     </div>
-                  );
-                })}
-                {parameterOptions.length === 0 && (
-                  <div className="col-span-full text-sm text-muted-foreground">
-                    No fields available for this parameter.
                   </div>
                 )}
-              </div>
+                emptyMessage="No fields available for this parameter."
+                disabled={disabled}
+                horizontal
+              />
             </div>
           );
         })}
-        {parameter_ids.length === 0 && (
-          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-            No parameters selected. Select parameters first to choose fields.
-          </div>
-        )}
       </div>
     </div>
   );

@@ -70,11 +70,10 @@ LEFT JOIN (
     WHERE fcpj.active = true AND cpr.active = true
 ) cp_lookup ON cp_lookup.field_id = ffj.field_id
 WHERE pfj.active = true
-  -- Only return fields for persona parameters
-  AND pr.persona_parameter = true
-  -- If parameter_ids is empty, return all; otherwise filter to specified IDs
+  -- If parameter_ids is empty, return all fields for persona_parameter=true parameters
+  -- If parameter_ids is provided, return fields for those specific parameters (includes conditional params)
   AND (
-      COALESCE(array_length(parameter_ids, 1), 0) = 0
+      (COALESCE(array_length(parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
       OR ppj.parameters_id = ANY(parameter_ids)
   )
   AND EXISTS (
