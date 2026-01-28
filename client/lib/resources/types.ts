@@ -12,6 +12,7 @@ export type ResourceType =
   | "examples"
   | "fields"
   | "parameters"
+  | "parameter_fields"
   | "departments"
   | "points"
   | "standard_groups"

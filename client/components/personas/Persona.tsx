@@ -1258,6 +1258,12 @@ function PersonaComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateParameterFields = useCallback(
+    async () =>
+      handleGenerateResources(["parameter_fields"], determineAgentType(["parameter_fields"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // Handle conditional parameter auto-select/deselect when a field triggers it
   // This supports transitive chains: when a field's conditional parameter is deselected,
   // we also deselect any conditional parameters that were triggered by that parameter's fields
@@ -2027,6 +2033,8 @@ function PersonaComponent({
                   agent_id={currentPersonaData?.parameter_fields_agent_id ?? null}
                   required={currentPersonaData?.parameter_fields_required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
+                  onGenerate={handleGenerateParameterFields}
+                  isGenerating={isGenerating("parameter_fields")}
                 />
               </div>
             </StepCard>
@@ -2436,6 +2444,7 @@ function PersonaComponent({
       handleGenerateColors,
       handleGenerateIcons,
       handleGenerateParameters,
+      handleGenerateParameterFields,
       handleConditionalParameterToggle,
       isGenerating,
       stepResources,
