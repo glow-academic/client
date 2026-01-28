@@ -65,11 +65,6 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
     const handleStatusChange = (e: Event) => {
       const detail = (e as CustomEvent<{ status: SaveStatus }>).detail;
       setSaveStatus(detail.status);
-
-      // Auto-reset to idle after "saved"
-      if (detail.status === "saved") {
-        setTimeout(() => setSaveStatus("idle"), 2000);
-      }
     };
 
     const handleUnsavedChanges = (e: Event) => {

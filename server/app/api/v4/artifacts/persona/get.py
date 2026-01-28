@@ -60,6 +60,7 @@ from app.api.v4.resources.descriptions.search import search_descriptions_interna
 from app.api.v4.resources.examples.get import get_examples_internal
 from app.api.v4.resources.examples.search import search_examples_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameter_fields.search import search_parameter_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.get import get_icons_internal
@@ -386,8 +387,9 @@ async def get_persona(
         async def fetch_parameter_fields():
             async with pool.acquire() as c:
                 selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
-                # No suggestions - fields are shown grouped by parameter on frontend
-                return (selected, [])
+                # Get all available fields for the selected parameters
+                available = await search_parameter_fields_internal(c, parameter_ids, bypass_cache)
+                return (selected, available)
 
         async def fetch_examples():
             async with pool.acquire() as c:

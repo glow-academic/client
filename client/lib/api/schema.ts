@@ -2528,7 +2528,9 @@ export interface paths {
         put?: never;
         /**
          * Search Parameter Fields
-         * @description Search parameter fields resources.
+         * @description Search parameter fields resources by parameter IDs.
+         *
+         *     Returns all available parameter_fields for the given parameters.
          */
         post: operations["search_parameter_fields_api_v4_resources_parameter_fields_search_post"];
         delete?: never;
@@ -20830,6 +20832,16 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetNamesV4Item"][] | null;
         };
+        /** SearchParameterFieldsApiRequest */
+        SearchParameterFieldsApiRequest: {
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+        };
+        /** SearchParameterFieldsApiResponse */
+        SearchParameterFieldsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+        };
         /** SearchParametersApiRequest */
         SearchParametersApiRequest: {
             /** Search */
@@ -25888,7 +25900,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchFieldsApiRequest"];
+                "application/json": components["schemas"]["SearchParameterFieldsApiRequest"];
             };
         };
         responses: {
@@ -25898,7 +25910,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchFieldsApiResponse"];
+                    "application/json": components["schemas"]["SearchParameterFieldsApiResponse"];
                 };
             };
             /** @description Validation Error */

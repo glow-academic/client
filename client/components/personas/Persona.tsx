@@ -479,6 +479,8 @@ function PersonaComponent({
         JSON.stringify(prev.parameter_ids) !==
           JSON.stringify(newState.parameter_ids)
       ) {
+        // Mark that this is a server sync, so autosave resets baseline instead of saving
+        serverSyncPendingRef.current = true;
         return newState;
       }
       return prev;
@@ -593,6 +595,8 @@ function PersonaComponent({
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
   const isFirstPatchRef = React.useRef(true);
+  // Track when we're syncing from server data (to reset baseline, not trigger save)
+  const serverSyncPendingRef = React.useRef(false);
 
   // Track if there are pending changes for beforeunload warning
   const hasPendingChangesRef = React.useRef(false);
@@ -642,6 +646,14 @@ function PersonaComponent({
       return;
     }
 
+    // If this change came from server sync, reset baseline instead of triggering save
+    if (serverSyncPendingRef.current) {
+      serverSyncPendingRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
+      console.debug("[Persona Draft] Server sync detected, resetting baseline");
+      return;
+    }
+
     // ✅ If nothing changed since the last successful patch, do nothing.
     if (lastPatchedKeyRef.current === draftPatchKey) {
       return;
@@ -655,6 +667,12 @@ function PersonaComponent({
       console.debug("[Persona Draft] Autosave disabled, skipping auto-patch");
       return;
     }
+
+    // Immediately show "Saving draft..." when autosave is enabled
+    // (actual API call is debounced, but UI reflects intent immediately)
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
 
     const timer = setTimeout(async () => {
       try {
@@ -715,6 +733,14 @@ function PersonaComponent({
 
         // Clear pending changes flag after successful save
         hasPendingChangesRef.current = false;
+
+        // Notify save context that save completed and changes are saved
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", { detail: { status: "idle" } })
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+        );
       } catch (error) {
         // Log error for debugging
         console.error("[Persona Draft] Patch failed:", error);
@@ -723,6 +749,10 @@ function PersonaComponent({
           description:
             "Your changes may not have been saved. Please try again.",
         });
+        // Notify save context of error, then reset to idle
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", { detail: { status: "error" } })
+        );
         // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
     }, 1000);
@@ -754,6 +784,13 @@ function PersonaComponent({
 
   // Emit unsaved-changes event when draftPatchKey changes
   useEffect(() => {
+    // During server sync, report no changes (baseline will be reset by autosave effect)
+    if (serverSyncPendingRef.current) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+      return;
+    }
     // Only report changes after we've established a baseline (ref is not null)
     const hasChanges =
       lastPatchedKeyRef.current !== null &&
@@ -813,7 +850,7 @@ function PersonaComponent({
       }
 
       window.dispatchEvent(
-        new CustomEvent("save-status-change", { detail: { status: "saved" } })
+        new CustomEvent("save-status-change", { detail: { status: "idle" } })
       );
       window.dispatchEvent(
         new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })

@@ -1,17 +1,27 @@
-"""Parameter Fields SEARCH endpoint - v4 API."""
+"""Parameter Fields SEARCH endpoint - v4 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from app.api.v4.resources.fields.search import search_fields_internal
-from app.sql.types import (
-    QGetFieldsV4Item,
-    SearchFieldsApiRequest,
-    SearchFieldsApiResponse,
-)
-from fastapi import APIRouter, Depends, Request, Response
+from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    QGetParameterFieldsV4Item,
+    SearchParameterFieldsApiRequest,
+    SearchParameterFieldsApiResponse,
+    SearchParameterFieldsSqlParams,
+    SearchParameterFieldsSqlRow,
+    load_sql_query,
+)
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v4/queries/resources/parameter_fields/search_parameter_fields_complete.sql"
 
 
 router = APIRouter()
@@ -19,37 +29,82 @@ router = APIRouter()
 
 async def search_parameter_fields_internal(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
-    user_department_ids: list[UUID] | None = None,
-    group_id: UUID | None = None,
-    suggest_source: str | None = None,
-    exclude_ids: list[UUID] | None = None,
-    parameter_id: UUID | None = None,
+    parameter_ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[QGetFieldsV4Item]:
-    """Internal function - delegates to search_fields_internal."""
-    return await search_fields_internal(
-        conn, search, limit_count, offset_count,
-        user_department_ids, group_id, suggest_source,
-        exclude_ids, parameter_id, bypass_cache
+) -> list[QGetParameterFieldsV4Item]:
+    """Internal function to search parameter fields by parameter IDs.
+
+    Returns all available parameter_fields for the given parameters.
+    Can be called directly from other routes without HTTP overhead.
+    """
+    if not parameter_ids:
+        return []
+
+    tags = ["resources", "parameter_fields"]
+    cache_key_val = cache_key(
+        "/api/v4/resources/parameter_fields/search",
+        {"parameter_ids": [str(id) for id in parameter_ids]},
     )
 
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [QGetParameterFieldsV4Item.model_validate(item) for item in cached.get("items", [])]
 
-@router.post("/parameter_fields/search", response_model=SearchFieldsApiResponse)
+    # Execute SQL
+    params = SearchParameterFieldsSqlParams(parameter_ids=parameter_ids)
+    result = cast(
+        SearchParameterFieldsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+
+    items: list[QGetParameterFieldsV4Item] = result.items if result and result.items else []
+
+    # Cache result
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items
+
+
+@router.post(
+    "/parameter_fields/search",
+    response_model=SearchParameterFieldsApiResponse,
+)
 async def search_parameter_fields(
-    request: SearchFieldsApiRequest,
+    request: SearchParameterFieldsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> SearchFieldsApiResponse:
-    """Search parameter fields resources."""
+) -> SearchParameterFieldsApiResponse:
+    """Search parameter fields resources by parameter IDs.
+
+    Returns all available parameter_fields for the given parameters.
+    """
+    tags = ["resources", "parameter_fields"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    items = await search_parameter_fields_internal(
-        conn, request.search, request.limit_count, request.offset_count,
-        request.user_department_ids, request.group_id, request.suggest_source,
-        request.exclude_ids, request.parameter_id, bypass_cache
-    )
-    response.headers["X-Cache-Tags"] = ",".join(["resources", "parameter_fields"])
-    return SearchFieldsApiResponse(items=items)
+
+    try:
+        items = await search_parameter_fields_internal(
+            conn, request.parameter_ids or [], bypass_cache
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return SearchParameterFieldsApiResponse(items=items)
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="search_parameter_fields",
+            sql_query=load_sql_query(SQL_PATH),
+            sql_params=None,
+            request=http_request,
+        )

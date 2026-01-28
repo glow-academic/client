@@ -11739,7 +11739,7 @@
           "resources"
         ],
         "summary": "Search Parameter Fields",
-        "description": "Search parameter fields resources.",
+        "description": "Search parameter fields resources by parameter IDs.\n\nReturns all available parameter_fields for the given parameters.",
         "operationId": "search_parameter_fields_api_v4_resources_parameter_fields_search_post",
         "parameters": [
           {
@@ -11796,7 +11796,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SearchFieldsApiRequest"
+                "$ref": "#/components/schemas/SearchParameterFieldsApiRequest"
               }
             }
           }
@@ -11807,7 +11807,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SearchFieldsApiResponse"
+                  "$ref": "#/components/schemas/SearchParameterFieldsApiResponse"
                 }
               }
             }
@@ -100863,6 +100863,47 @@
         },
         "type": "object",
         "title": "SearchNamesApiResponse"
+      },
+      "SearchParameterFieldsApiRequest": {
+        "properties": {
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          }
+        },
+        "type": "object",
+        "title": "SearchParameterFieldsApiRequest"
+      },
+      "SearchParameterFieldsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "SearchParameterFieldsApiResponse"
       },
       "SearchParametersApiRequest": {
         "properties": {

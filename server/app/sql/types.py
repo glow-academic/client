@@ -17452,6 +17452,31 @@ class GetParameterFieldsApiResponse(BaseModel):
 
 
 
+# Generated from: search_parameter_fields
+
+class SearchParameterFieldsSqlParams(BaseModel):
+
+    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.parameter_ids,
+        )
+
+class SearchParameterFieldsSqlRow(BaseModel):
+
+    items: list[QGetParameterFieldsV4Item] | None = None
+
+class SearchParameterFieldsApiRequest(BaseModel):
+
+    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchParameterFieldsApiResponse(BaseModel):
+
+    items: list[QGetParameterFieldsV4Item] | None = None
+
+
+
 # Generated from: get_parameters
 
 class GetParametersSqlParams(BaseModel):
@@ -25113,6 +25138,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterFieldsApiRequest",
         "GetParameterFieldsApiResponse",
     ),
+    "app/sql/v4/queries/resources/parameter_fields/search_parameter_fields_complete.sql": (
+        "SearchParameterFieldsSqlParams",
+        "SearchParameterFieldsSqlRow",
+        "SearchParameterFieldsApiRequest",
+        "SearchParameterFieldsApiResponse",
+    ),
     "app/sql/v4/queries/resources/parameters/get_parameters_complete.sql": (
         "GetParametersSqlParams",
         "GetParametersSqlRow",
@@ -27232,6 +27263,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameter_fields/get_parameter_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/parameter_fields/search_parameter_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
