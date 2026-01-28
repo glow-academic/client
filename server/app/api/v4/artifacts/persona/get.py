@@ -384,11 +384,12 @@ async def get_persona(
                 )
                 return (selected, suggestions)
 
-        async def fetch_parameter_fields():
+        async def fetch_parameter_fields(all_persona_parameter_ids: list[UUID]):
             async with pool.acquire() as c:
                 selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
-                # Get all available fields for the selected parameters
-                available = await search_parameter_fields_internal(c, parameter_ids, bypass_cache)
+                # Get all available fields for ALL persona parameters (not just selected ones)
+                # This enables instant UI when user selects a parameter
+                available = await search_parameter_fields_internal(c, all_persona_parameter_ids, bypass_cache)
                 return (selected, available)
 
         async def fetch_examples():
@@ -432,6 +433,18 @@ async def get_persona(
                 )
                 return (selected, suggestions)
 
+        # === TWO-PHASE FETCH ===
+        # Phase 1: Fetch parameters FIRST to get all persona parameter IDs
+        # This is needed because parameter_fields needs to know which parameters to scope to
+        (parameters_selected, parameters_suggestions) = await fetch_parameters()
+
+        # Extract ALL persona parameter IDs (both selected and available)
+        all_persona_parameter_ids = list(
+            {p.parameter_id for p in parameters_selected}
+            | {p.parameter_id for p in parameters_suggestions}
+        )
+
+        # Phase 2: Fetch remaining resources in parallel (including parameter_fields with proper IDs)
         (
             (names_selected, names_suggestions),
             (descriptions_selected, descriptions_suggestions),
@@ -442,7 +455,6 @@ async def get_persona(
             (departments_selected, departments_suggestions),
             (parameter_fields_selected, parameter_fields_suggestions),
             (examples_selected, examples_suggestions),
-            (parameters_selected, parameters_suggestions),
         ) = await asyncio.gather(
             fetch_names(),
             fetch_descriptions(),
@@ -451,9 +463,8 @@ async def get_persona(
             fetch_instructions(),
             fetch_flags(),
             fetch_departments(),
-            fetch_parameter_fields(),
+            fetch_parameter_fields(all_persona_parameter_ids),
             fetch_examples(),
-            fetch_parameters(),
         )
 
         names = _dedupe_by_id(names_selected + names_suggestions, "id")

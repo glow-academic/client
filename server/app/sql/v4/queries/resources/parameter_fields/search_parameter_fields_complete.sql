@@ -1,8 +1,12 @@
 -- Search available fields per parameter via parameter_fields_junction
 -- Gets all AVAILABLE fields for given parameters (what user can select)
 -- Note: This queries parameter_fields_junction (available), NOT parameter_fields_resource (already created)
--- Parameters: parameter_ids (uuid[])
+-- Parameters: parameter_ids (uuid[]) - these are RESOURCE IDs (from parameters_resource)
+--             If empty, returns fields for ALL persona_parameter=true parameters (for upfront loading)
 -- Returns: items (array of available fields with parameter_id for grouping)
+--
+-- Important: parameter_fields_junction uses artifact IDs, but API passes resource IDs.
+-- We join through parameter_parameters_junction to map resource → artifact.
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -36,8 +40,8 @@ SELECT COALESCE(
             pfj.field_resource_id,
             -- field_id: The underlying field definition
             pfj.field_resource_id,
-            -- parameter_id: Which parameter this field belongs to
-            pfj.parameter_id,
+            -- parameter_id: Return the RESOURCE ID (not artifact) so frontend can group correctly
+            ppj.parameters_id,
             -- name: Get field name via field_fields_junction
             (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
             -- description: Get field description via field_fields_junction
@@ -45,15 +49,25 @@ SELECT COALESCE(
             -- generated: Available fields are not generated (this refers to base field definition)
             false
         )::types.q_get_parameter_fields_v4_item
-        ORDER BY pfj.parameter_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)
+        ORDER BY ppj.parameters_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)
     ),
     ARRAY[]::types.q_get_parameter_fields_v4_item[]
 ) as items
 FROM parameter_fields_junction pfj
+-- Map artifact ID → resource ID via parameter_parameters_junction
+JOIN parameter_parameters_junction ppj ON ppj.parameter_id = pfj.parameter_id
+-- Join parameters_resource to filter by persona_parameter
+JOIN parameters_resource pr ON pr.id = ppj.parameters_id
 JOIN fields_resource fr ON fr.id = pfj.field_resource_id
 JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
 WHERE pfj.active = true
-  AND pfj.parameter_id = ANY(parameter_ids)
+  -- Only return fields for persona parameters
+  AND pr.persona_parameter = true
+  -- If parameter_ids is empty, return all; otherwise filter to specified IDs
+  AND (
+      COALESCE(array_length(parameter_ids, 1), 0) = 0
+      OR ppj.parameters_id = ANY(parameter_ids)
+  )
   AND EXISTS (
       SELECT 1 FROM field_flags_junction ff
       JOIN flags_resource fl ON ff.flag_id = fl.id

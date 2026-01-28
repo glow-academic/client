@@ -17482,18 +17482,18 @@ class SearchParameterFieldsApiResponse(BaseModel):
 class GetParametersSqlParams(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona_parameter: bool | None = None
-    document_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
+    p_persona_parameter: bool | None = None
+    p_document_parameter: bool | None = None
+    p_scenario_parameter: bool | None = None
+    p_video_parameter: bool | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.ids,
-            self.persona_parameter,
-            self.document_parameter,
-            self.scenario_parameter,
-            self.video_parameter,
+            self.p_persona_parameter,
+            self.p_document_parameter,
+            self.p_scenario_parameter,
+            self.p_video_parameter,
         )
 
 class QGetParametersV4Item(BaseModel):
@@ -17515,10 +17515,10 @@ class GetParametersSqlRow(BaseModel):
 class GetParametersApiRequest(BaseModel):
 
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona_parameter: bool | None = None
-    document_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
+    p_persona_parameter: bool | None = None
+    p_document_parameter: bool | None = None
+    p_scenario_parameter: bool | None = None
+    p_video_parameter: bool | None = None
 
 class GetParametersApiResponse(BaseModel):
 
@@ -17533,10 +17533,10 @@ class SearchParametersSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    persona_parameter: bool | None = None
-    document_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
+    p_persona_parameter: bool | None = None
+    p_document_parameter: bool | None = None
+    p_scenario_parameter: bool | None = None
+    p_video_parameter: bool | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
@@ -17545,10 +17545,10 @@ class SearchParametersSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.persona_parameter,
-            self.document_parameter,
-            self.scenario_parameter,
-            self.video_parameter,
+            self.p_persona_parameter,
+            self.p_document_parameter,
+            self.p_scenario_parameter,
+            self.p_video_parameter,
             self.suggest_source,
             self.exclude_ids,
         )
@@ -17562,10 +17562,10 @@ class SearchParametersApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    persona_parameter: bool | None = None
-    document_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
+    p_persona_parameter: bool | None = None
+    p_document_parameter: bool | None = None
+    p_scenario_parameter: bool | None = None
+    p_video_parameter: bool | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 

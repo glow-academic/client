@@ -8836,14 +8836,14 @@ export interface components {
         GetParametersApiRequest: {
             /** Ids */
             ids?: string[] | null;
-            /** Persona Parameter */
-            persona_parameter?: boolean | null;
-            /** Document Parameter */
-            document_parameter?: boolean | null;
-            /** Scenario Parameter */
-            scenario_parameter?: boolean | null;
-            /** Video Parameter */
-            video_parameter?: boolean | null;
+            /** P Persona Parameter */
+            p_persona_parameter?: boolean | null;
+            /** P Document Parameter */
+            p_document_parameter?: boolean | null;
+            /** P Scenario Parameter */
+            p_scenario_parameter?: boolean | null;
+            /** P Video Parameter */
+            p_video_parameter?: boolean | null;
         };
         /** GetParametersApiResponse */
         GetParametersApiResponse: {
@@ -20856,14 +20856,14 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Persona Parameter */
-            persona_parameter?: boolean | null;
-            /** Document Parameter */
-            document_parameter?: boolean | null;
-            /** Scenario Parameter */
-            scenario_parameter?: boolean | null;
-            /** Video Parameter */
-            video_parameter?: boolean | null;
+            /** P Persona Parameter */
+            p_persona_parameter?: boolean | null;
+            /** P Document Parameter */
+            p_document_parameter?: boolean | null;
+            /** P Scenario Parameter */
+            p_scenario_parameter?: boolean | null;
+            /** P Video Parameter */
+            p_video_parameter?: boolean | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */

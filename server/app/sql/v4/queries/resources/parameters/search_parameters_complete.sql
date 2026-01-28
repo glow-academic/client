@@ -18,14 +18,15 @@ BEGIN
 END $$;
 
 -- Create function
+-- Note: Parameter names prefixed with p_ to avoid collision with column names
 CREATE OR REPLACE FUNCTION api_search_parameters_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    persona_parameter boolean DEFAULT NULL,
-    document_parameter boolean DEFAULT NULL,
-    scenario_parameter boolean DEFAULT NULL,
-    video_parameter boolean DEFAULT NULL,
+    p_persona_parameter boolean DEFAULT NULL,
+    p_document_parameter boolean DEFAULT NULL,
+    p_scenario_parameter boolean DEFAULT NULL,
+    p_video_parameter boolean DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -68,10 +69,10 @@ FROM (
       AND p.name IS NOT NULL
       AND p.name != ''
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
-      AND (persona_parameter IS NULL OR p.persona_parameter = persona_parameter)
-      AND (document_parameter IS NULL OR p.document_parameter = document_parameter)
-      AND (scenario_parameter IS NULL OR p.scenario_parameter = scenario_parameter)
-      AND (video_parameter IS NULL OR p.video_parameter = video_parameter)
+      AND (p_persona_parameter IS NULL OR p.persona_parameter = p_persona_parameter)
+      AND (p_document_parameter IS NULL OR p.document_parameter = p_document_parameter)
+      AND (p_scenario_parameter IS NULL OR p.scenario_parameter = p_scenario_parameter)
+      AND (p_video_parameter IS NULL OR p.video_parameter = p_video_parameter)
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
     ORDER BY p.name
     LIMIT limit_count

@@ -35,11 +35,9 @@ async def search_parameter_fields_internal(
     """Internal function to search parameter fields by parameter IDs.
 
     Returns all available parameter_fields for the given parameters.
+    If parameter_ids is empty, returns fields for ALL persona parameters (for upfront loading).
     Can be called directly from other routes without HTTP overhead.
     """
-    if not parameter_ids:
-        return []
-
     tags = ["resources", "parameter_fields"]
     cache_key_val = cache_key(
         "/api/v4/resources/parameter_fields/search",

@@ -64,10 +64,10 @@ async def get_parameters_internal(
     # Execute SQL
     params = GetParametersSqlParams(
         ids=ids,
-        persona_parameter=persona_parameter,
-        document_parameter=document_parameter,
-        scenario_parameter=scenario_parameter,
-        video_parameter=video_parameter,
+        p_persona_parameter=persona_parameter,
+        p_document_parameter=document_parameter,
+        p_scenario_parameter=scenario_parameter,
+        p_video_parameter=video_parameter,
     )
     result = cast(
         GetParametersSqlRow,
@@ -109,10 +109,10 @@ async def get_parameters(
             conn,
             request.ids,
             bypass_cache,
-            request.persona_parameter,
-            request.document_parameter,
-            request.scenario_parameter,
-            request.video_parameter,
+            request.p_persona_parameter,
+            request.p_document_parameter,
+            request.p_scenario_parameter,
+            request.p_video_parameter,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetParametersApiResponse(items=items)
