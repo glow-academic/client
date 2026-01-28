@@ -12317,6 +12317,7 @@ class QGetPersonaV4Field(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
+    parameter_id: UUID | None
 
 
 

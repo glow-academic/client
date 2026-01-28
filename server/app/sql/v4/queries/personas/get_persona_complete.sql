@@ -46,7 +46,8 @@ CREATE TYPE types.q_get_persona_v4_field AS (
     field_id uuid,
     name text,
     description text,
-    generated boolean
+    generated boolean,
+    parameter_id uuid
 );
 
 CREATE TYPE types.q_get_persona_v4_example AS (
@@ -2619,10 +2620,10 @@ SELECT
     -- Field resources (selected fields filtered by field_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
+            (fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.parameter_id)::types.q_get_persona_v4_field
             ORDER BY fmd.sort_priority, fmd.name
         )
-        FROM (SELECT DISTINCT field_id, name, description, generated, sort_priority FROM field_mapping_data WHERE field_id = ANY(fid.field_ids)) fmd),
+        FROM (SELECT DISTINCT field_id, name, description, generated, parameter_id, sort_priority FROM field_mapping_data WHERE field_id = ANY(fid.field_ids)) fmd),
         '{}'::types.q_get_persona_v4_field[]
     ) as field_resources,
     CASE 
@@ -2640,13 +2641,13 @@ SELECT
             WHEN (SELECT persona_id FROM params) IS NULL THEN
                 -- For new personas, use valid_fields_data with search/filter
                 (SELECT ARRAY_AGG(
-                    (vfd.field_id, vfd.name, vfd.description, vfd.generated)::types.q_get_persona_v4_field
+                    (vfd.field_id, vfd.name, vfd.description, vfd.generated, vfd.parameter_id)::types.q_get_persona_v4_field
                     ORDER BY vfd.sort_priority, vfd.name
                 ) FROM (
-                    SELECT DISTINCT vfd.field_id, vfd.name, vfd.description, vfd.generated, vfd.sort_priority
+                    SELECT DISTINCT vfd.field_id, vfd.name, vfd.description, vfd.generated, vfd.parameter_id, vfd.sort_priority
                     FROM valid_fields_data vfd
                     CROSS JOIN params p
-                    WHERE 
+                    WHERE
                         vfd.field_id IS NOT NULL
                         -- Search filter: if field_search provided, match name or description
                         AND (p.field_search IS NULL OR p.field_search = '' OR
@@ -2661,13 +2662,13 @@ SELECT
             ELSE
                 -- For existing personas, use field_mapping_data with search/filter
                 (SELECT ARRAY_AGG(
-                    (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
+                    (fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.parameter_id)::types.q_get_persona_v4_field
                     ORDER BY fmd.sort_priority, fmd.name
                 ) FROM (
-                    SELECT DISTINCT fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.sort_priority
+                    SELECT DISTINCT fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.parameter_id, fmd.sort_priority
                     FROM field_mapping_data fmd
                     CROSS JOIN params p
-                    WHERE 
+                    WHERE
                         fmd.field_id IS NOT NULL
                         -- Search filter: if field_search provided, match name or description
                         AND (p.field_search IS NULL OR p.field_search = '' OR

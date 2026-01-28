@@ -38,7 +38,9 @@ export interface FieldsProps {
     name: string | null;
     description?: string | null;
     generated?: boolean | null;
-  }>; // All available fields from API (each includes generated field)
+    parameter_id?: string | null;
+  }>; // All available fields from API (each includes generated field and parameter_id)
+  parameterIdFilter?: string | null; // Only show fields with this parameter_id
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update field_ids in form state
   label?: string;
@@ -63,6 +65,7 @@ export function Fields({
   show_fields = false,
   field_suggestions: _field_suggestions,
   fields,
+  parameterIdFilter,
   disabled = false,
   onChange,
   label = "Fields",
@@ -99,12 +102,19 @@ export function Fields({
   const fieldItems = useMemo(() => {
     return allFieldsMemo
       .filter((f) => f.field_id && f.name) // Filter out nulls
+      .filter((f) => {
+        // Apply parameter_id filter if provided
+        if (parameterIdFilter) {
+          return f.parameter_id === parameterIdFilter;
+        }
+        return true;
+      })
       .map((f) => ({
         id: f.field_id!,
         name: f.name!,
         ...(f.description && { description: f.description }),
       }));
-  }, [allFieldsMemo]);
+  }, [allFieldsMemo, parameterIdFilter]);
 
   // Filter fields based on search term
   const filteredFields = useMemo(() => {

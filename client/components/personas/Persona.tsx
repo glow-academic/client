@@ -1363,17 +1363,17 @@ function PersonaComponent({
       // Check resource IDs from formState (components manage their own display state)
       const hasName = !!formState.name_id;
       const hasDescription = !!formState.description_id;
-      const hasFields = formState.field_ids.length > 0;
       const hasColor = !!formState.color_id;
       const hasIcon = !!formState.icon_id;
       const hasInstructions = !!formState.instructions_id;
+      const hasParameters = formState.parameter_ids.length > 0;
 
       switch (stepId) {
         case "basic":
           return hasName && hasDescription ? "completed" : "active";
-        case "fields":
+        case "parameters":
           if (!hasName || !hasDescription) return "pending";
-          return hasFields ? "completed" : "active";
+          return hasParameters ? "completed" : "active";
         case "color":
           if (!hasName || !hasDescription) return "pending";
           return hasColor ? "completed" : "active";
@@ -1384,10 +1384,23 @@ function PersonaComponent({
           if (!hasName || !hasDescription) return "pending";
           return hasInstructions ? "completed" : "active";
         default:
+          // Handle dynamic fields-{parameter_id} steps
+          if (stepId.startsWith("fields-")) {
+            const parameterId = stepId.replace("fields-", "");
+            if (!hasName || !hasDescription) return "pending";
+            // Check if any fields for this parameter are selected
+            const fieldsForParam = personaData?.fields?.filter(
+              (f) => f.parameter_id === parameterId
+            ) ?? [];
+            const hasFieldsForParam = formState.field_ids.some(
+              (fid) => fieldsForParam.some((f) => f.field_id === fid)
+            );
+            return hasFieldsForParam ? "completed" : "active";
+          }
           return "pending";
       }
     },
-    [formState]
+    [formState, personaData?.fields]
   );
 
   // Step-to-resources mapping for multi-generation
@@ -1480,9 +1493,9 @@ function PersonaComponent({
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [personaData?.general_agent_id, handleOpenStepCardModal]);
 
-  // Steps configuration for GenericForm
-  const steps = useMemo(
-    () => [
+  // Steps configuration for GenericForm - dynamic based on selected parameters
+  const steps = useMemo(() => {
+    const baseSteps = [
       {
         id: "basic",
         title: "Basic Information",
@@ -1496,12 +1509,22 @@ function PersonaComponent({
         description: "Select parameters for this persona.",
         resetFields: ["parameter_ids", "parameterSearch", "parameterShowSelected"],
       },
-      {
-        id: "fields",
-        title: "Fields",
-        description: "Select fields for this persona.",
-        resetFields: ["field_ids"],
-      },
+    ];
+
+    // Generate a step for each selected parameter
+    const parameterFieldSteps = (formState.parameter_ids ?? []).map((parameterId) => {
+      const param = personaData?.parameters?.find(
+        (p) => p.parameter_id === parameterId
+      );
+      return {
+        id: `fields-${parameterId}`,
+        title: param?.name ?? "Fields",
+        description: param?.description ?? "Select fields for this parameter.",
+        resetFields: [] as string[], // field_ids managed globally
+      };
+    });
+
+    const endSteps = [
       {
         id: "color",
         title: "Color",
@@ -1521,9 +1544,10 @@ function PersonaComponent({
           "Define instructions and example messages for the persona.",
         resetFields: ["instructions", "examples"],
       },
-    ],
-    []
-  );
+    ];
+
+    return [...baseSteps, ...parameterFieldSteps, ...endSteps];
+  }, [formState.parameter_ids, personaData?.parameters]);
 
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
@@ -1845,105 +1869,6 @@ function PersonaComponent({
             </StepCard>
           );
         }
-
-        case "fields":
-          const fieldSearchTerm =
-            (stepFormData["fieldSearch"] as string | null | undefined) || "";
-          const fieldShowSelected =
-            (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
-            false;
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={fieldSearchTerm}
-              onSearchChange={(term: string) =>
-                setStepFormData({ fieldSearch: term || null })
-              }
-              searchPlaceholder="Search fields..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: fieldShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ fieldShowSelected: value || null }),
-                },
-              ]}
-              resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-              actions={
-                stepResources["fields"] &&
-                stepResources["fields"].length > 0 ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "fields"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "fields",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["fields"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["fields"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["fields"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : undefined
-              }
-            >
-              <Fields
-                field_ids={formState.field_ids ?? []}
-                field_resources={currentPersonaData?.field_resources ?? []}
-                show_fields={currentPersonaData?.show_fields ?? false}
-                field_suggestions={currentPersonaData?.field_suggestions ?? []}
-                fields={currentPersonaData?.fields ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, field_ids: ids }))
-                }
-                label="Fields"
-                required={currentPersonaData?.fields_required ?? false}
-                group_id={currentPersonaData?.group_id ?? null}
-                agent_id={currentPersonaData?.fields_agent_id ?? null}
-                searchTerm={fieldSearchTerm}
-                showSelectedFilter={fieldShowSelected}
-              />
-            </StepCard>
-          );
 
         case "color": {
           const colorShowSelected =
@@ -2326,6 +2251,62 @@ function PersonaComponent({
           );
 
         default:
+          // Handle dynamic fields-{parameter_id} steps
+          if (stepId.startsWith("fields-")) {
+            const parameterId = stepId.replace("fields-", "");
+            const fieldSearchTerm =
+              (stepFormData["fieldSearch"] as string | null | undefined) || "";
+            const fieldShowSelected =
+              (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
+              false;
+            return (
+              <StepCard
+                stepStatus={stepStatus}
+                stepNumber={stepNumber}
+                stepTitle={stepTitle}
+                stepDescription={stepDescription}
+                isReadonly={disabled}
+                isEditMode={isEditMode}
+                searchTerm={fieldSearchTerm}
+                onSearchChange={(term: string) =>
+                  setStepFormData({ fieldSearch: term || null })
+                }
+                searchPlaceholder="Search fields..."
+                debounceMs={300}
+                filters={[
+                  {
+                    key: "showSelected",
+                    label: "Show selected",
+                    value: fieldShowSelected,
+                    onChange: (value: boolean) =>
+                      setStepFormData({ fieldShowSelected: value || null }),
+                  },
+                ]}
+                resetFields={[]}
+                {...(onReset ? { onReset } : {})}
+                resetLabel="Reset"
+              >
+                <Fields
+                  field_ids={formState.field_ids ?? []}
+                  field_resources={currentPersonaData?.field_resources ?? []}
+                  show_fields={currentPersonaData?.show_fields ?? false}
+                  field_suggestions={currentPersonaData?.field_suggestions ?? []}
+                  fields={currentPersonaData?.fields ?? []}
+                  parameterIdFilter={parameterId}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, field_ids: ids }))
+                  }
+                  label=""
+                  required={false}
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.fields_agent_id ?? null}
+                  searchTerm={fieldSearchTerm}
+                  showSelectedFilter={fieldShowSelected}
+                />
+              </StepCard>
+            );
+          }
           return null;
       }
     },
@@ -2356,6 +2337,7 @@ function PersonaComponent({
       formState.department_ids,
       formState.field_ids,
       formState.example_ids,
+      formState.parameter_ids,
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
