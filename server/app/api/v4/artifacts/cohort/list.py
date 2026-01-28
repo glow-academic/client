@@ -110,7 +110,10 @@ async def get_cohort_list(
         api_cohorts: list[ListCohortApiCohort] = []
         for sql_cohort in result.cohorts or []:
             # Parse raw cohort data
-            raw = ListCohortSqlCohort.model_validate(sql_cohort)
+            if hasattr(sql_cohort, "model_dump"):
+                raw = ListCohortSqlCohort.model_validate(sql_cohort.model_dump())
+            else:
+                raw = ListCohortSqlCohort.model_validate(sql_cohort)
 
             # Parse department_ids (string array from SQL)
             cohort_department_ids: list[UUID] | None = None
@@ -144,16 +147,27 @@ async def get_cohort_list(
             )
             api_cohorts.append(api_cohort)
 
+        def _normalize_list(items: list[Any] | None) -> list[dict[str, Any]] | None:
+            if not items:
+                return []
+            normalized: list[dict[str, Any]] = []
+            for item in items:
+                if hasattr(item, "model_dump"):
+                    normalized.append(item.model_dump())
+                else:
+                    normalized.append(dict(item))
+            return normalized
+
         # Build API response with computed permissions
         api_response = ListCohortApiResponse(
             actor_name=actor_name,
             user_role=user_role,
             cohorts=api_cohorts,
-            profiles=result.profiles,
-            simulations=result.simulations,
-            scenarios=result.scenarios,
+            profiles=_normalize_list(result.profiles),
+            simulations=_normalize_list(result.simulations),
+            scenarios=_normalize_list(result.scenarios),
             simulation_scenario_mapping=result.simulation_scenario_mapping,
-            departments=result.departments,
+            departments=_normalize_list(result.departments),
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

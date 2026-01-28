@@ -10,16 +10,25 @@ from app.utils.sql_helper import execute_sql_typed
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.api.v4.artifacts.scenario.permissions import (
+    compute_can_delete,
+    has_access,
+)
 from app.api.v4.artifacts.scenario.types import (
     DeleteScenarioApiRequest,
     DeleteScenarioApiResponse,
+)
+from app.sql.types import (
+    CheckScenarioDeleteAccessSqlParams,
+    CheckScenarioDeleteAccessSqlRow,
     DeleteScenarioSqlParams,
     DeleteScenarioSqlRow,
+    load_sql_query,
 )
-from app.sql.types import load_sql_query
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenario/delete_scenario_complete.sql"
+ACCESS_SQL_PATH = "app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql"
 
 
 router = APIRouter()
@@ -56,6 +65,49 @@ async def delete_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Permission check
+        access_params = CheckScenarioDeleteAccessSqlParams(
+            profile_id=profile_id,
+            scenario_id=request.scenario_id,
+        )
+        access_result = cast(
+            CheckScenarioDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACCESS_SQL_PATH,
+                params=access_params,
+            ),
+        )
+
+        if not access_result:
+            raise HTTPException(
+                status_code=401,
+                detail="Unable to verify user permissions.",
+            )
+
+        if not access_result.scenario_exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Scenario not found: {request.scenario_id}",
+            )
+
+        if not has_access(
+            access_result.user_role,
+            access_result.user_department_ids or [],
+            access_result.scenario_department_ids or [],
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this scenario.",
+            )
+
+        usage_count = access_result.usage_count or 0
+        if not compute_can_delete(access_result.user_role, access_result.scenario_department_ids, usage_count):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this scenario.",
+            )
+
         # Convert API request to SQL params (add profile_id from header)
         params = DeleteScenarioSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
@@ -69,12 +121,6 @@ async def delete_scenario(
                 params=params,
             ),
         )
-
-        # Check if scenario exists using SQL result
-        if not result.scenario_exists:
-            raise HTTPException(
-                status_code=404, detail=f"Scenario not found: {request.scenario_id}"
-            )
 
         # Check if scenario was deleted or is in use
         if not result.deleted:

@@ -4,8 +4,6 @@ Uses two-pass architecture with Python-computed permissions.
 """
 
 from typing import Annotated, Any, cast
-from uuid import UUID
-
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
@@ -13,6 +11,8 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    CheckSimulationDeleteAccessSqlParams,
+    CheckSimulationDeleteAccessSqlRow,
     DeleteSimulationApiRequest,
     DeleteSimulationApiResponse,
     DeleteSimulationSqlParams,
@@ -71,22 +71,15 @@ async def delete_simulation(
             )
 
         # Pass 1: Check access using access query
-        from pydantic import BaseModel
-
-        class CheckDeleteAccessSqlParams(BaseModel):
-            profile_id: UUID
-            simulation_id: UUID
-
-            def to_tuple(self) -> tuple[Any, ...]:
-                return (self.profile_id, self.simulation_id)
-
-        access_params = CheckDeleteAccessSqlParams(
+        access_params = CheckSimulationDeleteAccessSqlParams(
             profile_id=profile_id,
             simulation_id=request.simulation_id,
         )
-
-        access_result = await execute_sql_typed(
-            conn, ACCESS_SQL_PATH, params=access_params
+        access_result = cast(
+            CheckSimulationDeleteAccessSqlRow,
+            await execute_sql_typed(
+                conn, ACCESS_SQL_PATH, params=access_params
+            ),
         )
 
         if access_result:

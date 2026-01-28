@@ -19152,6 +19152,82 @@ class UpdateStandardDescriptionsApiResponse(BaseModel):
 
 
 
+# Generated from: check_scenario_delete_access
+
+class CheckScenarioDeleteAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.scenario_id,
+        )
+
+class CheckScenarioDeleteAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    scenario_exists: bool | None = None
+    scenario_name: str | None = None
+    usage_count: int | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    scenario_department_ids: list[UUID] | None = None
+
+class CheckScenarioDeleteAccessApiRequest(BaseModel):
+
+    scenario_id: UUID
+
+class CheckScenarioDeleteAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    scenario_exists: bool | None = None
+    scenario_name: str | None = None
+    usage_count: int | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    scenario_department_ids: list[UUID] | None = None
+
+
+
+# Generated from: check_scenario_duplicate_access
+
+class CheckScenarioDuplicateAccessSqlParams(BaseModel):
+
+    profile_id: UUID
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.scenario_id,
+        )
+
+class CheckScenarioDuplicateAccessSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    scenario_exists: bool | None = None
+    scenario_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    scenario_department_ids: list[UUID] | None = None
+
+class CheckScenarioDuplicateAccessApiRequest(BaseModel):
+
+    scenario_id: UUID
+
+class CheckScenarioDuplicateAccessApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    scenario_exists: bool | None = None
+    scenario_name: str | None = None
+    user_role: str | None = None
+    user_department_ids: list[UUID] | None = None
+    scenario_department_ids: list[UUID] | None = None
+
+
+
 # Generated from: delete_scenario
 
 class DeleteScenarioSqlParams(BaseModel):
@@ -25506,6 +25582,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateStandardDescriptionsApiRequest",
         "UpdateStandardDescriptionsApiResponse",
     ),
+    "app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql": (
+        "CheckScenarioDeleteAccessSqlParams",
+        "CheckScenarioDeleteAccessSqlRow",
+        "CheckScenarioDeleteAccessApiRequest",
+        "CheckScenarioDeleteAccessApiResponse",
+    ),
+    "app/sql/v4/queries/scenario/check_scenario_duplicate_access_complete.sql": (
+        "CheckScenarioDuplicateAccessSqlParams",
+        "CheckScenarioDuplicateAccessSqlRow",
+        "CheckScenarioDuplicateAccessApiRequest",
+        "CheckScenarioDuplicateAccessApiResponse",
+    ),
     "app/sql/v4/queries/scenario/delete_scenario_complete.sql": (
         "DeleteScenarioSqlParams",
         "DeleteScenarioSqlRow",
@@ -27566,6 +27654,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/rubrics/update_standard_descriptions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/scenario/check_scenario_duplicate_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload

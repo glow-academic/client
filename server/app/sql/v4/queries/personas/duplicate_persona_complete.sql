@@ -53,6 +53,12 @@ original_departments AS (
     FROM params x
     JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id AND pd.active = true
 ),
+original_fields AS (
+    -- Get field IDs from original persona
+    SELECT field_id
+    FROM params x
+    JOIN persona_fields_junction pf ON pf.persona_id = x.persona_id AND pf.active = true
+),
 default_call AS (
     SELECT id as call_id
     FROM view_calls_entry
@@ -190,6 +196,18 @@ copy_departments AS (
         NOW()
     FROM new_persona np
     CROSS JOIN original_departments od
+    RETURNING persona_id
+),
+copy_fields AS (
+    -- Copy field links from original persona
+    INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at)
+    SELECT
+        np.id,
+        ofi.field_id,
+        true,
+        NOW()
+    FROM new_persona np
+    CROSS JOIN original_fields ofi
     RETURNING persona_id
 )
 SELECT 
