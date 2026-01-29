@@ -558,9 +558,10 @@ simulation_scenarios_base AS (
             AND f.name = 'text_enabled'), true) as text_enabled,
         stlr.time_limit_seconds,
         COALESCE(
-            (SELECT ARRAY_AGG(DISTINCT sf.field_id)
-             FROM scenario_fields_junction sf
-             WHERE sf.scenario_id = s.id AND sf.active = true),
+            (SELECT ARRAY_AGG(DISTINCT pfr.field_id)
+             FROM scenario_parameter_fields_junction spf
+             JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+             WHERE spf.scenario_id = s.id AND spf.active = true),
             ARRAY[]::uuid[]
         ) as parameter_item_ids
     FROM params x
@@ -875,13 +876,14 @@ scenario_document_mapping AS (
     GROUP BY sdd.scenario_id
 ),
 scenario_parameter_items_data AS (
-    SELECT 
-        sf.scenario_id,
-        ARRAY_AGG(DISTINCT sf.field_id) as parameter_item_ids
-    FROM scenario_fields_junction sf
-    WHERE sf.scenario_id IN (SELECT id FROM valid_scenarios_list)
-      AND sf.active = true
-    GROUP BY sf.scenario_id
+    SELECT
+        spf.scenario_id,
+        ARRAY_AGG(DISTINCT pfr.field_id) as parameter_item_ids
+    FROM scenario_parameter_fields_junction spf
+    JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+    WHERE spf.scenario_id IN (SELECT id FROM valid_scenarios_list)
+      AND spf.active = true
+    GROUP BY spf.scenario_id
 ),
 scenario_field_mapping AS (
     SELECT 

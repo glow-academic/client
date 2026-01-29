@@ -84,10 +84,15 @@ source_departments AS (
     FROM params x
     JOIN scenario_departments_junction sd ON sd.scenario_id = x.scenario_id AND sd.active = true
 ),
-source_fields AS (
-    SELECT sf.field_id, sf.active
+source_parameter_fields AS (
+    SELECT spf.parameter_field_id, spf.active
     FROM params x
-    JOIN scenario_fields_junction sf ON sf.scenario_id = x.scenario_id AND sf.active = true
+    JOIN scenario_parameter_fields_junction spf ON spf.scenario_id = x.scenario_id AND spf.active = true
+),
+default_call AS (
+    SELECT id as call_id
+    FROM view_calls_entry
+    LIMIT 1
 ),
 source_objectives AS (
     SELECT so.objective_id, so.idx
@@ -297,12 +302,13 @@ copy_departments AS (
     FROM new_scenario ns
     CROSS JOIN source_departments sd
 ),
--- Link existing fields (parameters)
-copy_fields AS (
-    INSERT INTO scenario_fields_junction (scenario_id, field_id, active, created_at)
-    SELECT ns.id, sf.field_id, sf.active, NOW()
+-- Link existing parameter fields
+copy_parameter_fields AS (
+    INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, call_id, created_at)
+    SELECT ns.id, spf.parameter_field_id, spf.active, dc.call_id, NOW()
     FROM new_scenario ns
-    CROSS JOIN source_fields sf
+    CROSS JOIN source_parameter_fields spf
+    CROSS JOIN default_call dc
 ),
 -- Link existing objectives
 copy_objectives AS (

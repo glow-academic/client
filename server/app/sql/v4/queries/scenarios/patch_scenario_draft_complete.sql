@@ -54,9 +54,20 @@ DECLARE
     v_draft_id uuid;
     v_new_version int;
     v_draft_exists boolean := false;
-    v_profile_id uuid := profile_id;
+    v_profile_id uuid := profile_id;  -- This is profile_artifact.id
+    v_profiles_resource_id uuid;      -- This is profiles_resource.id (for FK)
     v_group_id uuid;
 BEGIN
+    -- Resolve profile_artifact.id to profiles_resource.id via junction table
+    -- profiles_drafts_connection has FK to profiles_resource, not profile_artifact
+    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    FROM profile_profiles_junction ppj
+    WHERE ppj.profile_id = v_profile_id
+    LIMIT 1;
+
+    IF v_profiles_resource_id IS NULL THEN
+        RAISE EXCEPTION 'No profiles_resource linked to profile_artifact: %', v_profile_id;
+    END IF;
     -- Validate resource IDs exist (error if missing and provided)
     IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
@@ -124,7 +135,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -311,9 +322,9 @@ BEGIN
         VALUES ('scenario'::artifact_type, v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
 
-    -- Link profile to draft
+    -- Link profile to draft (using profiles_resource.id, not profile_artifact.id)
     INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
-    VALUES (v_draft_id, v_profile_id, v_new_version);
+    VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
         
         v_draft_exists := false;
         

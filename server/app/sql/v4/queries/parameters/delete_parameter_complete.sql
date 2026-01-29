@@ -37,10 +37,10 @@ actor_profile AS (
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 usage_check AS (
-    SELECT COUNT(DISTINCT sf.scenario_id) as usage_count
+    SELECT COUNT(DISTINCT spf.scenario_id) as usage_count
     FROM params x
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true)
-    JOIN scenario_fields_junction sf ON sf.field_id = f.id AND sf.active = true
+    JOIN parameter_fields_resource pfr ON pfr.parameter_id = x.parameter_id
+    JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id AND spf.active = true
 ),
 parameter_info AS (
     SELECT 

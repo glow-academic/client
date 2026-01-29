@@ -74,9 +74,9 @@ scenario_parameters_data AS (
 ),
 -- Get fields for scenario (if scenario_id provided and agent has scenario artifact)
 scenario_fields_data AS (
-    SELECT 
-        CASE 
-            WHEN EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true) 
+    SELECT
+        CASE
+            WHEN EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
                  AND p_scenario_id IS NOT NULL THEN
                 COALESCE(
                     jsonb_agg(
@@ -84,8 +84,8 @@ scenario_fields_data AS (
                             'id', f.id::text,
                             'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
                             'description', (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
-                            'parameter_id', (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)::text,
-                            'active', EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = TRUE),
+                            'parameter_id', pfr.parameter_id::text,
+                            'active', EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE),
                             'created_at', f.created_at::text,
                             'updated_at', f.created_at::text
                         )
@@ -95,11 +95,12 @@ scenario_fields_data AS (
                 )
             ELSE '[]'::jsonb
         END as fields
-    FROM scenario_fields_junction sf
-    JOIN fields_resource f ON f.id = sf.field_id
-    WHERE (p_scenario_id IS NOT NULL AND sf.scenario_id = p_scenario_id)
-      AND sf.active = true
-      AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true)
+    FROM scenario_parameter_fields_junction spf
+    JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+    JOIN fields_resource f ON f.id = pfr.field_id
+    WHERE (p_scenario_id IS NOT NULL AND spf.scenario_id = p_scenario_id)
+      AND spf.active = true
+      AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 ),
 -- Get documents for scenario (if scenario_id provided and agent has scenario artifact)

@@ -344,9 +344,10 @@ parameter_item_data AS (
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p_param.id LIMIT 1) as parameter_name
     FROM scenario_artifact s
     CROSS JOIN chosen_scenario_id csi
-    LEFT JOIN scenario_fields_junction sf ON sf.scenario_id = s.id AND sf.active = true
-    LEFT JOIN fields_resource f ON f.id = sf.field_id
-    LEFT JOIN parameters_resource p_param ON p_param.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
+    LEFT JOIN scenario_parameter_fields_junction spf ON spf.scenario_id = s.id AND spf.active = true
+    LEFT JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+    LEFT JOIN fields_resource f ON f.id = pfr.field_id
+    LEFT JOIN parameters_resource p_param ON p_param.id = pfr.parameter_id
     WHERE s.id = csi.scenario_id
 ),
 -- Get full scenario data with all metadata

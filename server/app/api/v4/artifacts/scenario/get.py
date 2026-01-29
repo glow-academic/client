@@ -58,22 +58,25 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
-from app.api.v4.resources.documents.get import get_document_internal
-from app.api.v4.resources.fields.get import get_fields_internal
-from app.api.v4.resources.fields.search import search_fields_internal
+from app.api.v4.resources.documents.get import get_documents_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameter_fields.search import search_parameter_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
-from app.api.v4.resources.images.get import get_image_internal
+from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
-from app.api.v4.resources.objectives.get import get_objective_internal
+from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
-from app.api.v4.resources.parameters.search import search_parameters_internal
-from app.api.v4.resources.personas.get import get_persona_internal
-from app.api.v4.resources.problem_statements.get import get_problem_statement_internal
-from app.api.v4.resources.questions.get import get_question_internal
-from app.api.v4.resources.templates.get import get_template_internal
-from app.api.v4.resources.videos.get import get_video_internal
+from app.api.v4.resources.parameters.search import (
+    search_conditional_parameters_internal,
+    search_parameters_internal,
+)
+from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
+from app.api.v4.resources.questions.get import get_questions_internal
+from app.api.v4.resources.templates.get import get_templates_internal
+from app.api.v4.resources.videos.get import get_videos_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -542,11 +545,7 @@ async def get_scenario(
 
         async def fetch_problem_statements():
             async with pool.acquire() as c:
-                selected = []
-                for ps_id in problem_statement_ids:
-                    item = await get_problem_statement_internal(c, ps_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_problem_statements_internal(c, problem_statement_ids, bypass_cache)
                 # No search endpoint for problem_statements - return empty suggestions
                 return (selected, [])
 
@@ -596,21 +595,13 @@ async def get_scenario(
 
         async def fetch_personas():
             async with pool.acquire() as c:
-                selected = []
-                for persona_id in persona_ids:
-                    item = await get_persona_internal(c, persona_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_personas_internal(c, persona_ids, bypass_cache)
                 # No search endpoint for personas - return empty suggestions
                 return (selected, [])
 
         async def fetch_documents():
             async with pool.acquire() as c:
-                selected = []
-                for doc_id in document_ids:
-                    item = await get_document_internal(c, doc_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_documents_internal(c, document_ids, bypass_cache)
                 # No search endpoint for documents - return empty suggestions
                 return (selected, [])
 
@@ -637,74 +628,71 @@ async def get_scenario(
                 )
                 return (selected, suggestions)
 
-        async def fetch_parameter_fields():
+        async def fetch_parameter_fields(param_ids: list[UUID]):
             async with pool.acquire() as c:
-                selected = await get_fields_internal(c, parameter_field_ids, bypass_cache)
-                field_source = "all" if request.scenario_id is None else "recent"
-                suggestions = await search_fields_internal(
-                    c,
-                    search=None,
-                    limit_count=20,
-                    offset_count=0,
-                    user_department_ids=user_department_ids,
-                    group_id=access_result.group_id,
-                    suggest_source=field_source,
-                    exclude_ids=parameter_field_ids,
-                    parameter_id=None,
-                    bypass_cache=bypass_cache,
-                )
-                return (selected, suggestions)
+                selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
+                # Get all available fields for ALL parameters (scenario + conditional)
+                # This enables instant UI when user selects a parameter
+                available = await search_parameter_fields_internal(c, param_ids, bypass_cache)
+                return (selected, available)
 
         async def fetch_objectives():
             async with pool.acquire() as c:
-                selected = []
-                for obj_id in objective_ids:
-                    item = await get_objective_internal(c, obj_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_objectives_internal(c, objective_ids, bypass_cache)
                 # No search endpoint for objectives - return empty suggestions
                 return (selected, [])
 
         async def fetch_images():
             async with pool.acquire() as c:
-                selected = []
-                for img_id in image_ids:
-                    item = await get_image_internal(c, img_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_images_internal(c, image_ids, bypass_cache)
                 # No search endpoint for images - return empty suggestions
                 return (selected, [])
 
         async def fetch_videos():
             async with pool.acquire() as c:
-                selected = []
-                for vid_id in video_ids:
-                    item = await get_video_internal(c, vid_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_videos_internal(c, video_ids, bypass_cache)
                 # No search endpoint for videos - return empty suggestions
                 return (selected, [])
 
         async def fetch_questions():
             async with pool.acquire() as c:
-                selected = []
-                for q_id in question_ids:
-                    item = await get_question_internal(c, q_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_questions_internal(c, question_ids, bypass_cache)
                 # No search endpoint for questions - return empty suggestions
                 return (selected, [])
 
         async def fetch_templates():
             async with pool.acquire() as c:
-                selected = []
-                for tmpl_id in template_ids:
-                    item = await get_template_internal(c, tmpl_id, bypass_cache)
-                    if item:
-                        selected.append(item)
+                selected = await get_templates_internal(c, template_ids, bypass_cache)
                 # No search endpoint for templates - return empty suggestions
                 return (selected, [])
 
+        # === TWO-PHASE FETCH ===
+        # Phase 1a: Fetch scenario parameters FIRST to get all scenario parameter IDs
+        # This is needed because parameter_fields needs to know which parameters to scope to
+        (parameters_selected, parameters_suggestions) = await fetch_parameters()
+
+        # Extract ALL scenario parameter IDs (both selected and available)
+        all_scenario_parameter_ids = list(
+            {p.parameter_id for p in parameters_selected}
+            | {p.parameter_id for p in parameters_suggestions}
+        )
+
+        # Phase 1b: Fetch ALL conditional parameters transitively
+        # This uses a recursive approach to find the full chain
+        async def fetch_conditional_parameters():
+            async with pool.acquire() as c:
+                return await search_conditional_parameters_internal(
+                    c, [pid for pid in all_scenario_parameter_ids if pid is not None], bypass_cache
+                )
+
+        conditional_params = await fetch_conditional_parameters()
+
+        # Combine ALL parameter IDs for Phase 2 (includes transitive conditional params)
+        all_parameter_ids = list(set(
+            all_scenario_parameter_ids + [p.parameter_id for p in conditional_params if p.parameter_id]
+        ))
+
+        # Phase 2: Fetch remaining resources in parallel (including parameter_fields with proper IDs)
         (
             (names_selected, names_suggestions),
             (descriptions_selected, descriptions_suggestions),
@@ -713,7 +701,6 @@ async def get_scenario(
             (departments_selected, departments_suggestions),
             (personas_selected, _),
             (documents_selected, _),
-            (parameters_selected, parameters_suggestions),
             (parameter_fields_selected, parameter_fields_suggestions),
             (objectives_selected, _),
             (images_selected, _),
@@ -728,8 +715,7 @@ async def get_scenario(
             fetch_departments(),
             fetch_personas(),
             fetch_documents(),
-            fetch_parameters(),
-            fetch_parameter_fields(),
+            fetch_parameter_fields([pid for pid in all_parameter_ids if pid is not None]),
             fetch_objectives(),
             fetch_images(),
             fetch_videos(),
@@ -745,7 +731,13 @@ async def get_scenario(
         departments = _dedupe_by_id(departments_selected + departments_suggestions, "department_id")
         personas = personas_selected  # No suggestions
         documents = documents_selected  # No suggestions
-        parameters = _dedupe_by_id(parameters_selected + parameters_suggestions, "parameter_id")
+        # Combine scenario parameters with conditional parameters (conditional params have conditional=true)
+        parameters = _dedupe_by_id(
+            parameters_selected + parameters_suggestions + conditional_params,
+            "parameter_id"
+        )
+        # Dedupe by field_id since selected resources use parameter_fields_resource.id
+        # while available fields use field_id as their id
         parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
         objectives = objectives_selected  # No suggestions
         images = images_selected  # No suggestions
@@ -789,7 +781,7 @@ async def get_scenario(
             p for p in parameters if p.parameter_id in parameter_ids
         ]
         parameter_field_resources = [
-            f for f in parameter_fields if f.field_id in parameter_field_ids
+            f for f in parameter_fields if f.id in parameter_field_ids
         ]
         objective_resources = objectives_selected
         image_resources = images_selected

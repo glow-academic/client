@@ -154,11 +154,12 @@ scenario_objectives_junction AS (
 ),
 scenario_parameters_junction AS (
     SELECT
-        sf.scenario_id,
-        ARRAY_AGG(DISTINCT sf.field_id::text) as parameter_item_ids
-    FROM scenario_fields_junction sf
-    WHERE sf.active = true
-    GROUP BY sf.scenario_id
+        spf.scenario_id,
+        ARRAY_AGG(DISTINCT pfr.field_id::text) as parameter_item_ids
+    FROM scenario_parameter_fields_junction spf
+    JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+    WHERE spf.active = true
+    GROUP BY spf.scenario_id
 ),
 scenario_simulations AS (
     SELECT

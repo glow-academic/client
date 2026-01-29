@@ -16674,6 +16674,40 @@ class GetDocumentResourceApiResponse(BaseModel):
 
 
 
+# Generated from: get_documents
+
+class GetDocumentsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetDocumentsV4Item(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+    file_path: str | None
+    mime_type: str | None
+    generated: bool | None
+
+class GetDocumentsSqlRow(BaseModel):
+
+    items: list[QGetDocumentsV4Item] | None = None
+
+class GetDocumentsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetDocumentsApiResponse(BaseModel):
+
+    items: list[QGetDocumentsV4Item] | None = None
+
+
+
 # Generated from: emails
 
 class EmailsSqlParams(BaseModel):
@@ -17171,6 +17205,40 @@ class GetImageApiResponse(BaseModel):
 
 
 
+# Generated from: get_images
+
+class GetImagesSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetImagesV4Item(BaseModel):
+
+    image_id: UUID | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    generated: bool | None
+
+class GetImagesSqlRow(BaseModel):
+
+    items: list[QGetImagesV4Item] | None = None
+
+class GetImagesApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetImagesApiResponse(BaseModel):
+
+    items: list[QGetImagesV4Item] | None = None
+
+
+
 # Generated from: images
 
 class ImagesSqlParams(BaseModel):
@@ -17514,6 +17582,37 @@ class GetObjectiveApiResponse(BaseModel):
 
 
 
+# Generated from: get_objectives
+
+class GetObjectivesSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetObjectivesV4Item(BaseModel):
+
+    objective_id: UUID | None
+    objective: str | None
+    generated: bool | None
+
+class GetObjectivesSqlRow(BaseModel):
+
+    items: list[QGetObjectivesV4Item] | None = None
+
+class GetObjectivesApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetObjectivesApiResponse(BaseModel):
+
+    items: list[QGetObjectivesV4Item] | None = None
+
+
+
 # Generated from: objectives
 
 class ObjectivesSqlParams(BaseModel):
@@ -17841,6 +17940,41 @@ class GetPersonaResourceApiResponse(BaseModel):
 
 
 
+# Generated from: get_personas
+
+class GetPersonasSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetPersonasV4Item(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+    generated: bool | None
+
+class GetPersonasSqlRow(BaseModel):
+
+    items: list[QGetPersonasV4Item] | None = None
+
+class GetPersonasApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetPersonasApiResponse(BaseModel):
+
+    items: list[QGetPersonasV4Item] | None = None
+
+
+
 # Generated from: points
 
 class PointsSqlParams(BaseModel):
@@ -17935,6 +18069,38 @@ class GetProblemStatementApiRequest(BaseModel):
 class GetProblemStatementApiResponse(BaseModel):
 
     item: QGetProblemStatementResourceV4Item | None = None
+
+
+
+# Generated from: get_problem_statements
+
+class GetProblemStatementsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetProblemStatementsV4Item(BaseModel):
+
+    problem_statement_id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    generated: bool | None
+
+class GetProblemStatementsSqlRow(BaseModel):
+
+    items: list[QGetProblemStatementsV4Item] | None = None
+
+class GetProblemStatementsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetProblemStatementsApiResponse(BaseModel):
+
+    items: list[QGetProblemStatementsV4Item] | None = None
 
 
 
@@ -18075,6 +18241,38 @@ class GetQuestionApiRequest(BaseModel):
 class GetQuestionApiResponse(BaseModel):
 
     item: QGetQuestionResourceV4Item | None = None
+
+
+
+# Generated from: get_questions
+
+class GetQuestionsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetQuestionsV4Item(BaseModel):
+
+    question_id: UUID | None
+    question_text: str | None
+    allow_multiple: bool | None
+    generated: bool | None
+
+class GetQuestionsSqlRow(BaseModel):
+
+    items: list[QGetQuestionsV4Item] | None = None
+
+class GetQuestionsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetQuestionsApiResponse(BaseModel):
+
+    items: list[QGetQuestionsV4Item] | None = None
 
 
 
@@ -18926,6 +19124,39 @@ class GetTemplateApiResponse(BaseModel):
 
 
 
+# Generated from: get_templates
+
+class GetTemplatesSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetTemplatesV4Item(BaseModel):
+
+    template_id: UUID | None
+    name: str | None
+    description: str | None
+    html: str | None
+    generated: bool | None
+
+class GetTemplatesSqlRow(BaseModel):
+
+    items: list[QGetTemplatesV4Item] | None = None
+
+class GetTemplatesApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetTemplatesApiResponse(BaseModel):
+
+    items: list[QGetTemplatesV4Item] | None = None
+
+
+
 # Generated from: templates
 
 class TemplatesSqlParams(BaseModel):
@@ -19058,6 +19289,42 @@ class GetVideoApiRequest(BaseModel):
 class GetVideoApiResponse(BaseModel):
 
     item: QGetVideoResourceV4Item | None = None
+
+
+
+# Generated from: get_videos
+
+class GetVideosSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetVideosV4Item(BaseModel):
+
+    video_id: UUID | None
+    name: str | None
+    length_seconds: int | None
+    completed: bool | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    generated: bool | None
+
+class GetVideosSqlRow(BaseModel):
+
+    items: list[QGetVideosV4Item] | None = None
+
+class GetVideosApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetVideosApiResponse(BaseModel):
+
+    items: list[QGetVideosV4Item] | None = None
 
 
 
@@ -25425,6 +25692,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentResourceApiRequest",
         "GetDocumentResourceApiResponse",
     ),
+    "app/sql/v4/queries/resources/documents/get_documents_complete.sql": (
+        "GetDocumentsSqlParams",
+        "GetDocumentsSqlRow",
+        "GetDocumentsApiRequest",
+        "GetDocumentsApiResponse",
+    ),
     "app/sql/v4/queries/resources/emails_complete.sql": (
         "EmailsSqlParams",
         "EmailsSqlRow",
@@ -25509,6 +25782,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetImageApiRequest",
         "GetImageApiResponse",
     ),
+    "app/sql/v4/queries/resources/images/get_images_complete.sql": (
+        "GetImagesSqlParams",
+        "GetImagesSqlRow",
+        "GetImagesApiRequest",
+        "GetImagesApiResponse",
+    ),
     "app/sql/v4/queries/resources/images_complete.sql": (
         "ImagesSqlParams",
         "ImagesSqlRow",
@@ -25569,6 +25848,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetObjectiveApiRequest",
         "GetObjectiveApiResponse",
     ),
+    "app/sql/v4/queries/resources/objectives/get_objectives_complete.sql": (
+        "GetObjectivesSqlParams",
+        "GetObjectivesSqlRow",
+        "GetObjectivesApiRequest",
+        "GetObjectivesApiResponse",
+    ),
     "app/sql/v4/queries/resources/objectives_complete.sql": (
         "ObjectivesSqlParams",
         "ObjectivesSqlRow",
@@ -25623,6 +25908,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaResourceApiRequest",
         "GetPersonaResourceApiResponse",
     ),
+    "app/sql/v4/queries/resources/personas/get_personas_complete.sql": (
+        "GetPersonasSqlParams",
+        "GetPersonasSqlRow",
+        "GetPersonasApiRequest",
+        "GetPersonasApiResponse",
+    ),
     "app/sql/v4/queries/resources/points_complete.sql": (
         "PointsSqlParams",
         "PointsSqlRow",
@@ -25640,6 +25931,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProblemStatementSqlRow",
         "GetProblemStatementApiRequest",
         "GetProblemStatementApiResponse",
+    ),
+    "app/sql/v4/queries/resources/problem_statements/get_problem_statements_complete.sql": (
+        "GetProblemStatementsSqlParams",
+        "GetProblemStatementsSqlRow",
+        "GetProblemStatementsApiRequest",
+        "GetProblemStatementsApiResponse",
     ),
     "app/sql/v4/queries/resources/problem_statements_complete.sql": (
         "ProblemStatementsSqlParams",
@@ -25664,6 +25961,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetQuestionSqlRow",
         "GetQuestionApiRequest",
         "GetQuestionApiResponse",
+    ),
+    "app/sql/v4/queries/resources/questions/get_questions_complete.sql": (
+        "GetQuestionsSqlParams",
+        "GetQuestionsSqlRow",
+        "GetQuestionsApiRequest",
+        "GetQuestionsApiResponse",
     ),
     "app/sql/v4/queries/resources/questions_complete.sql": (
         "QuestionsSqlParams",
@@ -25797,6 +26100,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTemplateApiRequest",
         "GetTemplateApiResponse",
     ),
+    "app/sql/v4/queries/resources/templates/get_templates_complete.sql": (
+        "GetTemplatesSqlParams",
+        "GetTemplatesSqlRow",
+        "GetTemplatesApiRequest",
+        "GetTemplatesApiResponse",
+    ),
     "app/sql/v4/queries/resources/templates_complete.sql": (
         "TemplatesSqlParams",
         "TemplatesSqlRow",
@@ -25820,6 +26129,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideoSqlRow",
         "GetVideoApiRequest",
         "GetVideoApiResponse",
+    ),
+    "app/sql/v4/queries/resources/videos/get_videos_complete.sql": (
+        "GetVideosSqlParams",
+        "GetVideosSqlRow",
+        "GetVideosApiRequest",
+        "GetVideosApiResponse",
     ),
     "app/sql/v4/queries/resources/videos_complete.sql": (
         "VideosSqlParams",
@@ -27637,6 +27952,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/documents/get_documents_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/emails_complete.sql"]
     ) -> SqlString: ...
 
@@ -27707,6 +28027,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/images/get_images_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/images_complete.sql"]
     ) -> SqlString: ...
 
@@ -27757,6 +28082,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/objectives/get_objectives_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/objectives_complete.sql"]
     ) -> SqlString: ...
 
@@ -27802,6 +28132,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/personas/get_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/points_complete.sql"]
     ) -> SqlString: ...
 
@@ -27813,6 +28148,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/problem_statements/get_problem_statement_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/problem_statements/get_problem_statements_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27833,6 +28173,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/questions/get_question_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/questions/get_questions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27947,6 +28292,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/templates/get_templates_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/templates_complete.sql"]
     ) -> SqlString: ...
 
@@ -27963,6 +28313,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/videos/get_video_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/videos/get_videos_complete.sql"]
     ) -> SqlString: ...
 
     @overload

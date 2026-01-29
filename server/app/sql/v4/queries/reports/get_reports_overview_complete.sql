@@ -2563,14 +2563,13 @@ filt AS (
             ),
             cat_map AS (
                 SELECT
-                    f.id AS parameter_item_id,
-                    pfj.parameter_id AS parameter_id,
-                    sf.scenario_id AS scenario_id
-                FROM field_artifact f
-                JOIN parameter_fields_junction pfj ON pfj.field_id = f.id
-                JOIN param_ids_categorical p ON p.id = pfj.parameter_id
-                JOIN scenario_fields_junction sf ON sf.field_id = pfj.field_resource_id
-                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = sf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
+                    pfr.field_id AS parameter_item_id,
+                    pfr.parameter_id AS parameter_id,
+                    spf.scenario_id AS scenario_id
+                FROM parameter_fields_resource pfr
+                JOIN param_ids_categorical p ON p.id = pfr.parameter_id
+                JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id
+                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = spf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
             ),
             scenario_seen AS (
                 SELECT DISTINCT f.scenario_id
@@ -2660,13 +2659,14 @@ filt AS (
             ),
             num_map AS (
                 SELECT
-                    sf.scenario_id,
+                    spf.scenario_id,
                     nfl.parameter_id,
                     nfl.level::numeric AS level,
                     nfl.field_id
                 FROM num_field_levels nfl
-                JOIN scenario_fields_junction sf ON sf.field_id = nfl.field_resource_id
-                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = sf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
+                JOIN parameter_fields_resource pfr ON pfr.field_id = nfl.field_resource_id AND pfr.parameter_id = nfl.parameter_id
+                JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id
+                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = spf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
             ),
             num_map_seen AS (
                 SELECT nm.*
@@ -2839,21 +2839,20 @@ filt AS (
             sim_param_items_seen AS (
                 SELECT
                     s.id AS simulation_id,
-                    pfj.parameter_id AS parameter_id,
-                    pfj.field_id AS parameter_item_id,
+                    pfr.parameter_id AS parameter_id,
+                    pfr.field_id AS parameter_item_id,
                     COUNT(df.chat_id)::int AS cnt
                 FROM simulation_artifact s
                 JOIN simulation_scenarios_junction ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
                 JOIN scenario_scenarios_junction scsj ON scsj.scenarios_id = sc.id
                 JOIN scen_seen ss ON ss.scenario_id = scsj.scenario_id
-                JOIN scenario_fields_junction sf ON sf.scenario_id = scsj.scenario_id
-                JOIN fields_resource f ON f.id = sf.field_id
-                JOIN parameter_fields_junction pfj ON pfj.field_resource_id = f.id
-                JOIN param_ids_categorical pic ON pic.id = pfj.parameter_id
+                JOIN scenario_parameter_fields_junction spf ON spf.scenario_id = scsj.scenario_id
+                JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+                JOIN param_ids_categorical pic ON pic.id = pfr.parameter_id
                 JOIN mv_dashboard_facts df ON df.scenario_id = scsj.scenario_id AND df.profile_id = (SELECT target_profile_id FROM params)
                 WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf3 JOIN flags_resource fl ON sf3.flag_id = fl.id WHERE sf3.simulation_id = s.id AND fl.name = 'simulation_active' AND sf3.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = scsj.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
-                GROUP BY s.id, pfj.parameter_id, pfj.field_id
+                GROUP BY s.id, pfr.parameter_id, pfr.field_id
             ),
             simulation_facts AS (
                 SELECT

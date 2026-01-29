@@ -92,22 +92,22 @@ user_profile AS (
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
 parameter_active_scenario_links AS (
-    SELECT 
-        (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1),
-        COUNT(DISTINCT sf.scenario_id) as active_scenario_count
-    FROM field_artifact f
-    JOIN scenario_fields_junction sf ON sf.field_id = f.id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true) AND sf.active = true AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
-    GROUP BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
+    SELECT
+        pfr.parameter_id,
+        COUNT(DISTINCT spf.scenario_id) as active_scenario_count
+    FROM parameter_fields_resource pfr
+    JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id AND spf.active = true
+    WHERE pfr.parameter_id IS NOT NULL
+    GROUP BY pfr.parameter_id
 ),
 parameter_all_scenario_links AS (
-    SELECT 
-        (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1),
-        COUNT(DISTINCT sf.scenario_id) as total_scenario_links
-    FROM field_artifact f
-    JOIN scenario_fields_junction sf ON sf.field_id = f.id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
-    GROUP BY (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
+    SELECT
+        pfr.parameter_id,
+        COUNT(DISTINCT spf.scenario_id) as total_scenario_links
+    FROM parameter_fields_resource pfr
+    JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id
+    WHERE pfr.parameter_id IS NOT NULL
+    GROUP BY pfr.parameter_id
 ),
 scenario_parameters_data AS (
     SELECT 

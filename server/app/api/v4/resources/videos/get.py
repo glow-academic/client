@@ -12,13 +12,19 @@ from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_sql_query
+from app.sql.types import (
+    GetVideosSqlParams,
+    GetVideosSqlRow,
+    QGetVideosV4Item,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/videos/get_video_complete.sql"
+BATCH_SQL_PATH = "app/sql/v4/queries/resources/videos/get_videos_complete.sql"
 
 router = APIRouter()
 
@@ -105,6 +111,47 @@ async def get_video_internal(
     )
 
     return item
+
+
+async def get_videos_internal(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[QGetVideosV4Item]:
+    """Internal function for batch fetching videos by IDs.
+
+    This is a simple fetch without active flag check, used by scenario GET.
+    """
+    if not ids:
+        return []
+
+    tags = ["resources", "videos"]
+    cache_key_val = cache_key(
+        "/api/v4/resources/videos/get-batch",
+        {"ids": [str(id) for id in ids]},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [QGetVideosV4Item.model_validate(item) for item in cached.get("items", [])]
+
+    params = GetVideosSqlParams(p_ids=ids)
+    result = cast(
+        GetVideosSqlRow,
+        await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
+    )
+
+    items: list[QGetVideosV4Item] = result.items if result and result.items else []
+
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items
 
 
 # =============================================================================

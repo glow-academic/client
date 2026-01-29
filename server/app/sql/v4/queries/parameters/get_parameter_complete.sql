@@ -525,13 +525,14 @@ all_fields_with_usage AS (
         ffj.field_id as id,
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
         (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1),
-        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
+        COALESCE(COUNT(spf.scenario_id), 0) as usage_count,
         COALESCE(afd.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(f.generated, false) as generated
     FROM fields_resource f
     JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     LEFT JOIN all_fields_data afd ON afd.field_id = ffj.field_id
-    LEFT JOIN scenario_fields_junction sf ON sf.field_id = f.id AND sf.active = true
+    LEFT JOIN parameter_fields_resource pfr_usage ON pfr_usage.field_id = f.id
+    LEFT JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr_usage.id AND spf.active = true
     WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = ffj.field_id AND fl.name = 'field_active' AND ff.value = true)
     GROUP BY f.id, ffj.field_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), afd.department_ids, f.generated
 ),

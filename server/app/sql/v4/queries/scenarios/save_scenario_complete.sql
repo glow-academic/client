@@ -213,7 +213,7 @@ BEGIN
         DELETE FROM scenario_documents_junction WHERE scenario_id = v_scenario_id;
         DELETE FROM scenario_templates_junction WHERE scenario_id = v_scenario_id;
         DELETE FROM scenario_parameters_junction WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_fields_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_parameter_fields_junction WHERE scenario_id = v_scenario_id;
         DELETE FROM scenario_images_junction WHERE scenario_id = v_scenario_id;
         DELETE FROM scenario_objectives_junction WHERE scenario_id = v_scenario_id;
         DELETE FROM scenario_problem_statements_junction WHERE scenario_id = v_scenario_id;
@@ -312,10 +312,11 @@ BEGIN
     END IF;
 
     IF v_field_ids IS NOT NULL THEN
-        INSERT INTO scenario_fields_junction (scenario_id, field_id, active, created_at)
-        SELECT v_scenario_id, field_id, true, NOW()
+        INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, call_id, created_at)
+        SELECT v_scenario_id, pfr.id, true, (SELECT id FROM view_calls_entry LIMIT 1), NOW()
         FROM UNNEST(v_field_ids) as field_id
-        ON CONFLICT (scenario_id, field_id) DO UPDATE SET active = true;
+        JOIN parameter_fields_resource pfr ON pfr.field_id = field_id
+        ON CONFLICT (scenario_id, parameter_field_id) DO UPDATE SET active = true;
     END IF;
 
     IF v_image_ids IS NOT NULL THEN
