@@ -36,9 +36,11 @@ export interface ImageItem {
 export interface ImagesProps {
   image_ids?: string[]; // Current image artifact IDs (standardized prop name)
   image_resources?: Array<{
-    image_id: string | null;
-    name: string | null;
-    description?: string | null;
+    id?: string | null;
+    name?: string | null;
+    file_path?: string | null;
+    mime_type?: string | null;
+    upload_id?: string | null;
     generated?: boolean | null;
   }>; // Selected image resources (each includes generated field)
   show_images?: boolean; // Whether to show this resource picker
@@ -46,12 +48,12 @@ export interface ImagesProps {
   images_required?: boolean; // Whether this resource is required
   image_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   images?: Array<{
-    image_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
+    id?: string | null;
+    name?: string | null;
+    file_path?: string | null;
+    mime_type?: string | null;
     upload_id?: string | null;
-    updated_at?: string | null;
+    generated?: boolean | null;
   }>; // All available images from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update image_ids in form state
@@ -72,6 +74,10 @@ export interface ImagesProps {
   onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   imageInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
   isUploadingImage?: boolean; // Whether image is currently uploading
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ image_ids: string[] } | void>) => void;
 }
 
 export function Images({
@@ -88,7 +94,7 @@ export function Images({
   id = "images",
   required = false,
   placeholder = "Select images...",
-  description,
+  description: _description,
   group_id,
   agent_id,
   createImagesAction,
@@ -99,6 +105,8 @@ export function Images({
   onImageUpload,
   imageInputRef,
   isUploadingImage = false,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
@@ -115,22 +123,22 @@ export function Images({
     // Initialize from image_resources or images array
     if (image_resources && image_resources.length > 0) {
       return image_resources
-        .filter((img) => img.image_id && img.name)
+        .filter((img) => img.id && img.name)
         .map((img) => ({
-          id: img.image_id!,
+          id: img.id!,
           name: img.name!,
-          upload_id: img.image_id!,
+          upload_id: img.id!,
         }));
     }
     if (ids.length > 0 && allImages.length > 0) {
       return ids
         .map((id) => {
-          const img = allImages.find((i) => i.image_id === id);
-          if (img && img.image_id && img.name) {
+          const img = allImages.find((i) => i.id === id);
+          if (img && img.id && img.name) {
             return {
-              id: img.image_id,
+              id: img.id,
               name: img.name,
-              upload_id: img.upload_id || img.image_id,
+              upload_id: img.upload_id || img.id,
             };
           }
           return null;
@@ -148,12 +156,12 @@ export function Images({
     if (ids.length > 0 && allImages.length > 0) {
       const newSelectedImages = ids
         .map((id) => {
-          const img = allImages.find((i) => i.image_id === id);
-          if (img && img.image_id && img.name) {
+          const img = allImages.find((i) => i.id === id);
+          if (img && img.id && img.name) {
             return {
-              id: img.image_id,
+              id: img.id,
               name: img.name,
-              upload_id: img.upload_id || img.image_id,
+              upload_id: img.upload_id || img.id,
             };
           }
           return null;
@@ -170,6 +178,7 @@ export function Images({
 
   // Track which image IDs have already had resources created
   const createdImageIdsRef = useRef<Set<string>>(new Set());
+  const flushRef = useRef<(() => Promise<{ image_ids: string[] } | void>) | undefined>(undefined);
   const [previewImageId, setPreviewImageId] = useState<string | null>(null);
 
   // Initialize createdImageIdsRef with current IDs
@@ -181,13 +190,11 @@ export function Images({
   const imageMapping = useMemo(() => {
     const mapping: Record<string, ImageItem> = {};
     allImages.forEach((img) => {
-      if (img.image_id && img.name) {
-        mapping[img.image_id] = {
-          id: img.image_id,
+      if (img.id && img.name) {
+        mapping[img.id] = {
+          id: img.id,
           name: img.name,
-          ...(img.description ? { description: img.description } : {}),
           ...(img.upload_id ? { upload_id: img.upload_id } : {}),
-          ...(img.updated_at ? { updated_at: img.updated_at } : {}),
         };
       }
     });
@@ -195,7 +202,7 @@ export function Images({
   }, [allImages]);
 
   // Check if an image is suggested
-  const isSuggested = useCallback(
+  const _isSuggested = useCallback(
     (imageId: string) => suggestionsList.includes(imageId),
     [suggestionsList]
   );
@@ -207,9 +214,10 @@ export function Images({
         (id) => !ids.includes(id) && !createdImageIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected images
+      // Create resources for newly selected images (only if autosave is enabled)
       const effectiveAgentId = images_agent_id ?? agent_id;
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createImagesAction &&
         effectiveAgentId &&
@@ -242,8 +250,49 @@ export function Images({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createImagesAction, images_agent_id, agent_id, group_id, imageMapping]
+    [ids, onChange, createImagesAction, images_agent_id, agent_id, group_id, imageMapping, isAutosaveEnabled]
   );
+
+  // Flush function for manual save mode - creates pending resources and returns all IDs
+  flushRef.current = async (): Promise<{ image_ids: string[] } | void> => {
+    const effectiveAgentId = images_agent_id ?? agent_id;
+    if (!createImagesAction || !effectiveAgentId || !group_id) {
+      return { image_ids: ids };
+    }
+
+    const allIds: string[] = [...ids];
+
+    // Create resources for any selected images that haven't been created yet
+    for (const imageId of ids) {
+      if (!createdImageIdsRef.current.has(imageId)) {
+        try {
+          const imageItem = imageMapping[imageId];
+          await createImagesAction({
+            body: {
+              agent_id: effectiveAgentId,
+              group_id: group_id,
+              name: imageItem?.name ?? "",
+              description: imageItem?.description ?? "",
+              mcp: false,
+            },
+          });
+          createdImageIdsRef.current.add(imageId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`Failed to create image resource for ${imageId}:`, error);
+        }
+      }
+    }
+
+    return { image_ids: allIds };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const handleImageRemove = useCallback(
     (imageId: string) => {

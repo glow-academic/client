@@ -42,8 +42,9 @@ type CreateDraftQuestionsOut = OutputOf<
 export interface QuestionsProps {
   question_ids?: string[]; // Current question resource IDs (standardized prop name)
   question_resources?: Array<{
-    question_text: string | null;
-    idx: number | null;
+    id?: string | null;
+    question_text?: string | null;
+    allow_multiple?: boolean | null;
     generated?: boolean | null;
   }>; // Selected question resources (each includes generated field)
   show_questions?: boolean; // Whether to show this resource picker
@@ -51,8 +52,9 @@ export interface QuestionsProps {
   questions_required?: boolean; // Whether this resource is required
   question_suggestions?: string[]; // Array of suggested question IDs (UUIDs) - consistent with other suggestions
   questions?: Array<{
-    question_text: string | null;
-    idx: number | null;
+    id?: string | null;
+    question_text?: string | null;
+    allow_multiple?: boolean | null;
     generated?: boolean | null;
   }>; // All available questions from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
@@ -74,6 +76,10 @@ export interface QuestionsProps {
   questionMapping?: Record<string, string>;
   // Optional: video length for time slider (when questions are associated with videos)
   videoLength?: number | null;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -113,6 +119,8 @@ export function Questions({
   isGenerating = false,
   questionMapping = {},
   videoLength = null,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
@@ -136,7 +144,7 @@ export function Questions({
   }, [questionMapping, ids, allQuestions]);
 
   // Convert question_suggestions (UUIDs) to question strings by looking them up
-  const suggestionsList = useMemo(() => {
+  const _suggestionsList = useMemo(() => {
     if (question_suggestions && question_suggestions.length > 0) {
       return question_suggestions
         .map((id) => effectiveQuestionMapping[id])
@@ -203,6 +211,7 @@ export function Questions({
   const lastSavedQuestionsRef = useRef<QuestionType[]>(internalQuestions);
   const isInitialMountRef = useRef(true);
   const questionIdMapRef = useRef<Map<string, string>>(new Map()); // Maps question text -> question_id
+  const flushRef = useRef<(() => Promise<{ question_ids: string[] } | void>) | undefined>(undefined);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
   >(null);
@@ -302,6 +311,9 @@ export function Questions({
       return;
     }
 
+    // Skip auto-creation if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) return;
+
     // Clear all existing timers
     debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
     debounceTimersRef.current.clear();
@@ -384,7 +396,62 @@ export function Questions({
     questions_agent_id,
     agent_id,
     group_id,
+    isAutosaveEnabled,
   ]);
+
+  // Flush function for manual save mode - creates pending resources and returns all IDs
+  flushRef.current = async (): Promise<{ question_ids: string[] } | void> => {
+    const effectiveAgentId = questions_agent_id ?? agent_id;
+    if (!createQuestionsAction || !effectiveAgentId || !group_id) return;
+
+    const allIds: string[] = [];
+
+    for (const question of internalQuestions) {
+      if (!question.question_text.trim()) continue;
+
+      // Check if we already have an ID for this text
+      const existingId = questionIdMapRef.current.get(question.question_text);
+      if (existingId) {
+        allIds.push(existingId);
+        continue;
+      }
+
+      // Create resource for pending question
+      try {
+        const result = await createQuestionsAction({
+          body: {
+            agent_id: effectiveAgentId,
+            group_id: group_id,
+            question_text: question.question_text,
+            allow_multiple: question.allow_multiple,
+            time_value: question.times?.[0] ?? 0,
+            mcp: false,
+          },
+        });
+        if (result.question_id) {
+          questionIdMapRef.current.set(question.question_text, result.question_id);
+          allIds.push(result.question_id);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create question resource for "${question.question_text}":`, error);
+      }
+    }
+
+    // Update parent with all IDs
+    if (allIds.length > 0) {
+      onChange(allIds);
+    }
+
+    return { question_ids: allIds };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Question handlers (matching ContentSection pattern)
   const toggleQuestionExpanded = useCallback((index: number) => {

@@ -33,19 +33,23 @@ export interface DocumentItem {
 export interface DocumentsProps {
   document_ids?: string[]; // Current document artifact IDs (standardized prop name)
   document_resources?: Array<{
-    document_id: string | null;
-    name: string | null;
+    document_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
   }>; // Selected document resources (each includes generated field)
   show_documents?: boolean; // Whether to show this resource picker
   document_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   documents?: Array<{
-    document_id: string | null;
-    name: string | null;
+    document_id?: string | null;
+    name?: string | null;
     description?: string | null;
-    generated?: boolean | null;
-  }>; // All available documents from API (each includes generated field)
+    file_path?: string | null;
+    mime_type?: string | null;
+    parameter_ids?: string[] | null;
+    field_ids?: string[] | null;
+    parent_document_id?: string | null;
+  }>; // All available documents from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update document_ids in form state
   label?: string;

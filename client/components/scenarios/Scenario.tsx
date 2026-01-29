@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
@@ -81,27 +82,8 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftDepartmentsIn = InputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftDepartmentsOut = OutputOf<
-  "/api/v4/resources/departments",
-  "post"
->;
-type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
-type CreateDraftPersonasOut = OutputOf<"/api/v4/resources/personas", "post">;
-type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
-type CreateDraftParametersOut = OutputOf<
-  "/api/v4/resources/parameters",
-  "post"
->;
 type CreateDraftParameterFieldsIn = InputOf<
   "/api/v4/resources/parameter_fields",
   "post"
@@ -128,8 +110,6 @@ type ScenarioResourceType =
   | "documents"
   | "templates"
   | "parameters"
-  | "persona_fields"
-  | "document_fields"
   | "parameter_fields"
   | "images"
   | "videos"
@@ -151,8 +131,6 @@ type ScenarioFormState = {
   document_ids: string[];
   template_ids: string[];
   parameter_ids: string[];
-  persona_field_ids: string[];
-  document_field_ids: string[];
   parameter_field_ids: string[];
   image_ids: string[];
   objective_ids: string[];
@@ -183,24 +161,9 @@ export interface ScenarioProps {
   createObjectivesAction?: (
     input: CreateDraftObjectivesIn
   ) => Promise<CreateDraftObjectivesOut>;
-  createScenarioFlagsAction?: (
-    input: CreateDraftScenarioFlagsIn
-  ) => Promise<CreateDraftScenarioFlagsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
-  createPersonasAction?: (
-    input: CreateDraftPersonasIn
-  ) => Promise<CreateDraftPersonasOut>;
-  createDocumentsAction?: (
-    input: CreateDraftDocumentsIn
-  ) => Promise<CreateDraftDocumentsOut>;
   createTemplatesAction?: (
     input: CreateDraftTemplatesIn
   ) => Promise<CreateDraftTemplatesOut>;
-  createParametersAction?: (
-    input: CreateDraftParametersIn
-  ) => Promise<CreateDraftParametersOut>;
   createParameterFieldsAction?: (
     input: CreateDraftParameterFieldsIn
   ) => Promise<CreateDraftParameterFieldsOut>;
@@ -225,12 +188,7 @@ function ScenarioComponent({
   createDescriptionsAction,
   createProblemStatementsAction,
   createObjectivesAction,
-  createScenarioFlagsAction,
-  createDepartmentsAction,
-  createPersonasAction,
-  createDocumentsAction,
   createTemplatesAction,
-  createParametersAction,
   createParameterFieldsAction,
   createImagesAction,
   createVideosAction,
@@ -240,6 +198,7 @@ function ScenarioComponent({
   const isEditMode = !!scenarioId;
   const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { isAutosaveEnabled } = useSaveContext();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
   const scenarioData = isEditMode
@@ -272,6 +231,11 @@ function ScenarioComponent({
     name_id?: string | null;
     description_id?: string | null;
     problem_statement_id?: string | null;
+    objective_ids?: string[];
+    template_ids?: string[];
+    image_ids?: string[];
+    video_ids?: string[];
+    question_ids?: string[];
     parameter_field_ids?: string[];
   };
 
@@ -293,6 +257,11 @@ function ScenarioComponent({
       names: createRegisterFlush("names"),
       descriptions: createRegisterFlush("descriptions"),
       problem_statements: createRegisterFlush("problem_statements"),
+      objectives: createRegisterFlush("objectives"),
+      templates: createRegisterFlush("templates"),
+      images: createRegisterFlush("images"),
+      videos: createRegisterFlush("videos"),
+      questions: createRegisterFlush("questions"),
       parameter_fields: createRegisterFlush("parameter_fields"),
     }),
     [createRegisterFlush]
@@ -378,8 +347,6 @@ function ScenarioComponent({
         document_ids: [],
         template_ids: [],
         parameter_ids: [],
-        persona_field_ids: [],
-        document_field_ids: [],
         parameter_field_ids: [],
         image_ids: [],
         objective_ids: [],
@@ -406,8 +373,6 @@ function ScenarioComponent({
       document_ids: (scenarioData.document_ids ?? []).map(String),
       template_ids: (scenarioData.template_ids ?? []).map(String),
       parameter_ids: (scenarioData.parameter_ids ?? []).map(String),
-      persona_field_ids: (scenarioData.persona_field_ids ?? []).map(String),
-      document_field_ids: (scenarioData.document_field_ids ?? []).map(String),
       parameter_field_ids: (scenarioData.parameter_field_ids ?? []).map(String),
       image_ids: (scenarioData.image_ids ?? []).map(String),
       objective_ids: (scenarioData.objective_ids ?? []).map(String),
@@ -418,9 +383,6 @@ function ScenarioComponent({
 
   const [formState, setFormState] =
     useState<ScenarioFormState>(getInitialFormState);
-
-  // Autosave enabled state (default: true for autosave mode)
-  const [isAutosaveEnabled] = useState(true);
 
   // Ref to store formState for stable access in callbacks
   const formStateRef = useRef(formState);
@@ -457,14 +419,6 @@ function ScenarioComponent({
     () => JSON.stringify(formState.parameter_ids),
     [formState.parameter_ids]
   );
-  const personaFieldIdsStr = useMemo(
-    () => JSON.stringify(formState.persona_field_ids),
-    [formState.persona_field_ids]
-  );
-  const documentFieldIdsStr = useMemo(
-    () => JSON.stringify(formState.document_field_ids),
-    [formState.document_field_ids]
-  );
   const parameterFieldIdsStr = useMemo(
     () => JSON.stringify(formState.parameter_field_ids),
     [formState.parameter_field_ids]
@@ -484,6 +438,48 @@ function ScenarioComponent({
   const questionIdsStr = useMemo(
     () => JSON.stringify(formState.question_ids),
     [formState.question_ids]
+  );
+
+  // Memoized stringified scenarioData array IDs for useEffect dependency
+  const scenarioDepartmentIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.department_ids),
+    [scenarioData?.department_ids]
+  );
+  const scenarioPersonaIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.persona_ids),
+    [scenarioData?.persona_ids]
+  );
+  const scenarioDocumentIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.document_ids),
+    [scenarioData?.document_ids]
+  );
+  const scenarioTemplateIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.template_ids),
+    [scenarioData?.template_ids]
+  );
+  const scenarioParameterIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.parameter_ids),
+    [scenarioData?.parameter_ids]
+  );
+  const scenarioParameterFieldIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.parameter_field_ids),
+    [scenarioData?.parameter_field_ids]
+  );
+  const scenarioImageIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.image_ids),
+    [scenarioData?.image_ids]
+  );
+  const scenarioObjectiveIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.objective_ids),
+    [scenarioData?.objective_ids]
+  );
+  const scenarioVideoIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.video_ids),
+    [scenarioData?.video_ids]
+  );
+  const scenarioQuestionIdsStr = useMemo(
+    () => JSON.stringify(scenarioData?.question_ids),
+    [scenarioData?.question_ids]
   );
 
   useEffect(() => {
@@ -512,10 +508,6 @@ function ScenarioComponent({
           JSON.stringify(newState.template_ids) ||
         JSON.stringify(prev.parameter_ids) !==
           JSON.stringify(newState.parameter_ids) ||
-        JSON.stringify(prev.persona_field_ids) !==
-          JSON.stringify(newState.persona_field_ids) ||
-        JSON.stringify(prev.document_field_ids) !==
-          JSON.stringify(newState.document_field_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
           JSON.stringify(newState.parameter_field_ids) ||
         JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
@@ -543,18 +535,16 @@ function ScenarioComponent({
     scenarioData?.questions_enabled_flag_id,
     scenarioData?.problem_statement_enabled_flag_id,
     scenarioData?.use_templates_flag_id,
-    JSON.stringify(scenarioData?.department_ids),
-    JSON.stringify(scenarioData?.persona_ids),
-    JSON.stringify(scenarioData?.document_ids),
-    JSON.stringify(scenarioData?.template_ids),
-    JSON.stringify(scenarioData?.parameter_ids),
-    JSON.stringify(scenarioData?.persona_field_ids),
-    JSON.stringify(scenarioData?.document_field_ids),
-    JSON.stringify(scenarioData?.parameter_field_ids),
-    JSON.stringify(scenarioData?.image_ids),
-    JSON.stringify(scenarioData?.objective_ids),
-    JSON.stringify(scenarioData?.video_ids),
-    JSON.stringify(scenarioData?.question_ids),
+    scenarioDepartmentIdsStr,
+    scenarioPersonaIdsStr,
+    scenarioDocumentIdsStr,
+    scenarioTemplateIdsStr,
+    scenarioParameterIdsStr,
+    scenarioParameterFieldIdsStr,
+    scenarioImageIdsStr,
+    scenarioObjectiveIdsStr,
+    scenarioVideoIdsStr,
+    scenarioQuestionIdsStr,
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -586,6 +576,7 @@ function ScenarioComponent({
     patchScenarioDraftActionRef.current = patchScenarioDraftAction;
   }, [patchScenarioDraftAction]);
 
+  // Array dependencies use stringified versions to detect changes correctly
   const draftPatchKey = useMemo(
     () =>
       JSON.stringify({
@@ -601,18 +592,16 @@ function ScenarioComponent({
         problem_statement_enabled_flag_id:
           formState.problem_statement_enabled_flag_id,
         use_templates_flag_id: formState.use_templates_flag_id,
-        department_ids: formState.department_ids,
-        persona_ids: formState.persona_ids,
-        document_ids: formState.document_ids,
-        template_document_ids: formState.template_ids,
-        parameter_ids: formState.parameter_ids,
-        persona_field_ids: formState.persona_field_ids,
-        document_field_ids: formState.document_field_ids,
-        parameter_field_ids: formState.parameter_field_ids,
-        image_ids: formState.image_ids,
-        objective_ids: formState.objective_ids,
-        video_ids: formState.video_ids,
-        question_ids: formState.question_ids,
+        department_ids: departmentIdsStr,
+        persona_ids: personaIdsStr,
+        document_ids: documentIdsStr,
+        template_document_ids: templateIdsStr,
+        parameter_ids: parameterIdsStr,
+        field_ids: parameterFieldIdsStr,
+        image_ids: imageIdsStr,
+        objective_ids: objectiveIdsStr,
+        video_ids: videoIdsStr,
+        question_ids: questionIdsStr,
       }),
     [
       draftId,
@@ -631,8 +620,6 @@ function ScenarioComponent({
       documentIdsStr,
       templateIdsStr,
       parameterIdsStr,
-      personaFieldIdsStr,
-      documentFieldIdsStr,
       parameterFieldIdsStr,
       imageIdsStr,
       objectiveIdsStr,
@@ -666,32 +653,18 @@ function ScenarioComponent({
       formState.document_ids.length > 0 ||
       formState.template_ids.length > 0 ||
       formState.parameter_ids.length > 0 ||
-      formState.persona_field_ids.length > 0 ||
-      formState.document_field_ids.length > 0 ||
       formState.parameter_field_ids.length > 0 ||
       formState.image_ids.length > 0 ||
       formState.objective_ids.length > 0 ||
       formState.video_ids.length > 0 ||
       formState.question_ids.length > 0;
 
-    // Debug logging at effect start
-    console.debug("[Scenario Draft] Effect triggered", {
-      hasResourceIds,
-      draftPatchKey: draftPatchKey.substring(0, 100) + "...",
-      lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
-    });
-
     if (!hasResourceIds || !patchScenarioDraftActionRef.current) {
       return;
     }
 
     // Wait for version sync before patching to prevent race conditions
-    // Only block if there's an actual numeric version to sync (not null for new scenarios)
-    if (
-      typeof scenarioData?.draft_version === "number" &&
-      !versionSyncedRef.current
-    ) {
-      console.debug("[Scenario Draft] Waiting for version sync");
+    if (!versionSyncedRef.current && lastSavedVersionRef.current !== 0) {
       return;
     }
 
@@ -732,15 +705,6 @@ function ScenarioComponent({
       try {
         if (!patchScenarioDraftActionRef.current) return;
 
-        // Debug logging before API call
-        console.debug("[Scenario Draft] Calling patch API", {
-          input_draft_id: draftId,
-          expected_version: lastSavedVersionRef.current,
-          fields: Object.keys(formState).filter(
-            (k) => formState[k as keyof typeof formState]
-          ),
-        });
-
         const result = await patchScenarioDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
@@ -760,9 +724,7 @@ function ScenarioComponent({
             document_ids: formState.document_ids,
             template_document_ids: formState.template_ids,
             parameter_ids: formState.parameter_ids,
-            persona_field_ids: formState.persona_field_ids,
-            document_field_ids: formState.document_field_ids,
-            parameter_field_ids: formState.parameter_field_ids,
+            field_ids: formState.parameter_field_ids,
             image_ids: formState.image_ids,
             objective_ids: formState.objective_ids,
             video_ids: formState.video_ids,
@@ -785,12 +747,6 @@ function ScenarioComponent({
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
-        // Debug logging after success
-        console.debug("[Scenario Draft] Patch succeeded", {
-          draft_id: result.draft_id,
-          new_version: result.new_version,
-        });
-
         if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
           setLastSavedVersion(result.new_version ?? 0);
           lastSavedVersionRef.current = result.new_version ?? 0;
@@ -806,19 +762,14 @@ function ScenarioComponent({
         window.dispatchEvent(
           new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
         );
-      } catch (error) {
-        // Log error for debugging
-        console.error("[Scenario Draft] Patch failed:", error);
-        // Show user feedback
+      } catch {
         toast.error("Failed to save draft", {
           description:
             "Your changes may not have been saved. Please try again.",
         });
-        // Notify save context of error, then reset to idle
         window.dispatchEvent(
           new CustomEvent("save-status-change", { detail: { status: "error" } })
         );
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
     }, 1000);
 
@@ -934,18 +885,31 @@ function ScenarioComponent({
             department_ids: currentFormState.department_ids,
             persona_ids: currentFormState.persona_ids,
             document_ids: currentFormState.document_ids,
-            template_document_ids: currentFormState.template_ids,
+            template_document_ids:
+              mergedFlushResults.template_ids !== undefined
+                ? mergedFlushResults.template_ids
+                : currentFormState.template_ids,
             parameter_ids: currentFormState.parameter_ids,
-            persona_field_ids: currentFormState.persona_field_ids,
-            document_field_ids: currentFormState.document_field_ids,
-            parameter_field_ids:
+            field_ids:
               mergedFlushResults.parameter_field_ids !== undefined
                 ? mergedFlushResults.parameter_field_ids
                 : currentFormState.parameter_field_ids,
-            image_ids: currentFormState.image_ids,
-            objective_ids: currentFormState.objective_ids,
-            video_ids: currentFormState.video_ids,
-            question_ids: currentFormState.question_ids,
+            image_ids:
+              mergedFlushResults.image_ids !== undefined
+                ? mergedFlushResults.image_ids
+                : currentFormState.image_ids,
+            objective_ids:
+              mergedFlushResults.objective_ids !== undefined
+                ? mergedFlushResults.objective_ids
+                : currentFormState.objective_ids,
+            video_ids:
+              mergedFlushResults.video_ids !== undefined
+                ? mergedFlushResults.video_ids
+                : currentFormState.video_ids,
+            question_ids:
+              mergedFlushResults.question_ids !== undefined
+                ? mergedFlushResults.question_ids
+                : currentFormState.question_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -1059,16 +1023,6 @@ function ScenarioComponent({
       parameters_required: scenarioData.parameters_required,
       parameter_suggestions: scenarioData.parameter_suggestions,
       parameters: scenarioData.parameters,
-      persona_field_resources: scenarioData.persona_field_resources,
-      show_persona_fields: scenarioData.show_persona_fields,
-      persona_fields_agent_id: scenarioData.persona_fields_agent_id,
-      persona_fields_required: scenarioData.persona_fields_required,
-      persona_fields: scenarioData.persona_fields,
-      document_field_resources: scenarioData.document_field_resources,
-      show_document_fields: scenarioData.show_document_fields,
-      document_fields_agent_id: scenarioData.document_fields_agent_id,
-      document_fields_required: scenarioData.document_fields_required,
-      document_fields: scenarioData.document_fields,
       parameter_field_resources: scenarioData.parameter_field_resources,
       show_parameter_fields: scenarioData.show_parameter_fields,
       parameter_fields_agent_id: scenarioData.parameter_fields_agent_id,
@@ -1158,17 +1112,11 @@ function ScenarioComponent({
             ) ?? false
           );
         case "personas":
-          return (
-            stableScenarioDataFields.persona_resources?.some(
-              (p) => p.generated
-            ) ?? false
-          );
+          // ScenarioPersona doesn't have generated field in API
+          return false;
         case "documents":
-          return (
-            stableScenarioDataFields.document_resources?.some(
-              (d) => d.generated
-            ) ?? false
-          );
+          // ScenarioDocument doesn't have generated field in API
+          return false;
         case "templates":
           return (
             stableScenarioDataFields.template_resources?.some(
@@ -1176,23 +1124,8 @@ function ScenarioComponent({
             ) ?? false
           );
         case "parameters":
-          return (
-            stableScenarioDataFields.parameter_resources?.some(
-              (p) => p.generated
-            ) ?? false
-          );
-        case "persona_fields":
-          return (
-            stableScenarioDataFields.persona_field_resources?.some(
-              (f) => f.generated
-            ) ?? false
-          );
-        case "document_fields":
-          return (
-            stableScenarioDataFields.document_field_resources?.some(
-              (f) => f.generated
-            ) ?? false
-          );
+          // ScenarioParameter doesn't have generated field in API
+          return false;
         case "parameter_fields":
           return (
             stableScenarioDataFields.parameter_field_resources?.some(
@@ -1248,8 +1181,6 @@ function ScenarioComponent({
       document_ids?: string[];
       template_ids?: string[];
       parameter_ids?: string[];
-      persona_field_ids?: string[];
-      document_field_ids?: string[];
       parameter_field_ids?: string[];
       image_ids?: string[];
       video_ids?: string[];
@@ -1283,8 +1214,6 @@ function ScenarioComponent({
         "documents",
         "templates",
         "parameters",
-        "persona_fields",
-        "document_fields",
         "parameter_fields",
         "images",
         "videos",
@@ -1351,21 +1280,6 @@ function ScenarioComponent({
               (id) => !prev.parameter_ids.includes(id)
             );
             updates.parameter_ids = [...prev.parameter_ids, ...newIds];
-          }
-          if (data.persona_field_ids && data.persona_field_ids.length > 0) {
-            const newIds = data.persona_field_ids.filter(
-              (id) => !prev.persona_field_ids.includes(id)
-            );
-            updates.persona_field_ids = [...prev.persona_field_ids, ...newIds];
-          }
-          if (data.document_field_ids && data.document_field_ids.length > 0) {
-            const newIds = data.document_field_ids.filter(
-              (id) => !prev.document_field_ids.includes(id)
-            );
-            updates.document_field_ids = [
-              ...prev.document_field_ids,
-              ...newIds,
-            ];
           }
           if (data.parameter_field_ids && data.parameter_field_ids.length > 0) {
             const newIds = data.parameter_field_ids.filter(
@@ -1795,15 +1709,18 @@ function ScenarioComponent({
             changed = false;
             for (const field of allFields) {
               // If this field belongs to a parameter we're removing
-              // and it has a conditional_parameter_id
+              // and it has conditional_parameter_ids
               if (
                 field.parameter_id &&
                 toRemove.has(field.parameter_id) &&
-                field.conditional_parameter_id &&
-                !toRemove.has(field.conditional_parameter_id)
+                field.conditional_parameter_ids?.length
               ) {
-                toRemove.add(field.conditional_parameter_id);
-                changed = true;
+                for (const condParamId of field.conditional_parameter_ids) {
+                  if (condParamId && !toRemove.has(condParamId)) {
+                    toRemove.add(condParamId);
+                    changed = true;
+                  }
+                }
               }
             }
           }
@@ -1814,9 +1731,9 @@ function ScenarioComponent({
             if (
               field.parameter_id &&
               toRemove.has(field.parameter_id) &&
-              field.id
+              field.field_id
             ) {
-              fieldsToRemove.add(field.id);
+              fieldsToRemove.add(field.field_id);
             }
           }
 
@@ -1839,8 +1756,8 @@ function ScenarioComponent({
       basic: ["names", "descriptions", "scenario_flags", "departments"],
       problem_statement: ["problem_statements"],
       objectives: ["objectives"],
-      personas: ["personas", "persona_fields"],
-      documents: ["documents", "document_fields"],
+      personas: ["personas"],
+      documents: ["documents"],
       templates: ["templates"],
       parameters: ["parameters", "parameter_fields"],
       images: ["images"],
@@ -1857,8 +1774,6 @@ function ScenarioComponent({
         "documents",
         "templates",
         "parameters",
-        "persona_fields",
-        "document_fields",
         "parameter_fields",
         "images",
         "videos",
@@ -1880,8 +1795,6 @@ function ScenarioComponent({
       documents: "Documents",
       templates: "Templates",
       parameters: "Parameters",
-      persona_fields: "Persona Fields",
-      document_fields: "Document Fields",
       parameter_fields: "Parameter Fields",
       images: "Images",
       videos: "Videos",
@@ -2136,13 +2049,11 @@ function ScenarioComponent({
           return {
             ...prev,
             persona_ids: [],
-            persona_field_ids: [],
           };
         case "documents":
           return {
             ...prev,
             document_ids: [],
-            document_field_ids: [],
           };
         case "templates":
           return {
@@ -2322,65 +2233,65 @@ function ScenarioComponent({
             // Required single-select
             name_id: effectiveFormState.name_id!,
 
-            // Optional single-select
-            description_id: effectiveFormState.description_id ?? undefined,
+            // Optional single-select (use null instead of undefined for exactOptionalPropertyTypes)
+            description_id: effectiveFormState.description_id ?? null,
             problem_statement_id:
-              effectiveFormState.problem_statement_id ?? undefined,
-            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+              effectiveFormState.problem_statement_id ?? null,
+            active_flag_id: effectiveFormState.active_flag_id ?? null,
             objectives_enabled_flag_id:
-              effectiveFormState.objectives_enabled_flag_id ?? undefined,
+              effectiveFormState.objectives_enabled_flag_id ?? null,
             images_enabled_flag_id:
-              effectiveFormState.images_enabled_flag_id ?? undefined,
+              effectiveFormState.images_enabled_flag_id ?? null,
             video_enabled_flag_id:
-              effectiveFormState.video_enabled_flag_id ?? undefined,
+              effectiveFormState.video_enabled_flag_id ?? null,
             questions_enabled_flag_id:
-              effectiveFormState.questions_enabled_flag_id ?? undefined,
+              effectiveFormState.questions_enabled_flag_id ?? null,
             problem_statement_enabled_flag_id:
-              effectiveFormState.problem_statement_enabled_flag_id ?? undefined,
+              effectiveFormState.problem_statement_enabled_flag_id ?? null,
             use_templates_flag_id:
-              effectiveFormState.use_templates_flag_id ?? undefined,
+              effectiveFormState.use_templates_flag_id ?? null,
 
-            // Optional multi-select
+            // Optional multi-select (use null instead of undefined for exactOptionalPropertyTypes)
             department_ids:
               effectiveFormState.department_ids.length > 0
                 ? effectiveFormState.department_ids
-                : undefined,
+                : null,
             persona_ids:
               effectiveFormState.persona_ids.length > 0
                 ? effectiveFormState.persona_ids
-                : undefined,
+                : null,
             document_ids:
               effectiveFormState.document_ids.length > 0
                 ? effectiveFormState.document_ids
-                : undefined,
+                : null,
             template_document_ids:
               effectiveFormState.template_ids.length > 0
                 ? effectiveFormState.template_ids
-                : undefined,
+                : null,
             parameter_ids:
               effectiveFormState.parameter_ids.length > 0
                 ? effectiveFormState.parameter_ids
-                : undefined,
-            parameter_field_ids:
+                : null,
+            field_ids:
               effectiveFormState.parameter_field_ids.length > 0
                 ? effectiveFormState.parameter_field_ids
-                : undefined,
+                : null,
             image_ids:
               effectiveFormState.image_ids.length > 0
                 ? effectiveFormState.image_ids
-                : undefined,
+                : null,
             objective_ids:
               effectiveFormState.objective_ids.length > 0
                 ? effectiveFormState.objective_ids
-                : undefined,
+                : null,
             video_ids:
               effectiveFormState.video_ids.length > 0
                 ? effectiveFormState.video_ids
-                : undefined,
+                : null,
             question_ids:
               effectiveFormState.question_ids.length > 0
                 ? effectiveFormState.question_ids
-                : undefined,
+                : null,
           },
         });
 
@@ -2473,7 +2384,7 @@ function ScenarioComponent({
       stepDescription,
       stepNumber,
       stepStatus,
-      isOptional,
+      isOptional: _isOptional,
       formData,
       setFormData,
       filters,
@@ -2648,13 +2559,6 @@ function ScenarioComponent({
                   required={currentScenarioData?.departments_required ?? false}
                   group_id={currentScenarioData?.group_id ?? null}
                   agent_id={currentScenarioData?.departments_agent_id ?? null}
-                  createDepartmentsAction={
-                    createDepartmentsAction as
-                      | ((
-                          input: CreateDraftDepartmentsIn
-                        ) => Promise<CreateDraftDepartmentsOut>)
-                      | undefined
-                  }
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
                 />
@@ -2678,7 +2582,7 @@ function ScenarioComponent({
                   columns={2}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(key, flagId) => {
+                  onChange={(key: string, flagId: string | null) => {
                     const fieldMap: Record<string, string> = {
                       active: "active_flag_id",
                       video_enabled: "video_enabled_flag_id",
@@ -2852,6 +2756,8 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateObjectives}
                 isGenerating={isGenerating("objectives")}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.objectives}
               />
             </StepCard>
           );
@@ -2925,13 +2831,6 @@ function ScenarioComponent({
                     currentScenarioData?.personas_agent_id ?? null
                   }
                   required={currentScenarioData?.personas_required ?? false}
-                  createPersonasAction={
-                    createPersonasAction as
-                      | ((
-                          input: CreateDraftPersonasIn
-                        ) => Promise<CreateDraftPersonasOut>)
-                      | undefined
-                  }
                   onGenerate={handleGeneratePersonas}
                   isGenerating={isGenerating("personas")}
                 />
@@ -3008,13 +2907,6 @@ function ScenarioComponent({
                     currentScenarioData?.documents_agent_id ?? null
                   }
                   required={currentScenarioData?.documents_required ?? false}
-                  createDocumentsAction={
-                    createDocumentsAction as
-                      | ((
-                          input: CreateDraftDocumentsIn
-                        ) => Promise<CreateDraftDocumentsOut>)
-                      | undefined
-                  }
                   onGenerate={handleGenerateDocuments}
                   isGenerating={isGenerating("documents")}
                 />
@@ -3093,6 +2985,8 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateTemplates}
                 isGenerating={isGenerating("templates")}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.templates}
               />
             </StepCard>
           );
@@ -3171,13 +3065,6 @@ function ScenarioComponent({
                   group_id={currentScenarioData?.group_id ?? null}
                   agent_id={currentScenarioData?.parameters_agent_id ?? null}
                   required={currentScenarioData?.parameters_required ?? false}
-                  createParametersAction={
-                    createParametersAction as
-                      | ((
-                          input: CreateDraftParametersIn
-                        ) => Promise<CreateDraftParametersOut>)
-                      | undefined
-                  }
                   onGenerate={handleGenerateParameters}
                   isGenerating={isGenerating("parameters")}
                 />
@@ -3281,6 +3168,8 @@ function ScenarioComponent({
                 isGenerating={isGenerating("images")}
                 multiSelect={true}
                 maxImages={3}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.images}
               />
             </StepCard>
           );
@@ -3344,6 +3233,8 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateVideos}
                 isGenerating={isGenerating("videos")}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.videos}
               />
             </StepCard>
           );
@@ -3415,6 +3306,8 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateQuestions}
                 isGenerating={isGenerating("questions")}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks.questions}
               />
             </StepCard>
           );
@@ -3445,19 +3338,22 @@ function ScenarioComponent({
       createDescriptionsAction,
       createProblemStatementsAction,
       createObjectivesAction,
-      createScenarioFlagsAction,
-      createDepartmentsAction,
-      createPersonasAction,
-      createDocumentsAction,
       createTemplatesAction,
-      createParametersAction,
       createParameterFieldsAction,
       createImagesAction,
       createVideosAction,
       createQuestionsAction,
-      canRegenerate,
       handleOpenStepCardModal,
       stepResources,
+      isAutosaveEnabled,
+      registerFlushCallbacks,
+      showImagesSection,
+      showVideosSection,
+      showQuestionsSection,
+      handleConditionalParameterToggle,
+      showObjectivesSection,
+      showProblemStatementSection,
+      showTemplatesSection,
     ]
   );
 
@@ -3540,8 +3436,6 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     document_ids: prevScenarioData?.document_ids,
     template_ids: prevScenarioData?.template_ids,
     parameter_ids: prevScenarioData?.parameter_ids,
-    persona_field_ids: prevScenarioData?.persona_field_ids,
-    document_field_ids: prevScenarioData?.document_field_ids,
     parameter_field_ids: prevScenarioData?.parameter_field_ids,
     image_ids: prevScenarioData?.image_ids,
     objective_ids: prevScenarioData?.objective_ids,
@@ -3565,8 +3459,6 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     document_ids: nextScenarioData?.document_ids,
     template_ids: nextScenarioData?.template_ids,
     parameter_ids: nextScenarioData?.parameter_ids,
-    persona_field_ids: nextScenarioData?.persona_field_ids,
-    document_field_ids: nextScenarioData?.document_field_ids,
     parameter_field_ids: nextScenarioData?.parameter_field_ids,
     image_ids: nextScenarioData?.image_ids,
     objective_ids: nextScenarioData?.objective_ids,
@@ -3590,5 +3482,3 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
 
   return true;
 });
-
-export type { ScenarioProps };

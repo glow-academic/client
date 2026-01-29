@@ -42,7 +42,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop,
   onRemove,
   totalObjectives,
-  maxObjectives,
+  maxObjectives: _maxObjectives,
 }: {
   index: number;
   value: string;
@@ -162,8 +162,8 @@ function ObjectiveInputWithAutocomplete({
 export interface ObjectivesProps {
   objective_ids?: string[]; // Current objective resource IDs (standardized prop name)
   objective_resources?: Array<{
-    objective: string | null;
-    idx: number | null;
+    id?: string | null;
+    objective?: string | null;
     generated?: boolean | null;
   }>; // Selected objective resources (each includes generated field)
   show_objectives?: boolean; // Whether to show this resource picker
@@ -171,8 +171,8 @@ export interface ObjectivesProps {
   objectives_required?: boolean; // Whether this resource is required
   objective_suggestions?: string[]; // Array of suggested objective IDs (UUIDs) - consistent with other suggestions
   objectives?: Array<{
-    objective: string | null;
-    idx: number | null;
+    id?: string | null;
+    objective?: string | null;
     generated?: boolean | null;
   }>; // All available objectives from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
@@ -192,6 +192,10 @@ export interface ObjectivesProps {
   isGenerating?: boolean;
   // Optional: mapping of objective_id -> objective text (for initial display)
   objectiveMapping?: Record<string, string>;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
 }
 
 export function Objectives({
@@ -216,6 +220,8 @@ export function Objectives({
   onGenerate,
   isGenerating = false,
   objectiveMapping = {},
+  isAutosaveEnabled = true,
+  registerFlush,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);
@@ -271,6 +277,7 @@ export function Objectives({
   const lastSavedTextsRef = useRef<string[]>(internalTexts);
   const isInitialMountRef = useRef(true);
   const objectiveIdMapRef = useRef<Map<string, string>>(new Map()); // Maps objective text -> objective_id
+  const flushRef = useRef<(() => Promise<{ objective_ids: string[] } | void>) | undefined>(undefined);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -301,6 +308,9 @@ export function Objectives({
       lastSavedTextsRef.current = internalTexts;
       return;
     }
+
+    // Skip auto-creation if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) return;
 
     // Clear all existing timers
     debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
@@ -383,7 +393,60 @@ export function Objectives({
     objectives_agent_id,
     agent_id,
     group_id,
+    isAutosaveEnabled,
   ]);
+
+  // Flush function for manual save mode - creates pending resources and returns all IDs
+  flushRef.current = async (): Promise<{ objective_ids: string[] } | void> => {
+    const effectiveAgentId = objectives_agent_id ?? agent_id;
+    if (!createObjectivesAction || !effectiveAgentId || !group_id) return;
+
+    const allIds: string[] = [];
+
+    for (const text of internalTexts) {
+      if (!text.trim()) continue;
+
+      // Check if we already have an ID for this text
+      const existingId = objectiveIdMapRef.current.get(text);
+      if (existingId) {
+        allIds.push(existingId);
+        continue;
+      }
+
+      // Create resource for pending text
+      try {
+        const result = await createObjectivesAction({
+          body: {
+            agent_id: effectiveAgentId,
+            group_id: group_id,
+            objective: text,
+            mcp: false,
+          },
+        });
+        if (result.objective_id) {
+          objectiveIdMapRef.current.set(text, result.objective_id);
+          allIds.push(result.objective_id);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create objective resource for "${text}":`, error);
+      }
+    }
+
+    // Update parent with all IDs
+    if (allIds.length > 0) {
+      onChange(allIds);
+    }
+
+    return { objective_ids: allIds };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Objective handlers (matching ContentSection pattern)
   const addObjective = useCallback(() => {

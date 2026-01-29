@@ -43,17 +43,20 @@ export interface TemplateItem {
 export interface TemplatesProps {
   template_ids?: string[]; // Current template resource IDs (standardized prop name)
   template_resources?: Array<{
-    template_id: string | null;
+    id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    html?: string | null;
     generated?: boolean | null;
   }>; // Selected template resources (each includes generated field)
   show_templates?: boolean; // Whether to show this resource picker
   template_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   templates?: Array<{
-    template_id: string | null;
+    id?: string | null;
     name?: string | null;
-    generated?: boolean | null;
     description?: string | null;
     html?: string | null;
+    generated?: boolean | null;
   }>; // All available templates from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update template_ids in form state
@@ -71,6 +74,10 @@ export interface TemplatesProps {
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering templates
   showSelectedFilter?: boolean; // Whether to show only selected templates
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ template_ids: string[] } | void>) => void;
 }
 
 export function Templates({
@@ -84,7 +91,7 @@ export function Templates({
   label = "Templates",
   id = "templates",
   required = false,
-  placeholder = "Select templates...",
+  placeholder: _placeholder = "Select templates...",
   description,
   group_id,
   templates_agent_id,
@@ -93,6 +100,8 @@ export function Templates({
   isGenerating = false,
   searchTerm = "",
   showSelectedFilter = false,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: TemplatesProps) {
   const createCardId = "__create_template__";
   const ids = useMemo(() => template_ids ?? [], [template_ids]);
@@ -105,6 +114,7 @@ export function Templates({
 
   // Track which template IDs have already had resources created
   const createdTemplateIdsRef = useRef<Set<string>>(new Set());
+  const flushRef = useRef<(() => Promise<{ template_ids: string[] } | void>) | undefined>(undefined);
 
   // Initialize createdTemplateIdsRef with current IDs
   useEffect(() => {
@@ -114,9 +124,9 @@ export function Templates({
   // Convert templates array to TemplateItem format for SelectableGrid
   const templateItems = useMemo<TemplateItem[]>(() => {
     return allTemplates
-      .filter((t) => t.template_id && t.name) // Filter out nulls
+      .filter((t) => t.id && t.name) // Filter out nulls
       .map((t) => ({
-        id: t.template_id!,
+        id: t.id!,
         name: t.name!,
         description: t.description ?? null,
         html: t.html ?? null,
@@ -170,8 +180,9 @@ export function Templates({
         (id) => !ids.includes(id) && !createdTemplateIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected templates
+      // Create resources for newly selected templates (only if autosave is enabled)
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createTemplatesAction &&
         templates_agent_id &&
@@ -203,8 +214,47 @@ export function Templates({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createTemplatesAction, templates_agent_id, group_id, mergedTemplates]
+    [ids, onChange, createTemplatesAction, templates_agent_id, group_id, mergedTemplates, isAutosaveEnabled]
   );
+
+  // Flush function for manual save mode - creates pending resources and returns all IDs
+  flushRef.current = async (): Promise<{ template_ids: string[] } | void> => {
+    if (!createTemplatesAction || !templates_agent_id || !group_id) {
+      return { template_ids: ids };
+    }
+
+    const allIds: string[] = [...ids];
+
+    // Create resources for any selected templates that haven't been created yet
+    for (const templateId of ids) {
+      if (!createdTemplateIdsRef.current.has(templateId)) {
+        try {
+          const templateItem = mergedTemplates.find((t) => t.id === templateId);
+          await createTemplatesAction({
+            body: {
+              agent_id: templates_agent_id,
+              group_id: group_id,
+              name: templateItem?.name ?? "",
+              mcp: false,
+            },
+          });
+          createdTemplateIdsRef.current.add(templateId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`Failed to create template resource for ${templateId}:`, error);
+        }
+      }
+    }
+
+    return { template_ids: allIds };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const templatesById = useMemo(() => {
     const mapping: Record<string, TemplateItem> = {};

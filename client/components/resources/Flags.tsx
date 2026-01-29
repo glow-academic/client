@@ -35,21 +35,8 @@ export interface FlagConfig {
   generated?: boolean | null; // Whether AI generated
 }
 
-// Single-flag mode props
-interface SingleFlagProps {
-  flag_id?: string | null;
-  flag_ids?: never;
-  onChange: (flagId: string | null) => void;
-}
-
-// Multi-flag mode props
-interface MultiFlagProps {
-  flag_id?: never;
-  flag_ids: Record<string, string | null>;
-  onChange: (key: string, flagId: string | null) => void;
-}
-
-export type FlagsProps = {
+// Common props for both modes
+interface CommonFlagsProps {
   flags: FlagConfig[]; // Array of flag configurations from server
   show_flags?: boolean; // Master visibility control
   columns?: 1 | 2 | 3 | 4; // Columns per row (default: 2)
@@ -58,7 +45,25 @@ export type FlagsProps = {
   group_id?: string | null;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
-} & (SingleFlagProps | MultiFlagProps);
+}
+
+// Single-flag mode props - uses flag_id (optional) without flag_ids
+export interface SingleFlagProps extends CommonFlagsProps {
+  mode?: "single";
+  flag_id?: string | null;
+  flag_ids?: never;
+  onChange: (flagId: string | null) => void;
+}
+
+// Multi-flag mode props - uses flag_ids (required) without flag_id
+export interface MultiFlagProps extends CommonFlagsProps {
+  mode?: "multi";
+  flag_id?: never;
+  flag_ids: Record<string, string | null>;
+  onChange: (key: string, flagId: string | null) => void;
+}
+
+export type FlagsProps = SingleFlagProps | MultiFlagProps;
 
 export function Flags(props: FlagsProps) {
   const {

@@ -24,15 +24,15 @@ type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 export interface NamesProps {
   name_id?: string | null; // Current name_id (standardized prop name)
   name_resource?: {
-    id: string | null;
-    name: string | null;
+    id?: string | null;
+    name?: string | null;
     generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_name?: boolean; // Whether to show this resource picker
   name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   names?: Array<{
-    id: string | null;
-    name: string | null;
+    id?: string | null;
+    name?: string | null;
     generated?: boolean | null;
   }>; // Array of name suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag

@@ -33,19 +33,24 @@ export interface PersonaItem {
 export interface PersonasProps {
   persona_ids?: string[]; // Current persona artifact IDs (standardized prop name)
   persona_resources?: Array<{
-    persona_id: string | null;
-    name: string | null;
+    persona_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
   }>; // Selected persona resources (each includes generated field)
   show_personas?: boolean; // Whether to show this resource picker
   persona_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   personas?: Array<{
-    persona_id: string | null;
-    name: string | null;
+    persona_id?: string | null;
+    name?: string | null;
     description?: string | null;
-    generated?: boolean | null;
-  }>; // All available personas from API (each includes generated field)
+    color?: string | null;
+    icon?: string | null;
+    image_model?: boolean | null;
+    parameter_ids?: string[] | null;
+    field_ids?: string[] | null;
+    example?: string | null;
+  }>; // All available personas from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update persona_ids in form state
   label?: string;

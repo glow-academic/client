@@ -39,16 +39,16 @@ export interface DepartmentItem {
 export interface DepartmentsProps {
   department_ids?: string[]; // Current department resource IDs (standardized prop name)
   department_resources?: Array<{
-    department_id: string | null;
-    name: string | null;
+    department_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
   }>; // Selected department resources (each includes generated field)
   show_departments?: boolean; // Whether to show this resource picker
   department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   departments?: Array<{
-    department_id: string | null;
-    name: string | null;
+    department_id?: string | null;
+    name?: string | null;
     description?: string | null;
     generated?: boolean | null;
   }>; // All available departments from API (each includes generated field)
@@ -81,7 +81,7 @@ export function Departments({
   label = "Departments",
   id = "departments",
   required = false,
-  placeholder = "Select departments...",
+  placeholder: _placeholder = "Select departments...",
   description,
   group_id,
   agent_id,

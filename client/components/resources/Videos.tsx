@@ -35,24 +35,28 @@ export interface VideoItem {
 export interface VideosProps {
   video_ids?: string[]; // Current video artifact IDs (standardized prop name)
   video_resources?: Array<{
-    video_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
+    id?: string | null;
+    name?: string | null;
     length_seconds?: number | null;
+    completed?: boolean | null;
+    file_path?: string | null;
+    mime_type?: string | null;
     upload_id?: string | null;
+    generated?: boolean | null;
   }>; // Selected video resources (each includes generated field)
   show_videos?: boolean; // Whether to show this resource picker
   videos_agent_id?: string | null; // Agent ID for resource creation
   videos_required?: boolean; // Whether this resource is required
   video_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   videos?: Array<{
-    video_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
+    id?: string | null;
+    name?: string | null;
     length_seconds?: number | null;
+    completed?: boolean | null;
+    file_path?: string | null;
+    mime_type?: string | null;
     upload_id?: string | null;
+    generated?: boolean | null;
   }>; // All available videos from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update video_ids in form state
@@ -71,6 +75,10 @@ export interface VideosProps {
   onVideoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   videoInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
   isUploadingVideo?: boolean; // Whether video is currently uploading
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ video_ids: string[] } | void>) => void;
 }
 
 export function Videos({
@@ -87,7 +95,7 @@ export function Videos({
   id = "videos",
   required = false,
   placeholder = "Select video...",
-  description,
+  description: _description,
   group_id,
   agent_id,
   createVideosAction,
@@ -96,6 +104,8 @@ export function Videos({
   onVideoUpload,
   videoInputRef,
   isUploadingVideo = false,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;
@@ -114,10 +124,10 @@ export function Videos({
   } | null>(() => {
     // Initialize from video_resources or videos array
     if (ids.length > 0 && allVideos.length > 0) {
-      const video = allVideos.find((v) => v.video_id === ids[0]);
-      if (video && video.video_id && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
+      const video = allVideos.find((v) => v.id === ids[0]);
+      if (video && video.id && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
         return {
-          id: video.video_id,
+          id: video.id,
           name: video.name,
           length_seconds: video.length_seconds,
           ...(video.upload_id ? { upload_id: video.upload_id } : {}),
@@ -130,10 +140,10 @@ export function Videos({
   // Sync selectedVideo when ids change
   useEffect(() => {
     if (ids.length > 0 && allVideos.length > 0) {
-      const video = allVideos.find((v) => v.video_id === ids[0]);
-      if (video && video.video_id && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
+      const video = allVideos.find((v) => v.id === ids[0]);
+      if (video && video.id && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
         setSelectedVideo({
-          id: video.video_id,
+          id: video.id,
           name: video.name,
           length_seconds: video.length_seconds,
           ...(video.upload_id ? { upload_id: video.upload_id } : {}),
@@ -146,6 +156,7 @@ export function Videos({
 
   // Track which video IDs have already had resources created
   const createdVideoIdsRef = useRef<Set<string>>(new Set());
+  const flushRef = useRef<(() => Promise<{ video_ids: string[] } | void>) | undefined>(undefined);
 
   // Initialize createdVideoIdsRef with current IDs
   useEffect(() => {
@@ -156,11 +167,10 @@ export function Videos({
   const videoMapping = useMemo(() => {
     const mapping: Record<string, VideoItem> = {};
     allVideos.forEach((v) => {
-      if (v.video_id && v.name && v.length_seconds !== null && v.length_seconds !== undefined) {
-        mapping[v.video_id] = {
-          id: v.video_id,
+      if (v.id && v.name && v.length_seconds !== null && v.length_seconds !== undefined) {
+        mapping[v.id] = {
+          id: v.id,
           name: v.name,
-          ...(v.description ? { description: v.description } : {}),
           length_seconds: v.length_seconds,
           ...(v.upload_id ? { upload_id: v.upload_id } : {}),
         };
@@ -170,7 +180,7 @@ export function Videos({
   }, [allVideos]);
 
   // Check if a video is suggested
-  const isSuggested = useCallback(
+  const _isSuggested = useCallback(
     (videoId: string) => suggestionsList.includes(videoId),
     [suggestionsList]
   );
@@ -178,15 +188,15 @@ export function Videos({
   const handleVideoSelect = useCallback(
     async (selectedIds: string[]) => {
       const videoId = selectedIds[0] || null;
-      
+
       if (videoId && videoMapping[videoId]) {
         const selectedVideoItem = videoMapping[videoId];
-        
+
         // Find if this is a newly selected video
         const isNewlySelected = !ids.includes(videoId) && !createdVideoIdsRef.current.has(videoId);
 
-        // Create resource for newly selected video
-        if (isNewlySelected) {
+        // Create resource for newly selected video (only if autosave is enabled)
+        if (isAutosaveEnabled && isNewlySelected) {
           const effectiveAgentId = videos_agent_id ?? agent_id;
           if (createVideosAction && effectiveAgentId && group_id) {
             try {
@@ -219,8 +229,50 @@ export function Videos({
         onChange([]);
       }
     },
-    [ids, onChange, createVideosAction, videos_agent_id, agent_id, group_id, videoMapping]
+    [ids, onChange, createVideosAction, videos_agent_id, agent_id, group_id, videoMapping, isAutosaveEnabled]
   );
+
+  // Flush function for manual save mode - creates pending resources and returns all IDs
+  flushRef.current = async (): Promise<{ video_ids: string[] } | void> => {
+    const effectiveAgentId = videos_agent_id ?? agent_id;
+    if (!createVideosAction || !effectiveAgentId || !group_id) {
+      return { video_ids: ids };
+    }
+
+    const allIds: string[] = [...ids];
+
+    // Create resources for any selected videos that haven't been created yet
+    for (const videoId of ids) {
+      if (!createdVideoIdsRef.current.has(videoId)) {
+        try {
+          const videoItem = videoMapping[videoId];
+          await createVideosAction({
+            body: {
+              agent_id: effectiveAgentId,
+              group_id: group_id,
+              name: videoItem?.name ?? "",
+              length_seconds: videoItem?.length_seconds ?? 0,
+              description: videoItem?.description ?? "",
+              mcp: false,
+            },
+          });
+          createdVideoIdsRef.current.add(videoId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`Failed to create video resource for ${videoId}:`, error);
+        }
+      }
+    }
+
+    return { video_ids: allIds };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Check if any video resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

@@ -33,15 +33,17 @@ type CreateDraftProblemStatementsOut = OutputOf<
 export interface ProblemStatementsProps {
   problem_statement_id?: string | null; // Current problem_statement_id (standardized prop name)
   problem_statement_resource?: {
-    id: string | null;
-    problem_statement: string | null;
+    id?: string | null;
+    name?: string | null;
+    problem_statement?: string | null;
     generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_problem_statement?: boolean; // Whether to show this resource picker
   problem_statement_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   problem_statements?: Array<{
-    id: string | null;
-    problem_statement: string | null;
+    id?: string | null;
+    name?: string | null;
+    problem_statement?: string | null;
     generated?: boolean | null;
   }>; // Array of problem statement suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
@@ -248,13 +250,16 @@ export function ProblemStatements({
     lastServerTextRef.current = serverValue;
   }, [resourceProblemStatement, defaultProblemStatement, resourceId, problemStatementsById]);
 
-  const pickerItems: Array<{
-    id: string | null;
-    problem_statement: string | null;
-    generated?: boolean | null;
-  }> = useMemo(() => {
+  // Transform to ensure id and problem_statement are non-null for GenericPicker
+  const pickerItems = useMemo(() => {
     if (problemStatementsArray.length > 0) {
-      return problemStatementsArray;
+      return problemStatementsArray
+        .filter((ps) => ps.id != null && ps.problem_statement != null)
+        .map((ps) => ({
+          id: ps.id!,
+          problem_statement: ps.problem_statement!,
+          ...(ps.generated !== undefined ? { generated: ps.generated } : {}),
+        }));
     }
     return Object.values(suggestionsMapping);
   }, [problemStatementsArray, suggestionsMapping]);
