@@ -16,6 +16,8 @@ from typing import Any, cast
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from app.api.v4.artifacts.persona.get import get_persona_internal
+from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -23,11 +25,8 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
-    GetPersonaApiRequest,
     GetPersonaResourceTreeSqlParams,
     GetPersonaResourceTreeSqlRow,
-    GetPersonaSqlParams,
-    GetPersonaSqlRow,
     QGetPersonaResourceTreeV4Node,
 )
 from app.utils.logging.db_logger import get_logger
@@ -41,7 +40,6 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 # SQL paths
-SQL_PATH = "app/sql/v4/queries/personas/get_persona_complete.sql"
 RESOURCE_TREE_SQL_PATH = (
     "app/sql/v4/queries/personas/get_persona_resource_tree_complete.sql"
 )
@@ -65,7 +63,7 @@ PERSONA_RESOURCE_TYPES = [
     "instructions",
     "flags",
     "examples",
-    "fields",
+    "parameter_fields",
     "departments",
 ]
 
@@ -73,9 +71,7 @@ PERSONA_RESOURCE_TYPES = [
 class GeneratePersonaPayload(GetPersonaApiRequest):
     """Request to generate persona resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = (
-        None  # Optional: "name", "description", "basic", "content", "general"/"all"
-    )
+    agent_id: uuid.UUID  # Required: explicit agent ID from frontend
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
@@ -126,7 +122,7 @@ async def _persona_generate_impl(
 
     This function:
     1. Validates resource types
-    2. Fetches persona data and maps agent_type to agent_id
+    2. Fetches persona data via internal function for seed nodes
     3. Expands resources via tree traversal
     4. Calls prepare_persona_generation SQL (rate limit, group/run, context)
     5. Renders developer instructions with Jinja
@@ -167,103 +163,58 @@ async def _persona_generate_impl(
             )
             return
 
-        async with get_db_connection() as conn:
-            # Step 1: Fetch persona data to get agent_id mapping
-            params = GetPersonaSqlParams(
-                profile_id=profile_id,
-                persona_id=data.persona_id,
-                color_search=data.color_search,
-                icon_search=data.icon_search,
-                color_show_selected=data.color_show_selected,
-                icon_show_selected=data.icon_show_selected,
-                descriptions_search=data.descriptions_search,
-                instructions_search=data.instructions_search,
-                field_search=data.field_search,
-                field_show_selected=data.field_show_selected,
-                draft_id=data.draft_id,
-                mcp=getattr(data, "mcp", False) or False,
-            )
+        # Use agent_id directly from payload (frontend provides it)
+        agent_id = data.agent_id
 
-            result = cast(
-                GetPersonaSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+        # Step 1: Fetch persona data for seed nodes using internal function
+        result = await get_persona_internal(
+            profile_id=profile_id,
+            persona_id=data.persona_id,
+            draft_id=data.draft_id,
+        )
 
-            # Map agent_type to agent_id from response
-            agent_id: uuid.UUID | None = None
-            if data.agent_type:
-                agent_type_map = {
-                    "name": result.name_agent_id,
-                    "description": result.description_agent_id,
-                    "color": result.color_agent_id,
-                    "icon": result.icon_agent_id,
-                    "instructions": result.instructions_agent_id,
-                    "flags": result.flag_agent_id,
-                    "departments": result.departments_agent_id,
-                    "fields": result.fields_agent_id,
-                    "examples": result.examples_agent_id,
-                    "basic": result.basic_agent_id,
-                    "content": result.content_agent_id,
-                    "general": result.general_agent_id,
-                    "all": result.general_agent_id,
-                }
-                agent_id = agent_type_map.get(data.agent_type)
+        # Step 2: Seed resource nodes from the persona GET result
+        seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
 
-            if not agent_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"No agent found for agent_type: {data.agent_type}",
-                        artifact_type="persona",
-                        group_id=str(result.group_id) if result.group_id else None,
-                        resource_type="persona",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Step 2: Seed resource nodes from the persona GET result
-            seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
-
-            def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
-                if resource_id:
-                    seed_nodes.append(
-                        QGetPersonaResourceTreeV4Node(
-                            resource_type=resource_type,
-                            resource_id=resource_id,
-                        )
+        def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
+            if resource_id:
+                seed_nodes.append(
+                    QGetPersonaResourceTreeV4Node(
+                        resource_type=resource_type,
+                        resource_id=resource_id,
                     )
+                )
 
-            if result.names:
-                for name in result.names:
-                    add_seed("names", name.id)
-            if result.descriptions:
-                for desc in result.descriptions:
-                    add_seed("descriptions", desc.id)
-            if result.colors:
-                for color in result.colors:
-                    add_seed("colors", color.id)
-            if result.icons:
-                for icon in result.icons:
-                    add_seed("icons", icon.id)
-            if result.instructions:
-                for instruction in result.instructions:
-                    add_seed("instructions", instruction.id)
-            if result.flags:
-                for flag in result.flags:
-                    add_seed("flags", flag.id)
-            if result.departments:
-                for dept in result.departments:
-                    add_seed("departments", dept.department_id)
-            if result.fields:
-                for field in result.fields:
-                    add_seed("fields", field.field_id)
-            if result.examples:
-                for example in result.examples:
-                    add_seed("examples", example.id)
+        if result.names:
+            for name in result.names:
+                add_seed("names", name.id)
+        if result.descriptions:
+            for desc in result.descriptions:
+                add_seed("descriptions", desc.id)
+        if result.colors:
+            for color in result.colors:
+                add_seed("colors", color.id)
+        if result.icons:
+            for icon in result.icons:
+                add_seed("icons", icon.id)
+        if result.instructions:
+            for instruction in result.instructions:
+                add_seed("instructions", instruction.id)
+        if result.flags:
+            for flag in result.flags:
+                add_seed("flags", flag.flag_option_id)
+        if result.departments:
+            for dept in result.departments:
+                add_seed("departments", dept.department_id)
+        if result.parameter_fields:
+            for field in result.parameter_fields:
+                add_seed("parameter_fields", field.field_id)
+        if result.examples:
+            for example in result.examples:
+                add_seed("examples", example.id)
 
-            # Step 3: Expand seed nodes via resource tree traversal
+        # Step 3: Expand seed nodes via resource tree traversal
+        async with get_db_connection() as conn:
             resources: list[dict[str, Any]] = []
             if seed_nodes:
                 resource_tree_params = GetPersonaResourceTreeSqlParams(

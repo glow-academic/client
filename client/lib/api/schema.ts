@@ -17,6 +17,8 @@ export interface paths {
          * Get Persona
          * @description Get persona information using two-pass architecture.
          *
+         *     This is a thin HTTP wrapper around get_persona_internal().
+         *
          *     Query 1: Access check (user role, departments, persona state)
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)

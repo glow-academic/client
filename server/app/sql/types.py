@@ -12293,313 +12293,6 @@ class GetPersonaAccessApiResponse(BaseModel):
 
 
 
-# Generated from: get_persona
-
-class GetPersonaSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    color_search: str | None = None
-    icon_search: str | None = None
-    color_show_selected: bool | None = None
-    icon_show_selected: bool | None = None
-    descriptions_search: str | None = None
-    instructions_search: str | None = None
-    field_search: str | None = None
-    field_show_selected: bool | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.color_search,
-            self.icon_search,
-            self.color_show_selected,
-            self.icon_show_selected,
-            self.descriptions_search,
-            self.instructions_search,
-            self.field_search,
-            self.field_show_selected,
-            self.draft_id,
-            self.mcp,
-        )
-
-class QGetPersonaV4ColorOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    hex_code: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4ColorResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    hex_code: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4Example(BaseModel):
-
-    id: UUID | None
-    example: str | None
-    idx: int | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4Field(BaseModel):
-
-    field_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-    parameter_id: UUID | None
-
-
-
-
-class QGetPersonaV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4IconOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    value: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4IconResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    value: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4InstructionsResource(BaseModel):
-
-    id: UUID | None
-    template: str | None
-    generated: bool | None
-
-
-
-
-class QGetPersonaV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-class GetPersonaSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    persona_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetPersonaV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetPersonaV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetPersonaV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetPersonaV4DescriptionResource] | None = None
-    color_id: UUID | None = None
-    color_resource: QGetPersonaV4ColorResource | None = None
-    show_color: bool | None = None
-    color_agent_id: UUID | None = None
-    color_required: bool | None = None
-    color_suggestions: list[UUID] | None = None
-    colors: list[QGetPersonaV4ColorOption] | None = None
-    icon_id: UUID | None = None
-    icon_resource: QGetPersonaV4IconResource | None = None
-    show_icon: bool | None = None
-    icon_agent_id: UUID | None = None
-    icon_required: bool | None = None
-    icon_suggestions: list[UUID] | None = None
-    icons: list[QGetPersonaV4IconOption] | None = None
-    instructions_id: UUID | None = None
-    instructions_resource: QGetPersonaV4InstructionsResource | None = None
-    show_instructions: bool | None = None
-    instructions_agent_id: UUID | None = None
-    instructions_required: bool | None = None
-    instructions_suggestions: list[UUID] | None = None
-    instructions: list[QGetPersonaV4InstructionsResource] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetPersonaV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flags: list[QGetPersonaV4FlagResource] | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetPersonaV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetPersonaV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetPersonaV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetPersonaV4Field] | None = None
-    example_ids: list[UUID] | None = None
-    example_resources: list[QGetPersonaV4Example] | None = None
-    show_examples: bool | None = None
-    examples_agent_id: UUID | None = None
-    examples_required: bool | None = None
-    example_suggestions: list[UUID] | None = None
-    examples: list[QGetPersonaV4Example] | None = None
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-
-class GetPersonaApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    color_search: str | None = None
-    icon_search: str | None = None
-    color_show_selected: bool | None = None
-    icon_show_selected: bool | None = None
-    descriptions_search: str | None = None
-    instructions_search: str | None = None
-    field_search: str | None = None
-    field_show_selected: bool | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-
-class GetPersonaApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    persona_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetPersonaV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetPersonaV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetPersonaV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetPersonaV4DescriptionResource] | None = None
-    color_id: UUID | None = None
-    color_resource: QGetPersonaV4ColorResource | None = None
-    show_color: bool | None = None
-    color_agent_id: UUID | None = None
-    color_required: bool | None = None
-    color_suggestions: list[UUID] | None = None
-    colors: list[QGetPersonaV4ColorOption] | None = None
-    icon_id: UUID | None = None
-    icon_resource: QGetPersonaV4IconResource | None = None
-    show_icon: bool | None = None
-    icon_agent_id: UUID | None = None
-    icon_required: bool | None = None
-    icon_suggestions: list[UUID] | None = None
-    icons: list[QGetPersonaV4IconOption] | None = None
-    instructions_id: UUID | None = None
-    instructions_resource: QGetPersonaV4InstructionsResource | None = None
-    show_instructions: bool | None = None
-    instructions_agent_id: UUID | None = None
-    instructions_required: bool | None = None
-    instructions_suggestions: list[UUID] | None = None
-    instructions: list[QGetPersonaV4InstructionsResource] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetPersonaV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flags: list[QGetPersonaV4FlagResource] | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetPersonaV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetPersonaV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetPersonaV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetPersonaV4Field] | None = None
-    example_ids: list[UUID] | None = None
-    example_resources: list[QGetPersonaV4Example] | None = None
-    show_examples: bool | None = None
-    examples_agent_id: UUID | None = None
-    examples_required: bool | None = None
-    example_suggestions: list[UUID] | None = None
-    examples: list[QGetPersonaV4Example] | None = None
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-
-
-
 # Generated from: get_persona_docs_columns
 
 class GetPersonaDocsColumnsSqlParams(BaseModel):
@@ -20781,6 +20474,7 @@ class GetScenarioIdsSqlRow(BaseModel):
     videos_has_tools: bool | None = None
     questions_has_tools: bool | None = None
     templates_has_tools: bool | None = None
+    video_enabled_value: bool | None = None
 
 class GetScenarioIdsApiRequest(BaseModel):
 
@@ -20836,6 +20530,7 @@ class GetScenarioIdsApiResponse(BaseModel):
     videos_has_tools: bool | None = None
     questions_has_tools: bool | None = None
     templates_has_tools: bool | None = None
+    video_enabled_value: bool | None = None
 
 
 
@@ -25597,12 +25292,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaAccessApiRequest",
         "GetPersonaAccessApiResponse",
     ),
-    "app/sql/v4/queries/personas/get_persona_complete.sql": (
-        "GetPersonaSqlParams",
-        "GetPersonaSqlRow",
-        "GetPersonaApiRequest",
-        "GetPersonaApiResponse",
-    ),
     "app/sql/v4/queries/personas/get_persona_docs_columns_complete.sql": (
         "GetPersonaDocsColumnsSqlParams",
         "GetPersonaDocsColumnsSqlRow",
@@ -27952,11 +27641,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/personas/get_persona_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/personas/get_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload

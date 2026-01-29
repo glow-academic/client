@@ -13,7 +13,7 @@
           "personas"
         ],
         "summary": "Get Persona",
-        "description": "Get persona information using two-pass architecture.\n\nQuery 1: Access check (user role, departments, persona state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
+        "description": "Get persona information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_persona_internal().\n\nQuery 1: Access check (user role, departments, persona state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
         "operationId": "get_persona_api_v4_personas_get_post",
         "parameters": [
           {

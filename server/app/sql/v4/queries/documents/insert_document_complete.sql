@@ -136,14 +136,29 @@ insert_depts AS (
     RETURNING document_id
 ),
 insert_fields AS (
+    -- Insert into document_parameter_fields_junction (link document to parameter_fields_resource entries)
     INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
-    SELECT document_id, pfr.id, true, NOW()
-    FROM unnest(field_ids) as field_resource_id
+    SELECT id.document_id, pfr.id, true, NOW()
+    FROM insert_doc id
+    CROSS JOIN unnest(field_ids) as field_resource_id
     JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
     WHERE cardinality(field_ids) > 0
+    ON CONFLICT (document_id, parameter_field_id) DO NOTHING
+    RETURNING document_id
+),
+insert_parameters AS (
+    -- Populate document_parameters_junction from field -> parameter relationships
+    INSERT INTO document_parameters_junction (document_id, parameter_id, type, active, created_at)
+    SELECT DISTINCT id.document_id, pfr.parameter_id, 'direct'::link_type, true, NOW()
+    FROM insert_doc id
+    CROSS JOIN unnest(field_ids) as field_resource_id
+    JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
+    WHERE cardinality(field_ids) > 0
+      AND pfr.parameter_id IS NOT NULL
+    ON CONFLICT (document_id, parameter_id, type) DO NOTHING
     RETURNING document_id
 )
-SELECT 
+SELECT
     document_id::text as document_id,
     (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 $$;

@@ -94,7 +94,10 @@ RETURNS TABLE (
     images_has_tools boolean,
     videos_has_tools boolean,
     questions_has_tools boolean,
-    templates_has_tools boolean
+    templates_has_tools boolean,
+
+    -- Video enabled flag value (for video parameter filtering)
+    video_enabled_value boolean
 )
 LANGUAGE sql
 STABLE
@@ -462,53 +465,70 @@ problem_statement_resource_data AS (
     ) as problem_statement_id
     FROM params
 ),
+-- Flag retrieval follows the same pattern as Persona: draft flags are retrieved by exact ID
+-- without filtering by flag name, since the draft stores the exact flag_option_id selected.
+-- The fallback to scenario_flags_junction uses the appropriate flag names for each flag type.
 active_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'active' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'scenario_active' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'scenario_active' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as active_flag_id
     FROM params
 ),
 objectives_enabled_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'objectives_enabled' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'objectives_enabled' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'objectives_enabled' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as objectives_enabled_flag_id
     FROM params
 ),
 images_enabled_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'images_enabled' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'images_enabled' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'images_enabled' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as images_enabled_flag_id
     FROM params
 ),
 video_enabled_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'video_enabled' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'video_enabled' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'video_enabled' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as video_enabled_flag_id
     FROM params
 ),
 questions_enabled_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'questions_enabled' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'questions_enabled' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'questions_enabled' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as questions_enabled_flag_id
     FROM params
 ),
 problem_statement_enabled_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'problem_statement_enabled' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'problem_statement_enabled' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'problem_statement_enabled' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as problem_statement_enabled_flag_id
     FROM params
 ),
 use_templates_flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'use_templates' AND df.active = true LIMIT 1),
+        (SELECT df.flags_id FROM flags_drafts_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'use_templates' LIMIT 1),
         (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.name = 'use_templates' AND sf.value = TRUE AND sf.active = true LIMIT 1)
     ) as use_templates_flag_id
+    FROM params
+),
+-- Video enabled value for filtering (not just flag ID, but actual boolean value)
+video_enabled_value_data AS (
+    SELECT COALESCE(
+        (SELECT sf.value
+         FROM scenario_flags_junction sf
+         JOIN flags_resource f ON sf.flag_id = f.id
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params)
+           AND f.name = 'video_enabled'
+           AND sf.active = true
+         LIMIT 1),
+        false
+    ) as video_enabled_value
     FROM params
 ),
 -- Candidate agents data (for Python-side agent scoring)
@@ -618,7 +638,10 @@ SELECT
     tec.images_has_tools,
     tec.videos_has_tools,
     tec.questions_has_tools,
-    tec.templates_has_tools
+    tec.templates_has_tools,
+
+    -- Video enabled flag value
+    (SELECT video_enabled_value FROM video_enabled_value_data) as video_enabled_value
 FROM params x
 CROSS JOIN tools_existence_check tec;
 $$;

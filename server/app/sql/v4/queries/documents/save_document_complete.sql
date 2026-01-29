@@ -80,7 +80,8 @@ BEGIN
         DELETE FROM document_names_junction WHERE document_id = v_document_id;
         DELETE FROM document_descriptions_junction WHERE document_id = v_document_id;
         DELETE FROM document_departments_junction WHERE document_id = v_document_id;
-        DELETE FROM document_fields_junction WHERE document_id = v_document_id;
+        DELETE FROM document_parameter_fields_junction WHERE document_id = v_document_id;
+        DELETE FROM document_parameters_junction WHERE document_id = v_document_id;
         DELETE FROM document_uploads_resource WHERE document_id = v_document_id;
         -- Update existing active flag if it exists
         UPDATE document_flags_junction SET
@@ -222,16 +223,33 @@ BEGIN
     ),
     -- Link fields (old ones already deleted above if update)
     link_fields AS (
-        INSERT INTO document_fields_junction (document_id, field_id, active, created_at)
-        SELECT 
+        INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
+        SELECT
             x.document_id,
-            field_id,
+            pfr.id,
             true,
             NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.field_ids) as field_id
+        CROSS JOIN UNNEST(x.field_ids) as field_resource_id
+        JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
         WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT document_fields_pkey DO UPDATE SET
+        ON CONFLICT (document_id, parameter_field_id) DO NOTHING
+    ),
+    -- Link parameters (derived from field -> parameter relationships)
+    link_parameters AS (
+        INSERT INTO document_parameters_junction (document_id, parameter_id, type, active, created_at)
+        SELECT DISTINCT
+            x.document_id,
+            pfr.parameter_id,
+            'direct'::link_type,
+            true,
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.field_ids) as field_resource_id
+        JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
+        WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
+          AND pfr.parameter_id IS NOT NULL
+        ON CONFLICT (document_id, parameter_id, type) DO UPDATE SET
             active = true
     ),
     -- Link view_uploads_entry (old ones already deleted above if update)

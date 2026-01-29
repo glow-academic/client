@@ -45,7 +45,7 @@ RETURNS TABLE (
     resources types.q_get_persona_resource_tree_v4_node[]
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 AS $$
 DECLARE
     parent_node RECORD;
