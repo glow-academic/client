@@ -213,13 +213,15 @@ settings_resolution AS (
 ),
 draft_ids_data AS (
     -- Get draft IDs for the profile
+    -- Must join through profile_profiles_junction to translate profile_id -> profiles_id
     SELECT COALESCE(
         ARRAY_AGG(d.id ORDER BY d.updated_at DESC),
         ARRAY[]::uuid[]
     ) as draft_ids
-    FROM profiles_drafts_connection pdj
-    JOIN view_drafts_entry d ON d.id = pdj.draft_id
-    WHERE pdj.profiles_id = (SELECT profile_id FROM params)
+    FROM profile_profiles_junction ppj
+    JOIN profiles_drafts_connection pdc ON pdc.profiles_id = ppj.profiles_id
+    JOIN view_drafts_entry d ON d.id = pdc.draft_id
+    WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
 session_data AS (
     SELECT id as session_id

@@ -650,15 +650,17 @@ simulation_ids_computed AS (
 drafts_data AS (
     -- Get all drafts for effective profile
     -- Draft data is now stored in draft_* junction tables, not in payload
+    -- Must join through profile_profiles_junction to translate profile_id -> profiles_id
     SELECT
         d.id,
         d.artifact::text as artifact_type,
         NULL::jsonb as payload,
         d.version,
         d.updated_at
-    FROM profiles_drafts_connection pdj
-    JOIN view_drafts_entry d ON d.id = pdj.draft_id
-    WHERE pdj.profiles_id = (SELECT profile_id FROM params)
+    FROM profile_profiles_junction ppj
+    JOIN profiles_drafts_connection pdc ON pdc.profiles_id = ppj.profiles_id
+    JOIN view_drafts_entry d ON d.id = pdc.draft_id
+    WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
 drafts_aggregated AS (
     -- Aggregate drafts as array of composite types
