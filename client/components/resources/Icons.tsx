@@ -52,6 +52,11 @@ export interface IconsProps {
   id?: string;
   required?: boolean;
   searchTerm?: string;
+  onSearchChange?: (term: string) => void; // Callback when search term changes
+  showSelectedFilter?: boolean; // Whether to filter to show only selected
+  onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // Legacy props for backward compatibility
@@ -80,6 +85,11 @@ export function Icons({
   id = "icon",
   required = false,
   searchTerm = "",
+  onSearchChange,
+  showSelectedFilter = false,
+  onShowSelectedChange,
+  group_id,
+  agent_id,
   onGenerate,
   isGenerating = false,
   // Legacy props for backward compatibility
@@ -145,18 +155,27 @@ export function Icons({
     [suggestedIconIds]
   );
 
-  // Filter icons based on search term
+  // Filter icons based on search term and showSelectedFilter
   const displayIcons = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return iconItems;
+    let filtered = iconItems;
+
+    // Filter to show only selected if showSelectedFilter is true
+    if (showSelectedFilter && currentId) {
+      filtered = filtered.filter((item) => item.id === currentId);
     }
-    const searchLower = searchTerm.toLowerCase();
-    return iconItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchLower) ||
-        item.value.toLowerCase().includes(searchLower)
-    );
-  }, [iconItems, searchTerm]);
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(searchLower) ||
+          item.value.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filtered;
+  }, [iconItems, searchTerm, showSelectedFilter, currentId]);
 
   // Handle icon selection - just update parent state directly
   const handleSelect = useCallback(

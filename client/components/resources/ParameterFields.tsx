@@ -284,6 +284,41 @@ export function ParameterFields({
     }
   }, [registerFlush]);
 
+  // Track if we've synced conditional parameters on initial load
+  const hasInitializedConditionalsRef = useRef(false);
+
+  // Sync conditional parameters on load: if a selected field has a conditional_parameter_id,
+  // ensure that parameter is added to parameter_ids
+  useEffect(() => {
+    // Only run once when we have both selected resources and available fields
+    if (hasInitializedConditionalsRef.current) return;
+    if (!onConditionalParameterToggle) return;
+    if (selectedResources.length === 0 || availableFields.length === 0) return;
+
+    hasInitializedConditionalsRef.current = true;
+
+    // Build a set of field_ids that are currently selected
+    const selectedFieldIds = new Set<string>();
+    selectedResources.forEach((resource) => {
+      if (resource.field_id) {
+        selectedFieldIds.add(resource.field_id);
+      }
+    });
+
+    // Check each available field - if it's selected and has a conditional_parameter_id,
+    // trigger the toggle to add that parameter
+    availableFields.forEach((field) => {
+      if (
+        field.field_id &&
+        field.conditional_parameter_id &&
+        selectedFieldIds.has(field.field_id)
+      ) {
+        // This field is selected and unlocks a conditional parameter
+        onConditionalParameterToggle(field.conditional_parameter_id, true);
+      }
+    });
+  }, [selectedResources, availableFields, onConditionalParameterToggle]);
+
   const createParameterField = useCallback(
     async (parameterId: string, fieldId: string) => {
       const key = `${parameterId}:${fieldId}`;

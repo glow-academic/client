@@ -29,11 +29,11 @@ import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Examples } from "@/components/resources/Examples";
-import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,8 +75,6 @@ type CreateDraftInstructionsOut = OutputOf<
 >;
 type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
-type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftParameterFieldsIn = InputOf<
   "/api/v4/resources/parameter_fields",
   "post"
@@ -115,9 +113,6 @@ export interface PersonaProps {
   createExamplesAction?: (
     input: CreateDraftExamplesIn
   ) => Promise<CreateDraftExamplesOut>;
-  createDocumentsAction?: (
-    input: CreateDraftDocumentsIn
-  ) => Promise<CreateDraftDocumentsOut>;
   createParameterFieldsAction?: (
     input: CreateDraftParameterFieldsIn
   ) => Promise<CreateDraftParameterFieldsOut>;
@@ -152,7 +147,9 @@ function PersonaComponent({
   };
 
   // Registry of flush callbacks from creatable resource components
-  const flushRegistryRef = useRef<Map<string, () => Promise<FlushResult | void>>>(new Map());
+  const flushRegistryRef = useRef<
+    Map<string, () => Promise<FlushResult | void>>
+  >(new Map());
 
   // Create stable registerFlush callback
   const createRegisterFlush = useCallback((key: string) => {
@@ -386,8 +383,9 @@ function PersonaComponent({
           );
         case "parameter_fields":
           return (
-            stablePersonaDataFields.parameter_field_resources?.some((f) => f.generated) ??
-            false
+            stablePersonaDataFields.parameter_field_resources?.some(
+              (f) => f.generated
+            ) ?? false
           );
         case "examples":
           return (
@@ -418,6 +416,37 @@ function PersonaComponent({
         parameter_ids: [] as string[],
       };
     }
+
+    // Derive parameter_ids if empty but we have parameter_field_resources
+    // This ensures conditional parameters show up on load
+    let derivedParameterIds = data.parameter_ids ?? [];
+    if (
+      derivedParameterIds.length === 0 &&
+      data.parameter_field_resources &&
+      data.parameter_field_resources.length > 0
+    ) {
+      const paramIdsSet = new Set<string>();
+      const availableFields = data.parameter_fields ?? [];
+
+      // For each selected field resource, add its parent parameter and any conditional parameters
+      data.parameter_field_resources.forEach((fieldResource) => {
+        // Add the parent parameter (the parameter this field belongs to)
+        if (fieldResource.parameter_id) {
+          paramIdsSet.add(fieldResource.parameter_id);
+        }
+
+        // Find the available field to check for conditional_parameter_id
+        const availableField = availableFields.find(
+          (f) => f.field_id === fieldResource.field_id
+        );
+        if (availableField?.conditional_parameter_id) {
+          paramIdsSet.add(availableField.conditional_parameter_id);
+        }
+      });
+
+      derivedParameterIds = Array.from(paramIdsSet);
+    }
+
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
     return {
@@ -430,7 +459,7 @@ function PersonaComponent({
       department_ids: data.department_ids ?? [],
       parameter_field_ids: data.parameter_field_ids ?? [],
       example_ids: data.example_ids ?? [],
-      parameter_ids: data.parameter_ids ?? [],
+      parameter_ids: derivedParameterIds,
     };
     // Remove personaData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -493,7 +522,8 @@ function PersonaComponent({
         prev.active_flag_id !== newState.active_flag_id ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(newState.parameter_field_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !==
+          JSON.stringify(newState.parameter_field_ids) ||
         JSON.stringify(prev.example_ids) !==
           JSON.stringify(newState.example_ids) ||
         JSON.stringify(prev.parameter_ids) !==
@@ -744,9 +774,7 @@ function PersonaComponent({
         window.dispatchEvent(
           new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
         );
-      } catch (error) {
-        // Log error for debugging
-        console.error("[Persona Draft] Patch failed:", error);
+      } catch {
         // Show user feedback
         toast.error("Failed to save draft", {
           description:
@@ -851,27 +879,33 @@ function PersonaComponent({
           body: {
             input_draft_id: draftId || null,
             // Use flush results (fresh) with fallback to formState (for non-flushed resources)
-            name_id: mergedFlushResults.name_id !== undefined
-              ? mergedFlushResults.name_id
-              : currentFormState.name_id,
-            description_id: mergedFlushResults.description_id !== undefined
-              ? mergedFlushResults.description_id
-              : currentFormState.description_id,
-            color_id: mergedFlushResults.color_id !== undefined
-              ? mergedFlushResults.color_id
-              : currentFormState.color_id,
+            name_id:
+              mergedFlushResults.name_id !== undefined
+                ? mergedFlushResults.name_id
+                : currentFormState.name_id,
+            description_id:
+              mergedFlushResults.description_id !== undefined
+                ? mergedFlushResults.description_id
+                : currentFormState.description_id,
+            color_id:
+              mergedFlushResults.color_id !== undefined
+                ? mergedFlushResults.color_id
+                : currentFormState.color_id,
             icon_id: currentFormState.icon_id,
-            instructions_id: mergedFlushResults.instructions_id !== undefined
-              ? mergedFlushResults.instructions_id
-              : currentFormState.instructions_id,
+            instructions_id:
+              mergedFlushResults.instructions_id !== undefined
+                ? mergedFlushResults.instructions_id
+                : currentFormState.instructions_id,
             active_flag_id: currentFormState.active_flag_id,
             department_ids: currentFormState.department_ids,
-            parameter_field_ids: mergedFlushResults.parameter_field_ids !== undefined
-              ? mergedFlushResults.parameter_field_ids
-              : currentFormState.parameter_field_ids,
-            example_ids: mergedFlushResults.example_ids !== undefined
-              ? mergedFlushResults.example_ids
-              : currentFormState.example_ids,
+            parameter_field_ids:
+              mergedFlushResults.parameter_field_ids !== undefined
+                ? mergedFlushResults.parameter_field_ids
+                : currentFormState.parameter_field_ids,
+            example_ids:
+              mergedFlushResults.example_ids !== undefined
+                ? mergedFlushResults.example_ids
+                : currentFormState.example_ids,
             parameter_ids: currentFormState.parameter_ids,
             expected_version: lastSavedVersionRef.current,
           },
@@ -894,7 +928,9 @@ function PersonaComponent({
       // Ensure minimum display duration for manual save
       const elapsed = Date.now() - startTime;
       if (elapsed < MIN_SAVING_DURATION) {
-        await new Promise((resolve) => setTimeout(resolve, MIN_SAVING_DURATION - elapsed));
+        await new Promise((resolve) =>
+          setTimeout(resolve, MIN_SAVING_DURATION - elapsed)
+        );
       }
 
       window.dispatchEvent(
@@ -908,8 +944,7 @@ function PersonaComponent({
 
       // Show success toast for manual save
       toast.success(isNewDraft ? "Draft created" : "Draft saved");
-    } catch (error) {
-      console.error("[Persona] Save failed:", error);
+    } catch {
       window.dispatchEvent(
         new CustomEvent("save-status-change", { detail: { status: "error" } })
       );
@@ -944,6 +979,7 @@ function PersonaComponent({
       field_ids?: string[];
       department_ids?: string[];
       example_ids?: string[];
+      parameter_field_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -989,7 +1025,10 @@ function PersonaComponent({
             const newParameterFieldIds = data.parameter_field_ids.filter(
               (id) => !prev.parameter_field_ids.includes(id)
             );
-            updates.parameter_field_ids = [...prev.parameter_field_ids, ...newParameterFieldIds];
+            updates.parameter_field_ids = [
+              ...prev.parameter_field_ids,
+              ...newParameterFieldIds,
+            ];
           }
           if (data.department_ids && data.department_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
@@ -1271,13 +1310,19 @@ function PersonaComponent({
 
   const handleGenerateParameters = useCallback(
     async () =>
-      handleGenerateResources(["parameters"], determineAgentType(["parameters"])),
+      handleGenerateResources(
+        ["parameters"],
+        determineAgentType(["parameters"])
+      ),
     [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateParameterFields = useCallback(
     async () =>
-      handleGenerateResources(["parameter_fields"], determineAgentType(["parameter_fields"])),
+      handleGenerateResources(
+        ["parameter_fields"],
+        determineAgentType(["parameter_fields"])
+      ),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -1326,7 +1371,11 @@ function PersonaComponent({
           // Also find fields that should be deselected (fields of removed parameters)
           const fieldsToRemove = new Set<string>();
           for (const field of allFields) {
-            if (field.parameter_id && toRemove.has(field.parameter_id) && field.id) {
+            if (
+              field.parameter_id &&
+              toRemove.has(field.parameter_id) &&
+              field.id
+            ) {
               fieldsToRemove.add(field.id);
             }
           }
@@ -1389,15 +1438,33 @@ function PersonaComponent({
       // Flush results take precedence (they're freshly created)
       const baseFormState = formStateRef.current;
       const effectiveFormState = {
-        name_id: flushResults.name_id !== undefined ? flushResults.name_id : baseFormState.name_id,
-        description_id: flushResults.description_id !== undefined ? flushResults.description_id : baseFormState.description_id,
-        color_id: flushResults.color_id !== undefined ? flushResults.color_id : baseFormState.color_id,
+        name_id:
+          flushResults.name_id !== undefined
+            ? flushResults.name_id
+            : baseFormState.name_id,
+        description_id:
+          flushResults.description_id !== undefined
+            ? flushResults.description_id
+            : baseFormState.description_id,
+        color_id:
+          flushResults.color_id !== undefined
+            ? flushResults.color_id
+            : baseFormState.color_id,
         icon_id: baseFormState.icon_id,
-        instructions_id: flushResults.instructions_id !== undefined ? flushResults.instructions_id : baseFormState.instructions_id,
+        instructions_id:
+          flushResults.instructions_id !== undefined
+            ? flushResults.instructions_id
+            : baseFormState.instructions_id,
         active_flag_id: baseFormState.active_flag_id,
         department_ids: baseFormState.department_ids,
-        parameter_field_ids: flushResults.parameter_field_ids !== undefined ? flushResults.parameter_field_ids : baseFormState.parameter_field_ids,
-        example_ids: flushResults.example_ids !== undefined ? flushResults.example_ids : baseFormState.example_ids,
+        parameter_field_ids:
+          flushResults.parameter_field_ids !== undefined
+            ? flushResults.parameter_field_ids
+            : baseFormState.parameter_field_ids,
+        example_ids:
+          flushResults.example_ids !== undefined
+            ? flushResults.example_ids
+            : baseFormState.example_ids,
         parameter_ids: baseFormState.parameter_ids,
       };
 
@@ -1417,14 +1484,18 @@ function PersonaComponent({
         throw new Error("Persona icon is required");
       }
 
-      if (personaData?.instructions_required && !effectiveFormState.instructions_id) {
+      if (
+        personaData?.instructions_required &&
+        !effectiveFormState.instructions_id
+      ) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
 
       if (
         personaData?.departments_required &&
-        (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)
+        (!effectiveFormState.department_ids ||
+          effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
@@ -1432,7 +1503,8 @@ function PersonaComponent({
 
       if (
         personaData?.parameter_fields_required &&
-        (!effectiveFormState.parameter_field_ids || effectiveFormState.parameter_field_ids.length === 0)
+        (!effectiveFormState.parameter_field_ids ||
+          effectiveFormState.parameter_field_ids.length === 0)
       ) {
         toast.error("Parameter fields are required");
         throw new Error("Parameter fields are required");
@@ -1440,7 +1512,8 @@ function PersonaComponent({
 
       if (
         personaData?.examples_required &&
-        (!effectiveFormState.example_ids || effectiveFormState.example_ids.length === 0)
+        (!effectiveFormState.example_ids ||
+          effectiveFormState.example_ids.length === 0)
       ) {
         toast.error("Examples are required");
         throw new Error("Examples are required");
@@ -1489,24 +1562,26 @@ function PersonaComponent({
             instructions_id: effectiveFormState.instructions_id,
 
             // Optional single-select
-            description_id: effectiveFormState.description_id ?? undefined,
-            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+            description_id: effectiveFormState.description_id ?? null,
+            active_flag_id: effectiveFormState.active_flag_id ?? null,
 
             // Optional multi-select
             department_ids:
               effectiveFormState.department_ids.length > 0
                 ? effectiveFormState.department_ids
-                : undefined,
-            field_ids:
-              effectiveFormState.parameter_field_ids.length > 0 ? effectiveFormState.parameter_field_ids : undefined,
+                : null,
+            parameter_field_ids:
+              effectiveFormState.parameter_field_ids.length > 0
+                ? effectiveFormState.parameter_field_ids
+                : null,
             example_ids:
               effectiveFormState.example_ids.length > 0
                 ? effectiveFormState.example_ids
-                : undefined,
+                : null,
             parameter_ids:
               effectiveFormState.parameter_ids.length > 0
                 ? effectiveFormState.parameter_ids
-                : undefined,
+                : null,
           },
         });
         toast.success(
@@ -1968,10 +2043,8 @@ function PersonaComponent({
                   required={currentPersonaData?.flag_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.flag_agent_id ?? null}
-                  {...((formState.icon_id ||
-                    currentPersonaData?.flag_resource?.icon_id) && {
-                    iconId: (formState.icon_id ||
-                      currentPersonaData?.flag_resource?.icon_id) as string,
+                  {...(formState.icon_id && {
+                    iconId: formState.icon_id as string,
                   })}
                 />
               </div>
@@ -2045,20 +2118,35 @@ function PersonaComponent({
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
-                  parameter_field_resources={currentPersonaData?.parameter_field_resources ?? []}
-                  show_parameter_fields={currentPersonaData?.show_parameter_fields ?? false}
+                  parameter_field_resources={
+                    currentPersonaData?.parameter_field_resources ?? []
+                  }
+                  show_parameter_fields={
+                    currentPersonaData?.show_parameter_fields ?? false
+                  }
                   parameter_fields={currentPersonaData?.parameter_fields ?? []}
                   parameter_ids={formState.parameter_ids}
                   parameters={currentPersonaData?.parameters ?? []}
-                  parameter_resources={currentPersonaData?.parameter_resources ?? []}
+                  parameter_resources={
+                    currentPersonaData?.parameter_resources ?? []
+                  }
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      parameter_field_ids: ids,
+                    }))
                   }
-                  onConditionalParameterToggle={handleConditionalParameterToggle}
+                  onConditionalParameterToggle={
+                    handleConditionalParameterToggle
+                  }
                   group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.parameter_fields_agent_id ?? null}
-                  required={currentPersonaData?.parameter_fields_required ?? false}
+                  agent_id={
+                    currentPersonaData?.parameter_fields_agent_id ?? null
+                  }
+                  required={
+                    currentPersonaData?.parameter_fields_required ?? false
+                  }
                   createParameterFieldsAction={createParameterFieldsAction}
                   onGenerate={handleGenerateParameterFields}
                   isGenerating={isGenerating("parameter_fields")}
@@ -2500,6 +2588,7 @@ function PersonaComponent({
       handleOpenStepCardModal,
       isAutosaveEnabled,
       registerFlushCallbacks,
+      createParameterFieldsAction,
     ]
   );
 
@@ -2599,8 +2688,8 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     prevProps.createColorsAction !== nextProps.createColorsAction ||
     prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
     prevProps.createExamplesAction !== nextProps.createExamplesAction ||
-    prevProps.createDocumentsAction !== nextProps.createDocumentsAction ||
-    prevProps.createParameterFieldsAction !== nextProps.createParameterFieldsAction
+    prevProps.createParameterFieldsAction !==
+      nextProps.createParameterFieldsAction
   ) {
     return false; // Function props changed, re-render
   }

@@ -30,8 +30,7 @@ export interface FlagsProps {
     id: string | null;
     name: string | null;
     description: string | null;
-    icon_id: string | null;
-    icon_name?: string | null;
+    icon: string | null;
     generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
   flagName?: string;
@@ -57,8 +56,7 @@ export interface FlagsProps {
     id: string;
     name: string;
     description: string;
-    icon_id: string | null;
-    icon_name?: string | null;
+    icon: string | null;
     generated?: boolean | null;
   } | null;
   flagId?: string | null;
@@ -94,14 +92,13 @@ export function Flags({
   const resolvedFlagName = flagName ?? resource?.name ?? "active";
   const resolvedFlagDescription =
     flagDescription ?? resource?.description ?? "Active flag";
-  const resolvedIconId = iconId ?? resource?.icon_id ?? null;
   const resolvedIcon = useMemo(() => {
     if (icon) return icon;
-    if (!resource?.icon_name) return null;
-    const IconComponent = getPersonaIconComponent(resource.icon_name);
+    if (!resource?.icon) return null;
+    const IconComponent = getPersonaIconComponent(resource.icon);
     if (!IconComponent) return null;
     return <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />;
-  }, [icon, resource?.icon_name]);
+  }, [icon, resource?.icon]);
 
   const [internalValue, setInternalValue] = React.useState(
     resourceId !== null && resourceId !== undefined
@@ -159,7 +156,7 @@ export function Flags({
                 group_id: group_id,
                 name: resolvedFlagName,
                 description: resolvedFlagDescription,
-                icon_id: resolvedIconId,
+                icon_id: iconId,
                 mcp: false,
               },
             });
@@ -188,7 +185,7 @@ export function Flags({
     createFlagsAction,
     resolvedFlagName,
     resolvedFlagDescription,
-    resolvedIconId,
+    iconId,
     onFlagIdChange,
     resourceId,
     resource?.id,
