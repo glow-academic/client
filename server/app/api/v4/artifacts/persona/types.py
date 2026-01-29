@@ -141,6 +141,7 @@ class GetPersonaApiResponse(BaseModel):
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
+    parameters_step_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
 
 

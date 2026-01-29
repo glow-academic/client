@@ -286,6 +286,7 @@ function PersonaComponent({
       parameters: personaData.parameters,
       basic_agent_id: personaData.basic_agent_id,
       content_agent_id: personaData.content_agent_id,
+      parameters_step_agent_id: personaData.parameters_step_agent_id,
     };
     // Intentionally depend on individual fields, not whole personaData object
     // to prevent recreation when only object reference changes
@@ -353,6 +354,7 @@ function PersonaComponent({
     personaData?.parameters,
     personaData?.basic_agent_id,
     personaData?.content_agent_id,
+    personaData?.parameters_step_agent_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -419,17 +421,13 @@ function PersonaComponent({
       };
     }
 
-    // Derive parameter_ids if empty but we have parameter_field_resources
-    // This ensures conditional parameters show up on load
-    let derivedParameterIds = data.parameter_ids ?? [];
-    if (
-      derivedParameterIds.length === 0 &&
-      data.parameter_field_resources &&
-      data.parameter_field_resources.length > 0
-    ) {
-      const paramIdsSet = new Set<string>();
-      const availableFields = data.parameter_fields ?? [];
+    // Derive parameter_ids from parameter_field_resources
+    // This ensures conditional parameters show up on load, even when parameter_ids
+    // is already populated (it may only contain base parameters, not conditional ones)
+    const paramIdsSet = new Set<string>(data.parameter_ids ?? []);
+    const availableFields = data.parameter_fields ?? [];
 
+    if (data.parameter_field_resources && data.parameter_field_resources.length > 0) {
       // For each selected field resource, add its parent parameter and any conditional parameters
       data.parameter_field_resources.forEach((fieldResource) => {
         // Add the parent parameter (the parameter this field belongs to)
@@ -445,9 +443,9 @@ function PersonaComponent({
           paramIdsSet.add(availableField.conditional_parameter_id);
         }
       });
-
-      derivedParameterIds = Array.from(paramIdsSet);
     }
+
+    const derivedParameterIds = Array.from(paramIdsSet);
 
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
@@ -2091,6 +2089,51 @@ function PersonaComponent({
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["parameters"] &&
+                stepResources["parameters"].length > 0 &&
+                currentPersonaData?.parameters_step_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "parameters"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "parameters",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["parameters"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["parameters"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["parameters"]!.some((rt) => canRegenerate(rt))
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
               <div className="space-y-6">
                 <Parameters

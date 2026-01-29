@@ -9176,6 +9176,8 @@ export interface components {
             basic_agent_id?: string | null;
             /** Content Agent Id */
             content_agent_id?: string | null;
+            /** Parameters Step Agent Id */
+            parameters_step_agent_id?: string | null;
             /** General Agent Id */
             general_agent_id?: string | null;
         };

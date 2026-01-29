@@ -59,6 +59,12 @@ original_fields AS (
     FROM params x
     JOIN persona_parameter_fields_junction ppfj ON ppfj.persona_id = x.persona_id AND ppfj.active = true
 ),
+original_parameters AS (
+    -- Get parameter IDs from original persona (including conditional parameters)
+    SELECT ppj.parameter_id
+    FROM params x
+    JOIN persona_parameters_junction ppj ON ppj.persona_id = x.persona_id AND ppj.active = true
+),
 default_call AS (
     SELECT id as call_id
     FROM view_calls_entry
@@ -209,8 +215,21 @@ copy_fields AS (
     FROM new_persona np
     CROSS JOIN original_fields ofi
     RETURNING persona_id
+),
+copy_parameters AS (
+    -- Copy parameter links from original persona (including conditional parameters)
+    INSERT INTO persona_parameters_junction (persona_id, parameter_id, type, active, created_at)
+    SELECT
+        np.id,
+        op.parameter_id,
+        'direct',
+        true,
+        NOW()
+    FROM new_persona np
+    CROSS JOIN original_parameters op
+    RETURNING persona_id
 )
-SELECT 
+SELECT
     (SELECT id FROM new_persona LIMIT 1) as new_persona_id,
     (SELECT name FROM original_persona LIMIT 1) as original_name,
     (SELECT actor_name FROM user_profile LIMIT 1) as actor_name

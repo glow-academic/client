@@ -20,6 +20,7 @@ from app.api.v4.artifacts.persona.permissions import (
     CandidateAgent,
     PERSONA_BASIC_RESOURCES,
     PERSONA_CONTENT_RESOURCES,
+    PERSONA_PARAMETERS_RESOURCES,
     PERSONA_RESOURCES,
     compute_can_edit,
     compute_color_required,
@@ -241,6 +242,9 @@ async def get_persona(
         content_agent_id = select_multi_resource_agent(
             candidate_agents, PERSONA_CONTENT_RESOURCES, PERSONA_RESOURCES, user_dept_set
         )
+        parameters_step_agent_id = select_multi_resource_agent(
+            candidate_agents, PERSONA_PARAMETERS_RESOURCES, PERSONA_RESOURCES, user_dept_set
+        )
         general_agent_id = select_multi_resource_agent(
             candidate_agents, PERSONA_RESOURCES, PERSONA_RESOURCES, user_dept_set
         )
@@ -375,14 +379,15 @@ async def get_persona(
         async def fetch_departments():
             async with pool.acquire() as c:
                 selected = await get_departments_internal(c, department_ids, bypass_cache)
-                dept_source = "all" if request.persona_id is None else "recent"
+                # Always use "all" to show all available departments the user has access to
+                # This ensures users can see all options when editing, not just recently used ones
                 suggestions = await search_departments_internal(
                     c,
                     None,
                     20,
                     0,
                     user_department_ids,
-                    dept_source,
+                    "all",
                     department_ids,
                     bypass_cache,
                 )
@@ -688,6 +693,7 @@ async def get_persona(
             # Multi-resource agent IDs (Python-computed)
             basic_agent_id=basic_agent_id,
             content_agent_id=content_agent_id,
+            parameters_step_agent_id=parameters_step_agent_id,
             general_agent_id=general_agent_id,
         )
 

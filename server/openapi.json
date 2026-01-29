@@ -41240,6 +41240,18 @@
             ],
             "title": "Content Agent Id"
           },
+          "parameters_step_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters Step Agent Id"
+          },
           "general_agent_id": {
             "anyOf": [
               {
