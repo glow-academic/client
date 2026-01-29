@@ -244,6 +244,7 @@ function PersonaComponent({
       departments_agent_id: personaData.departments_agent_id,
       departments: personaData.departments,
       flag_resource: personaData.flag_resource,
+      flags: personaData.flags,
       show_flag: personaData.show_flag,
       flag_required: personaData.flag_required,
       flag_agent_id: personaData.flag_agent_id,
@@ -310,6 +311,7 @@ function PersonaComponent({
     personaData?.departments_agent_id,
     personaData?.departments,
     personaData?.flag_resource,
+    personaData?.flags,
     personaData?.show_flag,
     personaData?.flag_required,
     personaData?.flag_agent_id,
@@ -2028,6 +2030,7 @@ function PersonaComponent({
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
                   flag_resource={currentPersonaData?.flag_resource ?? null}
+                  flags={currentPersonaData?.flags ?? []}
                   show_flag={currentPersonaData?.show_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
@@ -2043,9 +2046,6 @@ function PersonaComponent({
                   required={currentPersonaData?.flag_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.flag_agent_id ?? null}
-                  {...(formState.icon_id && {
-                    iconId: formState.icon_id as string,
-                  })}
                 />
               </div>
             </StepCard>

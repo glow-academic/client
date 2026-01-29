@@ -931,8 +931,9 @@ flags_data AS (
     FROM flags_resource f
     JOIN artifact_flags_relation aft ON f.type = aft.flag_type
     CROSS JOIN params p
-    WHERE 
+    WHERE
         aft.artifact = 'persona'::artifact_type
+        AND f.name = 'persona_active'
         AND (
             -- Always include selected active_flag_id if it exists
             f.id = (SELECT active_flag_id FROM flag_resource_data)

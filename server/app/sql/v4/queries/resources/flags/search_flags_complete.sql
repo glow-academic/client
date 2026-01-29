@@ -1,5 +1,5 @@
 -- Search flags resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), exclude_ids (uuid[])
+-- Parameters: search (text), limit_count (int), offset_count (int), exclude_ids (uuid[]), artifact_type (text)
 -- Returns: items (array of flag resources)
 
 -- Drop function if exists (handles signature variations)
@@ -22,7 +22,8 @@ CREATE OR REPLACE FUNCTION api_search_flags_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    artifact_type text DEFAULT NULL
 )
 RETURNS TABLE (
     items types.q_get_flags_v4_item[]
@@ -42,6 +43,14 @@ FROM (
     FROM flags_resource f
     WHERE (search IS NULL OR search = '' OR LOWER(f.name) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))
+      AND (artifact_type IS NULL OR (
+          EXISTS (
+              SELECT 1 FROM artifact_flags_relation afr
+              WHERE afr.artifact = artifact_type::artifact_type
+                AND afr.flag_type = f.type
+          )
+          AND f.name LIKE artifact_type || '_%'
+      ))
     ORDER BY f.name
     LIMIT limit_count
     OFFSET offset_count

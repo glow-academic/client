@@ -32,6 +32,7 @@ async def search_flags_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
+    artifact_type: str | None = None,
 ) -> list[QGetFlagsV4Item]:
     if limit_count is not None and limit_count <= 0:
         return []
@@ -44,6 +45,7 @@ async def search_flags_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "artifact_type": artifact_type,
         },
     )
 
@@ -57,6 +59,7 @@ async def search_flags_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
+        artifact_type=artifact_type,
     )
     result = cast(
         SearchFlagsSqlRow,

@@ -21107,6 +21107,8 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Artifact Type */
+            artifact_type?: string | null;
         };
         /** SearchFlagsApiResponse */
         SearchFlagsApiResponse: {

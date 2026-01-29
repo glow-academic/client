@@ -16967,6 +16967,7 @@ class SearchFlagsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    artifact_type: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16974,6 +16975,7 @@ class SearchFlagsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
+            self.artifact_type,
         )
 
 class SearchFlagsSqlRow(BaseModel):
@@ -16986,6 +16988,7 @@ class SearchFlagsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    artifact_type: str | None = None
 
 class SearchFlagsApiResponse(BaseModel):
 

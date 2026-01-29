@@ -101918,6 +101918,17 @@
               }
             ],
             "title": "Exclude Ids"
+          },
+          "artifact_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Type"
           }
         },
         "type": "object",

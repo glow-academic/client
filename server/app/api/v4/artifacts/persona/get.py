@@ -368,6 +368,7 @@ async def get_persona(
                     0,
                     flag_ids,
                     bypass_cache,
+                    artifact_type="persona",
                 )
                 return (selected, suggestions)
 
