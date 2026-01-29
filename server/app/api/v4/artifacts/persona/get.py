@@ -51,6 +51,7 @@ from app.api.v4.artifacts.persona.permissions import (
 from app.api.v4.artifacts.persona.types import (
     GetPersonaApiRequest,
     GetPersonaApiResponse,
+    PersonaFlagConfig,
 )
 from app.api.v4.resources.colors.get import get_colors_internal
 from app.api.v4.resources.colors.search import search_colors_internal
@@ -92,6 +93,17 @@ QUERY1_SQL_PATH = "app/sql/v4/queries/personas/get_persona_access_complete.sql"
 QUERY2_SQL_PATH = "app/sql/v4/queries/personas/get_persona_ids_complete.sql"
 
 router = APIRouter()
+
+
+def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
+    """Derive key and label from flag name like 'persona_active' -> ('active', 'Active')"""
+    if not name:
+        return ("unknown", "Unknown")
+    # Remove artifact prefix (e.g., 'persona_active' -> 'active')
+    key = name.replace("persona_", "")
+    # Title case for label
+    label = key.replace("_", " ").title()
+    return (key, label)
 
 
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
@@ -575,6 +587,23 @@ async def get_persona(
         show_examples_flag = compute_show_examples(len(examples))
         show_parameters_flag = compute_show_parameters(len(parameters))
 
+        # Transform flags to enriched format for client
+        persona_flags = [
+            PersonaFlagConfig(
+                key=derive_flag_key_and_label(flag.name)[0],
+                label=derive_flag_key_and_label(flag.name)[1],
+                description=flag.description,
+                icon_id=flag.icon,
+                flag_option_id=flag.id,
+                show=show_flag,
+                required=compute_flag_required(),
+                agent_id=flag_agent_id,
+                generated=flag.generated,
+            )
+            for flag in flags
+            if flag.id
+        ]
+
         # Set audit context
         if access_result.actor_name:
             audit_ctx: dict[str, Any] = {
@@ -657,7 +686,7 @@ async def get_persona(
             show_flag=show_flag,
             flag_agent_id=flag_agent_id,  # Python-computed
             flag_required=compute_flag_required(),
-            flags=flags,
+            flags=persona_flags,
             # Departments
             department_ids=ids_result.department_ids,
             department_resources=department_resources,

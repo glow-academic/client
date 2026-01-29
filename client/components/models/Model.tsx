@@ -21,7 +21,7 @@ import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Endpoints } from "@/components/resources/Endpoints";
-import { Flags } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/FlagsLegacy";
 import { Modalities } from "@/components/resources/Modalities";
 import { Names } from "@/components/resources/Names";
 import { Pricing } from "@/components/resources/Pricing";

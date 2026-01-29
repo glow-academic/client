@@ -22,7 +22,7 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
-import { Flags } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/FlagsLegacy";
 import { Names } from "@/components/resources/Names";
 import { Uploads } from "@/components/resources/Uploads";
 import { Button } from "@/components/ui/button";

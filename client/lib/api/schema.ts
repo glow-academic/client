@@ -9115,7 +9115,7 @@ export interface components {
             /** Flag Required */
             flag_required?: boolean | null;
             /** Flags */
-            flags?: components["schemas"]["QGetFlagsV4Item"][] | null;
+            flags?: components["schemas"]["PersonaFlagConfig"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */
@@ -12490,6 +12490,36 @@ export interface components {
             new_version?: number | null;
             /** Draft Exists */
             draft_exists?: boolean | null;
+        };
+        /**
+         * PersonaFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        PersonaFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /** PointsApiRequest */
         PointsApiRequest: {

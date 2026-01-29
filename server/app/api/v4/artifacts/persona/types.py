@@ -19,6 +19,20 @@ from app.sql.types import (
 )
 
 
+class PersonaFlagConfig(BaseModel):
+    """Enriched flag config for direct client consumption."""
+
+    key: str  # e.g., "active"
+    label: str  # e.g., "Active"
+    description: str | None = None
+    icon_id: str | None = None
+    flag_option_id: UUID | None = None  # ID to use when enabling
+    show: bool = True
+    required: bool = False
+    agent_id: UUID | None = None
+    generated: bool | None = None
+
+
 class GetPersonaApiRequest(BaseModel):
     """Request model for get persona endpoint."""
 
@@ -100,7 +114,7 @@ class GetPersonaApiResponse(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
-    flags: list[QGetFlagsV4Item] | None = None
+    flags: list[PersonaFlagConfig] | None = None
 
     # Multi-select resources: departments
     department_ids: list[UUID] | None = None

@@ -23,7 +23,7 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Cohorts } from "@/components/resources/Cohorts";
 import { Departments } from "@/components/resources/Departments";
 import { Emails } from "@/components/resources/Emails";
-import { Flags } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/FlagsLegacy";
 import { Names } from "@/components/resources/Names";
 import { RequestLimits } from "@/components/resources/RequestLimits";
 import { Roles } from "@/components/resources/Roles";

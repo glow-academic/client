@@ -243,11 +243,8 @@ function PersonaComponent({
       departments_required: personaData.departments_required,
       departments_agent_id: personaData.departments_agent_id,
       departments: personaData.departments,
-      flag_resource: personaData.flag_resource,
       flags: personaData.flags,
       show_flag: personaData.show_flag,
-      flag_required: personaData.flag_required,
-      flag_agent_id: personaData.flag_agent_id,
       parameter_field_resources: personaData.parameter_field_resources,
       show_parameter_fields: personaData.show_parameter_fields,
       parameter_field_suggestions: personaData.parameter_field_suggestions,
@@ -311,11 +308,8 @@ function PersonaComponent({
     personaData?.departments_required,
     personaData?.departments_agent_id,
     personaData?.departments,
-    personaData?.flag_resource,
     personaData?.flags,
     personaData?.show_flag,
-    personaData?.flag_required,
-    personaData?.flag_agent_id,
     personaData?.parameter_field_resources,
     personaData?.show_parameter_fields,
     personaData?.parameter_field_suggestions,
@@ -378,7 +372,7 @@ function PersonaComponent({
             stablePersonaDataFields.instructions_resource?.generated ?? false
           );
         case "flags":
-          return stablePersonaDataFields.flag_resource?.generated ?? false;
+          return stablePersonaDataFields.flags?.[0]?.generated ?? false;
         case "departments":
           return (
             stablePersonaDataFields.department_resources?.some(
@@ -427,7 +421,10 @@ function PersonaComponent({
     const paramIdsSet = new Set<string>(data.parameter_ids ?? []);
     const availableFields = data.parameter_fields ?? [];
 
-    if (data.parameter_field_resources && data.parameter_field_resources.length > 0) {
+    if (
+      data.parameter_field_resources &&
+      data.parameter_field_resources.length > 0
+    ) {
       // For each selected field resource, add its parent parameter and any conditional parameters
       data.parameter_field_resources.forEach((fieldResource) => {
         // Add the parent parameter (the parameter this field belongs to)
@@ -2024,14 +2021,16 @@ function PersonaComponent({
                   agent_id={currentPersonaData?.departments_agent_id ?? null}
                 />
 
-                {/* Active Switch - using Flags resource component */}
+                {/* Active Switch - using server-driven Flags component */}
                 <Flags
-                  flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentPersonaData?.flag_resource ?? null}
                   flags={currentPersonaData?.flags ?? []}
-                  show_flag={currentPersonaData?.show_flag ?? false}
+                  flag_id={formState.active_flag_id}
+                  show_flags={currentPersonaData?.show_flag ?? false}
+                  columns={1}
+                  label="Flags"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
+                  group_id={currentPersonaData?.group_id ?? null}
+                  onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
@@ -2039,11 +2038,6 @@ function PersonaComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  label="Active"
-                  helpText="Inactive personas will not be available for scenarios"
-                  required={currentPersonaData?.flag_required ?? false}
-                  group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.flag_agent_id ?? null}
                 />
               </div>
             </StepCard>
@@ -2126,7 +2120,9 @@ function PersonaComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["parameters"]!.some((rt) => canRegenerate(rt))
+                        {stepResources["parameters"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
                           ? "Regenerate"
                           : "Generate"}
                       </TooltipContent>

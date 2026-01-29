@@ -22,7 +22,7 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Documents } from "@/components/resources/Documents";
 import { ParameterFields } from "@/components/resources/ParameterFields";
-import { Flags } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/FlagsLegacy";
 import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
 import { Objectives } from "@/components/resources/Objectives";
