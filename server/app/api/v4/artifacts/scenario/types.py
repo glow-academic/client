@@ -41,6 +41,20 @@ class ScenarioFlagResource(BaseModel):
     generated: bool | None = None
 
 
+class ScenarioFlagConfig(BaseModel):
+    """Enriched flag config for direct client consumption."""
+
+    key: str  # e.g., "active", "objectives_enabled"
+    label: str  # e.g., "Active", "Objectives Enabled"
+    description: str | None = None
+    icon_id: str | None = None
+    flag_option_id: UUID | None = None  # ID to use when enabling
+    show: bool = True
+    required: bool = False
+    agent_id: UUID | None = None
+    generated: bool | None = None
+
+
 class ScenarioDepartment(BaseModel):
     """Department for scenario."""
 
@@ -288,6 +302,10 @@ class GetScenarioApiResponse(BaseModel):
     show_use_templates_flag: bool | None = None
     use_templates_flag_agent_id: UUID | None = None
     use_templates_flag_required: bool | None = None
+
+    # Server-driven flags array (enriched configs for all flags)
+    flags: list[ScenarioFlagConfig] | None = None
+    show_flags: bool | None = None  # Master visibility for all flags
 
     # Departments
     department_ids: list[UUID] | None = None

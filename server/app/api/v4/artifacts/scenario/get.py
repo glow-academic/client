@@ -52,6 +52,7 @@ from app.api.v4.artifacts.scenario.permissions import (
 from app.api.v4.artifacts.scenario.types import (
     GetScenarioApiRequest,
     GetScenarioApiResponse,
+    ScenarioFlagConfig,
 )
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -61,6 +62,7 @@ from app.api.v4.resources.documents.get import get_document_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.images.get import get_image_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
@@ -89,6 +91,29 @@ QUERY1_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql
 QUERY2_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_ids_complete.sql"
 
 router = APIRouter()
+
+
+# Flag key to label mapping for scenarios
+SCENARIO_FLAG_LABELS = {
+    "active": "Active",
+    "video_enabled": "Video",
+    "problem_statement_enabled": "Problem Statement",
+    "objectives_enabled": "Objectives",
+    "images_enabled": "Images",
+    "use_templates": "Templates",
+    "questions_enabled": "Questions",
+}
+
+
+def derive_scenario_flag_key_and_label(name: str | None) -> tuple[str, str]:
+    """Derive key and label from flag name like 'scenario_active' -> ('active', 'Active')"""
+    if not name:
+        return ("unknown", "Unknown")
+    # Remove artifact prefix (e.g., 'scenario_active' -> 'active')
+    key = name.replace("scenario_", "")
+    # Use mapping for label, fallback to title case
+    label = SCENARIO_FLAG_LABELS.get(key, key.replace("_", " ").title())
+    return (key, label)
 
 
 @dataclass
@@ -525,33 +550,33 @@ async def get_scenario(
                 # No search endpoint for problem_statements - return empty suggestions
                 return (selected, [])
 
-        async def fetch_active_flags():
+        async def fetch_all_scenario_flags():
+            """Fetch ALL available scenario flags, not just selected ones."""
             async with pool.acquire() as c:
-                return await get_flags_internal(c, active_flag_ids, bypass_cache)
-
-        async def fetch_objectives_enabled_flags():
-            async with pool.acquire() as c:
-                return await get_flags_internal(c, objectives_enabled_flag_ids, bypass_cache)
-
-        async def fetch_images_enabled_flags():
-            async with pool.acquire() as c:
-                return await get_flags_internal(c, images_enabled_flag_ids, bypass_cache)
-
-        async def fetch_video_enabled_flags():
-            async with pool.acquire() as c:
-                return await get_flags_internal(c, video_enabled_flag_ids, bypass_cache)
-
-        async def fetch_questions_enabled_flags():
-            async with pool.acquire() as c:
-                return await get_flags_internal(c, questions_enabled_flag_ids, bypass_cache)
-
-        async def fetch_problem_statement_enabled_flags():
-            async with pool.acquire() as c:
-                return await get_flags_internal(c, problem_statement_enabled_flag_ids, bypass_cache)
-
-        async def fetch_use_templates_flags():
-            async with pool.acquire() as c:
-                return await get_flags_internal(c, use_templates_flag_ids, bypass_cache)
+                # Get all selected flag IDs to fetch their full data
+                all_selected_ids = [
+                    fid for fid in [
+                        ids_result.active_flag_id,
+                        ids_result.objectives_enabled_flag_id,
+                        ids_result.images_enabled_flag_id,
+                        ids_result.video_enabled_flag_id,
+                        ids_result.questions_enabled_flag_id,
+                        ids_result.problem_statement_enabled_flag_id,
+                        ids_result.use_templates_flag_id,
+                    ] if fid
+                ]
+                selected = await get_flags_internal(c, all_selected_ids, bypass_cache)
+                # Search for all available scenario flags
+                suggestions = await search_flags_internal(
+                    c,
+                    None,
+                    20,
+                    0,
+                    all_selected_ids,
+                    bypass_cache,
+                    artifact_type="scenario",
+                )
+                return (selected, suggestions)
 
         async def fetch_departments():
             async with pool.acquire() as c:
@@ -684,13 +709,7 @@ async def get_scenario(
             (names_selected, names_suggestions),
             (descriptions_selected, descriptions_suggestions),
             (problem_statements_selected, _),
-            active_flag_items,
-            objectives_enabled_flag_items,
-            images_enabled_flag_items,
-            video_enabled_flag_items,
-            questions_enabled_flag_items,
-            problem_statement_enabled_flag_items,
-            use_templates_flag_items,
+            (flags_selected, flags_suggestions),
             (departments_selected, departments_suggestions),
             (personas_selected, _),
             (documents_selected, _),
@@ -705,13 +724,7 @@ async def get_scenario(
             fetch_names(),
             fetch_descriptions(),
             fetch_problem_statements(),
-            fetch_active_flags(),
-            fetch_objectives_enabled_flags(),
-            fetch_images_enabled_flags(),
-            fetch_video_enabled_flags(),
-            fetch_questions_enabled_flags(),
-            fetch_problem_statement_enabled_flags(),
-            fetch_use_templates_flags(),
+            fetch_all_scenario_flags(),
             fetch_departments(),
             fetch_personas(),
             fetch_documents(),
@@ -728,6 +741,7 @@ async def get_scenario(
         names = _dedupe_by_id(names_selected + names_suggestions, "id")
         descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
         problem_statements = problem_statements_selected  # No suggestions
+        all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
         departments = _dedupe_by_id(departments_selected + departments_suggestions, "department_id")
         personas = personas_selected  # No suggestions
         documents = documents_selected  # No suggestions
@@ -751,13 +765,19 @@ async def get_scenario(
             (ps for ps in problem_statements if ps.id == ids_result.problem_statement_id),
             None,
         )
-        active_flag_resource = active_flag_items[0] if active_flag_items else None
-        objectives_enabled_flag_resource = objectives_enabled_flag_items[0] if objectives_enabled_flag_items else None
-        images_enabled_flag_resource = images_enabled_flag_items[0] if images_enabled_flag_items else None
-        video_enabled_flag_resource = video_enabled_flag_items[0] if video_enabled_flag_items else None
-        questions_enabled_flag_resource = questions_enabled_flag_items[0] if questions_enabled_flag_items else None
-        problem_statement_enabled_flag_resource = problem_statement_enabled_flag_items[0] if problem_statement_enabled_flag_items else None
-        use_templates_flag_resource = use_templates_flag_items[0] if use_templates_flag_items else None
+        # Find flag resources from all available scenario flags by name
+        def find_flag_by_name(name_suffix: str):
+            """Find a flag by name suffix (e.g., 'active' -> 'scenario_active')"""
+            target_name = f"scenario_{name_suffix}"
+            return next((f for f in all_scenario_flags if f.name == target_name), None)
+
+        active_flag_resource = find_flag_by_name("active")
+        objectives_enabled_flag_resource = find_flag_by_name("objectives_enabled")
+        images_enabled_flag_resource = find_flag_by_name("images_enabled")
+        video_enabled_flag_resource = find_flag_by_name("video_enabled")
+        questions_enabled_flag_resource = find_flag_by_name("questions_enabled")
+        problem_statement_enabled_flag_resource = find_flag_by_name("problem_statement_enabled")
+        use_templates_flag_resource = find_flag_by_name("use_templates")
 
         # Selected multi-select resources
         department_resources = [
@@ -798,6 +818,24 @@ async def get_scenario(
         show_videos = compute_show_videos(len(videos))
         show_questions = compute_show_questions(len(questions))
         show_templates = compute_show_templates(len(templates))
+
+        # Build enriched flags list from ALL available scenario flags
+        # This ensures flags are shown even when not yet selected
+        scenario_flags: list[ScenarioFlagConfig] = [
+            ScenarioFlagConfig(
+                key=derive_scenario_flag_key_and_label(flag.name)[0],
+                label=derive_scenario_flag_key_and_label(flag.name)[1],
+                description=flag.description,
+                icon_id=flag.icon,
+                flag_option_id=flag.id,
+                show=show_flag,
+                required=compute_flag_required(),
+                agent_id=None,
+                generated=flag.generated,
+            )
+            for flag in all_scenario_flags
+            if flag.id and flag.name and flag.name != "scenario_parameter"  # Exclude non-UI flags
+        ]
 
         # Set audit context
         if access_result.actor_name:
@@ -898,6 +936,9 @@ async def get_scenario(
             show_use_templates_flag=show_flag,
             use_templates_flag_agent_id=None,
             use_templates_flag_required=compute_flag_required(),
+            # Server-driven flags array
+            flags=scenario_flags,
+            show_flags=show_flag,  # Master visibility for all flags
             # Departments
             department_ids=department_ids,
             department_resources=[_to_dict(d) for d in department_resources],

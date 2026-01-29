@@ -7,7 +7,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -21,11 +27,11 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Documents } from "@/components/resources/Documents";
-import { ParameterFields } from "@/components/resources/ParameterFields";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
 import { Objectives } from "@/components/resources/Objectives";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
 import { Personas } from "@/components/resources/Personas";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
@@ -86,45 +92,30 @@ type CreateDraftDepartmentsOut = OutputOf<
   "post"
 >;
 type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
-type CreateDraftPersonasOut = OutputOf<
-  "/api/v4/resources/personas",
-  "post"
->;
+type CreateDraftPersonasOut = OutputOf<"/api/v4/resources/personas", "post">;
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDocumentsOut = OutputOf<
-  "/api/v4/resources/documents",
-  "post"
->;
+type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftTemplatesOut = OutputOf<
-  "/api/v4/resources/templates",
-  "post"
->;
+type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
 type CreateDraftParametersOut = OutputOf<
   "/api/v4/resources/parameters",
   "post"
 >;
-type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields", "post">;
+type CreateDraftParameterFieldsIn = InputOf<
+  "/api/v4/resources/parameter_fields",
+  "post"
+>;
 type CreateDraftParameterFieldsOut = OutputOf<
   "/api/v4/resources/parameter_fields",
   "post"
 >;
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<
-  "/api/v4/resources/images",
-  "post"
->;
+type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
-type CreateDraftVideosOut = OutputOf<
-  "/api/v4/resources/videos",
-  "post"
->;
+type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
-type CreateDraftQuestionsOut = OutputOf<
-  "/api/v4/resources/questions",
-  "post"
->;
+type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
 
 type ScenarioResourceType =
   | "names"
@@ -247,12 +238,7 @@ function ScenarioComponent({
 }: ScenarioProps) {
   const router = useRouter();
   const isEditMode = !!scenarioId;
-  const {
-    profile,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile, setSelectedDraftId, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
@@ -359,17 +345,20 @@ function ScenarioComponent({
   // Track last synced draftId to prevent redundant profile context updates
   const lastSyncedDraftIdRef = useRef<string | null>(null);
 
-  const onFormDataChange = useCallback((fd: Record<string, unknown>) => {
-    formDataRef.current = fd;
-    const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === nextDraftId ? prev : nextDraftId));
+  const onFormDataChange = useCallback(
+    (fd: Record<string, unknown>) => {
+      formDataRef.current = fd;
+      const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
+      setDraftId((prev) => (prev === nextDraftId ? prev : nextDraftId));
 
-    // One-way sync to profile context (no effect dependency on selectedDraftId)
-    if (nextDraftId !== lastSyncedDraftIdRef.current) {
-      lastSyncedDraftIdRef.current = nextDraftId;
-      setSelectedDraftId(nextDraftId);
-    }
-  }, [setSelectedDraftId]);
+      // One-way sync to profile context (no effect dependency on selectedDraftId)
+      if (nextDraftId !== lastSyncedDraftIdRef.current) {
+        lastSyncedDraftIdRef.current = nextDraftId;
+        setSelectedDraftId(nextDraftId);
+      }
+    },
+    [setSelectedDraftId]
+  );
 
   const getInitialFormState = useCallback((): ScenarioFormState => {
     if (!scenarioData) {
@@ -404,7 +393,8 @@ function ScenarioComponent({
       description_id: scenarioData.description_id ?? null,
       problem_statement_id: scenarioData.problem_statement_id ?? null,
       active_flag_id: scenarioData.active_flag_id ?? null,
-      objectives_enabled_flag_id: scenarioData.objectives_enabled_flag_id ?? null,
+      objectives_enabled_flag_id:
+        scenarioData.objectives_enabled_flag_id ?? null,
       images_enabled_flag_id: scenarioData.images_enabled_flag_id ?? null,
       video_enabled_flag_id: scenarioData.video_enabled_flag_id ?? null,
       questions_enabled_flag_id: scenarioData.questions_enabled_flag_id ?? null,
@@ -426,9 +416,8 @@ function ScenarioComponent({
     };
   }, [scenarioData]);
 
-  const [formState, setFormState] = useState<ScenarioFormState>(
-    getInitialFormState
-  );
+  const [formState, setFormState] =
+    useState<ScenarioFormState>(getInitialFormState);
 
   // Autosave enabled state (default: true for autosave mode)
   const [isAutosaveEnabled] = useState(true);
@@ -505,7 +494,8 @@ function ScenarioComponent({
         prev.description_id !== newState.description_id ||
         prev.problem_statement_id !== newState.problem_statement_id ||
         prev.active_flag_id !== newState.active_flag_id ||
-        prev.objectives_enabled_flag_id !== newState.objectives_enabled_flag_id ||
+        prev.objectives_enabled_flag_id !==
+          newState.objectives_enabled_flag_id ||
         prev.images_enabled_flag_id !== newState.images_enabled_flag_id ||
         prev.video_enabled_flag_id !== newState.video_enabled_flag_id ||
         prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
@@ -522,9 +512,12 @@ function ScenarioComponent({
           JSON.stringify(newState.template_ids) ||
         JSON.stringify(prev.parameter_ids) !==
           JSON.stringify(newState.parameter_ids) ||
-        JSON.stringify(prev.persona_field_ids) !== JSON.stringify(newState.persona_field_ids) ||
-        JSON.stringify(prev.document_field_ids) !== JSON.stringify(newState.document_field_ids) ||
-        JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(newState.parameter_field_ids) ||
+        JSON.stringify(prev.persona_field_ids) !==
+          JSON.stringify(newState.persona_field_ids) ||
+        JSON.stringify(prev.document_field_ids) !==
+          JSON.stringify(newState.document_field_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !==
+          JSON.stringify(newState.parameter_field_ids) ||
         JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
         JSON.stringify(prev.objective_ids) !==
           JSON.stringify(newState.objective_ids) ||
@@ -694,7 +687,10 @@ function ScenarioComponent({
 
     // Wait for version sync before patching to prevent race conditions
     // Only block if there's an actual numeric version to sync (not null for new scenarios)
-    if (typeof scenarioData?.draft_version === "number" && !versionSyncedRef.current) {
+    if (
+      typeof scenarioData?.draft_version === "number" &&
+      !versionSyncedRef.current
+    ) {
       console.debug("[Scenario Draft] Waiting for version sync");
       return;
     }
@@ -740,7 +736,9 @@ function ScenarioComponent({
         console.debug("[Scenario Draft] Calling patch API", {
           input_draft_id: draftId,
           expected_version: lastSavedVersionRef.current,
-          fields: Object.keys(formState).filter(k => formState[k as keyof typeof formState]),
+          fields: Object.keys(formState).filter(
+            (k) => formState[k as keyof typeof formState]
+          ),
         });
 
         const result = await patchScenarioDraftActionRef.current({
@@ -813,7 +811,8 @@ function ScenarioComponent({
         console.error("[Scenario Draft] Patch failed:", error);
         // Show user feedback
         toast.error("Failed to save draft", {
-          description: "Your changes may not have been saved. Please try again.",
+          description:
+            "Your changes may not have been saved. Please try again.",
         });
         // Notify save context of error, then reset to idle
         window.dispatchEvent(
@@ -923,11 +922,14 @@ function ScenarioComponent({
                 ? mergedFlushResults.problem_statement_id
                 : currentFormState.problem_statement_id,
             active_flag_id: currentFormState.active_flag_id,
-            objectives_enabled_flag_id: currentFormState.objectives_enabled_flag_id,
+            objectives_enabled_flag_id:
+              currentFormState.objectives_enabled_flag_id,
             images_enabled_flag_id: currentFormState.images_enabled_flag_id,
             video_enabled_flag_id: currentFormState.video_enabled_flag_id,
-            questions_enabled_flag_id: currentFormState.questions_enabled_flag_id,
-            problem_statement_enabled_flag_id: currentFormState.problem_statement_enabled_flag_id,
+            questions_enabled_flag_id:
+              currentFormState.questions_enabled_flag_id,
+            problem_statement_enabled_flag_id:
+              currentFormState.problem_statement_enabled_flag_id,
             use_templates_flag_id: currentFormState.use_templates_flag_id,
             department_ids: currentFormState.department_ids,
             persona_ids: currentFormState.persona_ids,
@@ -1024,44 +1026,9 @@ function ScenarioComponent({
       objectives_required: scenarioData.objectives_required,
       objective_suggestions: scenarioData.objective_suggestions,
       objectives: scenarioData.objectives,
-      active_flag_resource: scenarioData.active_flag_resource,
-      show_active_flag: scenarioData.show_active_flag,
-      active_flag_agent_id: scenarioData.active_flag_agent_id,
-      active_flag_required: scenarioData.active_flag_required,
-      objectives_enabled_flag_resource:
-        scenarioData.objectives_enabled_flag_resource,
-      show_objectives_enabled_flag: scenarioData.show_objectives_enabled_flag,
-      objectives_enabled_flag_agent_id:
-        scenarioData.objectives_enabled_flag_agent_id,
-      objectives_enabled_flag_required:
-        scenarioData.objectives_enabled_flag_required,
-      images_enabled_flag_resource: scenarioData.images_enabled_flag_resource,
-      show_images_enabled_flag: scenarioData.show_images_enabled_flag,
-      images_enabled_flag_agent_id: scenarioData.images_enabled_flag_agent_id,
-      images_enabled_flag_required: scenarioData.images_enabled_flag_required,
-      video_enabled_flag_resource: scenarioData.video_enabled_flag_resource,
-      show_video_enabled_flag: scenarioData.show_video_enabled_flag,
-      video_enabled_flag_agent_id: scenarioData.video_enabled_flag_agent_id,
-      video_enabled_flag_required: scenarioData.video_enabled_flag_required,
-      questions_enabled_flag_resource:
-        scenarioData.questions_enabled_flag_resource,
-      show_questions_enabled_flag: scenarioData.show_questions_enabled_flag,
-      questions_enabled_flag_agent_id:
-        scenarioData.questions_enabled_flag_agent_id,
-      questions_enabled_flag_required:
-        scenarioData.questions_enabled_flag_required,
-      problem_statement_enabled_flag_resource:
-        scenarioData.problem_statement_enabled_flag_resource,
-      show_problem_statement_enabled_flag:
-        scenarioData.show_problem_statement_enabled_flag,
-      problem_statement_enabled_flag_agent_id:
-        scenarioData.problem_statement_enabled_flag_agent_id,
-      problem_statement_enabled_flag_required:
-        scenarioData.problem_statement_enabled_flag_required,
-      use_templates_flag_resource: scenarioData.use_templates_flag_resource,
-      show_use_templates_flag: scenarioData.show_use_templates_flag,
-      use_templates_flag_agent_id: scenarioData.use_templates_flag_agent_id,
-      use_templates_flag_required: scenarioData.use_templates_flag_required,
+      // Server-driven flags array with master visibility
+      flags: scenarioData.flags,
+      show_flags: scenarioData.show_flags,
       department_resources: scenarioData.department_resources,
       show_departments: scenarioData.show_departments,
       departments_agent_id: scenarioData.departments_agent_id,
@@ -1182,23 +1149,7 @@ function ScenarioComponent({
           );
         case "scenario_flags":
           return (
-            (stableScenarioDataFields.active_flag_resource?.generated ??
-              false) ||
-            (stableScenarioDataFields.objectives_enabled_flag_resource
-              ?.generated ??
-              false) ||
-            (stableScenarioDataFields.images_enabled_flag_resource?.generated ??
-              false) ||
-            (stableScenarioDataFields.video_enabled_flag_resource?.generated ??
-              false) ||
-            (stableScenarioDataFields.questions_enabled_flag_resource
-              ?.generated ??
-              false) ||
-            (stableScenarioDataFields.problem_statement_enabled_flag_resource
-              ?.generated ??
-              false) ||
-            (stableScenarioDataFields.use_templates_flag_resource?.generated ??
-              false)
+            stableScenarioDataFields.flags?.some((f) => f.generated) ?? false
           );
         case "departments":
           return (
@@ -1208,18 +1159,21 @@ function ScenarioComponent({
           );
         case "personas":
           return (
-            stableScenarioDataFields.persona_resources?.some((p) => p.generated) ??
-            false
+            stableScenarioDataFields.persona_resources?.some(
+              (p) => p.generated
+            ) ?? false
           );
         case "documents":
           return (
-            stableScenarioDataFields.document_resources?.some((d) => d.generated) ??
-            false
+            stableScenarioDataFields.document_resources?.some(
+              (d) => d.generated
+            ) ?? false
           );
         case "templates":
           return (
-            stableScenarioDataFields.template_resources?.some((t) => t.generated) ??
-            false
+            stableScenarioDataFields.template_resources?.some(
+              (t) => t.generated
+            ) ?? false
           );
         case "parameters":
           return (
@@ -1247,13 +1201,15 @@ function ScenarioComponent({
           );
         case "images":
           return (
-            stableScenarioDataFields.image_resources?.some((i) => i.generated) ??
-            false
+            stableScenarioDataFields.image_resources?.some(
+              (i) => i.generated
+            ) ?? false
           );
         case "videos":
           return (
-            stableScenarioDataFields.video_resources?.some((v) => v.generated) ??
-            false
+            stableScenarioDataFields.video_resources?.some(
+              (v) => v.generated
+            ) ?? false
           );
         case "questions":
           return (
@@ -1406,13 +1362,19 @@ function ScenarioComponent({
             const newIds = data.document_field_ids.filter(
               (id) => !prev.document_field_ids.includes(id)
             );
-            updates.document_field_ids = [...prev.document_field_ids, ...newIds];
+            updates.document_field_ids = [
+              ...prev.document_field_ids,
+              ...newIds,
+            ];
           }
           if (data.parameter_field_ids && data.parameter_field_ids.length > 0) {
             const newIds = data.parameter_field_ids.filter(
               (id) => !prev.parameter_field_ids.includes(id)
             );
-            updates.parameter_field_ids = [...prev.parameter_field_ids, ...newIds];
+            updates.parameter_field_ids = [
+              ...prev.parameter_field_ids,
+              ...newIds,
+            ];
           }
           if (data.image_ids && data.image_ids.length > 0) {
             const newIds = data.image_ids.filter(
@@ -1448,7 +1410,9 @@ function ScenarioComponent({
                   : [...prev.objective_ids, resourceId];
                 break;
               case "departments":
-                updates.department_ids = prev.department_ids.includes(resourceId)
+                updates.department_ids = prev.department_ids.includes(
+                  resourceId
+                )
                   ? prev.department_ids
                   : [...prev.department_ids, resourceId];
                 break;
@@ -1750,28 +1714,19 @@ function ScenarioComponent({
 
   const handleGeneratePersonas = useCallback(
     async () =>
-      handleGenerateResources(
-        ["personas"],
-        determineAgentType(["personas"])
-      ),
+      handleGenerateResources(["personas"], determineAgentType(["personas"])),
     [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateDocuments = useCallback(
     async () =>
-      handleGenerateResources(
-        ["documents"],
-        determineAgentType(["documents"])
-      ),
+      handleGenerateResources(["documents"], determineAgentType(["documents"])),
     [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateTemplates = useCallback(
     async () =>
-      handleGenerateResources(
-        ["templates"],
-        determineAgentType(["templates"])
-      ),
+      handleGenerateResources(["templates"], determineAgentType(["templates"])),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -1798,10 +1753,7 @@ function ScenarioComponent({
 
   const handleGenerateQuestions = useCallback(
     async () =>
-      handleGenerateResources(
-        ["questions"],
-        determineAgentType(["questions"])
-      ),
+      handleGenerateResources(["questions"], determineAgentType(["questions"])),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -2000,18 +1952,23 @@ function ScenarioComponent({
         title: "Basic Information",
         description:
           "Set the scenario name, description, departments, and configuration options.",
-        resetFields: ["name", "description", "departments", "descriptionSearch"],
+        resetFields: [
+          "name",
+          "description",
+          "departments",
+          "descriptionSearch",
+        ],
       },
     ];
 
-      if (showProblemStatementSection) {
-        items.push({
-          id: "problem_statement",
-          title: "Problem Statement",
-          description: "Define the core problem statement for the scenario.",
-          resetFields: ["problem_statement", "problemStatementSearch"],
-        });
-      }
+    if (showProblemStatementSection) {
+      items.push({
+        id: "problem_statement",
+        title: "Problem Statement",
+        description: "Define the core problem statement for the scenario.",
+        resetFields: ["problem_statement", "problemStatementSearch"],
+      });
+    }
 
     if (showObjectivesSection) {
       items.push({
@@ -2022,41 +1979,41 @@ function ScenarioComponent({
       });
     }
 
-      if (stableScenarioDataFields?.show_personas) {
-        items.push({
-          id: "personas",
-          title: "Personas",
-          description: "Select personas for the scenario.",
-          resetFields: ["personas", "personaSearch", "personaShowSelected"],
-        });
-      }
+    if (stableScenarioDataFields?.show_personas) {
+      items.push({
+        id: "personas",
+        title: "Personas",
+        description: "Select personas for the scenario.",
+        resetFields: ["personas", "personaSearch", "personaShowSelected"],
+      });
+    }
 
-      if (stableScenarioDataFields?.show_documents) {
-        items.push({
-          id: "documents",
-          title: "Documents",
-          description: "Select documents for the scenario.",
-          resetFields: ["documents", "documentSearch", "documentShowSelected"],
-        });
-      }
+    if (stableScenarioDataFields?.show_documents) {
+      items.push({
+        id: "documents",
+        title: "Documents",
+        description: "Select documents for the scenario.",
+        resetFields: ["documents", "documentSearch", "documentShowSelected"],
+      });
+    }
 
-      if (showTemplatesSection) {
-        items.push({
-          id: "templates",
-          title: "Templates",
-          description: "Select templates for the scenario.",
-          resetFields: ["templates", "templateSearch"],
-        });
-      }
+    if (showTemplatesSection) {
+      items.push({
+        id: "templates",
+        title: "Templates",
+        description: "Select templates for the scenario.",
+        resetFields: ["templates", "templateSearch"],
+      });
+    }
 
-      if (stableScenarioDataFields?.show_parameters) {
-        items.push({
-          id: "parameters",
-          title: "Parameters",
-          description: "Select parameters for the scenario.",
-          resetFields: ["parameters", "parameterSearch", "parameterShowSelected"],
-        });
-      }
+    if (stableScenarioDataFields?.show_parameters) {
+      items.push({
+        id: "parameters",
+        title: "Parameters",
+        description: "Select parameters for the scenario.",
+        resetFields: ["parameters", "parameterSearch", "parameterShowSelected"],
+      });
+    }
 
     if (showImagesSection) {
       items.push({
@@ -2287,18 +2244,12 @@ function ScenarioComponent({
         throw new Error("Parameters are required");
       }
 
-      if (
-        scenarioData?.images_required &&
-        formState.image_ids.length === 0
-      ) {
+      if (scenarioData?.images_required && formState.image_ids.length === 0) {
         toast.error("Images are required");
         throw new Error("Images are required");
       }
 
-      if (
-        scenarioData?.videos_required &&
-        formState.video_ids.length === 0
-      ) {
+      if (scenarioData?.videos_required && formState.video_ids.length === 0) {
         toast.error("Videos are required");
         throw new Error("Videos are required");
       }
@@ -2373,7 +2324,8 @@ function ScenarioComponent({
 
             // Optional single-select
             description_id: effectiveFormState.description_id ?? undefined,
-            problem_statement_id: effectiveFormState.problem_statement_id ?? undefined,
+            problem_statement_id:
+              effectiveFormState.problem_statement_id ?? undefined,
             active_flag_id: effectiveFormState.active_flag_id ?? undefined,
             objectives_enabled_flag_id:
               effectiveFormState.objectives_enabled_flag_id ?? undefined,
@@ -2410,15 +2362,21 @@ function ScenarioComponent({
                 ? effectiveFormState.parameter_ids
                 : undefined,
             parameter_field_ids:
-              effectiveFormState.parameter_field_ids.length > 0 ? effectiveFormState.parameter_field_ids : undefined,
+              effectiveFormState.parameter_field_ids.length > 0
+                ? effectiveFormState.parameter_field_ids
+                : undefined,
             image_ids:
-              effectiveFormState.image_ids.length > 0 ? effectiveFormState.image_ids : undefined,
+              effectiveFormState.image_ids.length > 0
+                ? effectiveFormState.image_ids
+                : undefined,
             objective_ids:
               effectiveFormState.objective_ids.length > 0
                 ? effectiveFormState.objective_ids
                 : undefined,
             video_ids:
-              effectiveFormState.video_ids.length > 0 ? effectiveFormState.video_ids : undefined,
+              effectiveFormState.video_ids.length > 0
+                ? effectiveFormState.video_ids
+                : undefined,
             question_ids:
               effectiveFormState.question_ids.length > 0
                 ? effectiveFormState.question_ids
@@ -2538,8 +2496,10 @@ function ScenarioComponent({
       onReset?: () => void;
     }) => {
       const currentScenarioData = stableScenarioDataFields;
-      const personaSearch = (formData["personaSearch"] as string | undefined) ?? "";
-      const documentSearch = (formData["documentSearch"] as string | undefined) ?? "";
+      const personaSearch =
+        (formData["personaSearch"] as string | undefined) ?? "";
+      const documentSearch =
+        (formData["documentSearch"] as string | undefined) ?? "";
       const parameterSearch =
         (formData["parameterSearch"] as string | undefined) ?? "";
       const descriptionSearch =
@@ -2613,7 +2573,9 @@ function ScenarioComponent({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleOpenStepCardModal("basic", "generate")}
+                          onClick={() =>
+                            handleOpenStepCardModal("basic", "generate")
+                          }
                           disabled={disabled}
                         >
                           <Sparkles className="h-4 w-4" />
@@ -2632,7 +2594,9 @@ function ScenarioComponent({
                   description_resource={
                     currentScenarioData?.description_resource ?? null
                   }
-                  show_description={currentScenarioData?.show_description ?? true}
+                  show_description={
+                    currentScenarioData?.show_description ?? true
+                  }
                   description_suggestions={
                     currentScenarioData?.description_suggestions ?? []
                   }
@@ -2669,7 +2633,9 @@ function ScenarioComponent({
                   department_resources={
                     currentScenarioData?.department_resources ?? []
                   }
-                  show_departments={currentScenarioData?.show_departments ?? false}
+                  show_departments={
+                    currentScenarioData?.show_departments ?? false
+                  }
                   department_suggestions={
                     currentScenarioData?.department_suggestions ?? []
                   }
@@ -2693,145 +2659,43 @@ function ScenarioComponent({
                   isGenerating={isGenerating("departments")}
                 />
 
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Flags
-                      flag_id={formState.active_flag_id ?? null}
-                      flag_resource={currentScenarioData?.active_flag_resource ?? null}
-                      show_flag={currentScenarioData?.show_active_flag ?? false}
-                      disabled={disabled}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
-                      }
-                      label="Active"
-                      flagName="active"
-                      flagDescription="Inactive scenarios will not be available for selection."
-                      helpText={
-                        currentScenarioData?.active_flag_resource?.description ||
-                        "Inactive scenarios will not be available for selection."
-                      }
-                      iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
-                      group_id={currentScenarioData?.group_id ?? null}
-                      agent_id={currentScenarioData?.active_flag_agent_id ?? null}
-                      createFlagsAction={createScenarioFlagsAction}
-                      onGenerate={handleGenerateFlags}
-                      isGenerating={isGenerating("scenario_flags")}
-                      required={currentScenarioData?.active_flag_required ?? false}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Flags
-                      flag_id={formState.video_enabled_flag_id ?? null}
-                      flag_resource={currentScenarioData?.video_enabled_flag_resource ?? null}
-                      show_flag={currentScenarioData?.show_video_enabled_flag ?? false}
-                      disabled={disabled}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({ ...prev, video_enabled_flag_id: flagId }))
-                      }
-                      label="Videos"
-                      helpText={
-                        currentScenarioData?.video_enabled_flag_resource?.description ||
-                        "Show the videos section."
-                      }
-                      iconId={currentScenarioData?.video_enabled_flag_resource?.icon_id ?? undefined}
-                      group_id={currentScenarioData?.group_id ?? null}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Flags
-                      flag_id={formState.problem_statement_enabled_flag_id ?? null}
-                      flag_resource={currentScenarioData?.problem_statement_enabled_flag_resource ?? null}
-                      show_flag={currentScenarioData?.show_problem_statement_enabled_flag ?? false}
-                      disabled={disabled}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({ ...prev, problem_statement_enabled_flag_id: flagId }))
-                      }
-                      label="Problem Statement"
-                      helpText={
-                        currentScenarioData?.problem_statement_enabled_flag_resource?.description ||
-                        "Show the problem statement section."
-                      }
-                      iconId={currentScenarioData?.problem_statement_enabled_flag_resource?.icon_id ?? undefined}
-                      group_id={currentScenarioData?.group_id ?? null}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Flags
-                      flag_id={formState.objectives_enabled_flag_id ?? null}
-                      flag_resource={currentScenarioData?.objectives_enabled_flag_resource ?? null}
-                      show_flag={currentScenarioData?.show_objectives_enabled_flag ?? false}
-                      disabled={disabled}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({ ...prev, objectives_enabled_flag_id: flagId }))
-                      }
-                      label="Objectives"
-                      helpText={
-                        currentScenarioData?.objectives_enabled_flag_resource?.description ||
-                        "Show the objectives section."
-                      }
-                      iconId={currentScenarioData?.objectives_enabled_flag_resource?.icon_id ?? undefined}
-                      group_id={currentScenarioData?.group_id ?? null}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Flags
-                      flag_id={formState.images_enabled_flag_id ?? null}
-                      flag_resource={currentScenarioData?.images_enabled_flag_resource ?? null}
-                      show_flag={currentScenarioData?.show_images_enabled_flag ?? false}
-                      disabled={disabled}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({ ...prev, images_enabled_flag_id: flagId }))
-                      }
-                      label="Images"
-                      helpText={
-                        currentScenarioData?.images_enabled_flag_resource?.description ||
-                        "Show the images section."
-                      }
-                      iconId={currentScenarioData?.images_enabled_flag_resource?.icon_id ?? undefined}
-                      group_id={currentScenarioData?.group_id ?? null}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Flags
-                      flag_id={formState.use_templates_flag_id ?? null}
-                      flag_resource={currentScenarioData?.use_templates_flag_resource ?? null}
-                      show_flag={currentScenarioData?.show_use_templates_flag ?? false}
-                      disabled={disabled}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({ ...prev, use_templates_flag_id: flagId }))
-                      }
-                      label="Templates"
-                      helpText={
-                        currentScenarioData?.use_templates_flag_resource?.description ||
-                        "Show the templates section."
-                      }
-                      iconId={currentScenarioData?.use_templates_flag_resource?.icon_id ?? undefined}
-                      group_id={currentScenarioData?.group_id ?? null}
-                    />
-                  </div>
-                </div>
-
+                {/* Server-driven Flags - single component for all flags */}
                 <Flags
-                  flag_id={formState.questions_enabled_flag_id ?? null}
-                  flag_resource={currentScenarioData?.questions_enabled_flag_resource ?? null}
-                  show_flag={currentScenarioData?.show_questions_enabled_flag ?? false}
+                  flags={currentScenarioData?.flags ?? []}
+                  flag_ids={{
+                    active: formState.active_flag_id ?? null,
+                    video_enabled: formState.video_enabled_flag_id ?? null,
+                    problem_statement_enabled:
+                      formState.problem_statement_enabled_flag_id ?? null,
+                    objectives_enabled:
+                      formState.objectives_enabled_flag_id ?? null,
+                    images_enabled: formState.images_enabled_flag_id ?? null,
+                    use_templates: formState.use_templates_flag_id ?? null,
+                    questions_enabled:
+                      formState.questions_enabled_flag_id ?? null,
+                  }}
+                  show_flags={currentScenarioData?.show_flags ?? false}
+                  columns={2}
+                  label="Flags"
                   disabled={disabled}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({ ...prev, questions_enabled_flag_id: flagId }))
-                  }
-                  label="Questions"
-                  helpText={
-                    currentScenarioData?.questions_enabled_flag_resource?.description ||
-                    "Show the questions section."
-                  }
-                  iconId={currentScenarioData?.questions_enabled_flag_resource?.icon_id ?? undefined}
-                  group_id={currentScenarioData?.group_id ?? null}
+                  onChange={(key, flagId) => {
+                    const fieldMap: Record<string, string> = {
+                      active: "active_flag_id",
+                      video_enabled: "video_enabled_flag_id",
+                      problem_statement_enabled:
+                        "problem_statement_enabled_flag_id",
+                      objectives_enabled: "objectives_enabled_flag_id",
+                      images_enabled: "images_enabled_flag_id",
+                      use_templates: "use_templates_flag_id",
+                      questions_enabled: "questions_enabled_flag_id",
+                    };
+                    const field = fieldMap[key];
+                    if (field) {
+                      setFormState((prev) => ({ ...prev, [field]: flagId }));
+                    }
+                  }}
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("scenario_flags")}
                 />
               </div>
             </StepCard>
@@ -2885,7 +2749,9 @@ function ScenarioComponent({
                 problem_statement_suggestions={
                   currentScenarioData?.problem_statement_suggestions ?? []
                 }
-                problem_statements={currentScenarioData?.problem_statements ?? []}
+                problem_statements={
+                  currentScenarioData?.problem_statements ?? []
+                }
                 disabled={disabled}
                 onProblemStatementIdChange={(problemStatementId) =>
                   setFormState((prev) => ({
@@ -2897,9 +2763,13 @@ function ScenarioComponent({
                 isGenerating={isGenerating("problem_statements")}
                 label="Problem Statement"
                 placeholder="Define the core problem"
-                required={currentScenarioData?.problem_statement_required ?? false}
+                required={
+                  currentScenarioData?.problem_statement_required ?? false
+                }
                 group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.problem_statement_agent_id ?? null}
+                agent_id={
+                  currentScenarioData?.problem_statement_agent_id ?? null
+                }
                 searchTerm={problemStatementSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ problemStatementSearch: term || null })
@@ -2953,11 +2823,19 @@ function ScenarioComponent({
             >
               <Objectives
                 objective_ids={formState.objective_ids}
-                objective_resources={currentScenarioData?.objective_resources ?? []}
+                objective_resources={
+                  currentScenarioData?.objective_resources ?? []
+                }
                 show_objectives={showObjectivesSection}
-                objectives_agent_id={currentScenarioData?.objectives_agent_id ?? null}
-                objectives_required={currentScenarioData?.objectives_required ?? false}
-                objective_suggestions={currentScenarioData?.objective_suggestions ?? []}
+                objectives_agent_id={
+                  currentScenarioData?.objectives_agent_id ?? null
+                }
+                objectives_required={
+                  currentScenarioData?.objectives_required ?? false
+                }
+                objective_suggestions={
+                  currentScenarioData?.objective_suggestions ?? []
+                }
                 objectives={currentScenarioData?.objectives ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -3030,16 +2908,22 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Personas
                   persona_ids={formState.persona_ids}
-                  persona_resources={currentScenarioData?.persona_resources ?? []}
+                  persona_resources={
+                    currentScenarioData?.persona_resources ?? []
+                  }
                   show_personas={currentScenarioData?.show_personas ?? false}
-                  persona_suggestions={currentScenarioData?.persona_suggestions ?? []}
+                  persona_suggestions={
+                    currentScenarioData?.persona_suggestions ?? []
+                  }
                   personas={currentScenarioData?.personas ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, persona_ids: ids }))
                   }
                   group_id={currentScenarioData?.group_id ?? null}
-                  personas_agent_id={currentScenarioData?.personas_agent_id ?? null}
+                  personas_agent_id={
+                    currentScenarioData?.personas_agent_id ?? null
+                  }
                   required={currentScenarioData?.personas_required ?? false}
                   createPersonasAction={
                     createPersonasAction as
@@ -3107,16 +2991,22 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Documents
                   document_ids={formState.document_ids}
-                  document_resources={currentScenarioData?.document_resources ?? []}
+                  document_resources={
+                    currentScenarioData?.document_resources ?? []
+                  }
                   show_documents={currentScenarioData?.show_documents ?? false}
-                  document_suggestions={currentScenarioData?.document_suggestions ?? []}
+                  document_suggestions={
+                    currentScenarioData?.document_suggestions ?? []
+                  }
                   documents={currentScenarioData?.documents ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, document_ids: ids }))
                   }
                   group_id={currentScenarioData?.group_id ?? null}
-                  documents_agent_id={currentScenarioData?.documents_agent_id ?? null}
+                  documents_agent_id={
+                    currentScenarioData?.documents_agent_id ?? null
+                  }
                   required={currentScenarioData?.documents_required ?? false}
                   createDocumentsAction={
                     createDocumentsAction as
@@ -3176,9 +3066,13 @@ function ScenarioComponent({
             >
               <Templates
                 template_ids={formState.template_ids}
-                template_resources={currentScenarioData?.template_resources ?? []}
+                template_resources={
+                  currentScenarioData?.template_resources ?? []
+                }
                 show_templates={showTemplatesSection}
-                template_suggestions={currentScenarioData?.template_suggestions ?? []}
+                template_suggestions={
+                  currentScenarioData?.template_suggestions ?? []
+                }
                 templates={currentScenarioData?.templates ?? []}
                 searchTerm={templateSearch}
                 disabled={disabled}
@@ -3186,7 +3080,9 @@ function ScenarioComponent({
                   setFormState((prev) => ({ ...prev, template_ids: ids }))
                 }
                 group_id={currentScenarioData?.group_id ?? null}
-                templates_agent_id={currentScenarioData?.templates_agent_id ?? null}
+                templates_agent_id={
+                  currentScenarioData?.templates_agent_id ?? null
+                }
                 required={currentScenarioData?.templates_required ?? false}
                 createTemplatesAction={
                   createTemplatesAction as
@@ -3259,7 +3155,9 @@ function ScenarioComponent({
                   parameter_resources={
                     currentScenarioData?.parameter_resources ?? []
                   }
-                  show_parameters={currentScenarioData?.show_parameters ?? false}
+                  show_parameters={
+                    currentScenarioData?.show_parameters ?? false
+                  }
                   parameter_suggestions={
                     currentScenarioData?.parameter_suggestions ?? []
                   }
@@ -3304,10 +3202,16 @@ function ScenarioComponent({
                       parameter_field_ids: ids,
                     }))
                   }
-                  onConditionalParameterToggle={handleConditionalParameterToggle}
+                  onConditionalParameterToggle={
+                    handleConditionalParameterToggle
+                  }
                   group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.parameter_fields_agent_id ?? null}
-                  required={currentScenarioData?.parameter_fields_required ?? false}
+                  agent_id={
+                    currentScenarioData?.parameter_fields_agent_id ?? null
+                  }
+                  required={
+                    currentScenarioData?.parameter_fields_required ?? false
+                  }
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.parameter_fields}
@@ -3368,7 +3272,9 @@ function ScenarioComponent({
                 agent_id={currentScenarioData?.images_agent_id ?? null}
                 createImagesAction={
                   createImagesAction as
-                    | ((input: CreateDraftImagesIn) => Promise<CreateDraftImagesOut>)
+                    | ((
+                        input: CreateDraftImagesIn
+                      ) => Promise<CreateDraftImagesOut>)
                     | undefined
                 }
                 onGenerate={handleGenerateImages}
@@ -3431,7 +3337,9 @@ function ScenarioComponent({
                 agent_id={currentScenarioData?.videos_agent_id ?? null}
                 createVideosAction={
                   createVideosAction as
-                    | ((input: CreateDraftVideosIn) => Promise<CreateDraftVideosOut>)
+                    | ((
+                        input: CreateDraftVideosIn
+                      ) => Promise<CreateDraftVideosOut>)
                     | undefined
                 }
                 onGenerate={handleGenerateVideos}
@@ -3478,11 +3386,19 @@ function ScenarioComponent({
             >
               <Questions
                 question_ids={formState.question_ids}
-                question_resources={currentScenarioData?.question_resources ?? []}
+                question_resources={
+                  currentScenarioData?.question_resources ?? []
+                }
                 show_questions={showQuestionsSection}
-                questions_agent_id={currentScenarioData?.questions_agent_id ?? null}
-                questions_required={currentScenarioData?.questions_required ?? false}
-                question_suggestions={currentScenarioData?.question_suggestions ?? []}
+                questions_agent_id={
+                  currentScenarioData?.questions_agent_id ?? null
+                }
+                questions_required={
+                  currentScenarioData?.questions_required ?? false
+                }
+                question_suggestions={
+                  currentScenarioData?.question_suggestions ?? []
+                }
                 questions={currentScenarioData?.questions ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -3492,7 +3408,9 @@ function ScenarioComponent({
                 agent_id={currentScenarioData?.questions_agent_id ?? null}
                 createQuestionsAction={
                   createQuestionsAction as
-                    | ((input: CreateDraftQuestionsIn) => Promise<CreateDraftQuestionsOut>)
+                    | ((
+                        input: CreateDraftQuestionsIn
+                      ) => Promise<CreateDraftQuestionsOut>)
                     | undefined
                 }
                 onGenerate={handleGenerateQuestions}
@@ -3545,7 +3463,10 @@ function ScenarioComponent({
 
   return (
     <TooltipProvider>
-      <div className="w-full p-6 space-y-8" data-page={`scenario-${isEditMode ? "edit" : "new"}`}>
+      <div
+        className="w-full p-6 space-y-8"
+        data-page={`scenario-${isEditMode ? "edit" : "new"}`}
+      >
         <ReadOnlyBanner
           disabled={disabled}
           disabledReason={scenarioData?.disabled_reason ?? null}

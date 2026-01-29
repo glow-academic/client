@@ -10343,6 +10343,10 @@ export interface components {
             use_templates_flag_agent_id?: string | null;
             /** Use Templates Flag Required */
             use_templates_flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["ScenarioFlagConfig"][] | null;
+            /** Show Flags */
+            show_flags?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */
@@ -20720,6 +20724,36 @@ export interface components {
             parameter_id?: string | null;
             /** Show Selected */
             show_selected?: boolean | null;
+        };
+        /**
+         * ScenarioFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        ScenarioFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /**
          * ScenarioFlagResource
