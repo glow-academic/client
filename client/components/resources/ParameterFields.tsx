@@ -288,7 +288,9 @@ export function ParameterFields({
   const hasInitializedConditionalsRef = useRef(false);
 
   // Sync conditional parameters on load: if a selected field has a conditional_parameter_id,
-  // ensure that parameter is added to parameter_ids
+  // ensure that parameter is added to parameter_ids.
+  // This follows the FULL transitive chain: if field A unlocks param B, and param B has
+  // selected field C that unlocks param D, we need to enable both B and D.
   useEffect(() => {
     // Only run once when we have both selected resources and available fields
     if (hasInitializedConditionalsRef.current) return;
@@ -305,17 +307,55 @@ export function ParameterFields({
       }
     });
 
-    // Check each available field - if it's selected and has a conditional_parameter_id,
-    // trigger the toggle to add that parameter
+    // Build a map: parameter_id -> fields that belong to it
+    const fieldsByParameter = new Map<string, typeof availableFields>();
+    availableFields.forEach((field) => {
+      if (field.parameter_id) {
+        const existing = fieldsByParameter.get(field.parameter_id) ?? [];
+        existing.push(field);
+        fieldsByParameter.set(field.parameter_id, existing);
+      }
+    });
+
+    // Compute the full transitive chain of conditional parameters
+    // Start with parameters that have selected fields with conditional_parameter_id
+    const conditionalParamsToEnable = new Set<string>();
+
+    // First pass: find all conditional params from currently selected fields
     availableFields.forEach((field) => {
       if (
         field.field_id &&
         field.conditional_parameter_id &&
         selectedFieldIds.has(field.field_id)
       ) {
-        // This field is selected and unlocks a conditional parameter
-        onConditionalParameterToggle(field.conditional_parameter_id, true);
+        conditionalParamsToEnable.add(field.conditional_parameter_id);
       }
+    });
+
+    // Transitive pass: for each newly added param, check if its selected fields
+    // unlock more conditional params
+    let changed = true;
+    while (changed) {
+      changed = false;
+      conditionalParamsToEnable.forEach((paramId) => {
+        const paramFields = fieldsByParameter.get(paramId) ?? [];
+        paramFields.forEach((field) => {
+          if (
+            field.field_id &&
+            field.conditional_parameter_id &&
+            selectedFieldIds.has(field.field_id) &&
+            !conditionalParamsToEnable.has(field.conditional_parameter_id)
+          ) {
+            conditionalParamsToEnable.add(field.conditional_parameter_id);
+            changed = true;
+          }
+        });
+      });
+    }
+
+    // Trigger all conditional parameters at once
+    conditionalParamsToEnable.forEach((paramId) => {
+      onConditionalParameterToggle(paramId, true);
     });
   }, [selectedResources, availableFields, onConditionalParameterToggle]);
 
