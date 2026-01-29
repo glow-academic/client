@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -10,9 +12,7 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (GetProfileApiRequest, GetProfileSqlParams,
-                           GetProfileSqlRow)
-from fastapi import APIRouter
+from app.sql.types import GetProfileApiRequest, GetProfileSqlParams, GetProfileSqlRow
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
@@ -38,7 +38,9 @@ PROFILE_RESOURCE_TYPES = [
 class GenerateProfilePayload(GetProfileApiRequest):
     """Request to generate profile resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = None  # Optional: "name", "flags", "departments", "emails", "request_limits", "cohorts"
+    agent_type: str | None = (
+        None  # Optional: "name", "flags", "departments", "emails", "request_limits", "cohorts"
+    )
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
     staff_id: str | None = None  # Client passes staff_id instead of target_profile_id
@@ -122,40 +124,64 @@ async def _profile_generate_impl(
             resources: list[dict[str, Any]] = []
 
             if result.names:
-                resources.append({
-                    "resource_type": "names",
-                    "resource_ids": [str(n.id) for n in result.names if n.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "names",
+                        "resource_ids": [str(n.id) for n in result.names if n.id],
+                    }
+                )
             if result.emails:
-                resources.append({
-                    "resource_type": "emails",
-                    "resource_ids": [str(e.id) for e in result.emails if e.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "emails",
+                        "resource_ids": [str(e.id) for e in result.emails if e.id],
+                    }
+                )
             if result.request_limits:
-                resources.append({
-                    "resource_type": "request_limits",
-                    "resource_ids": [str(r.id) for r in result.request_limits if r.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "request_limits",
+                        "resource_ids": [
+                            str(r.id) for r in result.request_limits if r.id
+                        ],
+                    }
+                )
             if result.departments:
-                resources.append({
-                    "resource_type": "departments",
-                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "departments",
+                        "resource_ids": [
+                            str(d.department_id)
+                            for d in result.departments
+                            if d.department_id
+                        ],
+                    }
+                )
             if result.cohorts:
-                resources.append({
-                    "resource_type": "cohorts",
-                    "resource_ids": [str(c.cohort_id) for c in result.cohorts if c.cohort_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "cohorts",
+                        "resource_ids": [
+                            str(c.cohort_id) for c in result.cohorts if c.cohort_id
+                        ],
+                    }
+                )
             if result.routes:
-                resources.append({
-                    "resource_type": "routes",
-                    "resource_ids": [str(r.route_id) for r in result.routes if r.route_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "routes",
+                        "resource_ids": [
+                            str(r.route_id) for r in result.routes if r.route_id
+                        ],
+                    }
+                )
             if result.flag_resource and result.flag_resource.id:
-                resources.append({
-                    "resource_type": "flags",
-                    "resource_ids": [str(result.flag_resource.id)]
-                })
+                resources.append(
+                    {
+                        "resource_type": "flags",
+                        "resource_ids": [str(result.flag_resource.id)],
+                    }
+                )
 
             group_id: uuid.UUID | None = result.group_id
 
@@ -282,7 +308,9 @@ async def _profile_generate_impl(
                         sid=sid,
                     )
                     continue
-                per_resources = [r for r in resources if r.get("resource_type") == resource_type]
+                per_resources = [
+                    r for r in resources if r.get("resource_type") == resource_type
+                ]
                 per_resources_sql = normalize_resources_for_sql(per_resources)
                 create_run_sql = load_sql(CREATE_RUN_SQL_PATH)
                 create_run_row = await conn.fetchrow(

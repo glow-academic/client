@@ -9178,8 +9178,6 @@ export interface components {
             content_agent_id?: string | null;
             /** Parameters Step Agent Id */
             parameters_step_agent_id?: string | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /** GetPersonaResourceApiRequest */
         GetPersonaResourceApiRequest: {
@@ -10489,8 +10487,6 @@ export interface components {
             basic_agent_id?: string | null;
             /** Content Agent Id */
             content_agent_id?: string | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /**
          * GetScenariosApiRequest
@@ -11590,8 +11586,6 @@ export interface components {
             departments?: components["schemas"]["ListPersonaApiDepartment"][] | null;
             /** Total Count */
             total_count?: number | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /**
          * ListPersonaApiScenario
@@ -11726,8 +11720,6 @@ export interface components {
             department_options?: components["schemas"]["ListScenarioApiOption"][] | null;
             /** Total Count */
             total_count?: number | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /**
          * ListScenarioApiScenario

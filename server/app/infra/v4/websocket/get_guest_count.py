@@ -1,8 +1,7 @@
 """Get current guest connection count."""
 
-from app.utils.logging.db_logger import get_logger
-
 from app.main import get_redis_client
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

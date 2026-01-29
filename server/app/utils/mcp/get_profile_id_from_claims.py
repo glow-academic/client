@@ -3,7 +3,6 @@
 from typing import Any
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import execute_sql_typed
 
 
 async def get_profile_id_from_claims(
@@ -11,23 +10,23 @@ async def get_profile_id_from_claims(
     conn: asyncpg.Connection,
 ) -> str | None:
     """Extract profile_id from OAuth token claims.
-    
+
     Strategy:
     1. Extract email from claims (primary method)
     2. Query profiles table via profile_emails junction and emails_resource
     3. Return profile_id UUID string or None
-    
+
     Args:
         claims: OAuth token claims dict (from request.state.mcp_claims)
         conn: Database connection
-        
+
     Returns:
         Profile ID UUID string or None if not found
     """
     email = claims.get("email")
     if not email:
         return None
-    
+
     # Query profile_id from email using existing SQL function
     # We'll use a simple query that matches the pattern used elsewhere
     query = """
@@ -38,7 +37,7 @@ async def get_profile_id_from_claims(
         WHERE e.email = $1
         LIMIT 1
     """
-    
+
     try:
         result = await conn.fetchrow(query, email)
         if result:

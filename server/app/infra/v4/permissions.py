@@ -5,7 +5,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # Profile role type (matches database enum)
-ProfileRole = Literal["guest", "member", "instructional", "admin", "superadmin", "custom"]
+ProfileRole = Literal[
+    "guest", "member", "instructional", "admin", "superadmin", "custom"
+]
 
 
 class RoutePermission(BaseModel):

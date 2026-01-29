@@ -3,7 +3,7 @@
 Provides get endpoint for fetching a single document by ID.
 """
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -102,7 +102,10 @@ async def get_documents_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetDocumentsV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetDocumentsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     # Execute SQL
     params = GetDocumentsSqlParams(p_ids=ids)

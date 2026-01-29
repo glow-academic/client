@@ -7,7 +7,6 @@ from urllib.parse import parse_qs
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.add_guest_socket import add_guest_socket
@@ -23,6 +22,7 @@ from app.sql.types import (
     UpdateProfileToInactiveSqlParams,
     UpdateProfileToInactiveSqlRow,
 )
+from app.utils.sql_helper import execute_sql_typed
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -117,6 +117,7 @@ async def connect(
         if session_id:
             try:
                 from app.main import get_redis_client
+
                 redis_client = get_redis_client()
                 if redis_client:
                     await redis_client.setex(f"socket_session:{sid}", 86400, session_id)

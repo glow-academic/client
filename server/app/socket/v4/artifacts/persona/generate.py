@@ -13,6 +13,7 @@ The AI handler (generate.py) receives a simplified payload with pre-rendered con
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
@@ -29,7 +30,6 @@ from app.sql.types import (
     GetPersonaSqlRow,
     QGetPersonaResourceTreeV4Node,
 )
-from fastapi import APIRouter
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -73,7 +73,9 @@ PERSONA_RESOURCE_TYPES = [
 class GeneratePersonaPayload(GetPersonaApiRequest):
     """Request to generate persona resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = None  # Optional: "name", "description", "basic", "content", "general"/"all"
+    agent_type: str | None = (
+        None  # Optional: "name", "description", "basic", "content", "general"/"all"
+    )
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
@@ -307,7 +309,9 @@ async def _persona_generate_impl(
                     p_group_id=existing_group_id,
                     p_resources=resources if resources else None,
                 )
-                prepare_row = await conn.fetchrow(prepare_sql, *prepare_params.to_tuple())
+                prepare_row = await conn.fetchrow(
+                    prepare_sql, *prepare_params.to_tuple()
+                )
 
                 if not prepare_row:
                     await emit_to_internal(
@@ -316,7 +320,9 @@ async def _persona_generate_impl(
                             sid=sid,
                             error_message="Failed to prepare persona generation",
                             artifact_type="persona",
-                            group_id=str(existing_group_id) if existing_group_id else None,
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
                             resource_type="persona",
                         ),
                         sid=sid,
@@ -338,7 +344,9 @@ async def _persona_generate_impl(
                             sid=sid,
                             error_message=user_msg,
                             artifact_type="persona",
-                            group_id=str(existing_group_id) if existing_group_id else None,
+                            group_id=str(existing_group_id)
+                            if existing_group_id
+                            else None,
                             resource_type="persona",
                         ),
                         sid=sid,
@@ -361,7 +369,9 @@ async def _persona_generate_impl(
             voice = prepare_row["voice"]
             quality = prepare_row["quality"]
             tools = prepare_row["tools"]
-            developer_instruction_templates = prepare_row["developer_instruction_templates"]
+            developer_instruction_templates = prepare_row[
+                "developer_instruction_templates"
+            ]
             jinja_context = prepare_row["jinja_context"]
 
             # Step 5: Render developer instructions with Jinja
@@ -374,8 +384,12 @@ async def _persona_generate_impl(
             insert_sql = load_sql(SQL_PATH_INSERT_MESSAGES)
             insert_params = InsertGenerationMessagesSqlParams(
                 p_run_id=run_id,
-                p_developer_messages=rendered_developer_messages if rendered_developer_messages else None,
-                p_user_messages=data.user_instructions if data.user_instructions else None,
+                p_developer_messages=rendered_developer_messages
+                if rendered_developer_messages
+                else None,
+                p_user_messages=data.user_instructions
+                if data.user_instructions
+                else None,
             )
             insert_row = await conn.fetchrow(insert_sql, *insert_params.to_tuple())
 
@@ -408,8 +422,15 @@ async def _persona_generate_impl(
                     "group_id": str(group_id) if group_id else None,
                     "message_id": str(message_id) if message_id else None,
                     "messages": (
-                        ([{"role": "system", "content": system_prompt}] if system_prompt else [])
-                        + [{"role": "developer", "content": m} for m in rendered_developer_messages]
+                        (
+                            [{"role": "system", "content": system_prompt}]
+                            if system_prompt
+                            else []
+                        )
+                        + [
+                            {"role": "developer", "content": m}
+                            for m in rendered_developer_messages
+                        ]
                         + (messages if isinstance(messages, list) else [])
                     ),
                     "llm_config": {

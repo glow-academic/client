@@ -40,7 +40,11 @@ def get_models_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "model_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "model_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

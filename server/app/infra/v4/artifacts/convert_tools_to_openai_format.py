@@ -2,11 +2,9 @@
 
 from typing import Any
 
-from app.sql.types import IGetTextRunContextAndCreateRunV4Tool
 from openai.types.responses.function_tool_param import FunctionToolParam
-from openai.types.responses.response_create_params import ToolChoice
-from openai.types.responses.response_input_param import ResponseInputParam
-from openai.types.responses.tool_param import ToolParam
+
+from app.sql.types import IGetTextRunContextAndCreateRunV4Tool
 
 
 def convert_tools_to_openai_format(

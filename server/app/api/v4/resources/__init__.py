@@ -10,8 +10,7 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 from app.api.v4.resources.args.create import router as args_router
 
 router.include_router(args_router)
-from app.api.v4.resources.args_outputs.create import \
-    router as args_outputs_router
+from app.api.v4.resources.args_outputs.create import router as args_outputs_router
 
 router.include_router(args_outputs_router)
 # NOTE: audios removed - converted to audios_entry (migration 328)
@@ -37,12 +36,11 @@ from app.api.v4.resources.departments.search import router as departments_search
 
 router.include_router(departments_get_router)
 router.include_router(departments_search_router)
-from app.api.v4.resources.descriptions.create import \
-    router as descriptions_router
-from app.api.v4.resources.descriptions.get import \
-    router as descriptions_get_router
-from app.api.v4.resources.descriptions.search import \
-    router as descriptions_search_router
+from app.api.v4.resources.descriptions.create import router as descriptions_router
+from app.api.v4.resources.descriptions.get import router as descriptions_get_router
+from app.api.v4.resources.descriptions.search import (
+    router as descriptions_search_router,
+)
 
 router.include_router(descriptions_router)
 router.include_router(descriptions_get_router)
@@ -75,9 +73,15 @@ from app.api.v4.resources.fields.search import router as fields_search_router
 router.include_router(fields_get_router)
 router.include_router(fields_search_router)
 # Parameter fields endpoints for personas two-pass architecture
-from app.api.v4.resources.parameter_fields.create import router as parameter_fields_create_router
-from app.api.v4.resources.parameter_fields.get import router as parameter_fields_get_router
-from app.api.v4.resources.parameter_fields.search import router as parameter_fields_search_router
+from app.api.v4.resources.parameter_fields.create import (
+    router as parameter_fields_create_router,
+)
+from app.api.v4.resources.parameter_fields.get import (
+    router as parameter_fields_get_router,
+)
+from app.api.v4.resources.parameter_fields.search import (
+    router as parameter_fields_search_router,
+)
 
 router.include_router(parameter_fields_create_router)
 router.include_router(parameter_fields_get_router)
@@ -91,12 +95,10 @@ from app.api.v4.resources.flags.search import router as flags_search_router
 
 router.include_router(flags_get_router)
 router.include_router(flags_search_router)
-from app.api.v4.resources.group_positions.create import \
-    router as group_positions_router
+from app.api.v4.resources.group_positions.create import router as group_positions_router
 
 router.include_router(group_positions_router)
-from app.api.v4.resources.group_rubrics.create import \
-    router as group_rubrics_router
+from app.api.v4.resources.group_rubrics.create import router as group_rubrics_router
 
 router.include_router(group_rubrics_router)
 # NOTE: groups removed - non-creatable (migration 328)
@@ -114,12 +116,11 @@ from app.api.v4.resources.images.get import router as images_get_router
 router.include_router(images_router)
 router.include_router(images_get_router)
 # NOTE: improvements removed - converted to entry table (migration 305)
-from app.api.v4.resources.instructions.create import \
-    router as instructions_router
-from app.api.v4.resources.instructions.get import \
-    router as instructions_get_router
-from app.api.v4.resources.instructions.search import \
-    router as instructions_search_router
+from app.api.v4.resources.instructions.create import router as instructions_router
+from app.api.v4.resources.instructions.get import router as instructions_get_router
+from app.api.v4.resources.instructions.search import (
+    router as instructions_search_router,
+)
 
 router.include_router(instructions_router)
 router.include_router(instructions_get_router)
@@ -165,10 +166,12 @@ router.include_router(points_router)
 from app.api.v4.resources.pricing.create import router as pricing_router
 
 router.include_router(pricing_router)
-from app.api.v4.resources.problem_statements.create import \
-    router as problem_statements_router
-from app.api.v4.resources.problem_statements.get import \
-    router as problem_statements_get_router
+from app.api.v4.resources.problem_statements.create import (
+    router as problem_statements_router,
+)
+from app.api.v4.resources.problem_statements.get import (
+    router as problem_statements_get_router,
+)
 
 router.include_router(problem_statements_router)
 router.include_router(problem_statements_get_router)
@@ -187,8 +190,7 @@ from app.api.v4.resources.questions.get import router as questions_get_router
 router.include_router(questions_router)
 router.include_router(questions_get_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
-from app.api.v4.resources.request_limits.create import \
-    router as request_limits_router
+from app.api.v4.resources.request_limits.create import router as request_limits_router
 
 router.include_router(request_limits_router)
 # NOTE: responses removed - converted to entry table (migration 305)
@@ -198,30 +200,32 @@ from app.api.v4.resources.roles.get import router as roles_get_router
 
 router.include_router(roles_get_router)
 # NOTE: rubrics removed - non-creatable, sync via artifact save (migration 328)
-from app.api.v4.resources.run_positions.create import \
-    router as run_positions_router
+from app.api.v4.resources.run_positions.create import router as run_positions_router
 
 router.include_router(run_positions_router)
-from app.api.v4.resources.run_rubrics.create import \
-    router as run_rubrics_router
+from app.api.v4.resources.run_rubrics.create import router as run_rubrics_router
 
 router.include_router(run_rubrics_router)
 # NOTE: runs removed - non-creatable (migration 328)
 # NOTE: scenario_flags removed - non-creatable (migration 328)
-from app.api.v4.resources.setting_role_routes.create import \
-    router as setting_role_routes_router
+from app.api.v4.resources.setting_role_routes.create import (
+    router as setting_role_routes_router,
+)
 
 router.include_router(setting_role_routes_router)
-from app.api.v4.resources.scenario_positions.create import \
-    router as scenario_positions_router
+from app.api.v4.resources.scenario_positions.create import (
+    router as scenario_positions_router,
+)
 
 router.include_router(scenario_positions_router)
-from app.api.v4.resources.scenario_rubrics.create import \
-    router as scenario_rubrics_router
+from app.api.v4.resources.scenario_rubrics.create import (
+    router as scenario_rubrics_router,
+)
 
 router.include_router(scenario_rubrics_router)
-from app.api.v4.resources.scenario_time_limits.create import \
-    router as scenario_time_limits_router
+from app.api.v4.resources.scenario_time_limits.create import (
+    router as scenario_time_limits_router,
+)
 
 router.include_router(scenario_time_limits_router)
 # NOTE: scenarios removed - non-creatable, sync via artifact save (migration 328)
@@ -234,12 +238,15 @@ router.include_router(scenarios_router)
 from app.api.v4.resources.settings.get import router as settings_get_router
 
 router.include_router(settings_get_router)
-from app.api.v4.resources.simulation_positions.create import \
-    router as simulation_positions_router
-from app.api.v4.resources.simulation_positions.get import \
-    router as simulation_positions_get_router
-from app.api.v4.resources.simulation_positions.search import \
-    router as simulation_positions_search_router
+from app.api.v4.resources.simulation_positions.create import (
+    router as simulation_positions_router,
+)
+from app.api.v4.resources.simulation_positions.get import (
+    router as simulation_positions_get_router,
+)
+from app.api.v4.resources.simulation_positions.search import (
+    router as simulation_positions_search_router,
+)
 
 router.include_router(simulation_positions_router)
 router.include_router(simulation_positions_get_router)
@@ -254,8 +261,7 @@ router.include_router(simulations_search_router)
 from app.api.v4.resources.slugs.create import router as slugs_router
 
 router.include_router(slugs_router)
-from app.api.v4.resources.standard_groups.create import \
-    router as standard_groups_router
+from app.api.v4.resources.standard_groups.create import router as standard_groups_router
 
 router.include_router(standard_groups_router)
 # NOTE: standards removed - non-creatable (migration 328)

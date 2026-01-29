@@ -3,9 +3,9 @@
 Used internally by profile context 2-pass architecture.
 """
 
+from datetime import datetime
 from typing import Any, cast
 from uuid import UUID
-from datetime import datetime
 
 import asyncpg  # type: ignore
 from pydantic import BaseModel, Field
@@ -85,7 +85,10 @@ async def get_drafts_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetDraftsV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetDraftsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     # Execute SQL
     params = GetDraftsSqlParams(ids=ids)

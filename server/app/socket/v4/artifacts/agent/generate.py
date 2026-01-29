@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -11,7 +13,6 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import GetAgentApiRequest, GetAgentSqlParams, GetAgentSqlRow
-from fastapi import APIRouter
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -41,7 +42,9 @@ AGENT_RESOURCE_TYPES = [
 class GenerateAgentPayload(GetAgentApiRequest):
     """Request to generate agent resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = None  # Optional: "name", "description", "model", "prompt", "instructions", "flags", "departments", "general"/"all"
+    agent_type: str | None = (
+        None  # Optional: "name", "description", "model", "prompt", "instructions", "flags", "departments", "general"/"all"
+    )
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
@@ -67,9 +70,7 @@ async def _agent_generate_impl(
             )
             return
 
-        invalid_types = [
-            rt for rt in resource_types if rt not in AGENT_RESOURCE_TYPES
-        ]
+        invalid_types = [rt for rt in resource_types if rt not in AGENT_RESOURCE_TYPES]
         if invalid_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -158,35 +159,59 @@ async def _agent_generate_impl(
 
             # Extract IDs from each resource array
             if result.names:
-                resources.append({
-                    "resource_type": "names",
-                    "resource_ids": [str(n.id) for n in result.names if n.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "names",
+                        "resource_ids": [str(n.id) for n in result.names if n.id],
+                    }
+                )
             if result.descriptions:
-                resources.append({
-                    "resource_type": "descriptions",
-                    "resource_ids": [str(d.id) for d in result.descriptions if d.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "descriptions",
+                        "resource_ids": [
+                            str(d.id) for d in result.descriptions if d.id
+                        ],
+                    }
+                )
             if result.models:
-                resources.append({
-                    "resource_type": "models",
-                    "resource_ids": [str(m.model_id) for m in result.models if m.model_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "models",
+                        "resource_ids": [
+                            str(m.model_id) for m in result.models if m.model_id
+                        ],
+                    }
+                )
             if result.prompts:
-                resources.append({
-                    "resource_type": "prompts",
-                    "resource_ids": [str(p.prompt_id) for p in result.prompts if p.prompt_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "prompts",
+                        "resource_ids": [
+                            str(p.prompt_id) for p in result.prompts if p.prompt_id
+                        ],
+                    }
+                )
             if result.instructions:
-                resources.append({
-                    "resource_type": "instructions",
-                    "resource_ids": [str(inst.id) for inst in result.instructions if inst.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "instructions",
+                        "resource_ids": [
+                            str(inst.id) for inst in result.instructions if inst.id
+                        ],
+                    }
+                )
             if result.departments:
-                resources.append({
-                    "resource_type": "departments",
-                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "departments",
+                        "resource_ids": [
+                            str(d.department_id)
+                            for d in result.departments
+                            if d.department_id
+                        ],
+                    }
+                )
 
             # Get group_id from response if available
             group_id: uuid.UUID | None = result.group_id

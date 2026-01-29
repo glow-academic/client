@@ -3,9 +3,11 @@
 import asyncio
 from typing import Any
 
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.session_store import get_session_by_run_id, get_session_by_sid
+from app.socket.v4.artifacts.session_store import (
+    get_session_by_run_id,
+    get_session_by_sid,
+)
 
 internal_sio = get_internal_sio()
 
@@ -21,21 +23,23 @@ async def audio_frame_send(sid: str, data: dict[str, Any]) -> None:
             run_id = data.get("run_id")
             if run_id:
                 session = get_session_by_run_id(str(run_id))
-        
+
         if not session:
             # Session not found - ignore silently (session may not be initialized yet)
             return
-        
+
         # Extract audio data (can be binary ArrayBuffer or base64 string)
         audio_data = data.get("audio")
         if not audio_data:
             return
-        
+
         # Push to inbound_queue
-        await session.inbound_queue.put({
-            "type": "audio",
-            "pcm16_bytes": audio_data,  # Will be handled as binary or base64 in uplink loop
-        })
+        await session.inbound_queue.put(
+            {
+                "type": "audio",
+                "pcm16_bytes": audio_data,  # Will be handled as binary or base64 in uplink loop
+            }
+        )
     except Exception:
         # Ignore errors - session may not exist or be closed
         pass
@@ -52,17 +56,19 @@ async def mic_set_muted(sid: str, data: dict[str, Any]) -> None:
             run_id = data.get("run_id")
             if run_id:
                 session = get_session_by_run_id(str(run_id))
-        
+
         if not session:
             # Session not found - ignore silently
             return
-        
+
         # Push control message to inbound_queue
         muted = data.get("muted", False)
-        await session.inbound_queue.put({
-            "type": "mic.set_muted",
-            "muted": muted,
-        })
+        await session.inbound_queue.put(
+            {
+                "type": "mic.set_muted",
+                "muted": muted,
+            }
+        )
     except Exception:
         # Ignore errors - session may not exist or be closed
         pass
@@ -74,11 +80,11 @@ async def _client_ws_sender_task(sid: str, run_id: str) -> None:
         session = get_session_by_run_id(run_id)
         if not session:
             return
-        
+
         while True:
             try:
                 msg = await session.outbound_queue.get()
-                
+
                 if msg.get("type") == "audio":
                     pcm16_data = msg.get("pcm16")
                     if pcm16_data:

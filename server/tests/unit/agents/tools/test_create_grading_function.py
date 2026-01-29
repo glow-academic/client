@@ -5,9 +5,8 @@ Tests for app.utils.agents.tools.create_grading_function
 import uuid
 from typing import Any
 
-from app.utils.agents.tools.create_grading_function import create_grading_function
-
 from app.main import grading_progress, grading_results
+from app.utils.agents.tools.create_grading_function import create_grading_function
 
 
 class TestCreate_Grading_Function:

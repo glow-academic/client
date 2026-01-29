@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
-from app.api.v4.bulk.staff.process import router as process_router
-from app.api.v4.bulk.staff.search import router as search_router
-from app.api.v4.bulk.staff.save import router as save_router
 from app.api.v4.bulk.staff.delete import router as delete_router
+from app.api.v4.bulk.staff.process import router as process_router
+from app.api.v4.bulk.staff.save import router as save_router
+from app.api.v4.bulk.staff.search import router as search_router
 
 router = APIRouter(prefix="/staff", tags=["bulk", "staff"])
 

@@ -4,26 +4,27 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.artifacts.scenario.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
 from app.api.v4.artifacts.scenario.types import (
     GetScenariosListApiRequest,
     GetScenariosListSqlParams,
     ListScenarioApiResponse,
     ListScenarioSqlRow,
 )
-from app.api.v4.artifacts.scenario.permissions import (
-    compute_can_edit,
-    compute_can_delete,
-    compute_can_duplicate,
-)
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
 from app.sql.types import load_sql_query
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenario/get_scenarios_list_complete.sql"
@@ -99,13 +100,23 @@ async def get_scenario_list(
         user_role = result.user_role
         scenarios_with_permissions = []
         for scenario in result.scenarios or []:
-            scenario_dict = scenario.model_dump() if hasattr(scenario, "model_dump") else dict(scenario)
+            scenario_dict = (
+                scenario.model_dump()
+                if hasattr(scenario, "model_dump")
+                else dict(scenario)
+            )
             # num_simulations = count of simulations using this scenario
             usage_count = scenario_dict.get("num_simulations") or 0
             department_ids_raw = scenario_dict.get("department_ids") or []
-            department_ids = [UUID(d) if isinstance(d, str) else d for d in department_ids_raw]
-            scenario_dict["can_edit"] = compute_can_edit(user_role, department_ids, usage_count)
-            scenario_dict["can_delete"] = compute_can_delete(user_role, department_ids, usage_count)
+            department_ids = [
+                UUID(d) if isinstance(d, str) else d for d in department_ids_raw
+            ]
+            scenario_dict["can_edit"] = compute_can_edit(
+                user_role, department_ids, usage_count
+            )
+            scenario_dict["can_delete"] = compute_can_delete(
+                user_role, department_ids, usage_count
+            )
             scenario_dict["can_duplicate"] = compute_can_duplicate(user_role)
             scenarios_with_permissions.append(scenario_dict)
 

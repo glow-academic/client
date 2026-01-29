@@ -114,6 +114,7 @@ class TestGenericAgent:
 
     def test_get_tool_functions(self) -> None:
         """Test GenericAgent.get_tool_functions() method."""
+
         # Arrange
         async def mock_tool(arg1: str) -> str:
             return "success"

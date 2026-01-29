@@ -12,20 +12,21 @@ import uuid
 from typing import Any, cast
 
 import asyncpg
-from app.sql.types import (CreateSchemaFieldItemV4SqlParams,
-                           CreateSchemaFieldV4SqlParams,
-                           CreateSchemaV4SqlParams,
-                           CreateTemplateArrayItemV4SqlParams,
-                           CreateTemplateV4SqlParams,
-                           CreateTemplateValueV4SqlParams,
-                           GetSchemaWithFieldsSqlParams,
-                           GetSchemaWithFieldsSqlRow,
-                           GetTemplateArrayItemsV4SqlParams,
-                           GetTemplateArrayItemsV4SqlRow,
-                           GetTemplateSchemaSqlParams, GetTemplateSchemaSqlRow,
-                           GetTemplateValuesV4SqlParams,
-                           GetTemplateValuesV4SqlRow,
-                           LinkSchemaTemplateV4SqlParams)
+
+from app.sql.types import (
+    CreateSchemaFieldItemV4SqlParams,
+    CreateSchemaFieldV4SqlParams,
+    CreateSchemaV4SqlParams,
+    CreateTemplateArrayItemV4SqlParams,
+    CreateTemplateV4SqlParams,
+    CreateTemplateValueV4SqlParams,
+    GetSchemaWithFieldsSqlParams,
+    GetTemplateArrayItemsV4SqlParams,
+    GetTemplateSchemaSqlParams,
+    GetTemplateSchemaSqlRow,
+    GetTemplateValuesV4SqlParams,
+    LinkSchemaTemplateV4SqlParams,
+)
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 
@@ -161,9 +162,7 @@ async def get_template_schema(
             params=params,
         ),
     )
-    row = {
-        "schema_id": row_result.schema_id if row_result else None
-    }
+    row = {"schema_id": row_result.schema_id if row_result else None}
 
     if not row or not row["schema_id"]:
         return None
@@ -191,7 +190,9 @@ async def get_template_values(
     """
     # Get all scalar values
     values_params = GetTemplateValuesV4SqlParams(template_id=template_id)
-    values_sql = load_sql("app/sql/v4/queries/utils/get_template_values_v4_complete.sql")
+    values_sql = load_sql(
+        "app/sql/v4/queries/utils/get_template_values_v4_complete.sql"
+    )
     values_rows_raw = await conn.fetch(values_sql, template_id)
     values_rows = [
         {
@@ -206,7 +207,9 @@ async def get_template_values(
 
     # Get all array items
     array_params = GetTemplateArrayItemsV4SqlParams(template_id=template_id)
-    array_sql = load_sql("app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql")
+    array_sql = load_sql(
+        "app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql"
+    )
     array_items_rows_raw = await conn.fetch(array_sql, template_id)
     array_items_rows = [
         {

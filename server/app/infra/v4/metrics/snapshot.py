@@ -4,14 +4,16 @@ from datetime import datetime
 from typing import cast
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     InfrastructureMetricsSnapshotSqlParams,
     InfrastructureMetricsSnapshotSqlRow,
 )
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_metrics_snapshot_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/infrastructure_metrics_snapshot_complete.sql"
+)
 
 
 async def log_metrics_snapshot(

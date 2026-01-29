@@ -1,6 +1,5 @@
 """Simulation progress handler - listens to generate_* events and emits simulation-specific events."""
 
-import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -28,16 +27,16 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
 
     resource_type = data.get("resource_type")
     modality = data.get("modality")
-    
+
     sid = data.get("sid", "")
     if not sid:
         return  # No socket ID, can't emit to client
-    
+
     # Get profile_id from sid
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         return
-    
+
     # Extract event type and map to simulation events
     event_type = data.get("event_type") or data.get("type")
     chat_id = data.get("chat_id") or data.get("group_id")

@@ -6,13 +6,6 @@ from typing import Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import Request
-from app.utils.logging.db_logger import get_logger
-from app.utils.settings.theme import (
-    ThemePrimitives,
-    ThemeTokens,
-    derive_theme_tokens,
-)
-from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.templates.jinja_renderer import render_template
 from app.main import UPLOAD_FOLDER
@@ -22,11 +15,22 @@ from app.sql.types import (
     InfrastructureDocumentsGetDocumentAgentsSqlParams,
     InfrastructureDocumentsGetDocumentAgentsSqlRow,
 )
+from app.utils.logging.db_logger import get_logger
+from app.utils.settings.theme import (
+    ThemePrimitives,
+    ThemeTokens,
+    derive_theme_tokens,
+)
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
-ACTIVE_SETTINGS_SQL_PATH = "app/sql/v4/queries/settings/get_active_settings_complete.sql"
-GET_DOCUMENT_AGENTS_SQL_PATH = "app/sql/v4/queries/infrastructure/documents/get_document_agents_complete.sql"
+ACTIVE_SETTINGS_SQL_PATH = (
+    "app/sql/v4/queries/settings/get_active_settings_complete.sql"
+)
+GET_DOCUMENT_AGENTS_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/documents/get_document_agents_complete.sql"
+)
 
 
 async def create_dynamic_document(
@@ -84,7 +88,7 @@ async def create_dynamic_document(
     )
     if not parent_result:
         raise ValueError(f"Parent document {parent_document_id} not found")
-    
+
     parent_row = {
         "classify_agent_id": parent_result.classify_agent_id,
         "document_agent_id": parent_result.document_agent_id,
@@ -164,7 +168,9 @@ async def create_dynamic_document(
     child_name = f"{parent_row['name']} (Dynamic)"
     child_description = parent_row.get("description") or ""
 
-    sql_insert_document = load_sql("app/sql/v4/queries/documents/insert_document_complete.sql")
+    sql_insert_document = load_sql(
+        "app/sql/v4/queries/documents/insert_document_complete.sql"
+    )
     await conn.execute(
         sql_insert_document,
         str(child_document_id),
@@ -200,7 +206,9 @@ async def create_dynamic_document(
     upload_id = upload_row["id"]
 
     # Link document to upload (regular upload, not template upload)
-    sql_link_upload = load_sql("app/sql/v4/queries/documents/insert_document_upload.sql")
+    sql_link_upload = load_sql(
+        "app/sql/v4/queries/documents/insert_document_upload.sql"
+    )
     await conn.execute(
         sql_link_upload,
         str(child_document_id),

@@ -24,7 +24,9 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/personas/patch_persona_draft_complete.sql"
 
 router = APIRouter()
@@ -109,7 +111,9 @@ async def patch_persona_draft(
                 "success": True,
                 "draft_id": str(result.draft_id),
                 "new_version": result.new_version,
-                "message": "Draft updated successfully" if is_update else "Draft created successfully",
+                "message": "Draft updated successfully"
+                if is_update
+                else "Draft created successfully",
             }
         )
 

@@ -41251,18 +41251,6 @@
               }
             ],
             "title": "Parameters Step Agent Id"
-          },
-          "general_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "General Agent Id"
           }
         },
         "type": "object",
@@ -48340,18 +48328,6 @@
               }
             ],
             "title": "Content Agent Id"
-          },
-          "general_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "General Agent Id"
           }
         },
         "type": "object",
@@ -53208,18 +53184,6 @@
               }
             ],
             "title": "Total Count"
-          },
-          "general_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "General Agent Id"
           }
         },
         "type": "object",
@@ -53792,18 +53756,6 @@
               }
             ],
             "title": "Total Count"
-          },
-          "general_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "General Agent Id"
           }
         },
         "type": "object",

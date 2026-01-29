@@ -14,6 +14,7 @@ from tests.sql.types import (
     GetDepartmentByIdSqlRow,
     GetOrCreateRubricV4SqlRow,
 )
+
 from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio

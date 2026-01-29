@@ -18,6 +18,21 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Drop search function that depends on types (must happen before type drop)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_search_personas_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_search_personas_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
 -- Drop types WITHOUT CASCADE
 DO $$
 DECLARE

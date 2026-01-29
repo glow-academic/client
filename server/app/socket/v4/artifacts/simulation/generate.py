@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -10,9 +12,11 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (GetSimulationApiRequest, GetSimulationSqlParams,
-                           GetSimulationSqlRow)
-from fastapi import APIRouter
+from app.sql.types import (
+    GetSimulationApiRequest,
+    GetSimulationSqlParams,
+    GetSimulationSqlRow,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -44,7 +48,9 @@ SIMULATION_RESOURCE_TYPES = [
 class GenerateSimulationPayload(GetSimulationApiRequest):
     """Request to generate simulation resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = None  # Optional: "name", "description", "departments", "flags", "scenarios", "general"/"all"
+    agent_type: str | None = (
+        None  # Optional: "name", "description", "departments", "flags", "scenarios", "general"/"all"
+    )
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
@@ -144,56 +150,86 @@ async def _simulation_generate_impl(
 
             # Extract IDs from each resource array
             if result.names:
-                resources.append({
-                    "resource_type": "names",
-                    "resource_ids": [str(n.id) for n in result.names if n.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "names",
+                        "resource_ids": [str(n.id) for n in result.names if n.id],
+                    }
+                )
             if result.descriptions:
-                resources.append({
-                    "resource_type": "descriptions",
-                    "resource_ids": [str(d.id) for d in result.descriptions if d.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "descriptions",
+                        "resource_ids": [
+                            str(d.id) for d in result.descriptions if d.id
+                        ],
+                    }
+                )
             if result.departments:
-                resources.append({
-                    "resource_type": "departments",
-                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "departments",
+                        "resource_ids": [
+                            str(d.department_id)
+                            for d in result.departments
+                            if d.department_id
+                        ],
+                    }
+                )
             if result.flags:
-                resources.append({
-                    "resource_type": "flags",
-                    "resource_ids": [str(f.id) for f in result.flags if f.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "flags",
+                        "resource_ids": [str(f.id) for f in result.flags if f.id],
+                    }
+                )
             if result.scenarios:
-                resources.append({
-                    "resource_type": "scenarios",
-                    "resource_ids": [str(s.id) for s in result.scenarios if s.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "scenarios",
+                        "resource_ids": [str(s.id) for s in result.scenarios if s.id],
+                    }
+                )
             if result.scenario_flags:
-                resources.append({
-                    "resource_type": "scenario_flags",
-                    "resource_ids": [str(sf.id) for sf in result.scenario_flags if sf.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "scenario_flags",
+                        "resource_ids": [
+                            str(sf.id) for sf in result.scenario_flags if sf.id
+                        ],
+                    }
+                )
             if result.scenario_positions:
                 # scenario_positions uses composite key (simulation_id, scenario_id)
                 # Format as "simulation_id-scenario_id" strings
-                resources.append({
-                    "resource_type": "scenario_positions",
-                    "resource_ids": [
-                        f"{sp.simulation_id}-{sp.scenario_id}" 
-                        for sp in result.scenario_positions 
-                        if sp.simulation_id and sp.scenario_id
-                    ]
-                })
+                resources.append(
+                    {
+                        "resource_type": "scenario_positions",
+                        "resource_ids": [
+                            f"{sp.simulation_id}-{sp.scenario_id}"
+                            for sp in result.scenario_positions
+                            if sp.simulation_id and sp.scenario_id
+                        ],
+                    }
+                )
             if result.scenario_rubrics:
-                resources.append({
-                    "resource_type": "scenario_rubrics",
-                    "resource_ids": [str(sr.id) for sr in result.scenario_rubrics if sr.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "scenario_rubrics",
+                        "resource_ids": [
+                            str(sr.id) for sr in result.scenario_rubrics if sr.id
+                        ],
+                    }
+                )
             if result.scenario_time_limits:
-                resources.append({
-                    "resource_type": "scenario_time_limits",
-                    "resource_ids": [str(stl.id) for stl in result.scenario_time_limits if stl.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "scenario_time_limits",
+                        "resource_ids": [
+                            str(stl.id) for stl in result.scenario_time_limits if stl.id
+                        ],
+                    }
+                )
 
             # Get group_id from response if available
             group_id: uuid.UUID | None = result.group_id
@@ -278,7 +314,9 @@ async def _simulation_generate_impl(
                 {
                     "sid": sid,
                     "artifact_type": "simulation",
-                    "resource_type": resource_types[0] if resource_types else "simulation",
+                    "resource_type": resource_types[0]
+                    if resource_types
+                    else "simulation",
                     "run_id": run_id,
                     "group_id": str(group_id) if group_id else None,
                     "message_id": None,

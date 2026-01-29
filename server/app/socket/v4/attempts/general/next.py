@@ -5,11 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
@@ -137,7 +137,9 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 params=edge_params,
             )
             # Check which AI fields need filling
-            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_problem_statement.sql")
+            sql = load_sql(
+                "app/sql/v4/queries/scenario/get_scenario_problem_statement.sql"
+            )
             problem_statement_row = await conn.fetchrow(sql, child_scenario_id)
             needs_statement = (
                 not problem_statement_row
@@ -177,13 +179,17 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 department_id = uuid.UUID(str(scenario_dept_rows[0]["department_id"]))
 
             if not department_id and profile_id_uuid:
-                sql = load_sql("app/sql/v4/queries/profile/get_departments_for_profile.sql")
+                sql = load_sql(
+                    "app/sql/v4/queries/profile/get_departments_for_profile.sql"
+                )
                 profile_dept_rows = await conn.fetch(sql, str(profile_id_uuid))
                 if profile_dept_rows and len(profile_dept_rows) > 0:
                     department_id = uuid.UUID(str(profile_dept_rows[0]["id"]))
 
             if not department_id:
-                sql = load_sql("app/sql/v4/queries/departments/get_all_active_departments.sql")
+                sql = load_sql(
+                    "app/sql/v4/queries/departments/get_all_active_departments.sql"
+                )
                 all_dept_rows = await conn.fetch(sql)
                 if all_dept_rows and len(all_dept_rows) > 0:
                     department_id = uuid.UUID(str(all_dept_rows[0]["id"]))
@@ -201,7 +207,9 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             # Get scenario domain ID from parent scenario or simulation
             scenario_domain_id = parent_scenario_dict.get("scenario_domain_id")
             if not scenario_domain_id and simulation_id:
-                sql = load_sql("app/sql/v4/queries/simulations/get_simulation_by_id.sql")
+                sql = load_sql(
+                    "app/sql/v4/queries/simulations/get_simulation_by_id.sql"
+                )
                 simulation_row = await conn.fetchrow(sql, uuid.UUID(simulation_id))
                 if simulation_row:
                     scenario_domain_id = simulation_row.get("simulation_text_domain_id")

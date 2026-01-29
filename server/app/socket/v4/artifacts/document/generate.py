@@ -3,22 +3,23 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+from pydantic import BaseModel
+
 from app.infra.v4.documents.format_document_template_context import (
     format_document_template_context,
 )
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (GetDocumentAgentIdV4SqlParams,
-                           GetDocumentAgentIdV4SqlRow,
-                           GetDocumentDepartmentV4SqlParams,
-                           GetDocumentDepartmentV4SqlRow)
-from fastapi import APIRouter
-from pydantic import BaseModel
+from app.sql.types import (
+    GetDocumentAgentIdV4SqlParams,
+    GetDocumentAgentIdV4SqlRow,
+    GetDocumentDepartmentV4SqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -26,9 +27,15 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql"
-GET_DOCUMENT_DEPARTMENT_SQL_PATH = "app/sql/v4/queries/document/get_document_department_v4_complete.sql"
-GET_DOCUMENT_AGENT_ID_SQL_PATH = "app/sql/v4/queries/document/get_document_agent_id_v4_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql"
+)
+GET_DOCUMENT_DEPARTMENT_SQL_PATH = (
+    "app/sql/v4/queries/document/get_document_department_v4_complete.sql"
+)
+GET_DOCUMENT_AGENT_ID_SQL_PATH = (
+    "app/sql/v4/queries/document/get_document_agent_id_v4_complete.sql"
+)
 
 
 class GenerateDocumentPayload(BaseModel):
@@ -50,7 +57,8 @@ async def _generate_document_impl(
             # Get document context from SQL (fields, department, etc.)
             from app.sql.types import (
                 GetDocumentRunContextAndCreateRunSqlParams,
-                GetDocumentRunContextAndCreateRunSqlRow)
+                GetDocumentRunContextAndCreateRunSqlRow,
+            )
 
             # Get department_id from document if not provided
             if not data.department_id:
@@ -59,7 +67,9 @@ async def _generate_document_impl(
                 )
                 dept_result = cast(
                     GetDocumentDepartmentV4SqlRow,
-                    await execute_sql_typed(conn, GET_DOCUMENT_DEPARTMENT_SQL_PATH, params=dept_params),
+                    await execute_sql_typed(
+                        conn, GET_DOCUMENT_DEPARTMENT_SQL_PATH, params=dept_params
+                    ),
                 )
                 if not dept_result or not dept_result.department_id:
                     raise ValueError("Document must have a department")
@@ -78,7 +88,6 @@ async def _generate_document_impl(
 
             from typing import cast
 
-            from app.sql.types import GetDocumentRunContextAndCreateRunSqlRow
 
             result = cast(
                 GetDocumentRunContextAndCreateRunSqlRow,
@@ -155,7 +164,9 @@ async def _generate_document_impl(
                     )
                     agent_result = cast(
                         GetDocumentAgentIdV4SqlRow,
-                        await execute_sql_typed(conn, GET_DOCUMENT_AGENT_ID_SQL_PATH, params=agent_params),
+                        await execute_sql_typed(
+                            conn, GET_DOCUMENT_AGENT_ID_SQL_PATH, params=agent_params
+                        ),
                     )
                     agent_id = agent_result.agent_id if agent_result else None
 

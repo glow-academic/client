@@ -4,12 +4,17 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, Request
+
 from app.infra.v4.activity.audit import audit_activity
 from app.main import get_db
-from app.sql.types import (GetLoginDataApiRequest, GetLoginDataApiResponse,
-                           GetLoginDataSqlParams, GetLoginDataSqlRow)
+from app.sql.types import (
+    GetLoginDataApiRequest,
+    GetLoginDataApiResponse,
+    GetLoginDataSqlParams,
+    GetLoginDataSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, Request
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/auth/get_login_data_complete.sql"

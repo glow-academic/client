@@ -130,8 +130,7 @@ RETURNS TABLE (
     persona_options types.q_list_scenarios_v4_option[],
     simulation_options types.q_list_scenarios_v4_option[],
     department_options types.q_list_scenarios_v4_option[],
-    total_count bigint,
-    general_agent_id uuid
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -341,44 +340,6 @@ all_department_ids_options AS (
     SELECT DISTINCT unnest(department_ids) as department_id
     FROM scenario_data
     WHERE department_ids IS NOT NULL AND parent_scenario_id IS NULL
-),
-general_agent_for_user AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
-                  WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
-        JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-        JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
-        JOIN artifact_resources_relation ar ON ar.resource = rt.resource
-        WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
-    AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
-                 JOIN user_departments ud ON ad.department_id = ud.department_id
-                 WHERE ad.agent_id = a.id AND ad.active = true)
-         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-    AND ARRAY['names','descriptions','problem_statements','scenario_flags','departments',
-              'personas','documents','parameters','fields','objectives','images','videos',
-              'questions','templates']::text[]
-        <@ COALESCE(
-            (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
-             FROM agent_tools_junction at3
-             JOIN tools_resource tr2 ON tr2.id = at3.tool_id
-             JOIN tool_tools_junction ttj2 ON ttj2.tools_id = tr2.id
-             JOIN tool_artifact t ON t.id = ttj2.tool_id
-                  AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
-                              WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
-             JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
-             WHERE at3.agent_id = a.id AND at3.active = true),
-            ARRAY[]::text[]
-        )
-    ORDER BY
-        CASE WHEN EXISTS (
-            SELECT 1 FROM agent_departments_junction ad
-            JOIN user_departments ud ON ad.department_id = ud.department_id
-            WHERE ad.agent_id = a.id AND ad.active = true
-        ) THEN 0 ELSE 1 END ASC,
-        a.updated_at DESC, a.id ASC
-    LIMIT 1
 )
 SELECT
     up.actor_name::text as actor_name,
@@ -483,8 +444,7 @@ SELECT
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_scenarios_v4_option[]
     ) as department_options,
-    (SELECT total FROM filtered_count) as total_count,
-    (SELECT agent_id FROM general_agent_for_user) as general_agent_id
+    (SELECT total FROM filtered_count) as total_count
 FROM page_scenarios sd
 CROSS JOIN user_profile up
 GROUP BY up.actor_name, up.role

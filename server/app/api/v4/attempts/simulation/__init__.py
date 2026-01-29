@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from app.api.v4.attempts.simulation.get import router as get_router
 from app.api.v4.attempts.simulation.archive import router as archive_router
+from app.api.v4.attempts.simulation.get import router as get_router
 
 router = APIRouter(prefix="/simulation", tags=["attempts", "simulation"])
 

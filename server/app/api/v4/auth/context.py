@@ -7,12 +7,10 @@
 
 import asyncio
 import time
-from datetime import datetime
 from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg
-from pydantic import BaseModel, Field
 
 from app.api.v4.resources.cohorts.get import QGetCohortsV4Item, get_cohorts_internal
 from app.api.v4.resources.departments.get import (
@@ -29,13 +27,11 @@ from app.infra.v4.drafts.get import QGetDraftsV4Item, get_drafts_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    GetProfileContextApiRequest,
-    GetProfileContextApiResponse as BaseGetProfileContextApiResponse,
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,
+    GetProfileContextApiRequest,
     GetSettingsThemeSqlParams,
     GetSettingsThemeSqlRow,
-    QGetProfileContextAccessV4ArtifactAgent,
     QGetProfileContextV4Auth,
     QGetProfileContextV4Cohort,
     QGetProfileContextV4Department,
@@ -46,6 +42,9 @@ from app.sql.types import (
     QGetProfileContextV4ThemeTokens,
     load_sql_query,
 )
+from app.sql.types import (
+    GetProfileContextApiResponse as BaseGetProfileContextApiResponse,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 
@@ -53,13 +52,18 @@ class GetProfileContextApiResponse(BaseGetProfileContextApiResponse):
     """Extended profile context response with artifact_agent_ids."""
 
     artifact_agent_ids: dict[str, UUID | None] | None = None
+
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level
 SQL_ACCESS_PATH = "app/sql/v4/queries/profile/get_profile_context_access_complete.sql"
-SQL_SETTINGS_THEME_PATH = "app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql"
+SQL_SETTINGS_THEME_PATH = (
+    "app/sql/v4/queries/resources/settings/get_settings_theme_complete.sql"
+)
 
 router = APIRouter()
 
@@ -188,7 +192,9 @@ def convert_cohort(item: QGetCohortsV4Item) -> QGetProfileContextV4Cohort:
     )
 
 
-def convert_simulation(item: GetSimulationsBatchV4Item) -> QGetProfileContextV4Simulation:
+def convert_simulation(
+    item: GetSimulationsBatchV4Item,
+) -> QGetProfileContextV4Simulation:
     """Convert simulations batch item to profile context simulation."""
     return QGetProfileContextV4Simulation(
         simulation_id=item.simulation_id,
@@ -208,7 +214,7 @@ def convert_draft(item: QGetDraftsV4Item) -> QGetProfileContextV4Draft:
         artifact_type=item.artifact_type,
         payload=item.payload,
         version=item.version,
-        updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        updated_at=item.updated_at,
     )
 
 
@@ -251,7 +257,9 @@ def convert_provider(provider: Any) -> QGetProfileContextV4Provider:
 @router.post(
     "/context",
     response_model=GetProfileContextApiResponse,
-    dependencies=[audit_activity("profile.context", "{{ actor.name }} viewed profile context")],
+    dependencies=[
+        audit_activity("profile.context", "{{ actor.name }} viewed profile context")
+    ],
 )
 async def get_profile_context(
     request: GetProfileContextApiRequest,
@@ -372,7 +380,9 @@ async def get_profile_context(
             if not simulation_ids:
                 return []
             async with pool.acquire() as c:
-                return await get_simulations_batch_internal(c, simulation_ids, bypass_cache)
+                return await get_simulations_batch_internal(
+                    c, simulation_ids, bypass_cache
+                )
 
         async def fetch_settings_theme() -> GetSettingsThemeSqlRow | None:
             if not settings_id:
@@ -432,7 +442,9 @@ async def get_profile_context(
 
         # Derive theme tokens from settings (using lightweight theme query)
         if not settings_theme or not settings_theme.primary_color:
-            raise HTTPException(status_code=500, detail="Settings theme not found in profile context")
+            raise HTTPException(
+                status_code=500, detail="Settings theme not found in profile context"
+            )
 
         theme_primitives = {
             "primary": settings_theme.primary_color or "",
@@ -493,7 +505,9 @@ async def get_profile_context(
             scoped_roles=access_result.scoped_roles,
             role_resources=role_resources,
             # Settings - ID from Pass 1, colors/thresholds from lightweight theme query
-            settings_id=str(access_result.settings_id) if access_result.settings_id else None,
+            settings_id=str(access_result.settings_id)
+            if access_result.settings_id
+            else None,
             settings_created_at=None,  # Not fetched in lightweight query
             settings_active=None,  # Not fetched in lightweight query
             settings_name=None,  # Not fetched in lightweight query

@@ -7,8 +7,7 @@ Python-computed permissions and UI flags.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)

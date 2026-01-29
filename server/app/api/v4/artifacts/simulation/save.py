@@ -10,24 +10,24 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.api.v4.artifacts.simulation.permissions import (
+    compute_can_create,
+    compute_can_save,
+    has_access,
+)
 from app.api.v4.artifacts.simulation.types import (
     SaveSimulationApiRequest,
     SaveSimulationApiResponse,
     SaveSimulationSqlParams,
     SaveSimulationSqlRow,
 )
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
 from app.sql.types import (
     GetNameByIdSqlParams,
     GetNameByIdSqlRow,
     load_sql_query,
-)
-from app.api.v4.artifacts.simulation.permissions import (
-    has_access,
-    compute_can_create,
-    compute_can_save,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
@@ -35,7 +35,9 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/simulations/save_simulation_complete.sql"
 GET_NAME_SQL_PATH = "app/sql/v4/queries/simulations/get_name_by_id_complete.sql"
-ACCESS_SQL_PATH = "app/sql/v4/queries/simulations/check_simulation_save_access_complete.sql"
+ACCESS_SQL_PATH = (
+    "app/sql/v4/queries/simulations/check_simulation_save_access_complete.sql"
+)
 
 
 router = APIRouter()
@@ -101,29 +103,43 @@ async def save_simulation(
         if access_result:
             # Extract permission context
             user_role = getattr(access_result, "user_role", None)
-            user_department_ids = getattr(access_result, "user_department_ids", None) or []
-            simulation_department_ids = getattr(access_result, "simulation_department_ids", None) or []
+            user_department_ids = (
+                getattr(access_result, "user_department_ids", None) or []
+            )
+            simulation_department_ids = (
+                getattr(access_result, "simulation_department_ids", None) or []
+            )
             cohort_usage_count = getattr(access_result, "cohort_usage_count", 0) or 0
             simulation_exists = getattr(access_result, "simulation_exists", None)
-            draft_department_ids = getattr(access_result, "draft_department_ids", None) or []
+            draft_department_ids = (
+                getattr(access_result, "draft_department_ids", None) or []
+            )
 
             if request.input_simulation_id:
                 # Update mode
                 # Check if simulation exists
                 if simulation_exists is False:
                     raise HTTPException(
-                        status_code=404, detail=f"Simulation {request.input_simulation_id} not found"
+                        status_code=404,
+                        detail=f"Simulation {request.input_simulation_id} not found",
                     )
 
                 # Check access permission
-                if not has_access(user_role, user_department_ids, simulation_department_ids):
+                if not has_access(
+                    user_role, user_department_ids, simulation_department_ids
+                ):
                     raise HTTPException(
                         status_code=403,
                         detail="You don't have access to this simulation.",
                     )
 
                 # Check save permission using Python
-                if not compute_can_save(user_role, user_department_ids, simulation_department_ids, cohort_usage_count):
+                if not compute_can_save(
+                    user_role,
+                    user_department_ids,
+                    simulation_department_ids,
+                    cohort_usage_count,
+                ):
                     if cohort_usage_count > 0 and user_role == "staff":
                         raise HTTPException(
                             status_code=403,
@@ -165,7 +181,9 @@ async def save_simulation(
 
             if not result or not result.simulation_id:
                 if request.input_simulation_id:
-                    raise ValueError(f"Simulation not found: {request.input_simulation_id}")
+                    raise ValueError(
+                        f"Simulation not found: {request.input_simulation_id}"
+                    )
                 else:
                     raise ValueError("Failed to create simulation")
 
@@ -181,7 +199,9 @@ async def save_simulation(
                         name_params = GetNameByIdSqlParams(name_id=request.name_id)
                         name_result = cast(
                             GetNameByIdSqlRow,
-                            await execute_sql_typed(conn, GET_NAME_SQL_PATH, params=name_params),
+                            await execute_sql_typed(
+                                conn, GET_NAME_SQL_PATH, params=name_params
+                            ),
                         )
                         if name_result and name_result.name:
                             simulation_name = name_result.name

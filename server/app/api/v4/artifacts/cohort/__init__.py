@@ -1,12 +1,13 @@
 """Cohort v4 router."""
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.cohort.delete import router as delete_router
 from app.api.v4.artifacts.cohort.draft import router as draft_router
 from app.api.v4.artifacts.cohort.duplicate import router as duplicate_router
 from app.api.v4.artifacts.cohort.get import router as get_router
 from app.api.v4.artifacts.cohort.list import router as list_router
 from app.api.v4.artifacts.cohort.save import router as save_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/cohorts", tags=["cohorts"])
 

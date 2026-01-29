@@ -289,8 +289,7 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import \
-            PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -534,8 +533,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Setup activity logger
-            from app.infra.v4.activity.logger import \
-                setup_activity_logger  # noqa: E402
+            from app.infra.v4.activity.logger import setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
@@ -544,8 +542,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.infra.v4.metrics.collector import \
-            initialize_metrics  # noqa: E402
+        from app.infra.v4.metrics.collector import initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -555,8 +552,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             )
 
         # Import MCP server for lifespan management
-        from app.mcp import \
-            mcp_server as artifacts_resources_mcp_server  # noqa: E402
+        from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
         # Add MCP server session manager to lifespan
         await stack.enter_async_context(
@@ -747,36 +743,54 @@ fastapi_app.include_router(socket_v4_router)
 # Root-level endpoints (must be registered before MCP mount to avoid route interception)
 
 # Default-IdP OIDC endpoints (infrastructure-level, not versioned)
-from app.infra.v4.auth.default_idp import \
-    router as default_idp_router  # noqa: E402
+from app.infra.v4.auth.default_idp import router as default_idp_router  # noqa: E402
 
 fastapi_app.include_router(default_idp_router)  # /default-idp/... (OIDC endpoints)
+
 
 # RFC 8414 OAuth Authorization Server Metadata endpoint (REQUIRED for ChatGPT Dev Mode)
 # This must be a FastAPI route, not just middleware, to ensure it's accessible
 @fastapi_app.get("/.well-known/oauth-authorization-server")
 def oauth_authorization_server_metadata():
     """RFC 8414 OAuth Authorization Server Metadata endpoint.
-    
+
     ChatGPT Dev Mode uses this endpoint to discover OAuth configuration.
     This is required for OAuth to work with ChatGPT.
     """
     import os
+
     ORIGIN = os.getenv("ORIGIN", "http://localhost")
     APP_PREFIX = os.getenv("APP_PREFIX", "")
     KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "master")
     KEYCLOAK_ISSUER = f"{ORIGIN}{APP_PREFIX}/auth/realms/{KEYCLOAK_REALM}"
-    
+
     return {
         "issuer": KEYCLOAK_ISSUER,
         "authorization_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/auth",
         "token_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/token",
-        "scopes_supported": ["openid", "profile", "email", "address", "phone", "offline_access", "organization", "microprofile-jwt", "mcp-resource"],
+        "scopes_supported": [
+            "openid",
+            "profile",
+            "email",
+            "address",
+            "phone",
+            "offline_access",
+            "organization",
+            "microprofile-jwt",
+            "mcp-resource",
+        ],
         "response_types_supported": ["code"],
         "grant_types_supported": ["authorization_code"],
-        "token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"],
-        "code_challenge_methods_supported": ["S256"],  # Required for ChatGPT PKCE support
+        "token_endpoint_auth_methods_supported": [
+            "client_secret_post",
+            "client_secret_basic",
+        ],
+        "code_challenge_methods_supported": [
+            "S256"
+        ],  # Required for ChatGPT PKCE support
     }
+
+
 @fastapi_app.get("/")
 async def root_info() -> JSONResponse:
     """
@@ -867,20 +881,20 @@ async def metrics_snapshot() -> JSONResponse:
 
 async def _compile_sql_types() -> tuple[bool, str]:
     """Compile SQL types by executing SQL files and generating Python types.
-    
+
     This function:
     1. Executes all SQL files on the database (creates/updates PostgreSQL functions and types)
     2. Introspects those functions to generate Python type definitions
-    
+
     This is idempotent and safe to run multiple times. It ensures types are always
     up-to-date after migrations or SQL file changes.
-    
+
     Returns:
         Tuple of (success, message)
     """
     try:
         from app.infra.v4.sql.compile_types import compile_sql_types
-        
+
         success, message = await compile_sql_types()
         return success, message
     except Exception as e:
@@ -895,14 +909,14 @@ async def init_system() -> JSONResponse:
     Performs:
     1. SQL type compilation (if types.py is missing or incomplete)
     2. Keycloak sync to ensure identity providers are configured.
-    
+
     No authentication required - internal service-to-service call.
     """
     from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger("app.main")
-    
+
     init_messages: list[str] = []
     init_errors: list[str] = []
 
@@ -916,10 +930,10 @@ async def init_system() -> JSONResponse:
         else:
             init_errors.append(sql_message)
             logger.warning(f"SQL compilation: {sql_message}")
-        
+
         # 2. Perform Keycloak sync
         result = await perform_keycloak_sync(department_id=None)
-        
+
         if result.success:
             init_messages.append(result.message)
             logger.info(f"Keycloak sync: {result.message}")

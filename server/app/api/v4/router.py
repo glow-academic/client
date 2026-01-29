@@ -14,7 +14,13 @@ See `AGENTS.md` for overall architecture principles.
 # ============================================================================
 # Analytics
 # ============================================================================
+# ============================================================================
+# Imports
+# ============================================================================
+from fastapi import APIRouter, Depends
+
 from app.api.v4.analytics import router as analytics_router
+
 # ============================================================================
 # Artifacts (17 total)
 # ============================================================================
@@ -36,43 +42,47 @@ from app.api.v4.artifacts.scenario import router as scenarios_router
 from app.api.v4.artifacts.setting import router as settings_router
 from app.api.v4.artifacts.simulation import router as simulations_router
 from app.api.v4.artifacts.tool import router as tools_router
+
 # ============================================================================
 # Attempts
 # ============================================================================
 from app.api.v4.attempts import router as attempts_router
+
 # ============================================================================
 # Auth (not available to MCP)
 # ============================================================================
 from app.api.v4.auth import router as auth_router
+
 # ============================================================================
 # Bulk Operations
 # ============================================================================
 from app.api.v4.bulk import router as bulk_router
+
 # ============================================================================
 # Root Level Endpoints
 # ============================================================================
 from app.api.v4.debug import router as debug_router
+
 # ============================================================================
 # Decrypt
 # ============================================================================
 from app.api.v4.decrypt import router as decrypt_router
 from app.api.v4.docs import router as docs_router
+
 # ============================================================================
 # Export
 # ============================================================================
 from app.api.v4.export import router as export_router
+
 # ============================================================================
 # Resources
 # ============================================================================
 from app.api.v4.resources import router as resources_router
+
 # ============================================================================
 # Uploads
 # ============================================================================
 from app.api.v4.uploads import router as uploads_router
-# ============================================================================
-# Imports
-# ============================================================================
-from fastapi import APIRouter, Depends
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id

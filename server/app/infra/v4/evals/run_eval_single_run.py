@@ -2,19 +2,14 @@
 
 import json
 import uuid
+from contextlib import contextmanager
 from typing import Any, cast
 
 import asyncpg  # type: ignore
-from contextlib import contextmanager
-from typing import Any
-
-from app.infra.v4.agents.run_agent import run_agent_with_tools
-from app.infra.v4.agents.types import TResponseInputItem
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.agents.generic_agent import GenericAgent
-from app.infra.v4.debug.debug_info import DebugContext
+from app.infra.v4.agents.run_agent import run_agent_with_tools
+from app.infra.v4.agents.types import TResponseInputItem
 from app.main import get_internal_sio
 from app.sql.types import (
     InfrastructureEvalsCreateTestSqlParams,
@@ -36,8 +31,12 @@ from app.sql.types import (
     InfrastructureEvalsMarkEvalRunCompleteSqlParams,
     InfrastructureEvalsMarkTestCompleteSqlParams,
 )
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
-GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"
+GET_RUBRIC_DETAILS_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"
+)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -100,7 +99,9 @@ async def run_eval_single_run(
                 params=status_params,
             ),
         )
-        completed_check = {"completed": status_result.completed if status_result else False}
+        completed_check = {
+            "completed": status_result.completed if status_result else False
+        }
         if completed_check and completed_check["completed"]:
             logger.info(
                 f"Run {run_id} already completed for eval {eval_id}, skipping (idempotent)"
@@ -139,10 +140,14 @@ async def run_eval_single_run(
                 params=test_status_params,
             ),
         )
-        test_check = {
-            "test_id": test_status_result.test_id,
-            "completed": test_status_result.completed,
-        } if test_status_result else None
+        test_check = (
+            {
+                "test_id": test_status_result.test_id,
+                "completed": test_status_result.completed,
+            }
+            if test_status_result
+            else None
+        )
         if test_check:
             logger.info(
                 f"Run {run_id} already in progress (test {test_check['test_id']}), skipping (idempotent)"
@@ -166,7 +171,9 @@ async def run_eval_single_run(
             )
 
         # 1. Get messages from original run
-        sql_get_messages = load_sql("app/sql/v4/queries/evals/get_run_messages_for_eval.sql")
+        sql_get_messages = load_sql(
+            "app/sql/v4/queries/evals/get_run_messages_for_eval.sql"
+        )
         messages_row = await conn.fetchrow(sql_get_messages, run_id)
         if not messages_row:
             raise ValueError(f"No messages found for run {run_id}")
@@ -181,7 +188,9 @@ async def run_eval_single_run(
                 raise ValueError("agent_id is required when dynamic is true")
 
             # Get agent being evaluated's context
-            sql_get_agent_context = load_sql("app/sql/v4/queries/evals/get_agent_context.sql")
+            sql_get_agent_context = load_sql(
+                "app/sql/v4/queries/evals/get_agent_context.sql"
+            )
             agent_context_row = await conn.fetchrow(
                 sql_get_agent_context, agent_id, department_id, profile_id
             )
@@ -314,13 +323,16 @@ async def run_eval_single_run(
             ):
                 # Convert input items to message format
                 messages = [
-                    {"role": item.get("role", "user"), "content": item.get("content", "")}
+                    {
+                        "role": item.get("role", "user"),
+                        "content": item.get("content", ""),
+                    }
                     for item in agent_input_items
                 ]
-                
+
                 # Get model config from agent
                 model_config = agent.get_model_config()
-                
+
                 # Run agent with tools
                 agent_result = await run_agent_with_tools(
                     messages=messages,
@@ -416,7 +428,7 @@ async def run_eval_single_run(
         )
         if not rga_result:
             raise ValueError(f"Rubric grade agent not found: {rubric_grade_agent_id}")
-        
+
         rga_row = {
             "rubric_id": rga_result.rubric_id,
             "eval_agent_id": rga_result.eval_agent_id,
@@ -428,7 +440,9 @@ async def run_eval_single_run(
         eval_agent_id = rga_row["eval_agent_id"]
 
         # 4. Get eval_agent context (using eval_id and run_id to query from junction table)
-        sql_get_context = load_sql("app/sql/v4/queries/evals/get_eval_agent_context.sql")
+        sql_get_context = load_sql(
+            "app/sql/v4/queries/evals/get_eval_agent_context.sql"
+        )
         context_row = await conn.fetchrow(
             sql_get_context, eval_id, run_id, None, department_id, profile_id
         )
@@ -463,7 +477,9 @@ async def run_eval_single_run(
             test_id = None
 
         # 7. Create run for eval_agent
-        sql_create_run = load_sql("app/sql/v4/queries/model_runs/create_model_run_complete.sql")
+        sql_create_run = load_sql(
+            "app/sql/v4/queries/model_runs/create_model_run_complete.sql"
+        )
         eval_run_row = await conn.fetchrow(
             sql_create_run,
             department_id,
@@ -606,10 +622,10 @@ async def run_eval_single_run(
                 {"role": item.get("role", "user"), "content": item.get("content", "")}
                 for item in input_items
             ]
-            
+
             # Get model config from agent
             model_config = eval_agent.get_model_config()
-            
+
             # Run agent with tools
             result = await run_agent_with_tools(
                 messages=messages,
@@ -683,11 +699,13 @@ async def run_eval_single_run(
         )
         rubric_result2 = cast(
             InfrastructureEvalsGetRubricDetailsSqlRow,
-            await execute_sql_typed(conn, GET_RUBRIC_DETAILS_SQL_PATH, params=rubric_params2),
+            await execute_sql_typed(
+                conn, GET_RUBRIC_DETAILS_SQL_PATH, params=rubric_params2
+            ),
         )
         if not rubric_result2:
             raise ValueError(f"Rubric not found: {rubric_id}")
-        
+
         rubric = {
             "id": rubric_result2.id,
             "name": rubric_result2.name,

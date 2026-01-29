@@ -2,9 +2,8 @@
 Tests for app.utils.agents.tools.create_hint_function
 """
 
-from app.utils.agents.tools.create_hint_function import create_hint_function
-
 from app.main import hint_progress, hint_results
+from app.utils.agents.tools.create_hint_function import create_hint_function
 
 
 class TestCreate_Hint_Function:

@@ -1,6 +1,6 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from app.infra.v4.debug.debug_info import DebugContext
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 DEBUG_INFO_TOOL_SUFFIX = """

@@ -9,16 +9,16 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
 from app.api.v4.artifacts.simulation.types import (
+    QGetScenariosV4Item,
     SearchScenariosApiRequest,
     SearchScenariosApiResponse,
     SearchScenariosSqlParams,
     SearchScenariosSqlRow,
-    QGetScenariosV4Item,
 )
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -63,7 +63,9 @@ async def search_scenarios_internal(
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "user_department_ids": [str(i) for i in user_department_ids] if user_department_ids else None,
+            "user_department_ids": [str(i) for i in user_department_ids]
+            if user_department_ids
+            else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(i) for i in exclude_ids] if exclude_ids else None,
         },
@@ -72,7 +74,9 @@ async def search_scenarios_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached and "items" in cached:
-            return [QGetScenariosV4Item.model_validate(item) for item in cached["items"]]
+            return [
+                QGetScenariosV4Item.model_validate(item) for item in cached["items"]
+            ]
 
     params = SearchScenariosSqlParams(
         search=search,

@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.generation.resource_utils import normalize_resources_for_sql
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -10,9 +12,7 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
-from app.sql.types import (GetCohortApiRequest, GetCohortSqlParams,
-                           GetCohortSqlRow)
-from fastapi import APIRouter
+from app.sql.types import GetCohortApiRequest, GetCohortSqlParams, GetCohortSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -41,7 +41,9 @@ COHORT_RESOURCE_TYPES = [
 class GenerateCohortPayload(GetCohortApiRequest):
     """Request to generate cohort resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = None  # Optional: "name", "description", "basic", "general"/"all", "flags", "departments", "simulations"
+    agent_type: str | None = (
+        None  # Optional: "name", "description", "basic", "general"/"all", "flags", "departments", "simulations"
+    )
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
@@ -69,9 +71,7 @@ async def _cohort_generate_impl(
             )
             return
 
-        invalid_types = [
-            rt for rt in resource_types if rt not in COHORT_RESOURCE_TYPES
-        ]
+        invalid_types = [rt for rt in resource_types if rt not in COHORT_RESOURCE_TYPES]
         if invalid_types:
             await emit_to_internal(
                 "generate_call_error",
@@ -142,39 +142,61 @@ async def _cohort_generate_impl(
 
             # Extract IDs from each resource array
             if result.names:
-                resources.append({
-                    "resource_type": "names",
-                    "resource_ids": [str(n.id) for n in result.names if n.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "names",
+                        "resource_ids": [str(n.id) for n in result.names if n.id],
+                    }
+                )
             if result.descriptions:
-                resources.append({
-                    "resource_type": "descriptions",
-                    "resource_ids": [str(d.id) for d in result.descriptions if d.id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "descriptions",
+                        "resource_ids": [
+                            str(d.id) for d in result.descriptions if d.id
+                        ],
+                    }
+                )
             if result.flag_resource and result.flag_resource.id:
-                resources.append({
-                    "resource_type": "flags",
-                    "resource_ids": [str(result.flag_resource.id)]
-                })
+                resources.append(
+                    {
+                        "resource_type": "flags",
+                        "resource_ids": [str(result.flag_resource.id)],
+                    }
+                )
             if result.departments:
-                resources.append({
-                    "resource_type": "departments",
-                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "departments",
+                        "resource_ids": [
+                            str(d.department_id)
+                            for d in result.departments
+                            if d.department_id
+                        ],
+                    }
+                )
             if result.simulations:
-                resources.append({
-                    "resource_type": "simulations",
-                    "resource_ids": [str(s.simulation_id) for s in result.simulations if s.simulation_id]
-                })
+                resources.append(
+                    {
+                        "resource_type": "simulations",
+                        "resource_ids": [
+                            str(s.simulation_id)
+                            for s in result.simulations
+                            if s.simulation_id
+                        ],
+                    }
+                )
             if result.simulation_positions:
-                resources.append({
-                    "resource_type": "simulation_positions",
-                    "resource_ids": [
-                        f"{sp.simulation_id}-{sp.value}"
-                        for sp in result.simulation_positions
-                        if sp.simulation_id is not None and sp.value is not None
-                    ],
-                })
+                resources.append(
+                    {
+                        "resource_type": "simulation_positions",
+                        "resource_ids": [
+                            f"{sp.simulation_id}-{sp.value}"
+                            for sp in result.simulation_positions
+                            if sp.simulation_id is not None and sp.value is not None
+                        ],
+                    }
+                )
 
             # Get group_id from response if available
             group_id: uuid.UUID | None = result.group_id

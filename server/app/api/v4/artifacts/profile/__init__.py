@@ -1,11 +1,12 @@
 """Profile v4 router."""
 
-from app.api.v4.artifacts.profile.draft import router as draft_router
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.profile.delete import router as delete_router
+from app.api.v4.artifacts.profile.draft import router as draft_router
 from app.api.v4.artifacts.profile.get import router as get_router
 from app.api.v4.artifacts.profile.list import router as list_router
 from app.api.v4.artifacts.profile.save import router as save_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 

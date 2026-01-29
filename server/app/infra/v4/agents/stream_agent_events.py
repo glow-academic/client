@@ -1,9 +1,7 @@
 """Generic helper for parsing agent streaming events with callbacks."""
 
 import json
-from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any
-
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 

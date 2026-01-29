@@ -1,15 +1,16 @@
 """Simulation progress handler - listens to generate_call_* events and emits simulation-specific events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from fastapi import APIRouter
+
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (ValidateSimulationResourceProgressSqlParams,
-                           ValidateSimulationResourceProgressSqlRow)
-from fastapi import APIRouter
+from app.sql.types import (
+    ValidateSimulationResourceProgressSqlParams,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -17,7 +18,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/simulations/validate_simulation_resource_progress_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/simulations/validate_simulation_resource_progress_complete.sql"
+)
 
 
 @internal_sio.on("generate_call_start")  # type: ignore

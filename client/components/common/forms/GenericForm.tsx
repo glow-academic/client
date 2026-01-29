@@ -469,7 +469,9 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
       const fieldsToReset = step.resetFields as (keyof Values<T>)[];
       const resetUpdates: Partial<Values<T>> = {};
       fieldsToReset.forEach((field) => {
-        resetUpdates[field] = undefined as Values<T>[typeof field];
+        // Use null (not undefined) to properly remove the parameter from the URL
+        // nuqs treats null as "delete this param", while undefined becomes empty string
+        resetUpdates[field] = null as Values<T>[typeof field];
       });
 
       handleSetFormData(resetUpdates);

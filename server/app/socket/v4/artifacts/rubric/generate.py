@@ -3,6 +3,8 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -11,8 +13,6 @@ from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import GetRubricApiRequest, GetRubricSqlParams, GetRubricSqlRow
 from app.utils.sql_helper import execute_sql_typed, load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel
 
 internal_sio = get_internal_sio()
 
@@ -20,12 +20,8 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 GET_RUBRIC_SQL_PATH = "app/sql/v4/queries/rubrics/get_rubric_complete.sql"
-CREATE_RUN_SQL_PATH = (
-    "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
-)
-TEXT_RUN_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
-)
+CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
+TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
 
 RUBRIC_RESOURCE_TYPES = [
@@ -227,13 +223,13 @@ async def _generate_rubric_impl(
                     "generate_call_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                    error_message="Failed to create generation run",
-                    resource_id=data.rubric_id,
-                    group_id=str(result.group_id) if result.group_id else None,
-                    resource_type="rubric",
-                ),
-                sid=sid,
-            )
+                        error_message="Failed to create generation run",
+                        resource_id=data.rubric_id,
+                        group_id=str(result.group_id) if result.group_id else None,
+                        resource_type="rubric",
+                    ),
+                    sid=sid,
+                )
             return
 
             run_id = str(create_run_row["run_id"])

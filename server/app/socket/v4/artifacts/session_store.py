@@ -18,7 +18,9 @@ class AudioSession:
         self.muted = False
         self.oa_ws_connection: Any | None = None  # OpenAI WebSocket connection
         self.item_id_to_upload_id: dict[str, str] = {}  # item_id -> upload_id mapping
-        self.response_id_to_upload_id: dict[str, str] = {}  # response_id -> upload_id mapping
+        self.response_id_to_upload_id: dict[
+            str, str
+        ] = {}  # response_id -> upload_id mapping
         self.chat_id: str | None = None
         self.group_id: str | None = None
         self.assistant_message_id: str | None = None

@@ -3,6 +3,8 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.scenario.get import get_scenario_generation_context
 from app.api.v4.artifacts.scenario.types import GetScenarioApiRequest
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
@@ -14,7 +16,6 @@ from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
 
 logger = get_logger(__name__)
 
@@ -48,7 +49,9 @@ SCENARIO_RESOURCE_TYPES = [
 class GenerateScenarioPayload(GetScenarioApiRequest):
     """Request to generate scenario resources - extends GET API request with generation-specific fields."""
 
-    agent_type: str | None = None  # Optional: "name", "description", "basic", "content", "general"/"all"
+    agent_type: str | None = (
+        None  # Optional: "name", "description", "basic", "content", "general"/"all"
+    )
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
@@ -145,10 +148,12 @@ async def _scenario_generate_impl(
             resources: list[dict[str, Any]] = []
             for resource_type, ids in context.resource_ids.items():
                 if ids:
-                    resources.append({
-                        "resource_type": resource_type,
-                        "resource_ids": [str(id) for id in ids]
-                    })
+                    resources.append(
+                        {
+                            "resource_type": resource_type,
+                            "resource_ids": [str(id) for id in ids],
+                        }
+                    )
 
             # Get group_id from context
             group_id: uuid.UUID | None = context.group_id
@@ -182,7 +187,9 @@ async def _scenario_generate_impl(
                 return
 
             run_id = str(create_run_row["run_id"])
-            group_id = create_run_row["group_id"] if create_run_row["group_id"] else group_id
+            group_id = (
+                create_run_row["group_id"] if create_run_row["group_id"] else group_id
+            )
             trace_id = create_run_row.get("trace_id")
             message_ids = create_run_row.get("message_ids")
 

@@ -3,6 +3,8 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -16,7 +18,6 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/leaderboard/get_leaderboard_complete.sql"
@@ -89,9 +90,7 @@ async def get_leaderboard(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert SQL result to API response
-        api_response = GetLeaderboardApiResponse.model_validate(
-            result.model_dump()
-        )
+        api_response = GetLeaderboardApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

@@ -199,7 +199,6 @@ async def get_persona_list(
             fields=fields,
             departments=departments,
             total_count=result.total_count,
-            general_agent_id=result.general_agent_id,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

@@ -28,9 +28,7 @@ COLUMNS_SQL_PATH = "app/sql/v4/queries/personas/get_persona_docs_columns_complet
 JUNCTIONS_SQL_PATH = (
     "app/sql/v4/queries/personas/get_persona_docs_junctions_complete.sql"
 )
-FK_SQL_PATH = (
-    "app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql"
-)
+FK_SQL_PATH = "app/sql/v4/queries/personas/get_persona_docs_foreign_keys_complete.sql"
 
 # Permission functions to document
 PERMISSION_FUNCTIONS = [
@@ -80,9 +78,7 @@ async def _get_junction_tables(
     )
     if not result.junction_tables:
         return []
-    return [
-        {"name": jt.name, "columns": jt.columns} for jt in result.junction_tables
-    ]
+    return [{"name": jt.name, "columns": jt.columns} for jt in result.junction_tables]
 
 
 async def _get_foreign_keys(

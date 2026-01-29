@@ -190,22 +190,40 @@ async def _fetch_junction_data(
     ]
     scenario_positions = [
         QGetSimulationV4ScenarioPositionResource.model_validate(item)
-        for item in (positions_row["items"] if positions_row and positions_row["items"] else [])
+        for item in (
+            positions_row["items"] if positions_row and positions_row["items"] else []
+        )
     ]
     scenario_rubrics = [
         QGetSimulationV4ScenarioRubricResource.model_validate(item)
-        for item in (rubrics_junc_row["items"] if rubrics_junc_row and rubrics_junc_row["items"] else [])
+        for item in (
+            rubrics_junc_row["items"]
+            if rubrics_junc_row and rubrics_junc_row["items"]
+            else []
+        )
     ]
     scenario_time_limits = [
         QGetSimulationV4ScenarioTimeLimitResource.model_validate(item)
-        for item in (time_limits_row["items"] if time_limits_row and time_limits_row["items"] else [])
+        for item in (
+            time_limits_row["items"]
+            if time_limits_row and time_limits_row["items"]
+            else []
+        )
     ]
     rubrics = [
         QGetSimulationV4Rubric.model_validate(item)
-        for item in (rubrics_row["items"] if rubrics_row and rubrics_row["items"] else [])
+        for item in (
+            rubrics_row["items"] if rubrics_row and rubrics_row["items"] else []
+        )
     ]
 
-    return scenario_flags, scenario_positions, scenario_rubrics, scenario_time_limits, rubrics
+    return (
+        scenario_flags,
+        scenario_positions,
+        scenario_rubrics,
+        scenario_time_limits,
+        rubrics,
+    )
 
 
 @router.post(
@@ -273,7 +291,9 @@ async def get_simulation(
                 )
 
             # Check access
-            if not has_access(user_role, user_department_ids, simulation_department_ids):
+            if not has_access(
+                user_role, user_department_ids, simulation_department_ids
+            ):
                 raise HTTPException(
                     status_code=403,
                     detail="You don't have access to this simulation. It may be restricted to other departments.",
@@ -312,7 +332,9 @@ async def get_simulation(
 
         # Selected IDs for fetching
         name_ids = [ids_result.name_id] if ids_result.name_id else []
-        description_ids = [ids_result.description_id] if ids_result.description_id else []
+        description_ids = (
+            [ids_result.description_id] if ids_result.description_id else []
+        )
         flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
         department_ids = ids_result.department_ids or []
         # For new simulation, use user's departments if simulation has none
@@ -342,7 +364,9 @@ async def get_simulation(
 
         async def fetch_descriptions():
             async with pool.acquire() as c:
-                selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+                selected = await get_descriptions_internal(
+                    c, description_ids, bypass_cache
+                )
                 suggestions = await search_descriptions_internal(
                     c,
                     None,
@@ -361,7 +385,9 @@ async def get_simulation(
 
         async def fetch_departments():
             async with pool.acquire() as c:
-                selected = await get_departments_internal(c, department_ids, bypass_cache)
+                selected = await get_departments_internal(
+                    c, department_ids, bypass_cache
+                )
                 dept_source = "all" if request.simulation_id is None else "recent"
                 suggestions = await search_departments_internal(
                     c,
@@ -406,7 +432,13 @@ async def get_simulation(
             flag_items,
             (departments_selected, departments_suggestions),
             (scenarios_selected, scenarios_suggestions),
-            (scenario_flags, scenario_positions, scenario_rubrics, scenario_time_limits, rubrics),
+            (
+                scenario_flags,
+                scenario_positions,
+                scenario_rubrics,
+                scenario_time_limits,
+                rubrics,
+            ),
         ) = await asyncio.gather(
             fetch_names(),
             fetch_descriptions(),
@@ -418,14 +450,18 @@ async def get_simulation(
 
         # Combine selected and suggestions (dedupe)
         names = _dedupe_by_id(names_selected + names_suggestions, "id")
-        descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-        departments = _dedupe_by_id(departments_selected + departments_suggestions, "department_id")
-        scenarios = _dedupe_by_id(scenarios_selected + scenarios_suggestions, "scenario_id")
+        descriptions = _dedupe_by_id(
+            descriptions_selected + descriptions_suggestions, "id"
+        )
+        departments = _dedupe_by_id(
+            departments_selected + departments_suggestions, "department_id"
+        )
+        scenarios = _dedupe_by_id(
+            scenarios_selected + scenarios_suggestions, "scenario_id"
+        )
 
         # Find selected resources
-        name_resource = next(
-            (n for n in names if n.id == ids_result.name_id), None
-        )
+        name_resource = next((n for n in names if n.id == ids_result.name_id), None)
         description_resource = next(
             (d for d in descriptions if d.id == ids_result.description_id), None
         )
@@ -544,7 +580,9 @@ async def get_simulation(
             names=[_to_dict(n) for n in names],
             # Description
             description_id=ids_result.description_id,
-            description_resource=_to_dict(description_resource) if description_resource else None,
+            description_resource=_to_dict(description_resource)
+            if description_resource
+            else None,
             show_description=show_description,
             description_agent_id=ids_result.description_agent_id,
             description_required=compute_description_required(),
@@ -599,7 +637,9 @@ async def get_simulation(
             rubrics=[_to_dict(r) for r in rubrics],
             # Scenario time limits
             scenario_time_limit_ids=ids_result.scenario_time_limit_ids or [],
-            scenario_time_limit_resources=[_to_dict(stl) for stl in scenario_time_limits],
+            scenario_time_limit_resources=[
+                _to_dict(stl) for stl in scenario_time_limits
+            ],
             show_scenario_time_limits=show_scenario_time_limits,
             scenario_time_limits_agent_id=None,
             scenario_time_limits_required=False,

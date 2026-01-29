@@ -88,13 +88,9 @@ async def _member_progress_impl(
             is_general_row = await conn.fetchrow(is_general_sql, chat_id_uuid)
             is_general = bool(is_general_row["is_general"]) if is_general_row else False
             if is_general:
-                sql_path = (
-                    "app/sql/v4/queries/attempts/general/member_progress_start_complete.sql"
-                )
+                sql_path = "app/sql/v4/queries/attempts/general/member_progress_start_complete.sql"
             else:
-                sql_path = (
-                    "app/sql/v4/queries/attempts/practice/member_progress_start_complete.sql"
-                )
+                sql_path = "app/sql/v4/queries/attempts/practice/member_progress_start_complete.sql"
 
             sql = load_sql(sql_path)
             row = await conn.fetchrow(
@@ -182,7 +178,9 @@ async def _member_progress_impl(
 
             if audio:
                 resource_type = "voice"
-                model_name = context_result.voice_model_name or context_result.model_name
+                model_name = (
+                    context_result.voice_model_name or context_result.model_name
+                )
                 api_key = context_result.voice_api_key or context_result.api_key
                 base_url = context_result.voice_base_url or context_result.base_url
                 temperature = (

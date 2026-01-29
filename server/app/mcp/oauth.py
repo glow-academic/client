@@ -75,7 +75,7 @@ def _can_resolve_hostname(hostname: str) -> bool:
 
 def get_jwks() -> list[dict[str, Any]]:
     """Get JWKS from Keycloak with caching.
-    
+
     Tries multiple URLs in order:
     1. Internal Docker URL (if hostname resolves)
     2. Localhost direct (for local dev)
@@ -84,7 +84,7 @@ def get_jwks() -> list[dict[str, Any]]:
     now = time.time()
     if _jwks_cache["keys"] is None or now - _jwks_cache["ts"] > JWKS_TTL:
         last_error = None
-        
+
         # Filter URLs based on environment
         urls_to_try = []
         for url in JWKS_URLS:
@@ -93,7 +93,7 @@ def get_jwks() -> list[dict[str, Any]]:
                 logger.debug(f"Skipping Docker URL (hostname not resolvable): {url}")
                 continue
             urls_to_try.append(url)
-        
+
         # Try each URL until one works
         for jwks_url in urls_to_try:
             try:
@@ -105,13 +105,15 @@ def get_jwks() -> list[dict[str, Any]]:
                     _jwks_cache["keys"] = keys
                     _jwks_cache["ts"] = now
                     _jwks_cache["url"] = jwks_url
-                    logger.info(f"Successfully fetched JWKS from: {jwks_url} ({len(keys)} keys)")
+                    logger.info(
+                        f"Successfully fetched JWKS from: {jwks_url} ({len(keys)} keys)"
+                    )
                     return keys
             except Exception as e:
                 last_error = e
                 logger.debug(f"Failed to fetch JWKS from {jwks_url}: {e}")
                 continue
-        
+
         # If we have cached keys, use them even if expired
         if _jwks_cache["keys"] is not None:
             logger.warning(
@@ -119,12 +121,12 @@ def get_jwks() -> list[dict[str, Any]]:
                 f"Last error: {last_error}"
             )
             return _jwks_cache["keys"]
-        
+
         # No cached keys and all URLs failed
         raise RuntimeError(
             f"Failed to fetch JWKS from all endpoints. Last error: {last_error}"
         ) from last_error
-    
+
     return _jwks_cache["keys"]
 
 
@@ -168,9 +170,13 @@ def verify_token(token: str) -> dict[str, Any]:
             token,
             key,
             algorithms=[headers.get("alg", "RS256")],
-            options={"verify_at_hash": False, "verify_aud": False, "verify_iss": False},  # Disable issuer check temporarily
+            options={
+                "verify_at_hash": False,
+                "verify_aud": False,
+                "verify_iss": False,
+            },  # Disable issuer check temporarily
         )
-        
+
         # Validate issuer manually - accept both direct Keycloak URL and proxied URL
         token_issuer = claims.get("iss", "")
         expected_issuers = [
@@ -178,11 +184,13 @@ def verify_token(token: str) -> dict[str, Any]:
             f"{KEYCLOAK_INTERNAL_URL}/auth/realms/{KEYCLOAK_REALM}",  # Direct Keycloak URL
             "http://localhost:8080/auth/realms/master",  # Fallback for local dev
         ]
-        
+
         if token_issuer and token_issuer not in expected_issuers:
             # Check if it's just a port difference (localhost:8080 vs localhost:3000)
             token_issuer_base = token_issuer.replace(":8080", "").replace(":3000", "")
-            expected_issuer_base = KEYCLOAK_ISSUER.replace(":8080", "").replace(":3000", "")
+            expected_issuer_base = KEYCLOAK_ISSUER.replace(":8080", "").replace(
+                ":3000", ""
+            )
             if token_issuer_base != expected_issuer_base:
                 logger.warning(
                     f"Token issuer mismatch: got {token_issuer}, expected one of {expected_issuers}"
@@ -194,13 +202,15 @@ def verify_token(token: str) -> dict[str, Any]:
                 logger.debug(
                     f"Token issuer port difference accepted: {token_issuer} vs {KEYCLOAK_ISSUER}"
                 )
-        
+
         # Check audience manually with better error messages
         token_audience = claims.get("aud")
         if token_audience:
             # Handle both string and list audiences
-            audiences = token_audience if isinstance(token_audience, list) else [token_audience]
-            
+            audiences = (
+                token_audience if isinstance(token_audience, list) else [token_audience]
+            )
+
             # Check if MCP_RESOURCE is in audience
             # Also check variations (with/without port, http/https) for flexibility
             mcp_resource_variations = [
@@ -208,7 +218,7 @@ def verify_token(token: str) -> dict[str, Any]:
                 MCP_RESOURCE.replace(":3000", "").replace(":8000", ""),  # Without port
                 MCP_RESOURCE.replace("http://", "https://"),  # HTTPS variant
             ]
-            
+
             if not any(variant in audiences for variant in mcp_resource_variations):
                 # Allow client_id as fallback (for backward compatibility)
                 client_id = claims.get("azp") or claims.get("client_id")
@@ -237,7 +247,7 @@ def verify_token(token: str) -> dict[str, Any]:
                 f"Configure Keycloak client scope with audience mapper."
             )
             # Don't fail if audience is missing - allow for now but log warning
-        
+
         return claims
     except jwt.ExpiredSignatureError:
         logger.warning("MCP OAuth token expired")
@@ -255,13 +265,13 @@ def verify_token(token: str) -> dict[str, Any]:
 
 def oauth_401() -> Response:
     """Return 401 with WWW-Authenticate header pointing to PRM endpoint and Keycloak authorization endpoint.
-    
+
     Per RFC 9728 and MCP spec, ChatGPT will use resource_metadata from WWW-Authenticate header
     if present, otherwise it constructs the well-known URL by inserting .well-known/oauth-protected-resource
     between host and path.
-    
+
     The scope parameter helps ChatGPT understand what scopes are required for this resource.
-    
+
     Per RFC 9728, the resource parameter in WWW-Authenticate should match the resource identifier
     that the client is calling. ChatGPT sends resource=https://company.ashoksaravanan.com/mcp in auth requests,
     so we should include it in WWW-Authenticate to help ChatGPT recognize this as the protected resource.
@@ -291,9 +301,9 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
         # Cursor IDE and other browsers need this for CORS preflight checks
         if request.method == "OPTIONS":
             return await call_next(request)
-        
+
         path = request.url.path
-        
+
         # RFC 8414 OAuth Authorization Server Metadata (REQUIRED for ChatGPT Dev Mode)
         # ChatGPT expects this endpoint to discover OAuth configuration
         # Handle this BEFORE /mcp path checks since it's at root level
@@ -302,7 +312,7 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
             if APP_PREFIX
             else "/.well-known/oauth-authorization-server"
         )
-        
+
         # Handle RFC 8414 OAuth Authorization Server Metadata discovery (no auth required)
         # This is what ChatGPT Dev Mode uses to discover OAuth endpoints
         if path == oauth_as_path:
@@ -313,26 +323,44 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
                     "issuer": KEYCLOAK_ISSUER,
                     "authorization_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/auth",
                     "token_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/token",
-                    "scopes_supported": ["openid", "profile", "email", "address", "phone", "offline_access", "organization", "microprofile-jwt", "mcp-resource"],
+                    "scopes_supported": [
+                        "openid",
+                        "profile",
+                        "email",
+                        "address",
+                        "phone",
+                        "offline_access",
+                        "organization",
+                        "microprofile-jwt",
+                        "mcp-resource",
+                    ],
                     "response_types_supported": ["code"],
                     "grant_types_supported": ["authorization_code"],
-                    "token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"],
-                    "code_challenge_methods_supported": ["S256"],  # Required for ChatGPT PKCE support
+                    "token_endpoint_auth_methods_supported": [
+                        "client_secret_post",
+                        "client_secret_basic",
+                    ],
+                    "code_challenge_methods_supported": [
+                        "S256"
+                    ],  # Required for ChatGPT PKCE support
                 }
             )
-        
+
         # Log all incoming requests to /mcp for debugging
         if path.startswith("/mcp") or path.startswith(f"{APP_PREFIX}/mcp"):
             all_headers = dict(request.headers)
             auth_header = all_headers.get("authorization", "NOT PRESENT")
             # Log full request details for debugging ChatGPT behavior
             # Also log ALL header values (not just keys) to see if token is in a different header
-            header_values = {k: (v[:100] + '...' if len(str(v)) > 100 else v) for k, v in all_headers.items()}
-            
+            header_values = {
+                k: (v[:100] + "..." if len(str(v)) > 100 else v)
+                for k, v in all_headers.items()
+            }
+
             # Also check query parameters and URL for tokens (in case ChatGPT sends it differently)
             query_params = dict(request.query_params)
             url_str = str(request.url)
-            
+
             logger.info(
                 f"MCP request received: {request.method} {path}, "
                 f"Authorization header present: {auth_header != 'NOT PRESENT'}, "
@@ -359,8 +387,12 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
             path == prm_path
             or path == mcp_prm_path
             or path.endswith("/.well-known/oauth-protected-resource")
-            or path == "/.well-known/oauth-protected-resource/mcp"  # RFC 9728 path-insertion
-            or (path.startswith("/.well-known/oauth-protected-resource/") and path.endswith("/mcp"))  # Handle path variations
+            or path
+            == "/.well-known/oauth-protected-resource/mcp"  # RFC 9728 path-insertion
+            or (
+                path.startswith("/.well-known/oauth-protected-resource/")
+                and path.endswith("/mcp")
+            )  # Handle path variations
         ):
             # Return PRM metadata per RFC 9728 and MCP spec
             # ChatGPT requires code_challenge_methods_supported and scopes_supported
@@ -369,8 +401,20 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
                 {
                     "resource": MCP_RESOURCE,
                     "authorization_servers": [KEYCLOAK_ISSUER],
-                    "code_challenge_methods_supported": ["S256"],  # Required for ChatGPT PKCE support
-                    "scopes_supported": ["openid", "profile", "email", "address", "phone", "offline_access", "organization", "microprofile-jwt", "mcp-resource"],  # Include mcp-resource so ChatGPT knows it's available
+                    "code_challenge_methods_supported": [
+                        "S256"
+                    ],  # Required for ChatGPT PKCE support
+                    "scopes_supported": [
+                        "openid",
+                        "profile",
+                        "email",
+                        "address",
+                        "phone",
+                        "offline_access",
+                        "organization",
+                        "microprofile-jwt",
+                        "mcp-resource",
+                    ],  # Include mcp-resource so ChatGPT knows it's available
                 }
             )
 
@@ -379,7 +423,7 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
         # FastMCP handles SSE at /mcp, so /mcp/sse/ should also route to /mcp
         if not path.startswith(mcp_path) and not path.startswith("/mcp"):
             return await call_next(request)
-        
+
         # Handle /mcp/sse/ path - ChatGPT expects this endpoint (per OpenAI docs)
         # FastMCP handles SSE at /mcp, so rewrite /mcp/sse/ to /mcp
         if path == f"{mcp_path}/sse/" or path == "/mcp/sse/":
@@ -430,8 +474,7 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
         # This makes MCP endpoints consistent with HTTP API endpoints
         # Both use request.state.profile_id as the single source of truth
         from app.main import get_pool
-        from app.utils.mcp.get_profile_id_from_claims import \
-            get_profile_id_from_claims
+        from app.utils.mcp.get_profile_id_from_claims import get_profile_id_from_claims
 
         pool = get_pool()
         if pool:
@@ -461,10 +504,15 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
         # Cursor expects /mcp/messages and /mcp/sse/messages
         # FastMCP handles requests at /mcp directly
         # So we rewrite these paths to /mcp before forwarding
-        if path in [f"{mcp_path}/messages", f"{mcp_path}/sse/messages", "/mcp/messages", "/mcp/sse/messages"]:
+        if path in [
+            f"{mcp_path}/messages",
+            f"{mcp_path}/sse/messages",
+            "/mcp/messages",
+            "/mcp/sse/messages",
+        ]:
             # Rewrite the path to /mcp for FastMCP
             request.scope["path"] = mcp_path
             request.scope["raw_path"] = mcp_path.encode()
-        
+
         # Continue to MCP server
         return await call_next(request)

@@ -40,7 +40,11 @@ def get_fields_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "field_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "field_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

@@ -131,7 +131,10 @@ async def get_templates_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetTemplatesV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetTemplatesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetTemplatesSqlParams(p_ids=ids)
     result = cast(

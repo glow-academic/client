@@ -2,8 +2,9 @@
 
 from typing import Any
 
-from app.main import get_internal_sio, sio
 from fastapi import APIRouter
+
+from app.main import get_internal_sio, sio
 
 internal_sio = get_internal_sio()
 

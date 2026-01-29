@@ -40,7 +40,11 @@ def get_rubrics_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "rubric_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "rubric_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

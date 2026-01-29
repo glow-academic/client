@@ -9,7 +9,6 @@ Business logic (permissions, UI flags) is computed in Python.
 """
 
 import asyncio
-from datetime import datetime
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -17,32 +16,32 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import (
-    CandidateAgent,
     PERSONA_BASIC_RESOURCES,
     PERSONA_CONTENT_RESOURCES,
     PERSONA_PARAMETERS_RESOURCES,
     PERSONA_RESOURCES,
+    CandidateAgent,
     compute_can_edit,
     compute_color_required,
     compute_departments_required,
     compute_description_required,
     compute_disabled_reason,
     compute_examples_required,
-    compute_parameter_fields_required,
     compute_flag_required,
     compute_icon_required,
     compute_instructions_required,
     compute_name_required,
+    compute_parameter_fields_required,
     compute_parameters_required,
     compute_show_color,
     compute_show_departments,
     compute_show_description,
     compute_show_examples,
-    compute_show_parameter_fields,
     compute_show_flag,
     compute_show_icon,
     compute_show_instructions,
     compute_show_name,
+    compute_show_parameter_fields,
     compute_show_parameters,
     has_access,
     select_agents_for_artifact,
@@ -61,8 +60,6 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.examples.get import get_examples_internal
 from app.api.v4.resources.examples.search import search_examples_internal
-from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
-from app.api.v4.resources.parameter_fields.search import search_parameter_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.get import get_icons_internal
@@ -71,6 +68,10 @@ from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.instructions.search import search_instructions_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameter_fields.search import (
+    search_parameter_fields_internal,
+)
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import (
     search_conditional_parameters_internal,
@@ -252,13 +253,16 @@ async def get_persona(
             candidate_agents, PERSONA_BASIC_RESOURCES, PERSONA_RESOURCES, user_dept_set
         )
         content_agent_id = select_multi_resource_agent(
-            candidate_agents, PERSONA_CONTENT_RESOURCES, PERSONA_RESOURCES, user_dept_set
+            candidate_agents,
+            PERSONA_CONTENT_RESOURCES,
+            PERSONA_RESOURCES,
+            user_dept_set,
         )
         parameters_step_agent_id = select_multi_resource_agent(
-            candidate_agents, PERSONA_PARAMETERS_RESOURCES, PERSONA_RESOURCES, user_dept_set
-        )
-        general_agent_id = select_multi_resource_agent(
-            candidate_agents, PERSONA_RESOURCES, PERSONA_RESOURCES, user_dept_set
+            candidate_agents,
+            PERSONA_PARAMETERS_RESOURCES,
+            PERSONA_RESOURCES,
+            user_dept_set,
         )
 
         # === PYTHON BUSINESS LOGIC ===
@@ -280,10 +284,14 @@ async def get_persona(
 
         # Selected IDs for fetching
         name_ids = [ids_result.name_id] if ids_result.name_id else []
-        description_ids = [ids_result.description_id] if ids_result.description_id else []
+        description_ids = (
+            [ids_result.description_id] if ids_result.description_id else []
+        )
         color_ids = [ids_result.color_id] if ids_result.color_id else []
         icon_ids = [ids_result.icon_id] if ids_result.icon_id else []
-        instructions_ids = [ids_result.instructions_id] if ids_result.instructions_id else []
+        instructions_ids = (
+            [ids_result.instructions_id] if ids_result.instructions_id else []
+        )
         flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
         department_ids = ids_result.department_ids or []
         parameter_field_ids = ids_result.parameter_field_ids or []
@@ -314,7 +322,9 @@ async def get_persona(
 
         async def fetch_descriptions():
             async with pool.acquire() as c:
-                selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+                selected = await get_descriptions_internal(
+                    c, description_ids, bypass_cache
+                )
                 suggestions = await search_descriptions_internal(
                     c,
                     request.descriptions_search,
@@ -390,7 +400,9 @@ async def get_persona(
 
         async def fetch_departments():
             async with pool.acquire() as c:
-                selected = await get_departments_internal(c, department_ids, bypass_cache)
+                selected = await get_departments_internal(
+                    c, department_ids, bypass_cache
+                )
                 # Always use "all" to show all available departments the user has access to
                 # This ensures users can see all options when editing, not just recently used ones
                 suggestions = await search_departments_internal(
@@ -407,10 +419,14 @@ async def get_persona(
 
         async def fetch_parameter_fields(param_ids: list[UUID]):
             async with pool.acquire() as c:
-                selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
+                selected = await get_parameter_fields_internal(
+                    c, parameter_field_ids, bypass_cache
+                )
                 # Get all available fields for ALL parameters (persona + conditional)
                 # This enables instant UI when user selects a parameter
-                available = await search_parameter_fields_internal(c, param_ids, bypass_cache)
+                available = await search_parameter_fields_internal(
+                    c, param_ids, bypass_cache
+                )
                 return (selected, available)
 
         async def fetch_examples():
@@ -470,15 +486,20 @@ async def get_persona(
         async def fetch_conditional_parameters():
             async with pool.acquire() as c:
                 return await search_conditional_parameters_internal(
-                    c, [pid for pid in all_persona_parameter_ids if pid is not None], bypass_cache
+                    c,
+                    [pid for pid in all_persona_parameter_ids if pid is not None],
+                    bypass_cache,
                 )
 
         conditional_params = await fetch_conditional_parameters()
 
         # Combine ALL parameter IDs for Phase 2 (includes transitive conditional params)
-        all_parameter_ids = list(set(
-            all_persona_parameter_ids + [p.parameter_id for p in conditional_params if p.parameter_id]
-        ))
+        all_parameter_ids = list(
+            set(
+                all_persona_parameter_ids
+                + [p.parameter_id for p in conditional_params if p.parameter_id]
+            )
+        )
 
         # Phase 2: Fetch remaining resources in parallel (including parameter_fields with proper IDs)
         (
@@ -499,12 +520,16 @@ async def get_persona(
             fetch_instructions(),
             fetch_flags(),
             fetch_departments(),
-            fetch_parameter_fields([pid for pid in all_parameter_ids if pid is not None]),
+            fetch_parameter_fields(
+                [pid for pid in all_parameter_ids if pid is not None]
+            ),
             fetch_examples(),
         )
 
         names = _dedupe_by_id(names_selected + names_suggestions, "id")
-        descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
+        descriptions = _dedupe_by_id(
+            descriptions_selected + descriptions_suggestions, "id"
+        )
         colors = _dedupe_by_id(colors_selected + colors_suggestions, "id")
         icons = _dedupe_by_id(icons_selected + icons_suggestions, "id")
         instructions_list = _dedupe_by_id(
@@ -516,28 +541,24 @@ async def get_persona(
         )
         # Dedupe by field_id since selected resources use parameter_fields_resource.id
         # while available fields use field_id as their id
-        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
+        parameter_fields = _dedupe_by_id(
+            parameter_fields_selected + parameter_fields_suggestions, "field_id"
+        )
         examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
         # Combine persona parameters with conditional parameters (conditional params have conditional=true)
         parameters = _dedupe_by_id(
             parameters_selected + parameters_suggestions + conditional_params,
-            "parameter_id"
+            "parameter_id",
         )
 
         # Find selected resources
-        name_resource = next(
-            (n for n in names if n.id == ids_result.name_id), None
-        )
+        name_resource = next((n for n in names if n.id == ids_result.name_id), None)
         description_resource = next(
             (d for d in descriptions if d.id == ids_result.description_id),
             None,
         )
-        color_resource = next(
-            (c for c in colors if c.id == ids_result.color_id), None
-        )
-        icon_resource = next(
-            (i for i in icons if i.id == ids_result.icon_id), None
-        )
+        color_resource = next((c for c in colors if c.id == ids_result.color_id), None)
+        icon_resource = next((i for i in icons if i.id == ids_result.icon_id), None)
         instructions_resource = next(
             (i for i in instructions_list if i.id == ids_result.instructions_id),
             None,
@@ -558,9 +579,7 @@ async def get_persona(
         parameter_field_resources = [
             f for f in parameter_fields if f.id in selected_parameter_field_ids
         ]
-        example_resources = [
-            e for e in examples if e.id in selected_example_ids
-        ]
+        example_resources = [e for e in examples if e.id in selected_example_ids]
         parameter_resources = [
             p for p in parameters if p.parameter_id in selected_parameter_ids
         ]
@@ -583,7 +602,9 @@ async def get_persona(
         show_instructions_flag = compute_show_instructions(instructions_has_tools)
         show_flag = compute_show_flag()
         show_departments_flag = compute_show_departments(len(departments))
-        show_parameter_fields_flag = compute_show_parameter_fields(len(parameter_fields))
+        show_parameter_fields_flag = compute_show_parameter_fields(
+            len(parameter_fields)
+        )
         show_examples_flag = compute_show_examples(len(examples))
         show_parameters_flag = compute_show_parameters(len(parameters))
 
@@ -723,7 +744,6 @@ async def get_persona(
             basic_agent_id=basic_agent_id,
             content_agent_id=content_agent_id,
             parameters_step_agent_id=parameters_step_agent_id,
-            general_agent_id=general_agent_id,
         )
 
         # No global cache for this response - individual resources are cached

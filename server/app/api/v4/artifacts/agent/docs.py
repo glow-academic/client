@@ -40,7 +40,11 @@ def get_agents_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "agent_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "agent_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

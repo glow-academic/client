@@ -4,14 +4,16 @@ from datetime import datetime
 from typing import cast
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     InfrastructureMetricsHealthSqlParams,
     InfrastructureMetricsHealthSqlRow,
 )
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_metrics_health_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/infrastructure_metrics_health_complete.sql"
+)
 
 
 async def log_service_health(

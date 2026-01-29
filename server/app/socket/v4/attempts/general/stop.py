@@ -4,7 +4,6 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from app.utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
@@ -15,6 +14,7 @@ from app.main import (
     _voice_sessions,
     sio,
 )
+from app.utils.sql_helper import load_sql
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -81,9 +81,7 @@ async def simulation_text_stop_error(
 async def simulation_message_cancelled(
     payload: SimulationMessageCancelledPayload, room: str
 ) -> None:
-    await sio.emit(
-        "simulation_text_message_cancelled", payload.model_dump(), room=room
-    )
+    await sio.emit("simulation_text_message_cancelled", payload.model_dump(), room=room)
 
 
 async def simulation_stopped(payload: SimulationStoppedPayload, room: str) -> None:

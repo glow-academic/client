@@ -9,6 +9,11 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.simulation.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -18,11 +23,6 @@ from app.sql.types import (
     GetSimulationsListSqlParams,
     GetSimulationsListSqlRow,
     load_sql_query,
-)
-from app.api.v4.artifacts.simulation.permissions import (
-    compute_can_edit,
-    compute_can_delete,
-    compute_can_duplicate,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -113,8 +113,7 @@ async def get_simulation_list(
             sim_department_ids_raw = getattr(sim, "department_ids", None) or []
             # Convert string UUIDs to UUID objects if needed
             sim_department_ids = [
-                UUID(d) if isinstance(d, str) else d
-                for d in sim_department_ids_raw
+                UUID(d) if isinstance(d, str) else d for d in sim_department_ids_raw
             ]
             usage_count = getattr(sim, "usage_count", 0) or 0
 

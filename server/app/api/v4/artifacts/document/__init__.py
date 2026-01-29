@@ -1,12 +1,13 @@
 """Document v4 router."""
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.document.delete import router as delete_router
 from app.api.v4.artifacts.document.draft import router as draft_router
 from app.api.v4.artifacts.document.duplicate import router as duplicate_router
 from app.api.v4.artifacts.document.get import router as get_router
 from app.api.v4.artifacts.document.list import router as list_router
 from app.api.v4.artifacts.document.save import router as save_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 

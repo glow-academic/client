@@ -6,6 +6,7 @@ from tests.sql.types import (
     GetSuperadminAliasSqlParams,
     GetSuperadminAliasSqlRow,
 )
+
 from app.utils.sql_helper import execute_sql_typed
 
 

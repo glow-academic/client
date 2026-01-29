@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.utils.sql_helper import load_sql
 
 # Postgres type OIDs to Python type mapping

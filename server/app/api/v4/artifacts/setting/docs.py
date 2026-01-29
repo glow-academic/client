@@ -40,7 +40,11 @@ def get_settings_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "setting_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "setting_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

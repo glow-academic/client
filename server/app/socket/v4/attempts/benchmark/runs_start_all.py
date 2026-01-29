@@ -5,8 +5,6 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -17,11 +15,15 @@ from app.sql.types import (
     GetBenchmarkRunsStartAllContextSqlParams,
     GetBenchmarkRunsStartAllContextSqlRow,
 )
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 logger = get_logger(__name__)
 
-SQL_PATH = "app/sql/v4/queries/benchmark/get_benchmark_runs_start_all_context_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/benchmark/get_benchmark_runs_start_all_context_complete.sql"
+)
 
 client_router = APIRouter()
 server_router = APIRouter()

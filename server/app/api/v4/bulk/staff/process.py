@@ -6,18 +6,24 @@ from io import StringIO
 from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (ProcessCsvApiRequest, ProcessCsvApiResponse,
-                           ProcessCsvSqlParams, ProcessCsvSqlRow,
-                           QProcessCsvV4CsvRowError, QProcessCsvV4ProcessedRow,
-                           load_sql_query)
+from app.sql.types import (
+    ProcessCsvApiRequest,
+    ProcessCsvApiResponse,
+    ProcessCsvSqlParams,
+    ProcessCsvSqlRow,
+    QProcessCsvV4CsvRowError,
+    QProcessCsvV4ProcessedRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/staff/process_csv_complete.sql"
@@ -28,7 +34,9 @@ router = APIRouter()
 @router.post(
     "/process",
     response_model=ProcessCsvApiResponse,
-    dependencies=[audit_activity("staff.process", "{{ actor.name }} processed staff CSV")],
+    dependencies=[
+        audit_activity("staff.process", "{{ actor.name }} processed staff CSV")
+    ],
 )
 async def process_staff(
     request: ProcessCsvApiRequest,

@@ -458,7 +458,9 @@ def select_best_agent_for_resource(
     # Score and sort candidates (higher scores first)
     scored = sorted(
         eligible,
-        key=lambda a: score_agent_for_artifact(a, artifact_resources, user_department_ids),
+        key=lambda a: score_agent_for_artifact(
+            a, artifact_resources, user_department_ids
+        ),
         reverse=True,
     )
 
@@ -531,7 +533,9 @@ def select_multi_resource_agent(
 
     scored = sorted(
         eligible,
-        key=lambda a: score_agent_for_artifact(a, artifact_resources, user_department_ids),
+        key=lambda a: score_agent_for_artifact(
+            a, artifact_resources, user_department_ids
+        ),
         reverse=True,
     )
 

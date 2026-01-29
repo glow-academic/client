@@ -2,13 +2,11 @@
 Unified endpoint that handles both create (agent_id = NULL) and update (agent_id provided).
 """
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -20,6 +18,8 @@ from app.sql.types import (
     SaveAgentSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/agents/save_agent_complete.sql"

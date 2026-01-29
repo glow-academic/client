@@ -3,13 +3,17 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
 from app.main import sio
-from app.sql.types import (GetTestDetailsV4SqlParams, GetTestDetailsV4SqlRow,
-                           MarkTestCompleteV4SqlParams)
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from app.sql.types import (
+    GetTestDetailsV4SqlParams,
+    GetTestDetailsV4SqlRow,
+    MarkTestCompleteV4SqlParams,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -73,9 +77,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Get active test for this attempt
-            test_details_params = GetTestDetailsV4SqlParams(
-                attempt_id=attempt_id_uuid
-            )
+            test_details_params = GetTestDetailsV4SqlParams(attempt_id=attempt_id_uuid)
             test_details_result = cast(
                 GetTestDetailsV4SqlRow,
                 await execute_sql_typed(
@@ -84,10 +86,14 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     params=test_details_params,
                 ),
             )
-            active_test_row = {
-                "test_id": test_details_result.test_id,
-                "run_id": test_details_result.run_id,
-            } if test_details_result else None
+            active_test_row = (
+                {
+                    "test_id": test_details_result.test_id,
+                    "run_id": test_details_result.run_id,
+                }
+                if test_details_result
+                else None
+            )
 
             if active_test_row:
                 test_id = active_test_row["test_id"]
@@ -98,9 +104,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     await cancel_active_run(run_id)
 
                 # Mark test as completed
-                mark_params = MarkTestCompleteV4SqlParams(
-                    test_id=uuid.UUID(test_id)
-                )
+                mark_params = MarkTestCompleteV4SqlParams(test_id=uuid.UUID(test_id))
                 await execute_sql_typed(
                     conn,
                     "app/sql/v4/queries/benchmark/mark_test_complete_v4_complete.sql",

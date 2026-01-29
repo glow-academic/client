@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-
 _tool_results: dict[str, dict[str, Any]] = {}
 _tool_futures: dict[str, asyncio.Future[dict[str, Any]]] = {}
 
@@ -26,7 +25,9 @@ def resolve_tool_result(call_id: str, result: dict[str, Any]) -> None:
         fut.set_result(result)
 
 
-async def wait_for_tool_result(call_id: str, timeout_seconds: float) -> dict[str, Any] | None:
+async def wait_for_tool_result(
+    call_id: str, timeout_seconds: float
+) -> dict[str, Any] | None:
     """Wait for a tool result to be provided by domain handlers."""
     if call_id in _tool_results:
         return _tool_results.pop(call_id)
@@ -34,7 +35,7 @@ async def wait_for_tool_result(call_id: str, timeout_seconds: float) -> dict[str
     fut = _get_future(call_id)
     try:
         result = await asyncio.wait_for(fut, timeout=timeout_seconds)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return None
     finally:
         _tool_futures.pop(call_id, None)

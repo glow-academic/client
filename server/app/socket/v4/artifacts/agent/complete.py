@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -10,7 +12,6 @@ from app.sql.types import (
     GetAgentResourceIdsByGroupIdSqlParams,
     GetAgentResourceIdsByGroupIdSqlRow,
 )
-from fastapi import APIRouter
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -113,11 +114,17 @@ async def handle_agent_artifact_complete(data: dict[str, Any]) -> None:
             "group_id": group_id_str,
             "resource_type": resource_type,
             "name_id": str(result.name_id) if result.name_id else None,
-            "description_id": str(result.description_id) if result.description_id else None,
+            "description_id": str(result.description_id)
+            if result.description_id
+            else None,
             "model_id": str(result.model_id) if result.model_id else None,
             "prompt_id": str(result.prompt_id) if result.prompt_id else None,
-            "instructions_id": str(result.instructions_id) if result.instructions_id else None,
-            "active_flag_id": str(result.active_flag_id) if result.active_flag_id else None,
+            "instructions_id": str(result.instructions_id)
+            if result.instructions_id
+            else None,
+            "active_flag_id": str(result.active_flag_id)
+            if result.active_flag_id
+            else None,
             "department_ids": [str(did) for did in (result.department_ids or [])],
             "success": True,
             "message": f"{resource_type} generation completed successfully",

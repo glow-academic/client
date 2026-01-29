@@ -1048,7 +1048,6 @@ function ScenarioComponent({
       questions: scenarioData.questions,
       can_edit: scenarioData.can_edit,
       disabled_reason: scenarioData.disabled_reason,
-      general_agent_id: scenarioData.general_agent_id,
       basic_agent_id: scenarioData.basic_agent_id,
       content_agent_id: scenarioData.content_agent_id,
     };
@@ -2771,7 +2770,9 @@ function ScenarioComponent({
               isReadonly={disabled}
               isEditMode={isEditMode}
               searchTerm={personaSearch}
-              onSearchChange={(value) => setFormData({ personaSearch: value })}
+              onSearchChange={(value) =>
+                setFormData({ personaSearch: value || null })
+              }
               resetFields={["personas"]}
               filters={
                 filters ?? [
@@ -2787,7 +2788,7 @@ function ScenarioComponent({
               actions={
                 shouldShowGenerateAction(
                   "personas",
-                  currentScenarioData?.general_agent_id
+                  currentScenarioData?.personas_agent_id
                 ) ? (
                   <TooltipProvider>
                     <Tooltip>
@@ -2847,7 +2848,9 @@ function ScenarioComponent({
               isReadonly={disabled}
               isEditMode={isEditMode}
               searchTerm={documentSearch}
-              onSearchChange={(value) => setFormData({ documentSearch: value })}
+              onSearchChange={(value) =>
+                setFormData({ documentSearch: value || null })
+              }
               resetFields={["documents"]}
               filters={
                 filters ?? [
@@ -2863,7 +2866,7 @@ function ScenarioComponent({
               actions={
                 shouldShowGenerateAction(
                   "documents",
-                  currentScenarioData?.general_agent_id
+                  currentScenarioData?.documents_agent_id
                 ) ? (
                   <TooltipProvider>
                     <Tooltip>
@@ -3019,7 +3022,7 @@ function ScenarioComponent({
               actions={
                 shouldShowGenerateAction(
                   "parameters",
-                  currentScenarioData?.general_agent_id
+                  currentScenarioData?.parameters_agent_id
                 ) ? (
                   <TooltipProvider>
                     <Tooltip>

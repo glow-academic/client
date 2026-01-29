@@ -32,4 +32,3 @@ def normalize_resources_for_sql(
             normalized.append((str(resource_type), uuid_ids))
 
     return normalized or None
-

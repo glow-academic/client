@@ -9,7 +9,6 @@ import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
@@ -20,6 +19,7 @@ from app.sql.types import (
     BenchmarkEvalCompleteSqlParams,
     BenchmarkEvalCompleteSqlRow,
 )
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()

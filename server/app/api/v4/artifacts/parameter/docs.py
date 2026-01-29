@@ -40,7 +40,11 @@ def get_parameters_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "parameter_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "parameter_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

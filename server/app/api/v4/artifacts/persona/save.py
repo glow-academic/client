@@ -29,7 +29,9 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/personas/check_persona_save_access_complete.sql"
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/personas/check_persona_save_access_complete.sql"
+)
 SQL_PATH = "app/sql/v4/queries/personas/save_persona_complete.sql"
 
 
@@ -157,7 +159,9 @@ async def save_persona(
             {
                 "success": True,
                 "persona_id": str(result.persona_id),
-                "message": "Persona updated successfully" if is_update else "Persona created successfully",
+                "message": "Persona updated successfully"
+                if is_update
+                else "Persona created successfully",
             }
         )
 

@@ -40,7 +40,11 @@ def get_departments_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "department_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "department_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

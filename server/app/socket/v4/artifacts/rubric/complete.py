@@ -3,13 +3,14 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.sql.types import (
     GetRubricToolCallResultsSqlParams,
     GetRubricToolCallResultsSqlRow,
 )
-from fastapi import APIRouter
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()

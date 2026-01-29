@@ -3,17 +3,21 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetHomeOverviewApiRequest,
-                           GetHomeOverviewApiResponse,
-                           GetHomeOverviewSqlParams, GetHomeOverviewSqlRow)
+from app.sql.types import (
+    GetHomeOverviewApiRequest,
+    GetHomeOverviewApiResponse,
+    GetHomeOverviewSqlParams,
+    GetHomeOverviewSqlRow,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/home/get_home_overview_complete.sql"
@@ -24,9 +28,7 @@ router = APIRouter()
 @router.post(
     "/get",
     response_model=GetHomeOverviewApiResponse,
-    dependencies=[
-        audit_activity("home.get", "{{ actor.name }} viewed home overview")
-    ],
+    dependencies=[audit_activity("home.get", "{{ actor.name }} viewed home overview")],
 )
 async def get_home_overview(
     request: GetHomeOverviewApiRequest,

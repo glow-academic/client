@@ -40,7 +40,11 @@ def get_providers_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "provider_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "provider_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

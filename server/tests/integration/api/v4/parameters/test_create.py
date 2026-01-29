@@ -13,6 +13,7 @@ from tests.sql.types import (
     GetParameterItemsSqlParams,
     GetParameterItemsSqlRow,
 )
+
 from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio

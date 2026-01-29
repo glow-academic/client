@@ -10,9 +10,9 @@ from tests.sql.types import (
     TestGetActivityByMessageSqlParams,
     TestGetActivityByMessageSqlRow,
 )
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.insert_websocket import insert_activity_websocket
+from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
 

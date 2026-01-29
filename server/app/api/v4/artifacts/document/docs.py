@@ -40,7 +40,11 @@ def get_documents_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "document_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "document_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

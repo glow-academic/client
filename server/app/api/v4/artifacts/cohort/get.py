@@ -8,6 +8,33 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.artifacts.cohort.permissions import (
+    compute_can_edit,
+    compute_departments_required,
+    compute_description_required,
+    compute_disabled_reason,
+    compute_flag_required,
+    compute_name_required,
+    compute_show_departments,
+    compute_show_description,
+    compute_show_flag,
+    compute_show_name,
+    compute_show_simulation_positions,
+    compute_show_simulations,
+    compute_simulation_positions_required,
+    compute_simulations_required,
+    has_access,
+)
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.simulation_positions.get import (
+    get_simulation_positions_internal,
+)
+from app.api.v4.resources.simulations.get import get_simulation_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -20,32 +47,6 @@ from app.sql.types import (
     GetCohortSqlRow,
     load_sql_query,
 )
-from app.api.v4.artifacts.cohort.permissions import (
-    compute_can_edit,
-    compute_disabled_reason,
-    compute_show_departments,
-    compute_show_description,
-    compute_show_flag,
-    compute_show_name,
-    compute_show_simulation_positions,
-    compute_show_simulations,
-    compute_departments_required,
-    compute_description_required,
-    compute_flag_required,
-    compute_name_required,
-    compute_simulation_positions_required,
-    compute_simulations_required,
-    has_access,
-)
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
-from app.api.v4.resources.flags.get import get_flags_internal
-from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.simulations.get import get_simulation_internal
-from app.api.v4.resources.simulation_positions.get import (
-    get_simulation_positions_internal,
-)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -76,7 +77,7 @@ async def get_cohort(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetCohortApiResponse:
     """Get cohort information - handles both new (cohort_id = NULL) and detail (cohort_id provided).
-    
+
     Two-pass architecture:
     - Query 1: access check (role + department access)
     - Query 2: ID + search data (resource IDs + suggestions)
@@ -235,13 +236,23 @@ async def get_cohort(
         # === RESOURCE FETCHING (by IDs for cache reuse) ===
         pool = await get_pool()
 
-        def _ids_from_resource_list(items: list[Any] | None, id_attr: str) -> list[UUID]:
+        def _ids_from_resource_list(
+            items: list[Any] | None, id_attr: str
+        ) -> list[UUID]:
             if not items:
                 return []
-            return [getattr(item, id_attr) for item in items if getattr(item, id_attr, None)]
+            return [
+                getattr(item, id_attr) for item in items if getattr(item, id_attr, None)
+            ]
 
-        def _order_by_ids(items: list[Any], id_attr: str, ordered_ids: list[UUID]) -> list[Any]:
-            by_id = {getattr(item, id_attr): item for item in items if getattr(item, id_attr, None)}
+        def _order_by_ids(
+            items: list[Any], id_attr: str, ordered_ids: list[UUID]
+        ) -> list[Any]:
+            by_id = {
+                getattr(item, id_attr): item
+                for item in items
+                if getattr(item, id_attr, None)
+            }
             return [by_id[i] for i in ordered_ids if i in by_id]
 
         async def _run_with_pool(fn, *args):
@@ -263,8 +274,12 @@ async def get_cohort(
         # Search result IDs from SQL (for options lists)
         name_option_ids = _ids_from_resource_list(result.names, "id")
         description_option_ids = _ids_from_resource_list(result.descriptions, "id")
-        department_option_ids = _ids_from_resource_list(result.departments, "department_id")
-        simulation_option_ids = _ids_from_resource_list(result.simulations, "simulation_id")
+        department_option_ids = _ids_from_resource_list(
+            result.departments, "department_id"
+        )
+        simulation_option_ids = _ids_from_resource_list(
+            result.simulations, "simulation_id"
+        )
 
         # Fetch resources in parallel
         (
@@ -314,7 +329,10 @@ async def get_cohort(
         flag_resource = _to_dict(flag_items[0]) if flag_items else None
 
         # Ordered option lists
-        names = [_to_dict(item) for item in _order_by_ids(name_options, "id", name_option_ids)]
+        names = [
+            _to_dict(item)
+            for item in _order_by_ids(name_options, "id", name_option_ids)
+        ]
         descriptions = [
             _to_dict(item)
             for item in _order_by_ids(description_options, "id", description_option_ids)

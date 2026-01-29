@@ -5,16 +5,22 @@ Unified endpoint that handles both new (tool_id = NULL) and detail (tool_id prov
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetToolApiRequest, GetToolApiResponse,
-                           GetToolSqlParams, GetToolSqlRow, load_sql_query)
+from app.sql.types import (
+    GetToolApiRequest,
+    GetToolApiResponse,
+    GetToolSqlParams,
+    GetToolSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/tools/get_tool_complete.sql"
@@ -40,7 +46,7 @@ async def get_tool(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetToolApiResponse:
     """Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided).
-    
+
     Validation Logic:
     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)

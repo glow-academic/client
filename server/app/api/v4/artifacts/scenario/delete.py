@@ -4,12 +4,7 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
 from app.api.v4.artifacts.scenario.permissions import (
     compute_can_delete,
     has_access,
@@ -18,6 +13,9 @@ from app.api.v4.artifacts.scenario.types import (
     DeleteScenarioApiRequest,
     DeleteScenarioApiResponse,
 )
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
 from app.sql.types import (
     CheckScenarioDeleteAccessSqlParams,
     CheckScenarioDeleteAccessSqlRow,
@@ -25,10 +23,14 @@ from app.sql.types import (
     DeleteScenarioSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenario/delete_scenario_complete.sql"
-ACCESS_SQL_PATH = "app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql"
+ACCESS_SQL_PATH = (
+    "app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql"
+)
 
 
 router = APIRouter()
@@ -102,7 +104,9 @@ async def delete_scenario(
             )
 
         usage_count = access_result.usage_count or 0
-        if not compute_can_delete(access_result.user_role, access_result.scenario_department_ids, usage_count):
+        if not compute_can_delete(
+            access_result.user_role, access_result.scenario_department_ids, usage_count
+        ):
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to delete this scenario.",

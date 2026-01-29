@@ -1,12 +1,13 @@
 """Setting v4 router."""
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.setting.delete import router as delete_router
 from app.api.v4.artifacts.setting.draft import router as draft_router
 from app.api.v4.artifacts.setting.duplicate import router as duplicate_router
 from app.api.v4.artifacts.setting.get import router as get_router
 from app.api.v4.artifacts.setting.list import router as list_router
 from app.api.v4.artifacts.setting.save import router as save_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

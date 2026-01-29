@@ -18,7 +18,19 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.scenario.permissions import (
     compute_can_edit,
+    compute_departments_required,
+    compute_description_required,
     compute_disabled_reason,
+    compute_documents_required,
+    compute_fields_required,
+    compute_flag_required,
+    compute_images_required,
+    compute_name_required,
+    compute_objectives_required,
+    compute_parameters_required,
+    compute_personas_required,
+    compute_problem_statement_required,
+    compute_questions_required,
     compute_show_departments,
     compute_show_description,
     compute_show_documents,
@@ -33,18 +45,6 @@ from app.api.v4.artifacts.scenario.permissions import (
     compute_show_questions,
     compute_show_templates,
     compute_show_videos,
-    compute_departments_required,
-    compute_description_required,
-    compute_documents_required,
-    compute_fields_required,
-    compute_flag_required,
-    compute_images_required,
-    compute_name_required,
-    compute_objectives_required,
-    compute_parameters_required,
-    compute_personas_required,
-    compute_problem_statement_required,
-    compute_questions_required,
     compute_templates_required,
     compute_videos_required,
     has_access,
@@ -59,20 +59,24 @@ from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.documents.get import get_documents_internal
-from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
-from app.api.v4.resources.parameter_fields.search import search_parameter_fields_internal
+from app.api.v4.resources.documents.search import search_documents_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.images.get import get_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameter_fields.search import (
+    search_parameter_fields_internal,
+)
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import (
     search_conditional_parameters_internal,
     search_parameters_internal,
 )
 from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.personas.search import search_personas_internal
 from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.templates.get import get_templates_internal
@@ -342,8 +346,12 @@ async def get_scenario_generation_context(
     # Build resource IDs dict
     resource_ids: dict[str, list[UUID]] = {
         "names": [ids_result.name_id] if ids_result.name_id else [],
-        "descriptions": [ids_result.description_id] if ids_result.description_id else [],
-        "problem_statements": [ids_result.problem_statement_id] if ids_result.problem_statement_id else [],
+        "descriptions": [ids_result.description_id]
+        if ids_result.description_id
+        else [],
+        "problem_statements": [ids_result.problem_statement_id]
+        if ids_result.problem_statement_id
+        else [],
         "objectives": ids_result.objective_ids or [],
         "departments": ids_result.department_ids or [],
         "fields": ids_result.parameter_field_ids or [],
@@ -464,6 +472,82 @@ async def get_scenario(
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
 
+        # === PARSE CANDIDATE AGENTS AND COMPUTE AGENT IDS ===
+        # Parse candidate_agents from Query 2 result
+        candidate_agents = [
+            CandidateAgent(
+                agent_id=ca["agent_id"],
+                agent_name=ca["agent_name"],
+                tool_resources=set(ca["tool_resources"] or []),
+                department_ids=set(ca["department_ids"] or []),
+                updated_at=ca["updated_at"],
+                is_active=True,  # Query 2 only returns active agents
+                is_mcp=ca["is_mcp"] or False,
+            )
+            for ca in (ids_result.candidate_agents or [])
+        ]
+
+        # Use Python scoring to select best agents for each resource
+        user_dept_set = set(user_department_ids) if user_department_ids else None
+
+        # Single-resource agent IDs
+        name_agent_id = _select_single_resource_agent(
+            candidate_agents, "names", SCENARIO_RESOURCES, user_dept_set
+        )
+        description_agent_id = _select_single_resource_agent(
+            candidate_agents, "descriptions", SCENARIO_RESOURCES, user_dept_set
+        )
+        problem_statement_agent_id = _select_single_resource_agent(
+            candidate_agents, "problem_statements", SCENARIO_RESOURCES, user_dept_set
+        )
+        objectives_agent_id = _select_single_resource_agent(
+            candidate_agents, "objectives", SCENARIO_RESOURCES, user_dept_set
+        )
+        departments_agent_id = _select_single_resource_agent(
+            candidate_agents, "departments", SCENARIO_RESOURCES, user_dept_set
+        )
+        personas_agent_id = _select_single_resource_agent(
+            candidate_agents, "personas", SCENARIO_RESOURCES, user_dept_set
+        )
+        documents_agent_id = _select_single_resource_agent(
+            candidate_agents, "documents", SCENARIO_RESOURCES, user_dept_set
+        )
+        templates_agent_id = _select_single_resource_agent(
+            candidate_agents, "templates", SCENARIO_RESOURCES, user_dept_set
+        )
+        parameters_agent_id = _select_single_resource_agent(
+            candidate_agents, "parameters", SCENARIO_RESOURCES, user_dept_set
+        )
+        parameter_fields_agent_id = _select_single_resource_agent(
+            candidate_agents, "fields", SCENARIO_RESOURCES, user_dept_set
+        )
+        images_agent_id = _select_single_resource_agent(
+            candidate_agents, "images", SCENARIO_RESOURCES, user_dept_set
+        )
+        videos_agent_id = _select_single_resource_agent(
+            candidate_agents, "videos", SCENARIO_RESOURCES, user_dept_set
+        )
+        questions_agent_id = _select_single_resource_agent(
+            candidate_agents, "questions", SCENARIO_RESOURCES, user_dept_set
+        )
+        flags_agent_id = _select_single_resource_agent(
+            candidate_agents, "flags", SCENARIO_RESOURCES, user_dept_set
+        )
+
+        # Multi-resource agent IDs
+        basic_agent_id = _select_best_agent(
+            candidate_agents,
+            SCENARIO_BASIC_RESOURCES,
+            SCENARIO_RESOURCES,
+            user_dept_set,
+        )
+        content_agent_id = _select_best_agent(
+            candidate_agents,
+            SCENARIO_CONTENT_RESOURCES,
+            SCENARIO_RESOURCES,
+            user_dept_set,
+        )
+
         # === PYTHON BUSINESS LOGIC ===
 
         # Compute permissions
@@ -483,19 +567,46 @@ async def get_scenario(
 
         # Selected IDs for fetching
         name_ids = [ids_result.name_id] if ids_result.name_id else []
-        description_ids = [ids_result.description_id] if ids_result.description_id else []
-        problem_statement_ids = [ids_result.problem_statement_id] if ids_result.problem_statement_id else []
-        active_flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
-        objectives_enabled_flag_ids = [ids_result.objectives_enabled_flag_id] if ids_result.objectives_enabled_flag_id else []
-        images_enabled_flag_ids = [ids_result.images_enabled_flag_id] if ids_result.images_enabled_flag_id else []
-        video_enabled_flag_ids = [ids_result.video_enabled_flag_id] if ids_result.video_enabled_flag_id else []
-        questions_enabled_flag_ids = [ids_result.questions_enabled_flag_id] if ids_result.questions_enabled_flag_id else []
-        problem_statement_enabled_flag_ids = [ids_result.problem_statement_enabled_flag_id] if ids_result.problem_statement_enabled_flag_id else []
-        use_templates_flag_ids = [ids_result.use_templates_flag_id] if ids_result.use_templates_flag_id else []
+        description_ids = (
+            [ids_result.description_id] if ids_result.description_id else []
+        )
+        problem_statement_ids = (
+            [ids_result.problem_statement_id] if ids_result.problem_statement_id else []
+        )
+        active_flag_ids = (
+            [ids_result.active_flag_id] if ids_result.active_flag_id else []
+        )
+        objectives_enabled_flag_ids = (
+            [ids_result.objectives_enabled_flag_id]
+            if ids_result.objectives_enabled_flag_id
+            else []
+        )
+        images_enabled_flag_ids = (
+            [ids_result.images_enabled_flag_id]
+            if ids_result.images_enabled_flag_id
+            else []
+        )
+        video_enabled_flag_ids = (
+            [ids_result.video_enabled_flag_id]
+            if ids_result.video_enabled_flag_id
+            else []
+        )
+        questions_enabled_flag_ids = (
+            [ids_result.questions_enabled_flag_id]
+            if ids_result.questions_enabled_flag_id
+            else []
+        )
+        problem_statement_enabled_flag_ids = (
+            [ids_result.problem_statement_enabled_flag_id]
+            if ids_result.problem_statement_enabled_flag_id
+            else []
+        )
+        use_templates_flag_ids = (
+            [ids_result.use_templates_flag_id]
+            if ids_result.use_templates_flag_id
+            else []
+        )
         department_ids = ids_result.department_ids or []
-        # For new scenario, use user's departments if scenario has none
-        if request.scenario_id is None and not department_ids and user_department_ids:
-            department_ids = user_department_ids
         persona_ids = ids_result.persona_ids or []
         document_ids = ids_result.document_ids or []
         parameter_ids = ids_result.parameter_ids or []
@@ -530,7 +641,9 @@ async def get_scenario(
 
         async def fetch_descriptions():
             async with pool.acquire() as c:
-                selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+                selected = await get_descriptions_internal(
+                    c, description_ids, bypass_cache
+                )
                 suggestions = await search_descriptions_internal(
                     c,
                     request.description_search,
@@ -545,7 +658,9 @@ async def get_scenario(
 
         async def fetch_problem_statements():
             async with pool.acquire() as c:
-                selected = await get_problem_statements_internal(c, problem_statement_ids, bypass_cache)
+                selected = await get_problem_statements_internal(
+                    c, problem_statement_ids, bypass_cache
+                )
                 # No search endpoint for problem_statements - return empty suggestions
                 return (selected, [])
 
@@ -554,7 +669,8 @@ async def get_scenario(
             async with pool.acquire() as c:
                 # Get all selected flag IDs to fetch their full data
                 all_selected_ids = [
-                    fid for fid in [
+                    fid
+                    for fid in [
                         ids_result.active_flag_id,
                         ids_result.objectives_enabled_flag_id,
                         ids_result.images_enabled_flag_id,
@@ -562,7 +678,8 @@ async def get_scenario(
                         ids_result.questions_enabled_flag_id,
                         ids_result.problem_statement_enabled_flag_id,
                         ids_result.use_templates_flag_id,
-                    ] if fid
+                    ]
+                    if fid
                 ]
                 selected = await get_flags_internal(c, all_selected_ids, bypass_cache)
                 # Search for all available scenario flags
@@ -579,7 +696,9 @@ async def get_scenario(
 
         async def fetch_departments():
             async with pool.acquire() as c:
-                selected = await get_departments_internal(c, department_ids, bypass_cache)
+                selected = await get_departments_internal(
+                    c, department_ids, bypass_cache
+                )
                 dept_source = "all" if request.scenario_id is None else "recent"
                 suggestions = await search_departments_internal(
                     c,
@@ -596,14 +715,32 @@ async def get_scenario(
         async def fetch_personas():
             async with pool.acquire() as c:
                 selected = await get_personas_internal(c, persona_ids, bypass_cache)
-                # No search endpoint for personas - return empty suggestions
-                return (selected, [])
+                suggestions = await search_personas_internal(
+                    c,
+                    request.persona_search,
+                    20,
+                    0,
+                    user_department_ids,
+                    access_result.group_id,
+                    persona_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_documents():
             async with pool.acquire() as c:
                 selected = await get_documents_internal(c, document_ids, bypass_cache)
-                # No search endpoint for documents - return empty suggestions
-                return (selected, [])
+                suggestions = await search_documents_internal(
+                    c,
+                    request.document_search,
+                    20,
+                    0,
+                    user_department_ids,
+                    access_result.group_id,
+                    document_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_parameters():
             async with pool.acquire() as c:
@@ -630,10 +767,14 @@ async def get_scenario(
 
         async def fetch_parameter_fields(param_ids: list[UUID]):
             async with pool.acquire() as c:
-                selected = await get_parameter_fields_internal(c, parameter_field_ids, bypass_cache)
+                selected = await get_parameter_fields_internal(
+                    c, parameter_field_ids, bypass_cache
+                )
                 # Get all available fields for ALL parameters (scenario + conditional)
                 # This enables instant UI when user selects a parameter
-                available = await search_parameter_fields_internal(c, param_ids, bypass_cache)
+                available = await search_parameter_fields_internal(
+                    c, param_ids, bypass_cache
+                )
                 return (selected, available)
 
         async def fetch_objectives():
@@ -682,15 +823,20 @@ async def get_scenario(
         async def fetch_conditional_parameters():
             async with pool.acquire() as c:
                 return await search_conditional_parameters_internal(
-                    c, [pid for pid in all_scenario_parameter_ids if pid is not None], bypass_cache
+                    c,
+                    [pid for pid in all_scenario_parameter_ids if pid is not None],
+                    bypass_cache,
                 )
 
         conditional_params = await fetch_conditional_parameters()
 
         # Combine ALL parameter IDs for Phase 2 (includes transitive conditional params)
-        all_parameter_ids = list(set(
-            all_scenario_parameter_ids + [p.parameter_id for p in conditional_params if p.parameter_id]
-        ))
+        all_parameter_ids = list(
+            set(
+                all_scenario_parameter_ids
+                + [p.parameter_id for p in conditional_params if p.parameter_id]
+            )
+        )
 
         # Phase 2: Fetch remaining resources in parallel (including parameter_fields with proper IDs)
         (
@@ -699,8 +845,8 @@ async def get_scenario(
             (problem_statements_selected, _),
             (flags_selected, flags_suggestions),
             (departments_selected, departments_suggestions),
-            (personas_selected, _),
-            (documents_selected, _),
+            (personas_selected, personas_suggestions),
+            (documents_selected, documents_suggestions),
             (parameter_fields_selected, parameter_fields_suggestions),
             (objectives_selected, _),
             (images_selected, _),
@@ -715,7 +861,9 @@ async def get_scenario(
             fetch_departments(),
             fetch_personas(),
             fetch_documents(),
-            fetch_parameter_fields([pid for pid in all_parameter_ids if pid is not None]),
+            fetch_parameter_fields(
+                [pid for pid in all_parameter_ids if pid is not None]
+            ),
             fetch_objectives(),
             fetch_images(),
             fetch_videos(),
@@ -725,20 +873,28 @@ async def get_scenario(
 
         # Combine selected and suggestions (dedupe)
         names = _dedupe_by_id(names_selected + names_suggestions, "id")
-        descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
+        descriptions = _dedupe_by_id(
+            descriptions_selected + descriptions_suggestions, "id"
+        )
         problem_statements = problem_statements_selected  # No suggestions
         all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-        departments = _dedupe_by_id(departments_selected + departments_suggestions, "department_id")
-        personas = personas_selected  # No suggestions
-        documents = documents_selected  # No suggestions
+        departments = _dedupe_by_id(
+            departments_selected + departments_suggestions, "department_id"
+        )
+        personas = _dedupe_by_id(personas_selected + personas_suggestions, "persona_id")
+        documents = _dedupe_by_id(
+            documents_selected + documents_suggestions, "document_id"
+        )
         # Combine scenario parameters with conditional parameters (conditional params have conditional=true)
         parameters = _dedupe_by_id(
             parameters_selected + parameters_suggestions + conditional_params,
-            "parameter_id"
+            "parameter_id",
         )
         # Dedupe by field_id since selected resources use parameter_fields_resource.id
         # while available fields use field_id as their id
-        parameter_fields = _dedupe_by_id(parameter_fields_selected + parameter_fields_suggestions, "field_id")
+        parameter_fields = _dedupe_by_id(
+            parameter_fields_selected + parameter_fields_suggestions, "field_id"
+        )
         objectives = objectives_selected  # No suggestions
         images = images_selected  # No suggestions
         videos = videos_selected  # No suggestions
@@ -746,17 +902,20 @@ async def get_scenario(
         templates = templates_selected  # No suggestions
 
         # Find selected resources
-        name_resource = next(
-            (n for n in names if n.id == ids_result.name_id), None
-        )
+        name_resource = next((n for n in names if n.id == ids_result.name_id), None)
         description_resource = next(
             (d for d in descriptions if d.id == ids_result.description_id),
             None,
         )
         problem_statement_resource = next(
-            (ps for ps in problem_statements if ps.problem_statement_id == ids_result.problem_statement_id),
+            (
+                ps
+                for ps in problem_statements
+                if ps.problem_statement_id == ids_result.problem_statement_id
+            ),
             None,
         )
+
         # Find flag resources from all available scenario flags by name
         def find_flag_by_name(name_suffix: str):
             """Find a flag by name suffix (e.g., 'active' -> 'scenario_active')"""
@@ -768,7 +927,9 @@ async def get_scenario(
         images_enabled_flag_resource = find_flag_by_name("images_enabled")
         video_enabled_flag_resource = find_flag_by_name("video_enabled")
         questions_enabled_flag_resource = find_flag_by_name("questions_enabled")
-        problem_statement_enabled_flag_resource = find_flag_by_name("problem_statement_enabled")
+        problem_statement_enabled_flag_resource = find_flag_by_name(
+            "problem_statement_enabled"
+        )
         use_templates_flag_resource = find_flag_by_name("use_templates")
 
         # Selected multi-select resources
@@ -777,9 +938,7 @@ async def get_scenario(
         ]
         persona_resources = personas_selected
         document_resources = documents_selected
-        parameter_resources = [
-            p for p in parameters if p.parameter_id in parameter_ids
-        ]
+        parameter_resources = [p for p in parameters if p.parameter_id in parameter_ids]
         parameter_field_resources = [
             f for f in parameter_fields if f.id in parameter_field_ids
         ]
@@ -793,6 +952,8 @@ async def get_scenario(
         name_suggestions_ids = [n.id for n in names_suggestions]
         description_suggestions_ids = [d.id for d in descriptions_suggestions]
         department_suggestions_ids = [d.department_id for d in departments_suggestions]
+        persona_suggestions_ids = [p.persona_id for p in personas_suggestions]
+        document_suggestions_ids = [d.document_id for d in documents_suggestions]
         parameter_suggestions_ids = [p.parameter_id for p in parameters_suggestions]
 
         # Compute final show flags based on actual data
@@ -826,7 +987,9 @@ async def get_scenario(
                 generated=flag.generated,
             )
             for flag in all_scenario_flags
-            if flag.id and flag.name and flag.name != "scenario_parameter"  # Exclude non-UI flags
+            if flag.id
+            and flag.name
+            and flag.name != "scenario_parameter"  # Exclude non-UI flags
         ]
 
         # Set audit context
@@ -866,67 +1029,87 @@ async def get_scenario(
             name_id=ids_result.name_id,
             name_resource=_to_dict(name_resource) if name_resource else None,
             show_name=show_name,
-            name_agent_id=None,  # Agent IDs computed in Python if needed
+            name_agent_id=name_agent_id,
             name_required=compute_name_required(),
             name_suggestions=name_suggestions_ids,
             names=[_to_dict(n) for n in names],
             # Description
             description_id=ids_result.description_id,
-            description_resource=_to_dict(description_resource) if description_resource else None,
+            description_resource=_to_dict(description_resource)
+            if description_resource
+            else None,
             show_description=show_description,
-            description_agent_id=None,
+            description_agent_id=description_agent_id,
             description_required=compute_description_required(),
             description_suggestions=description_suggestions_ids,
             descriptions=[_to_dict(d) for d in descriptions],
             # Problem statement
             problem_statement_id=ids_result.problem_statement_id,
-            problem_statement_resource=_to_dict(problem_statement_resource) if problem_statement_resource else None,
+            problem_statement_resource=_to_dict(problem_statement_resource)
+            if problem_statement_resource
+            else None,
             show_problem_statement=show_problem_statement,
-            problem_statement_agent_id=None,
+            problem_statement_agent_id=problem_statement_agent_id,
             problem_statement_required=compute_problem_statement_required(),
             problem_statement_suggestions=[],
             problem_statements=[_to_dict(ps) for ps in problem_statements],
             # Active flag
             active_flag_id=ids_result.active_flag_id,
-            active_flag_resource=_to_dict(active_flag_resource) if active_flag_resource else None,
+            active_flag_resource=_to_dict(active_flag_resource)
+            if active_flag_resource
+            else None,
             show_active_flag=show_flag,
-            active_flag_agent_id=None,
+            active_flag_agent_id=flags_agent_id,
             active_flag_required=compute_flag_required(),
             # Objectives enabled flag
             objectives_enabled_flag_id=ids_result.objectives_enabled_flag_id,
-            objectives_enabled_flag_resource=_to_dict(objectives_enabled_flag_resource) if objectives_enabled_flag_resource else None,
+            objectives_enabled_flag_resource=_to_dict(objectives_enabled_flag_resource)
+            if objectives_enabled_flag_resource
+            else None,
             show_objectives_enabled_flag=show_flag,
-            objectives_enabled_flag_agent_id=None,
+            objectives_enabled_flag_agent_id=flags_agent_id,
             objectives_enabled_flag_required=compute_flag_required(),
             # Images enabled flag
             images_enabled_flag_id=ids_result.images_enabled_flag_id,
-            images_enabled_flag_resource=_to_dict(images_enabled_flag_resource) if images_enabled_flag_resource else None,
+            images_enabled_flag_resource=_to_dict(images_enabled_flag_resource)
+            if images_enabled_flag_resource
+            else None,
             show_images_enabled_flag=show_flag,
-            images_enabled_flag_agent_id=None,
+            images_enabled_flag_agent_id=flags_agent_id,
             images_enabled_flag_required=compute_flag_required(),
             # Video enabled flag
             video_enabled_flag_id=ids_result.video_enabled_flag_id,
-            video_enabled_flag_resource=_to_dict(video_enabled_flag_resource) if video_enabled_flag_resource else None,
+            video_enabled_flag_resource=_to_dict(video_enabled_flag_resource)
+            if video_enabled_flag_resource
+            else None,
             show_video_enabled_flag=show_flag,
-            video_enabled_flag_agent_id=None,
+            video_enabled_flag_agent_id=flags_agent_id,
             video_enabled_flag_required=compute_flag_required(),
             # Questions enabled flag
             questions_enabled_flag_id=ids_result.questions_enabled_flag_id,
-            questions_enabled_flag_resource=_to_dict(questions_enabled_flag_resource) if questions_enabled_flag_resource else None,
+            questions_enabled_flag_resource=_to_dict(questions_enabled_flag_resource)
+            if questions_enabled_flag_resource
+            else None,
             show_questions_enabled_flag=show_flag,
-            questions_enabled_flag_agent_id=None,
+            questions_enabled_flag_agent_id=flags_agent_id,
             questions_enabled_flag_required=compute_flag_required(),
             # Problem statement enabled flag
             problem_statement_enabled_flag_id=ids_result.problem_statement_enabled_flag_id,
-            problem_statement_enabled_flag_resource=_to_dict(problem_statement_enabled_flag_resource) if problem_statement_enabled_flag_resource else None,
+            problem_statement_enabled_flag_resource=_to_dict(
+                problem_statement_enabled_flag_resource
+            )
+            if problem_statement_enabled_flag_resource
+            else None,
             show_problem_statement_enabled_flag=show_flag,
-            problem_statement_enabled_flag_agent_id=None,
+            problem_statement_enabled_flag_agent_id=flags_agent_id,
             problem_statement_enabled_flag_required=compute_flag_required(),
             # Use templates flag
             use_templates_flag_id=ids_result.use_templates_flag_id,
-            use_templates_flag_resource=_to_dict(use_templates_flag_resource) if use_templates_flag_resource else None,
+            use_templates_flag_resource=_to_dict(use_templates_flag_resource)
+            if use_templates_flag_resource
+            else None,
             show_use_templates_flag=show_flag,
-            use_templates_flag_agent_id=None,
+            use_templates_flag_agent_id=flags_agent_id,
             use_templates_flag_required=compute_flag_required(),
             # Server-driven flags array
             flags=scenario_flags,
@@ -935,7 +1118,7 @@ async def get_scenario(
             department_ids=department_ids,
             department_resources=[_to_dict(d) for d in department_resources],
             show_departments=show_departments,
-            departments_agent_id=None,
+            departments_agent_id=departments_agent_id,
             departments_required=compute_departments_required(),
             department_suggestions=department_suggestions_ids,
             departments=[_to_dict(d) for d in departments],
@@ -943,14 +1126,14 @@ async def get_scenario(
             parameter_field_ids=parameter_field_ids,
             parameter_field_resources=[_to_dict(f) for f in parameter_field_resources],
             show_parameter_fields=show_parameter_fields,
-            parameter_fields_agent_id=None,
+            parameter_fields_agent_id=parameter_fields_agent_id,
             parameter_fields_required=compute_fields_required(),
             parameter_fields=[_to_dict(f) for f in parameter_fields],
             # Objectives
             objective_ids=objective_ids,
             objective_resources=[_to_dict(o) for o in objective_resources],
             show_objectives=show_objectives,
-            objectives_agent_id=None,
+            objectives_agent_id=objectives_agent_id,
             objectives_required=compute_objectives_required(),
             objective_suggestions=[],
             objectives=[_to_dict(o) for o in objectives],
@@ -958,7 +1141,7 @@ async def get_scenario(
             image_ids=image_ids,
             image_resources=[_to_dict(i) for i in image_resources],
             show_images=show_images,
-            images_agent_id=None,
+            images_agent_id=images_agent_id,
             images_required=compute_images_required(),
             image_suggestions=[],
             images=[_to_dict(i) for i in images],
@@ -966,7 +1149,7 @@ async def get_scenario(
             video_ids=video_ids,
             video_resources=[_to_dict(v) for v in video_resources],
             show_videos=show_videos,
-            videos_agent_id=None,
+            videos_agent_id=videos_agent_id,
             videos_required=compute_videos_required(),
             video_suggestions=[],
             videos=[_to_dict(v) for v in videos],
@@ -974,7 +1157,7 @@ async def get_scenario(
             question_ids=question_ids,
             question_resources=[_to_dict(q) for q in question_resources],
             show_questions=show_questions,
-            questions_agent_id=None,
+            questions_agent_id=questions_agent_id,
             questions_required=compute_questions_required(),
             question_suggestions=[],
             questions=[_to_dict(q) for q in questions],
@@ -982,7 +1165,7 @@ async def get_scenario(
             template_ids=template_ids,
             template_resources=[_to_dict(t) for t in template_resources],
             show_templates=show_templates,
-            templates_agent_id=None,
+            templates_agent_id=templates_agent_id,
             templates_required=compute_templates_required(),
             template_suggestions=[],
             templates=[_to_dict(t) for t in templates],
@@ -990,30 +1173,29 @@ async def get_scenario(
             persona_ids=persona_ids,
             persona_resources=[_to_dict(p) for p in persona_resources],
             show_personas=show_personas,
-            personas_agent_id=None,
+            personas_agent_id=personas_agent_id,
             personas_required=compute_personas_required(),
-            persona_suggestions=[],
+            persona_suggestions=persona_suggestions_ids,
             personas=[_to_dict(p) for p in personas],
             # Documents
             document_ids=document_ids,
             document_resources=[_to_dict(d) for d in document_resources],
             show_documents=show_documents,
-            documents_agent_id=None,
+            documents_agent_id=documents_agent_id,
             documents_required=compute_documents_required(),
-            document_suggestions=[],
+            document_suggestions=document_suggestions_ids,
             documents=[_to_dict(d) for d in documents],
             # Parameters
             parameter_ids=parameter_ids,
             parameter_resources=[_to_dict(p) for p in parameter_resources],
             show_parameters=show_parameters,
-            parameters_agent_id=None,
+            parameters_agent_id=parameters_agent_id,
             parameters_required=compute_parameters_required(),
             parameter_suggestions=parameter_suggestions_ids,
             parameters=[_to_dict(p) for p in parameters],
-            # Multi-resource agent IDs (computed in Python if needed)
-            basic_agent_id=None,
-            content_agent_id=None,
-            general_agent_id=None,
+            # Multi-resource agent IDs
+            basic_agent_id=basic_agent_id,
+            content_agent_id=content_agent_id,
         )
 
         # No global cache for this response - individual resources are cached

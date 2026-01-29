@@ -3,17 +3,21 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.sql.types import (GetRubricGradeAgentV4SqlParams,
-                           GetRubricGradeAgentV4SqlRow,
-                           GetTestRunIdV4SqlParams, GetTestRunIdV4SqlRow,
-                           MarkEvalGroupCompleteV4SqlParams,
-                           MarkEvalRunCompleteV4SqlParams,
-                           MarkTestCompleteV4SqlParams)
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from app.sql.types import (
+    GetRubricGradeAgentV4SqlParams,
+    GetRubricGradeAgentV4SqlRow,
+    GetTestRunIdV4SqlParams,
+    GetTestRunIdV4SqlRow,
+    MarkEvalGroupCompleteV4SqlParams,
+    MarkEvalRunCompleteV4SqlParams,
+    MarkTestCompleteV4SqlParams,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -136,7 +140,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     room=sid,
                 )
                 return
-            
+
             rga_row = {
                 "grade_agent_id": rga_result.grade_agent_id,
                 "rubric_id": rga_result.rubric_id,
@@ -165,9 +169,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     params=test_run_params,
                 ),
             )
-            test_row = {
-                "run_id": test_run_result.run_id if test_run_result else None
-            }
+            test_row = {"run_id": test_run_result.run_id if test_run_result else None}
             if not test_row:
                 await benchmark_end_error(
                     BenchmarkEndErrorPayload(success=False, message="Test not found"),

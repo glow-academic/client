@@ -5,6 +5,7 @@ Tests for app.utils.cache.set_cached
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app.utils.cache.set_cached import set_cached
 
 

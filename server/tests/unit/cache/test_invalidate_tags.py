@@ -5,6 +5,7 @@ Tests for app.utils.cache.invalidate_tags
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

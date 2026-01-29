@@ -1,7 +1,6 @@
 """Helper functions for socket v4 integration tests."""
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     GetOrCreateTestDepartmentV4SqlParams,
@@ -9,6 +8,7 @@ from app.sql.types import (
     GetOrCreateTestProfileV4SqlParams,
     TestGetOrCreateTestAgentV4SqlParams,
 )
+from app.utils.sql_helper import execute_sql_typed
 
 
 async def get_or_create_test_profile(

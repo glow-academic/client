@@ -11,6 +11,7 @@ from tests.sql.types import (
     CreateTestSimulationWithRubricSqlRow,
     GetFirstDepartmentSqlRow,
 )
+
 from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio

@@ -40,7 +40,11 @@ def get_simulations_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "simulation_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "simulation_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

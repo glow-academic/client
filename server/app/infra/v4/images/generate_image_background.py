@@ -4,11 +4,10 @@ import os
 import uuid
 from typing import cast
 
+from app.main import UPLOAD_FOLDER, get_pool
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
-
-from app.main import UPLOAD_FOLDER, get_pool
 
 logger = get_logger(__name__)
 
@@ -256,7 +255,9 @@ async def generate_image_background(
                 # Don't fail - upload exists, can be linked later
 
             # Update image record: completed=true
-            sql_update_image = load_sql("app/sql/v4/queries/images/update_image_completed.sql")
+            sql_update_image = load_sql(
+                "app/sql/v4/queries/images/update_image_completed.sql"
+            )
             await conn.execute(sql_update_image, image_id, True)
 
             logger.info(

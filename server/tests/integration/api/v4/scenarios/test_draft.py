@@ -10,9 +10,7 @@ from tests.seed_helpers import get_superadmin_alias  # type: ignore
 pytestmark = pytest.mark.asyncio
 
 
-async def _create_name_resource(
-    db: asyncpg.Connection, name: str
-) -> str:
+async def _create_name_resource(db: asyncpg.Connection, name: str) -> str:
     row = await db.fetchrow(
         "INSERT INTO names_resource (name, call_id) VALUES ($1, uuidv7()) RETURNING id",
         name,

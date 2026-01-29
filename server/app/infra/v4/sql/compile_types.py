@@ -11,7 +11,6 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any
 
 import asyncpg  # type: ignore
 
@@ -295,7 +294,10 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
             "create_union_view_improvements_entry_complete.sql",
         ]
         if filename in union_views:
-            return (4, "a_" + sql_path)  # 'a_' prefix ensures they come before level 5 views
+            return (
+                4,
+                "a_" + sql_path,
+            )  # 'a_' prefix ensures they come before level 5 views
 
         # Regular views - Level 0 (base views with no view dependencies)
         base_views = [
@@ -376,10 +378,19 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         return (11, sql_path)
 
     # Settings detail must come before active settings (type dependency)
-    if sql_path == f"app/sql/{VERSION}/queries/settings/get_settings_detail_complete.sql":
-        return (12, "a_" + sql_path)  # 'a_' prefix ensures it sorts before 'get_active_'
+    if (
+        sql_path
+        == f"app/sql/{VERSION}/queries/settings/get_settings_detail_complete.sql"
+    ):
+        return (
+            12,
+            "a_" + sql_path,
+        )  # 'a_' prefix ensures it sorts before 'get_active_'
 
-    if sql_path == f"app/sql/{VERSION}/queries/settings/get_active_settings_complete.sql":
+    if (
+        sql_path
+        == f"app/sql/{VERSION}/queries/settings/get_active_settings_complete.sql"
+    ):
         return (13, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
 
     # All other routes sorted alphabetically
@@ -1082,7 +1093,7 @@ async def generate_types_for_sql_file(
         server_root_str = str(server_root)
         if server_root_str not in sys.path:
             sys.path.insert(0, server_root_str)
-        
+
         # Import introspection functions from app folder (available at runtime)
         from app.infra.v4.sql.sql_introspect import introspect_sql_file
         from app.infra.v4.sql.sql_typegen import generate_types_file
@@ -1201,10 +1212,10 @@ async def compile_sql_types(
     server_root: Path | None = None,
 ) -> tuple[bool, str]:
     """Compile SQL files and generate types.
-    
+
     This is the core function that can be called programmatically from both
     the Makefile script and the /init endpoint.
-    
+
     Args:
         sql_files: Optional list of specific SQL files to process (relative to server root).
                    If None, processes all files.
@@ -1214,7 +1225,7 @@ async def compile_sql_types(
         db_host: Database host (defaults to DB_HOST env var or "localhost")
         db_port: Database port (defaults to DB_PORT env var or 5432)
         server_root: Server root directory (defaults to parent of app directory)
-    
+
     Returns:
         Tuple of (success, message) where success is True if compilation succeeded
     """
@@ -1224,33 +1235,33 @@ async def compile_sql_types(
         # compile_types.py is at: server/app/infra/v4/sql/compile_types.py
         # We need to go up 5 levels: sql -> v4 -> infra -> app -> server
         server_root = Path(__file__).resolve().parent.parent.parent.parent.parent
-    
+
     # Ensure server root is in path for imports (needed when called from script)
     server_root_str = str(server_root)
     if server_root_str not in sys.path:
         sys.path.insert(0, server_root_str)
-    
+
     # Get database connection info from environment or parameters
     db_user = db_user or os.getenv("DB_USER", "myuser")
     db_password = db_password or os.getenv("DB_PASSWORD", "mypassword")
     db_name = db_name or os.getenv("DB_NAME", "mydb")
     db_host = db_host or os.getenv("DB_HOST", "localhost")
     db_port = db_port or int(os.getenv("DB_PORT", "5432"))
-    
+
     db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-    
+
     # Detect if we're in production (skip introspection)
     # In production, we only execute SQL files, don't generate types.py
     origin = os.getenv("ORIGIN", "http://localhost")
     is_production = "localhost" not in origin.lower()
     skip_introspection = is_production
-    
+
     # Determine if we're in incremental mode
     incremental_mode = sql_files is not None and len(sql_files) > 0
-    
+
     # Find all SQL files from both app and tests directories
     sql_file_paths: list[Path] = []
-    
+
     if incremental_mode:
         # In incremental mode, only process specified files
         for file_path_str in sql_files or []:
@@ -1258,12 +1269,12 @@ async def compile_sql_types(
             file_path = Path(file_path_str)
             if not file_path.is_absolute():
                 file_path = server_root / file_path
-            
+
             # Validate file exists
             if not file_path.exists():
                 print(f"⚠️  File not found: {file_path}")
                 continue
-            
+
             # Validate file is within allowed directories
             try:
                 rel_path = file_path.relative_to(server_root)
@@ -1279,12 +1290,12 @@ async def compile_sql_types(
             except ValueError:
                 print(f"⚠️  File must be relative to server root: {file_path}")
                 continue
-            
+
             sql_file_paths.append(file_path)
-        
+
         if not sql_file_paths:
             return False, "No valid SQL files provided"
-        
+
         print(f"🔍 Processing {len(sql_file_paths)} SQL file(s) in incremental mode")
     else:
         # Full mode: process all files
@@ -1292,20 +1303,25 @@ async def compile_sql_types(
         app_sql_dir = server_root / "app" / "sql" / VERSION
         if app_sql_dir.exists():
             sql_file_paths.extend(app_sql_dir.rglob("*.sql"))
-        
+
         # Process tests/sql/{VERSION}/integration/ (all subdirectories)
         tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
         if tests_sql_dir.exists():
             sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
-        
+
         if not sql_file_paths:
-            return True, f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
-        
+            return (
+                True,
+                f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/",
+            )
+
         print(f"🔍 Found {len(sql_file_paths)} SQL files to process")
-    
+
     # Sort SQL files with analytics routes first
-    sorted_sql_files = sorted(sql_file_paths, key=lambda f: _sort_sql_files(f, server_root))
-    
+    sorted_sql_files = sorted(
+        sql_file_paths, key=lambda f: _sort_sql_files(f, server_root)
+    )
+
     # Connect to database
     try:
         conn = await asyncpg.connect(db_url)
@@ -1314,21 +1330,21 @@ async def compile_sql_types(
         print(f"❌ {error_msg}")
         print(f"   URL: postgresql://{db_user}:***@{db_host}:{db_port}/{db_name}")
         return False, error_msg
-    
+
     try:
         # Load existing type definitions for fallback preservation (both incremental and full mode)
         existing_app_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
         existing_test_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
-        
+
         # Load existing types even in full mode for fallback when files fail
         existing_app_types = parse_existing_types_file("app", server_root)
         existing_test_types = parse_existing_types_file("test", server_root)
-        
+
         if incremental_mode:
             print(
                 f"📚 Loaded {len(existing_app_types)} existing app types and {len(existing_test_types)} existing test types"
             )
-            
+
             # Check if types.py is complete - if not, fall back to full compilation
             if not is_types_file_complete(
                 server_root, existing_app_types, existing_test_types
@@ -1351,13 +1367,18 @@ async def compile_sql_types(
                 if tests_sql_dir.exists():
                     sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
                 if not sql_file_paths:
-                    return True, f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
+                    return (
+                        True,
+                        f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/",
+                    )
                 # Re-sort SQL files with analytics routes first
-                sorted_sql_files = sorted(sql_file_paths, key=lambda f: _sort_sql_files(f, server_root))
+                sorted_sql_files = sorted(
+                    sql_file_paths, key=lambda f: _sort_sql_files(f, server_root)
+                )
                 print(
                     f"🔍 Found {len(sql_file_paths)} SQL files to process (full compilation mode)"
                 )
-        
+
         # Process each SQL file
         errors: list[tuple[str, str]] = []  # (sql_path, error_message)
         successes: list[str] = []
@@ -1365,7 +1386,7 @@ async def compile_sql_types(
         type_definitions: list[
             tuple[str, str, str, str, str, str, str]
         ] = []  # (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
-        
+
         # First pass: Execute all SQL files that contain functions/types
         # This ensures functions and types exist in the database before introspection
         # Analytics routes are processed first since they depend on the materialized view
@@ -1373,20 +1394,20 @@ async def compile_sql_types(
         print("   (Analytics routes processed first due to dependencies)")
         execution_errors: list[tuple[str, str]] = []
         failed_files: set[str] = set()  # Track files that failed during execution
-        
+
         for sql_file in sorted_sql_files:
             sql_path = str(sql_file.relative_to(server_root))
             execute_success, execute_message = await execute_sql_file(
                 sql_path, conn, server_root
             )
-            
+
             if not execute_success:
                 # Recover from transaction abort if needed
                 await _recover_from_transaction_abort(conn)
-                
+
                 # Track failed files
                 failed_files.add(sql_path)
-                
+
                 # For test SQL files, treat execution errors as skips
                 if sql_path.startswith("tests/sql/"):
                     print(f"⏭️  {execute_message}")
@@ -1395,69 +1416,76 @@ async def compile_sql_types(
                     print(f"❌ {execute_message}")
             elif "Executed" in execute_message:
                 pass  # Success - no logging needed
-        
+
         # Ensure connection is in clean state before introspection
         await _recover_from_transaction_abort(conn)
-        
+
         # Add execution errors to main errors list for accurate counting
         errors.extend(execution_errors)
-        
+
         if execution_errors:
             print(f"\n⚠️  {len(execution_errors)} SQL files failed to execute:")
             for sql_path, error_msg in execution_errors:
                 print(f"   - {sql_path}: {error_msg}")
             print("\n   Continuing with type generation anyway...")
-        
+
         # Second pass: Generate types for all SQL files
         # Skip in production - only execute SQL files, don't generate types.py
         if skip_introspection:
-            print("\n⏭️  Skipping type generation (production mode - ORIGIN doesn't contain localhost)")
-            executed_count = len(sorted_sql_files) - len(failed_files) - len(execution_errors)
+            print(
+                "\n⏭️  Skipping type generation (production mode - ORIGIN doesn't contain localhost)"
+            )
+            executed_count = (
+                len(sorted_sql_files) - len(failed_files) - len(execution_errors)
+            )
             print(f"   ✅ Executed {executed_count} SQL files successfully")
             if execution_errors:
                 print(f"   ⚠️  {len(execution_errors)} files had errors")
-            return True, f"SQL execution completed successfully ({executed_count} files executed, type generation skipped in production)"
-        
+            return (
+                True,
+                f"SQL execution completed successfully ({executed_count} files executed, type generation skipped in production)",
+            )
+
         # Use same sorting order as execution phase
         print("\n🔍 Generating types from SQL files...")
-        
+
         for sql_file in sorted_sql_files:
             # Get relative path from server root
             sql_path = str(sql_file.relative_to(server_root))
-            
+
             # Skip files that failed during execution phase
             if sql_path in failed_files:
                 skipped.append(sql_path)
                 print(f"⏭️  Skipping {sql_path} (failed during execution phase)")
-                
+
                 # Preserve existing types if available
                 existing_type = None
                 if sql_path in existing_app_types:
                     existing_type = existing_app_types[sql_path]
                 elif sql_path in existing_test_types:
                     existing_type = existing_test_types[sql_path]
-                
+
                 if existing_type:
                     print(
                         f"   Preserving existing type definitions for {sql_path} due to compilation failure"
                     )
                     type_definitions.append(existing_type)
                 continue
-            
+
             # Recover from transaction abort if needed before each introspection
             await _recover_from_transaction_abort(conn)
-            
+
             # Check if we have existing types for this file (for fallback preservation)
             existing_type = None
             if sql_path in existing_app_types:
                 existing_type = existing_app_types[sql_path]
             elif sql_path in existing_test_types:
                 existing_type = existing_test_types[sql_path]
-            
+
             success, message, type_definition = await generate_types_for_sql_file(
                 sql_path, conn, server_root, skip_execution=True
             )
-            
+
             if success:
                 if "Skipping" not in message:
                     successes.append(message)
@@ -1471,18 +1499,18 @@ async def compile_sql_types(
             else:
                 # Recover from transaction abort after error
                 await _recover_from_transaction_abort(conn)
-                
+
                 # Store as tuple for better grouping
                 errors.append((sql_path, message))
                 print(f"❌ {sql_path}: {message}")
-                
+
                 # Preserve existing types if available (works in both incremental and full mode)
                 if existing_type:
                     print(
                         f"   Preserving existing type definitions for {sql_path} due to error"
                     )
                     type_definitions.append(existing_type)
-        
+
         # Separate app and test type definitions
         app_type_definitions = [
             td for td in type_definitions if td[0].startswith(f"app/sql/{VERSION}/")
@@ -1492,43 +1520,43 @@ async def compile_sql_types(
             for td in type_definitions
             if td[0].startswith(f"tests/sql/{VERSION}/integration/")
         ]
-        
+
         # In incremental mode, merge with existing types for files not processed
         if incremental_mode:
             # Create set of processed SQL paths
             processed_paths = {td[0] for td in type_definitions}
-            
+
             # Add existing app types that weren't processed
             for sql_path, existing_td in existing_app_types.items():
                 if sql_path not in processed_paths:
                     app_type_definitions.append(existing_td)
-            
+
             # Add existing test types that weren't processed
             for sql_path, existing_td in existing_test_types.items():
                 if sql_path not in processed_paths:
                     test_type_definitions.append(existing_td)
-            
+
             # Sort to maintain consistent order
             app_type_definitions.sort(key=lambda x: x[0])
             test_type_definitions.sort(key=lambda x: x[0])
-        
+
         # Write app consolidated types file if we have entries
         # Skip in production - types.py is pre-generated and committed
         if not skip_introspection and app_type_definitions:
             write_consolidated_types_file(app_type_definitions, "app", server_root)
             # Success - no logging needed
-        
+
         # Write test consolidated types file if we have entries
         # Skip in production - types.py is pre-generated and committed
         if not skip_introspection and test_type_definitions:
             write_consolidated_types_file(test_type_definitions, "test", server_root)
             # Success - no logging needed
-        
+
         # Summary
         print("\n📊 Summary:")
         print(f"   ⏭️  Skipped: {len(skipped)}")
         print(f"   ❌ Errors: {len(errors)}")
-        
+
         if errors:
             # Group errors by error message to identify patterns
             error_groups: dict[str, list[str]] = {}
@@ -1570,19 +1598,19 @@ async def compile_sql_types(
                     )
                 elif "could not determine data type" in error_msg:
                     core_error = "could not determine data type of parameter"
-                
+
                 if core_error not in error_groups:
                     error_groups[core_error] = []
                 error_groups[core_error].append(sql_path)
-            
+
             # Sort error groups by count (most common first)
             sorted_groups = sorted(
                 error_groups.items(), key=lambda x: len(x[1]), reverse=True
             )
-            
+
             print("\n❌ SQL compilation failed. Errors grouped by type:")
             print()
-            
+
             for core_error, files in sorted_groups:
                 count = len(files)
                 print(f"   {core_error} ({count} file{'s' if count > 1 else ''}):")
@@ -1590,10 +1618,13 @@ async def compile_sql_types(
                 for file_path in sorted(files):
                     print(f"      - {file_path}")
                 print()
-            
+
             return False, f"SQL compilation failed with {len(errors)} error(s)"
-        
-        return True, f"SQL compilation completed successfully ({len(successes)} files processed)"
-    
+
+        return (
+            True,
+            f"SQL compilation completed successfully ({len(successes)} files processed)",
+        )
+
     finally:
         await conn.close()

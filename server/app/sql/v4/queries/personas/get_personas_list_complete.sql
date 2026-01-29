@@ -97,8 +97,7 @@ RETURNS TABLE (
     scenarios types.q_list_personas_v4_scenario[],
     fields types.q_list_personas_v4_field[],
     departments types.q_list_personas_v4_department[],
-    total_count bigint,
-    general_agent_id uuid
+    total_count bigint
 )
 LANGUAGE sql
 STABLE
@@ -269,44 +268,6 @@ filtered_field_options AS (
     SELECT fmd.*
     FROM field_mapping_data fmd
     WHERE field_search IS NULL OR fmd.name ILIKE '%' || field_search || '%'
-),
--- Find the general agent that can generate personas for this user
-general_agent_for_user AS (
-    SELECT a.id as agent_id
-    FROM agent_artifact a
-    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id
-                  WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    AND EXISTS (SELECT 1 FROM agent_tools_junction at2 JOIN tools_resource tr_rt ON tr_rt.id = at2.tool_id
-        JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-        JOIN resource_tools_relation rt ON rt.tool_id = ttj_rt.tool_id
-        JOIN artifact_resources_relation ar ON ar.resource = rt.resource
-        WHERE at2.agent_id = a.id AND at2.active = TRUE AND ar.artifact = 'persona'::artifact_type)
-    AND (EXISTS (SELECT 1 FROM agent_departments_junction ad
-                 JOIN user_departments ud ON ad.department_id = ud.department_id
-                 WHERE ad.agent_id = a.id AND ad.active = true)
-         OR NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-    AND ARRAY['names','descriptions','colors','icons','instructions',
-              'flags','examples','fields','departments']::text[]
-        <@ COALESCE(
-            (SELECT ARRAY_AGG(DISTINCT rt2.resource::text)
-             FROM agent_tools_junction at3
-             JOIN tools_resource tr2 ON tr2.id = at3.tool_id
-             JOIN tool_tools_junction ttj2 ON ttj2.tools_id = tr2.id
-             JOIN tool_artifact t ON t.id = ttj2.tool_id
-                  AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f2 ON tf.flag_id = f2.id
-                              WHERE tf.tool_id = t.id AND f2.name = 'tool_active' AND tf.value = true)
-             JOIN resource_tools_relation rt2 ON rt2.tool_id = t.id
-             WHERE at3.agent_id = a.id AND at3.active = true),
-            ARRAY[]::text[]
-        )
-    ORDER BY
-        CASE WHEN EXISTS (
-            SELECT 1 FROM agent_departments_junction ad
-            JOIN user_departments ud ON ad.department_id = ud.department_id
-            WHERE ad.agent_id = a.id AND ad.active = true
-        ) THEN 0 ELSE 1 END ASC,
-        a.updated_at DESC, a.id ASC
-    LIMIT 1
 )
 SELECT
     up.actor_name::text as actor_name,
@@ -353,8 +314,6 @@ SELECT
         '{}'::types.q_list_personas_v4_department[]
     ) as departments,
     -- Total count of filtered personas (before pagination)
-    (SELECT total_count FROM filtered_count) as total_count,
-    -- General agent ID for generation capability
-    (SELECT agent_id FROM general_agent_for_user) as general_agent_id
+    (SELECT total_count FROM filtered_count) as total_count
 FROM user_profile up
 $$;

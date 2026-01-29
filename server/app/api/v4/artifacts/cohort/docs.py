@@ -40,7 +40,11 @@ def get_cohorts_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "cohort_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "cohort_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

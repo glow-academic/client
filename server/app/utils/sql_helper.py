@@ -19,8 +19,9 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import asyncpg  # type: ignore
-from app.utils.sql_nest import nest
 from pydantic import BaseModel
+
+from app.utils.sql_nest import nest
 
 # Cache for SQL metadata introspection to avoid repeated PREPARE calls
 # Type: dict[str, SQLMetadata | None]

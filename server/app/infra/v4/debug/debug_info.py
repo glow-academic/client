@@ -4,12 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.sql.types import InfrastructureDebugInsertDebugInfoSqlParams
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
 
 
 @dataclass
@@ -37,17 +36,17 @@ async def debug_info(ctx: Any, content: str) -> str:
     confirmation string.
     """
     # Extract run_id and conn from context (context structure may vary)
-    if hasattr(ctx, 'context'):
+    if hasattr(ctx, "context"):
         run_id = ctx.context.run_id
         conn = ctx.context.conn
     elif isinstance(ctx, dict):
-        run_id = ctx.get('run_id')
-        conn = ctx.get('conn')
+        run_id = ctx.get("run_id")
+        conn = ctx.get("conn")
     else:
         # Fallback: try to get from attributes directly
-        run_id = getattr(ctx, 'run_id', None)
-        conn = getattr(ctx, 'conn', None)
-    
+        run_id = getattr(ctx, "run_id", None)
+        conn = getattr(ctx, "conn", None)
+
     if not run_id or not conn:
         return "Error: Missing run_id or conn in context"
 

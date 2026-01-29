@@ -3,18 +3,24 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.sql.types import (CreateTestV4SqlParams, GetAgentNameV4SqlParams,
-                           GetAgentNameV4SqlRow,
-                           GetEvalAttemptInfiniteModeV4SqlParams,
-                           GetEvalAttemptInfiniteModeV4SqlRow,
-                           GetTestByTraceIdV4SqlParams,
-                           GetTestByTraceIdV4SqlRow, GetToolNameV4SqlParams,
-                           GetToolNameV4SqlRow, LinkAttemptTestV4SqlParams)
-from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
+from app.sql.types import (
+    CreateTestV4SqlParams,
+    GetAgentNameV4SqlParams,
+    GetAgentNameV4SqlRow,
+    GetEvalAttemptInfiniteModeV4SqlParams,
+    GetEvalAttemptInfiniteModeV4SqlRow,
+    GetTestByTraceIdV4SqlParams,
+    GetTestByTraceIdV4SqlRow,
+    GetToolNameV4SqlParams,
+    GetToolNameV4SqlRow,
+    LinkAttemptTestV4SqlParams,
+)
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
@@ -73,7 +79,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 ),
             )
             attempt_row = {
-                "infinite_mode": attempt_result.infinite_mode if attempt_result else False
+                "infinite_mode": attempt_result.infinite_mode
+                if attempt_result
+                else False
             }
             if not attempt_row:
                 return
@@ -94,10 +102,14 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                     params=test_params,
                 ),
             )
-            test_row = {
-                "test_id": test_result.test_id,
-                "completed": test_result.completed,
-            } if test_result else None
+            test_row = (
+                {
+                    "test_id": test_result.test_id,
+                    "completed": test_result.completed,
+                }
+                if test_result
+                else None
+            )
 
             if not test_row:
                 # Create new test
@@ -135,7 +147,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 group_id_uuid = uuid.UUID(group_id)
 
                 # Get group_stop tools (function returns multiple rows)
-                group_stop_sql = 'SELECT * FROM "public"."socket_get_group_stop_tools_v4"($1::uuid)'
+                group_stop_sql = (
+                    'SELECT * FROM "public"."socket_get_group_stop_tools_v4"($1::uuid)'
+                )
                 group_stop_rows = await conn.fetch(group_stop_sql, group_id_uuid)
                 group_stop_tools = [
                     {

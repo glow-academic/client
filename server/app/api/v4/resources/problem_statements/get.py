@@ -23,7 +23,9 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/resources/problem_statements/get_problem_statement_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/resources/problem_statements/get_problem_statement_complete.sql"
+)
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/problem_statements/get_problem_statements_complete.sql"
 
 router = APIRouter()
@@ -130,7 +132,10 @@ async def get_problem_statements_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetProblemStatementsV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetProblemStatementsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetProblemStatementsSqlParams(p_ids=ids)
     result = cast(
@@ -138,7 +143,9 @@ async def get_problem_statements_internal(
         await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
     )
 
-    items: list[QGetProblemStatementsV4Item] = result.items if result and result.items else []
+    items: list[QGetProblemStatementsV4Item] = (
+        result.items if result and result.items else []
+    )
 
     await set_cached(
         cache_key_val,

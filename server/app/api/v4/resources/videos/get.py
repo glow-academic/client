@@ -134,7 +134,10 @@ async def get_videos_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetVideosV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetVideosV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetVideosSqlParams(p_ids=ids)
     result = cast(

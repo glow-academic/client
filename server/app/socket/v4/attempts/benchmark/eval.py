@@ -11,9 +11,8 @@ from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 
-TEXT_RUN_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
-)
+TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
+
 
 # Generic handler for any agent eval_start event
 # Pattern: {agent_name}_eval_start (e.g., simulation_eval_start, voice_eval_start)
@@ -42,7 +41,7 @@ async def _handle_agent_eval_start(data: dict[str, Any]) -> None:
         group_id = data.get("group_id")
         agent_id = data.get("agent_id")
         message_ids = data.get("message_ids")
-        
+
         if not test_id or not attempt_id or not eval_id or not agent_id:
             await internal_sio.emit(
                 "benchmark_error",
@@ -57,7 +56,7 @@ async def _handle_agent_eval_start(data: dict[str, Any]) -> None:
                 },
             )
             return
-        
+
         # Get profile_id from sid
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
@@ -74,7 +73,7 @@ async def _handle_agent_eval_start(data: dict[str, Any]) -> None:
                 },
             )
             return
-        
+
         if not run_id:
             await internal_sio.emit(
                 "benchmark_error",
@@ -188,7 +187,7 @@ async def _handle_tool_eval_start(data: dict[str, Any]) -> None:
         tool_id = data.get("tool_id")
         messages = data.get("messages")
         model_config = data.get("model_config")
-        
+
         if not test_id or not attempt_id or not eval_id or not tool_id:
             await internal_sio.emit(
                 "benchmark_error",
@@ -203,7 +202,7 @@ async def _handle_tool_eval_start(data: dict[str, Any]) -> None:
                 },
             )
             return
-        
+
         # Get profile_id from sid
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
@@ -220,7 +219,7 @@ async def _handle_tool_eval_start(data: dict[str, Any]) -> None:
                 },
             )
             return
-        
+
         if not messages or not model_config:
             await internal_sio.emit(
                 "benchmark_error",

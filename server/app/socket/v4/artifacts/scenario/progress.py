@@ -1,15 +1,16 @@
 """Scenario progress handler - listens to generate_text_* events and emits scenario-specific events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from fastapi import APIRouter
+
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (ValidateScenarioResourceProgressSqlParams,
-                           ValidateScenarioResourceProgressSqlRow)
-from fastapi import APIRouter
+from app.sql.types import (
+    ValidateScenarioResourceProgressSqlParams,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()

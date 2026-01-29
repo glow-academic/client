@@ -9,7 +9,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
 # =============================================================================

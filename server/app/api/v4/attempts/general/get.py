@@ -3,18 +3,21 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetGeneralAttemptApiRequest,
-                           GetGeneralAttemptApiResponse,
-                           GetGeneralAttemptSqlParams,
-                           GetGeneralAttemptSqlRow)
+from app.sql.types import (
+    GetGeneralAttemptApiRequest,
+    GetGeneralAttemptApiResponse,
+    GetGeneralAttemptSqlParams,
+    GetGeneralAttemptSqlRow,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/attempts/get_general_attempt_complete.sql"
@@ -28,7 +31,8 @@ router = APIRouter()
     response_model=GetGeneralAttemptApiResponse,
     dependencies=[
         audit_activity(
-            "attempt.viewed", "{{ actor.name }} viewed general attempt '{{ attempt.id }}'"
+            "attempt.viewed",
+            "{{ actor.name }} viewed general attempt '{{ attempt.id }}'",
         )
     ],
 )
@@ -95,7 +99,8 @@ async def get_general_attempt(
         # Check if attempt exists using SQL result
         if not result.attempt_exists:
             raise HTTPException(
-                status_code=404, detail=f"General attempt not found: {request.attempt_id}"
+                status_code=404,
+                detail=f"General attempt not found: {request.attempt_id}",
             )
 
         # Check role-based access control (handled in SQL)
@@ -114,9 +119,7 @@ async def get_general_attempt(
             )
 
         # Convert SQL result to API response
-        api_response = GetGeneralAttemptApiResponse.model_validate(
-            result.model_dump()
-        )
+        api_response = GetGeneralAttemptApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

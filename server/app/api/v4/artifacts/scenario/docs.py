@@ -40,7 +40,11 @@ def get_scenarios_docs() -> dict[str, Any]:
                 },
             ],
             "indexes": [
-                {"name": "scenario_artifact_pkey", "type": "PRIMARY KEY", "columns": ["id"]}
+                {
+                    "name": "scenario_artifact_pkey",
+                    "type": "PRIMARY KEY",
+                    "columns": ["id"],
+                }
             ],
             "foreign_keys": [],
         },

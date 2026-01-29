@@ -4,7 +4,6 @@ import uuid
 from typing import cast
 
 from fastapi import APIRouter
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.decrement_guest_count import decrement_guest_count
@@ -20,6 +19,7 @@ from app.sql.types import (
     UpdateProfileToInactiveSqlParams,
     UpdateProfileToInactiveSqlRow,
 )
+from app.utils.sql_helper import execute_sql_typed
 
 client_router = APIRouter()
 server_router = APIRouter()

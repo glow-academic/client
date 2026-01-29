@@ -6,8 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import litellm  # type: ignore
-from app.infra.v4.artifacts.convert_tools_to_openai_format import \
-    convert_tools_to_openai_format
+
+from app.infra.v4.artifacts.convert_tools_to_openai_format import (
+    convert_tools_to_openai_format,
+)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -110,15 +112,19 @@ async def run_agent_with_tools(
             usage_obj = response.get("usage")
         elif hasattr(response, "usage"):
             usage_obj = response.usage
-        
+
         if usage_obj:
             if isinstance(usage_obj, dict):
                 total_usage["prompt_tokens"] += usage_obj.get("prompt_tokens", 0)
-                total_usage["completion_tokens"] += usage_obj.get("completion_tokens", 0)
+                total_usage["completion_tokens"] += usage_obj.get(
+                    "completion_tokens", 0
+                )
                 total_usage["total_tokens"] += usage_obj.get("total_tokens", 0)
             else:
                 total_usage["prompt_tokens"] += getattr(usage_obj, "prompt_tokens", 0)
-                total_usage["completion_tokens"] += getattr(usage_obj, "completion_tokens", 0)
+                total_usage["completion_tokens"] += getattr(
+                    usage_obj, "completion_tokens", 0
+                )
                 total_usage["total_tokens"] += getattr(usage_obj, "total_tokens", 0)
 
         # Check for tool calls (handle both dict and object formats)
@@ -127,7 +133,7 @@ async def run_agent_with_tools(
             choices = response.get("choices", [])
         elif hasattr(response, "choices"):
             choices = response.choices
-        
+
         if not choices or len(choices) == 0:
             break
 
@@ -137,7 +143,7 @@ async def run_agent_with_tools(
             message = choice.get("message", {})
         elif hasattr(choice, "message"):
             message = choice.message
-        
+
         if not message:
             break
 
@@ -173,8 +179,14 @@ async def run_agent_with_tools(
             if isinstance(tool_call, dict):
                 tool_call_id = tool_call.get("id")
                 function_obj = tool_call.get("function", {})
-                function_name = function_obj.get("name") if isinstance(function_obj, dict) else None
-                function_args_str = function_obj.get("arguments", "{}") if isinstance(function_obj, dict) else "{}"
+                function_name = (
+                    function_obj.get("name") if isinstance(function_obj, dict) else None
+                )
+                function_args_str = (
+                    function_obj.get("arguments", "{}")
+                    if isinstance(function_obj, dict)
+                    else "{}"
+                )
             else:
                 tool_call_id = getattr(tool_call, "id", None)
                 function_obj = getattr(tool_call, "function", None)
@@ -194,9 +206,13 @@ async def run_agent_with_tools(
 
             # Parse function arguments
             try:
-                function_args = json.loads(function_args_str) if function_args_str else {}
+                function_args = (
+                    json.loads(function_args_str) if function_args_str else {}
+                )
             except json.JSONDecodeError:
-                logger.warning(f"Failed to parse tool call arguments: {function_args_str}")
+                logger.warning(
+                    f"Failed to parse tool call arguments: {function_args_str}"
+                )
                 function_args = {}
 
             # Execute tool function
@@ -231,7 +247,10 @@ async def run_agent_with_tools(
                     {
                         "id": tool_call_id,
                         "type": "function",
-                        "function": {"name": function_name, "arguments": function_args_str},
+                        "function": {
+                            "name": function_name,
+                            "arguments": function_args_str,
+                        },
                     }
                 )
 
@@ -252,7 +271,9 @@ async def run_agent_with_tools(
         litellm_kwargs["messages"] = conversation_messages
 
     if iteration >= max_iterations:
-        logger.warning(f"Reached max iterations ({max_iterations}), returning current output")
+        logger.warning(
+            f"Reached max iterations ({max_iterations}), returning current output"
+        )
 
     # Create result object compatible with Runner.run() return value
     context_wrapper = MockContextWrapper(usage=total_usage)

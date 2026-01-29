@@ -4,8 +4,9 @@ Handles both completions() API (choices-based) and responses() API (response-bas
 Pure parsing/transformation only - no AI calls, no DB, no emits.
 """
 
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
+from typing import Any
 
 
 # ----------------------------
@@ -80,8 +81,10 @@ async def stream_litellm_events(
     # Usage represents completion - when we find it, emit completion event
     # All text/tool deltas are progress events (already handled)
     final_usage_data: dict[str, Any] | None = None
-    response_completed_received = False  # Track if response.completed was received (for Responses API)
-    
+    response_completed_received = (
+        False  # Track if response.completed was received (for Responses API)
+    )
+
     async for chunk in stream:
         # Check every chunk for usage
         # LiteLLM docs: final chunk has usage field with token stats, choices is empty array
@@ -98,16 +101,22 @@ async def stream_litellm_events(
                 pass
         elif isinstance(chunk, dict):
             chunk_dict_for_usage_check = chunk
-        
+
         # Check for usage in chunk (may be in final chunk with empty choices)
         if chunk_dict_for_usage_check and isinstance(chunk_dict_for_usage_check, dict):
             usage_obj = chunk_dict_for_usage_check.get("usage")
-            if usage_obj is not None:  # Check for non-null usage (final chunk has actual usage, others have null)
+            if (
+                usage_obj is not None
+            ):  # Check for non-null usage (final chunk has actual usage, others have null)
                 if isinstance(usage_obj, dict):
                     # Extract usage from dict
                     final_usage_data = {
-                        "prompt_tokens": usage_obj.get("prompt_tokens", usage_obj.get("input_tokens", 0)),
-                        "completion_tokens": usage_obj.get("completion_tokens", usage_obj.get("output_tokens", 0)),
+                        "prompt_tokens": usage_obj.get(
+                            "prompt_tokens", usage_obj.get("input_tokens", 0)
+                        ),
+                        "completion_tokens": usage_obj.get(
+                            "completion_tokens", usage_obj.get("output_tokens", 0)
+                        ),
                     }
                 elif hasattr(usage_obj, "prompt_tokens"):
                     # Extract usage from object
@@ -115,7 +124,7 @@ async def stream_litellm_events(
                         "prompt_tokens": getattr(usage_obj, "prompt_tokens", 0),
                         "completion_tokens": getattr(usage_obj, "completion_tokens", 0),
                     }
-                
+
                 # Usage represents completion - emit message_complete with usage immediately
                 # This is centralized: usage = completion, regardless of when it arrives
                 if final_usage_data:
@@ -125,14 +134,14 @@ async def stream_litellm_events(
                         last_choice_state = choices.get(0)
                         if last_choice_state and last_choice_state.finish_reason:
                             finish_reason = last_choice_state.finish_reason
-                    
+
                     yield {
                         "type": "message_complete",
                         "choice_index": 0,
                         "finish_reason": finish_reason,
                         "usage": final_usage_data,
                     }
-        
+
         # Also check chunk.usage directly (for Pydantic models)
         if not final_usage_data and hasattr(chunk, "usage"):
             usage_obj = chunk.usage
@@ -144,10 +153,14 @@ async def stream_litellm_events(
                     }
                 elif isinstance(usage_obj, dict):
                     final_usage_data = {
-                        "prompt_tokens": usage_obj.get("prompt_tokens", usage_obj.get("input_tokens", 0)),
-                        "completion_tokens": usage_obj.get("completion_tokens", usage_obj.get("output_tokens", 0)),
+                        "prompt_tokens": usage_obj.get(
+                            "prompt_tokens", usage_obj.get("input_tokens", 0)
+                        ),
+                        "completion_tokens": usage_obj.get(
+                            "completion_tokens", usage_obj.get("output_tokens", 0)
+                        ),
                     }
-                
+
                 # Usage represents completion - emit message_complete with usage immediately
                 if final_usage_data:
                     # Get finish_reason from the last choice state if available
@@ -156,14 +169,14 @@ async def stream_litellm_events(
                         last_choice_state = choices.get(0)
                         if last_choice_state and last_choice_state.finish_reason:
                             finish_reason = last_choice_state.finish_reason
-                    
+
                     yield {
                         "type": "message_complete",
                         "choice_index": 0,
                         "finish_reason": finish_reason,
                         "usage": final_usage_data,
                     }
-        
+
         # Detect format on first chunk
         if format_detected is None:
             if hasattr(chunk, "type") or (
@@ -195,13 +208,17 @@ async def stream_litellm_events(
             # For completions format, check if this is the final usage chunk (empty choices, has usage)
             # According to LiteLLM docs, final chunk has empty choices array and usage field
             is_final_usage_chunk = False
-            if chunk_dict_for_usage_check and isinstance(chunk_dict_for_usage_check, dict):
+            if chunk_dict_for_usage_check and isinstance(
+                chunk_dict_for_usage_check, dict
+            ):
                 choices_check = chunk_dict_for_usage_check.get("choices", [])
                 usage_check = chunk_dict_for_usage_check.get("usage")
                 # Final usage chunk: empty choices and non-null usage
-                if (not choices_check or len(choices_check) == 0) and usage_check is not None:
+                if (
+                    not choices_check or len(choices_check) == 0
+                ) and usage_check is not None:
                     is_final_usage_chunk = True
-            
+
             # Skip parsing final usage chunk (it has no choices to parse, usage already captured and emitted above)
             # Usage = completion, so we already emitted message_complete when we found usage
             if not is_final_usage_chunk:
@@ -214,7 +231,7 @@ async def stream_litellm_events(
                     # Only emit message_complete when we find usage (handled above)
                     if event.get("type") != "message_complete":
                         yield event
-    
+
     # After streaming completes, emit final message_complete with usage if we found it in final chunk
     # This handles the case where usage chunk comes after all other chunks
     if final_usage_data:
@@ -352,14 +369,22 @@ async def _parse_responses_chunk(
                     yield {"type": "text_delta", "delta": delta}
             elif item_id:
                 # Create new text item if not found (shouldn't happen, but handle gracefully)
-                response_items[item_id] = {"type": "text", "started": True, "buffer": delta}
+                response_items[item_id] = {
+                    "type": "text",
+                    "started": True,
+                    "buffer": delta,
+                }
                 yield {"type": "text_start"}
                 yield {"type": "text_delta", "delta": delta}
             else:
                 # No item_id, create a temporary item
                 temp_id = "temp_text_0"
                 if temp_id not in response_items:
-                    response_items[temp_id] = {"type": "text", "started": True, "buffer": ""}
+                    response_items[temp_id] = {
+                        "type": "text",
+                        "started": True,
+                        "buffer": "",
+                    }
                     yield {"type": "text_start"}
                 response_items[temp_id]["buffer"] += delta
                 yield {"type": "text_delta", "delta": delta}
@@ -432,7 +457,9 @@ async def _parse_responses_chunk(
             if item_state.get("type") == "function_call":
                 # Use provided arguments or accumulated arguments
                 final_arguments = (
-                    arguments if arguments is not None else item_state.get("arguments", "")
+                    arguments
+                    if arguments is not None
+                    else item_state.get("arguments", "")
                 )
                 yield {
                     "type": "tool_call_complete",
@@ -552,7 +579,7 @@ async def _parse_completions_chunk(
             delta_raw = ch.get("delta", {}) or {}
         else:
             delta_raw = {}
-        
+
         # Convert delta to dict if it's a Pydantic model
         if not isinstance(delta_raw, dict):
             if hasattr(delta_raw, "model_dump"):
@@ -577,14 +604,14 @@ async def _parse_completions_chunk(
             finish_reason = ch.get("finish_reason")
         else:
             finish_reason = None
-        
+
         # Check for tool_calls in choice object (not just delta) - they might be here when finish_reason is set
         choice_tool_calls = None
         if hasattr(ch, "tool_calls"):
             choice_tool_calls = ch.tool_calls
         elif isinstance(ch, dict):
             choice_tool_calls = ch.get("tool_calls")
-        
+
         # Also check if tool_calls are in the accumulated choice state
         # When finish_reason is "tool_calls", the complete tool_calls might be in the choice state
         accumulated_tool_calls = None
@@ -614,13 +641,15 @@ async def _parse_completions_chunk(
         # When finish_reason is "tool_calls", tool_calls might be in the choice object, not delta
         tool_calls_delta = delta.get("tool_calls") or []
         if not tool_calls_delta and choice_tool_calls:
-            tool_calls_delta = choice_tool_calls if isinstance(choice_tool_calls, list) else []
-        
+            tool_calls_delta = (
+                choice_tool_calls if isinstance(choice_tool_calls, list) else []
+            )
+
         # When finish_reason is "tool_calls", we should NOT process accumulated tool_calls as deltas
         # They've already been processed, and completion logic will emit tool_call_complete events
         # Only process tool_calls from delta/choice if they're actually new deltas
         # Skip accumulated tool_calls conversion when finish_reason is "tool_calls" - let completion logic handle it
-        
+
         for tc in tool_calls_delta:
             if not isinstance(tc, dict):
                 continue
@@ -682,8 +711,12 @@ async def _parse_completions_chunk(
                     chunk_dict_for_usage = chunk.dict()
                 except:
                     pass
-            
-            if chunk_dict_for_usage and isinstance(chunk_dict_for_usage, dict) and "usage" in chunk_dict_for_usage:
+
+            if (
+                chunk_dict_for_usage
+                and isinstance(chunk_dict_for_usage, dict)
+                and "usage" in chunk_dict_for_usage
+            ):
                 usage_obj = chunk_dict_for_usage["usage"]
                 if isinstance(usage_obj, dict):
                     usage_data = {

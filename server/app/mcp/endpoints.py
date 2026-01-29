@@ -5,58 +5,59 @@ import inspect
 from pathlib import Path
 from typing import Any, cast
 
-from fastapi import Request, Response
+from fastapi import Response
 from mcp.server.fastmcp import FastMCP
 
 # ============================================================================
 # Dynamic Discovery Functions
 # ============================================================================
 
+
 def discover_artifacts() -> list[str]:
     """Discover all artifacts by scanning artifacts directory.
-    
+
     Returns:
         List of artifact names (singular, alphabetical).
     """
     artifacts_dir = Path(__file__).parent.parent / "api" / "v4" / "artifacts"
     artifacts = []
-    
+
     if artifacts_dir.exists():
         for item in sorted(artifacts_dir.iterdir()):
             if item.is_dir() and not item.name.startswith("_"):
                 # Check if it has handlers (has get.py or save.py)
                 if (item / "get.py").exists() or (item / "save.py").exists():
                     artifacts.append(item.name)
-    
+
     return artifacts
 
 
 def discover_resources() -> list[str]:
     """Discover all resources by scanning resources directory.
-    
+
     Returns:
         List of resource names (plural, alphabetical).
     """
     resources_dir = Path(__file__).parent.parent / "api" / "v4" / "resources"
     resources = []
-    
+
     if resources_dir.exists():
         for item in sorted(resources_dir.iterdir()):
             if item.is_dir() and not item.name.startswith("_"):
                 # Check if it has create.py
                 if (item / "create.py").exists():
                     resources.append(item.name)
-    
+
     return resources
 
 
 def _get_analytics_handler_name(analytics_type: str, operation: str) -> str | None:
     """Get the handler function name for an analytics operation.
-    
+
     Args:
         analytics_type: Analytics type (e.g., "home", "dashboard")
         operation: Operation name (e.g., "get", "list")
-    
+
     Returns:
         Function name or None if operation not applicable.
     """
@@ -78,22 +79,22 @@ def _get_analytics_handler_name(analytics_type: str, operation: str) -> str | No
         return patterns[0]
     elif operation == "refresh" and analytics_type == "refresh":
         return "refresh_analytics"
-    
+
     return None
 
 
 def discover_analytics_handlers() -> dict[tuple[str, str], Any]:
     """Discover all analytics handlers by scanning analytics directory.
-    
+
     Returns:
         Dictionary mapping (type, operation) tuples to handler functions.
     """
     analytics_dir = Path(__file__).parent.parent / "api" / "v4" / "analytics"
     handlers: dict[tuple[str, str], Any] = {}
-    
+
     if not analytics_dir.exists():
         return handlers
-    
+
     # Handle refresh.py separately (it's at the root level)
     refresh_path = analytics_dir / "refresh.py"
     if refresh_path.exists():
@@ -104,60 +105,76 @@ def discover_analytics_handlers() -> dict[tuple[str, str], Any]:
                 handlers[("refresh", "refresh")] = getattr(module, func_name)
         except (ImportError, AttributeError):
             pass
-    
+
     # Scan subdirectories for type/operation pairs
     for item in sorted(analytics_dir.iterdir()):
         if item.is_dir() and not item.name.startswith("_"):
             analytics_type = item.name
-            
+
             # Check for get.py
             get_path = item / "get.py"
             if get_path.exists():
                 try:
-                    module = importlib.import_module(f"app.api.v4.analytics.{analytics_type}.get")
+                    module = importlib.import_module(
+                        f"app.api.v4.analytics.{analytics_type}.get"
+                    )
                     func_name = _get_analytics_handler_name(analytics_type, "get")
                     if func_name:
                         # Try the primary pattern first
                         if hasattr(module, func_name):
-                            handlers[(analytics_type, "get")] = getattr(module, func_name)
+                            handlers[(analytics_type, "get")] = getattr(
+                                module, func_name
+                            )
                         else:
                             # Fallback: find any function starting with "get_"
                             for attr_name in dir(module):
-                                if attr_name.startswith("get_") and callable(getattr(module, attr_name)):
-                                    handlers[(analytics_type, "get")] = getattr(module, attr_name)
+                                if attr_name.startswith("get_") and callable(
+                                    getattr(module, attr_name)
+                                ):
+                                    handlers[(analytics_type, "get")] = getattr(
+                                        module, attr_name
+                                    )
                                     break
                 except (ImportError, AttributeError):
                     pass
-            
+
             # Check for list.py
             list_path = item / "list.py"
             if list_path.exists():
                 try:
-                    module = importlib.import_module(f"app.api.v4.analytics.{analytics_type}.list")
+                    module = importlib.import_module(
+                        f"app.api.v4.analytics.{analytics_type}.list"
+                    )
                     func_name = _get_analytics_handler_name(analytics_type, "list")
                     if func_name:
                         # Try the primary pattern first
                         if hasattr(module, func_name):
-                            handlers[(analytics_type, "list")] = getattr(module, func_name)
+                            handlers[(analytics_type, "list")] = getattr(
+                                module, func_name
+                            )
                         else:
                             # Fallback: find any function starting with "get_" (list endpoints also use get_ prefix)
                             for attr_name in dir(module):
-                                if attr_name.startswith("get_") and callable(getattr(module, attr_name)):
-                                    handlers[(analytics_type, "list")] = getattr(module, attr_name)
+                                if attr_name.startswith("get_") and callable(
+                                    getattr(module, attr_name)
+                                ):
+                                    handlers[(analytics_type, "list")] = getattr(
+                                        module, attr_name
+                                    )
                                     break
                 except (ImportError, AttributeError):
                     pass
-    
+
     return handlers
 
 
 def _get_attempts_handler_name(attempt_type: str, operation: str) -> str | None:
     """Get the handler function name for an attempts operation.
-    
+
     Args:
         attempt_type: Attempt type (e.g., "simulation", "benchmark")
         operation: Operation name (e.g., "get", "archive")
-    
+
     Returns:
         Function name or None if operation not applicable.
     """
@@ -165,59 +182,63 @@ def _get_attempts_handler_name(attempt_type: str, operation: str) -> str | None:
         return f"get_{attempt_type}_attempt"
     elif operation == "archive":
         return f"archive_{attempt_type}_attempts"
-    
+
     return None
 
 
 def discover_attempts_handlers() -> dict[tuple[str, str], Any]:
     """Discover all attempts handlers by scanning attempts directory.
-    
+
     Returns:
         Dictionary mapping (type, operation) tuples to handler functions.
     """
     attempts_dir = Path(__file__).parent.parent / "api" / "v4" / "attempts"
     handlers: dict[tuple[str, str], Any] = {}
-    
+
     if not attempts_dir.exists():
         return handlers
-    
+
     # Scan subdirectories for type/operation pairs
     for item in sorted(attempts_dir.iterdir()):
         if item.is_dir() and not item.name.startswith("_"):
             attempt_type = item.name
-            
+
             # Check for get.py
             get_path = item / "get.py"
             if get_path.exists():
                 try:
-                    module = importlib.import_module(f"app.api.v4.attempts.{attempt_type}.get")
+                    module = importlib.import_module(
+                        f"app.api.v4.attempts.{attempt_type}.get"
+                    )
                     func_name = _get_attempts_handler_name(attempt_type, "get")
                     if func_name and hasattr(module, func_name):
                         handlers[(attempt_type, "get")] = getattr(module, func_name)
                 except (ImportError, AttributeError):
                     pass
-            
+
             # Check for archive.py
             archive_path = item / "archive.py"
             if archive_path.exists():
                 try:
-                    module = importlib.import_module(f"app.api.v4.attempts.{attempt_type}.archive")
+                    module = importlib.import_module(
+                        f"app.api.v4.attempts.{attempt_type}.archive"
+                    )
                     func_name = _get_attempts_handler_name(attempt_type, "archive")
                     if func_name and hasattr(module, func_name):
                         handlers[(attempt_type, "archive")] = getattr(module, func_name)
                 except (ImportError, AttributeError):
                     pass
-    
+
     return handlers
 
 
 def _get_bulk_handler_name(bulk_type: str, operation: str) -> str | None:
     """Get the handler function name for a bulk operation.
-    
+
     Args:
         bulk_type: Bulk type (e.g., "document", "staff")
         operation: Operation name (e.g., "process", "search", "save", "delete")
-    
+
     Returns:
         Function name: {operation}_{type}
     """
@@ -226,45 +247,53 @@ def _get_bulk_handler_name(bulk_type: str, operation: str) -> str | None:
 
 def discover_bulk_handlers() -> dict[tuple[str, str], Any]:
     """Discover all bulk handlers by scanning bulk directory.
-    
+
     Returns:
         Dictionary mapping (type, operation) tuples to handler functions.
     """
     bulk_dir = Path(__file__).parent.parent / "api" / "v4" / "bulk"
     handlers: dict[tuple[str, str], Any] = {}
-    
+
     if not bulk_dir.exists():
         return handlers
-    
+
     # Scan subdirectories for type/operation pairs
     for item in sorted(bulk_dir.iterdir()):
         if item.is_dir() and not item.name.startswith("_"):
             bulk_type = item.name
-            
+
             # Check for operation files
             for op_file in sorted(item.iterdir()):
-                if op_file.is_file() and op_file.suffix == ".py" and not op_file.name.startswith("_"):
+                if (
+                    op_file.is_file()
+                    and op_file.suffix == ".py"
+                    and not op_file.name.startswith("_")
+                ):
                     operation = op_file.stem
                     if operation == "__init__":
                         continue
-                    
+
                     try:
-                        module = importlib.import_module(f"app.api.v4.bulk.{bulk_type}.{operation}")
+                        module = importlib.import_module(
+                            f"app.api.v4.bulk.{bulk_type}.{operation}"
+                        )
                         func_name = _get_bulk_handler_name(bulk_type, operation)
                         if func_name and hasattr(module, func_name):
-                            handlers[(bulk_type, operation)] = getattr(module, func_name)
+                            handlers[(bulk_type, operation)] = getattr(
+                                module, func_name
+                            )
                     except (ImportError, AttributeError):
                         pass
-    
+
     return handlers
 
 
 def _get_export_handler_name(export_type: str) -> str | None:
     """Get the handler function name for an export operation.
-    
+
     Args:
         export_type: Export type (e.g., "certificate", "report")
-    
+
     Returns:
         Function name: export_{type}
     """
@@ -273,23 +302,23 @@ def _get_export_handler_name(export_type: str) -> str | None:
 
 def discover_export_handlers() -> dict[str, Any]:
     """Discover all export handlers by scanning export directory.
-    
+
     Returns:
         Dictionary mapping type to handler functions.
     """
     export_dir = Path(__file__).parent.parent / "api" / "v4" / "export"
     handlers: dict[str, Any] = {}
-    
+
     if not export_dir.exists():
         return handlers
-    
+
     # Scan for type files
     for item in sorted(export_dir.iterdir()):
         if item.is_file() and item.suffix == ".py" and not item.name.startswith("_"):
             export_type = item.stem
             if export_type == "__init__":
                 continue
-            
+
             try:
                 module = importlib.import_module(f"app.api.v4.export.{export_type}")
                 func_name = _get_export_handler_name(export_type)
@@ -297,34 +326,34 @@ def discover_export_handlers() -> dict[str, Any]:
                     handlers[export_type] = getattr(module, func_name)
             except (ImportError, AttributeError):
                 pass
-    
+
     return handlers
 
 
 def discover_decrypt_handlers() -> dict[str, Any]:
     """Discover decrypt handler.
-    
+
     Returns:
         Dictionary with "decrypt" key mapping to handler function.
     """
     handlers: dict[str, Any] = {}
-    
+
     try:
         module = importlib.import_module("app.api.v4.decrypt.key")
         if hasattr(module, "decrypt_key"):
-            handlers["decrypt"] = getattr(module, "decrypt_key")
+            handlers["decrypt"] = module.decrypt_key
     except (ImportError, AttributeError):
         pass
-    
+
     return handlers
 
 
 def _get_uploads_handler_name(operation: str) -> str | None:
     """Get the handler function name for an uploads operation.
-    
+
     Args:
         operation: Operation name (e.g., "get", "save")
-    
+
     Returns:
         Function name: {operation}_upload
     """
@@ -333,23 +362,23 @@ def _get_uploads_handler_name(operation: str) -> str | None:
 
 def discover_uploads_handlers() -> dict[str, Any]:
     """Discover all uploads handlers by scanning uploads directory.
-    
+
     Returns:
         Dictionary mapping operation to handler functions.
     """
     uploads_dir = Path(__file__).parent.parent / "api" / "v4" / "uploads"
     handlers: dict[str, Any] = {}
-    
+
     if not uploads_dir.exists():
         return handlers
-    
+
     # Scan for operation files
     for item in sorted(uploads_dir.iterdir()):
         if item.is_file() and item.suffix == ".py" and not item.name.startswith("_"):
             operation = item.stem
             if operation == "__init__":
                 continue
-            
+
             try:
                 module = importlib.import_module(f"app.api.v4.uploads.{operation}")
                 func_name = _get_uploads_handler_name(operation)
@@ -357,78 +386,78 @@ def discover_uploads_handlers() -> dict[str, Any]:
                     handlers[operation] = getattr(module, func_name)
             except (ImportError, AttributeError):
                 pass
-    
+
     return handlers
 
 
 def discover_debug_handlers() -> dict[str, Any]:
     """Discover debug handler.
-    
+
     Returns:
         Dictionary with "debug" key mapping to handler function.
     """
     handlers: dict[str, Any] = {}
-    
+
     try:
         module = importlib.import_module("app.api.v4.debug")
         # Try create_feedback first (current name), fallback to debug
         if hasattr(module, "create_feedback"):
-            handlers["debug"] = getattr(module, "create_feedback")
+            handlers["debug"] = module.create_feedback
         elif hasattr(module, "debug"):
-            handlers["debug"] = getattr(module, "debug")
+            handlers["debug"] = module.debug
     except (ImportError, AttributeError):
         pass
-    
+
     return handlers
 
 
 def discover_groups_handlers() -> dict[str, Any]:
     """Discover groups handler from artifacts/group.py.
-    
+
     Returns:
         Dictionary with "get" key mapping to handler function.
     """
     handlers: dict[str, Any] = {}
-    
+
     try:
         module = importlib.import_module("app.api.v4.artifacts.group")
         if hasattr(module, "get_group"):
-            handlers["get"] = getattr(module, "get_group")
+            handlers["get"] = module.get_group
     except (ImportError, AttributeError):
         pass
-    
+
     return handlers
 
 
 def pluralize_artifact(artifact_name: str) -> str:
     """Pluralize artifact name for docs operations.
-    
+
     Args:
         artifact_name: Singular artifact name (e.g., "agent", "persona")
-    
+
     Returns:
         Pluralized artifact name (e.g., "agents", "personas")
     """
     # Simple rule: add 's' to end (handles most cases)
     # Special cases: y → ies, s/x/z → add 'es', etc.
-    if artifact_name.endswith('y'):
-        return artifact_name[:-1] + 'ies'
-    elif artifact_name.endswith(('s', 'x', 'z', 'ch', 'sh')):
-        return artifact_name + 'es'
+    if artifact_name.endswith("y"):
+        return artifact_name[:-1] + "ies"
+    elif artifact_name.endswith(("s", "x", "z", "ch", "sh")):
+        return artifact_name + "es"
     else:
-        return artifact_name + 's'
+        return artifact_name + "s"
 
 
 def _get_artifact_handler_name(artifact_name: str, operation: str) -> str | None:
     """Get the handler function name for an artifact operation.
-    
+
     Derives function names directly from API path structure.
     Artifacts use singular names matching directory names.
-    
+
     Args:
         artifact_name: Singular artifact name (e.g., "agent", "persona")
         operation: Operation name (e.g., "get", "save", "list")
-    
+
     Returns:
         Function name or None if operation not applicable.
     """
@@ -449,48 +478,48 @@ def _get_artifact_handler_name(artifact_name: str, operation: str) -> str | None
         # Pluralize only for docs: get_{artifact}s_docs
         plural_name = pluralize_artifact(artifact_name)
         return f"get_{plural_name}_docs"
-    
+
     return None
 
 
 def discover_artifact_handlers(artifact_name: str) -> dict[str, Any]:
     """Discover handlers for an artifact dynamically.
-    
+
     Args:
         artifact_name: Singular artifact name (e.g., "agent", "persona")
-    
+
     Returns:
         Dictionary mapping operation names to handler functions.
     """
     handlers: dict[str, Any] = {}
     operations = ["get", "save", "list", "duplicate", "delete", "draft", "docs"]
-    
+
     for op in operations:
         func_name = _get_artifact_handler_name(artifact_name, op)
         if func_name is None:
             continue
-        
+
         try:
             module_path = f"app.api.v4.artifacts.{artifact_name}.{op}"
             module = importlib.import_module(module_path)
-            
+
             if hasattr(module, func_name):
                 handlers[op] = getattr(module, func_name)
         except (ImportError, AttributeError):
             pass  # Operation not available for this artifact
-    
+
     return handlers
 
 
 def _get_resource_create_handler_name(resource_name: str) -> str | None:
     """Get the create handler function name for a resource.
-    
+
     Derives function names directly from API path structure.
     Resources use plural names matching directory names.
-    
+
     Args:
         resource_name: Plural resource name (e.g., "agents", "args")
-    
+
     Returns:
         Function name: create_{resource_name} (plural, matches directory)
     """
@@ -519,7 +548,9 @@ def discover_resource_handlers(resource_name: str) -> dict[str, Any]:
         else:
             # Fallback: find any function starting with "create_"
             for attr_name in dir(module):
-                if attr_name.startswith("create_") and callable(getattr(module, attr_name)):
+                if attr_name.startswith("create_") and callable(
+                    getattr(module, attr_name)
+                ):
                     handlers["create"] = getattr(module, attr_name)
                     break
     except (ImportError, KeyError):
@@ -537,6 +568,7 @@ def discover_resource_handlers(resource_name: str) -> dict[str, Any]:
         pass
 
     return handlers
+
 
 # ============================================================================
 # Discovered Data Structures
@@ -556,26 +588,32 @@ RESOURCES = discover_resources()
 # Combined list
 ALL_ITEMS = ARTIFACTS + RESOURCES
 
+
 # Helper function to route save operations to create or update based on ID presence
 # Only used for scenarios and profile which don't have unified save.py yet
 def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) -> Any:
     """Create a unified save handler that routes to create or update based on ID.
-    
+
     Args:
         create_func: Function to call for create operations
         update_func: Function to call for update operations
         id_field_name: Name of the ID field to check (e.g., "scenario_id", "profile_id")
     """
-    async def save_handler(request: Any, http_request: Any, response: Any, conn: Any) -> Any:
+
+    async def save_handler(
+        request: Any, http_request: Any, response: Any, conn: Any
+    ) -> Any:
         # Check if ID field exists and is not None
-        request_dict = request.model_dump() if hasattr(request, "model_dump") else dict(request)
+        request_dict = (
+            request.model_dump() if hasattr(request, "model_dump") else dict(request)
+        )
         has_id = request_dict.get(id_field_name) is not None
-        
+
         if has_id:
             return await update_func(request, http_request, response, conn)
         else:
             return await create_func(request, http_request, response, conn)
-    
+
     return save_handler
 
 
@@ -587,7 +625,6 @@ def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) 
 HANDLERS: dict[str, dict[str, Any]] = {}
 for artifact in ARTIFACTS:
     HANDLERS[artifact] = discover_artifact_handlers(artifact)
-
 
 
 # Analytics handlers - dynamically discovered
@@ -613,7 +650,6 @@ UPLOADS_HANDLERS: dict[str, Any] = discover_uploads_handlers()
 
 # Debug handlers - dynamically discovered
 DEBUG_HANDLERS: dict[str, Any] = discover_debug_handlers()
-
 
 
 # ============================================================================
@@ -646,15 +682,16 @@ for artifact in ARTIFACTS:
 # Description Derivation Functions
 # ============================================================================
 
+
 def get_artifact_description(artifact_name: str) -> str:
     """Get artifact description from handler docstring.
-    
+
     This is used for the artifacts() list endpoint which shows short descriptions.
     For comprehensive documentation, use docs_artifact() which uses docs.py files.
-    
+
     Args:
         artifact_name: Singular artifact name (e.g., "agent", "persona")
-    
+
     Returns:
         Description string, or fallback if not available.
     """
@@ -665,24 +702,24 @@ def get_artifact_description(artifact_name: str) -> str:
             doc = getattr(handler, "__doc__", None)
             if doc and isinstance(doc, str):
                 # Extract first sentence
-                parts = doc.split('.')
+                parts = doc.split(".")
                 if parts:
                     first_sentence = parts[0].strip()
                     return str(first_sentence)
-    
+
     # Generic fallback
     return f"{artifact_name.title()} artifact"
 
 
 def get_resource_description(resource_name: str) -> str:
     """Get resource description from handler docstring.
-    
+
     This is used for the resources() list endpoint which shows short descriptions.
     For comprehensive documentation, use docs_resource() which uses docs.py files.
-    
+
     Args:
         resource_name: Plural resource name (e.g., "agents", "args")
-    
+
     Returns:
         Description string, or fallback if not available.
     """
@@ -693,11 +730,11 @@ def get_resource_description(resource_name: str) -> str:
             doc = getattr(handler, "__doc__", None)
             if doc and isinstance(doc, str):
                 # Extract first sentence
-                parts = doc.split('.')
+                parts = doc.split(".")
                 if parts:
                     first_sentence = parts[0].strip()
                     return str(first_sentence)
-    
+
     # Generic fallback
     return f"{resource_name.title()} resource"
 
@@ -724,12 +761,13 @@ except ImportError:
 # Documentation Helper Functions
 # ============================================================================
 
+
 def get_artifact_operation_description(operation: str) -> str:
     """Generate enhanced description for artifact operations.
-    
+
     Args:
         operation: Operation name (get, save, list, duplicate, delete, draft)
-    
+
     Returns:
         Enhanced description string with examples and workflow guidance.
     """
@@ -767,7 +805,6 @@ Workflow:
     1. Call payload_artifact(name="agent", operation="get") to get exact payload schema
     2. Construct payload with required fields
     3. Call get_artifact with name and payload""",
-        
         "save": """Save (create or update) an artifact or resource.
 
 Args:
@@ -791,7 +828,6 @@ Workflow:
     1. Call payload_artifact(name="agent") to get exact payload schema
     2. Construct payload with artifact data
     3. Call save_artifact with name and payload""",
-        
         "list": """List items for an artifact or resource.
 
 Args:
@@ -816,7 +852,6 @@ Workflow:
     1. Call payload_artifact(name="agent", operation="list") to get exact payload schema
     2. Construct payload with filter parameters (or empty for all)
     3. Call list_artifact with name and payload""",
-        
         "duplicate": """Duplicate an artifact or resource.
 
 Args:
@@ -839,7 +874,6 @@ Workflow:
     1. Call payload_artifact(name="agent", operation="duplicate") to get exact payload schema
     2. Construct payload with source artifact_id
     3. Call duplicate_artifact with name and payload""",
-        
         "delete": """Delete an artifact or resource.
 
 Args:
@@ -861,7 +895,6 @@ Workflow:
     1. Call payload_artifact(name="agent", operation="delete") to get exact payload schema
     2. Construct payload with artifact_id to delete
     3. Call delete_artifact with name and payload""",
-        
         "draft": """Create or patch a draft artifact (autosave).
 
 Args:
@@ -884,22 +917,22 @@ Workflow:
     2. Construct payload with draft data
     3. Call draft_artifact with name and payload""",
     }
-    
+
     return descriptions.get(operation, "Standard artifact operation")
 
 
 def format_example_payload(artifact_name: str, operation: str) -> str:
     """Format example payload for documentation.
-    
+
     Args:
         artifact_name: Name of the artifact (e.g., "agent", "persona")
         operation: Operation name (get, save, list, etc.)
-    
+
     Returns:
         Formatted example payload string.
     """
     artifact_id_field = f"{artifact_name}_id"
-    
+
     examples = {
         "get": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
         "save": f'{{"name": "My {artifact_name.title()}", "description": "...", ...}}',
@@ -908,7 +941,7 @@ def format_example_payload(artifact_name: str, operation: str) -> str:
         "delete": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
         "draft": f'{{"name": "Draft {artifact_name.title()}", ...}}',
     }
-    
+
     return examples.get(operation, "{}")
 
 
@@ -949,11 +982,11 @@ def _suggest_item_name(name: str) -> str | None:
 
 def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
     """Get payload schema for artifact/resource operations.
-    
+
     Args:
         name: Artifact or resource name (e.g., "agent", "scenario", "names")
         operation: Operation name (e.g., "get", "save", "list", "create"). Defaults to "get".
-    
+
     Note: The 'mcp' field is automatically filtered out as it's auto-injected.
     """
     if name not in ALL_ITEMS:
@@ -984,7 +1017,9 @@ def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
                     del schema["properties"]["mcp"]
                     # Remove from required list if present
                     if "required" in schema and "mcp" in schema["required"]:
-                        schema["required"] = [r for r in schema["required"] if r != "mcp"]
+                        schema["required"] = [
+                            r for r in schema["required"] if r != "mcp"
+                        ]
                 return schema
         except Exception:
             pass
@@ -1007,14 +1042,14 @@ async def call_handler(
     name: str, operation: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
     """Call a handler function with the given payload.
-    
+
     profile_id is automatically extracted from MCP request context.
     """
     from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
     # Extract profile_id from MCP context
     profile_id = get_mcp_profile_id()
-    
+
     if name not in HANDLERS:
         available_artifacts = list(HANDLERS.keys())
         suggestion = _suggest_item_name(name)
@@ -1041,17 +1076,17 @@ async def call_handler(
             "error": f"Handler for {name}.{operation} is not implemented yet.",
             "status": "not_implemented",
         }
-    
+
     # Call the handler using call_endpoint_handler which properly sets up Request/Response/DB context
     return await call_endpoint_handler(handler, payload, profile_id)
 
 
 def get_request_model_from_handler(handler: Any) -> Any | None:
     """Extract request model from handler function annotations.
-    
+
     Args:
         handler: The handler function
-        
+
     Returns:
         Request model class or None if not found
     """
@@ -1065,7 +1100,7 @@ def get_request_model_from_handler(handler: Any) -> Any | None:
                 return first_param.annotation
     except Exception:
         pass
-    
+
     return None
 
 
@@ -1075,18 +1110,19 @@ async def call_endpoint_handler(
     profile_id: str,
 ) -> dict[str, Any]:
     """Call an endpoint handler with proper Request/Response/DB context.
-    
+
     Args:
         handler: The handler function to call
         payload: The payload dictionary (will be passed as request body)
         profile_id: The profile ID to use
-        
+
     Returns:
         Dictionary with response data or error information
     """
-    from app.main import get_db
     from starlette.requests import Request as StarletteRequest
-    
+
+    from app.main import get_db
+
     try:
         # Get request model from handler
         request_model = get_request_model_from_handler(handler)
@@ -1095,7 +1131,7 @@ async def call_endpoint_handler(
                 "error": "Could not determine request model from handler",
                 "status": "error",
             }
-        
+
         # Create Request object with proper scope
         scope = {
             "type": "http",
@@ -1106,24 +1142,27 @@ async def call_endpoint_handler(
             "server": ("localhost", 8000),
         }
         http_request = StarletteRequest(scope)
-        
+
         # Set profile_id in request state
         http_request.state.profile_id = profile_id
         http_request.state.mcp = True
-        
+
         # Create Response object
         http_response = Response()
-        
+
         # Auto-inject mcp: true if request model has mcp field
         # This ensures agents never need to pass mcp parameter
-        if hasattr(request_model, "model_fields") and "mcp" in request_model.model_fields:
+        if (
+            hasattr(request_model, "model_fields")
+            and "mcp" in request_model.model_fields
+        ):
             payload = {**payload, "mcp": True}
-        
+
         # Get database connection (get_db is an async generator)
         async for conn in get_db():
             # Parse payload into request model
             api_request = request_model(**payload)
-            
+
             # Call handler
             result = await handler(
                 request=api_request,
@@ -1131,7 +1170,7 @@ async def call_endpoint_handler(
                 response=http_response,
                 conn=conn,
             )
-            
+
             # Convert result to dict
             if hasattr(result, "model_dump"):
                 result_dict = result.model_dump(mode="json")
@@ -1141,13 +1180,13 @@ async def call_endpoint_handler(
                 return cast(dict[str, Any], result_dict)
             else:
                 return cast(dict[str, Any], {"data": result})
-        
+
         # This should never happen (get_db always yields), but satisfy type checker
         return {
             "error": "Database connection not available",
             "status": "error",
         }
-                
+
     except Exception as e:
         return {
             "error": str(e),
@@ -1321,13 +1360,13 @@ def register_endpoints(server: FastMCP) -> None:
             - Field types (UUID, string, boolean, etc.)
             - Field descriptions
             - Default values
-            
+
             Note: The 'mcp' field is automatically filtered out as it's auto-injected.
 
         Example:
             name: "agent", operation: "get"
             Returns schema with fields like agent_id, draft_id, etc.
-            
+
             name: "scenario", operation: "save"
             Returns SaveScenarioApiRequest schema with all required fields for saving.
 
@@ -1356,7 +1395,7 @@ def register_endpoints(server: FastMCP) -> None:
             - Field types (UUID, string, boolean, etc.)
             - Field descriptions
             - Default values
-            
+
             Note: The 'mcp' field is automatically filtered out as it's auto-injected.
 
         Example:
@@ -1370,9 +1409,7 @@ def register_endpoints(server: FastMCP) -> None:
         return get_payload_schema(name, operation)
 
     @server.tool()
-    async def get_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def get_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Get an artifact or resource by name.
 
         Args:
@@ -1406,9 +1443,7 @@ def register_endpoints(server: FastMCP) -> None:
         return await call_handler(name, "get", payload)
 
     @server.tool()
-    async def save_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def save_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Save (create or update) an artifact or resource.
 
         Args:
@@ -1417,7 +1452,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         Payload Structure:
             Use payload_artifact(name="{name}") to get the exact schema.
-            
+
             For create: omit {artifact}_id or set to null
             For update: include {artifact}_id with UUID
 
@@ -1436,9 +1471,7 @@ def register_endpoints(server: FastMCP) -> None:
         return await call_handler(name, "save", payload)
 
     @server.tool()
-    async def list_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def list_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """List items for an artifact or resource.
 
         Args:
@@ -1467,9 +1500,7 @@ def register_endpoints(server: FastMCP) -> None:
         return await call_handler(name, "list", payload)
 
     @server.tool()
-    async def duplicate_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def duplicate_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Duplicate an artifact or resource.
 
         Args:
@@ -1496,9 +1527,7 @@ def register_endpoints(server: FastMCP) -> None:
         return await call_handler(name, "duplicate", payload)
 
     @server.tool()
-    async def delete_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def delete_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Delete an artifact or resource.
 
         Args:
@@ -1524,9 +1553,7 @@ def register_endpoints(server: FastMCP) -> None:
         return await call_handler(name, "delete", payload)
 
     @server.tool()
-    async def draft_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def draft_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Create or patch a draft artifact (autosave).
 
         Args:
@@ -1553,9 +1580,7 @@ def register_endpoints(server: FastMCP) -> None:
 
     # Resource-specific endpoints (create only)
     @server.tool()
-    async def create_resource(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def create_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a resource.
 
         Args:
@@ -1584,7 +1609,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         # Resources are create-only, not full CRUD
         if name not in RESOURCES:
             return {
@@ -1654,7 +1679,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         key = (type, operation)
         if key not in ANALYTICS_HANDLERS:
             valid_keys = list(ANALYTICS_HANDLERS.keys())
@@ -1690,7 +1715,7 @@ def register_endpoints(server: FastMCP) -> None:
             - Field types and formats
             - Field descriptions
             - Default values
-            
+
             Note: The 'mcp' field is automatically filtered out as it's auto-injected.
 
         Example:
@@ -1722,7 +1747,11 @@ def register_endpoints(server: FastMCP) -> None:
         if request_model and hasattr(request_model, "model_json_schema"):
             schema = request_model.model_json_schema()
             # Filter out 'mcp' field from schema so agents don't see it
-            if isinstance(schema, dict) and "properties" in schema and "mcp" in schema["properties"]:
+            if (
+                isinstance(schema, dict)
+                and "properties" in schema
+                and "mcp" in schema["properties"]
+            ):
                 schema = schema.copy()
                 schema["properties"] = schema["properties"].copy()
                 del schema["properties"]["mcp"]
@@ -1743,9 +1772,7 @@ def register_endpoints(server: FastMCP) -> None:
 
     # Groups endpoints
     @server.tool()
-    async def get_group(
-        group_id: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def get_group(group_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Get pricing group detail.
 
         Args:
@@ -1767,7 +1794,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         if "get" not in GROUPS_HANDLERS:
             return {
                 "error": "get_group handler not available.",
@@ -1776,7 +1803,9 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Add group_id to payload
         payload_with_id = {**payload, "group_id": group_id}
-        return await call_endpoint_handler(GROUPS_HANDLERS["get"], payload_with_id, profile_id)
+        return await call_endpoint_handler(
+            GROUPS_HANDLERS["get"], payload_with_id, profile_id
+        )
 
     # Attempts endpoints
     @server.tool()
@@ -1810,7 +1839,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         key = (type, "get")
         if key not in ATTEMPTS_HANDLERS:
             valid_keys = list(ATTEMPTS_HANDLERS.keys())
@@ -1862,7 +1891,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         key = (type, "archive")
         if key not in ATTEMPTS_HANDLERS:
             valid_keys = list(ATTEMPTS_HANDLERS.keys())
@@ -1883,12 +1912,9 @@ def register_endpoints(server: FastMCP) -> None:
         payload_with_ids = {**payload, "attempt_ids": attempt_ids}
         return await call_endpoint_handler(handler, payload_with_ids, profile_id)
 
-
     # Decrypt endpoint
     @server.tool()
-    async def decrypt(
-        key_id: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def decrypt(key_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Decrypt encrypted key value.
 
         Args:
@@ -1911,7 +1937,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         if "decrypt" not in DECRYPT_HANDLERS:
             return {
                 "error": "decrypt handler not available.",
@@ -1920,13 +1946,13 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Add key_id to payload
         payload_with_id = {**payload, "key_id": key_id}
-        return await call_endpoint_handler(DECRYPT_HANDLERS["decrypt"], payload_with_id, profile_id)
+        return await call_endpoint_handler(
+            DECRYPT_HANDLERS["decrypt"], payload_with_id, profile_id
+        )
 
     # Export endpoints
     @server.tool()
-    async def export_certificate(
-        payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def export_certificate(payload: dict[str, Any]) -> dict[str, Any]:
         """Export certificate.
 
         Args:
@@ -1947,19 +1973,19 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         if "certificate" not in EXPORT_HANDLERS:
             return {
                 "error": "export_certificate handler not available.",
                 "status": "not_implemented",
             }
 
-        return await call_endpoint_handler(EXPORT_HANDLERS["certificate"], payload, profile_id)
+        return await call_endpoint_handler(
+            EXPORT_HANDLERS["certificate"], payload, profile_id
+        )
 
     @server.tool()
-    async def export_report(
-        payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def export_report(payload: dict[str, Any]) -> dict[str, Any]:
         """Export report.
 
         Args:
@@ -1984,14 +2010,16 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         if "report" not in EXPORT_HANDLERS:
             return {
                 "error": "export_report handler not available.",
                 "status": "not_implemented",
             }
 
-        return await call_endpoint_handler(EXPORT_HANDLERS["report"], payload, profile_id)
+        return await call_endpoint_handler(
+            EXPORT_HANDLERS["report"], payload, profile_id
+        )
 
     # Bulk endpoints
     @server.tool()
@@ -2034,13 +2062,13 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         key = (type, operation)
         if key not in BULK_HANDLERS:
             valid_keys = list(BULK_HANDLERS.keys())
             valid_types = list(set(t for t, op in valid_keys))
             valid_operations = list(set(op for t, op in valid_keys if t == type))
-            
+
             if type not in valid_types:
                 return {
                     "error": f"'{type}' is not a valid bulk type.",
@@ -2053,7 +2081,7 @@ def register_endpoints(server: FastMCP) -> None:
                     "status": "invalid_operation",
                     "valid_operations": valid_operations,
                 }
-        
+
         handler = BULK_HANDLERS[key]
         if handler is None:
             return {
@@ -2065,9 +2093,7 @@ def register_endpoints(server: FastMCP) -> None:
 
     # Upload endpoints
     @server.tool()
-    async def upload(
-        payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def upload(payload: dict[str, Any]) -> dict[str, Any]:
         """Upload a file (base64 content).
 
         Args:
@@ -2098,16 +2124,13 @@ def register_endpoints(server: FastMCP) -> None:
         """
         import base64
         import json
-        import os
-        import shutil
         import uuid
-        from pathlib import Path
 
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         # Validate payload
         if "content" not in payload or "filename" not in payload:
             return {
@@ -2126,8 +2149,9 @@ def register_endpoints(server: FastMCP) -> None:
             upload_id = str(uuid.uuid4())
 
             # Get upload directories
-            from app.main import (AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER,
-                                  VIDEO_FOLDER)
+            from app.main import (
+                TUS_UPLOADS_DIR,
+            )
 
             # Create TUS upload directory
             upload_dir = TUS_UPLOADS_DIR / upload_id
@@ -2156,9 +2180,10 @@ def register_endpoints(server: FastMCP) -> None:
                     "error": "save_upload handler not available.",
                     "status": "not_implemented",
                 }
-            
-            from app.main import get_db
+
             from starlette.requests import Request as StarletteRequest
+
+            from app.main import get_db
 
             # Create request/response objects for finalize
             scope = {
@@ -2176,7 +2201,9 @@ def register_endpoints(server: FastMCP) -> None:
 
             # Call finalize
             async for conn in get_db():
-                result = await UPLOADS_HANDLERS["save"](upload_id, http_request, http_response, conn)
+                result = await UPLOADS_HANDLERS["save"](
+                    upload_id, http_request, http_response, conn
+                )
                 if hasattr(result, "model_dump"):
                     result_dict = result.model_dump(mode="json")
                     return cast(dict[str, Any], result_dict)
@@ -2194,9 +2221,7 @@ def register_endpoints(server: FastMCP) -> None:
             }
 
     @server.tool()
-    async def download(
-        upload_id: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def download(upload_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Download an upload file.
 
         Args:
@@ -2227,16 +2252,17 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         if "get" not in UPLOADS_HANDLERS:
             return {
                 "error": "get_upload handler not available.",
                 "status": "not_implemented",
             }
-        
+
         try:
-            from app.main import get_db
             from starlette.requests import Request as StarletteRequest
+
+            from app.main import get_db
 
             # Create request object
             scope = {
@@ -2256,8 +2282,10 @@ def register_endpoints(server: FastMCP) -> None:
 
             # Call download handler
             async for conn in get_db():
-                result = await UPLOADS_HANDLERS["get"](upload_id, http_request, conn, preview=preview)
-                
+                result = await UPLOADS_HANDLERS["get"](
+                    upload_id, http_request, conn, preview=preview
+                )
+
                 # Handle FileResponse or Response
                 if hasattr(result, "body"):
                     # Response object
@@ -2266,13 +2294,19 @@ def register_endpoints(server: FastMCP) -> None:
                         # Binary content - encode as base64
                         return {
                             "content": base64.b64encode(content).decode("utf-8"),
-                            "content_type": result.headers.get("content-type", "application/octet-stream"),
+                            "content_type": result.headers.get(
+                                "content-type", "application/octet-stream"
+                            ),
                             "encoding": "base64",
                         }
                     else:
                         return {
-                            "content": content.decode("utf-8") if isinstance(content, bytes) else str(content),
-                            "content_type": result.headers.get("content-type", "text/plain"),
+                            "content": content.decode("utf-8")
+                            if isinstance(content, bytes)
+                            else str(content),
+                            "content_type": result.headers.get(
+                                "content-type", "text/plain"
+                            ),
                         }
                 else:
                     return {
@@ -2293,9 +2327,7 @@ def register_endpoints(server: FastMCP) -> None:
 
     # Debug/Report Problem endpoint
     @server.tool()
-    async def debug(
-        message: str
-    ) -> dict[str, Any]:
+    async def debug(message: str) -> dict[str, Any]:
         """Report a problem or provide feedback (debug tool).
 
         Use this tool to report bugs, provide feedback, or ask questions about the system.
@@ -2324,7 +2356,7 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
-        
+
         # Validate message
         if not message or not message.strip():
             return {

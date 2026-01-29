@@ -5,13 +5,18 @@ Unified endpoint that handles both create (parameter_id = NULL) and update (para
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (SaveParameterApiRequest, SaveParameterApiResponse,
-                           SaveParameterSqlParams, SaveParameterSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (
+    SaveParameterApiRequest,
+    SaveParameterApiResponse,
+    SaveParameterSqlParams,
+    SaveParameterSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -74,7 +79,9 @@ async def save_parameter(
 
             if not result or not result.parameter_id:
                 if request.input_parameter_id:
-                    raise ValueError(f"Parameter not found: {request.input_parameter_id}")
+                    raise ValueError(
+                        f"Parameter not found: {request.input_parameter_id}"
+                    )
                 else:
                     raise ValueError("Failed to create parameter")
 

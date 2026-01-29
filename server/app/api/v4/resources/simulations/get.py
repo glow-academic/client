@@ -22,7 +22,9 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/resources/simulations/get_simulations_complete.sql"
-SQL_BATCH_PATH = "app/sql/v4/queries/resources/simulations/get_simulations_batch_complete.sql"
+SQL_BATCH_PATH = (
+    "app/sql/v4/queries/resources/simulations/get_simulations_batch_complete.sql"
+)
 
 
 router = APIRouter()
@@ -273,7 +275,10 @@ async def get_simulations_batch_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [GetSimulationsBatchV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                GetSimulationsBatchV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     # Execute SQL
     params = GetSimulationsBatchSqlParams(ids=ids)
@@ -282,7 +287,9 @@ async def get_simulations_batch_internal(
         await execute_sql_typed(conn, SQL_BATCH_PATH, params=params),
     )
 
-    items: list[GetSimulationsBatchV4Item] = result.items if result and result.items else []
+    items: list[GetSimulationsBatchV4Item] = (
+        result.items if result and result.items else []
+    )
 
     # Cache result
     await set_cached(
@@ -319,7 +326,9 @@ async def get_simulations_batch(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_simulations_batch_internal(conn, request.ids or [], bypass_cache)
+        items = await get_simulations_batch_internal(
+            conn, request.ids or [], bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetSimulationsBatchApiResponse(items=items)
     except HTTPException:

@@ -24,7 +24,9 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
+ACCESS_CHECK_SQL_PATH = (
+    "app/sql/v4/queries/personas/check_persona_duplicate_access_complete.sql"
+)
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/personas/duplicate_persona_complete.sql"
 
 

@@ -7,7 +7,8 @@ It does NOT perform any database operations. All writes are handled by domain ha
 from __future__ import annotations
 
 import json
-from typing import Any, AsyncIterator, cast
+from collections.abc import AsyncIterator
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -20,8 +21,8 @@ from app.infra.v4.artifacts import (
 )
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.socket.v4.artifacts.tool_registry import wait_for_tool_result
+from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 
 # Try to import litellm
 try:
@@ -190,7 +191,9 @@ async def _call_llm_text_stream(
                                 "additionalProperties": False,
                             }
                         validated_tools.append(tool_copy)
-                    elif tool_dict.get("type") == "function" and "function" in tool_dict:
+                    elif (
+                        tool_dict.get("type") == "function" and "function" in tool_dict
+                    ):
                         func = tool_dict.get("function")
                         if isinstance(func, dict) and func.get("name"):
                             validated_tools.append(
@@ -320,7 +323,9 @@ async def _generate_artifact_impl(
         stream = _call_llm_text_stream(
             model=model_config.model,
             messages=messages,
-            tools=responses_tools if responses_tools else (openai_tools if openai_tools else None),
+            tools=responses_tools
+            if responses_tools
+            else (openai_tools if openai_tools else None),
             tool_choice=tool_choice,
             api_key=model_config.api_key,
             base_url=model_config.base_url,

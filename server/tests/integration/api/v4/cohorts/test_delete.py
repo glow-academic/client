@@ -10,6 +10,7 @@ from tests.sql.types import (
     GetCohortByIdSqlParams,
     GetCohortByIdSqlRow,
 )
+
 from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio

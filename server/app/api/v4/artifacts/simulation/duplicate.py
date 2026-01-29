@@ -4,9 +4,14 @@ Uses two-pass architecture with Python-computed permissions.
 """
 
 from typing import Annotated, Any, cast
+
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.simulation.permissions import (
+    compute_can_duplicate,
+    has_access,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -19,16 +24,14 @@ from app.sql.types import (
     DuplicateSimulationSqlRow,
     load_sql_query,
 )
-from app.api.v4.artifacts.simulation.permissions import (
-    has_access,
-    compute_can_duplicate,
-)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/simulations/duplicate_simulation_complete.sql"
-ACCESS_SQL_PATH = "app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql"
+ACCESS_SQL_PATH = (
+    "app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql"
+)
 
 
 router = APIRouter()
@@ -77,26 +80,31 @@ async def duplicate_simulation(
         )
         access_result = cast(
             CheckSimulationDuplicateAccessSqlRow,
-            await execute_sql_typed(
-                conn, ACCESS_SQL_PATH, params=access_params
-            ),
+            await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
         )
 
         if access_result:
             # Extract permission context
             user_role = getattr(access_result, "user_role", None)
-            user_department_ids = getattr(access_result, "user_department_ids", None) or []
-            simulation_department_ids = getattr(access_result, "simulation_department_ids", None) or []
+            user_department_ids = (
+                getattr(access_result, "user_department_ids", None) or []
+            )
+            simulation_department_ids = (
+                getattr(access_result, "simulation_department_ids", None) or []
+            )
             simulation_exists = getattr(access_result, "simulation_exists", False)
 
             # Check if simulation exists
             if not simulation_exists:
                 raise HTTPException(
-                    status_code=404, detail=f"Simulation {request.simulation_id} not found"
+                    status_code=404,
+                    detail=f"Simulation {request.simulation_id} not found",
                 )
 
             # Check access permission
-            if not has_access(user_role, user_department_ids, simulation_department_ids):
+            if not has_access(
+                user_role, user_department_ids, simulation_department_ids
+            ):
                 raise HTTPException(
                     status_code=403,
                     detail="You don't have access to this simulation.",

@@ -5,6 +5,8 @@ Unified endpoint that handles both new (department_id = NULL) and detail (depart
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -15,7 +17,6 @@ from app.sql.types import (
     GetDepartmentSqlRow,
     load_sql_query,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -45,7 +46,7 @@ async def get_department(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetDepartmentApiResponse:
     """Get department information - handles both new (department_id = NULL) and detail (department_id provided).
-    
+
     Validation Logic:
     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)

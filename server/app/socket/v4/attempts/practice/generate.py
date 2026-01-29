@@ -3,8 +3,10 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
@@ -13,8 +15,6 @@ from app.sql.types import (
     GetSimulationRunContextSqlParams,
     GetSimulationRunContextSqlRow,
 )
-from fastapi import APIRouter
-from pydantic import BaseModel
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
@@ -23,7 +23,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/queries/simulations/get_simulation_run_context_complete.sql"
-GET_GROUP_ID_SQL_PATH = "app/sql/v4/queries/simulations/get_group_id_from_chat_group_v4_complete.sql"
+GET_GROUP_ID_SQL_PATH = (
+    "app/sql/v4/queries/simulations/get_group_id_from_chat_group_v4_complete.sql"
+)
 CREATE_RUN_SQL_PATH = "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 
 
@@ -113,7 +115,11 @@ async def _simulation_voice_generate_impl(
                 return
 
             run_id = str(create_run_row["run_id"])
-            group_id = str(create_run_row["group_id"]) if create_run_row.get("group_id") else group_id
+            group_id = (
+                str(create_run_row["group_id"])
+                if create_run_row.get("group_id")
+                else group_id
+            )
             trace_id = create_run_row.get("trace_id")
 
             voice_system_prompt = result.voice_system_prompt or result.system_prompt

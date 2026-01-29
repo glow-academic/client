@@ -4,25 +4,32 @@ import uuid
 from typing import Any, cast
 
 import asyncpg
-from app.sql.types import (InfraToolsGetSchemaFieldsV4SqlParams,
-                           InfraToolsGetSchemaFieldsV4SqlRow,
-                           InfraToolsGetSchemaIdFromTemplateV4SqlParams,
-                           InfraToolsGetSchemaIdFromTemplateV4SqlRow,
-                           InfraToolsGetTemplateIdV4SqlParams,
-                           InfraToolsGetTemplateIdV4SqlRow,
-                           InfraToolsGetToolCallResultV4SqlParams,
-                           InfraToolsGetToolCallResultV4SqlRow)
 from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
+
+from app.sql.types import (
+    InfraToolsGetSchemaIdFromTemplateV4SqlParams,
+    InfraToolsGetSchemaIdFromTemplateV4SqlRow,
+    InfraToolsGetTemplateIdV4SqlParams,
+    InfraToolsGetTemplateIdV4SqlRow,
+    InfraToolsGetToolCallResultV4SqlParams,
+    InfraToolsGetToolCallResultV4SqlRow,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-GET_TEMPLATE_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql"
+GET_TEMPLATE_ID_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql"
+)
 GET_SCHEMA_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"
-GET_SCHEMA_FIELDS_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql"
-GET_TOOL_CALL_RESULT_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
+GET_SCHEMA_FIELDS_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql"
+)
+GET_TOOL_CALL_RESULT_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
+)
 
 
 def validate_jinja_template(template_expr: str) -> tuple[bool, str | None]:
@@ -112,7 +119,7 @@ async def render_tool_template(
     # Get all schema_fields for that schema with their templates
     # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
     from app.utils.sql_helper import load_sql
-    
+
     schema_fields_sql = load_sql(GET_SCHEMA_FIELDS_SQL_PATH)
     schema_fields_raw = await conn.fetch(schema_fields_sql, schema_id)
     schema_fields = [
@@ -220,12 +227,12 @@ async def get_rendered_template_values(
     Returns:
         Dictionary of rendered values if found, None otherwise
     """
-    result_params = InfraToolsGetToolCallResultV4SqlParams(
-        tool_call_id=tool_call_id
-    )
+    result_params = InfraToolsGetToolCallResultV4SqlParams(tool_call_id=tool_call_id)
     result_result = cast(
         InfraToolsGetToolCallResultV4SqlRow,
-        await execute_sql_typed(conn, GET_TOOL_CALL_RESULT_SQL_PATH, params=result_params),
+        await execute_sql_typed(
+            conn, GET_TOOL_CALL_RESULT_SQL_PATH, params=result_params
+        ),
     )
     result_record = {
         "result_json": result_result.result_json if result_result else None

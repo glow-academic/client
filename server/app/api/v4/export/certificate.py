@@ -8,15 +8,18 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.main import get_db
-from app.sql.types import (GetCertificateDataApiRequest,
-                           GetCertificateDataSqlParams,
-                           GetCertificateDataSqlRow)
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
+
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.main import get_db
+from app.sql.types import (
+    GetCertificateDataApiRequest,
+    GetCertificateDataSqlParams,
+    GetCertificateDataSqlRow,
+)
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -90,17 +93,20 @@ async def export_certificate(
             # Drawing and Rect not used, removed to fix F401
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import \
-                getSampleStyleSheet  # type: ignore
+            from reportlab.lib.styles import (
+                ParagraphStyle,  # type: ignore
+                getSampleStyleSheet,  # type: ignore
+            )
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import Frame  # type: ignore
-            from reportlab.platypus import PageTemplate  # type: ignore
-            from reportlab.platypus import Paragraph  # type: ignore
-            from reportlab.platypus import SimpleDocTemplate  # type: ignore
-            from reportlab.platypus import Spacer  # type: ignore
-            from reportlab.platypus import Table  # type: ignore
-            from reportlab.platypus import TableStyle  # type: ignore
+            from reportlab.platypus import (
+                Frame,  # type: ignore
+                PageTemplate,  # type: ignore
+                Paragraph,  # type: ignore
+                SimpleDocTemplate,  # type: ignore
+                Spacer,  # type: ignore
+                Table,  # type: ignore
+                TableStyle,  # type: ignore
+            )
 
             # Create PDF in memory
             buffer = io.BytesIO()

@@ -1,8 +1,9 @@
 """Pricing analytics router."""
 
+from fastapi import APIRouter
+
 from app.api.v4.analytics.pricing.get import router as get_router
 from app.api.v4.analytics.pricing.list import router as list_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/pricing", tags=["analytics", "pricing"])
 

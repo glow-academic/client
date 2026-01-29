@@ -8,6 +8,7 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.simulation.permissions import compute_can_draft
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -18,7 +19,6 @@ from app.sql.types import (
     PatchSimulationDraftSqlRow,
     load_sql_query,
 )
-from app.api.v4.artifacts.simulation.permissions import compute_can_draft
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -99,7 +99,9 @@ async def patch_simulation_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchSimulationDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchSimulationDraftApiResponse.model_validate(
+            result.model_dump()
+        )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

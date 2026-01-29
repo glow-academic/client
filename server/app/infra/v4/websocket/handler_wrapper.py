@@ -4,9 +4,10 @@ import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
+from pydantic import BaseModel, ValidationError
+
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.typed_emit import emit_to_client
-from pydantic import BaseModel, ValidationError
 
 TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
@@ -206,7 +207,7 @@ async def handle_internal_event(
         validated = request_type(**payload_dict)
         await handler(sid, validated, profile_id_uuid, group_id_uuid)
         return
-    except ValidationError as e:
+    except ValidationError:
         # Socket.IO logs validation errors automatically
         # Special handling for generate_error - emit directly to avoid recursion
         if error_event_name == "generate_error":

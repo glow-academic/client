@@ -3,22 +3,25 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetReportsHistoryApiRequest,
-                           GetReportsHistoryApiResponse,
-                           GetReportsHistorySqlParams, GetReportsHistorySqlRow,
-                           GetReportsOverviewApiRequest,
-                           GetReportsOverviewApiResponse,
-                           GetReportsOverviewSqlParams,
-                           GetReportsOverviewSqlRow,
-                           QReportsOverviewV4AttemptHistoryRow, load_sql_query)
+from app.sql.types import (
+    GetReportsHistorySqlParams,
+    GetReportsHistorySqlRow,
+    GetReportsOverviewApiRequest,
+    GetReportsOverviewApiResponse,
+    GetReportsOverviewSqlParams,
+    GetReportsOverviewSqlRow,
+    QReportsOverviewV4AttemptHistoryRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 OVERVIEW_SQL_PATH = "app/sql/v4/queries/reports/get_reports_overview_complete.sql"
@@ -30,9 +33,7 @@ router = APIRouter()
 @router.post(
     "/get",
     response_model=GetReportsOverviewApiResponse,
-    dependencies=[
-        audit_activity("reports.get", "{{ actor.name }} viewed reports")
-    ],
+    dependencies=[audit_activity("reports.get", "{{ actor.name }} viewed reports")],
 )
 async def get_reports(
     request: GetReportsOverviewApiRequest,
@@ -97,21 +98,23 @@ async def get_reports(
                     params=overview_params,
                 ),
             )
-            
+
             # Execute history query to get history data (no pagination for single profile)
             # Use default pagination params to get all history
             history_request_dict = request.model_dump()
-            history_request_dict.update({
-                "page": 0,
-                "page_size": 1000,  # Large page size to get all history for single profile
-                "search": None,
-                "profile_ids": [],
-                "simulation_ids": [],
-                "scenario_ids": [],
-                "infinite_mode": None,
-                "sort_by": "date",
-                "sort_order": "desc",
-            })
+            history_request_dict.update(
+                {
+                    "page": 0,
+                    "page_size": 1000,  # Large page size to get all history for single profile
+                    "search": None,
+                    "profile_ids": [],
+                    "simulation_ids": [],
+                    "scenario_ids": [],
+                    "infinite_mode": None,
+                    "sort_by": "date",
+                    "sort_order": "desc",
+                }
+            )
             history_params = GetReportsHistorySqlParams(
                 **history_request_dict,
             )
@@ -137,7 +140,9 @@ async def get_reports(
         # Convert history data to overview history format (types are structurally identical but Pydantic needs explicit conversion)
         # Use model_dump(mode='json') to serialize, then validate as overview type
         overview_dict["history"] = [
-            QReportsOverviewV4AttemptHistoryRow.model_validate(row.model_dump(mode="json"))
+            QReportsOverviewV4AttemptHistoryRow.model_validate(
+                row.model_dump(mode="json")
+            )
             for row in (history_result.data or [])
         ]
 

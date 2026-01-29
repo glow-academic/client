@@ -50,12 +50,16 @@ def render_developer_instructions(
                 parsed = json.loads(jinja_context)
                 context_dict = parsed if isinstance(parsed, dict) else {}
             except (json.JSONDecodeError, TypeError):
-                logger.warning("Failed to parse jinja_context as JSON, using empty context")
+                logger.warning(
+                    "Failed to parse jinja_context as JSON, using empty context"
+                )
                 context_dict = {}
         elif isinstance(jinja_context, dict):
             context_dict = jinja_context
         else:
-            logger.warning(f"Unexpected jinja_context type: {type(jinja_context)}, using empty context")
+            logger.warning(
+                f"Unexpected jinja_context type: {type(jinja_context)}, using empty context"
+            )
             context_dict = {}
 
     # Create Jinja environment with security settings
@@ -132,7 +136,9 @@ def convert_tools_to_dict(
                     "resource": tool[3],
                     "artifact": tool[4],
                     "arguments": tool[5] if isinstance(tool[5], dict) else {},
-                    "argument_descriptions": tool[6] if isinstance(tool[6], dict) else {},
+                    "argument_descriptions": tool[6]
+                    if isinstance(tool[6], dict)
+                    else {},
                     "argument_defaults": tool[7] if isinstance(tool[7], dict) else {},
                     "active": tool[8] if len(tool) > 8 else True,
                 }

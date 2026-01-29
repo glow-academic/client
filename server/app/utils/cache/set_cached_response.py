@@ -2,9 +2,10 @@
 
 from typing import Any
 
+from fastapi import Request
+
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.set_cached import set_cached
-from fastapi import Request
 
 
 async def set_cached_response(

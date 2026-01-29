@@ -1,12 +1,13 @@
 """Auth resource router (not available to MCP)."""
 
+from fastapi import APIRouter
+
 from app.api.v4.auth.context import router as context_router
 from app.api.v4.auth.email import router as email_router
 from app.api.v4.auth.emulate import router as emulate_router
 from app.api.v4.auth.login import router as login_router
 from app.api.v4.auth.simulatable import router as simulatable_router
 from app.api.v4.auth.upsert import router as upsert_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

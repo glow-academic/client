@@ -130,7 +130,10 @@ async def get_questions_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetQuestionsV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetQuestionsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetQuestionsSqlParams(p_ids=ids)
     result = cast(

@@ -9,7 +9,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
 # =============================================================================
 # Resource Types
 # =============================================================================
@@ -399,7 +398,6 @@ class GetScenarioApiResponse(BaseModel):
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
 
 
 # =============================================================================
@@ -509,7 +507,6 @@ class ListScenarioApiResponse(BaseModel):
     simulation_options: list[ListScenarioApiOption] | None = None
     department_options: list[ListScenarioApiOption] | None = None
     total_count: int | None = None
-    general_agent_id: UUID | None = None
 
 
 # =============================================================================
@@ -681,7 +678,6 @@ class ListScenarioSqlRow(BaseModel):
     simulation_options: list[ListScenarioApiOption] | None = None
     department_options: list[ListScenarioApiOption] | None = None
     total_count: int | None = None
-    general_agent_id: UUID | None = None
 
 
 # =============================================================================
@@ -888,7 +884,6 @@ class GetScenarioSqlRow(BaseModel):
     parameters: list[ScenarioParameter] | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
 
 
 class GetScenariosListSqlParams(BaseModel):

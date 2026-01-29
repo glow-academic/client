@@ -79,13 +79,21 @@ async def log_activity(
         if loop.is_running():
             asyncio.create_task(
                 _insert_activity(
-                    message, str(request.url.path), resolved_profile_id, is_error, session_id
+                    message,
+                    str(request.url.path),
+                    resolved_profile_id,
+                    is_error,
+                    session_id,
                 )
             )
         else:
             asyncio.run(
                 _insert_activity(
-                    message, str(request.url.path), resolved_profile_id, is_error, session_id
+                    message,
+                    str(request.url.path),
+                    resolved_profile_id,
+                    is_error,
+                    session_id,
                 )
             )
     except RuntimeError:
@@ -94,7 +102,11 @@ async def log_activity(
 
 
 async def _insert_activity(
-    message: str, endpoint: str, profile_id: str, error: bool = False, session_id: str | None = None
+    message: str,
+    endpoint: str,
+    profile_id: str,
+    error: bool = False,
+    session_id: str | None = None,
 ) -> None:
     """Insert activity record into database.
 
@@ -112,7 +124,9 @@ async def _insert_activity(
         async with _db_pool.acquire() as conn:
             from app.infra.v4.activity.insert import insert_activity
 
-            await insert_activity(message, endpoint, profile_id, error, conn, session_id)
+            await insert_activity(
+                message, endpoint, profile_id, error, conn, session_id
+            )
     except Exception:
         # Never break logging if DB write fails
         pass

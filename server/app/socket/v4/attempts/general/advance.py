@@ -5,11 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from app.utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 

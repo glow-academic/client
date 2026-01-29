@@ -4,11 +4,10 @@ Tests for app.utils.agents.tools.create_title_description_function
 
 import uuid
 
+from app.main import scenario_progress, scenario_results
 from app.utils.agents.tools.create_title_description_function import (
     create_title_description_function,
 )
-
-from app.main import scenario_progress, scenario_results
 
 
 class TestCreate_Title_Description_Function:

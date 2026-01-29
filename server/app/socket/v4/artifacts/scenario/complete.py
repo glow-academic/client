@@ -3,13 +3,15 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from fastapi import APIRouter
+
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (GetScenarioResourceIdsByGroupIdSqlParams,
-                           GetScenarioResourceIdsByGroupIdSqlRow)
-from fastapi import APIRouter
+from app.sql.types import (
+    GetScenarioResourceIdsByGroupIdSqlParams,
+    GetScenarioResourceIdsByGroupIdSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
@@ -17,7 +19,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"
+)
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -27,7 +31,7 @@ async def handle_scenario_artifact_complete(data: dict[str, Any]) -> None:
     eval_mode = data.get("eval_mode", False)
     if eval_mode:
         return  # Don't process evals - benchmark handlers will handle them
-    
+
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "scenario":
@@ -164,7 +168,9 @@ async def handle_scenario_media_complete(data: dict[str, Any]) -> None:
         return
 
     file_path = data.get("file_path") or data.get("assistant_output")
-    mime_type = data.get("mime_type") or ("image/png" if resource_type == "images" else "video/mp4")
+    mime_type = data.get("mime_type") or (
+        "image/png" if resource_type == "images" else "video/mp4"
+    )
     file_size = data.get("file_size") or 0
     upload_id = data.get("upload_id")
     run_id = data.get("run_id")
@@ -172,7 +178,9 @@ async def handle_scenario_media_complete(data: dict[str, Any]) -> None:
     try:
         async with get_db_connection() as conn:
             if resource_type == "images":
-                sql = load_sql("app/sql/v4/queries/images/complete_image_generation_complete.sql")
+                sql = load_sql(
+                    "app/sql/v4/queries/images/complete_image_generation_complete.sql"
+                )
                 await conn.fetchrow(
                     sql,
                     uuid.UUID(resource_id_str),
@@ -181,7 +189,9 @@ async def handle_scenario_media_complete(data: dict[str, Any]) -> None:
                     int(file_size),
                 )
             elif resource_type == "videos":
-                sql = load_sql("app/sql/v4/queries/videos/create_generation_and_link_complete.sql")
+                sql = load_sql(
+                    "app/sql/v4/queries/videos/create_generation_and_link_complete.sql"
+                )
                 await conn.fetchrow(
                     sql,
                     uuid.UUID(resource_id_str),
@@ -242,12 +252,16 @@ async def handle_scenario_media_complete(data: dict[str, Any]) -> None:
             "group_id": group_id_str,
             "resource_type": resource_type,
             "name_id": str(result.name_id) if result.name_id else None,
-            "description_id": str(result.description_id) if result.description_id else None,
+            "description_id": str(result.description_id)
+            if result.description_id
+            else None,
             "problem_statement_id": str(result.problem_statement_id)
             if result.problem_statement_id
             else None,
             "objective_id": str(result.objective_id) if result.objective_id else None,
-            "scenario_flag_id": str(result.scenario_flag_id) if result.scenario_flag_id else None,
+            "scenario_flag_id": str(result.scenario_flag_id)
+            if result.scenario_flag_id
+            else None,
             "template_id": str(result.template_id) if result.template_id else None,
             "image_ids": [str(iid) for iid in (result.image_ids or [])],
             "video_ids": [str(vid) for vid in (result.video_ids or [])],

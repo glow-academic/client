@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -10,7 +12,6 @@ from app.sql.types import (
     ValidateAgentResourceErrorSqlParams,
     ValidateAgentResourceErrorSqlRow,
 )
-from fastapi import APIRouter
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -53,8 +54,10 @@ async def handle_agents_error(data: dict[str, Any]) -> None:
                 params = ValidateAgentResourceErrorSqlParams(
                     profile_id=profile_id,
                     group_id=group_id,
-                    resource_type=resource_type or "",  # SQL function expects non-null, empty string if None
-                    resource_types=resource_types or [],  # SQL function expects non-null array
+                    resource_type=resource_type
+                    or "",  # SQL function expects non-null, empty string if None
+                    resource_types=resource_types
+                    or [],  # SQL function expects non-null array
                     artifact_type="agent",  # Always "agent" for this handler
                 )
                 result = cast(

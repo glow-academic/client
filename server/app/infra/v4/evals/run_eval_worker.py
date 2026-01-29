@@ -6,21 +6,27 @@ import uuid
 from typing import Any, cast
 
 import asyncpg  # type: ignore
-from app.main import get_pool
-from app.utils.sql_helper import execute_sql_typed, load_sql
 
+from app.main import get_pool
 from app.sql.types import (
     InfrastructureEvalsGetRubricDetailsSqlParams,
     InfrastructureEvalsGetRubricDetailsSqlRow,
     InfrastructureEvalsMarkModelRunCompleteSqlParams,
     InfrastructureEvalsMarkModelRunIncompleteSqlParams,
 )
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = logging.getLogger(__name__)
 
-MARK_MODEL_RUN_INCOMPLETE_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"
-MARK_MODEL_RUN_COMPLETE_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/mark_model_run_complete_v4_complete.sql"
-GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"
+MARK_MODEL_RUN_INCOMPLETE_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"
+)
+MARK_MODEL_RUN_COMPLETE_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/evals/mark_model_run_complete_v4_complete.sql"
+)
+GET_RUBRIC_DETAILS_SQL_PATH = (
+    "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"
+)
 
 # Global semaphore to limit concurrent eval runs (max 4)
 _eval_semaphore = asyncio.Semaphore(4)
@@ -78,11 +84,13 @@ async def run_single_eval(
         )
         rubric_result = cast(
             InfrastructureEvalsGetRubricDetailsSqlRow,
-            await execute_sql_typed(conn, GET_RUBRIC_DETAILS_SQL_PATH, params=rubric_params),
+            await execute_sql_typed(
+                conn, GET_RUBRIC_DETAILS_SQL_PATH, params=rubric_params
+            ),
         )
         if not rubric_result:
             raise ValueError(f"Rubric not found: {rubric_id}")
-        
+
         rubric = {
             "id": rubric_result.id,
             "name": rubric_result.name,
@@ -111,7 +119,9 @@ async def run_single_eval(
             eval_id=uuid.UUID(eval_id),
             model_run_id=uuid.UUID(model_run_id),
         )
-        await execute_sql_typed(conn, MARK_MODEL_RUN_COMPLETE_SQL_PATH, params=complete_params)
+        await execute_sql_typed(
+            conn, MARK_MODEL_RUN_COMPLETE_SQL_PATH, params=complete_params
+        )
 
         # Emit completion event
         if emit_progress_func:
@@ -135,7 +145,9 @@ async def run_single_eval(
             eval_id=uuid.UUID(eval_id),
             model_run_id=uuid.UUID(model_run_id),
         )
-        await execute_sql_typed(conn, MARK_MODEL_RUN_COMPLETE_SQL_PATH, params=error_complete_params)
+        await execute_sql_typed(
+            conn, MARK_MODEL_RUN_COMPLETE_SQL_PATH, params=error_complete_params
+        )
         # Emit error event
         if emit_progress_func:
             await emit_progress_func(

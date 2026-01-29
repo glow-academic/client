@@ -1,14 +1,11 @@
 """Profile emulation endpoint - issue default-idp emulation grant."""
 
-from typing import Annotated, Any, cast
-
-import asyncpg
 import os
+from typing import Annotated, Any, cast
 from urllib.parse import quote
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -20,6 +17,8 @@ from app.sql.types import (
     CreateEmulationGrantSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/auth/create_emulation_grant_complete.sql"
@@ -62,12 +61,16 @@ async def authorize_emulation(
         # In local dev, hit Keycloak directly at port 8080 (no nginx proxy)
         # In production, use ORIGIN + prefix (nginx routes ${APP_PREFIX}/auth/ to Keycloak)
         is_local_dev = "localhost" in origin.lower()
-        default_keycloak_url = "http://localhost:8080/auth" if is_local_dev else f"{origin}{prefix}/auth"
+        default_keycloak_url = (
+            "http://localhost:8080/auth" if is_local_dev else f"{origin}{prefix}/auth"
+        )
         keycloak_public_url = os.getenv("KEYCLOAK_PUBLIC_URL", default_keycloak_url)
         keycloak_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
 
         # URL-encode return_url if provided (for use in query string)
-        return_url_encoded = quote(request.return_url, safe="") if request.return_url else None
+        return_url_encoded = (
+            quote(request.return_url, safe="") if request.return_url else None
+        )
 
         # Convert API request to SQL params using double star pattern
         params = CreateEmulationGrantSqlParams(

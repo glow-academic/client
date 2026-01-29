@@ -3,13 +3,15 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from fastapi import APIRouter
+
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (ValidateSimulationResourceErrorSqlParams,
-                           ValidateSimulationResourceErrorSqlRow)
-from fastapi import APIRouter
+from app.sql.types import (
+    ValidateSimulationResourceErrorSqlParams,
+    ValidateSimulationResourceErrorSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
@@ -17,7 +19,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/queries/simulations/validate_simulation_resource_error_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/simulations/validate_simulation_resource_error_complete.sql"
+)
 
 
 @internal_sio.on("generate_call_error")  # type: ignore
@@ -52,8 +56,10 @@ async def handle_simulations_error(data: dict[str, Any]) -> None:
                 params = ValidateSimulationResourceErrorSqlParams(
                     profile_id=profile_id,
                     group_id=group_id,
-                    resource_type=resource_type or "",  # SQL function expects non-null, empty string if None
-                    resource_types=resource_types or [],  # SQL function expects non-null array
+                    resource_type=resource_type
+                    or "",  # SQL function expects non-null, empty string if None
+                    resource_types=resource_types
+                    or [],  # SQL function expects non-null array
                     artifact_type="simulation",  # Always "simulation" for this handler
                 )
                 result = cast(

@@ -132,7 +132,10 @@ async def get_images_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetImagesV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetImagesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetImagesSqlParams(p_ids=ids)
     result = cast(

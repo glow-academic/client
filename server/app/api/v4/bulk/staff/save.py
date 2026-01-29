@@ -4,15 +4,20 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
-from app.sql.types import (UpsertStaffApiRequest, UpsertStaffApiResponse,
-                           UpsertStaffSqlParams, UpsertStaffSqlRow,
-                           load_sql_query)
+from app.sql.types import (
+    UpsertStaffApiRequest,
+    UpsertStaffApiResponse,
+    UpsertStaffSqlParams,
+    UpsertStaffSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/staff/upsert_staff_complete.sql"

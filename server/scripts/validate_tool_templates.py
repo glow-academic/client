@@ -526,7 +526,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
     results["granular_schema_validation"] = [dict(r) for r in granular_validation]
 
     # Query 13: INSERT column coverage analysis
-    insert_coverage = await conn.fetch("""
+    insert_coverage = await conn.fetch(r"""
         WITH function_inserts AS (
             SELECT 
                 p.proname,
@@ -650,7 +650,9 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         WHERE ai.instruction_id IS NULL
         ORDER BY ag.id
     """)
-    results["agents_missing_instructions"] = [dict(r) for r in agents_missing_instructions]
+    results["agents_missing_instructions"] = [
+        dict(r) for r in agents_missing_instructions
+    ]
 
     # Query 16: Summary statistics
     stats = await conn.fetchrow("""
@@ -814,7 +816,9 @@ def print_report(results: dict[str, Any]) -> None:
         for gap in output_gaps:
             print(f"  Table: {gap['table_name']}")
             print(f"  Column: {gap['column_name']} ({gap['data_type']})")
-            print(f"  Nullable: {gap['is_nullable']}, Default: {gap['column_default'] or 'None'}")
+            print(
+                f"  Nullable: {gap['is_nullable']}, Default: {gap['column_default'] or 'None'}"
+            )
             print()
     else:
         print("✅ All required columns are covered by output schemas")
@@ -822,31 +826,43 @@ def print_report(results: dict[str, Any]) -> None:
 
     # Granular schema validation
     granular = results["granular_schema_validation"]
-    type_mismatches = [g for g in granular if g["type_compatibility"] == "TYPE_MISMATCH"]
-    missing_columns = [g for g in granular if g["type_compatibility"] == "MISSING_COLUMN"]
-    nullable_warnings = [g for g in granular if "WARNING" in g.get("nullable_compatibility", "")]
-    
+    type_mismatches = [
+        g for g in granular if g["type_compatibility"] == "TYPE_MISMATCH"
+    ]
+    missing_columns = [
+        g for g in granular if g["type_compatibility"] == "MISSING_COLUMN"
+    ]
+    nullable_warnings = [
+        g for g in granular if "WARNING" in g.get("nullable_compatibility", "")
+    ]
+
     if type_mismatches or missing_columns or nullable_warnings:
         print("🔍 GRANULAR SCHEMA-TABLE VALIDATION")
         print("-" * 80)
         if missing_columns:
             print(f"❌ {len(missing_columns)} schema fields missing from tables")
             for item in missing_columns[:10]:
-                print(f"  - {item['resource']}.{item['schema_field_name']} (tool: {item['tool_name']})")
+                print(
+                    f"  - {item['resource']}.{item['schema_field_name']} (tool: {item['tool_name']})"
+                )
             if len(missing_columns) > 10:
                 print(f"  ... and {len(missing_columns) - 10} more")
             print()
         if type_mismatches:
             print(f"⚠️  {len(type_mismatches)} data type mismatches")
             for item in type_mismatches[:10]:
-                print(f"  - {item['resource']}.{item['schema_field_name']}: schema={item['schema_field_type']}, table={item['table_data_type']}")
+                print(
+                    f"  - {item['resource']}.{item['schema_field_name']}: schema={item['schema_field_type']}, table={item['table_data_type']}"
+                )
             if len(type_mismatches) > 10:
                 print(f"  ... and {len(type_mismatches) - 10} more")
             print()
         if nullable_warnings:
             print(f"⚠️  {len(nullable_warnings)} required/nullable mismatches")
             for item in nullable_warnings[:10]:
-                print(f"  - {item['resource']}.{item['schema_field_name']}: {item['nullable_compatibility']}")
+                print(
+                    f"  - {item['resource']}.{item['schema_field_name']}: {item['nullable_compatibility']}"
+                )
             if len(nullable_warnings) > 10:
                 print(f"  ... and {len(nullable_warnings) - 10} more")
             print()
@@ -856,11 +872,15 @@ def print_report(results: dict[str, Any]) -> None:
 
     # INSERT column coverage
     insert_coverage = results["insert_column_coverage"]
-    missing_from_schema = [i for i in insert_coverage if i["coverage_status"] == "MISSING_FROM_SCHEMA"]
+    missing_from_schema = [
+        i for i in insert_coverage if i["coverage_status"] == "MISSING_FROM_SCHEMA"
+    ]
     if missing_from_schema:
         print("⚠️  INSERT COLUMNS MISSING FROM OUTPUT SCHEMAS")
         print("-" * 80)
-        print(f"Found {len(missing_from_schema)} INSERT columns not covered by output schemas")
+        print(
+            f"Found {len(missing_from_schema)} INSERT columns not covered by output schemas"
+        )
         print("(Excluding system-managed columns)")
         print()
         for item in missing_from_schema[:20]:
@@ -944,7 +964,9 @@ def print_report(results: dict[str, Any]) -> None:
         print(f"   - {len(artifacts_missing)} artifacts missing agents")
         print(f"   - {len(agents_no_tools)} agents missing tools")
         print(f"   - {len(agents_no_prompts)} agents missing prompts (warnings)")
-        print(f"   - {len(agents_no_instructions)} agents missing instructions (warnings)")
+        print(
+            f"   - {len(agents_no_instructions)} agents missing instructions (warnings)"
+        )
     print("=" * 80)
 
 

@@ -10,11 +10,11 @@ Changes:
 4. Remove references to instruction_schemas
 """
 
-import os
 import re
 from pathlib import Path
 
 SQL_DIR = Path("/Users/ashoksaravanan/Coding/glow/server/app/sql/v4")
+
 
 def fix_join_message_calls(content: str) -> str:
     """
@@ -24,51 +24,51 @@ def fix_join_message_calls(content: str) -> str:
     # FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id
     # -> FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id
     content = re.sub(
-        r'(FROM|JOIN) calls c JOIN message_calls mc ON mc\.call_id = c\.id JOIN message_runs mr ON mr\.message_id = mc\.message_id',
-        r'\1 calls c JOIN message_runs mr ON mr.message_id = c.message_id',
-        content
+        r"(FROM|JOIN) calls c JOIN message_calls mc ON mc\.call_id = c\.id JOIN message_runs mr ON mr\.message_id = mc\.message_id",
+        r"\1 calls c JOIN message_runs mr ON mr.message_id = c.message_id",
+        content,
     )
 
     # Pattern 1b: Similar but with departments_resource
     content = re.sub(
-        r'FROM departments_resource d JOIN calls c ON c\.id = d\.call_id JOIN message_calls mc ON mc\.call_id = c\.id JOIN message_runs mr ON mr\.message_id = mc\.message_id',
-        r'FROM departments_resource d JOIN calls c ON c.id = d.call_id JOIN message_runs mr ON mr.message_id = c.message_id',
-        content
+        r"FROM departments_resource d JOIN calls c ON c\.id = d\.call_id JOIN message_calls mc ON mc\.call_id = c\.id JOIN message_runs mr ON mr\.message_id = mc\.message_id",
+        r"FROM departments_resource d JOIN calls c ON c.id = d.call_id JOIN message_runs mr ON mr.message_id = c.message_id",
+        content,
     )
 
     # Pattern 2: JOIN message_calls mc ON mc.call_id = c.id (standalone on its own line)
     # Only match when followed by a line that uses mc.message_id
     content = re.sub(
-        r'\n(\s*)JOIN message_calls mc ON mc\.call_id = c\.id\s*\n(\s*)(.+)mr\.message_id = mc\.message_id',
-        r'\n\2\3mr.message_id = c.message_id',
-        content
+        r"\n(\s*)JOIN message_calls mc ON mc\.call_id = c\.id\s*\n(\s*)(.+)mr\.message_id = mc\.message_id",
+        r"\n\2\3mr.message_id = c.message_id",
+        content,
     )
 
     # Pattern 2b: Same but for c2 alias
     content = re.sub(
-        r'\n(\s*)JOIN message_calls mc ON mc\.call_id = c2\.id\s*\n(\s*)(.+)mr\.message_id = mc\.message_id',
-        r'\n\2\3mr.message_id = c2.message_id',
-        content
+        r"\n(\s*)JOIN message_calls mc ON mc\.call_id = c2\.id\s*\n(\s*)(.+)mr\.message_id = mc\.message_id",
+        r"\n\2\3mr.message_id = c2.message_id",
+        content,
     )
 
     # Pattern 3: JOIN message_calls mcc ON mcc.message_id = X JOIN calls tc ON tc.id = mcc.call_id
     # -> JOIN calls tc ON tc.message_id = X
     content = re.sub(
-        r'JOIN message_calls mcc ON mcc\.message_id = (\S+)\s*\n\s*JOIN calls tc ON tc\.id = mcc\.call_id',
-        r'JOIN calls tc ON tc.message_id = \1',
-        content
+        r"JOIN message_calls mcc ON mcc\.message_id = (\S+)\s*\n\s*JOIN calls tc ON tc\.id = mcc\.call_id",
+        r"JOIN calls tc ON tc.message_id = \1",
+        content,
     )
     content = re.sub(
-        r'JOIN message_calls mcc2 ON mcc2\.message_id = (\S+)\s*\n\s*JOIN calls tc ON tc\.id = mcc2\.call_id',
-        r'JOIN calls tc ON tc.message_id = \1',
-        content
+        r"JOIN message_calls mcc2 ON mcc2\.message_id = (\S+)\s*\n\s*JOIN calls tc ON tc\.id = mcc2\.call_id",
+        r"JOIN calls tc ON tc.message_id = \1",
+        content,
     )
 
     # Pattern 4: Multiline JOIN message_calls patterns
     content = re.sub(
-        r'JOIN message_calls mcc ON mcc\.message_id = (\S+)(\s+)JOIN calls tc ON tc\.id = mcc\.call_id',
-        r'JOIN calls tc ON tc.message_id = \1',
-        content
+        r"JOIN message_calls mcc ON mcc\.message_id = (\S+)(\s+)JOIN calls tc ON tc\.id = mcc\.call_id",
+        r"JOIN calls tc ON tc.message_id = \1",
+        content,
     )
 
     return content
@@ -90,7 +90,9 @@ def fix_insert_message_calls(content: str) -> str:
     def replace_insert(match):
         message_id_var = match.group(1)
         call_id_var = match.group(2)
-        return f"UPDATE calls SET message_id = {message_id_var} WHERE id = {call_id_var};"
+        return (
+            f"UPDATE calls SET message_id = {message_id_var} WHERE id = {call_id_var};"
+        )
 
     content = re.sub(pattern, replace_insert, content, flags=re.IGNORECASE)
 
@@ -117,31 +119,31 @@ def fix_join_message_audios(content: str) -> str:
     LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id
     """
     # Check if message_audios is referenced
-    if 'message_audios' not in content:
+    if "message_audios" not in content:
         return content
 
     # Replace the JOIN pattern
     content = re.sub(
-        r'LEFT JOIN message_audios ma ON ma\.message_id = m\.id',
-        'LEFT JOIN calls c_audio ON c_audio.message_id = m.id',
-        content
+        r"LEFT JOIN message_audios ma ON ma\.message_id = m\.id",
+        "LEFT JOIN calls c_audio ON c_audio.message_id = m.id",
+        content,
     )
     content = re.sub(
-        r'JOIN message_audios ma ON ma\.message_id = mr\.message_id',
-        'JOIN calls c_audio ON c_audio.message_id = mr.message_id',
-        content
+        r"JOIN message_audios ma ON ma\.message_id = mr\.message_id",
+        "JOIN calls c_audio ON c_audio.message_id = mr.message_id",
+        content,
     )
 
     # Fix the audios_resource join
     content = re.sub(
-        r'(LEFT )?JOIN audios_resource ar ON ar\.id = ma\.audio_id',
-        r'\1JOIN audios_resource ar ON ar.call_id = c_audio.id',
-        content
+        r"(LEFT )?JOIN audios_resource ar ON ar\.id = ma\.audio_id",
+        r"\1JOIN audios_resource ar ON ar.call_id = c_audio.id",
+        content,
     )
 
     # Replace any remaining ma. references
-    content = content.replace('ma.audio_id', 'ar.id')
-    content = content.replace('ma.message_id', 'c_audio.message_id')
+    content = content.replace("ma.audio_id", "ar.id")
+    content = content.replace("ma.message_id", "c_audio.message_id")
 
     return content
 
@@ -155,7 +157,12 @@ def fix_insert_message_audios(content: str) -> str:
     """
     # Remove INSERT INTO message_audios statements
     pattern = r"INSERT INTO message_audios\s*\([^)]+\)\s*\n?\s*(?:SELECT[^;]+|VALUES[^;]+)(?:ON CONFLICT[^;]+)?;"
-    content = re.sub(pattern, "-- message_audios INSERT removed - audios linked via calls.message_id", content, flags=re.IGNORECASE | re.DOTALL)
+    content = re.sub(
+        pattern,
+        "-- message_audios INSERT removed - audios linked via calls.message_id",
+        content,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
 
     return content
 
@@ -164,19 +171,15 @@ def fix_instruction_schemas(content: str) -> str:
     """
     Remove references to instruction_schemas table.
     """
-    if 'instruction_schemas' not in content:
+    if "instruction_schemas" not in content:
         return content
 
     # Remove JOIN instruction_schemas lines
-    content = re.sub(
-        r'\s*LEFT JOIN instruction_schemas[^\n]+\n',
-        '\n',
-        content
-    )
+    content = re.sub(r"\s*LEFT JOIN instruction_schemas[^\n]+\n", "\n", content)
 
     # Remove references to ins. columns (likely ins.schema_id)
-    content = re.sub(r'ins\.schema_id', 'NULL::uuid', content)
-    content = re.sub(r'ins\.instruction_id', 'NULL::uuid', content)
+    content = re.sub(r"ins\.schema_id", "NULL::uuid", content)
+    content = re.sub(r"ins\.instruction_id", "NULL::uuid", content)
 
     return content
 
@@ -185,33 +188,33 @@ def process_file(filepath: Path) -> tuple[bool, list[str]]:
     """Process a single SQL file and return (changed, changes_made)."""
     changes = []
 
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         original = f.read()
 
     content = original
 
     # Apply fixes
-    if 'message_calls' in content:
+    if "message_calls" in content:
         content = fix_join_message_calls(content)
         content = fix_insert_message_calls(content)
         if content != original:
-            changes.append('message_calls')
+            changes.append("message_calls")
 
-    if 'message_audios' in content:
+    if "message_audios" in content:
         before = content
         content = fix_join_message_audios(content)
         content = fix_insert_message_audios(content)
         if content != before:
-            changes.append('message_audios')
+            changes.append("message_audios")
 
-    if 'instruction_schemas' in content:
+    if "instruction_schemas" in content:
         before = content
         content = fix_instruction_schemas(content)
         if content != before:
-            changes.append('instruction_schemas')
+            changes.append("instruction_schemas")
 
     if content != original:
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write(content)
         return True, changes
 
@@ -236,9 +239,11 @@ def main():
     print(f"Total files modified: {len(changed_files)}")
 
     # Summary by change type
-    mc_count = sum(1 for _, changes in changed_files if 'message_calls' in changes)
-    ma_count = sum(1 for _, changes in changed_files if 'message_audios' in changes)
-    is_count = sum(1 for _, changes in changed_files if 'instruction_schemas' in changes)
+    mc_count = sum(1 for _, changes in changed_files if "message_calls" in changes)
+    ma_count = sum(1 for _, changes in changed_files if "message_audios" in changes)
+    is_count = sum(
+        1 for _, changes in changed_files if "instruction_schemas" in changes
+    )
 
     print(f"  - message_calls fixes: {mc_count}")
     print(f"  - message_audios fixes: {ma_count}")

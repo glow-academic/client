@@ -3,7 +3,6 @@ Tests for app.utils.debug_info
 """
 
 import uuid
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -31,7 +30,10 @@ class TestDebug_Info:
 
         # Mock execute_sql_typed and asyncio.create_task
         with (
-            patch("app.infra.v4.debug.debug_info.execute_sql_typed", new_callable=AsyncMock) as mock_execute,
+            patch(
+                "app.infra.v4.debug.debug_info.execute_sql_typed",
+                new_callable=AsyncMock,
+            ) as mock_execute,
             patch("asyncio.create_task") as mock_create_task,
         ):
             result = await debug_info(mock_ctx, "Test debug message")
@@ -60,7 +62,8 @@ class TestDebug_Info:
         # Mock execute_sql_typed to raise an exception
         with (
             patch(
-                "app.infra.v4.debug.debug_info.execute_sql_typed", side_effect=Exception("SQL error")
+                "app.infra.v4.debug.debug_info.execute_sql_typed",
+                side_effect=Exception("SQL error"),
             ),
             patch("builtins.print"),
         ):  # Suppress print output

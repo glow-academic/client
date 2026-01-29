@@ -3,12 +3,13 @@
 import uuid
 from typing import Any, cast
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.sql.types import GetTestByIdV4SqlParams, GetTestByIdV4SqlRow
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -96,11 +97,15 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                     params=test_params,
                 ),
             )
-            test_row = {
-                "id": test_result.id,
-                "title": test_result.title,
-                "completed": test_result.completed,
-            } if test_result else None
+            test_row = (
+                {
+                    "id": test_result.id,
+                    "title": test_result.title,
+                    "completed": test_result.completed,
+                }
+                if test_result
+                else None
+            )
             if not test_row:
                 await benchmark_advance_error(
                     BenchmarkAdvanceErrorPayload(

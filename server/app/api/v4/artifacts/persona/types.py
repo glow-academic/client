@@ -1,6 +1,5 @@
 """Handcrafted types for persona GET endpoint."""
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -156,7 +155,6 @@ class GetPersonaApiResponse(BaseModel):
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     parameters_step_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
 
 
 # ========== List Endpoint Types ==========
@@ -224,7 +222,6 @@ class ListPersonaApiResponse(BaseModel):
     fields: list[ListPersonaApiField] | None = None
     departments: list[ListPersonaApiDepartment] | None = None
     total_count: int | None = None
-    general_agent_id: UUID | None = None
 
 
 # ========== Save Endpoint Types ==========

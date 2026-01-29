@@ -4,9 +4,8 @@ Tests for app.utils.agents.tools.create_objectives_function
 
 import uuid
 
-from app.utils.agents.tools.create_objectives_function import create_objectives_function
-
 from app.main import scenario_progress, scenario_results
+from app.utils.agents.tools.create_objectives_function import create_objectives_function
 
 
 class TestCreate_Objectives_Function:

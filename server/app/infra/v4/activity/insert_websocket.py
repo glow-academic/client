@@ -3,17 +3,15 @@
 from typing import cast
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.profile_exists import profile_exists
 from app.sql.types import (
     InfrastructureActivityInsertWebsocketSqlParams,
     InfrastructureActivityInsertWebsocketSqlRow,
 )
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/infrastructure/infrastructure_activity_insert_websocket_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_activity_insert_websocket_complete.sql"
 
 
 async def insert_activity_websocket(

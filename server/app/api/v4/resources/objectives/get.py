@@ -129,7 +129,10 @@ async def get_objectives_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [QGetObjectivesV4Item.model_validate(item) for item in cached.get("items", [])]
+            return [
+                QGetObjectivesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
     params = GetObjectivesSqlParams(p_ids=ids)
     result = cast(

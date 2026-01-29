@@ -4,7 +4,6 @@ from fastapi import APIRouter
 
 # Import new handlers to register them
 from . import complete, generate, progress  # noqa: F401
-
 from .advance import (
     client_router as advance_client_router,
 )
@@ -35,6 +34,12 @@ from .leave import (
 from .leave import (
     server_router as leave_server_router,
 )
+from .member_progress import (
+    client_router as member_progress_client_router,
+)
+from .member_progress import (
+    server_router as member_progress_server_router,
+)
 from .next import (
     client_router as next_client_router,
 )
@@ -52,12 +57,6 @@ from .stop import (
 )
 from .stop import (
     server_router as stop_server_router,
-)
-from .member_progress import (
-    client_router as member_progress_client_router,
-)
-from .member_progress import (
-    server_router as member_progress_server_router,
 )
 
 client_router = APIRouter(prefix="/practice", tags=["socket-client"])

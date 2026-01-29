@@ -1,11 +1,12 @@
 """Build tool functions dynamically from database tool configs."""
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from app.infra.v4.tools.build_pydantic_fields import \
-    build_function_signature_string
 from pydantic import Field
 from utils.logging.db_logger import get_logger
+
+from app.infra.v4.tools.build_pydantic_fields import build_function_signature_string
 
 logger = get_logger(__name__)
 

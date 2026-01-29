@@ -3,7 +3,9 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v4.activity.audit import audit_activity, audit_set
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -15,7 +17,6 @@ from app.sql.types import (
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 SQL_PATH = "app/sql/v4/queries/profile/patch_profile_draft_complete.sql"
 
@@ -66,9 +67,7 @@ async def patch_profile_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchProfileDraftApiResponse.model_validate(
-            result.model_dump()
-        )
+        api_response = PatchProfileDraftApiResponse.model_validate(result.model_dump())
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

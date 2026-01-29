@@ -6,7 +6,6 @@ department membership, and cohort usage.
 
 from uuid import UUID
 
-
 # =============================================================================
 # Core Permission Functions
 # =============================================================================

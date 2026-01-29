@@ -1,12 +1,13 @@
 """Provider v4 router."""
 
+from fastapi import APIRouter
+
 from app.api.v4.artifacts.provider.delete import router as delete_router
 from app.api.v4.artifacts.provider.draft import router as draft_router
 from app.api.v4.artifacts.provider.duplicate import router as duplicate_router
 from app.api.v4.artifacts.provider.get import router as get_router
 from app.api.v4.artifacts.provider.list import router as list_router
 from app.api.v4.artifacts.provider.save import router as save_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 

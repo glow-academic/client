@@ -5,12 +5,18 @@ Unified endpoint that handles both new (eval_id = NULL) and detail (eval_id prov
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetEvalApiRequest, GetEvalApiResponse,
-                           GetEvalSqlParams, GetEvalSqlRow, load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (
+    GetEvalApiRequest,
+    GetEvalApiResponse,
+    GetEvalSqlParams,
+    GetEvalSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -40,7 +46,7 @@ async def get_eval(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetEvalApiResponse:
     """Get eval information - handles both new (eval_id = NULL) and detail (eval_id provided).
-    
+
     Validation Logic:
     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
@@ -135,9 +141,7 @@ async def get_eval(
         else:
             # Detail mode: check if eval exists and has access
             if result.eval_exists is False:
-                raise HTTPException(
-                    status_code=404, detail=f"Eval {eval_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Eval {eval_id} not found")
 
             if not result.name_resource or not result.name_resource.name:
                 # Eval exists but user doesn't have access

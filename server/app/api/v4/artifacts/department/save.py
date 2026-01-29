@@ -6,8 +6,6 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -19,6 +17,8 @@ from app.sql.types import (
     SaveDepartmentSqlRow,
     load_sql_query,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/departments/save_department_complete.sql"
@@ -79,7 +79,9 @@ async def save_department(
 
             if not result or not result.department_id:
                 if request.input_department_id:
-                    raise ValueError(f"Department not found: {request.input_department_id}")
+                    raise ValueError(
+                        f"Department not found: {request.input_department_id}"
+                    )
                 else:
                     raise ValueError("Failed to create department")
 

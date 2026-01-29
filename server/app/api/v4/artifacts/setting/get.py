@@ -5,13 +5,18 @@ Unified endpoint that handles both new (settings_id = NULL) and detail (settings
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetSettingApiRequest, GetSettingApiResponse,
-                           GetSettingSqlParams, GetSettingSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (
+    GetSettingApiRequest,
+    GetSettingApiResponse,
+    GetSettingSqlParams,
+    GetSettingSqlRow,
+    load_sql_query,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -41,7 +46,7 @@ async def get_setting(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSettingApiResponse:
     """Get setting information - handles both new (settings_id = NULL) and detail (settings_id provided).
-    
+
     Validation Logic:
     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
