@@ -206,6 +206,7 @@ class GetScenarioApiRequest(BaseModel):
     template_search: str | None = None
     image_search: str | None = None
     video_search: str | None = None
+    question_search: str | None = None
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
@@ -706,6 +707,7 @@ class GetScenarioSqlParams(BaseModel):
     template_search: str | None = None
     image_search: str | None = None
     video_search: str | None = None
+    question_search: str | None = None
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
@@ -740,6 +742,7 @@ class GetScenarioSqlParams(BaseModel):
             self.template_search,
             self.image_search,
             self.video_search,
+            self.question_search,
             self.persona_show_selected,
             self.document_show_selected,
             self.parameter_show_selected,

@@ -1,0 +1,57 @@
+-- Search videos resources with optional context
+-- Parameters: search (text), limit_count (int), offset_count (int), exclude_ids (uuid[])
+-- Returns: items (array of video resources)
+
+-- Drop function if exists (handles signature variations)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_search_videos_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_search_videos_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_search_videos_v4(
+    search text DEFAULT NULL,
+    limit_count int DEFAULT 20,
+    offset_count int DEFAULT 0,
+    exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
+)
+RETURNS TABLE (
+    items types.q_get_videos_v4_item[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            v.id,
+            v.name,
+            v.length_seconds,
+            COALESCE(v.completed, false),
+            COALESCE(u.file_path, ''),
+            COALESCE(u.mime_type, ''),
+            COALESCE(vuc.upload_id, v.id),
+            COALESCE(v.generated, false)
+        )::types.q_get_videos_v4_item
+        ORDER BY v.name
+    ),
+    ARRAY[]::types.q_get_videos_v4_item[]
+) as items
+FROM videos_resource v
+LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
+LEFT JOIN view_uploads_entry u ON u.id = vuc.upload_id
+WHERE v.active = true
+  AND (exclude_ids IS NULL OR NOT (v.id = ANY(exclude_ids)))
+  AND (search IS NULL OR search = '' OR LOWER(v.name) LIKE '%' || LOWER(search) || '%')
+LIMIT limit_count
+OFFSET offset_count;
+$$;

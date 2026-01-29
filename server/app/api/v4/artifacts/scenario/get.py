@@ -63,6 +63,7 @@ from app.api.v4.resources.documents.search import search_documents_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.images.get import get_images_internal
+from app.api.v4.resources.images.search import search_images_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.objectives.get import get_objectives_internal
@@ -78,9 +79,15 @@ from app.api.v4.resources.parameters.search import (
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.personas.search import search_personas_internal
 from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
+from app.api.v4.resources.problem_statements.search import (
+    search_problem_statements_internal,
+)
 from app.api.v4.resources.questions.get import get_questions_internal
+from app.api.v4.resources.questions.search import search_questions_internal
 from app.api.v4.resources.templates.get import get_templates_internal
+from app.api.v4.resources.templates.search import search_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
+from app.api.v4.resources.videos.search import search_videos_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -661,8 +668,15 @@ async def get_scenario(
                 selected = await get_problem_statements_internal(
                     c, problem_statement_ids, bypass_cache
                 )
-                # No search endpoint for problem_statements - return empty suggestions
-                return (selected, [])
+                suggestions = await search_problem_statements_internal(
+                    c,
+                    request.problem_statement_search,
+                    20,
+                    0,
+                    problem_statement_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_all_scenario_flags():
             """Fetch ALL available scenario flags, not just selected ones."""
@@ -786,26 +800,54 @@ async def get_scenario(
         async def fetch_images():
             async with pool.acquire() as c:
                 selected = await get_images_internal(c, image_ids, bypass_cache)
-                # No search endpoint for images - return empty suggestions
-                return (selected, [])
+                suggestions = await search_images_internal(
+                    c,
+                    request.image_search,
+                    20,
+                    0,
+                    image_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_videos():
             async with pool.acquire() as c:
                 selected = await get_videos_internal(c, video_ids, bypass_cache)
-                # No search endpoint for videos - return empty suggestions
-                return (selected, [])
+                suggestions = await search_videos_internal(
+                    c,
+                    request.video_search,
+                    20,
+                    0,
+                    video_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_questions():
             async with pool.acquire() as c:
                 selected = await get_questions_internal(c, question_ids, bypass_cache)
-                # No search endpoint for questions - return empty suggestions
-                return (selected, [])
+                suggestions = await search_questions_internal(
+                    c,
+                    request.question_search,
+                    20,
+                    0,
+                    question_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         async def fetch_templates():
             async with pool.acquire() as c:
                 selected = await get_templates_internal(c, template_ids, bypass_cache)
-                # No search endpoint for templates - return empty suggestions
-                return (selected, [])
+                suggestions = await search_templates_internal(
+                    c,
+                    request.template_search,
+                    20,
+                    0,
+                    template_ids,
+                    bypass_cache,
+                )
+                return (selected, suggestions)
 
         # === TWO-PHASE FETCH ===
         # Phase 1a: Fetch scenario parameters FIRST to get all scenario parameter IDs
@@ -842,17 +884,17 @@ async def get_scenario(
         (
             (names_selected, names_suggestions),
             (descriptions_selected, descriptions_suggestions),
-            (problem_statements_selected, _),
+            (problem_statements_selected, problem_statements_suggestions),
             (flags_selected, flags_suggestions),
             (departments_selected, departments_suggestions),
             (personas_selected, personas_suggestions),
             (documents_selected, documents_suggestions),
             (parameter_fields_selected, parameter_fields_suggestions),
             (objectives_selected, _),
-            (images_selected, _),
-            (videos_selected, _),
-            (questions_selected, _),
-            (templates_selected, _),
+            (images_selected, images_suggestions),
+            (videos_selected, videos_suggestions),
+            (questions_selected, questions_suggestions),
+            (templates_selected, templates_suggestions),
         ) = await asyncio.gather(
             fetch_names(),
             fetch_descriptions(),
@@ -876,7 +918,10 @@ async def get_scenario(
         descriptions = _dedupe_by_id(
             descriptions_selected + descriptions_suggestions, "id"
         )
-        problem_statements = problem_statements_selected  # No suggestions
+        problem_statements = _dedupe_by_id(
+            problem_statements_selected + problem_statements_suggestions,
+            "problem_statement_id",
+        )
         all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
         departments = _dedupe_by_id(
             departments_selected + departments_suggestions, "department_id"
@@ -896,10 +941,14 @@ async def get_scenario(
             parameter_fields_selected + parameter_fields_suggestions, "field_id"
         )
         objectives = objectives_selected  # No suggestions
-        images = images_selected  # No suggestions
-        videos = videos_selected  # No suggestions
-        questions = questions_selected  # No suggestions
-        templates = templates_selected  # No suggestions
+        images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
+        videos = _dedupe_by_id(videos_selected + videos_suggestions, "video_id")
+        questions = _dedupe_by_id(
+            questions_selected + questions_suggestions, "question_id"
+        )
+        templates = _dedupe_by_id(
+            templates_selected + templates_suggestions, "template_id"
+        )
 
         # Find selected resources
         name_resource = next((n for n in names if n.id == ids_result.name_id), None)
@@ -955,6 +1004,13 @@ async def get_scenario(
         persona_suggestions_ids = [p.persona_id for p in personas_suggestions]
         document_suggestions_ids = [d.document_id for d in documents_suggestions]
         parameter_suggestions_ids = [p.parameter_id for p in parameters_suggestions]
+        problem_statement_suggestions_ids = [
+            ps.problem_statement_id for ps in problem_statements_suggestions
+        ]
+        image_suggestions_ids = [i.image_id for i in images_suggestions]
+        video_suggestions_ids = [v.video_id for v in videos_suggestions]
+        question_suggestions_ids = [q.question_id for q in questions_suggestions]
+        template_suggestions_ids = [t.template_id for t in templates_suggestions]
 
         # Compute final show flags based on actual data
         show_name = compute_show_name()
@@ -1051,7 +1107,7 @@ async def get_scenario(
             show_problem_statement=show_problem_statement,
             problem_statement_agent_id=problem_statement_agent_id,
             problem_statement_required=compute_problem_statement_required(),
-            problem_statement_suggestions=[],
+            problem_statement_suggestions=problem_statement_suggestions_ids,
             problem_statements=[_to_dict(ps) for ps in problem_statements],
             # Active flag
             active_flag_id=ids_result.active_flag_id,
@@ -1143,7 +1199,7 @@ async def get_scenario(
             show_images=show_images,
             images_agent_id=images_agent_id,
             images_required=compute_images_required(),
-            image_suggestions=[],
+            image_suggestions=image_suggestions_ids,
             images=[_to_dict(i) for i in images],
             # Videos
             video_ids=video_ids,
@@ -1151,7 +1207,7 @@ async def get_scenario(
             show_videos=show_videos,
             videos_agent_id=videos_agent_id,
             videos_required=compute_videos_required(),
-            video_suggestions=[],
+            video_suggestions=video_suggestions_ids,
             videos=[_to_dict(v) for v in videos],
             # Questions
             question_ids=question_ids,
@@ -1159,7 +1215,7 @@ async def get_scenario(
             show_questions=show_questions,
             questions_agent_id=questions_agent_id,
             questions_required=compute_questions_required(),
-            question_suggestions=[],
+            question_suggestions=question_suggestions_ids,
             questions=[_to_dict(q) for q in questions],
             # Templates
             template_ids=template_ids,
@@ -1167,7 +1223,7 @@ async def get_scenario(
             show_templates=show_templates,
             templates_agent_id=templates_agent_id,
             templates_required=compute_templates_required(),
-            template_suggestions=[],
+            template_suggestions=template_suggestions_ids,
             templates=[_to_dict(t) for t in templates],
             # Personas
             persona_ids=persona_ids,

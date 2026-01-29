@@ -623,12 +623,17 @@ def write_consolidated_types_file(
                 all_imports.add(line)
             elif line.startswith("from uuid import"):
                 all_imports.add(line)
+            elif line.startswith("from datetime import"):
+                all_imports.add(line)
             elif line.startswith("from pydantic import"):
                 # Merge pydantic imports
                 if "Field" in line:
                     all_imports.add("from pydantic import Field")
 
     # Sort imports
+    datetime_imports = sorted(
+        [imp for imp in all_imports if imp.startswith("from datetime")]
+    )
     typing_imports = sorted(
         [imp for imp in all_imports if imp.startswith("from typing")]
     )
@@ -646,6 +651,9 @@ def write_consolidated_types_file(
     ]
 
     # Add imports
+    if datetime_imports:
+        for imp in datetime_imports:
+            lines.append(imp)
     for imp in typing_imports:
         lines.append(imp)
     if uuid_imports:

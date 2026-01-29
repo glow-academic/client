@@ -91,12 +91,11 @@ BEGIN
     -- Create call record
     v_call_id := uuidv7();
     INSERT INTO calls_entry (
-        id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at
+        id, external_call_id, template_id, arguments_raw, completed, created_at, updated_at
     )
     VALUES (
         v_call_id,
         'templates_' || v_call_id::text,
-        v_tool_id,
         v_template_id_from_tool,
         v_arguments_raw,
         true,

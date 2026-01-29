@@ -311,9 +311,9 @@ def _pg_type_to_python_type(pg_type: str, generated_types: dict[str, str]) -> st
         "char": "str",
         "boolean": "bool",
         "bool": "bool",
-        "timestamptz": "str",  # ISO string
-        "timestamp with time zone": "str",
-        "timestamp": "str",
+        "timestamptz": "datetime",
+        "timestamp with time zone": "datetime",
+        "timestamp": "datetime",
         "date": "str",
         "time": "str",
         "integer": "int",

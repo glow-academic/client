@@ -10208,6 +10208,8 @@ export interface components {
             image_search?: string | null;
             /** Video Search */
             video_search?: string | null;
+            /** Question Search */
+            question_search?: string | null;
             /** Persona Show Selected */
             persona_show_selected?: boolean | null;
             /** Document Show Selected */
