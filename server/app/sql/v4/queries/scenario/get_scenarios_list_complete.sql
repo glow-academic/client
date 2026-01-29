@@ -119,6 +119,7 @@ CREATE OR REPLACE FUNCTION api_list_scenarios_v4(
 )
 RETURNS TABLE (
     actor_name text,
+    user_role text,
     scenarios types.q_list_scenarios_v4_scenario[],
     objectives types.q_list_scenarios_v4_objective[],
     fields types.q_list_scenarios_v4_field[],
@@ -380,6 +381,7 @@ general_agent_for_user AS (
 )
 SELECT
     up.actor_name::text as actor_name,
+    up.role::text as user_role,
     COALESCE(
         ARRAY_AGG(
             (sd.scenario_id, sd.title, sd.problem_statement, sd.active, sd.generated,
@@ -484,5 +486,5 @@ SELECT
     (SELECT agent_id FROM general_agent_for_user) as general_agent_id
 FROM page_scenarios sd
 CROSS JOIN user_profile up
-GROUP BY up.actor_name
+GROUP BY up.actor_name, up.role
 $$;

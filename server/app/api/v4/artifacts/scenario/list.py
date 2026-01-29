@@ -96,11 +96,12 @@ async def get_scenario_list(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Compute permissions in Python for each scenario
-        user_role = getattr(result, "user_role", None)
+        user_role = result.user_role
         scenarios_with_permissions = []
         for scenario in result.scenarios or []:
             scenario_dict = scenario.model_dump() if hasattr(scenario, "model_dump") else dict(scenario)
-            usage_count = scenario_dict.get("usage_count") or 0
+            # num_simulations = count of simulations using this scenario
+            usage_count = scenario_dict.get("num_simulations") or 0
             department_ids_raw = scenario_dict.get("department_ids") or []
             department_ids = [UUID(d) if isinstance(d, str) else d for d in department_ids_raw]
             scenario_dict["can_edit"] = compute_can_edit(user_role, department_ids, usage_count)

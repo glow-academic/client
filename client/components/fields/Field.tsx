@@ -652,9 +652,6 @@ function FieldComponent({
     return () => clearEntityMetadata();
   }, [fieldData, fieldId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
-  // Set generation capability when field data is loaded
-  // Check if any agent_id exists for generation capability
-  useEffect(() => {
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({

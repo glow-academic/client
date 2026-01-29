@@ -20014,6 +20014,7 @@ class QListScenariosV4Simulation(BaseModel):
 class GetScenariosListSqlRow(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     scenarios: list[QListScenariosV4Scenario] | None = None
     objectives: list[QListScenariosV4Objective] | None = None
     fields: list[QListScenariosV4Field] | None = None
@@ -20042,6 +20043,7 @@ class GetScenariosListApiRequest(BaseModel):
 class GetScenariosListApiResponse(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     scenarios: list[QListScenariosV4Scenario] | None = None
     objectives: list[QListScenariosV4Objective] | None = None
     fields: list[QListScenariosV4Field] | None = None

@@ -281,6 +281,37 @@ function ScenarioComponent({
     [generatingResources]
   );
 
+  // Type for flush results - each resource returns its created ID(s)
+  type FlushResult = {
+    name_id?: string | null;
+    description_id?: string | null;
+    problem_statement_id?: string | null;
+    parameter_field_ids?: string[];
+  };
+
+  // Registry of flush callbacks from creatable resource components
+  const flushRegistryRef = useRef<
+    Map<string, () => Promise<FlushResult | void>>
+  >(new Map());
+
+  // Create stable registerFlush callback
+  const createRegisterFlush = useCallback((key: string) => {
+    return (flush: () => Promise<FlushResult | void>) => {
+      flushRegistryRef.current.set(key, flush);
+    };
+  }, []);
+
+  // Memoize registerFlush callbacks to prevent re-renders
+  const registerFlushCallbacks = useMemo(
+    () => ({
+      names: createRegisterFlush("names"),
+      descriptions: createRegisterFlush("descriptions"),
+      problem_statements: createRegisterFlush("problem_statements"),
+      parameter_fields: createRegisterFlush("parameter_fields"),
+    }),
+    [createRegisterFlush]
+  );
+
   // Set breadcrumb context when scenario data is loaded in edit mode
   useEffect(() => {
     const scenarioName = scenarioData?.name_resource?.name;
@@ -398,6 +429,24 @@ function ScenarioComponent({
   const [formState, setFormState] = useState<ScenarioFormState>(
     getInitialFormState
   );
+
+  // Autosave enabled state (default: true for autosave mode)
+  const [isAutosaveEnabled] = useState(true);
+
+  // Ref to store formState for stable access in callbacks
+  const formStateRef = useRef(formState);
+  useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  // Ref to track scenarioData for conditional parameter toggle
+  const scenarioDataRef = useRef(scenarioData);
+  useEffect(() => {
+    scenarioDataRef.current = scenarioData;
+  }, [scenarioData]);
+
+  // Track if a change came from server sync (to skip triggering autosave)
+  const serverSyncPendingRef = useRef(false);
 
   const departmentIdsStr = useMemo(
     () => JSON.stringify(formState.department_ids),
@@ -658,6 +707,13 @@ function ScenarioComponent({
       return;
     }
 
+    // If this change came from server sync, reset baseline instead of triggering save
+    if (serverSyncPendingRef.current) {
+      serverSyncPendingRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
+      return;
+    }
+
     // ✅ If nothing changed since the last successful patch, do nothing.
     if (lastPatchedKeyRef.current === draftPatchKey) {
       return;
@@ -665,6 +721,16 @@ function ScenarioComponent({
 
     // Mark that we have pending changes (for beforeunload warning)
     hasPendingChangesRef.current = true;
+
+    // Skip autosave if disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
+    // Immediately show "Saving draft..." when autosave is enabled
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
 
     const timer = setTimeout(async () => {
       try {
@@ -734,6 +800,14 @@ function ScenarioComponent({
 
         // Clear pending changes flag after successful save
         hasPendingChangesRef.current = false;
+
+        // Notify save context that save completed and changes are saved
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", { detail: { status: "idle" } })
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+        );
       } catch (error) {
         // Log error for debugging
         console.error("[Scenario Draft] Patch failed:", error);
@@ -741,6 +815,10 @@ function ScenarioComponent({
         toast.error("Failed to save draft", {
           description: "Your changes may not have been saved. Please try again.",
         });
+        // Notify save context of error, then reset to idle
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", { detail: { status: "error" } })
+        );
         // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
     }, 1000);
@@ -751,6 +829,7 @@ function ScenarioComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     draftPatchKey, // ✅ trigger only when payload changes
+    isAutosaveEnabled, // ✅ re-check when autosave mode changes
     // patchScenarioDraftAction is accessed via ref
   ]);
 
@@ -765,6 +844,157 @@ function ScenarioComponent({
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
+
+  // Emit unsaved-changes event when draftPatchKey changes
+  useEffect(() => {
+    // During server sync, report no changes (baseline will be reset by autosave effect)
+    if (serverSyncPendingRef.current) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+      return;
+    }
+    // Only report changes after we've established a baseline (ref is not null)
+    const hasChanges =
+      lastPatchedKeyRef.current !== null &&
+      lastPatchedKeyRef.current !== draftPatchKey;
+    window.dispatchEvent(
+      new CustomEvent("unsaved-changes", { detail: { hasChanges } })
+    );
+  }, [draftPatchKey]);
+
+  // Flush all resources without saving to draft - returns the created IDs
+  // Used by handleSubmit when autosave is off to get IDs before final save
+  const flushAllResources = useCallback(async (): Promise<FlushResult> => {
+    const flushPromises = Array.from(flushRegistryRef.current.values()).map(
+      (flush) => flush()
+    );
+    const flushResults = await Promise.all(flushPromises);
+
+    // Merge all flush results into a single object (filter out void results)
+    const mergedFlushResults = flushResults.reduce<FlushResult>(
+      (acc, result) => (result ? { ...acc, ...result } : acc),
+      {}
+    );
+
+    return mergedFlushResults;
+  }, []);
+
+  // Flush all resources and patch draft (for manual save via Save toolbar)
+  const flushAllAndSave = useCallback(async () => {
+    const startTime = Date.now();
+    const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
+
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
+
+    try {
+      // 1. Flush all creatable resource components and collect returned IDs
+      const flushPromises = Array.from(flushRegistryRef.current.values()).map(
+        (flush) => flush()
+      );
+      const flushResults = await Promise.all(flushPromises);
+
+      // 2. Merge all flush results into a single object (filter out void results)
+      const mergedFlushResults = flushResults.reduce<FlushResult>(
+        (acc, result) => (result ? { ...acc, ...result } : acc),
+        {}
+      );
+
+      // 3. Patch draft with all resource IDs - use flush results with fallback to current formState
+      let isNewDraft = false;
+      if (patchScenarioDraftActionRef.current) {
+        const currentFormState = formStateRef.current;
+        const result = await patchScenarioDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            // Use flush results (fresh) with fallback to formState (for non-flushed resources)
+            name_id:
+              mergedFlushResults.name_id !== undefined
+                ? mergedFlushResults.name_id
+                : currentFormState.name_id,
+            description_id:
+              mergedFlushResults.description_id !== undefined
+                ? mergedFlushResults.description_id
+                : currentFormState.description_id,
+            problem_statement_id:
+              mergedFlushResults.problem_statement_id !== undefined
+                ? mergedFlushResults.problem_statement_id
+                : currentFormState.problem_statement_id,
+            active_flag_id: currentFormState.active_flag_id,
+            objectives_enabled_flag_id: currentFormState.objectives_enabled_flag_id,
+            images_enabled_flag_id: currentFormState.images_enabled_flag_id,
+            video_enabled_flag_id: currentFormState.video_enabled_flag_id,
+            questions_enabled_flag_id: currentFormState.questions_enabled_flag_id,
+            problem_statement_enabled_flag_id: currentFormState.problem_statement_enabled_flag_id,
+            use_templates_flag_id: currentFormState.use_templates_flag_id,
+            department_ids: currentFormState.department_ids,
+            persona_ids: currentFormState.persona_ids,
+            document_ids: currentFormState.document_ids,
+            template_document_ids: currentFormState.template_ids,
+            parameter_ids: currentFormState.parameter_ids,
+            persona_field_ids: currentFormState.persona_field_ids,
+            document_field_ids: currentFormState.document_field_ids,
+            parameter_field_ids:
+              mergedFlushResults.parameter_field_ids !== undefined
+                ? mergedFlushResults.parameter_field_ids
+                : currentFormState.parameter_field_ids,
+            image_ids: currentFormState.image_ids,
+            objective_ids: currentFormState.objective_ids,
+            video_ids: currentFormState.video_ids,
+            question_ids: currentFormState.question_ids,
+            expected_version: lastSavedVersionRef.current,
+          },
+        });
+
+        // Update refs
+        lastPatchedKeyRef.current = draftPatchKey;
+        if (result.new_version !== undefined && result.new_version !== null) {
+          lastSavedVersionRef.current = result.new_version;
+          setLastSavedVersion(result.new_version);
+        }
+
+        // Update URL if draft was created
+        if (!draftId && result.draft_id) {
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+          isNewDraft = true;
+        }
+      }
+
+      // Ensure minimum display duration for manual save
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_SAVING_DURATION) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, MIN_SAVING_DURATION - elapsed)
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", { detail: { status: "idle" } })
+      );
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+
+      hasPendingChangesRef.current = false;
+
+      // Show success toast for manual save
+      toast.success(isNewDraft ? "Draft created" : "Draft saved");
+    } catch {
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", { detail: { status: "error" } })
+      );
+      toast.error("Failed to save draft");
+    }
+  }, [draftId, draftPatchKey]);
+
+  // Listen for save trigger from layout
+  useEffect(() => {
+    const handleTriggerSave = () => flushAllAndSave();
+    window.addEventListener("trigger-save", handleTriggerSave);
+    return () => window.removeEventListener("trigger-save", handleTriggerSave);
+  }, [flushAllAndSave]);
 
   const stableScenarioDataFields = useMemo(() => {
     if (!scenarioData) return null;
@@ -1584,10 +1814,77 @@ function ScenarioComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  // Handle toggling conditional parameters on/off when parameter fields are selected/deselected
+  // This supports transitive chains: when a field's conditional parameter is deselected,
+  // we also deselect any conditional parameters that were triggered by that parameter's fields
+  const handleConditionalParameterToggle = useCallback(
+    (conditionalParameterId: string, selected: boolean) => {
+      setFormState((prev) => {
+        if (selected) {
+          // Auto-add conditional parameter if not present
+          if (!prev.parameter_ids.includes(conditionalParameterId)) {
+            return {
+              ...prev,
+              parameter_ids: [...prev.parameter_ids, conditionalParameterId],
+            };
+          }
+        } else {
+          // Auto-remove conditional parameter and handle chain cleanup
+          // Build a set of parameters to remove (starts with the one being deselected)
+          const toRemove = new Set<string>([conditionalParameterId]);
+
+          // Get all available fields from scenarioData to find chain dependencies
+          const allFields = scenarioDataRef.current?.parameter_fields ?? [];
+
+          // Recursively find conditional params that should also be removed
+          // (parameters whose trigger fields belong to parameters being removed)
+          let changed = true;
+          while (changed) {
+            changed = false;
+            for (const field of allFields) {
+              // If this field belongs to a parameter we're removing
+              // and it has a conditional_parameter_id
+              if (
+                field.parameter_id &&
+                toRemove.has(field.parameter_id) &&
+                field.conditional_parameter_id &&
+                !toRemove.has(field.conditional_parameter_id)
+              ) {
+                toRemove.add(field.conditional_parameter_id);
+                changed = true;
+              }
+            }
+          }
+
+          // Also find fields that should be deselected (fields of removed parameters)
+          const fieldsToRemove = new Set<string>();
+          for (const field of allFields) {
+            if (
+              field.parameter_id &&
+              toRemove.has(field.parameter_id) &&
+              field.id
+            ) {
+              fieldsToRemove.add(field.id);
+            }
+          }
+
+          return {
+            ...prev,
+            parameter_ids: prev.parameter_ids.filter((id) => !toRemove.has(id)),
+            parameter_field_ids: prev.parameter_field_ids.filter(
+              (id) => !fieldsToRemove.has(id)
+            ),
+          };
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
   const stepResources: Record<string, ScenarioResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "scenario_flags", "departments"],
-      configuration: ["scenario_flags"],
       problem_statement: ["problem_statements"],
       objectives: ["objectives"],
       personas: ["personas", "persona_fields"],
@@ -1702,14 +1999,8 @@ function ScenarioComponent({
         id: "basic",
         title: "Basic Information",
         description:
-          "Set the scenario name, description, departments, and active status.",
+          "Set the scenario name, description, departments, and configuration options.",
         resetFields: ["name", "description", "departments", "descriptionSearch"],
-      },
-      {
-        id: "configuration",
-        title: "Configuration",
-        description: "Enable or disable scenario features.",
-        resetFields: ["configuration"],
       },
     ];
 
@@ -1834,8 +2125,6 @@ function ScenarioComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
-      case "configuration":
-        return "Configuration reset";
       case "problem_statement":
         return "Problem statement reset";
       case "objectives":
@@ -1869,10 +2158,6 @@ function ScenarioComponent({
             description_id: null,
             active_flag_id: null,
             department_ids: [],
-          };
-        case "configuration":
-          return {
-            ...prev,
             objectives_enabled_flag_id: null,
             images_enabled_flag_id: null,
             video_enabled_flag_id: null,
@@ -2046,6 +2331,36 @@ function ScenarioComponent({
         throw new Error("Scenario name is required");
       }
 
+      // When autosave is disabled, flush all resources first to create them
+      // This gets the IDs directly without saving to draft
+      let flushResults: FlushResult = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      // Get the current form state and merge with flush results
+      // Flush results take precedence (they're freshly created)
+      const baseFormState = formStateRef.current;
+      const effectiveFormState = {
+        ...baseFormState,
+        name_id:
+          flushResults.name_id !== undefined
+            ? flushResults.name_id
+            : baseFormState.name_id,
+        description_id:
+          flushResults.description_id !== undefined
+            ? flushResults.description_id
+            : baseFormState.description_id,
+        problem_statement_id:
+          flushResults.problem_statement_id !== undefined
+            ? flushResults.problem_statement_id
+            : baseFormState.problem_statement_id,
+        parameter_field_ids:
+          flushResults.parameter_field_ids !== undefined
+            ? flushResults.parameter_field_ids
+            : baseFormState.parameter_field_ids,
+      };
+
       try {
         await saveScenarioAction({
           body: {
@@ -2054,59 +2369,59 @@ function ScenarioComponent({
             input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
 
             // Required single-select
-            name_id: formState.name_id,
+            name_id: effectiveFormState.name_id!,
 
             // Optional single-select
-            description_id: formState.description_id ?? undefined,
-            problem_statement_id: formState.problem_statement_id ?? undefined,
-            active_flag_id: formState.active_flag_id ?? undefined,
+            description_id: effectiveFormState.description_id ?? undefined,
+            problem_statement_id: effectiveFormState.problem_statement_id ?? undefined,
+            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
             objectives_enabled_flag_id:
-              formState.objectives_enabled_flag_id ?? undefined,
+              effectiveFormState.objectives_enabled_flag_id ?? undefined,
             images_enabled_flag_id:
-              formState.images_enabled_flag_id ?? undefined,
+              effectiveFormState.images_enabled_flag_id ?? undefined,
             video_enabled_flag_id:
-              formState.video_enabled_flag_id ?? undefined,
+              effectiveFormState.video_enabled_flag_id ?? undefined,
             questions_enabled_flag_id:
-              formState.questions_enabled_flag_id ?? undefined,
+              effectiveFormState.questions_enabled_flag_id ?? undefined,
             problem_statement_enabled_flag_id:
-              formState.problem_statement_enabled_flag_id ?? undefined,
+              effectiveFormState.problem_statement_enabled_flag_id ?? undefined,
             use_templates_flag_id:
-              formState.use_templates_flag_id ?? undefined,
+              effectiveFormState.use_templates_flag_id ?? undefined,
 
             // Optional multi-select
             department_ids:
-              formState.department_ids.length > 0
-                ? formState.department_ids
+              effectiveFormState.department_ids.length > 0
+                ? effectiveFormState.department_ids
                 : undefined,
             persona_ids:
-              formState.persona_ids.length > 0
-                ? formState.persona_ids
+              effectiveFormState.persona_ids.length > 0
+                ? effectiveFormState.persona_ids
                 : undefined,
             document_ids:
-              formState.document_ids.length > 0
-                ? formState.document_ids
+              effectiveFormState.document_ids.length > 0
+                ? effectiveFormState.document_ids
                 : undefined,
             template_document_ids:
-              formState.template_document_ids.length > 0
-                ? formState.template_document_ids
+              effectiveFormState.template_ids.length > 0
+                ? effectiveFormState.template_ids
                 : undefined,
             parameter_ids:
-              formState.parameter_ids.length > 0
-                ? formState.parameter_ids
+              effectiveFormState.parameter_ids.length > 0
+                ? effectiveFormState.parameter_ids
                 : undefined,
-            field_ids:
-              formState.field_ids.length > 0 ? formState.field_ids : undefined,
+            parameter_field_ids:
+              effectiveFormState.parameter_field_ids.length > 0 ? effectiveFormState.parameter_field_ids : undefined,
             image_ids:
-              formState.image_ids.length > 0 ? formState.image_ids : undefined,
+              effectiveFormState.image_ids.length > 0 ? effectiveFormState.image_ids : undefined,
             objective_ids:
-              formState.objective_ids.length > 0
-                ? formState.objective_ids
+              effectiveFormState.objective_ids.length > 0
+                ? effectiveFormState.objective_ids
                 : undefined,
             video_ids:
-              formState.video_ids.length > 0 ? formState.video_ids : undefined,
+              effectiveFormState.video_ids.length > 0 ? effectiveFormState.video_ids : undefined,
             question_ids:
-              formState.question_ids.length > 0
-                ? formState.question_ids
+              effectiveFormState.question_ids.length > 0
+                ? effectiveFormState.question_ids
                 : undefined,
           },
         });
@@ -2142,6 +2457,8 @@ function ScenarioComponent({
       isEditMode,
       scenarioId,
       router,
+      isAutosaveEnabled,
+      flushAllResources,
     ]
   );
 
@@ -2157,9 +2474,6 @@ function ScenarioComponent({
           return hasName && hasDescription && hasDepartments
             ? "completed"
             : "active";
-        case "configuration":
-          if (!hasName || !hasDescription) return "pending";
-          return "active";
         case "problem_statement":
           if (!hasName || !hasDescription) return "pending";
           return hasProblemStatement ? "completed" : "active";
@@ -2379,278 +2693,147 @@ function ScenarioComponent({
                   isGenerating={isGenerating("departments")}
                 />
 
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <Flags
+                      flag_id={formState.active_flag_id ?? null}
+                      flag_resource={currentScenarioData?.active_flag_resource ?? null}
+                      show_flag={currentScenarioData?.show_active_flag ?? false}
+                      disabled={disabled}
+                      onFlagIdChange={(flagId) =>
+                        setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
+                      }
+                      label="Active"
+                      flagName="active"
+                      flagDescription="Inactive scenarios will not be available for selection."
+                      helpText={
+                        currentScenarioData?.active_flag_resource?.description ||
+                        "Inactive scenarios will not be available for selection."
+                      }
+                      iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
+                      group_id={currentScenarioData?.group_id ?? null}
+                      agent_id={currentScenarioData?.active_flag_agent_id ?? null}
+                      createFlagsAction={createScenarioFlagsAction}
+                      onGenerate={handleGenerateFlags}
+                      isGenerating={isGenerating("scenario_flags")}
+                      required={currentScenarioData?.active_flag_required ?? false}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Flags
+                      flag_id={formState.video_enabled_flag_id ?? null}
+                      flag_resource={currentScenarioData?.video_enabled_flag_resource ?? null}
+                      show_flag={currentScenarioData?.show_video_enabled_flag ?? false}
+                      disabled={disabled}
+                      onFlagIdChange={(flagId) =>
+                        setFormState((prev) => ({ ...prev, video_enabled_flag_id: flagId }))
+                      }
+                      label="Videos"
+                      helpText={
+                        currentScenarioData?.video_enabled_flag_resource?.description ||
+                        "Show the videos section."
+                      }
+                      iconId={currentScenarioData?.video_enabled_flag_resource?.icon_id ?? undefined}
+                      group_id={currentScenarioData?.group_id ?? null}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <Flags
+                      flag_id={formState.problem_statement_enabled_flag_id ?? null}
+                      flag_resource={currentScenarioData?.problem_statement_enabled_flag_resource ?? null}
+                      show_flag={currentScenarioData?.show_problem_statement_enabled_flag ?? false}
+                      disabled={disabled}
+                      onFlagIdChange={(flagId) =>
+                        setFormState((prev) => ({ ...prev, problem_statement_enabled_flag_id: flagId }))
+                      }
+                      label="Problem Statement"
+                      helpText={
+                        currentScenarioData?.problem_statement_enabled_flag_resource?.description ||
+                        "Show the problem statement section."
+                      }
+                      iconId={currentScenarioData?.problem_statement_enabled_flag_resource?.icon_id ?? undefined}
+                      group_id={currentScenarioData?.group_id ?? null}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Flags
+                      flag_id={formState.objectives_enabled_flag_id ?? null}
+                      flag_resource={currentScenarioData?.objectives_enabled_flag_resource ?? null}
+                      show_flag={currentScenarioData?.show_objectives_enabled_flag ?? false}
+                      disabled={disabled}
+                      onFlagIdChange={(flagId) =>
+                        setFormState((prev) => ({ ...prev, objectives_enabled_flag_id: flagId }))
+                      }
+                      label="Objectives"
+                      helpText={
+                        currentScenarioData?.objectives_enabled_flag_resource?.description ||
+                        "Show the objectives section."
+                      }
+                      iconId={currentScenarioData?.objectives_enabled_flag_resource?.icon_id ?? undefined}
+                      group_id={currentScenarioData?.group_id ?? null}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <Flags
+                      flag_id={formState.images_enabled_flag_id ?? null}
+                      flag_resource={currentScenarioData?.images_enabled_flag_resource ?? null}
+                      show_flag={currentScenarioData?.show_images_enabled_flag ?? false}
+                      disabled={disabled}
+                      onFlagIdChange={(flagId) =>
+                        setFormState((prev) => ({ ...prev, images_enabled_flag_id: flagId }))
+                      }
+                      label="Images"
+                      helpText={
+                        currentScenarioData?.images_enabled_flag_resource?.description ||
+                        "Show the images section."
+                      }
+                      iconId={currentScenarioData?.images_enabled_flag_resource?.icon_id ?? undefined}
+                      group_id={currentScenarioData?.group_id ?? null}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Flags
+                      flag_id={formState.use_templates_flag_id ?? null}
+                      flag_resource={currentScenarioData?.use_templates_flag_resource ?? null}
+                      show_flag={currentScenarioData?.show_use_templates_flag ?? false}
+                      disabled={disabled}
+                      onFlagIdChange={(flagId) =>
+                        setFormState((prev) => ({ ...prev, use_templates_flag_id: flagId }))
+                      }
+                      label="Templates"
+                      helpText={
+                        currentScenarioData?.use_templates_flag_resource?.description ||
+                        "Show the templates section."
+                      }
+                      iconId={currentScenarioData?.use_templates_flag_resource?.icon_id ?? undefined}
+                      group_id={currentScenarioData?.group_id ?? null}
+                    />
+                  </div>
+                </div>
+
                 <Flags
-                  flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentScenarioData?.active_flag_resource ?? null}
-                  show_flag={currentScenarioData?.show_active_flag ?? false}
+                  flag_id={formState.questions_enabled_flag_id ?? null}
+                  flag_resource={currentScenarioData?.questions_enabled_flag_resource ?? null}
+                  show_flag={currentScenarioData?.show_questions_enabled_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
+                    setFormState((prev) => ({ ...prev, questions_enabled_flag_id: flagId }))
                   }
-                  label="Active"
-                  flagName="active"
-                  flagDescription="Inactive scenarios will not be available for selection."
+                  label="Questions"
                   helpText={
-                    currentScenarioData?.active_flag_resource?.description ||
-                    "Inactive scenarios will not be available for selection."
+                    currentScenarioData?.questions_enabled_flag_resource?.description ||
+                    "Show the questions section."
                   }
-                  iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
+                  iconId={currentScenarioData?.questions_enabled_flag_resource?.icon_id ?? undefined}
                   group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.active_flag_agent_id ?? null}
-                  createFlagsAction={createScenarioFlagsAction}
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  required={currentScenarioData?.active_flag_required ?? false}
                 />
               </div>
-            </StepCard>
-          );
-        case "configuration":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["configuration"]}
-              actions={
-                shouldShowGenerateAction(
-                  "configuration",
-                  currentScenarioData?.basic_agent_id
-                ) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            handleOpenStepCardModal("configuration", "generate")
-                          }
-                          disabled={disabled}
-                        >
-                          <Sparkles className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Generate</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : null
-              }
-              {...resetProps}
-            >
-              <Flags
-                flag_id={formState.problem_statement_enabled_flag_id ?? null}
-                flag_resource={
-                  currentScenarioData?.problem_statement_enabled_flag_resource ??
-                  null
-                }
-                show_flag={
-                  currentScenarioData?.show_problem_statement_enabled_flag ??
-                  false
-                }
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    problem_statement_enabled_flag_id: flagId,
-                  }))
-                }
-                label="Problem Statement Enabled"
-                flagName="problem_statement_enabled"
-                flagDescription="Show the problem statement section."
-                helpText={
-                  currentScenarioData?.problem_statement_enabled_flag_resource
-                    ?.description || "Show the problem statement section."
-                }
-                iconId={
-                  currentScenarioData?.problem_statement_enabled_flag_resource
-                    ?.icon_id ?? undefined
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={
-                  currentScenarioData?.problem_statement_enabled_flag_agent_id ??
-                  null
-                }
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={
-                  currentScenarioData?.problem_statement_enabled_flag_required ??
-                  false
-                }
-              />
-
-              <Flags
-                flag_id={formState.objectives_enabled_flag_id ?? null}
-                flag_resource={
-                  currentScenarioData?.objectives_enabled_flag_resource ?? null
-                }
-                show_flag={
-                  currentScenarioData?.show_objectives_enabled_flag ?? false
-                }
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    objectives_enabled_flag_id: flagId,
-                  }))
-                }
-                label="Objectives Enabled"
-                flagName="objectives_enabled"
-                flagDescription="Show the objectives section."
-                helpText={
-                  currentScenarioData?.objectives_enabled_flag_resource
-                    ?.description || "Show the objectives section."
-                }
-                iconId={
-                  currentScenarioData?.objectives_enabled_flag_resource
-                    ?.icon_id ?? undefined
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={
-                  currentScenarioData?.objectives_enabled_flag_agent_id ?? null
-                }
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={
-                  currentScenarioData?.objectives_enabled_flag_required ?? false
-                }
-              />
-
-              <Flags
-                flag_id={formState.images_enabled_flag_id ?? null}
-                flag_resource={
-                  currentScenarioData?.images_enabled_flag_resource ?? null
-                }
-                show_flag={currentScenarioData?.show_images_enabled_flag ?? false}
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    images_enabled_flag_id: flagId,
-                  }))
-                }
-                label="Images Enabled"
-                flagName="images_enabled"
-                flagDescription="Show the images section."
-                helpText={
-                  currentScenarioData?.images_enabled_flag_resource?.description ||
-                  "Show the images section."
-                }
-                iconId={
-                  currentScenarioData?.images_enabled_flag_resource?.icon_id ??
-                  undefined
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.images_enabled_flag_agent_id ?? null}
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={currentScenarioData?.images_enabled_flag_required ?? false}
-              />
-
-              <Flags
-                flag_id={formState.video_enabled_flag_id ?? null}
-                flag_resource={
-                  currentScenarioData?.video_enabled_flag_resource ?? null
-                }
-                show_flag={currentScenarioData?.show_video_enabled_flag ?? false}
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    video_enabled_flag_id: flagId,
-                  }))
-                }
-                label="Video Enabled"
-                flagName="video_enabled"
-                flagDescription="Show the videos section."
-                helpText={
-                  currentScenarioData?.video_enabled_flag_resource?.description ||
-                  "Show the videos section."
-                }
-                iconId={
-                  currentScenarioData?.video_enabled_flag_resource?.icon_id ??
-                  undefined
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.video_enabled_flag_agent_id ?? null}
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={currentScenarioData?.video_enabled_flag_required ?? false}
-              />
-
-              <Flags
-                flag_id={formState.questions_enabled_flag_id ?? null}
-                flag_resource={
-                  currentScenarioData?.questions_enabled_flag_resource ?? null
-                }
-                show_flag={
-                  currentScenarioData?.show_questions_enabled_flag ?? false
-                }
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    questions_enabled_flag_id: flagId,
-                  }))
-                }
-                label="Questions Enabled"
-                flagName="questions_enabled"
-                flagDescription="Show the questions section."
-                helpText={
-                  currentScenarioData?.questions_enabled_flag_resource
-                    ?.description || "Show the questions section."
-                }
-                iconId={
-                  currentScenarioData?.questions_enabled_flag_resource?.icon_id ??
-                  undefined
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.questions_enabled_flag_agent_id ?? null}
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={currentScenarioData?.questions_enabled_flag_required ?? false}
-              />
-
-              <Flags
-                flag_id={formState.use_templates_flag_id ?? null}
-                flag_resource={
-                  currentScenarioData?.use_templates_flag_resource ?? null
-                }
-                show_flag={currentScenarioData?.show_use_templates_flag ?? false}
-                disabled={disabled}
-                onFlagIdChange={(flagId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    use_templates_flag_id: flagId,
-                  }))
-                }
-                label="Templates Enabled"
-                flagName="use_templates"
-                flagDescription="Show the templates section."
-                helpText={
-                  currentScenarioData?.use_templates_flag_resource?.description ||
-                  "Show the templates section."
-                }
-                iconId={
-                  currentScenarioData?.use_templates_flag_resource?.icon_id ??
-                  undefined
-                }
-                group_id={currentScenarioData?.group_id ?? null}
-                agent_id={currentScenarioData?.use_templates_flag_agent_id ?? null}
-                createFlagsAction={createScenarioFlagsAction}
-                onGenerate={handleGenerateFlags}
-                isGenerating={isGenerating("scenario_flags")}
-                required={currentScenarioData?.use_templates_flag_required ?? false}
-              />
             </StepCard>
           );
         case "problem_statement":
@@ -3101,24 +3284,33 @@ function ScenarioComponent({
                   isGenerating={isGenerating("parameters")}
                 />
                 <ParameterFields
-                  field_ids={formState.parameter_field_ids}
-                  field_resources={currentScenarioData?.parameter_field_resources ?? []}
-                  show_fields={currentScenarioData?.show_parameter_fields ?? false}
-                  fields={currentScenarioData?.parameter_fields ?? []}
+                  parameter_field_ids={formState.parameter_field_ids}
+                  parameter_field_resources={
+                    currentScenarioData?.parameter_field_resources ?? []
+                  }
+                  show_parameter_fields={
+                    currentScenarioData?.show_parameter_fields ?? false
+                  }
+                  parameter_fields={currentScenarioData?.parameter_fields ?? []}
+                  parameter_ids={formState.parameter_ids}
+                  parameters={currentScenarioData?.parameters ?? []}
+                  parameter_resources={
+                    currentScenarioData?.parameter_resources ?? []
+                  }
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      parameter_field_ids: ids,
+                    }))
                   }
+                  onConditionalParameterToggle={handleConditionalParameterToggle}
                   group_id={currentScenarioData?.group_id ?? null}
                   agent_id={currentScenarioData?.parameter_fields_agent_id ?? null}
                   required={currentScenarioData?.parameter_fields_required ?? false}
-                  createParameterFieldsAction={
-                    createParameterFieldsAction as
-                      | ((
-                          input: CreateDraftParameterFieldsIn
-                        ) => Promise<CreateDraftParameterFieldsOut>)
-                      | undefined
-                  }
+                  createParameterFieldsAction={createParameterFieldsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.parameter_fields}
                 />
               </div>
             </StepCard>
