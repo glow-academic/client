@@ -1,4 +1,6 @@
--- Duplicate persona - fetches original and creates copy with prompt and department links in single query
+-- Duplicate persona - creates copy linking to existing resources (except name)
+-- Only name gets " Copy" suffix, active flag set to FALSE
+-- All other resources (color, icon, description, instructions, departments, fields, examples, parameters) link to existing
 -- Converted to function
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -6,9 +8,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_duplicate_persona_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -38,12 +40,13 @@ user_profile AS (
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_persona AS (
-    SELECT 
+    SELECT
         p.id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
-        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
-        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
+        (SELECT pd.description_id FROM persona_descriptions_junction pd WHERE pd.persona_id = p.id LIMIT 1) as description_id,
+        (SELECT pc.color_id FROM persona_colors_junction pc WHERE pc.persona_id = p.id LIMIT 1) as color_id,
+        (SELECT pi.icon_id FROM persona_icons_junction pi WHERE pi.persona_id = p.id LIMIT 1) as icon_id,
+        (SELECT pij.instruction_id FROM persona_instructions_junction pij WHERE pij.persona_id = p.id LIMIT 1) as instruction_id
     FROM params x
     JOIN persona_artifact p ON p.id = x.persona_id
 ),
@@ -59,132 +62,97 @@ original_fields AS (
     FROM params x
     JOIN persona_parameter_fields_junction ppfj ON ppfj.persona_id = x.persona_id AND ppfj.active = true
 ),
+original_examples AS (
+    -- Get example IDs and idx from original persona
+    SELECT pej.example_id, pej.idx
+    FROM params x
+    JOIN persona_examples_junction pej ON pej.persona_id = x.persona_id AND pej.active = true
+),
 original_parameters AS (
     -- Get parameter IDs from original persona (including conditional parameters)
-    SELECT ppj.parameter_id
+    SELECT ppj.parameter_id, ppj.type
     FROM params x
     JOIN persona_parameters_junction ppj ON ppj.persona_id = x.persona_id AND ppj.active = true
 ),
-default_call AS (
-    SELECT id as call_id
-    FROM view_calls_entry
-    LIMIT 1
-),
--- Insert name INTO names_resource table
+-- Insert name INTO names_resource table (only resource that gets copied with " Copy" suffix)
 new_name_resource AS (
     INSERT INTO names_resource (name, created_at)
     SELECT name || ' Copy', NOW()
     FROM original_persona
-    CROSS JOIN default_call dc
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
-),
--- Insert description INTO descriptions_resource table
-new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at)
-    SELECT description, NOW()
-    FROM original_persona
-    CROSS JOIN default_call dc
-    WHERE description IS NOT NULL AND description != ''
-    RETURNING id as description_id, description
-),
--- Insert color INTO colors_resource table (if exists)
-new_color_resource AS (
-    INSERT INTO colors_resource (name, description, hex_code, created_at)
-    SELECT 'persona_color', 'Persona color', color, NOW()
-    FROM original_persona
-    CROSS JOIN default_call dc
-    WHERE color IS NOT NULL AND color != ''
-    RETURNING id as color_id, hex_code
-),
--- Insert icon INTO icons_resource table (if exists)
-new_icon_resource AS (
-    INSERT INTO icons_resource (name, description, value, created_at)
-    SELECT 'persona_icon', 'Persona icon', icon, NOW()
-    FROM original_persona
-    CROSS JOIN default_call dc
-    WHERE icon IS NOT NULL AND icon != ''
-    RETURNING id as icon_id, value
 ),
 new_persona AS (
     INSERT INTO persona_artifact (
         created_at,
         updated_at
     )
-    SELECT 
+    SELECT
         NOW(),
         NOW()
     FROM original_persona op
     RETURNING id
 ),
--- Copy instruction if original persona has one
-copy_persona_instruction AS (
-    INSERT INTO instructions_resource (template, active, created_at)
-    SELECT
-        COALESCE(pi_orig.template, ''),
-        true,
-        NOW()
-    FROM new_persona np
-    CROSS JOIN original_persona op
-    CROSS JOIN default_call dc
-    LEFT JOIN persona_instructions_junction pi_orig_link ON pi_orig_link.persona_id = op.id
-    LEFT JOIN instructions_resource pi_orig ON pi_orig.id = pi_orig_link.instruction_id
-    WHERE pi_orig.template IS NOT NULL AND pi_orig.template != ''
-    RETURNING id as instruction_id
-),
-link_persona_instruction AS (
-    INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at)
-    SELECT 
-        np.id,
-        cpi.instruction_id,
-        NOW()
-    FROM new_persona np
-    CROSS JOIN copy_persona_instruction cpi
-),
--- Link persona to name
+-- Link persona to name (new name with " Copy" suffix)
 link_persona_name AS (
     INSERT INTO persona_names_junction (persona_id, name_id, created_at)
-    SELECT 
+    SELECT
         np.id,
         nnr.name_id,
         NOW()
     FROM new_persona np
     CROSS JOIN new_name_resource nnr
 ),
--- Link persona to description
+-- Link persona to existing description
 link_persona_description AS (
     INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at)
-    SELECT 
+    SELECT
         np.id,
-        ndr.description_id,
+        op.description_id,
         NOW()
     FROM new_persona np
-    CROSS JOIN new_description_resource ndr
+    CROSS JOIN original_persona op
+    WHERE op.description_id IS NOT NULL
 ),
--- Link persona to color
+-- Link persona to existing color
 link_persona_color AS (
     INSERT INTO persona_colors_junction (persona_id, color_id, created_at)
-    SELECT 
+    SELECT
         np.id,
-        ncr.color_id,
+        op.color_id,
         NOW()
     FROM new_persona np
-    CROSS JOIN new_color_resource ncr
+    CROSS JOIN original_persona op
+    WHERE op.color_id IS NOT NULL
 ),
--- Link persona to icon
+-- Link persona to existing icon
 link_persona_icon AS (
     INSERT INTO persona_icons_junction (persona_id, icon_id, created_at)
-    SELECT 
+    SELECT
         np.id,
-        nir.icon_id,
+        op.icon_id,
         NOW()
     FROM new_persona np
-    CROSS JOIN new_icon_resource nir
+    CROSS JOIN original_persona op
+    WHERE op.icon_id IS NOT NULL
+),
+-- Link persona to existing instruction
+link_persona_instruction AS (
+    INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at)
+    SELECT
+        np.id,
+        op.instruction_id,
+        NOW()
+    FROM new_persona np
+    CROSS JOIN original_persona op
+    WHERE op.instruction_id IS NOT NULL
 ),
 -- Link persona active flag (set to false for duplicate)
 link_persona_active_flag AS (
-    INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at) SELECT np.id,
+    INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at)
+    SELECT
+        np.id,
         f.id,
         FALSE,
         NOW()
@@ -193,9 +161,9 @@ link_persona_active_flag AS (
     WHERE f.name = 'persona_active'
 ),
 copy_departments AS (
-    -- Copy department links from original persona
+    -- Link to existing department IDs from original persona
     INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
-    SELECT 
+    SELECT
         np.id,
         od.department_id,
         true,
@@ -205,7 +173,7 @@ copy_departments AS (
     RETURNING persona_id
 ),
 copy_fields AS (
-    -- Copy parameter_field links from original persona
+    -- Link to existing parameter_field IDs from original persona
     INSERT INTO persona_parameter_fields_junction (persona_id, parameter_field_id, active, created_at)
     SELECT
         np.id,
@@ -216,17 +184,30 @@ copy_fields AS (
     CROSS JOIN original_fields ofi
     RETURNING persona_id
 ),
-copy_parameters AS (
-    -- Copy parameter links from original persona (including conditional parameters)
-    INSERT INTO persona_parameters_junction (persona_id, parameter_id, type, active, created_at)
+copy_examples AS (
+    -- Link to existing example IDs from original persona
+    INSERT INTO persona_examples_junction (persona_id, example_id, idx, active, created_at)
     SELECT
         np.id,
-        op.parameter_id,
-        'direct',
+        oe.example_id,
+        oe.idx,
         true,
         NOW()
     FROM new_persona np
-    CROSS JOIN original_parameters op
+    CROSS JOIN original_examples oe
+    RETURNING persona_id
+),
+copy_parameters AS (
+    -- Link to existing parameter IDs from original persona (preserving type)
+    INSERT INTO persona_parameters_junction (persona_id, parameter_id, type, active, created_at)
+    SELECT
+        np.id,
+        opr.parameter_id,
+        opr.type,
+        true,
+        NOW()
+    FROM new_persona np
+    CROSS JOIN original_parameters opr
     RETURNING persona_id
 )
 SELECT
