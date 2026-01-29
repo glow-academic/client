@@ -18,8 +18,12 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { inferMimeFromName } from "@/utils/mime-map";
 import { Check, Loader2, Sparkles, Upload, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
 
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
@@ -79,6 +83,12 @@ export interface VideosProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ video_ids: string[] } | void>) => void;
+  /** Action to finalize TUS upload */
+  finalizeUploadAction?: (uploadId: string) => Promise<{
+    success: boolean;
+    upload_id?: string;
+    message?: string;
+  }>;
 }
 
 export function Videos({
@@ -106,6 +116,7 @@ export function Videos({
   isUploadingVideo = false,
   isAutosaveEnabled = true,
   registerFlush,
+  finalizeUploadAction,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;
@@ -157,6 +168,19 @@ export function Videos({
   // Track which video IDs have already had resources created
   const createdVideoIdsRef = useRef<Set<string>>(new Set());
   const flushRef = useRef<(() => Promise<{ video_ids: string[] } | void>) | undefined>(undefined);
+
+  // TUS upload state
+  const [activeUploads, setActiveUploads] = useState<
+    Map<
+      string,
+      {
+        file: File;
+        progress: number;
+        toastId: string;
+        status: "uploading" | "finalizing" | "completed" | "error";
+      }
+    >
+  >(new Map());
 
   // Initialize createdVideoIdsRef with current IDs
   useEffect(() => {
@@ -273,6 +297,213 @@ export function Videos({
       registerFlush(() => flushRef.current?.() ?? Promise.resolve());
     }
   }, [registerFlush]);
+
+  // TUS upload function
+  const uploadFile = useCallback(
+    async (file: File) => {
+      const effectiveAgentId = videos_agent_id ?? agent_id;
+      if (!finalizeUploadAction || !createVideosAction || !group_id || !effectiveAgentId) {
+        toast.error("Upload functionality not available");
+        return;
+      }
+
+      const fileId = uuidv4();
+      const toastId = toast.loading(`Preparing upload: ${file.name}`, {
+        description: "0% complete",
+        dismissible: true,
+      });
+
+      setActiveUploads((prev) =>
+        new Map(prev).set(fileId, {
+          file,
+          progress: 0,
+          toastId: toastId as string,
+          status: "uploading",
+        })
+      );
+
+      let tusUploadInstance: tus.Upload | null = null;
+      try {
+        tusUploadInstance = new tus.Upload(file, {
+          endpoint: `/api/uploads/save`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type || inferMimeFromName(file.name),
+            fileId: fileId,
+          },
+          onError: (error) => {
+            toast.error(`Upload failed: ${file.name}`, {
+              description: error.message || "An error occurred during upload",
+              id: toastId,
+            });
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              const upload = newMap.get(fileId);
+              if (upload) {
+                newMap.set(fileId, {
+                  ...upload,
+                  progress,
+                });
+              }
+              return newMap;
+            });
+
+            toast.loading(`Uploading ${file.name}... ${progress}%`, {
+              description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
+              id: toastId,
+              dismissible: true,
+            });
+          },
+          onSuccess: async () => {
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              const upload = newMap.get(fileId);
+              if (upload) {
+                newMap.set(fileId, {
+                  ...upload,
+                  status: "finalizing",
+                });
+              }
+              return newMap;
+            });
+
+            try {
+              const uploadUrl = tusUploadInstance?.url || "";
+              const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+              if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+                throw new Error("Failed to extract upload ID from upload URL");
+              }
+              const tusUploadId = tusUploadIdMatch[1];
+
+              // Finalize upload to get database upload_id
+              const finalizeResult = await finalizeUploadAction(tusUploadId);
+
+              if (!finalizeResult.success || !finalizeResult.upload_id) {
+                throw new Error(
+                  finalizeResult.message || "Failed to finalize upload"
+                );
+              }
+
+              const databaseUploadId = finalizeResult.upload_id;
+
+              // Create video resource entry
+              const createResult = await createVideosAction({
+                body: {
+                  agent_id: effectiveAgentId,
+                  group_id: group_id,
+                  name: file.name,
+                  length_seconds: 0, // Will be updated after processing
+                  description: "",
+                  upload_id: databaseUploadId,
+                  mcp: false,
+                },
+              });
+
+              if (!createResult.id) {
+                throw new Error("Failed to create video resource");
+              }
+
+              const videoResourceId = createResult.id;
+              createdVideoIdsRef.current.add(videoResourceId);
+
+              // Add to selection
+              onChange([videoResourceId]);
+
+              // Update selectedVideo state
+              setSelectedVideo({
+                id: videoResourceId,
+                name: file.name,
+                length_seconds: 0,
+                upload_id: databaseUploadId,
+              });
+
+              toast.success(`Upload completed: ${file.name}!`, {
+                description: "Video uploaded successfully",
+                id: toastId,
+              });
+
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                const upload = newMap.get(fileId);
+                if (upload) {
+                  newMap.set(fileId, {
+                    ...upload,
+                    status: "completed",
+                  });
+                }
+                return newMap;
+              });
+
+              // Remove completed upload from state after delay
+              setTimeout(() => {
+                setActiveUploads((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(fileId);
+                  return newMap;
+                });
+              }, 2000);
+            } catch (error) {
+              toast.error(`Upload processing failed: ${file.name}`, {
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to process uploaded file",
+                id: toastId,
+              });
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(fileId);
+                return newMap;
+              });
+            }
+          },
+        });
+
+        await tusUploadInstance.start();
+      } catch {
+        toast.error(`Upload failed: ${file.name}`, {
+          description: "An error occurred during upload",
+          id: toastId,
+        });
+        setActiveUploads((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(fileId);
+          return newMap;
+        });
+      }
+    },
+    [
+      finalizeUploadAction,
+      createVideosAction,
+      group_id,
+      videos_agent_id,
+      agent_id,
+      onChange,
+    ]
+  );
+
+  // Internal upload handler for when finalizeUploadAction is provided
+  const handleInternalUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        // Only upload the first file for videos (single select)
+        uploadFile(files[0]);
+      }
+      // Reset input
+      e.target.value = "";
+    },
+    [uploadFile]
+  );
 
   // Check if any video resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -394,6 +625,27 @@ export function Videos({
 
       {/* Video Preview Container (matching ContentSection pattern) */}
       <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">
+        {/* Upload progress overlay */}
+        {activeUploads.size > 0 && (
+          <div className="absolute inset-0 bg-black/80 z-10 flex flex-col items-center justify-center">
+            {Array.from(activeUploads.values()).map((upload) => (
+              <div key={upload.toastId} className="text-center text-white px-4 w-full max-w-xs">
+                <Loader2 className="h-12 w-12 mb-4 mx-auto animate-spin" />
+                <p className="text-sm font-medium mb-2 truncate">{upload.file.name}</p>
+                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${upload.progress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-white/70">
+                  {upload.status === "finalizing" ? "Finalizing..." : `${upload.progress}%`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {selectedVideo ? (
           selectedVideo.upload_id ? (
             <video
@@ -412,15 +664,19 @@ export function Videos({
             <Video className="h-12 w-12 mb-2" />
             <p className="text-sm">No video selected</p>
             {/* Upload button when no video selected */}
-            {onVideoUpload && (
+            {(onVideoUpload || finalizeUploadAction) && (
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => effectiveVideoInputRef.current?.click()}
-                disabled={disabled || isUploadingVideo}
+                disabled={disabled || isUploadingVideo || activeUploads.size > 0}
                 className="mt-4"
               >
-                <Upload className="h-4 w-4 mr-2" />
+                {activeUploads.size > 0 ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
                 Upload Video
               </Button>
             )}
@@ -429,13 +685,13 @@ export function Videos({
       </div>
 
       {/* Hidden file input */}
-      {onVideoUpload && (
+      {(onVideoUpload || finalizeUploadAction) && (
         <input
           ref={effectiveVideoInputRef}
           type="file"
           accept="video/*"
-          onChange={onVideoUpload}
-          disabled={isUploadingVideo || disabled}
+          onChange={finalizeUploadAction ? handleInternalUpload : onVideoUpload}
+          disabled={isUploadingVideo || disabled || activeUploads.size > 0}
           className="hidden"
         />
       )}

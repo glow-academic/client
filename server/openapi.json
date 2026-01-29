@@ -100514,6 +100514,28 @@
               }
             ],
             "title": "Parent Document Id"
+          },
+          "video_document": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Document"
+          },
+          "non_video_document": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Non Video Document"
           }
         },
         "type": "object",
@@ -100716,6 +100738,17 @@
               }
             ],
             "title": "Generated"
+          },
+          "video_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Flag"
           }
         },
         "type": "object",
@@ -101025,6 +101058,17 @@
               }
             ],
             "title": "Video Parameter"
+          },
+          "non_video_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Non Video Parameter"
           }
         },
         "type": "object",
@@ -101140,6 +101184,28 @@
               }
             ],
             "title": "Example"
+          },
+          "video_persona": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Persona"
+          },
+          "non_video_persona": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Non Video Persona"
           }
         },
         "type": "object",

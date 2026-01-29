@@ -19,8 +19,12 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { inferMimeFromName } from "@/utils/mime-map";
 import { Check, Eye, Image, Loader2, Sparkles, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
 
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
@@ -78,6 +82,12 @@ export interface ImagesProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ image_ids: string[] } | void>) => void;
+  /** Action to finalize TUS upload */
+  finalizeUploadAction?: (uploadId: string) => Promise<{
+    success: boolean;
+    upload_id?: string;
+    message?: string;
+  }>;
 }
 
 export function Images({
@@ -107,6 +117,7 @@ export function Images({
   isUploadingImage = false,
   isAutosaveEnabled = true,
   registerFlush,
+  finalizeUploadAction,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
@@ -180,6 +191,19 @@ export function Images({
   const createdImageIdsRef = useRef<Set<string>>(new Set());
   const flushRef = useRef<(() => Promise<{ image_ids: string[] } | void>) | undefined>(undefined);
   const [previewImageId, setPreviewImageId] = useState<string | null>(null);
+
+  // TUS upload state
+  const [activeUploads, setActiveUploads] = useState<
+    Map<
+      string,
+      {
+        file: File;
+        progress: number;
+        toastId: string;
+        status: "uploading" | "finalizing" | "completed" | "error";
+      }
+    >
+  >(new Map());
 
   // Initialize createdImageIdsRef with current IDs
   useEffect(() => {
@@ -293,6 +317,216 @@ export function Images({
       registerFlush(() => flushRef.current?.() ?? Promise.resolve());
     }
   }, [registerFlush]);
+
+  // TUS upload function
+  const uploadFile = useCallback(
+    async (file: File) => {
+      const effectiveAgentId = images_agent_id ?? agent_id;
+      if (!finalizeUploadAction || !createImagesAction || !group_id || !effectiveAgentId) {
+        toast.error("Upload functionality not available");
+        return;
+      }
+
+      const fileId = uuidv4();
+      const toastId = toast.loading(`Preparing upload: ${file.name}`, {
+        description: "0% complete",
+        dismissible: true,
+      });
+
+      setActiveUploads((prev) =>
+        new Map(prev).set(fileId, {
+          file,
+          progress: 0,
+          toastId: toastId as string,
+          status: "uploading",
+        })
+      );
+
+      let tusUploadInstance: tus.Upload | null = null;
+      try {
+        tusUploadInstance = new tus.Upload(file, {
+          endpoint: `/api/uploads/save`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type || inferMimeFromName(file.name),
+            fileId: fileId,
+          },
+          onError: (error) => {
+            toast.error(`Upload failed: ${file.name}`, {
+              description: error.message || "An error occurred during upload",
+              id: toastId,
+            });
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              const upload = newMap.get(fileId);
+              if (upload) {
+                newMap.set(fileId, {
+                  ...upload,
+                  progress,
+                });
+              }
+              return newMap;
+            });
+
+            toast.loading(`Uploading ${file.name}... ${progress}%`, {
+              description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
+              id: toastId,
+              dismissible: true,
+            });
+          },
+          onSuccess: async () => {
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              const upload = newMap.get(fileId);
+              if (upload) {
+                newMap.set(fileId, {
+                  ...upload,
+                  status: "finalizing",
+                });
+              }
+              return newMap;
+            });
+
+            try {
+              const uploadUrl = tusUploadInstance?.url || "";
+              const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+              if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+                throw new Error("Failed to extract upload ID from upload URL");
+              }
+              const tusUploadId = tusUploadIdMatch[1];
+
+              // Finalize upload to get database upload_id
+              const finalizeResult = await finalizeUploadAction(tusUploadId);
+
+              if (!finalizeResult.success || !finalizeResult.upload_id) {
+                throw new Error(
+                  finalizeResult.message || "Failed to finalize upload"
+                );
+              }
+
+              const databaseUploadId = finalizeResult.upload_id;
+
+              // Create image resource entry
+              const createResult = await createImagesAction({
+                body: {
+                  agent_id: effectiveAgentId,
+                  group_id: group_id,
+                  name: file.name,
+                  description: "",
+                  upload_id: databaseUploadId,
+                  mcp: false,
+                },
+              });
+
+              if (!createResult.id) {
+                throw new Error("Failed to create image resource");
+              }
+
+              const imageResourceId = createResult.id;
+              createdImageIdsRef.current.add(imageResourceId);
+
+              // Add to selection
+              onChange([...ids, imageResourceId]);
+
+              // Update selectedImages state
+              setSelectedImages((prev) => [
+                ...prev,
+                {
+                  id: imageResourceId,
+                  name: file.name,
+                  upload_id: databaseUploadId,
+                },
+              ]);
+
+              toast.success(`Upload completed: ${file.name}!`, {
+                description: "Image uploaded successfully",
+                id: toastId,
+              });
+
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                const upload = newMap.get(fileId);
+                if (upload) {
+                  newMap.set(fileId, {
+                    ...upload,
+                    status: "completed",
+                  });
+                }
+                return newMap;
+              });
+
+              // Remove completed upload from state after delay
+              setTimeout(() => {
+                setActiveUploads((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(fileId);
+                  return newMap;
+                });
+              }, 2000);
+            } catch (error) {
+              toast.error(`Upload processing failed: ${file.name}`, {
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to process uploaded file",
+                id: toastId,
+              });
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(fileId);
+                return newMap;
+              });
+            }
+          },
+        });
+
+        await tusUploadInstance.start();
+      } catch {
+        toast.error(`Upload failed: ${file.name}`, {
+          description: "An error occurred during upload",
+          id: toastId,
+        });
+        setActiveUploads((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(fileId);
+          return newMap;
+        });
+      }
+    },
+    [
+      finalizeUploadAction,
+      createImagesAction,
+      group_id,
+      images_agent_id,
+      agent_id,
+      ids,
+      onChange,
+    ]
+  );
+
+  // Internal upload handler for when finalizeUploadAction is provided
+  const handleInternalUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        Array.from(files).forEach((file) => {
+          uploadFile(file);
+        });
+      }
+      // Reset input
+      e.target.value = "";
+    },
+    [uploadFile]
+  );
 
   const handleImageRemove = useCallback(
     (imageId: string) => {
@@ -475,14 +709,17 @@ export function Images({
             ))}
 
             {/* Add Image Box - Show until max (matching ContentSection pattern) */}
-            {selectedImages.length < maxImages && (
+            {selectedImages.length < maxImages && activeUploads.size === 0 && (
               <div
                 onClick={() => {
-                  if (!disabled && !isUploadingImage && onImageUpload) {
+                  if (!disabled && !isUploadingImage && (onImageUpload || finalizeUploadAction)) {
                     effectiveImageInputRef.current?.click();
                   }
                 }}
-                className="aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0"
+                className={cn(
+                  "aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0",
+                  (disabled || isUploadingImage) && "opacity-50 cursor-not-allowed"
+                )}
               >
                 <Upload className="h-6 w-6 text-muted-foreground mb-1" />
                 <p className="text-xs text-muted-foreground text-center px-2">
@@ -490,17 +727,37 @@ export function Images({
                 </p>
               </div>
             )}
+
+            {/* Upload progress indicator */}
+            {activeUploads.size > 0 && (
+              <div className="aspect-square w-32 min-w-[8rem] border-2 border-dashed border-primary rounded-lg bg-muted/20 flex flex-col items-center justify-center shrink-0">
+                {Array.from(activeUploads.values()).map((upload) => (
+                  <div key={upload.toastId} className="w-full px-2 text-center">
+                    <Loader2 className="h-6 w-6 text-primary mb-1 mx-auto animate-spin" />
+                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mb-1">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${upload.progress}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {upload.status === "finalizing" ? "Finalizing..." : `${upload.progress}%`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Hidden file input */}
-        {onImageUpload && (
+        {(onImageUpload || finalizeUploadAction) && (
           <input
             ref={effectiveImageInputRef}
             type="file"
             accept="image/*"
-            onChange={onImageUpload}
-            disabled={isUploadingImage || disabled}
+            onChange={finalizeUploadAction ? handleInternalUpload : onImageUpload}
+            disabled={isUploadingImage || disabled || activeUploads.size > 0}
             className="hidden"
           />
         )}

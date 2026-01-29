@@ -47,6 +47,9 @@ export interface ParametersProps {
     description?: string | null;
     generated?: boolean | null;
     conditional?: boolean | null;
+    video_parameter?: boolean | null;
+    non_video_parameter?: boolean | null;
+    scenario_parameter?: boolean | null;
   }>; // All available parameters from API (each includes generated and conditional fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update parameter_ids in form state
@@ -66,6 +69,7 @@ export interface ParametersProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to show only selected parameters
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
+  videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
 }
 
 export function Parameters({
@@ -90,10 +94,35 @@ export function Parameters({
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
+  videoEnabled = false,
 }: ParametersProps) {
   const ids = useMemo(() => parameter_ids ?? [], [parameter_ids]);
   const show = show_parameters ?? false;
   const allParameters = useMemo(() => parameters ?? [], [parameters]);
+
+  // Filter parameters based on video mode
+  // If scenario_parameter=true, always show (overrides video filtering)
+  // Otherwise: video mode ON shows video_parameter=true, video mode OFF shows non_video_parameter=true
+  const videoFilteredParameters = useMemo(() => {
+    return allParameters.filter((p) => {
+      // If scenario_parameter is true, always show (overrides video filtering)
+      if (p.scenario_parameter === true) {
+        return true;
+      }
+      const hasVideoFlag = p.video_parameter === true;
+      const hasNonVideoFlag = p.non_video_parameter === true;
+      // If neither flag is set, always show (backward compatibility)
+      if (!hasVideoFlag && !hasNonVideoFlag) {
+        return true;
+      }
+      // If video mode is on, show if video_parameter is true
+      if (videoEnabled) {
+        return hasVideoFlag;
+      }
+      // If video mode is off, show if non_video_parameter is true
+      return hasNonVideoFlag;
+    });
+  }, [allParameters, videoEnabled]);
   const suggestionsList = useMemo(
     () => parameter_suggestions ?? [],
     [parameter_suggestions]
@@ -124,14 +153,14 @@ export function Parameters({
   // Convert parameters array to ParametersItem format for GenericPicker
   // Filter out conditional parameters - they are auto-selected via field selection
   const parametersItems = useMemo(() => {
-    return allParameters
+    return videoFilteredParameters
       .filter((p) => p.parameter_id && p.name && !p.conditional) // Filter out nulls and conditional params
       .map((p) => ({
         id: p.parameter_id!,
         name: p.name!,
         ...(p.description ? { description: p.description } : {}),
       }));
-  }, [allParameters]);
+  }, [videoFilteredParameters]);
 
   // Filter parameters based on search term and selection
   const filteredParameters = useMemo(() => {

@@ -18,8 +18,30 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { Brain, Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+
+// Utility function to generate gradient from hex color
+const generateGradientFromHex = (hexColor: string): string => {
+  // Remove # if present
+  const cleanHex = hexColor.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(cleanHex.substr(0, 2), 16);
+  const g = parseInt(cleanHex.substr(2, 2), 16);
+  const b = parseInt(cleanHex.substr(4, 2), 16);
+
+  // Create a lighter variant for the gradient (brighter like simulation cards)
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+
+  // Convert back to hex
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
 
 type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
 type CreateDraftPersonasOut = OutputOf<"/api/v4/resources/personas", "post">;
@@ -28,6 +50,8 @@ export interface PersonaItem {
   id: string;
   name: string;
   description?: string;
+  icon?: string;
+  color?: string;
 }
 
 export interface PersonasProps {
@@ -50,6 +74,8 @@ export interface PersonasProps {
     parameter_ids?: string[] | null;
     field_ids?: string[] | null;
     example?: string | null;
+    video_persona?: boolean | null;
+    non_video_persona?: boolean | null;
   }>; // All available personas from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update persona_ids in form state
@@ -65,6 +91,11 @@ export interface PersonasProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ persona_ids: string[] } | void>) => void;
 }
 
 export function Personas({
@@ -85,10 +116,33 @@ export function Personas({
   createPersonasAction,
   onGenerate,
   isGenerating = false,
+  videoEnabled = false,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
   const show = show_personas ?? false;
   const allPersonas = useMemo(() => personas ?? [], [personas]);
+
+  // Filter personas based on video mode
+  // Include if: video mode ON and has video_persona, OR video mode OFF and has non_video_persona
+  // Always include if neither flag is set (backward compatibility)
+  const filteredPersonas = useMemo(() => {
+    return allPersonas.filter((p) => {
+      const hasVideoFlag = p.video_persona === true;
+      const hasNonVideoFlag = p.non_video_persona === true;
+      // If neither flag is set, always show (backward compatibility)
+      if (!hasVideoFlag && !hasNonVideoFlag) {
+        return true;
+      }
+      // If video mode is on, show if video_persona is true
+      if (videoEnabled) {
+        return hasVideoFlag;
+      }
+      // If video mode is off, show if non_video_persona is true
+      return hasNonVideoFlag;
+    });
+  }, [allPersonas, videoEnabled]);
   const suggestionsList = useMemo(
     () => persona_suggestions ?? [],
     [persona_suggestions]
@@ -104,14 +158,19 @@ export function Personas({
 
   // Convert personas array to PersonaItem format for GenericPicker
   const personaItems = useMemo(() => {
-    return allPersonas
+    return filteredPersonas
       .filter((p) => p.persona_id && p.name) // Filter out nulls
       .map((p) => ({
         id: p.persona_id!,
         name: p.name!,
         ...(p.description ? { description: p.description } : {}), // Only include if not null/undefined
+        ...(p.icon ? { icon: p.icon } : {}),
+        ...(p.color ? { color: p.color } : {}),
       }));
-  }, [allPersonas]);
+  }, [filteredPersonas]);
+
+  // Ref for flush function
+  const flushRef = useRef<(() => Promise<{ persona_ids: string[] } | void>) | undefined>(undefined);
 
   // Check if a persona is suggested
   const isSuggested = useCallback(
@@ -127,8 +186,9 @@ export function Personas({
         ? ids.filter((id) => id !== personaId)
         : [...ids, personaId];
 
-      // Create resource if newly selected
+      // Create resource if newly selected (only if autosave is enabled)
       if (
+        isAutosaveEnabled &&
         !isCurrentlySelected &&
         !createdPersonaIdsRef.current.has(personaId) &&
         createPersonasAction &&
@@ -157,8 +217,44 @@ export function Personas({
       // Update parent state
       onChange(newIds);
     },
-    [ids, onChange, createPersonasAction, personas_agent_id, group_id]
+    [ids, onChange, createPersonasAction, personas_agent_id, group_id, isAutosaveEnabled]
   );
+
+  // Flush function for manual save mode - creates pending resources and returns all IDs
+  flushRef.current = async (): Promise<{ persona_ids: string[] } | void> => {
+    if (!createPersonasAction || !personas_agent_id || !group_id) {
+      return { persona_ids: ids };
+    }
+
+    // Create resources for any selected personas that haven't been created yet
+    for (const personaId of ids) {
+      if (!createdPersonaIdsRef.current.has(personaId)) {
+        try {
+          await createPersonasAction({
+            body: {
+              agent_id: personas_agent_id,
+              group_id: group_id,
+              persona_id: personaId,
+              mcp: false,
+            },
+          });
+          createdPersonaIdsRef.current.add(personaId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`Failed to create persona resource for ${personaId}:`, error);
+        }
+      }
+    }
+
+    return { persona_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Check if any persona resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -217,8 +313,11 @@ export function Personas({
         selectedIds={ids}
         onSelect={handleSelect}
         getId={(item) => item.id}
+        horizontal={true}
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
+          const IconComponent = getPersonaIconComponent(item.icon || "") || Brain;
+          const hexColor = item.color || "#64748b";
 
           return (
             <div
@@ -243,15 +342,25 @@ export function Personas({
                 </div>
               )}
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm leading-tight">
-                  {item.name}
-                </h3>
-                {item.description && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
+              <div className="flex items-start gap-3">
+                <div
+                  className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                  style={{
+                    background: generateGradientFromHex(hexColor),
+                  }}
+                >
+                  <IconComponent className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-tight">
+                    {item.name}
+                  </h3>
+                  {item.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           );

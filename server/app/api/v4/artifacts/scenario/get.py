@@ -913,105 +913,94 @@ async def get_scenario(
             fetch_templates(),
         )
 
-        # === VIDEO PARAMETER FILTERING ===
-        # Get the video_enabled flag value (default false for new scenarios)
-        video_enabled = getattr(ids_result, "video_enabled_value", False) or False
+        # === VIDEO PARAMETER COMPUTATION ===
+        # Compute video_persona/non_video_persona, video_document/non_video_document,
+        # and non_video_parameter for frontend filtering (no server-side filtering)
+        async with pool.acquire() as filter_conn:
+            # 1. Get all video/non-video parameter IDs
+            video_param_rows = await filter_conn.fetch(
+                "SELECT id, video_parameter FROM parameters_resource WHERE active = true"
+            )
+            video_param_ids = {row["id"] for row in video_param_rows if row["video_parameter"]}
+            non_video_param_ids = {row["id"] for row in video_param_rows if not row["video_parameter"]}
 
-        # Only apply filtering for existing scenarios
-        if request.scenario_id is not None:
-            async with pool.acquire() as filter_conn:
-                # 1. Get all parameter IDs matching the video_parameter flag
-                video_param_rows = await filter_conn.fetch(
-                    "SELECT id FROM parameters_resource WHERE video_parameter = $1 AND active = true",
-                    video_enabled,
+            # 2. Get persona -> parameter mappings (via parameter_fields_resource)
+            # Note: personas_resource.id != persona_artifact.id
+            # We need to join through persona_personas_junction to map resource IDs to artifact IDs
+            all_persona_ids = [
+                p.persona_id
+                for p in personas_selected + personas_suggestions
+                if p.persona_id
+            ]
+            if all_persona_ids:
+                persona_param_rows = await filter_conn.fetch(
+                    """SELECT ppj.personas_id as persona_id, ARRAY_AGG(DISTINCT pfr.parameter_id) as param_ids
+                       FROM persona_personas_junction ppj
+                       JOIN persona_parameter_fields_junction ppfj ON ppfj.persona_id = ppj.persona_id
+                       JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+                       WHERE ppj.personas_id = ANY($1)
+                         AND ppj.active = true
+                         AND ppfj.active = true
+                         AND pfr.active = true
+                         AND pfr.parameter_id IS NOT NULL
+                       GROUP BY ppj.personas_id""",
+                    all_persona_ids,
                 )
-                video_param_ids = {row["id"] for row in video_param_rows}
+                persona_to_params = {
+                    row["persona_id"]: row["param_ids"] or []
+                    for row in persona_param_rows
+                }
+            else:
+                persona_to_params = {}
 
-                # 2. Get persona -> parameter mappings (via parameter_fields_resource)
-                all_persona_ids = [
-                    p.persona_id
-                    for p in personas_selected + personas_suggestions
-                    if p.persona_id
-                ]
-                if all_persona_ids:
-                    persona_param_rows = await filter_conn.fetch(
-                        """SELECT ppfj.persona_id, ARRAY_AGG(DISTINCT pfr.parameter_id) as param_ids
-                           FROM persona_parameter_fields_junction ppfj
-                           JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
-                           WHERE ppfj.persona_id = ANY($1)
-                             AND ppfj.active = true
-                             AND pfr.active = true
-                             AND pfr.parameter_id IS NOT NULL
-                           GROUP BY ppfj.persona_id""",
-                        all_persona_ids,
-                    )
-                    persona_to_params = {
-                        row["persona_id"]: row["param_ids"] or []
-                        for row in persona_param_rows
-                    }
-                else:
-                    persona_to_params = {}
-
-                # 3. Get document -> parameter mappings
-                all_document_ids = [
-                    d.document_id
-                    for d in documents_selected + documents_suggestions
-                    if d.document_id
-                ]
-                if all_document_ids:
-                    doc_param_rows = await filter_conn.fetch(
-                        """SELECT dpj.document_id, ARRAY_AGG(dpj.parameter_id) as param_ids
-                           FROM document_parameters_junction dpj
-                           WHERE dpj.document_id = ANY($1) AND dpj.active = true
-                           GROUP BY dpj.document_id""",
-                        all_document_ids,
-                    )
-                    doc_to_params = {
-                        row["document_id"]: row["param_ids"] or []
-                        for row in doc_param_rows
-                    }
-                else:
-                    doc_to_params = {}
-
-            # Helper function for filtering
-            def filter_by_video_param(items, id_attr, item_to_params):
-                """Include item if it has no params OR has at least one matching video param."""
-                result = []
-                for item in items:
-                    item_id = getattr(item, id_attr, None)
-                    if item_id is None:
-                        continue
-                    linked_params = item_to_params.get(item_id, [])
-                    # Include if no params OR at least one matches
-                    if not linked_params or any(
-                        pid in video_param_ids for pid in linked_params
-                    ):
-                        result.append(item)
-                return result
-
-            # Filter personas
-            personas_selected = filter_by_video_param(
-                personas_selected, "persona_id", persona_to_params
-            )
-            personas_suggestions = filter_by_video_param(
-                personas_suggestions, "persona_id", persona_to_params
-            )
-
-            # Filter documents
-            documents_selected = filter_by_video_param(
-                documents_selected, "document_id", doc_to_params
-            )
-            documents_suggestions = filter_by_video_param(
-                documents_suggestions, "document_id", doc_to_params
-            )
-
-            # Filter scenario parameters (direct video_parameter attribute)
-            parameters_selected = [
-                p for p in parameters_selected if p.video_parameter == video_enabled
+            # 3. Get document -> parameter mappings
+            # Note: documents_resource.id != document_artifact.id
+            # We need to join through document_documents_junction to map resource IDs to artifact IDs
+            all_document_ids = [
+                d.document_id
+                for d in documents_selected + documents_suggestions
+                if d.document_id
             ]
-            parameters_suggestions = [
-                p for p in parameters_suggestions if p.video_parameter == video_enabled
-            ]
+            if all_document_ids:
+                doc_param_rows = await filter_conn.fetch(
+                    """SELECT ddj.documents_id as document_id, ARRAY_AGG(dpj.parameter_id) as param_ids
+                       FROM document_documents_junction ddj
+                       JOIN document_parameters_junction dpj ON dpj.document_id = ddj.document_id
+                       WHERE ddj.documents_id = ANY($1)
+                         AND ddj.active = true
+                         AND dpj.active = true
+                       GROUP BY ddj.documents_id""",
+                    all_document_ids,
+                )
+                doc_to_params = {
+                    row["document_id"]: row["param_ids"] or []
+                    for row in doc_param_rows
+                }
+            else:
+                doc_to_params = {}
+
+        # Helper functions to compute video flags (used in response construction)
+        def compute_persona_video_flags(persona_id: UUID | None) -> tuple[bool, bool]:
+            """Compute video_persona and non_video_persona based on linked parameters."""
+            if persona_id is None:
+                return False, True
+            linked_params = persona_to_params.get(persona_id, [])
+            has_video_param = any(pid in video_param_ids for pid in linked_params)
+            has_non_video_param = any(pid in non_video_param_ids for pid in linked_params) or not linked_params
+            return has_video_param, has_non_video_param
+
+        def compute_document_video_flags(document_id: UUID | None) -> tuple[bool, bool]:
+            """Compute video_document and non_video_document based on linked parameters."""
+            if document_id is None:
+                return False, True
+            linked_params = doc_to_params.get(document_id, [])
+            has_video_param = any(pid in video_param_ids for pid in linked_params)
+            has_non_video_param = any(pid in non_video_param_ids for pid in linked_params) or not linked_params
+            return has_video_param, has_non_video_param
+
+        def compute_parameter_non_video_flag(video_parameter: bool | None) -> bool:
+            """Compute non_video_parameter as inverse of video_parameter."""
+            return not video_parameter if video_parameter is not None else True
 
         # Combine selected and suggestions (dedupe)
         names = _dedupe_by_id(names_selected + names_suggestions, "id")
@@ -1141,12 +1130,16 @@ async def get_scenario(
                 required=compute_flag_required(),
                 agent_id=None,
                 generated=flag.generated,
+                # questions_enabled flag only shows when video_enabled is true
+                video_flag=flag.name == "scenario_questions_enabled",
             )
             for flag in all_scenario_flags
             if flag.id
             and flag.name
             and flag.name != "scenario_parameter"  # Exclude non-UI flags
         ]
+        # Sort flags so video_flag=True flags appear at the end (prevents layout shift)
+        scenario_flags.sort(key=lambda f: f.video_flag or False)
 
         # Set audit context
         if access_result.actor_name:
@@ -1173,6 +1166,28 @@ async def get_scenario(
             if hasattr(item, "model_dump"):
                 return item.model_dump()
             return dict(item)
+
+        def _persona_to_dict(persona: Any) -> dict[str, Any]:
+            """Convert persona to dict with video flags."""
+            d = _to_dict(persona)
+            video_persona, non_video_persona = compute_persona_video_flags(persona.persona_id)
+            d['video_persona'] = video_persona
+            d['non_video_persona'] = non_video_persona
+            return d
+
+        def _document_to_dict(document: Any) -> dict[str, Any]:
+            """Convert document to dict with video flags."""
+            d = _to_dict(document)
+            video_document, non_video_document = compute_document_video_flags(document.document_id)
+            d['video_document'] = video_document
+            d['non_video_document'] = non_video_document
+            return d
+
+        def _parameter_to_dict(param: Any) -> dict[str, Any]:
+            """Convert parameter to dict with non_video_parameter flag."""
+            d = _to_dict(param)
+            d['non_video_parameter'] = compute_parameter_non_video_flag(param.video_parameter)
+            return d
 
         response_data = GetScenarioApiResponse(
             # Required fields
@@ -1332,7 +1347,7 @@ async def get_scenario(
             personas_agent_id=personas_agent_id,
             personas_required=compute_personas_required(),
             persona_suggestions=persona_suggestions_ids,
-            personas=[_to_dict(p) for p in personas],
+            personas=[_persona_to_dict(p) for p in personas],
             # Documents
             document_ids=document_ids,
             document_resources=[_to_dict(d) for d in document_resources],
@@ -1340,7 +1355,7 @@ async def get_scenario(
             documents_agent_id=documents_agent_id,
             documents_required=compute_documents_required(),
             document_suggestions=document_suggestions_ids,
-            documents=[_to_dict(d) for d in documents],
+            documents=[_document_to_dict(d) for d in documents],
             # Parameters
             parameter_ids=parameter_ids,
             parameter_resources=[_to_dict(p) for p in parameter_resources],
@@ -1348,7 +1363,7 @@ async def get_scenario(
             parameters_agent_id=parameters_agent_id,
             parameters_required=compute_parameters_required(),
             parameter_suggestions=parameter_suggestions_ids,
-            parameters=[_to_dict(p) for p in parameters],
+            parameters=[_parameter_to_dict(p) for p in parameters],
             # Multi-resource agent IDs
             basic_agent_id=basic_agent_id,
             content_agent_id=content_agent_id,

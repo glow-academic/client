@@ -1079,6 +1079,9 @@ function ScenarioComponent({
   const showQuestionsSection = flagsEnabled.questions;
   const showTemplatesSection = flagsEnabled.templates;
 
+  // Whether video mode is enabled - used for filtering personas/documents/parameters
+  const videoEnabled = !!formState.video_enabled_flag_id;
+
   const canRegenerate = useCallback(
     (resourceType: ScenarioResourceType): boolean => {
       if (!stableScenarioDataFields) return false;
@@ -2563,8 +2566,11 @@ function ScenarioComponent({
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
+                {/* Filter out video_flag flags when video is not enabled */}
                 <Flags
-                  flags={currentScenarioData?.flags ?? []}
+                  flags={(currentScenarioData?.flags ?? []).filter(
+                    (f) => !f.video_flag || videoEnabled
+                  )}
                   flag_ids={{
                     active: formState.active_flag_id ?? null,
                     video_enabled: formState.video_enabled_flag_id ?? null,
@@ -2834,6 +2840,7 @@ function ScenarioComponent({
                   required={currentScenarioData?.personas_required ?? false}
                   onGenerate={handleGeneratePersonas}
                   isGenerating={isGenerating("personas")}
+                  videoEnabled={videoEnabled}
                 />
               </div>
             </StepCard>
@@ -2912,6 +2919,7 @@ function ScenarioComponent({
                   required={currentScenarioData?.documents_required ?? false}
                   onGenerate={handleGenerateDocuments}
                   isGenerating={isGenerating("documents")}
+                  videoEnabled={videoEnabled}
                 />
               </div>
             </StepCard>
@@ -3070,6 +3078,7 @@ function ScenarioComponent({
                   required={currentScenarioData?.parameters_required ?? false}
                   onGenerate={handleGenerateParameters}
                   isGenerating={isGenerating("parameters")}
+                  videoEnabled={videoEnabled}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}

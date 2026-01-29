@@ -20690,6 +20690,10 @@ export interface components {
             field_ids?: string[] | null;
             /** Parent Document Id */
             parent_document_id?: string | null;
+            /** Video Document */
+            video_document?: boolean | null;
+            /** Non Video Document */
+            non_video_document?: boolean | null;
         };
         /**
          * ScenarioField
@@ -20750,6 +20754,8 @@ export interface components {
             agent_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+            /** Video Flag */
+            video_flag?: boolean | null;
         };
         /**
          * ScenarioFlagResource
@@ -20828,6 +20834,8 @@ export interface components {
             scenario_parameter?: boolean | null;
             /** Video Parameter */
             video_parameter?: boolean | null;
+            /** Non Video Parameter */
+            non_video_parameter?: boolean | null;
         };
         /**
          * ScenarioPersona
@@ -20852,6 +20860,10 @@ export interface components {
             field_ids?: string[] | null;
             /** Example */
             example?: string | null;
+            /** Video Persona */
+            video_persona?: boolean | null;
+            /** Non Video Persona */
+            non_video_persona?: boolean | null;
         };
         /** ScenarioPositionsApiRequest */
         ScenarioPositionsApiRequest: {

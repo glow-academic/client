@@ -52,6 +52,7 @@ class ScenarioFlagConfig(BaseModel):
     required: bool = False
     agent_id: UUID | None = None
     generated: bool | None = None
+    video_flag: bool | None = None  # True if this flag only shows when video_enabled is true
 
 
 class ScenarioDepartment(BaseModel):
@@ -75,6 +76,8 @@ class ScenarioPersona(BaseModel):
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     example: str | None = None
+    video_persona: bool | None = None  # Has linked parameter with video_parameter=true
+    non_video_persona: bool | None = None  # Has linked parameter with video_parameter=false
 
 
 class ScenarioObjective(BaseModel):
@@ -96,6 +99,8 @@ class ScenarioDocument(BaseModel):
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     parent_document_id: UUID | None = None
+    video_document: bool | None = None  # Has linked parameter with video_parameter=true
+    non_video_document: bool | None = None  # Has linked parameter with video_parameter=false
 
 
 class ScenarioTemplate(BaseModel):
@@ -118,6 +123,7 @@ class ScenarioParameter(BaseModel):
     persona_parameter: bool | None = None
     scenario_parameter: bool | None = None
     video_parameter: bool | None = None
+    non_video_parameter: bool | None = None  # Inverse of video_parameter for frontend filtering
 
 
 class ScenarioField(BaseModel):
