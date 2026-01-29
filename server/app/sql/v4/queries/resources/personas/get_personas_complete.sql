@@ -58,17 +58,17 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             p.id,
-            (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-            COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''),
-            COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), ''),
-            COALESCE((SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), ''),
-            COALESCE((SELECT pf.value FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'image_model' LIMIT 1), false),
+            p.name,
+            COALESCE(p.description, ''),
+            COALESCE(p.color, ''),
+            COALESCE(p.icon, ''),
+            false,  -- image_model flag not stored in personas_resource
             COALESCE(p.generated, false)
         )::types.q_get_personas_v4_item
         ORDER BY array_position(p_ids, p.id)
     ),
     ARRAY[]::types.q_get_personas_v4_item[]
 ) as items
-FROM persona_artifact p
+FROM personas_resource p
 WHERE p.id = ANY(p_ids);
 $$;

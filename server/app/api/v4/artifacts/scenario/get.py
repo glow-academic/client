@@ -754,7 +754,7 @@ async def get_scenario(
             None,
         )
         problem_statement_resource = next(
-            (ps for ps in problem_statements if ps.id == ids_result.problem_statement_id),
+            (ps for ps in problem_statements if ps.problem_statement_id == ids_result.problem_statement_id),
             None,
         )
         # Find flag resources from all available scenario flags by name
