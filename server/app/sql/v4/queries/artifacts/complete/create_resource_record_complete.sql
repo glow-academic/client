@@ -50,7 +50,7 @@ BEGIN
         RAISE EXCEPTION 'Invalid resource type: %', resource_type;
     END IF;
     
-    v_table_name := resource_type;
+    v_table_name := resource_type || '_resource';
     v_system_columns := jsonb_build_object(
         'call_id', call_id::text,
         'active', 'true',

@@ -52,6 +52,13 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
     group_id_str = data.get("group_id")
     resource_type = data.get("resource_type")
     event_type = data.get("event_type")
+
+    # Only process actual tool completion events, not summary events
+    # text_complete: text-only response, no tool results
+    # run_complete: summary event with all results, already processed individually
+    if event_type not in ("tool_call_complete", "tool_result"):
+        return
+
     tool_result = data.get("result") or {}
     tool_results = data.get("tool_results") or []
     if not tool_result and tool_results:
@@ -64,6 +71,14 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
         return
 
     if not resource_id_str:
+        # Check if this was a tool failure (e.g., duplicate key error)
+        # In that case, the error was already returned to the model for retry
+        # and we don't need to emit an error event to the client
+        tool_success = tool_result.get("success", True)
+        if not tool_success:
+            # Tool execution failed - this is expected and model can retry
+            # Don't emit error since other successful calls may have completed
+            return
         await sio.emit(
             "persona_generation_error",
             {

@@ -8,12 +8,8 @@ from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
 
 from app.sql.types import (
-    InfraToolsGetSchemaFieldsV4SqlParams,
-    InfraToolsGetSchemaFieldsV4SqlRow,
-    InfraToolsGetSchemaIdFromTemplateV4SqlParams,
-    InfraToolsGetSchemaIdFromTemplateV4SqlRow,
-    InfraToolsGetTemplateIdV4SqlParams,
-    InfraToolsGetTemplateIdV4SqlRow,
+    GetResourceOutputSchemaFieldsSqlParams,
+    GetResourceOutputSchemaFieldsSqlRow,
     InfraToolsGetToolCallResultV4SqlParams,
     InfraToolsGetToolCallResultV4SqlRow,
 )
@@ -22,12 +18,9 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-GET_TEMPLATE_ID_SQL_PATH = (
-    "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql"
-)
-GET_SCHEMA_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"
-GET_SCHEMA_FIELDS_SQL_PATH = (
-    "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql"
+# Use the output schema fields directly - this queries args_outputs_resource via tool_args_outputs_junction
+GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH = (
+    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
 )
 GET_TOOL_CALL_RESULT_SQL_PATH = (
     "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
@@ -68,11 +61,11 @@ async def render_tool_template(
     tool_id: uuid.UUID,
     tool_arguments: dict[str, Any],
 ) -> dict[str, Any]:
-    """Render Jinja templates for a tool's schema fields using tool arguments.
+    """Render Jinja templates for a tool's output schema fields using tool arguments.
 
-    Gets the tool's template_id, finds the associated schema via schema_templates,
-    retrieves all schema_fields with their templates, and renders each template
-    using Jinja2 with tool_arguments as context.
+    Gets the tool's output schema fields (from args_outputs_resource via
+    tool_args_outputs_junction), and renders each template using Jinja2
+    with tool_arguments as context.
 
     Args:
         conn: Database connection
@@ -81,69 +74,39 @@ async def render_tool_template(
 
     Returns:
         Dictionary of rendered values keyed by schema field name.
-        Empty dictionary if tool has no template_id or schema.
+        Empty dictionary if tool has no output schema fields.
 
     Raises:
         TemplateError: If template rendering fails (logged but not raised)
     """
-    # Get tool's template_id
-    tool_params = InfraToolsGetTemplateIdV4SqlParams(tool_id=tool_id)
-    tool_result = cast(
-        InfraToolsGetTemplateIdV4SqlRow,
-        await execute_sql_typed(conn, GET_TEMPLATE_ID_SQL_PATH, params=tool_params),
-    )
-
-    if not tool_result or not tool_result.template_id:
-        logger.warning(
-            f"Tool {tool_id} has no template_id, skipping template rendering"
-        )
-        return {}
-
-    template_id = tool_result.template_id
-
-    # Get schema linked to template via schema_templates
-    schema_params = InfraToolsGetSchemaIdFromTemplateV4SqlParams(
-        template_id=template_id
-    )
-    schema_result = cast(
-        InfraToolsGetSchemaIdFromTemplateV4SqlRow,
-        await execute_sql_typed(conn, GET_SCHEMA_ID_SQL_PATH, params=schema_params),
-    )
-
-    if not schema_result or not schema_result.schema_id:
-        logger.warning(
-            f"Template {template_id} for tool {tool_id} has no linked schema, skipping template rendering"
-        )
-        return {}
-
-    schema_id = schema_result.schema_id
-
-    # Get all schema_fields for that schema with their templates
-    schema_params = InfraToolsGetSchemaFieldsV4SqlParams(schema_id=schema_id)
-    schema_fields_rows = cast(
-        list[InfraToolsGetSchemaFieldsV4SqlRow],
+    # Get output schema fields directly from args_outputs_resource
+    # This queries tool_args_outputs_junction → args_outputs_resource
+    output_params = GetResourceOutputSchemaFieldsSqlParams(tool_id=tool_id)
+    output_fields_rows = cast(
+        list[GetResourceOutputSchemaFieldsSqlRow],
         await execute_sql_typed(
             conn,
-            "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql",
-            params=schema_params,
+            GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH,
+            params=output_params,
             multi_row=True,
         ),
     )
-    schema_fields = [
-        {
-            "id": row.id,
-            "name": row.name,
-            "field_type": row.field_type,
-            "template": row.template,
-        }
-        for row in schema_fields_rows
-    ]
 
-    if not schema_fields:
+    if not output_fields_rows:
         logger.warning(
-            f"Schema {schema_id} for tool {tool_id} has no fields, skipping template rendering"
+            f"Tool {tool_id} has no output schema fields, skipping template rendering"
         )
         return {}
+
+    schema_fields = [
+        {
+            "name": row.name,
+            "field_type": row.field_type or "string",
+            "template": row.template,
+        }
+        for row in output_fields_rows
+        if row.name  # Skip rows without a name
+    ]
 
     # Create Jinja2 environment with autoescape enabled for security
     env = Environment(
@@ -212,7 +175,7 @@ async def render_tool_template(
             continue
 
     logger.info(
-        f"Rendered {len(rendered_values)} fields for tool {tool_id} using template {template_id}"
+        f"Rendered {len(rendered_values)} fields for tool {tool_id}"
     )
 
     return rendered_values

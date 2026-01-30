@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import traceback
+import uuid
 from collections.abc import AsyncIterator
 from typing import Any, cast
 
@@ -21,9 +22,10 @@ from app.infra.v4.artifacts import (
     format_messages_for_litellm,
     stream_litellm_events,
 )
+from app.infra.v4.tools.tool_executor import execute_tool_call
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v4.artifacts.tool_registry import wait_for_tool_result
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 
@@ -107,11 +109,99 @@ async def _emit_modality_event(
     await internal_sio.emit(_event_name_for_modality(modality, phase), payload)
 
 
-async def _call_llm_text_stream(
+def _validate_responses_tools(tools: list[dict[str, Any]] | list[ToolParam]) -> list[dict[str, Any]]:
+    """Validate and convert tools to Responses API format."""
+    validated_tools: list[dict[str, Any]] = []
+    for tool in tools:
+        tool_dict: dict[str, Any] | None = None
+        if isinstance(tool, dict):
+            tool_dict = cast(dict[str, Any], tool)
+        elif hasattr(tool, "model_dump"):
+            tool_dict = tool.model_dump()
+        elif hasattr(tool, "dict"):
+            tool_dict = tool.dict()
+        if not tool_dict:
+            continue
+        if tool_dict.get("type") == "function" and "name" in tool_dict:
+            tool_copy = {**tool_dict}
+            if tool_copy.get("strict") and isinstance(
+                tool_copy.get("parameters"), dict
+            ):
+                tool_copy["parameters"] = {
+                    **tool_copy["parameters"],
+                    "additionalProperties": False,
+                }
+            validated_tools.append(tool_copy)
+        elif tool_dict.get("type") == "function" and "function" in tool_dict:
+            func = tool_dict.get("function")
+            if isinstance(func, dict) and func.get("name"):
+                validated_tools.append(
+                    {
+                        "type": "function",
+                        "name": func.get("name"),
+                        "parameters": func.get("parameters", {}),
+                        "description": func.get("description"),
+                        "strict": func.get("strict"),
+                    }
+                )
+    return validated_tools
+
+
+async def _call_responses_api(
+    model: str,
+    responses_input: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | list[ToolParam] | None = None,
+    tool_choice: str | ToolChoice = "auto",
+    api_key: str | None = None,
+    base_url: str | None = None,
+    temperature: float = 0.0,
+    extra_body: dict[str, Any] | None = None,
+) -> AsyncIterator[Any]:
+    """Call LLM using Responses API with proper input format.
+
+    Args:
+        responses_input: List of Responses API items (messages, function_call, function_call_output)
+        tools: Tools in responses API format
+    """
+    if not LITELLM_AVAILABLE or not hasattr(litellm, "aresponses"):
+        raise ValueError("litellm aresponses not available")
+
+    responses_kwargs: dict[str, Any] = {
+        "input": responses_input,
+        "model": model,
+        "stream": True,
+        "api_key": api_key,
+        "temperature": temperature,
+        "timeout": 120.0,
+    }
+
+    if base_url:
+        responses_kwargs["base_url"] = base_url
+
+    if tools:
+        validated_tools = _validate_responses_tools(tools)
+        responses_kwargs["tools"] = validated_tools
+        responses_kwargs["tool_choice"] = tool_choice
+
+    if extra_body:
+        responses_kwargs["extra_body"] = extra_body
+
+    debug_kwargs = {k: v for k, v in responses_kwargs.items() if k != "api_key"}
+    logger.info(
+        f"Calling aresponses API - model: {model}, "
+        f"num_tools: {len(responses_kwargs.get('tools', []))}, "
+        f"tool_choice: {tool_choice}, "
+        f"num_input_items: {len(responses_input)}"
+    )
+    logger.debug(f"aresponses kwargs (sans api_key): {debug_kwargs}")
+
+    return await litellm.aresponses(**responses_kwargs)  # type: ignore
+
+
+async def _call_chat_completions_api(
     model: str,
     messages: list[dict[str, Any]],
-    tools: list[dict[str, Any]] | list[ToolParam] | None = None,
-    openai_tools: list[dict[str, Any]] | None = None,
+    tools: list[dict[str, Any]] | None = None,
     tool_choice: str | ToolChoice = "auto",
     api_key: str | None = None,
     base_url: str | None = None,
@@ -120,20 +210,14 @@ async def _call_llm_text_stream(
     metadata: dict[str, Any] | None = None,
     extra_body: dict[str, Any] | None = None,
 ) -> AsyncIterator[Any]:
-    """Call LLM with streaming, preferring aresponses() API, falling back to acompletion().
+    """Call LLM using Chat Completions API.
 
     Args:
-        tools: Tools in responses API format (flat with name at top level)
-        openai_tools: Tools in OpenAI chat completion format (nested with function key)
+        messages: List of chat messages (role/content/tool_calls format)
+        tools: Tools in OpenAI chat completion format
     """
     if not LITELLM_AVAILABLE:
         raise ValueError("litellm is not available")
-
-    if not model or not model.strip():
-        raise ValueError("model name is required but was empty or null")
-
-    # Use openai_tools for acompletion fallback (nested format with function key)
-    completion_tools = openai_tools if openai_tools else tools
 
     base_kwargs: dict[str, Any] = {
         "model": model,
@@ -147,17 +231,15 @@ async def _call_llm_text_stream(
     if base_url:
         base_kwargs["base_url"] = base_url
 
-    if completion_tools:
-        base_kwargs["tools"] = completion_tools
+    if tools:
+        base_kwargs["tools"] = tools
         base_kwargs["tool_choice"] = tool_choice
 
     merged_extra_body: dict[str, Any] | None = None
     if reasoning:
         merged_extra_body = {"reasoning": reasoning}
-
     if extra_body:
         merged_extra_body = {**(merged_extra_body or {}), **extra_body}
-
     if merged_extra_body:
         base_kwargs["extra_body"] = merged_extra_body
 
@@ -170,85 +252,73 @@ async def _call_llm_text_stream(
         if extra_headers:
             base_kwargs["extra_headers"] = extra_headers
 
-    try:
-        if hasattr(litellm, "aresponses"):
-            responses_kwargs: dict[str, Any] = {
-                "input": messages,
-                "model": model,
-                "stream": True,
-                "api_key": api_key,
-                "temperature": temperature,
-                "timeout": 120.0,
-            }
-            if base_url:
-                responses_kwargs["base_url"] = base_url
-
-            if tools:
-                validated_tools: list[dict[str, Any]] = []
-                for tool in tools:
-                    tool_dict: dict[str, Any] | None = None
-                    if isinstance(tool, dict):
-                        tool_dict = cast(dict[str, Any], tool)
-                    elif hasattr(tool, "model_dump"):
-                        tool_dict = tool.model_dump()
-                    elif hasattr(tool, "dict"):
-                        tool_dict = tool.dict()
-                    if not tool_dict:
-                        continue
-                    if tool_dict.get("type") == "function" and "name" in tool_dict:
-                        tool_copy = {**tool_dict}
-                        if tool_copy.get("strict") and isinstance(
-                            tool_copy.get("parameters"), dict
-                        ):
-                            tool_copy["parameters"] = {
-                                **tool_copy["parameters"],
-                                "additionalProperties": False,
-                            }
-                        validated_tools.append(tool_copy)
-                    elif (
-                        tool_dict.get("type") == "function" and "function" in tool_dict
-                    ):
-                        func = tool_dict.get("function")
-                        if isinstance(func, dict) and func.get("name"):
-                            validated_tools.append(
-                                {
-                                    "type": "function",
-                                    "name": func.get("name"),
-                                    "parameters": func.get("parameters", {}),
-                                    "description": func.get("description"),
-                                    "strict": func.get("strict"),
-                                }
-                            )
-                responses_kwargs["tools"] = validated_tools
-                responses_kwargs["tool_choice"] = tool_choice
-
-            if merged_extra_body:
-                responses_kwargs["extra_body"] = merged_extra_body
-
-            # Log debug info (without sensitive api_key)
-            debug_kwargs = {k: v for k, v in responses_kwargs.items() if k != "api_key"}
-            logger.info(
-                f"Attempting aresponses API - model: {model}, "
-                f"num_tools: {len(validated_tools) if tools else 0}, "
-                f"tool_choice: {tool_choice}"
-            )
-            logger.debug(f"aresponses kwargs (sans api_key): {debug_kwargs}")
-            return await litellm.aresponses(**responses_kwargs)  # type: ignore
-    except Exception as e:
-        logger.warning(
-            f"aresponses API failed for model {model}, falling back to acompletion: "
-            f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
-        )
-
-    # Log debug info for acompletion fallback
-    debug_base_kwargs = {k: v for k, v in base_kwargs.items() if k != "api_key"}
+    debug_kwargs = {k: v for k, v in base_kwargs.items() if k != "api_key"}
     logger.info(
-        f"Using acompletion fallback - model: {model}, "
-        f"num_tools: {len(completion_tools) if completion_tools else 0}, "
-        f"tool_choice: {base_kwargs.get('tool_choice', 'none')}"
+        f"Calling acompletion API - model: {model}, "
+        f"num_tools: {len(tools) if tools else 0}, "
+        f"tool_choice: {base_kwargs.get('tool_choice', 'none')}, "
+        f"num_messages: {len(messages)}"
     )
-    logger.debug(f"acompletion kwargs (sans api_key): {debug_base_kwargs}")
+    logger.debug(f"acompletion kwargs (sans api_key): {debug_kwargs}")
+
     return await litellm.acompletion(**base_kwargs)  # type: ignore
+
+
+async def _call_llm_with_mode(
+    mode: str,
+    model: str,
+    responses_input: list[dict[str, Any]] | None = None,
+    chat_messages: list[dict[str, Any]] | None = None,
+    responses_tools: list[dict[str, Any]] | list[ToolParam] | None = None,
+    openai_tools: list[dict[str, Any]] | None = None,
+    tool_choice: str | ToolChoice = "auto",
+    api_key: str | None = None,
+    base_url: str | None = None,
+    temperature: float = 0.0,
+    reasoning: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    extra_body: dict[str, Any] | None = None,
+) -> AsyncIterator[Any]:
+    """Call LLM using the specified mode.
+
+    Args:
+        mode: "responses" or "chat_completions"
+        responses_input: Input for Responses API (items with type=function_call, etc.)
+        chat_messages: Input for Chat Completions API (messages with role/content)
+        responses_tools: Tools in Responses API format
+        openai_tools: Tools in OpenAI chat completions format
+    """
+    if not model or not model.strip():
+        raise ValueError("model name is required but was empty or null")
+
+    if mode == "responses":
+        if responses_input is None:
+            raise ValueError("responses_input required for responses mode")
+        return await _call_responses_api(
+            model=model,
+            responses_input=responses_input,
+            tools=responses_tools,
+            tool_choice=tool_choice,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=temperature,
+            extra_body=extra_body,
+        )
+    else:
+        if chat_messages is None:
+            raise ValueError("chat_messages required for chat_completions mode")
+        return await _call_chat_completions_api(
+            model=model,
+            messages=chat_messages,
+            tools=openai_tools,
+            tool_choice=tool_choice,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=temperature,
+            reasoning=reasoning,
+            metadata=metadata,
+            extra_body=extra_body,
+        )
 
 
 async def _generate_artifact_impl(
@@ -358,55 +428,102 @@ async def _generate_artifact_impl(
             )
             return
 
-        stream = await _call_llm_text_stream(
-            model=model_config.model,
-            messages=messages,
-            tools=responses_tools,  # Flat format for aresponses API
-            openai_tools=openai_tools,  # Nested format for acompletion fallback
-            tool_choice=tool_choice,
-            api_key=decrypted_api_key,
-            base_url=model_config.base_url,
-            temperature=model_config.temperature or 0.0,
-            reasoning=model_config.reasoning,
-            metadata=metadata,
-            extra_body=extra_body or None,
-        )
+        # Agentic loop - allows model to see tool results and retry on errors
+        # We maintain two parallel conversation states:
+        # - responses_input: For Responses API (items with type=function_call, function_call_output)
+        # - chat_messages: For Chat Completions API (messages with role/content/tool_calls)
+        max_iterations = 10
+        iteration = 0
+        total_input_tokens = 0
+        total_output_tokens = 0
+        all_tool_results: list[dict[str, Any]] = []
+        final_assistant_output = ""
 
-        assistant_output = ""
-        input_tokens = 0
-        output_tokens = 0
-        tool_call_states: dict[str, dict[str, Any]] = {}
-        tool_results: list[dict[str, Any]] = []
+        # Initialize both conversation states from initial messages
+        # Chat messages: standard role/content format
+        chat_messages = list(messages)  # Copy to avoid mutation
 
-        async for event in stream_litellm_events(stream):
-            event_type = event.get("type")
+        # Responses input: convert to item format (messages without tool history work directly)
+        responses_input: list[dict[str, Any]] = [
+            {"role": m["role"], "content": m.get("content", "")}
+            for m in messages
+            if m.get("role") in ("system", "user", "assistant") and not m.get("tool_calls")
+        ]
 
-            if event_type == "text_start":
-                await _emit_modality_event(
-                    "text",
-                    "start",
-                    {
-                        "modality": data.modality,
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "type": "start",
-                        "event_type": "text_start",
-                        "eval_mode": data.eval_mode,
-                    },
-                )
+        # Determine which API mode to use (try Responses first)
+        api_mode = "chat_completions"  # Default fallback
+        if LITELLM_AVAILABLE and hasattr(litellm, "aresponses"):
+            api_mode = "responses"
+            logger.info("Using Responses API mode for agentic loop")
+        else:
+            logger.info("Using Chat Completions API mode for agentic loop")
 
-            elif event_type == "text_delta":
-                delta = event.get("delta", "")
-                if delta:
-                    assistant_output += delta
+        while iteration < max_iterations:
+            iteration += 1
+            logger.info(f"Agentic loop iteration {iteration}/{max_iterations} (mode: {api_mode})")
+
+            # Call the appropriate API
+            try:
+                if api_mode == "responses":
+                    stream = await _call_responses_api(
+                        model=model_config.model,
+                        responses_input=responses_input,
+                        tools=responses_tools,
+                        tool_choice=tool_choice,
+                        api_key=decrypted_api_key,
+                        base_url=model_config.base_url,
+                        temperature=model_config.temperature or 0.0,
+                        extra_body=extra_body or None,
+                    )
+                else:
+                    stream = await _call_chat_completions_api(
+                        model=model_config.model,
+                        messages=chat_messages,
+                        tools=openai_tools,
+                        tool_choice=tool_choice,
+                        api_key=decrypted_api_key,
+                        base_url=model_config.base_url,
+                        temperature=model_config.temperature or 0.0,
+                        reasoning=model_config.reasoning,
+                        metadata=metadata,
+                        extra_body=extra_body or None,
+                    )
+            except Exception as e:
+                if api_mode == "responses":
+                    # Fall back to chat completions
+                    logger.warning(
+                        f"Responses API failed, falling back to Chat Completions: {e}"
+                    )
+                    api_mode = "chat_completions"
+                    stream = await _call_chat_completions_api(
+                        model=model_config.model,
+                        messages=chat_messages,
+                        tools=openai_tools,
+                        tool_choice=tool_choice,
+                        api_key=decrypted_api_key,
+                        base_url=model_config.base_url,
+                        temperature=model_config.temperature or 0.0,
+                        reasoning=model_config.reasoning,
+                        metadata=metadata,
+                        extra_body=extra_body or None,
+                    )
+                else:
+                    raise
+
+            assistant_output = ""
+            input_tokens = 0
+            output_tokens = 0
+            tool_call_states: dict[str, dict[str, Any]] = {}
+            tool_results: list[dict[str, Any]] = []
+            output_items: list[dict[str, Any]] = []  # Raw output items for Responses API
+
+            async for event in stream_litellm_events(stream):
+                event_type = event.get("type")
+
+                if event_type == "text_start":
                     await _emit_modality_event(
                         "text",
-                        "progress",
+                        "start",
                         {
                             "modality": data.modality,
                             "sid": sid,
@@ -416,201 +533,304 @@ async def _generate_artifact_impl(
                             "group_id": data.group_id,
                             "chat_id": data.chat_id,
                             "message_id": data.message_id,
-                            "type": "progress",
-                            "event_type": "text_delta",
-                            "delta": delta,
-                            "accumulated_content": assistant_output,
+                            "type": "start",
+                            "event_type": "text_start",
                             "eval_mode": data.eval_mode,
                         },
                     )
 
-            elif event_type == "text_complete":
-                assistant_output = event.get("text", assistant_output)
-                await _emit_modality_event(
-                    "text",
-                    "complete",
-                    {
-                        "modality": data.modality,
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "type": "complete",
-                        "event_type": "text_complete",
-                        "text": assistant_output,
-                        "eval_mode": data.eval_mode,
-                    },
-                )
+                elif event_type == "text_delta":
+                    delta = event.get("delta", "")
+                    if delta:
+                        assistant_output += delta
+                        await _emit_modality_event(
+                            "text",
+                            "progress",
+                            {
+                                "modality": data.modality,
+                                "sid": sid,
+                                "artifact_type": data.artifact_type,
+                                "resource_type": resource_type,
+                                "run_id": data.run_id,
+                                "group_id": data.group_id,
+                                "chat_id": data.chat_id,
+                                "message_id": data.message_id,
+                                "type": "progress",
+                                "event_type": "text_delta",
+                                "delta": delta,
+                                "accumulated_content": assistant_output,
+                                "eval_mode": data.eval_mode,
+                            },
+                        )
 
-            elif event_type == "tool_call_start":
-                tool_call_id = cast(str, event.get("tool_call_id"))
-                tool_call_states.setdefault(
-                    tool_call_id,
-                    {
-                        "call_id": tool_call_id,
-                        "tool_name": None,
-                        "arguments": "",
-                    },
-                )
-                await _emit_modality_event(
-                    "call",
-                    "start",
-                    {
-                        "modality": "call",
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "type": "start",
-                        "event_type": "tool_call_start",
-                        "tool_call_id": tool_call_id,
-                        "eval_mode": data.eval_mode,
-                    },
-                )
-
-            elif event_type == "tool_call_delta":
-                tool_call_id = cast(str, event.get("tool_call_id"))
-                delta = event.get("delta", "") or ""
-                tool_name = event.get("tool_name")
-                st = tool_call_states.setdefault(
-                    tool_call_id,
-                    {
-                        "call_id": tool_call_id,
-                        "tool_name": None,
-                        "arguments": "",
-                    },
-                )
-                if tool_name and not st["tool_name"]:
-                    st["tool_name"] = tool_name
-                st["arguments"] += delta
-                await _emit_modality_event(
-                    "call",
-                    "progress",
-                    {
-                        "modality": "call",
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "type": "progress",
-                        "event_type": "tool_call_delta",
-                        "tool_call_id": tool_call_id,
-                        "delta": delta,
-                        "tool_name": st.get("tool_name"),
-                        "arguments_delta": delta,
-                        "eval_mode": data.eval_mode,
-                    },
-                )
-
-            elif event_type == "tool_call_complete":
-                tool_call_id = cast(str, event.get("tool_call_id"))
-                tool_name = (
-                    event.get("name")
-                    or tool_call_states.get(tool_call_id, {}).get("tool_name")
-                    or ""
-                )
-                st = tool_call_states.get(tool_call_id, {})
-                arguments_str = event.get("arguments") or st.get("arguments", "")
-
-                try:
-                    arguments_dict = json.loads(arguments_str) if arguments_str else {}
-                except json.JSONDecodeError:
-                    arguments_dict = {}
-
-                await _emit_modality_event(
-                    "call",
-                    "complete",
-                    {
-                        "modality": "call",
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "type": "complete",
-                        "event_type": "tool_call_complete",
-                        "tool_call_id": tool_call_id,
-                        "tool_name": tool_name,
-                        "arguments": arguments_dict,
-                        "arguments_delta": arguments_str,
-                        "call_id": tool_call_id,
-                        "eval_mode": data.eval_mode,
-                    },
-                )
-
-                await internal_sio.emit(
-                    "tool_call",
-                    {
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "call_id": tool_call_id,
-                        "tool_call_id": tool_call_id,
-                        "tool_name": tool_name,
-                        "arguments": arguments_dict,
-                        "eval_mode": data.eval_mode,
-                    },
-                )
-
-                tool_result = await wait_for_tool_result(
-                    tool_call_id, data.tool_timeout_seconds
-                )
-                if tool_result is None:
+                elif event_type == "text_complete":
+                    assistant_output = event.get("text", assistant_output)
                     await _emit_modality_event(
-                        data.modality,
-                        "error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message=f"Tool result timeout for {tool_name}",
-                            artifact_type=data.artifact_type,
-                            group_id=data.group_id,
-                            resource_type=resource_type,
-                        ).model_dump(),
+                        "text",
+                        "complete",
+                        {
+                            "modality": data.modality,
+                            "sid": sid,
+                            "artifact_type": data.artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": data.run_id,
+                            "group_id": data.group_id,
+                            "chat_id": data.chat_id,
+                            "message_id": data.message_id,
+                            "type": "complete",
+                            "event_type": "text_complete",
+                            "text": assistant_output,
+                            "eval_mode": data.eval_mode,
+                        },
                     )
-                    return
 
-                tool_results.append(tool_result)
-                await _emit_modality_event(
-                    "call",
-                    "complete",
-                    {
-                        "modality": "call",
-                        "sid": sid,
-                        "artifact_type": data.artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": data.run_id,
-                        "group_id": data.group_id,
-                        "chat_id": data.chat_id,
-                        "message_id": data.message_id,
-                        "type": "complete",
-                        "event_type": "tool_result",
+                elif event_type == "tool_call_start":
+                    raw_id = cast(str, event.get("tool_call_id"))
+                    # Only truncate for chat completions (40 char limit)
+                    # Responses API can handle longer IDs
+                    tool_call_id = raw_id[:40] if api_mode == "chat_completions" and len(raw_id) > 40 else raw_id
+                    tool_call_states.setdefault(
+                        tool_call_id,
+                        {
+                            "call_id": tool_call_id,
+                            "raw_id": raw_id,  # Keep original for responses API
+                            "tool_name": None,
+                            "arguments": "",
+                        },
+                    )
+                    await _emit_modality_event(
+                        "call",
+                        "start",
+                        {
+                            "modality": "call",
+                            "sid": sid,
+                            "artifact_type": data.artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": data.run_id,
+                            "group_id": data.group_id,
+                            "chat_id": data.chat_id,
+                            "message_id": data.message_id,
+                            "type": "start",
+                            "event_type": "tool_call_start",
+                            "tool_call_id": tool_call_id,
+                            "eval_mode": data.eval_mode,
+                        },
+                    )
+
+                elif event_type == "tool_call_delta":
+                    raw_id = cast(str, event.get("tool_call_id"))
+                    tool_call_id = raw_id[:40] if api_mode == "chat_completions" and len(raw_id) > 40 else raw_id
+                    delta = event.get("delta", "") or ""
+                    tool_name = event.get("tool_name")
+                    st = tool_call_states.setdefault(
+                        tool_call_id,
+                        {
+                            "call_id": tool_call_id,
+                            "raw_id": raw_id,
+                            "tool_name": None,
+                            "arguments": "",
+                        },
+                    )
+                    if tool_name and not st["tool_name"]:
+                        st["tool_name"] = tool_name
+                    st["arguments"] += delta
+                    await _emit_modality_event(
+                        "call",
+                        "progress",
+                        {
+                            "modality": "call",
+                            "sid": sid,
+                            "artifact_type": data.artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": data.run_id,
+                            "group_id": data.group_id,
+                            "chat_id": data.chat_id,
+                            "message_id": data.message_id,
+                            "type": "progress",
+                            "event_type": "tool_call_delta",
+                            "tool_call_id": tool_call_id,
+                            "delta": delta,
+                            "tool_name": st.get("tool_name"),
+                            "arguments_delta": delta,
+                            "eval_mode": data.eval_mode,
+                        },
+                    )
+
+                elif event_type == "tool_call_complete":
+                    raw_id = cast(str, event.get("tool_call_id"))
+                    tool_call_id = raw_id[:40] if api_mode == "chat_completions" and len(raw_id) > 40 else raw_id
+                    tool_name = (
+                        event.get("name")
+                        or tool_call_states.get(tool_call_id, {}).get("tool_name")
+                        or ""
+                    )
+                    st = tool_call_states.get(tool_call_id, {})
+                    arguments_str = event.get("arguments") or st.get("arguments", "")
+
+                    try:
+                        arguments_dict = json.loads(arguments_str) if arguments_str else {}
+                    except json.JSONDecodeError:
+                        arguments_dict = {}
+
+                    await _emit_modality_event(
+                        "call",
+                        "complete",
+                        {
+                            "modality": "call",
+                            "sid": sid,
+                            "artifact_type": data.artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": data.run_id,
+                            "group_id": data.group_id,
+                            "chat_id": data.chat_id,
+                            "message_id": data.message_id,
+                            "type": "complete",
+                            "event_type": "tool_call_complete",
+                            "tool_call_id": tool_call_id,
+                            "tool_name": tool_name,
+                            "arguments": arguments_dict,
+                            "arguments_delta": arguments_str,
+                            "call_id": tool_call_id,
+                            "eval_mode": data.eval_mode,
+                        },
+                    )
+
+                    # Execute tool inline using the agentic pattern
+                    # Tool result (including errors) will be visible to model for retries
+                    async with get_db_connection() as conn:
+                        tool_result_str = await execute_tool_call(
+                            conn=conn,
+                            tool_name=tool_name,
+                            arguments=arguments_dict,
+                            run_id=uuid.UUID(data.run_id) if data.run_id else None,
+                        )
+
+                    # Parse result for internal tracking
+                    try:
+                        tool_result = json.loads(tool_result_str)
+                    except json.JSONDecodeError:
+                        tool_result = {"success": False, "message": tool_result_str}
+
+                    # Store for agentic loop - we'll append to appropriate state
+                    tool_results.append({
                         "tool_call_id": tool_call_id,
+                        "raw_id": raw_id,  # Original ID for responses API
                         "tool_name": tool_name,
+                        "arguments": arguments_dict,
+                        "arguments_str": arguments_str,
                         "result": tool_result,
-                        "eval_mode": data.eval_mode,
-                    },
+                        "result_str": tool_result_str,
+                    })
+
+                    await _emit_modality_event(
+                        "call",
+                        "complete",
+                        {
+                            "modality": "call",
+                            "sid": sid,
+                            "artifact_type": data.artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": data.run_id,
+                            "group_id": data.group_id,
+                            "chat_id": data.chat_id,
+                            "message_id": data.message_id,
+                            "type": "complete",
+                            "event_type": "tool_result",
+                            "tool_call_id": tool_call_id,
+                            "tool_name": tool_name,
+                            "result": tool_result,
+                            "eval_mode": data.eval_mode,
+                        },
+                    )
+
+                elif event_type == "output_item":
+                    # Collect raw output items for Responses API conversation history
+                    item = event.get("item")
+                    if item:
+                        output_items.append(item)
+
+                elif event_type == "message_complete":
+                    usage_data = event.get("usage")
+                    if isinstance(usage_data, dict):
+                        input_tokens = usage_data.get("prompt_tokens", 0) or 0
+                        output_tokens = usage_data.get("completion_tokens", 0) or 0
+
+            # End of async for event loop
+
+            # Track cumulative stats
+            total_input_tokens += input_tokens
+            total_output_tokens += output_tokens
+            all_tool_results.extend(tool_results)
+            final_assistant_output = assistant_output
+
+            # Check if we need to continue the agentic loop
+            if not tool_results:
+                # No tool calls in this iteration, we're done
+                logger.info(f"Agentic loop complete after {iteration} iterations (no tool calls)")
+                break
+
+            # Update conversation state based on API mode
+            if api_mode == "responses":
+                # Responses API: append model's output items + our function_call_output items
+                # 1. Append the model's output items (text, function_call) - persisted from stream
+                for item in output_items:
+                    responses_input.append(item)
+
+                # 2. Append our function_call_output items (our responses to the tool calls)
+                for tr in tool_results:
+                    responses_input.append({
+                        "type": "function_call_output",
+                        "call_id": tr["raw_id"],
+                        "output": tr["result_str"],
+                    })
+                logger.info(
+                    f"Agentic loop iteration {iteration}: {len(output_items)} output items, "
+                    f"{len(tool_results)} tool outputs, "
+                    f"continuing with {len(responses_input)} responses items"
+                )
+            else:
+                # Chat Completions: append assistant message with tool_calls + tool messages
+                assistant_tool_calls = []
+                for tr in tool_results:
+                    assistant_tool_calls.append({
+                        "id": tr["tool_call_id"],  # Truncated ID for chat completions
+                        "type": "function",
+                        "function": {
+                            "name": tr["tool_name"],
+                            "arguments": tr["arguments_str"],
+                        },
+                    })
+
+                chat_messages.append({
+                    "role": "assistant",
+                    "content": assistant_output or "",
+                    "tool_calls": assistant_tool_calls,
+                })
+
+                for tr in tool_results:
+                    chat_messages.append({
+                        "tool_call_id": tr["tool_call_id"],
+                        "role": "tool",
+                        "name": tr["tool_name"],
+                        "content": tr["result_str"],
+                    })
+                logger.info(
+                    f"Agentic loop iteration {iteration}: {len(tool_results)} tool calls, "
+                    f"continuing with {len(chat_messages)} chat messages"
                 )
 
-            elif event_type == "message_complete":
-                usage_data = event.get("usage")
-                if isinstance(usage_data, dict):
-                    input_tokens = usage_data.get("prompt_tokens", 0) or 0
-                    output_tokens = usage_data.get("completion_tokens", 0) or 0
+            # After first iteration with tool calls, switch to auto tool_choice
+            # to allow model to decide whether to call more tools or respond
+            if tool_choice == "required":
+                tool_choice = "auto"
+
+        # End of agentic while loop
+
+        if iteration >= max_iterations:
+            logger.warning(
+                f"Agentic loop reached max iterations ({max_iterations}), "
+                f"returning partial results"
+            )
 
         await _emit_modality_event(
             data.modality,
@@ -626,10 +846,10 @@ async def _generate_artifact_impl(
                 "group_id": data.group_id,
                 "chat_id": data.chat_id,
                 "message_id": data.message_id,
-                "input_text_tokens": input_tokens,
-                "output_text_tokens": output_tokens,
-                "assistant_output": assistant_output,
-                "tool_results": tool_results,
+                "input_text_tokens": total_input_tokens,
+                "output_text_tokens": total_output_tokens,
+                "assistant_output": final_assistant_output,
+                "tool_results": all_tool_results,
                 "eval_mode": data.eval_mode,
             },
         )

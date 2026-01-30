@@ -29,14 +29,14 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT 
+    SELECT
         column_name::text as name,
         data_type::text as data_type,
         (is_nullable = 'YES') as is_nullable,
         column_default::text as column_default
     FROM information_schema.columns
     WHERE table_schema = 'public'
-      AND table_name = resource_type
+      AND table_name = resource_type || '_resource'
       AND column_name NOT IN ('id', 'created_at')
     ORDER BY ordinal_position;
 $$;

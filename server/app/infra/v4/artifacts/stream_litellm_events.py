@@ -243,19 +243,22 @@ async def stream_litellm_events(
             "usage": final_usage_data,
         }
 
-    # Emit final completion events for responses format
+    # Emit final completion events for responses format (only for items not already done)
     if format_detected == "responses":
         # Check for any incomplete items and emit completion events
         for item_id, item_state in response_items.items():
+            if item_state.get("done"):
+                continue  # Already emitted completion event
             if item_state.get("type") == "text" and item_state.get("started"):
                 yield {
                     "type": "text_complete",
                     "text": item_state.get("buffer", ""),
                 }
             elif item_state.get("type") == "function_call":
+                call_id = item_state.get("call_id", item_id)
                 yield {
                     "type": "tool_call_complete",
-                    "tool_call_id": item_id,
+                    "tool_call_id": call_id,
                     "name": item_state.get("name"),
                     "arguments": item_state.get("arguments", ""),
                 }
@@ -430,12 +433,23 @@ async def _parse_responses_chunk(
 
         if item_id and item_id in response_items:
             item_state = response_items[item_id]
-            if item_state.get("type") == "text":
+            if item_state.get("type") == "text" and not item_state.get("done"):
                 # Use provided text or accumulated buffer
                 final_text = text if text is not None else item_state.get("buffer", "")
+                # Mark as done to prevent duplicate emission in cleanup loop
+                item_state["done"] = True
                 yield {
                     "type": "text_complete",
                     "text": final_text,
+                }
+                # Also yield the raw output item for Responses API conversation history
+                yield {
+                    "type": "output_item",
+                    "item": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": final_text}],
+                    },
                 }
 
     # Handle response.function_call_arguments.done (function call complete)
@@ -454,18 +468,32 @@ async def _parse_responses_chunk(
 
         if item_id and item_id in response_items:
             item_state = response_items[item_id]
-            if item_state.get("type") == "function_call":
+            if item_state.get("type") == "function_call" and not item_state.get("done"):
                 # Use provided arguments or accumulated arguments
                 final_arguments = (
                     arguments
                     if arguments is not None
                     else item_state.get("arguments", "")
                 )
+                # Get the call_id from the item state (set during response.output_item.added)
+                call_id = item_state.get("call_id", item_id)
+                # Mark as done to prevent duplicate emission in cleanup loop
+                item_state["done"] = True
                 yield {
                     "type": "tool_call_complete",
-                    "tool_call_id": item_id,
+                    "tool_call_id": call_id,  # Use actual call_id from model
                     "name": item_state.get("name"),
                     "arguments": final_arguments,
+                }
+                # Also yield the raw output item for Responses API conversation history
+                yield {
+                    "type": "output_item",
+                    "item": {
+                        "type": "function_call",
+                        "call_id": call_id,
+                        "name": item_state.get("name"),
+                        "arguments": final_arguments,
+                    },
                 }
 
     # Handle response.output_item.done (legacy/fallback)
