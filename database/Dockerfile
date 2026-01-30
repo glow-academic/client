@@ -19,7 +19,7 @@ RUN apk add --no-cache bash nodejs npm util-linux
 # ──────────────────────────────────────────────────────────
 WORKDIR /database
 RUN mkdir -p /database/history
-VOLUME ["/var/lib/postgresql/data"]
+VOLUME ["/var/lib/postgresql"]
 
 # ──────────────────────────────────────────────────────────
 # 4️⃣  Seed & helper scripts

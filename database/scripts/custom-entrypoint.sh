@@ -137,7 +137,7 @@ elif [[ "$DB_OPERATION" =~ ^seed_.*\.sql$ ]]; then
   fi
   
   log_warning "🧹 Cleaning database before loading seed file..."
-  rm -rf /var/lib/postgresql/data/*
+  rm -rf /var/lib/postgresql/data/18/*
   log_success "Database data directory cleaned."
   
   # Copy seed file to initialization directory
@@ -207,7 +207,7 @@ else
   log_info "✅ Backup restoration completed successfully"
 fi
 # Mark restore completion (healthcheck will verify this)
-touch /var/lib/postgresql/data/.restore_complete 2>/dev/null || true
+touch /var/lib/postgresql/.restore_complete 2>/dev/null || true
 EOF
         chmod +x /docker-entrypoint-initdb.d/50-restore-backup.sh
         log_success "Custom format restore script prepared"
@@ -256,7 +256,7 @@ EOF
   cat > /docker-entrypoint-initdb.d/99-mark-ready.sh << 'EOF'
 #!/bin/bash
 # Mark that database initialization is complete
-touch /var/lib/postgresql/data/.restore_complete 2>/dev/null || true
+touch /var/lib/postgresql/.restore_complete 2>/dev/null || true
 echo "[DB] Database initialization marked as complete at $(date)"
 EOF
   chmod +x /docker-entrypoint-initdb.d/99-mark-ready.sh

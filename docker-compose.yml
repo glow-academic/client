@@ -36,8 +36,8 @@ services:
       - HISTORY_DIR=/database/history
       # DB_OPERATION can be set via .env file or docker run -e DB_OPERATION=...
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - history:/database/history 
+      - pgdata:/var/lib/postgresql
+      - history:/database/history
     depends_on:
       volume-init:
         condition: service_completed_successfully
@@ -45,9 +45,9 @@ services:
       # Ensure PostgreSQL is stable AFTER initialization restart
       # When DB_OPERATION is set, wait for .restore_complete AND verify queries work
       # When DB_OPERATION is empty, just check PostgreSQL readiness
-      # The restore script creates /var/lib/postgresql/data/.restore_complete when done
+      # The restore script creates /var/lib/postgresql/.restore_complete when done
       test: >
-        if [ -n "${DB_OPERATION:-}" ] && [ ! -f /var/lib/postgresql/data/.restore_complete ]; then
+        if [ -n "${DB_OPERATION:-}" ] && [ ! -f /var/lib/postgresql/.restore_complete ]; then
           exit 1
         fi &&
         pg_isready -U ${DB_USER} -d ${DB_NAME} &&
