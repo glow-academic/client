@@ -189,7 +189,7 @@ BEGIN
 
             IF scenario_position_ids IS NOT NULL THEN
                 DELETE FROM scenario_positions_drafts_connection WHERE scenario_positions_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_position_id, version)
+                INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_positions_id, version)
                 SELECT v_draft_id, scenario_position_id, v_new_version
                 FROM UNNEST(scenario_position_ids) as scenario_position_id
                 ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
@@ -198,7 +198,7 @@ BEGIN
 
             IF scenario_rubric_ids IS NOT NULL THEN
                 DELETE FROM scenario_rubrics_drafts_connection WHERE scenario_rubrics_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubric_id, version)
+                INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubrics_id, version)
                 SELECT v_draft_id, scenario_rubric_id, v_new_version
                 FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
                 ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
@@ -207,7 +207,7 @@ BEGIN
 
             IF scenario_time_limit_ids IS NOT NULL THEN
                 DELETE FROM scenario_time_limits_drafts_connection WHERE scenario_time_limits_drafts_connection.draft_id = v_draft_id;
-                INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limit_id, version)
+                INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limits_id, version)
                 SELECT v_draft_id, scenario_time_limit_id, v_new_version
                 FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
                 ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
@@ -282,7 +282,7 @@ BEGIN
     END IF;
 
     IF scenario_position_ids IS NOT NULL THEN
-        INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_position_id, version)
+        INSERT INTO scenario_positions_drafts_connection (draft_id, scenario_positions_id, version)
         SELECT v_draft_id, scenario_position_id, v_new_version
         FROM UNNEST(scenario_position_ids) as scenario_position_id
         ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
@@ -290,7 +290,7 @@ BEGIN
     END IF;
 
     IF scenario_rubric_ids IS NOT NULL THEN
-        INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubric_id, version)
+        INSERT INTO scenario_rubrics_drafts_connection (draft_id, scenario_rubrics_id, version)
         SELECT v_draft_id, scenario_rubric_id, v_new_version
         FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
         ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
@@ -298,13 +298,13 @@ BEGIN
     END IF;
 
     IF scenario_time_limit_ids IS NOT NULL THEN
-        INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limit_id, version)
+        INSERT INTO scenario_time_limits_drafts_connection (draft_id, scenario_time_limits_id, version)
         SELECT v_draft_id, scenario_time_limit_id, v_new_version
         FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
         ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
-    
+
     RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;

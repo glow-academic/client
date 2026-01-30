@@ -39,15 +39,17 @@ export interface ScenarioTimeLimitsProps {
   show_scenario_time_limits?: boolean;
   scenario_ids?: string[];
   scenarios?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    name: string | null;
+    id?: string | null;
+    scenario_id?: string | null;
+    name?: string | null;
+    title?: string | null; // API returns title, map to name
     description?: string | null;
   }>;
   scenario_resources?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    name: string | null;
+    id?: string | null;
+    scenario_id?: string | null;
+    name?: string | null;
+    title?: string | null; // API returns title, map to name
     description?: string | null;
     generated?: boolean | null;
   }>;
@@ -94,23 +96,26 @@ export function ScenarioTimeLimits({
   );
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
-    // Use full scenarios list as base (keyed by resource ID to match scenario_ids)
+    // Use full scenarios list as base (keyed by scenario_id to match scenario_ids)
+    // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
     (scenarios ?? []).forEach((scenario) => {
-      if (scenario.id) {
-        const name = scenario.name?.trim() || null;
+      const id = scenario.scenario_id || scenario.id;
+      if (id) {
+        const name = (scenario.title || scenario.name)?.trim() || null;
         const desc = scenario.description?.trim() || null;
         if (name || desc) {
-          map.set(scenario.id, name || desc || "Untitled scenario");
+          map.set(id, name || desc || "Untitled scenario");
         }
       }
     });
     // Override with scenario_resources (server-confirmed data takes priority)
     (scenario_resources ?? []).forEach((scenario) => {
-      if (scenario.id) {
-        const name = scenario.name?.trim() || "";
+      const id = scenario.scenario_id || scenario.id;
+      if (id) {
+        const name = (scenario.title || scenario.name)?.trim() || "";
         const descriptionText = scenario.description?.trim() || "";
         map.set(
-          scenario.id,
+          id,
           name || descriptionText || "Untitled scenario"
         );
       }
@@ -118,13 +123,17 @@ export function ScenarioTimeLimits({
     return map;
   }, [scenarios, scenario_resources]);
   // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
+  // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
   const artifactIdMap = useMemo(() => {
     const map = new Map<string, string>();
     (scenarios ?? []).forEach((s) => {
-      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
+      const id = s.scenario_id || s.id;
+      // For scenarios_resource data, scenario_id IS the ID (not a foreign key)
+      if (id) map.set(id, id);
     });
     (scenario_resources ?? []).forEach((s) => {
-      if (s.id && s.scenario_id) map.set(s.id, s.scenario_id);
+      const id = s.scenario_id || s.id;
+      if (id) map.set(id, id);
     });
     return map;
   }, [scenarios, scenario_resources]);

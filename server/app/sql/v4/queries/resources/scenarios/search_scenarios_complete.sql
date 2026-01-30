@@ -43,58 +43,36 @@ WITH params AS (
 all_scenarios AS (
     SELECT
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as title,
-        COALESCE(
-            (SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
-            ''
-        ) as description,
-        -- Check if scenario has active flag
-        COALESCE(
-            (SELECT sf.value FROM scenario_flags_junction sf
-             JOIN flags_resource f ON sf.flag_id = f.id
-             WHERE sf.scenario_id = s.id
-               AND f.name = 'scenario_active'
-             LIMIT 1),
-            false
-        ) as active,
+        s.name as title,
+        COALESCE(s.description, '') as description,
+        s.active as active,
         COALESCE(s.generated, false) as generated,
-        -- Get department_id from scenario_departments_junction
-        (SELECT sd.department_id FROM scenario_departments_junction sd WHERE sd.scenario_id = s.id LIMIT 1) as department_id,
-        -- Get persona_id from scenario_personas_junction
-        (SELECT sp.persona_id FROM scenario_personas_junction sp WHERE sp.scenario_id = s.id LIMIT 1) as persona_id,
-        -- Get persona name
-        (SELECT n.name FROM scenario_personas_junction sp
-         JOIN persona_names_junction pn ON pn.persona_id = sp.persona_id
-         JOIN names_resource n ON n.id = pn.name_id
-         WHERE sp.scenario_id = s.id
-         LIMIT 1) as persona_name,
-        s.updated_at
-    FROM scenario_artifact s
+        -- Get first department_id from array
+        CASE WHEN s.department_ids IS NOT NULL AND array_length(s.department_ids, 1) > 0
+             THEN s.department_ids[1]
+             ELSE NULL
+        END as department_id,
+        -- Persona info not available for scenarios_resource
+        NULL::uuid as persona_id,
+        NULL::text as persona_name,
+        s.created_at as updated_at
+    FROM scenarios_resource s
     CROSS JOIN params p
-    -- Only include scenarios that are active
-    WHERE EXISTS (
-        SELECT 1 FROM scenario_flags_junction sf
-        JOIN flags_resource f ON sf.flag_id = f.id
-        WHERE sf.scenario_id = s.id
-          AND f.name = 'scenario_active'
-          AND sf.value = true
-    )
+    -- Only include active scenarios
+    WHERE s.active = true
     -- Apply search filter if provided
     AND (
         p.search_term IS NULL
         OR p.search_term = ''
-        OR LOWER((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)) LIKE '%' || LOWER(p.search_term) || '%'
-        OR LOWER(COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '')) LIKE '%' || LOWER(p.search_term) || '%'
+        OR LOWER(s.name) LIKE '%' || LOWER(p.search_term) || '%'
+        OR LOWER(COALESCE(s.description, '')) LIKE '%' || LOWER(p.search_term) || '%'
     )
     -- Apply department filter if provided (user can only see scenarios in their departments or without departments)
     AND (
         p.user_dept_ids IS NULL
-        OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd WHERE sd.scenario_id = s.id)
-        OR EXISTS (
-            SELECT 1 FROM scenario_departments_junction sd
-            WHERE sd.scenario_id = s.id
-              AND sd.department_id = ANY(p.user_dept_ids)
-        )
+        OR s.department_ids IS NULL
+        OR array_length(s.department_ids, 1) IS NULL
+        OR s.department_ids && p.user_dept_ids
     )
     -- Exclude specified IDs
     AND NOT s.id = ANY(p.exclude_ids)

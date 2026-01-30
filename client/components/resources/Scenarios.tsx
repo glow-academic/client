@@ -33,18 +33,20 @@ export interface ScenarioItem {
 export interface ScenariosProps {
   scenario_ids?: string[]; // Current scenario resource IDs (standardized prop name)
   scenario_resources?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    name: string | null;
+    id?: string | null;
+    scenario_id?: string | null;
+    name?: string | null;
+    title?: string | null; // API returns title, map to name
     description?: string | null;
     generated?: boolean | null;
   }>; // Selected scenario resources (each includes generated field)
   show_scenarios?: boolean; // Whether to show this resource picker
   scenario_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   scenarios?: Array<{
-    id: string | null;
-    scenario_id: string | null;
-    name: string | null;
+    id?: string | null;
+    scenario_id?: string | null;
+    name?: string | null;
+    title?: string | null; // API returns title, map to name
     description?: string | null;
     generated?: boolean | null;
   }>; // All available scenarios from API (each includes generated field)
@@ -104,12 +106,17 @@ export function Scenarios({
   }, [ids]);
 
   // Convert scenarios array to ScenarioItem format for GenericPicker
+  // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
   const scenarioItems = useMemo(() => {
     return allScenarios
-      .filter((s) => s.id && s.name) // Filter out nulls
+      .filter((s) => {
+        const id = s.scenario_id || s.id;
+        const name = s.title || s.name;
+        return id && name;
+      })
       .map((s) => ({
-        id: s.id!,
-        name: s.name!,
+        id: (s.scenario_id || s.id)!,
+        name: (s.title || s.name)!,
         ...(s.description ? { description: s.description } : {}), // Only include if not null/undefined
       }));
   }, [allScenarios]);
@@ -134,27 +141,28 @@ export function Scenarios({
         agent_id &&
         group_id
       ) {
-        for (const scenarioResourceId of newlySelected) {
+        for (const scenarioId of newlySelected) {
           try {
-            // Find the scenario artifact ID from the resource
+            // Find the scenario from the list - handle both id and scenario_id fields
             const scenarioResource = allScenarios.find(
-              (s) => s.id === scenarioResourceId
+              (s) => (s.scenario_id || s.id) === scenarioId
             );
-            if (scenarioResource?.scenario_id) {
+            // The scenarioId is already the scenario_id (from scenarioItems mapping)
+            if (scenarioResource) {
               await createScenariosAction({
                 body: {
                   agent_id: agent_id,
                   group_id: group_id,
-                  scenario_id: scenarioResource.scenario_id,
+                  scenario_id: scenarioId, // Already the scenario_id
                   mcp: false,
                 },
               });
-              createdScenarioIdsRef.current.add(scenarioResourceId);
+              createdScenarioIdsRef.current.add(scenarioId);
             }
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error(
-              `Failed to create scenario resource for ${scenarioResourceId}:`,
+              `Failed to create scenario resource for ${scenarioId}:`,
               error
             );
             // Don't block UI - still update selection
