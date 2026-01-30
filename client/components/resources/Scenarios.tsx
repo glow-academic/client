@@ -280,14 +280,16 @@ export function Scenarios({
                 : "border-input"
             )}
           >
+            {/* Suggested badge - top right */}
             {isSuggested(item.id) && !isSelected && (
-              <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                 Suggested
-              </span>
+              </div>
             )}
+            {/* Check icon - top right */}
             {isSelected && (
-              <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Check className="h-3.5 w-3.5" />
+              <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
             <div className="space-y-1">
