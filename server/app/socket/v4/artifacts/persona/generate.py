@@ -22,8 +22,15 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.persona.permissions import (
+    GenerationContext,
+    format_generation_error,
+    validate_generation_access,
+)
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
+    GetPersonaGenerationContextSqlParams,
+    GetPersonaGenerationContextSqlRow,
     GetPersonaResourceTreeSqlParams,
     GetPersonaResourceTreeSqlRow,
     IPersonaResourceV4,
@@ -51,6 +58,9 @@ GET_GROUP_IDS_BY_RESOURCE_IDS_SQL_PATH = (
     "app/sql/v4/queries/personas/get_group_ids_by_resource_ids_complete.sql"
 )
 # New SQL paths for business logic separation
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"
+)
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
 )
@@ -214,9 +224,54 @@ async def _persona_generate_impl(
             # Get group_id from persona response if available
             existing_group_id: uuid.UUID | None = result.group_id
 
-            # Step 4: Prepare generation (rate limit, group/run, context)
-            # This SQL function handles rate limit validation (fail fast),
-            # group/run creation, and fetches all context in one call
+            # Step 4: Fetch context and validate prerequisites
+            context_params = GetPersonaGenerationContextSqlParams(
+                p_profile_id=profile_id,
+                p_agent_id=agent_id,
+            )
+            context_row = cast(
+                GetPersonaGenerationContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=context_params),
+            )
+
+            # Build context dataclass for validation
+            ctx = GenerationContext(
+                agent_exists=context_row.agent_exists or False,
+                agent_name=context_row.agent_name,
+                agent_is_active=context_row.agent_is_active or False,
+                model_id=context_row.model_id,
+                model_name=context_row.model_name,
+                provider_id=context_row.provider_id,
+                provider_name=context_row.provider_name,
+                has_api_key=context_row.has_api_key or False,
+                requests_per_day=context_row.requests_per_day,
+                runs_today=context_row.runs_today or 0,
+            )
+
+            # Validate using business logic in Python
+            is_valid, failures = validate_generation_access(ctx)
+
+            if not is_valid:
+                error_msg = format_generation_error(failures)
+                logger.error(
+                    f"Persona generation validation failed - "
+                    f"profile_id={profile_id}, agent_id={agent_id}, "
+                    f"reason: {error_msg}"
+                )
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Failed to prepare persona generation: {error_msg}",
+                        artifact_type="persona",
+                        group_id=str(existing_group_id) if existing_group_id else None,
+                        resource_type="persona",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            # Step 5: Prepare generation (group/run creation, context fetch)
             try:
                 prepare_params = PreparePersonaGenerationSqlParams(
                     p_profile_id=profile_id,
@@ -232,134 +287,15 @@ async def _persona_generate_impl(
                 )
 
                 if not prepare_row.run_id:
-                    # Run diagnostic queries to determine the actual failure reason
-                    failure_reasons: list[str] = []
-
-                    # Check 1: Agent exists and is active
-                    agent_check = await conn.fetchrow(
-                        """
-                        SELECT
-                            a.id,
-                            EXISTS (
-                                SELECT 1 FROM agent_flags_junction af
-                                JOIN flags_resource f ON af.flag_id = f.id
-                                WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
-                            ) as is_active
-                        FROM agent_artifact a
-                        WHERE a.id = $1
-                        """,
-                        agent_id,
-                    )
-                    if not agent_check:
-                        failure_reasons.append(f"Agent {agent_id} does not exist")
-                    elif not agent_check["is_active"]:
-                        failure_reasons.append(f"Agent {agent_id} is not active")
-
-                    # Check 2: API key configuration exists
-                    key_check = await conn.fetchrow(
-                        """
-                        SELECT COUNT(*) as key_count
-                        FROM setting_artifact s
-                        JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id AND spk.active = true
-                        JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
-                        WHERE EXISTS (
-                            SELECT 1 FROM setting_flags_junction sf
-                            JOIN flags_resource f ON sf.flag_id = f.id
-                            WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE
-                        )
-                        """,
-                    )
-                    if not key_check or key_check["key_count"] == 0:
-                        failure_reasons.append("No active API key configured in settings")
-
-                    # Check 3: Rate limit configured for profile
-                    rate_check = await conn.fetchrow(
-                        """
-                        SELECT
-                            rl.requests_per_day,
-                            (
-                                SELECT COUNT(*)::bigint
-                                FROM profile_runs_junction prj
-                                JOIN view_runs_entry mr ON mr.id = prj.run_id
-                                WHERE prj.profile_id = $1
-                                AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
-                            ) as runs_today
-                        FROM profile_artifact prof
-                        LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
-                        LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-                        WHERE prof.id = $1
-                        """,
-                        profile_id,
-                    )
-                    if rate_check:
-                        if rate_check["requests_per_day"] is None:
-                            failure_reasons.append("Profile has no rate limit configured (requests_per_day is NULL)")
-                        elif rate_check["runs_today"] >= rate_check["requests_per_day"]:
-                            failure_reasons.append(
-                                f"Rate limit exceeded ({rate_check['runs_today']}/{rate_check['requests_per_day']} requests today)"
-                            )
-
-                    # Check 4: Agent has a model configured
-                    model_check = await conn.fetchrow(
-                        """
-                        SELECT
-                            m.id as model_id,
-                            (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
-                            p_prov.id as provider_id,
-                            (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = p_prov.id LIMIT 1) as provider_name
-                        FROM agent_artifact a
-                        LEFT JOIN agent_models_junction am ON am.agent_id = a.id
-                        LEFT JOIN models_resource m ON m.id = am.model_id
-                        LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
-                        LEFT JOIN providers_resource p_res ON p_res.id = mp.providers_id
-                        LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_res.id
-                        LEFT JOIN provider_artifact p_prov ON p_prov.id = ppj.provider_id
-                        WHERE a.id = $1
-                        """,
-                        agent_id,
-                    )
-                    if not model_check or not model_check["model_id"]:
-                        failure_reasons.append(f"Agent {agent_id} has no model configured")
-                    elif not model_check["provider_id"]:
-                        failure_reasons.append(f"Model {model_check['model_name']} has no provider configured")
-
-                    # Check 5: Provider has API key in active settings
-                    if model_check and model_check["provider_id"]:
-                        provider_key_check = await conn.fetchrow(
-                            """
-                            SELECT
-                                spk.key_id,
-                                kr.key IS NOT NULL as has_key
-                            FROM setting_artifact s
-                            JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id AND spk.active = true
-                            JOIN model_providers_junction mp ON mp.providers_id = spk.providers_id
-                            JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
-                            WHERE mp.model_id = $1
-                            AND EXISTS (
-                                SELECT 1 FROM setting_flags_junction sf
-                                JOIN flags_resource f ON sf.flag_id = f.id
-                                WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE
-                            )
-                            LIMIT 1
-                            """,
-                            model_check["model_id"],
-                        )
-                        if not provider_key_check:
-                            failure_reasons.append(
-                                f"No API key configured for provider '{model_check['provider_name']}' in active settings"
-                            )
-
-                    error_detail = "; ".join(failure_reasons) if failure_reasons else "Unknown reason (check server logs for SQL details)"
                     logger.error(
-                        f"Persona generation preparation failed - "
-                        f"profile_id={profile_id}, agent_id={agent_id}, "
-                        f"reason: {error_detail}"
+                        f"Persona generation preparation failed unexpectedly - "
+                        f"profile_id={profile_id}, agent_id={agent_id}"
                     )
                     await emit_to_internal(
                         "generate_call_error",
                         GenerateErrorApiRequest(
                             sid=sid,
-                            error_message=f"Failed to prepare persona generation: {error_detail}",
+                            error_message="Failed to prepare persona generation: Unknown error",
                             artifact_type="persona",
                             group_id=str(existing_group_id)
                             if existing_group_id

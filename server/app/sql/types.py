@@ -8207,6 +8207,52 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_persona_generation_context
+
+class GetPersonaGenerationContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_agent_id,
+        )
+
+class GetPersonaGenerationContextSqlRow(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+class GetPersonaGenerationContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_agent_id: UUID
+
+class GetPersonaGenerationContextApiResponse(BaseModel):
+
+    agent_exists: bool | None = None
+    agent_name: str | None = None
+    agent_is_active: bool | None = None
+    model_id: UUID | None = None
+    model_name: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    has_api_key: bool | None = None
+    requests_per_day: int | None = None
+    runs_today: int | None = None
+
+
+
 # Generated from: insert_generation_messages
 
 class InsertGenerationMessagesSqlParams(BaseModel):
@@ -12387,35 +12433,6 @@ class GetPersonaDocsJunctionsApiResponse(BaseModel):
 
 
 # Generated from: get_persona_generation_context
-
-class GetPersonaGenerationContextSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-        )
-
-class GetPersonaGenerationContextSqlRow(BaseModel):
-
-    domain_id: UUID | None = None
-    agent_id: UUID | None = None
-
-class GetPersonaGenerationContextApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetPersonaGenerationContextApiResponse(BaseModel):
-
-    domain_id: UUID | None = None
-    agent_id: UUID | None = None
-
 
 
 # Generated from: get_persona_ids
@@ -24819,6 +24836,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
+    "app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql": (
+        "GetPersonaGenerationContextSqlParams",
+        "GetPersonaGenerationContextSqlRow",
+        "GetPersonaGenerationContextApiRequest",
+        "GetPersonaGenerationContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/persona/insert_generation_messages_complete.sql": (
         "InsertGenerationMessagesSqlParams",
         "InsertGenerationMessagesSqlRow",
@@ -27258,6 +27281,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/fields/save_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/persona/get_persona_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
