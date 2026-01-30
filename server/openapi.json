@@ -16966,6 +16966,199 @@
         ]
       }
     },
+    "/api/v4/resources/templates/html": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Template Html",
+        "description": "Get template HTML by ID.",
+        "operationId": "get_template_html_api_v4_resources_templates_html_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetTemplateHtmlApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTemplateHtmlApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/templates/search": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Search Templates",
+        "operationId": "search_templates_api_v4_resources_templates_search_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchTemplatesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchTemplatesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/values": {
       "post": {
         "tags": [
@@ -48360,8 +48553,7 @@
         "required": [
           "ids"
         ],
-        "title": "GetScenariosApiRequest",
-        "description": "Request for getting scenarios by IDs."
+        "title": "GetScenariosApiRequest"
       },
       "GetScenariosApiResponse": {
         "properties": {
@@ -48369,7 +48561,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetScenariosV4Item"
+                  "$ref": "#/components/schemas/app__sql__types__QGetScenariosV4Item"
                 },
                 "type": "array"
               },
@@ -48381,8 +48573,7 @@
           }
         },
         "type": "object",
-        "title": "GetScenariosApiResponse",
-        "description": "Response for getting scenarios by IDs."
+        "title": "GetScenariosApiResponse"
       },
       "GetScenariosListApiRequest": {
         "properties": {
@@ -50870,6 +51061,39 @@
         "title": "GetTemplateApiResponse",
         "description": "Response for getting a template."
       },
+      "GetTemplateHtmlApiRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "GetTemplateHtmlApiRequest",
+        "description": "Request for getting template HTML by ID."
+      },
+      "GetTemplateHtmlApiResponse": {
+        "properties": {
+          "html": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html"
+          }
+        },
+        "type": "object",
+        "title": "GetTemplateHtmlApiResponse",
+        "description": "Response for getting template HTML."
+      },
       "GetTemplateV4Item": {
         "properties": {
           "template_id": {
@@ -50905,17 +51129,6 @@
               }
             ],
             "title": "Description"
-          },
-          "html": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Html"
           },
           "generated": {
             "anyOf": [
@@ -52340,7 +52553,8 @@
           "updated_at": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -53103,7 +53317,8 @@
           "updated_at": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -53941,7 +54156,8 @@
           "updated_at": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -56563,7 +56779,7 @@
             ],
             "title": "Parameter Ids"
           },
-          "field_ids": {
+          "parameter_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -56576,7 +56792,7 @@
                 "type": "null"
               }
             ],
-            "title": "Field Ids"
+            "title": "Parameter Field Ids"
           },
           "image_ids": {
             "anyOf": [
@@ -81937,104 +82153,6 @@
         ],
         "title": "QGetRubricsListV4StandardGroup"
       },
-      "QGetScenariosV4Item": {
-        "properties": {
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          },
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "persona_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Name"
-          }
-        },
-        "type": "object",
-        "title": "QGetScenariosV4Item",
-        "description": "Scenario item from scenarios resource query."
-      },
       "QGetSettingV4Auth": {
         "properties": {
           "auth_id": {
@@ -87634,6 +87752,63 @@
           "generated"
         ],
         "title": "QGetSimulationV4ScenarioTimeLimitResource"
+      },
+      "QGetTemplatesV4Item": {
+        "properties": {
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "name",
+          "description",
+          "generated"
+        ],
+        "title": "QGetTemplatesV4Item"
       },
       "QGetToolV4ArgsFieldDetail": {
         "properties": {
@@ -99761,7 +99936,7 @@
             ],
             "title": "Parameter Ids"
           },
-          "field_ids": {
+          "parameter_field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -99774,7 +99949,7 @@
                 "type": "null"
               }
             ],
-            "title": "Field Ids"
+            "title": "Parameter Field Ids"
           },
           "image_ids": {
             "anyOf": [
@@ -100473,6 +100648,18 @@
             ],
             "title": "Mime Type"
           },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
           "parameter_ids": {
             "anyOf": [
               {
@@ -100824,7 +101011,7 @@
       },
       "ScenarioImage": {
         "properties": {
-          "id": {
+          "image_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -100834,7 +101021,7 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Image Id"
           },
           "name": {
             "anyOf": [
@@ -101281,7 +101468,7 @@
       },
       "ScenarioProblemStatement": {
         "properties": {
-          "id": {
+          "problem_statement_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -101291,7 +101478,7 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Problem Statement Id"
           },
           "name": {
             "anyOf": [
@@ -101333,7 +101520,7 @@
       },
       "ScenarioQuestion": {
         "properties": {
-          "id": {
+          "question_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -101343,7 +101530,7 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Question Id"
           },
           "question_text": {
             "anyOf": [
@@ -101447,7 +101634,7 @@
       },
       "ScenarioTemplate": {
         "properties": {
-          "id": {
+          "template_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -101457,7 +101644,7 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Template Id"
           },
           "name": {
             "anyOf": [
@@ -101480,17 +101667,6 @@
               }
             ],
             "title": "Description"
-          },
-          "html": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Html"
           },
           "generated": {
             "anyOf": [
@@ -101571,7 +101747,7 @@
       },
       "ScenarioVideo": {
         "properties": {
-          "id": {
+          "video_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -101581,7 +101757,7 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Video Id"
           },
           "name": {
             "anyOf": [
@@ -102851,7 +103027,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetScenariosV4Item"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"
                 },
                 "type": "array"
               },
@@ -103100,6 +103276,82 @@
         "type": "object",
         "title": "SearchSimulationsApiResponse",
         "description": "Response for searching simulations."
+      },
+      "SearchTemplatesApiRequest": {
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "limit_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Count",
+            "default": 20
+          },
+          "offset_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Count",
+            "default": 0
+          },
+          "exclude_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Ids"
+          }
+        },
+        "type": "object",
+        "title": "SearchTemplatesApiRequest"
+      },
+      "SearchTemplatesApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetTemplatesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "SearchTemplatesApiResponse"
       },
       "SimulationPositionsApiRequest": {
         "properties": {
@@ -103671,6 +103923,104 @@
         },
         "type": "object",
         "title": "VoicesApiResponse"
+      },
+      "app__api__v4__artifacts__simulation__types__QGetScenariosV4Item": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          }
+        },
+        "type": "object",
+        "title": "QGetScenariosV4Item",
+        "description": "Scenario item from scenarios resource query."
       },
       "app__api__v4__resources__simulations__get__GetSimulationApiRequest": {
         "properties": {
@@ -104673,6 +105023,113 @@
         },
         "type": "object",
         "title": "GetSimulationApiResponse"
+      },
+      "app__sql__types__QGetScenariosV4Item": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "title",
+          "description",
+          "active",
+          "generated",
+          "department_id",
+          "persona_id",
+          "persona_name"
+        ],
+        "title": "QGetScenariosV4Item"
       }
     }
   }

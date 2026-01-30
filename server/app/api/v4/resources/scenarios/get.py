@@ -9,7 +9,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.simulation.types import (
+from app.sql.types import (
     GetScenariosApiRequest,
     GetScenariosApiResponse,
     GetScenariosSqlParams,

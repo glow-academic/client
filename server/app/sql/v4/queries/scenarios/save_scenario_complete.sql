@@ -56,7 +56,7 @@ CREATE OR REPLACE FUNCTION api_save_scenario_v4(
     document_ids uuid[] DEFAULT NULL,
     template_document_ids uuid[] DEFAULT NULL,
     parameter_ids uuid[] DEFAULT NULL,
-    field_ids uuid[] DEFAULT NULL,
+    parameter_field_ids uuid[] DEFAULT NULL,
     image_ids uuid[] DEFAULT NULL,
     objective_ids uuid[] DEFAULT NULL,
     video_ids uuid[] DEFAULT NULL,
@@ -92,7 +92,7 @@ DECLARE
     v_document_ids uuid[];
     v_template_document_ids uuid[];
     v_parameter_ids uuid[];
-    v_field_ids uuid[];
+    v_parameter_field_ids uuid[];
     v_image_ids uuid[];
     v_objective_ids uuid[];
     v_video_ids uuid[];
@@ -117,7 +117,7 @@ BEGIN
     v_document_ids := COALESCE(document_ids, ARRAY[]::uuid[]);
     v_template_document_ids := COALESCE(template_document_ids, ARRAY[]::uuid[]);
     v_parameter_ids := COALESCE(parameter_ids, ARRAY[]::uuid[]);
-    v_field_ids := COALESCE(field_ids, ARRAY[]::uuid[]);
+    v_parameter_field_ids := COALESCE(parameter_field_ids, ARRAY[]::uuid[]);
     v_image_ids := COALESCE(image_ids, ARRAY[]::uuid[]);
     v_objective_ids := COALESCE(objective_ids, ARRAY[]::uuid[]);
     v_video_ids := COALESCE(video_ids, ARRAY[]::uuid[]);
@@ -149,17 +149,20 @@ BEGIN
         VALUES (v_scenario_id, v_scenario_id, true, NOW());
     ELSE
         v_scenario_id := v_input_scenario_id;
+
+        -- Check if scenario exists BEFORE attempting update
+        IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE id = v_scenario_id) THEN
+            RAISE EXCEPTION 'Scenario not found: %', v_input_scenario_id;
+        END IF;
+
         UPDATE scenario_artifact
         SET updated_at = NOW()
         WHERE id = v_scenario_id;
+
         -- Upsert group via junction table
         INSERT INTO scenario_groups_junction (scenario_id, group_id)
         VALUES (v_scenario_id, v_group_id)
         ON CONFLICT DO NOTHING;
-
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'Scenario not found: %', v_input_scenario_id;
-        END IF;
     END IF;
 
     -- Validate required resource IDs exist (single-select resources)
@@ -311,11 +314,11 @@ BEGIN
         ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET active = true;
     END IF;
 
-    IF v_field_ids IS NOT NULL THEN
+    IF v_parameter_field_ids IS NOT NULL THEN
         INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, call_id, created_at)
         SELECT v_scenario_id, pfr.id, true, (SELECT id FROM view_calls_entry LIMIT 1), NOW()
-        FROM UNNEST(v_field_ids) as field_id
-        JOIN parameter_fields_resource pfr ON pfr.field_id = field_id
+        FROM UNNEST(v_parameter_field_ids) as input_field_id
+        JOIN parameter_fields_resource pfr ON pfr.field_id = input_field_id
         ON CONFLICT (scenario_id, parameter_field_id) DO UPDATE SET active = true;
     END IF;
 

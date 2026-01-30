@@ -712,7 +712,7 @@ export default function Personas({
 
     return (
       <Card
-        className="hover:shadow-md transition-shadow"
+        className="relative flex flex-col h-full hover:shadow-md transition-shadow"
         data-testid="persona-card"
         data-persona-id={persona.persona_id}
         role="gridcell"
@@ -872,7 +872,7 @@ export default function Personas({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-grow flex flex-col">
+        <CardContent className="pt-0 flex-grow flex flex-col justify-end">
           <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
             {persona.description || "No description available"}
           </p>

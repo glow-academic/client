@@ -4,6 +4,7 @@ These types are used for the scenario API endpoints and include
 Python-computed permissions and UI flags.
 """
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -96,6 +97,7 @@ class ScenarioDocument(BaseModel):
     description: str | None = None
     file_path: str | None = None
     mime_type: str | None = None
+    upload_id: UUID | None = None
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     parent_document_id: UUID | None = None
@@ -106,10 +108,9 @@ class ScenarioDocument(BaseModel):
 class ScenarioTemplate(BaseModel):
     """Template for scenario."""
 
-    id: UUID | None = None
+    template_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    html: str | None = None
     generated: bool | None = None
 
 
@@ -141,7 +142,7 @@ class ScenarioField(BaseModel):
 class ScenarioImage(BaseModel):
     """Image for scenario."""
 
-    id: UUID | None = None
+    image_id: UUID | None = None
     name: str | None = None
     file_path: str | None = None
     mime_type: str | None = None
@@ -152,7 +153,7 @@ class ScenarioImage(BaseModel):
 class ScenarioVideo(BaseModel):
     """Video for scenario."""
 
-    id: UUID | None = None
+    video_id: UUID | None = None
     name: str | None = None
     length_seconds: int | None = None
     completed: bool | None = None
@@ -165,7 +166,7 @@ class ScenarioVideo(BaseModel):
 class ScenarioQuestion(BaseModel):
     """Question for scenario."""
 
-    id: UUID | None = None
+    question_id: UUID | None = None
     question_text: str | None = None
     allow_multiple: bool | None = None
     generated: bool | None = None
@@ -174,7 +175,7 @@ class ScenarioQuestion(BaseModel):
 class ScenarioProblemStatement(BaseModel):
     """Problem statement for scenario."""
 
-    id: UUID | None = None
+    problem_statement_id: UUID | None = None
     name: str | None = None
     problem_statement: str | None = None
     generated: bool | None = None
@@ -428,7 +429,7 @@ class ListScenarioApiScenario(BaseModel):
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
     cohort_ids: list[str] | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
 
     # Python-computed permissions
     can_edit: bool | None = None
@@ -548,7 +549,7 @@ class SaveScenarioApiRequest(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
@@ -627,7 +628,7 @@ class PatchScenarioDraftApiRequest(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     problem_statement_id: UUID | None = None
@@ -665,7 +666,7 @@ class ListScenarioSqlScenario(BaseModel):
     simulation_ids: list[str] | None = None
     num_simulations: int | None = None
     cohort_ids: list[str] | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
 
 
 class ListScenarioSqlRow(BaseModel):
@@ -967,7 +968,7 @@ class SaveScenarioSqlParams(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
@@ -994,7 +995,7 @@ class SaveScenarioSqlParams(BaseModel):
             self.document_ids,
             self.template_document_ids,
             self.parameter_ids,
-            self.field_ids,
+            self.parameter_field_ids,
             self.image_ids,
             self.objective_ids,
             self.video_ids,
@@ -1077,7 +1078,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     problem_statement_id: UUID | None = None
@@ -1104,7 +1105,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
             self.document_ids,
             self.template_document_ids,
             self.parameter_ids,
-            self.field_ids,
+            self.parameter_field_ids,
             self.image_ids,
             self.objective_ids,
             self.problem_statement_id,

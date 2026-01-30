@@ -57,6 +57,7 @@ export interface DocumentsProps {
     description?: string | null;
     file_path?: string | null;
     mime_type?: string | null;
+    upload_id?: string | null;
     parameter_ids?: string[] | null;
     field_ids?: string[] | null;
     parent_document_id?: string | null;
@@ -320,7 +321,7 @@ export function Documents({
             can_delete: false,
             active: true,
             department_ids: [],
-            upload_id: null,
+            upload_id: fullDoc?.upload_id ?? null,
             field_ids: fullDoc?.field_ids || [],
             valid_field_ids: null,
             active_scenario_count: null,
@@ -424,7 +425,7 @@ export function Documents({
               can_delete: false,
               active: true,
               department_ids: [],
-              upload_id: null,
+              upload_id: fullDoc?.upload_id ?? null,
               field_ids: fullDoc?.field_ids || [],
               valid_field_ids: null,
               active_scenario_count: null,

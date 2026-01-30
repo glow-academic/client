@@ -34,6 +34,7 @@ export interface ProblemStatementsProps {
   problem_statement_id?: string | null; // Current problem_statement_id (standardized prop name)
   problem_statement_resource?: {
     id?: string | null;
+    problem_statement_id?: string | null;
     name?: string | null;
     problem_statement?: string | null;
     generated?: boolean | null;
@@ -42,6 +43,7 @@ export interface ProblemStatementsProps {
   problem_statement_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   problem_statements?: Array<{
     id?: string | null;
+    problem_statement_id?: string | null;
     name?: string | null;
     problem_statement?: string | null;
     generated?: boolean | null;
@@ -251,12 +253,13 @@ export function ProblemStatements({
   }, [resourceProblemStatement, defaultProblemStatement, resourceId, problemStatementsById]);
 
   // Transform to ensure id and problem_statement are non-null for GenericPicker
+  // API returns problem_statement_id, not id
   const pickerItems = useMemo(() => {
     if (problemStatementsArray.length > 0) {
       return problemStatementsArray
-        .filter((ps) => ps.id != null && ps.problem_statement != null)
+        .filter((ps) => (ps.problem_statement_id || ps.id) != null && ps.problem_statement != null)
         .map((ps) => ({
-          id: ps.id!,
+          id: (ps.problem_statement_id ?? ps.id)!,
           problem_statement: ps.problem_statement!,
           ...(ps.generated !== undefined ? { generated: ps.generated } : {}),
         }));

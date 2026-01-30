@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -37,7 +38,6 @@ export interface TemplateItem {
   id: string;
   name: string;
   description?: string | null;
-  html?: string | null;
 }
 
 export interface TemplatesProps {
@@ -46,16 +46,15 @@ export interface TemplatesProps {
     id?: string | null;
     name?: string | null;
     description?: string | null;
-    html?: string | null;
     generated?: boolean | null;
   }>; // Selected template resources (each includes generated field)
   show_templates?: boolean; // Whether to show this resource picker
   template_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   templates?: Array<{
     id?: string | null;
+    template_id?: string | null;
     name?: string | null;
     description?: string | null;
-    html?: string | null;
     generated?: boolean | null;
   }>; // All available templates from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
@@ -122,14 +121,14 @@ export function Templates({
   }, [ids]);
 
   // Convert templates array to TemplateItem format for SelectableGrid
+  // API returns template_id, not id
   const templateItems = useMemo<TemplateItem[]>(() => {
     return allTemplates
-      .filter((t) => t.id && t.name) // Filter out nulls
+      .filter((t) => (t.template_id || t.id) && t.name) // Filter out nulls
       .map((t) => ({
-        id: t.id!,
+        id: (t.template_id ?? t.id)!,
         name: t.name!,
         description: t.description ?? null,
-        html: t.html ?? null,
       }));
   }, [allTemplates]);
 
@@ -274,6 +273,8 @@ export function Templates({
   const [htmlOverrides, setHtmlOverrides] = useState<Record<string, string>>(
     {}
   );
+  const [htmlCache, setHtmlCache] = useState<Record<string, string>>({});
+  const [htmlLoading, setHtmlLoading] = useState(false);
   const editorOriginalValueRef = useRef("");
   const editorOriginalNameRef = useRef("");
   const editorOriginalDescriptionRef = useRef("");
@@ -287,22 +288,79 @@ export function Templates({
       .replace(/vbscript:/gi, "data-removed:");
   }, []);
 
+  const fetchTemplateHtml = useCallback(
+    async (templateId: string): Promise<string> => {
+      // Check htmlOverrides (user edits) first
+      if (htmlOverrides[templateId] !== undefined) {
+        return htmlOverrides[templateId];
+      }
+      // Check htmlCache second
+      if (htmlCache[templateId] !== undefined) {
+        return htmlCache[templateId];
+      }
+      // Fetch from BFF endpoint /api/templates/html
+      try {
+        const response = await fetch("/api/templates/html", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: templateId }),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const result = await response.json();
+        const html = result?.html ?? "";
+        setHtmlCache((prev) => ({ ...prev, [templateId]: html }));
+        return html;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch template HTML:", error);
+        return "";
+      }
+    },
+    [htmlOverrides, htmlCache]
+  );
+
   const openEditor = useCallback(
-    (templateId: string) => {
+    async (templateId: string) => {
       const template = templatesById[templateId];
-      const nextValue =
-        htmlOverrides[templateId] ?? template?.html ?? "";
-      editorOriginalValueRef.current = nextValue;
-      editorOriginalNameRef.current = template?.name ?? "";
-      editorOriginalDescriptionRef.current = template?.description ?? "";
+      // Open dialog immediately with name/description
       setEditorTemplateId(templateId);
-      setEditorValue(nextValue);
       setEditorName(template?.name ?? "");
       setEditorDescription(template?.description ?? "");
+      editorOriginalNameRef.current = template?.name ?? "";
+      editorOriginalDescriptionRef.current = template?.description ?? "";
       setIsNewTemplate(false);
       setEditorOpen(true);
+
+      // Check for local overrides first (no loading needed)
+      if (htmlOverrides[templateId] !== undefined) {
+        const html = htmlOverrides[templateId];
+        setEditorValue(html);
+        editorOriginalValueRef.current = html;
+        return;
+      }
+
+      // Check htmlCache
+      if (htmlCache[templateId] !== undefined) {
+        const html = htmlCache[templateId];
+        setEditorValue(html);
+        editorOriginalValueRef.current = html;
+        return;
+      }
+
+      // Fetch HTML asynchronously
+      setHtmlLoading(true);
+      setEditorValue(""); // Clear while loading
+      try {
+        const html = await fetchTemplateHtml(templateId);
+        setEditorValue(html);
+        editorOriginalValueRef.current = html;
+      } finally {
+        setHtmlLoading(false);
+      }
     },
-    [templatesById, htmlOverrides]
+    [templatesById, htmlOverrides, htmlCache, fetchTemplateHtml]
   );
 
   const openCreateEditor = useCallback(() => {
@@ -358,7 +416,6 @@ export function Templates({
             id: newTemplateId,
             name: nextName,
             description: nextDescription || null,
-            html: editorValue,
           },
         ]);
         setHtmlOverrides((prev) => ({
@@ -489,8 +546,6 @@ export function Templates({
               </div>
             );
           }
-          const displayHtml =
-            htmlOverrides[item.id] ?? item.html ?? "";
           return (
             <div
               className={cn(
@@ -515,24 +570,14 @@ export function Templates({
               )}
 
               <div className="flex-1 min-w-0 space-y-2">
-                <div>
-                  <h3 className="font-medium text-base leading-tight">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {item.id.slice(0, 8)}...
-                  </p>
-                </div>
+                <h3 className="font-medium text-base leading-tight">
+                  {item.name}
+                </h3>
                 {item.description && (
                   <p className="text-xs text-muted-foreground line-clamp-2">
                     {item.description}
                   </p>
                 )}
-                <div className="rounded-md border bg-muted/40 p-2">
-                  <p className="text-[11px] text-muted-foreground line-clamp-3 font-mono">
-                    {displayHtml || "No HTML yet"}
-                  </p>
-                </div>
                 <p className="text-xs text-muted-foreground">Click to edit</p>
               </div>
             </div>
@@ -575,19 +620,29 @@ export function Templates({
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="template-html-editor">HTML</Label>
-                <Textarea
-                  id="template-html-editor"
-                  value={editorValue}
-                  onChange={(e) => setEditorValue(e.target.value)}
-                  className="min-h-[360px] font-mono text-xs"
-                  placeholder="Paste template HTML here..."
-                  disabled={disabled || isSaving}
-                />
+                {htmlLoading ? (
+                  <div className="min-h-[360px] flex items-center justify-center border rounded-md bg-muted/30">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <Textarea
+                    id="template-html-editor"
+                    value={editorValue}
+                    onChange={(e) => setEditorValue(e.target.value)}
+                    className="min-h-[360px] font-mono text-xs"
+                    placeholder="Paste template HTML here..."
+                    disabled={disabled || isSaving}
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Preview</Label>
                 <div className="border rounded-md overflow-hidden bg-background min-h-[360px]">
-                  {editorValue ? (
+                  {htmlLoading ? (
+                    <div className="h-[360px] flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : editorValue ? (
                     <iframe
                       sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin"
                       className="w-full h-[360px] border-0"

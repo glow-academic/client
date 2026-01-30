@@ -43,6 +43,7 @@ export interface QuestionsProps {
   question_ids?: string[]; // Current question resource IDs (standardized prop name)
   question_resources?: Array<{
     id?: string | null;
+    question_id?: string | null;
     question_text?: string | null;
     allow_multiple?: boolean | null;
     generated?: boolean | null;
@@ -53,6 +54,7 @@ export interface QuestionsProps {
   question_suggestions?: string[]; // Array of suggested question IDs (UUIDs) - consistent with other suggestions
   questions?: Array<{
     id?: string | null;
+    question_id?: string | null;
     question_text?: string | null;
     allow_multiple?: boolean | null;
     generated?: boolean | null;

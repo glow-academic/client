@@ -41,6 +41,7 @@ export interface ImagesProps {
   image_ids?: string[]; // Current image artifact IDs (standardized prop name)
   image_resources?: Array<{
     id?: string | null;
+    image_id?: string | null;
     name?: string | null;
     file_path?: string | null;
     mime_type?: string | null;
@@ -53,6 +54,7 @@ export interface ImagesProps {
   image_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   images?: Array<{
     id?: string | null;
+    image_id?: string | null;
     name?: string | null;
     file_path?: string | null;
     mime_type?: string | null;
@@ -132,24 +134,26 @@ export function Images({
     Array<{ id: string; name: string; upload_id: string }>
   >(() => {
     // Initialize from image_resources or images array
+    // API returns image_id, not id
     if (image_resources && image_resources.length > 0) {
       return image_resources
-        .filter((img) => img.id && img.name)
+        .filter((img) => (img.image_id || img.id) && img.name)
         .map((img) => ({
-          id: img.id!,
+          id: (img.image_id ?? img.id)!,
           name: img.name!,
-          upload_id: img.id!,
+          upload_id: (img.image_id ?? img.id)!,
         }));
     }
     if (ids.length > 0 && allImages.length > 0) {
       return ids
         .map((id) => {
-          const img = allImages.find((i) => i.id === id);
-          if (img && img.id && img.name) {
+          const img = allImages.find((i) => (i.image_id ?? i.id) === id);
+          const imgId = img?.image_id ?? img?.id;
+          if (img && imgId && img.name) {
             return {
-              id: img.id,
+              id: imgId,
               name: img.name,
-              upload_id: img.upload_id || img.id,
+              upload_id: img.upload_id || imgId,
             };
           }
           return null;
@@ -163,16 +167,18 @@ export function Images({
   });
 
   // Sync selectedImages when ids change
+  // API returns image_id, not id
   useEffect(() => {
     if (ids.length > 0 && allImages.length > 0) {
       const newSelectedImages = ids
         .map((id) => {
-          const img = allImages.find((i) => i.id === id);
-          if (img && img.id && img.name) {
+          const img = allImages.find((i) => (i.image_id ?? i.id) === id);
+          const imgId = img?.image_id ?? img?.id;
+          if (img && imgId && img.name) {
             return {
-              id: img.id,
+              id: imgId,
               name: img.name,
-              upload_id: img.upload_id || img.id,
+              upload_id: img.upload_id || imgId,
             };
           }
           return null;
@@ -211,12 +217,14 @@ export function Images({
   }, [ids]);
 
   // Build image mapping for GenericPicker
+  // API returns image_id, not id
   const imageMapping = useMemo(() => {
     const mapping: Record<string, ImageItem> = {};
     allImages.forEach((img) => {
-      if (img.id && img.name) {
-        mapping[img.id] = {
-          id: img.id,
+      const imgId = img.image_id ?? img.id;
+      if (imgId && img.name) {
+        mapping[imgId] = {
+          id: imgId,
           name: img.name,
           ...(img.upload_id ? { upload_id: img.upload_id } : {}),
         };

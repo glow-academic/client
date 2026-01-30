@@ -269,9 +269,13 @@ router.include_router(standard_groups_router)
 # NOTE: temperature_levels removed - non-creatable (migration 328)
 from app.api.v4.resources.templates.create import router as templates_router
 from app.api.v4.resources.templates.get import router as templates_get_router
+from app.api.v4.resources.templates.html import router as templates_html_router
+from app.api.v4.resources.templates.search import router as templates_search_router
 
 router.include_router(templates_router)
 router.include_router(templates_get_router)
+router.include_router(templates_html_router)
+router.include_router(templates_search_router)
 # NOTE: thresholds removed - non-creatable (migration 328)
 # NOTE: times removed - converted to entry table (migration 305)
 # NOTE: tools removed - non-creatable, sync via artifact save (migration 328)

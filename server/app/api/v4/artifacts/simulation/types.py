@@ -4,6 +4,7 @@ These types are used for the simulation API endpoints and include
 Python-computed permissions and UI flags.
 """
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -342,7 +343,7 @@ class ListSimulationApiSimulation(BaseModel):
     department_ids: list[str] | None = None
     scenario_ids: list[str] | None = None
     usage_count: int | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
 
     # Python-computed permissions
     can_edit: bool | None = None
@@ -544,7 +545,7 @@ class ListSimulationSqlSimulation(BaseModel):
     department_ids: list[str] | None = None
     scenario_ids: list[str] | None = None
     usage_count: int | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
 
 
 class ListSimulationSqlRow(BaseModel):

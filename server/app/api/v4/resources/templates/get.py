@@ -40,7 +40,6 @@ class GetTemplateV4Item(BaseModel):
     template_id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    html: str | None = None
     generated: bool | None = None
 
 

@@ -16385,6 +16385,7 @@ class QGetDocumentsV4Item(BaseModel):
     file_path: str | None
     mime_type: str | None
     generated: bool | None
+    upload_id: UUID | None
 
 class GetDocumentsSqlRow(BaseModel):
 
@@ -18998,6 +18999,31 @@ class GetTemplateApiResponse(BaseModel):
 
 
 
+# Generated from: get_template_html
+
+class GetTemplateHtmlSqlParams(BaseModel):
+
+    id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.id,
+        )
+
+class GetTemplateHtmlSqlRow(BaseModel):
+
+    html: str | None = None
+
+class GetTemplateHtmlApiRequest(BaseModel):
+
+    id: UUID
+
+class GetTemplateHtmlApiResponse(BaseModel):
+
+    html: str | None = None
+
+
+
 # Generated from: get_templates
 
 class GetTemplatesSqlParams(BaseModel):
@@ -19014,7 +19040,6 @@ class QGetTemplatesV4Item(BaseModel):
     template_id: UUID | None
     name: str | None
     description: str | None
-    html: str | None
     generated: bool | None
 
 class GetTemplatesSqlRow(BaseModel):
@@ -20616,7 +20641,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     problem_statement_id: UUID | None = None
@@ -20642,7 +20667,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
             self.document_ids,
             self.template_document_ids,
             self.parameter_ids,
-            self.field_ids,
+            self.parameter_field_ids,
             self.image_ids,
             self.objective_ids,
             self.problem_statement_id,
@@ -20674,7 +20699,7 @@ class PatchScenarioDraftApiRequest(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     problem_statement_id: UUID | None = None
@@ -20712,7 +20737,7 @@ class SaveScenarioSqlParams(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
@@ -20738,7 +20763,7 @@ class SaveScenarioSqlParams(BaseModel):
             self.document_ids,
             self.template_document_ids,
             self.parameter_ids,
-            self.field_ids,
+            self.parameter_field_ids,
             self.image_ids,
             self.objective_ids,
             self.video_ids,
@@ -20769,7 +20794,7 @@ class SaveScenarioApiRequest(BaseModel):
     document_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
@@ -26066,6 +26091,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTemplateApiRequest",
         "GetTemplateApiResponse",
     ),
+    "app/sql/v4/queries/resources/templates/get_template_html_complete.sql": (
+        "GetTemplateHtmlSqlParams",
+        "GetTemplateHtmlSqlRow",
+        "GetTemplateHtmlApiRequest",
+        "GetTemplateHtmlApiResponse",
+    ),
     "app/sql/v4/queries/resources/templates/get_templates_complete.sql": (
         "GetTemplatesSqlParams",
         "GetTemplatesSqlRow",
@@ -28286,6 +28317,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/templates/get_template_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/templates/get_template_html_complete.sql"]
     ) -> SqlString: ...
 
     @overload

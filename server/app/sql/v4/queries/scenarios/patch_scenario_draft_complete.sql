@@ -34,7 +34,7 @@ CREATE OR REPLACE FUNCTION api_patch_scenario_draft_v4(
     document_ids uuid[] DEFAULT NULL,
     template_document_ids uuid[] DEFAULT NULL,
     parameter_ids uuid[] DEFAULT NULL,
-    field_ids uuid[] DEFAULT NULL,
+    parameter_field_ids uuid[] DEFAULT NULL,
     image_ids uuid[] DEFAULT NULL,
     objective_ids uuid[] DEFAULT NULL,
     problem_statement_id uuid DEFAULT NULL,
@@ -261,10 +261,10 @@ BEGIN
                 SET version = v_new_version;
             END IF;
 
-            IF field_ids IS NOT NULL THEN
+            IF parameter_field_ids IS NOT NULL THEN
                 INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
-                SELECT v_draft_id, field_id, v_new_version
-                FROM unnest(field_ids) as field_id
+                SELECT v_draft_id, pf_id, v_new_version
+                FROM unnest(parameter_field_ids) as pf_id
                 ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
@@ -432,10 +432,10 @@ BEGIN
             SET version = v_new_version;
         END IF;
 
-        IF field_ids IS NOT NULL THEN
+        IF parameter_field_ids IS NOT NULL THEN
             INSERT INTO fields_drafts_connection (draft_id, fields_id, version)
-            SELECT v_draft_id, field_id, v_new_version
-            FROM unnest(field_ids) as field_id
+            SELECT v_draft_id, pf_id, v_new_version
+            FROM unnest(parameter_field_ids) as pf_id
             ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
             SET version = v_new_version;
         END IF;

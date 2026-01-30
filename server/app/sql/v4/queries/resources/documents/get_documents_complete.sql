@@ -55,7 +55,8 @@ CREATE TYPE types.q_get_documents_v4_item AS (
     description text,
     file_path text,
     mime_type text,
-    generated boolean
+    generated boolean,
+    upload_id uuid
 );
 
 -- Create function
@@ -76,7 +77,8 @@ SELECT COALESCE(
             COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = da.id LIMIT 1), ''),
             COALESCE(u.file_path, ''),
             COALESCE(u.mime_type, ''),
-            COALESCE(d.generated, false)
+            COALESCE(d.generated, false),
+            u.id
         )::types.q_get_documents_v4_item
         ORDER BY array_position(p_ids, d.id)
     ),

@@ -4,6 +4,7 @@ These types are used for the cohort API endpoints and include
 Python-computed permissions and UI flags.
 """
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -166,7 +167,7 @@ class ListCohortApiCohort(BaseModel):
     simulation_ids: list[str] | None = None
     usage_count: int | None = None
     num_members: int | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
 
     # Python-computed permissions
     can_edit: bool | None = None
@@ -394,4 +395,4 @@ class ListCohortSqlCohort(BaseModel):
     usage_count: int | None = None
     num_members: int | None = None
     is_member: bool | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None

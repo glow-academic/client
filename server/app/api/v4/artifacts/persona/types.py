@@ -1,5 +1,6 @@
 """Handcrafted types for persona GET endpoint."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -179,7 +180,7 @@ class ListPersonaApiPersona(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
 
 
 class ListPersonaApiScenario(BaseModel):

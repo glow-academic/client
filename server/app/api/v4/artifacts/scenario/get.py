@@ -1011,7 +1011,9 @@ async def get_scenario(
             problem_statements_selected + problem_statements_suggestions,
             "problem_statement_id",
         )
-        all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
+        # Dedupe flags by name (not id) to ensure unique keys for React rendering
+        # Multiple flag records with same name but different IDs would cause duplicate keys
+        all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "name")
         departments = _dedupe_by_id(
             departments_selected + departments_suggestions, "department_id"
         )

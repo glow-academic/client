@@ -34,7 +34,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.document_id, q.name, q.description, q.file_path, q.mime_type, q.generated)::types.q_get_documents_v4_item
+        (q.document_id, q.name, q.description, q.file_path, q.mime_type, q.generated, q.upload_id)::types.q_get_documents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
@@ -46,7 +46,8 @@ FROM (
         COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = da.id LIMIT 1), '') AS description,
         COALESCE(u.file_path, '') AS file_path,
         COALESCE(u.mime_type, '') AS mime_type,
-        COALESCE(d.generated, false) AS generated
+        COALESCE(d.generated, false) AS generated,
+        u.id AS upload_id
     FROM documents_resource d
     -- Join to document artifact to check active flag
     JOIN document_documents_junction ddj ON ddj.documents_id = d.id
@@ -73,7 +74,7 @@ FROM (
         AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
         -- Optional search filter
         AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = da.id LIMIT 1)) LIKE '%' || LOWER(search) || '%')
-    GROUP BY d.id, d.generated, u.file_path, u.mime_type, da.id
+    GROUP BY d.id, d.generated, u.file_path, u.mime_type, u.id, da.id
     ORDER BY (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = da.id LIMIT 1)
     LIMIT limit_count
     OFFSET offset_count

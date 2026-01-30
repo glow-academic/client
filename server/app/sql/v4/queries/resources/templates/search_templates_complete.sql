@@ -36,7 +36,6 @@ SELECT COALESCE(
             t.id,
             t.name,
             COALESCE(t.description, ''),
-            COALESCE(t.html, ''),
             COALESCE(t.generated, false)
         )::types.q_get_templates_v4_item
         ORDER BY t.name

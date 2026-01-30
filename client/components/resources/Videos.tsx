@@ -40,6 +40,7 @@ export interface VideosProps {
   video_ids?: string[]; // Current video artifact IDs (standardized prop name)
   video_resources?: Array<{
     id?: string | null;
+    video_id?: string | null;
     name?: string | null;
     length_seconds?: number | null;
     completed?: boolean | null;
@@ -54,6 +55,7 @@ export interface VideosProps {
   video_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   videos?: Array<{
     id?: string | null;
+    video_id?: string | null;
     name?: string | null;
     length_seconds?: number | null;
     completed?: boolean | null;
@@ -127,6 +129,7 @@ export function Videos({
   );
 
   // Internal state for selected video (single select for videos)
+  // API returns video_id, not id
   const [selectedVideo, setSelectedVideo] = useState<{
     id: string;
     name: string;
@@ -135,10 +138,11 @@ export function Videos({
   } | null>(() => {
     // Initialize from video_resources or videos array
     if (ids.length > 0 && allVideos.length > 0) {
-      const video = allVideos.find((v) => v.id === ids[0]);
-      if (video && video.id && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
+      const video = allVideos.find((v) => (v.video_id ?? v.id) === ids[0]);
+      const videoId = video?.video_id ?? video?.id;
+      if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
         return {
-          id: video.id,
+          id: videoId,
           name: video.name,
           length_seconds: video.length_seconds,
           ...(video.upload_id ? { upload_id: video.upload_id } : {}),
@@ -151,10 +155,11 @@ export function Videos({
   // Sync selectedVideo when ids change
   useEffect(() => {
     if (ids.length > 0 && allVideos.length > 0) {
-      const video = allVideos.find((v) => v.id === ids[0]);
-      if (video && video.id && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
+      const video = allVideos.find((v) => (v.video_id ?? v.id) === ids[0]);
+      const videoId = video?.video_id ?? video?.id;
+      if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
         setSelectedVideo({
-          id: video.id,
+          id: videoId,
           name: video.name,
           length_seconds: video.length_seconds,
           ...(video.upload_id ? { upload_id: video.upload_id } : {}),
@@ -188,12 +193,14 @@ export function Videos({
   }, [ids]);
 
   // Build video mapping for GenericPicker (matching ContentSection pattern)
+  // API returns video_id, not id
   const videoMapping = useMemo(() => {
     const mapping: Record<string, VideoItem> = {};
     allVideos.forEach((v) => {
-      if (v.id && v.name && v.length_seconds !== null && v.length_seconds !== undefined) {
-        mapping[v.id] = {
-          id: v.id,
+      const videoId = v.video_id ?? v.id;
+      if (videoId && v.name && v.length_seconds !== null && v.length_seconds !== undefined) {
+        mapping[videoId] = {
+          id: videoId,
           name: v.name,
           length_seconds: v.length_seconds,
           ...(v.upload_id ? { upload_id: v.upload_id } : {}),
