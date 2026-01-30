@@ -25,8 +25,9 @@ SQL_PATH = (
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_call_complete events - filter by persona artifact_type and emit granular event."""
+    """Handle generate_call_complete and generate_text_complete events - filter by persona artifact_type and emit granular event."""
     # Skip processing if in eval mode - benchmark handlers will handle evals
     eval_mode = data.get("eval_mode", False)
     if eval_mode:

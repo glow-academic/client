@@ -34,8 +34,6 @@ from app.sql.types import (
     GetPersonaResourceTreeSqlParams,
     GetPersonaResourceTreeSqlRow,
     IPersonaResourceV4,
-    InsertGenerationMessagesSqlParams,
-    InsertGenerationMessagesSqlRow,
     PreparePersonaGenerationSqlParams,
     PreparePersonaGenerationSqlRow,
     QGetPersonaResourceTreeV4Node,
@@ -63,9 +61,6 @@ SQL_PATH_CONTEXT = (
 )
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
-)
-SQL_PATH_INSERT_MESSAGES = (
-    "app/sql/v4/queries/generate/persona/insert_generation_messages_complete.sql"
 )
 
 # Persona resource types
@@ -355,39 +350,15 @@ async def _persona_generate_impl(
                 jinja_context=jinja_context,
             )
 
-            # Step 6: Insert pre-rendered messages
-            insert_params = InsertGenerationMessagesSqlParams(
-                p_run_id=run_id,
-                p_developer_messages=rendered_developer_messages
-                if rendered_developer_messages
-                else None,
-                p_user_messages=data.user_instructions
-                if data.user_instructions
-                else None,
-            )
-            insert_row = cast(
-                InsertGenerationMessagesSqlRow,
-                await execute_sql_typed(
-                    conn, SQL_PATH_INSERT_MESSAGES, params=insert_params
-                ),
-            )
-
-            if not insert_row.message_id:
-                await emit_to_internal(
-                    "generate_call_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to insert generation messages",
-                        artifact_type="persona",
-                        group_id=str(group_id) if group_id else None,
-                        resource_type="persona",
-                    ),
-                    sid=sid,
-                )
-                return
-
-            message_id = insert_row.message_id
-            messages = insert_row.messages
+            # Step 6: Build messages for LLM (no database insertion needed for persona generation)
+            messages: list[dict[str, str]] = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            for m in rendered_developer_messages:
+                messages.append({"role": "developer", "content": m})
+            if data.user_instructions:
+                for instruction in data.user_instructions:
+                    messages.append({"role": "user", "content": instruction})
 
             # Step 7: Emit simplified payload to generate_artifact handler
             # The AI handler only needs to decrypt API key and stream LLM
@@ -399,19 +370,8 @@ async def _persona_generate_impl(
                     "resource_type": resource_types[0] if resource_types else "persona",
                     "run_id": str(run_id),
                     "group_id": str(group_id) if group_id else None,
-                    "message_id": str(message_id) if message_id else None,
-                    "messages": (
-                        (
-                            [{"role": "system", "content": system_prompt}]
-                            if system_prompt
-                            else []
-                        )
-                        + [
-                            {"role": "developer", "content": m}
-                            for m in rendered_developer_messages
-                        ]
-                        + (messages if isinstance(messages, list) else [])
-                    ),
+                    "message_id": None,
+                    "messages": messages,
                     "llm_config": {
                         "model": model_name,
                         "api_key": api_key,
@@ -422,6 +382,7 @@ async def _persona_generate_impl(
                         "voice": voice,
                         "quality": quality,
                         "length_seconds": None,
+                        "tool_choice": "required",  # Force tool calls for persona generation
                     },
                     "tools": convert_tools_to_dict(tools),
                     "metadata": {"trace_id": trace_id},

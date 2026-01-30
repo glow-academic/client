@@ -11,8 +11,15 @@ from app.infra.v4.tools.render_tool_template import render_tool_template
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.sql.types import (
+    InfraToolsCreateCallForToolSqlParams,
+    InfraToolsCreateCallForToolSqlRow,
+    InfraToolsGetResourceTypeByToolIdSqlParams,
+    InfraToolsGetResourceTypeByToolIdSqlRow,
     InfraToolsGetTemplateIdV4SqlParams,
     InfraToolsGetTemplateIdV4SqlRow,
+    InfraToolsGetToolIdByNameSqlParams,
+    InfraToolsGetToolIdByNameSqlRow,
+    InfraToolsLinkToolCallSqlParams,
 )
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
@@ -48,11 +55,17 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
         return
 
     async with get_db_connection() as conn:
-        tool_id_sql = load_sql(
-            "app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql"
+        # Get tool_id by name
+        tool_params = InfraToolsGetToolIdByNameSqlParams(tool_name=tool_name)
+        tool_result = cast(
+            InfraToolsGetToolIdByNameSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql",
+                params=tool_params,
+            ),
         )
-        tool_row = await conn.fetchrow(tool_id_sql, tool_name)
-        if not tool_row or not tool_row.get("tool_id"):
+        if not tool_result or not tool_result.tool_id:
             await internal_sio.emit(
                 "tool_result",
                 {
@@ -63,13 +76,19 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             )
             return
 
-        tool_id = uuid.UUID(str(tool_row["tool_id"]))
+        tool_id = tool_result.tool_id
 
-        resource_type_sql = load_sql(
-            "app/sql/v4/queries/infrastructure/tools/get_resource_type_by_tool_id_complete.sql"
+        # Get resource_type by tool_id
+        resource_params = InfraToolsGetResourceTypeByToolIdSqlParams(tool_id=tool_id)
+        resource_result = cast(
+            InfraToolsGetResourceTypeByToolIdSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/queries/infrastructure/tools/get_resource_type_by_tool_id_complete.sql",
+                params=resource_params,
+            ),
         )
-        resource_row = await conn.fetchrow(resource_type_sql, tool_id)
-        if not resource_row or not resource_row.get("resource_type"):
+        if not resource_result or not resource_result.resource_type:
             await internal_sio.emit(
                 "tool_result",
                 {
@@ -80,7 +99,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             )
             return
 
-        resource_type = str(resource_row["resource_type"])
+        resource_type = resource_result.resource_type
 
         template_params = InfraToolsGetTemplateIdV4SqlParams(tool_id=tool_id)
         template_result = cast(
@@ -93,17 +112,22 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
         )
         template_id = template_result.template_id if template_result else None
 
-        create_call_sql = load_sql(
-            "app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql"
+        # Create call entry
+        call_params = InfraToolsCreateCallForToolSqlParams(
+            external_call_id=str(call_id),
+            run_id=uuid.UUID(run_id),
+            template_id=template_id,
+            arguments_raw=json.dumps(arguments),
         )
-        call_row = await conn.fetchrow(
-            create_call_sql,
-            str(call_id),
-            uuid.UUID(run_id),
-            template_id,
-            json.dumps(arguments),
+        call_result = cast(
+            InfraToolsCreateCallForToolSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql",
+                params=call_params,
+            ),
         )
-        if not call_row or not call_row.get("call_id"):
+        if not call_result or not call_result.call_id:
             await internal_sio.emit(
                 "tool_result",
                 {
@@ -114,12 +138,18 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             )
             return
 
-        call_db_id = uuid.UUID(str(call_row["call_id"]))
+        call_db_id = call_result.call_id
 
-        link_sql = load_sql(
-            "app/sql/v4/queries/infrastructure/tools/link_tool_call_complete.sql"
+        # Link tool to call
+        link_params = InfraToolsLinkToolCallSqlParams(
+            tool_id=tool_id,
+            call_id=call_db_id,
         )
-        await conn.execute(link_sql, tool_id, call_db_id)
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/infrastructure/tools/link_tool_call_complete.sql",
+            params=link_params,
+        )
 
         rendered_values = await render_tool_template(conn, tool_id, arguments)
         mapped_values = await map_template_values_to_table_columns(

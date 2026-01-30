@@ -1,0 +1,1 @@
+"""Rubrics resource endpoints."""

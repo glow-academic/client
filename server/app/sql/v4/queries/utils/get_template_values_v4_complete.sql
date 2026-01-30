@@ -1,13 +1,12 @@
--- DEPRECATED: Get template values (scalar values)
--- This function is deprecated - template_values_resource table has been dropped
+-- Get template values (deprecated - returns empty)
 -- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'utils_get_template_values_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -15,11 +14,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function as no-op (deprecated)
--- Note: template_values_resource table has been dropped
--- This function is kept for backward compatibility but returns empty result
+-- 2) Create function (deprecated - returns empty result)
 CREATE OR REPLACE FUNCTION utils_get_template_values_v4(
-    template_id uuid
+    p_template_id uuid
 )
 RETURNS TABLE (
     name text,
@@ -31,8 +28,6 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    -- DEPRECATED: This function no longer returns template values
-    -- template_values_resource table has been dropped
     SELECT NULL::text, NULL::text, NULL::numeric, NULL::boolean, NULL::text
-    WHERE false
+    WHERE false;
 $$;

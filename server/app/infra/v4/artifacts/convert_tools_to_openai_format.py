@@ -7,13 +7,20 @@ from openai.types.responses.function_tool_param import FunctionToolParam
 from app.sql.types import IGetTextRunContextAndCreateRunV4Tool
 
 
+def _get_tool_attr(tool: Any, attr: str, default: Any = None) -> Any:
+    """Get attribute from tool, handling both object and dict formats."""
+    if isinstance(tool, dict):
+        return tool.get(attr, default)
+    return getattr(tool, attr, default)
+
+
 def convert_tools_to_openai_format(
-    tools: list[IGetTextRunContextAndCreateRunV4Tool],
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Convert database tool configs to OpenAI chat completion tool format (for acompletion()).
 
     Args:
-        tools: List of tool configs from database
+        tools: List of tool configs from database (objects or dicts)
 
     Returns:
         List of OpenAI chat completion tool format dictionaries (ChatCompletionToolParam)
@@ -21,15 +28,17 @@ def convert_tools_to_openai_format(
     openai_tools: list[dict[str, Any]] = []
 
     for tool in tools:
-        if not tool.name or not tool.active:
+        name = _get_tool_attr(tool, "name")
+        active = _get_tool_attr(tool, "active", True)
+        if not name or not active:
             continue
 
         # Build properties from arguments JSONB
         properties: dict[str, Any] = {}
         required_fields: list[str] = []
 
-        arguments = tool.arguments or {}
-        argument_descriptions = tool.argument_descriptions or {}
+        arguments = _get_tool_attr(tool, "arguments") or {}
+        argument_descriptions = _get_tool_attr(tool, "argument_descriptions") or {}
 
         if isinstance(arguments, dict):
             for field_name, field_spec in arguments.items():
@@ -76,8 +85,8 @@ def convert_tools_to_openai_format(
             {
                 "type": "function",
                 "function": {
-                    "name": tool.name,
-                    "description": tool.description or "",
+                    "name": name,
+                    "description": _get_tool_attr(tool, "description") or "",
                     "parameters": {
                         "type": "object",
                         "properties": properties,
@@ -91,12 +100,12 @@ def convert_tools_to_openai_format(
 
 
 def convert_tools_to_responses_format(
-    tools: list[IGetTextRunContextAndCreateRunV4Tool],
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | list[dict[str, Any]],
 ) -> list[FunctionToolParam]:
     """Convert database tool configs to Responses API tool format (for aresponses()).
 
     Args:
-        tools: List of tool configs from database
+        tools: List of tool configs from database (objects or dicts)
 
     Returns:
         List of FunctionToolParam dictionaries (for Responses API)
@@ -104,15 +113,17 @@ def convert_tools_to_responses_format(
     responses_tools: list[FunctionToolParam] = []
 
     for tool in tools:
-        if not tool.name or not tool.active:
+        name = _get_tool_attr(tool, "name")
+        active = _get_tool_attr(tool, "active", True)
+        if not name or not active:
             continue
 
         # Build parameters from arguments JSONB
         parameters: dict[str, Any] = {}
         required_fields: list[str] = []
 
-        arguments = tool.arguments or {}
-        argument_descriptions = tool.argument_descriptions or {}
+        arguments = _get_tool_attr(tool, "arguments") or {}
+        argument_descriptions = _get_tool_attr(tool, "argument_descriptions") or {}
 
         if isinstance(arguments, dict):
             for field_name, field_spec in arguments.items():
@@ -120,7 +131,6 @@ def convert_tools_to_responses_format(
                     continue
 
                 field_type = field_spec.get("type", "string")
-                field_required = bool(field_spec.get("required", False))
                 field_description = argument_descriptions.get(field_name, "")
 
                 if field_type == "array":
@@ -152,16 +162,18 @@ def convert_tools_to_responses_format(
                         "description": field_description,
                     }
 
-                if field_required:
-                    required_fields.append(field_name)
+                # When strict=True, ALL properties must be in the required array
+                # OpenAI enforces this: "required is required to be supplied and to be
+                # an array including every key in properties"
+                required_fields.append(field_name)
 
         # Responses API format: FunctionToolParam (flat structure, not nested)
         # When strict=True, additionalProperties must be explicitly set to false
         responses_tools.append(
             {
                 "type": "function",
-                "name": tool.name,
-                "description": tool.description or "",
+                "name": name,
+                "description": _get_tool_attr(tool, "description") or "",
                 "parameters": {
                     "type": "object",
                     "properties": parameters,

@@ -23,6 +23,7 @@ SQL_PATH = "app/sql/v4/queries/personas/validate_persona_resource_error_complete
 
 
 @internal_sio.on("generate_call_error")  # type: ignore
+@internal_sio.on("generate_text_error")  # type: ignore
 async def handle_personas_error(data: dict[str, Any]) -> None:
     """Handle generate_*_error event - filter by persona artifact_type and emit persona-specific event."""
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)

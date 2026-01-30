@@ -3223,6 +3223,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/rubrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Rubrics
+         * @description Get rubrics by simulation ID.
+         */
+        post: operations["get_rubrics_api_v4_resources_rubrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/run_positions": {
         parameters: {
             query?: never;
@@ -3257,6 +3277,46 @@ export interface paths {
          * @description Create run_rubrics resource (always INSERT).
          */
         post: operations["create_run_rubrics_api_v4_resources_run_rubrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_flags/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario Flags
+         * @description Get scenario flags by simulation and scenario IDs.
+         */
+        post: operations["get_scenario_flags_api_v4_resources_scenario_flags_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_flags/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Scenario Flags
+         * @description Search available scenario flags for scenarios.
+         */
+        post: operations["search_scenario_flags_api_v4_resources_scenario_flags_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3303,6 +3363,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_positions/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario Positions
+         * @description Get scenario positions by simulation and scenario IDs.
+         */
+        post: operations["get_scenario_positions_api_v4_resources_scenario_positions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_positions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Scenario Positions
+         * @description Search available scenario positions for scenarios.
+         */
+        post: operations["search_scenario_positions_api_v4_resources_scenario_positions_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenario_rubrics": {
         parameters: {
             query?: never;
@@ -3323,6 +3423,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_rubrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario Rubrics
+         * @description Get scenario rubrics by simulation and scenario IDs.
+         */
+        post: operations["get_scenario_rubrics_api_v4_resources_scenario_rubrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_rubrics/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Scenario Rubrics
+         * @description Search available scenario rubrics for scenarios.
+         */
+        post: operations["search_scenario_rubrics_api_v4_resources_scenario_rubrics_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenario_time_limits": {
         parameters: {
             query?: never;
@@ -3337,6 +3477,46 @@ export interface paths {
          * @description Create scenario_time_limits resource (always INSERT).
          */
         post: operations["create_scenario_time_limits_api_v4_resources_scenario_time_limits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_time_limits/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario Time Limits
+         * @description Get scenario time limits by simulation and scenario IDs.
+         */
+        post: operations["get_scenario_time_limits_api_v4_resources_scenario_time_limits_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_time_limits/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Scenario Time Limits
+         * @description Search available scenario time limits for scenarios.
+         */
+        post: operations["search_scenario_time_limits_api_v4_resources_scenario_time_limits_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10189,6 +10369,19 @@ export interface components {
             /** Standards */
             standards?: components["schemas"]["QGetRubricV4StandardResource"][] | null;
         };
+        /** GetRubricsApiRequest */
+        GetRubricsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+        };
+        /** GetRubricsApiResponse */
+        GetRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRubricsV4Item"][] | null;
+        };
         /** GetRubricsListApiRequest */
         GetRubricsListApiRequest: Record<string, never>;
         /** GetRubricsListApiResponse */
@@ -10528,6 +10721,66 @@ export interface components {
             basic_agent_id?: string | null;
             /** Content Agent Id */
             content_agent_id?: string | null;
+        };
+        /** GetScenarioFlagsApiRequest */
+        GetScenarioFlagsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** GetScenarioFlagsApiResponse */
+        GetScenarioFlagsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+        };
+        /** GetScenarioPositionsApiRequest */
+        GetScenarioPositionsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** GetScenarioPositionsApiResponse */
+        GetScenarioPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
+        };
+        /** GetScenarioRubricsApiRequest */
+        GetScenarioRubricsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** GetScenarioRubricsApiResponse */
+        GetScenarioRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
+        };
+        /** GetScenarioTimeLimitsApiRequest */
+        GetScenarioTimeLimitsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** GetScenarioTimeLimitsApiResponse */
+        GetScenarioTimeLimitsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
         };
         /** GetScenariosApiRequest */
         GetScenariosApiRequest: {
@@ -17126,6 +17379,67 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
+        /** QGetRubricsV4Item */
+        QGetRubricsV4Item: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetScenarioFlagsV4Item */
+        QGetScenarioFlagsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Flag Id */
+            flag_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioPositionsV4Item */
+        QGetScenarioPositionsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioRubricsV4Item */
+        QGetScenarioRubricsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioTimeLimitsV4Item */
+        QGetScenarioTimeLimitsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetSettingV4Auth */
         QGetSettingV4Auth: {
             /** Auth Id */
@@ -17994,157 +18308,6 @@ export interface components {
             mime_type: string | null;
             /** Upload Id */
             upload_id: string | null;
-        };
-        /** QGetSimulationV4Department */
-        QGetSimulationV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Rubric Ids */
-            rubric_ids: string[] | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
-        };
-        /** QGetSimulationV4DescriptionOption */
-        QGetSimulationV4DescriptionOption: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4DescriptionResource */
-        QGetSimulationV4DescriptionResource: {
-            /** Id */
-            id: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4FlagOption */
-        QGetSimulationV4FlagOption: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4FlagResource */
-        QGetSimulationV4FlagResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4NameOption */
-        QGetSimulationV4NameOption: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4NameResource */
-        QGetSimulationV4NameResource: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4Rubric */
-        QGetSimulationV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationV4ScenarioFlagResource */
-        QGetSimulationV4ScenarioFlagResource: {
-            /** Id */
-            id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Flag Id */
-            flag_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4ScenarioPositionResource */
-        QGetSimulationV4ScenarioPositionResource: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Value */
-            value: number | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4ScenarioResource */
-        QGetSimulationV4ScenarioResource: {
-            /** Id */
-            id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4ScenarioRubricResource */
-        QGetSimulationV4ScenarioRubricResource: {
-            /** Id */
-            id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetSimulationV4ScenarioTimeLimitResource */
-        QGetSimulationV4ScenarioTimeLimitResource: {
-            /** Id */
-            id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds: number | null;
-            /** Generated */
-            generated: boolean | null;
         };
         /** QGetTemplatesV4Item */
         QGetTemplatesV4Item: {
@@ -21346,6 +21509,66 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
+        /** SearchScenarioFlagsApiRequest */
+        SearchScenarioFlagsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** SearchScenarioFlagsApiResponse */
+        SearchScenarioFlagsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+        };
+        /** SearchScenarioPositionsApiRequest */
+        SearchScenarioPositionsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** SearchScenarioPositionsApiResponse */
+        SearchScenarioPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPositionsV4Item"][] | null;
+        };
+        /** SearchScenarioRubricsApiRequest */
+        SearchScenarioRubricsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** SearchScenarioRubricsApiResponse */
+        SearchScenarioRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioRubricsV4Item"][] | null;
+        };
+        /** SearchScenarioTimeLimitsApiRequest */
+        SearchScenarioTimeLimitsApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** SearchScenarioTimeLimitsApiResponse */
+        SearchScenarioTimeLimitsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
+        };
         /**
          * SearchScenariosApiRequest
          * @description Request for searching scenarios.
@@ -21477,6 +21700,60 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetTemplatesV4Item"][] | null;
         };
+        /**
+         * SimulationDepartment
+         * @description Department for simulation.
+         */
+        SimulationDepartment: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationDescriptionResource
+         * @description Description resource for simulation.
+         */
+        SimulationDescriptionResource: {
+            /** Id */
+            id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationFlagResource
+         * @description Flag resource for simulation.
+         */
+        SimulationFlagResource: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationNameResource
+         * @description Name resource for simulation.
+         */
+        SimulationNameResource: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
         /** SimulationPositionsApiRequest */
         SimulationPositionsApiRequest: {
             /**
@@ -21506,6 +21783,114 @@ export interface components {
         SimulationPositionsApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /**
+         * SimulationRubric
+         * @description Rubric for simulation.
+         */
+        SimulationRubric: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationScenario
+         * @description Scenario for simulation.
+         */
+        SimulationScenario: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Department Id */
+            department_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Position */
+            position?: number | null;
+            /** Time Limit Seconds */
+            time_limit_seconds?: number | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+        };
+        /**
+         * SimulationScenarioFlag
+         * @description Scenario flag for simulation.
+         */
+        SimulationScenarioFlag: {
+            /** Id */
+            id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationScenarioPosition
+         * @description Scenario position for simulation.
+         */
+        SimulationScenarioPosition: {
+            /** Id */
+            id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Value */
+            value?: number | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationScenarioRubric
+         * @description Scenario rubric for simulation.
+         */
+        SimulationScenarioRubric: {
+            /** Id */
+            id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationScenarioTimeLimit
+         * @description Scenario time limit for simulation.
+         */
+        SimulationScenarioTimeLimit: {
+            /** Id */
+            id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds?: number | null;
+            /** Generated */
+            generated?: boolean | null;
         };
         /** SlugsApiRequest */
         SlugsApiRequest: {
@@ -21726,6 +22111,165 @@ export interface components {
             voices_id?: string | null;
         };
         /**
+         * GetSimulationApiRequest
+         * @description Request for getting a single simulation.
+         */
+        app__api__v4__artifacts__simulation__types__GetSimulationApiRequest: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Scenario Show Selected */
+            scenario_show_selected?: boolean | null;
+            /** Filter Scenario Ids */
+            filter_scenario_ids?: string[] | null;
+        };
+        /**
+         * GetSimulationApiResponse
+         * @description Response for getting a single simulation.
+         */
+        app__api__v4__artifacts__simulation__types__GetSimulationApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Simulation Exists */
+            simulation_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["SimulationNameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["SimulationNameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["SimulationDescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["SimulationDescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["SimulationFlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["SimulationDepartment"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["SimulationDepartment"][] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Resources */
+            scenario_resources?: components["schemas"]["SimulationScenario"][] | null;
+            /** Show Scenarios */
+            show_scenarios?: boolean | null;
+            /** Scenarios Agent Id */
+            scenarios_agent_id?: string | null;
+            /** Scenarios Required */
+            scenarios_required?: boolean | null;
+            /** Scenario Suggestions */
+            scenario_suggestions?: string[] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["SimulationScenario"][] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Flag Resources */
+            scenario_flag_resources?: components["schemas"]["SimulationScenarioFlag"][] | null;
+            /** Show Scenario Flags */
+            show_scenario_flags?: boolean | null;
+            /** Scenario Flags Agent Id */
+            scenario_flags_agent_id?: string | null;
+            /** Scenario Flags Required */
+            scenario_flags_required?: boolean | null;
+            /** Scenario Flag Suggestions */
+            scenario_flag_suggestions?: string[] | null;
+            /** Scenario Flags */
+            scenario_flags?: components["schemas"]["SimulationScenarioFlag"][] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Position Resources */
+            scenario_position_resources?: components["schemas"]["SimulationScenarioPosition"][] | null;
+            /** Show Scenario Positions */
+            show_scenario_positions?: boolean | null;
+            /** Scenario Positions Agent Id */
+            scenario_positions_agent_id?: string | null;
+            /** Scenario Positions Required */
+            scenario_positions_required?: boolean | null;
+            /** Scenario Position Suggestions */
+            scenario_position_suggestions?: string[] | null;
+            /** Scenario Positions */
+            scenario_positions?: components["schemas"]["SimulationScenarioPosition"][] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Rubric Resources */
+            scenario_rubric_resources?: components["schemas"]["SimulationScenarioRubric"][] | null;
+            /** Show Scenario Rubrics */
+            show_scenario_rubrics?: boolean | null;
+            /** Scenario Rubrics Agent Id */
+            scenario_rubrics_agent_id?: string | null;
+            /** Scenario Rubrics Required */
+            scenario_rubrics_required?: boolean | null;
+            /** Scenario Rubric Suggestions */
+            scenario_rubric_suggestions?: string[] | null;
+            /** Scenario Rubrics */
+            scenario_rubrics?: components["schemas"]["SimulationScenarioRubric"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["SimulationRubric"][] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
+            /** Scenario Time Limit Resources */
+            scenario_time_limit_resources?: components["schemas"]["SimulationScenarioTimeLimit"][] | null;
+            /** Show Scenario Time Limits */
+            show_scenario_time_limits?: boolean | null;
+            /** Scenario Time Limits Agent Id */
+            scenario_time_limits_agent_id?: string | null;
+            /** Scenario Time Limits Required */
+            scenario_time_limits_required?: boolean | null;
+            /** Scenario Time Limit Suggestions */
+            scenario_time_limit_suggestions?: string[] | null;
+            /** Scenario Time Limits */
+            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimit"][] | null;
+            /** Basic Agent Id */
+            basic_agent_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
+        };
+        /**
          * QGetScenariosV4Item
          * @description Scenario item from scenarios resource query.
          */
@@ -21764,164 +22308,6 @@ export interface components {
          */
         app__api__v4__resources__simulations__get__GetSimulationApiResponse: {
             item?: components["schemas"]["GetSimulationV4Item"] | null;
-        };
-        /** GetSimulationApiRequest */
-        app__sql__types__GetSimulationApiRequest: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Scenario Search */
-            scenario_search?: string | null;
-            /** Scenario Show Selected */
-            scenario_show_selected?: boolean | null;
-            /** Filter Scenario Ids */
-            filter_scenario_ids?: string[] | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** GetSimulationApiResponse */
-        app__sql__types__GetSimulationApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Simulation Exists */
-            simulation_exists?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Disabled Reason */
-            disabled_reason?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetSimulationV4NameResource"] | null;
-            /** Show Name */
-            show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
-            /** Name Required */
-            name_required?: boolean | null;
-            /** Name Suggestions */
-            name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetSimulationV4NameOption"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetSimulationV4DescriptionResource"] | null;
-            /** Show Description */
-            show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
-            /** Description Required */
-            description_required?: boolean | null;
-            /** Description Suggestions */
-            description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetSimulationV4DescriptionOption"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetSimulationV4Department"][] | null;
-            /** Show Departments */
-            show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
-            /** Departments Required */
-            departments_required?: boolean | null;
-            /** Department Suggestions */
-            department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetSimulationV4Department"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetSimulationV4FlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
-            /** Flag Required */
-            flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["QGetSimulationV4FlagOption"][] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Resources */
-            scenario_resources?: components["schemas"]["QGetSimulationV4ScenarioResource"][] | null;
-            /** Show Scenarios */
-            show_scenarios?: boolean | null;
-            /** Scenarios Agent Id */
-            scenarios_agent_id?: string | null;
-            /** Scenarios Required */
-            scenarios_required?: boolean | null;
-            /** Scenario Suggestions */
-            scenario_suggestions?: string[] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QGetSimulationV4ScenarioResource"][] | null;
-            /** Scenario Flag Ids */
-            scenario_flag_ids?: string[] | null;
-            /** Scenario Flag Resources */
-            scenario_flag_resources?: components["schemas"]["QGetSimulationV4ScenarioFlagResource"][] | null;
-            /** Show Scenario Flags */
-            show_scenario_flags?: boolean | null;
-            /** Scenario Flags Agent Id */
-            scenario_flags_agent_id?: string | null;
-            /** Scenario Flags Required */
-            scenario_flags_required?: boolean | null;
-            /** Scenario Flag Suggestions */
-            scenario_flag_suggestions?: string[] | null;
-            /** Scenario Flags */
-            scenario_flags?: components["schemas"]["QGetSimulationV4ScenarioFlagResource"][] | null;
-            /** Scenario Position Ids */
-            scenario_position_ids?: string[] | null;
-            /** Scenario Position Resources */
-            scenario_position_resources?: components["schemas"]["QGetSimulationV4ScenarioPositionResource"][] | null;
-            /** Show Scenario Positions */
-            show_scenario_positions?: boolean | null;
-            /** Scenario Positions Agent Id */
-            scenario_positions_agent_id?: string | null;
-            /** Scenario Positions Required */
-            scenario_positions_required?: boolean | null;
-            /** Scenario Position Suggestions */
-            scenario_position_suggestions?: string[] | null;
-            /** Scenario Positions */
-            scenario_positions?: components["schemas"]["QGetSimulationV4ScenarioPositionResource"][] | null;
-            /** Scenario Rubric Ids */
-            scenario_rubric_ids?: string[] | null;
-            /** Scenario Rubric Resources */
-            scenario_rubric_resources?: components["schemas"]["QGetSimulationV4ScenarioRubricResource"][] | null;
-            /** Show Scenario Rubrics */
-            show_scenario_rubrics?: boolean | null;
-            /** Scenario Rubrics Agent Id */
-            scenario_rubrics_agent_id?: string | null;
-            /** Scenario Rubrics Required */
-            scenario_rubrics_required?: boolean | null;
-            /** Scenario Rubric Suggestions */
-            scenario_rubric_suggestions?: string[] | null;
-            /** Scenario Rubrics */
-            scenario_rubrics?: components["schemas"]["QGetSimulationV4ScenarioRubricResource"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetSimulationV4Rubric"][] | null;
-            /** Scenario Time Limit Ids */
-            scenario_time_limit_ids?: string[] | null;
-            /** Scenario Time Limit Resources */
-            scenario_time_limit_resources?: components["schemas"]["QGetSimulationV4ScenarioTimeLimitResource"][] | null;
-            /** Show Scenario Time Limits */
-            show_scenario_time_limits?: boolean | null;
-            /** Scenario Time Limits Agent Id */
-            scenario_time_limits_agent_id?: string | null;
-            /** Scenario Time Limits Required */
-            scenario_time_limits_required?: boolean | null;
-            /** Scenario Time Limit Suggestions */
-            scenario_time_limit_suggestions?: string[] | null;
-            /** Scenario Time Limits */
-            scenario_time_limits?: components["schemas"]["QGetSimulationV4ScenarioTimeLimitResource"][] | null;
-            /** General Agent Id */
-            general_agent_id?: string | null;
         };
         /** QGetScenariosV4Item */
         app__sql__types__QGetScenariosV4Item: {
@@ -22443,7 +22829,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types__GetSimulationApiRequest"];
+                "application/json": components["schemas"]["app__api__v4__artifacts__simulation__types__GetSimulationApiRequest"];
             };
         };
         responses: {
@@ -22453,7 +22839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types__GetSimulationApiResponse"];
+                    "application/json": components["schemas"]["app__api__v4__artifacts__simulation__types__GetSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -27721,6 +28107,43 @@ export interface operations {
             };
         };
     };
+    get_rubrics_api_v4_resources_rubrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_run_positions_api_v4_resources_run_positions_post: {
         parameters: {
             query?: never;
@@ -27782,6 +28205,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scenario_flags_api_v4_resources_scenario_flags_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioFlagsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioFlagsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_scenario_flags_api_v4_resources_scenario_flags_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchScenarioFlagsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchScenarioFlagsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -27869,6 +28366,80 @@ export interface operations {
             };
         };
     };
+    get_scenario_positions_api_v4_resources_scenario_positions_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_scenario_positions_api_v4_resources_scenario_positions_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchScenarioPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchScenarioPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_scenario_rubrics_api_v4_resources_scenario_rubrics_post: {
         parameters: {
             query?: never;
@@ -27906,6 +28477,80 @@ export interface operations {
             };
         };
     };
+    get_scenario_rubrics_api_v4_resources_scenario_rubrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_scenario_rubrics_api_v4_resources_scenario_rubrics_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchScenarioRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchScenarioRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_scenario_time_limits_api_v4_resources_scenario_time_limits_post: {
         parameters: {
             query?: never;
@@ -27930,6 +28575,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScenarioTimeLimitsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scenario_time_limits_api_v4_resources_scenario_time_limits_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioTimeLimitsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioTimeLimitsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_scenario_time_limits_api_v4_resources_scenario_time_limits_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchScenarioTimeLimitsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchScenarioTimeLimitsApiResponse"];
                 };
             };
             /** @description Validation Error */

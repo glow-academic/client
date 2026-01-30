@@ -8,6 +8,8 @@ from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
 
 from app.sql.types import (
+    InfraToolsGetSchemaFieldsV4SqlParams,
+    InfraToolsGetSchemaFieldsV4SqlRow,
     InfraToolsGetSchemaIdFromTemplateV4SqlParams,
     InfraToolsGetSchemaIdFromTemplateV4SqlRow,
     InfraToolsGetTemplateIdV4SqlParams,
@@ -117,19 +119,24 @@ async def render_tool_template(
     schema_id = schema_result.schema_id
 
     # Get all schema_fields for that schema with their templates
-    # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
-    from app.utils.sql_helper import load_sql
-
-    schema_fields_sql = load_sql(GET_SCHEMA_FIELDS_SQL_PATH)
-    schema_fields_raw = await conn.fetch(schema_fields_sql, schema_id)
+    schema_params = InfraToolsGetSchemaFieldsV4SqlParams(schema_id=schema_id)
+    schema_fields_rows = cast(
+        list[InfraToolsGetSchemaFieldsV4SqlRow],
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql",
+            params=schema_params,
+            multi_row=True,
+        ),
+    )
     schema_fields = [
         {
-            "id": row["id"],
-            "name": row["name"],
-            "field_type": row["field_type"],
-            "template": row["template"],
+            "id": row.id,
+            "name": row.name,
+            "field_type": row.field_type,
+            "template": row.template,
         }
-        for row in schema_fields_raw
+        for row in schema_fields_rows
     ]
 
     if not schema_fields:

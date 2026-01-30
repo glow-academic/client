@@ -37,27 +37,35 @@ from app.api.v4.resources.descriptions.search import search_descriptions_interna
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.rubrics.get import get_rubrics_internal
+from app.api.v4.resources.scenario_flags.get import get_scenario_flags_internal
+from app.api.v4.resources.scenario_flags.search import search_scenario_flags_internal
+from app.api.v4.resources.scenario_positions.get import get_scenario_positions_internal
+from app.api.v4.resources.scenario_positions.search import (
+    search_scenario_positions_internal,
+)
+from app.api.v4.resources.scenario_rubrics.get import get_scenario_rubrics_internal
+from app.api.v4.resources.scenario_rubrics.search import search_scenario_rubrics_internal
+from app.api.v4.resources.scenario_time_limits.get import get_scenario_time_limits_internal
+from app.api.v4.resources.scenario_time_limits.search import (
+    search_scenario_time_limits_internal,
+)
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import (
+from app.api.v4.artifacts.simulation.types import (
     GetSimulationAccessSqlParams,
     GetSimulationAccessSqlRow,
     GetSimulationApiRequest,
     GetSimulationApiResponse,
     GetSimulationIdsSqlParams,
     GetSimulationIdsSqlRow,
-    QGetSimulationV4Department,
-    QGetSimulationV4Rubric,
-    QGetSimulationV4ScenarioFlagResource,
-    QGetSimulationV4ScenarioPositionResource,
-    QGetSimulationV4ScenarioResource,
-    QGetSimulationV4ScenarioRubricResource,
-    QGetSimulationV4ScenarioTimeLimitResource,
-    load_sql_query,
+    SimulationDepartment,
+    SimulationScenario,
 )
+from app.sql.types import load_sql_query
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths for two-pass architecture
@@ -77,153 +85,6 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
             seen.add(item_id)
             output.append(item)
     return output
-
-
-async def _fetch_junction_data(
-    conn: asyncpg.Connection,
-    simulation_id: UUID | None,
-    draft_id: UUID | None,
-    scenario_ids: list[UUID],
-) -> tuple[
-    list[QGetSimulationV4ScenarioFlagResource],
-    list[QGetSimulationV4ScenarioPositionResource],
-    list[QGetSimulationV4ScenarioRubricResource],
-    list[QGetSimulationV4ScenarioTimeLimitResource],
-    list[QGetSimulationV4Rubric],
-]:
-    """Fetch simulation-scenario junction data (flags, positions, rubrics, time limits)."""
-    if not simulation_id and not draft_id:
-        return [], [], [], [], []
-
-    # Build scenario_ids array for SQL
-    scenario_ids_arr = scenario_ids if scenario_ids else []
-
-    # Fetch all junction data with separate queries for clarity
-    # Use JSONB aggregation for easier Python parsing
-
-    # Scenario flags
-    flags_query = """
-    SELECT jsonb_agg(jsonb_build_object(
-        'id', sfr.id,
-        'scenario_id', sfr.scenario_id,
-        'flag_id', sfr.flag_id,
-        'name', f.name,
-        'description', f.description,
-        'icon', f.icon,
-        'generated', sfr.value
-    )) as items
-    FROM simulation_scenario_flags_junction sfr
-    JOIN flags_resource f ON f.id = sfr.flag_id
-    JOIN scenarios_artifact sr ON sr.id = sfr.scenario_id
-    WHERE sfr.simulation_id = $1
-      AND sfr.value = true
-      AND sr.id = ANY($2::uuid[])
-    """
-
-    # Scenario positions
-    positions_query = """
-    SELECT jsonb_agg(jsonb_build_object(
-        'simulation_id', spr.simulation_id,
-        'scenario_id', spr.scenario_id,
-        'value', spr.value,
-        'generated', false
-    )) as items
-    FROM simulation_scenario_positions_junction spr
-    WHERE spr.simulation_id = $1
-      AND spr.active = true
-    """
-
-    # Scenario rubrics
-    rubrics_query = """
-    SELECT jsonb_agg(jsonb_build_object(
-        'id', srr.id,
-        'scenario_id', srr.scenario_id,
-        'rubric_id', srr.rubric_id,
-        'generated', false
-    )) as items
-    FROM simulation_scenario_rubrics_junction srr
-    WHERE srr.simulation_id = $1
-      AND srr.active = true
-    """
-
-    # Scenario time limits
-    time_limits_query = """
-    SELECT jsonb_agg(jsonb_build_object(
-        'id', stlr.id,
-        'scenario_id', stlr.scenario_id,
-        'time_limit_seconds', stlr.value,
-        'generated', false
-    )) as items
-    FROM simulation_scenario_time_limits_junction stlr
-    WHERE stlr.simulation_id = $1
-      AND stlr.active = true
-    """
-
-    # Rubrics (distinct)
-    rubrics_list_query = """
-    SELECT jsonb_agg(DISTINCT jsonb_build_object(
-        'rubric_id', r.id,
-        'name', rn.name,
-        'description', rd.description
-    )) as items
-    FROM simulation_scenario_rubrics_junction srr
-    JOIN rubrics_artifact r ON r.id = srr.rubric_id
-    LEFT JOIN rubric_names_junction rnj ON rnj.rubric_id = r.id
-    LEFT JOIN names_resource rn ON rn.id = rnj.name_id
-    LEFT JOIN rubric_descriptions_junction rdj ON rdj.rubric_id = r.id
-    LEFT JOIN descriptions_resource rd ON rd.id = rdj.description_id
-    WHERE srr.simulation_id = $1
-      AND srr.active = true
-    """
-
-    # Execute all queries
-    flags_row = await conn.fetchrow(flags_query, simulation_id, scenario_ids_arr)
-    positions_row = await conn.fetchrow(positions_query, simulation_id)
-    rubrics_junc_row = await conn.fetchrow(rubrics_query, simulation_id)
-    time_limits_row = await conn.fetchrow(time_limits_query, simulation_id)
-    rubrics_row = await conn.fetchrow(rubrics_list_query, simulation_id)
-
-    # Parse results
-    scenario_flags = [
-        QGetSimulationV4ScenarioFlagResource.model_validate(item)
-        for item in (flags_row["items"] if flags_row and flags_row["items"] else [])
-    ]
-    scenario_positions = [
-        QGetSimulationV4ScenarioPositionResource.model_validate(item)
-        for item in (
-            positions_row["items"] if positions_row and positions_row["items"] else []
-        )
-    ]
-    scenario_rubrics = [
-        QGetSimulationV4ScenarioRubricResource.model_validate(item)
-        for item in (
-            rubrics_junc_row["items"]
-            if rubrics_junc_row and rubrics_junc_row["items"]
-            else []
-        )
-    ]
-    scenario_time_limits = [
-        QGetSimulationV4ScenarioTimeLimitResource.model_validate(item)
-        for item in (
-            time_limits_row["items"]
-            if time_limits_row and time_limits_row["items"]
-            else []
-        )
-    ]
-    rubrics = [
-        QGetSimulationV4Rubric.model_validate(item)
-        for item in (
-            rubrics_row["items"] if rubrics_row and rubrics_row["items"] else []
-        )
-    ]
-
-    return (
-        scenario_flags,
-        scenario_positions,
-        scenario_rubrics,
-        scenario_time_limits,
-        rubrics,
-    )
 
 
 @router.post(
@@ -413,13 +274,50 @@ async def get_simulation(
                 )
                 return (selected, suggestions)
 
-        async def fetch_junction():
+        async def fetch_scenario_flags():
             async with pool.acquire() as c:
-                return await _fetch_junction_data(
-                    c,
-                    request.simulation_id,
-                    request.draft_id,
-                    scenario_ids,
+                selected = await get_scenario_flags_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                suggestions = await search_scenario_flags_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                return (selected, suggestions)
+
+        async def fetch_scenario_positions():
+            async with pool.acquire() as c:
+                selected = await get_scenario_positions_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                suggestions = await search_scenario_positions_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                return (selected, suggestions)
+
+        async def fetch_scenario_rubrics():
+            async with pool.acquire() as c:
+                selected = await get_scenario_rubrics_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                suggestions = await search_scenario_rubrics_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                return (selected, suggestions)
+
+        async def fetch_scenario_time_limits():
+            async with pool.acquire() as c:
+                selected = await get_scenario_time_limits_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                suggestions = await search_scenario_time_limits_internal(
+                    c, request.simulation_id, scenario_ids, bypass_cache
+                )
+                return (selected, suggestions)
+
+        async def fetch_rubrics():
+            async with pool.acquire() as c:
+                return await get_rubrics_internal(
+                    c, request.simulation_id, bypass_cache
                 )
 
         # Parallel fetch all resources
@@ -429,20 +327,39 @@ async def get_simulation(
             flag_items,
             (departments_selected, departments_suggestions),
             (scenarios_selected, scenarios_suggestions),
-            (
-                scenario_flags,
-                scenario_positions,
-                scenario_rubrics,
-                scenario_time_limits,
-                rubrics,
-            ),
+            (scenario_flags_selected, scenario_flags_suggestions),
+            (scenario_positions_selected, scenario_positions_suggestions),
+            (scenario_rubrics_selected, scenario_rubrics_suggestions),
+            (scenario_time_limits_selected, scenario_time_limits_suggestions),
+            rubrics,
         ) = await asyncio.gather(
             fetch_names(),
             fetch_descriptions(),
             fetch_flags(),
             fetch_departments(),
             fetch_scenarios(),
-            fetch_junction(),
+            fetch_scenario_flags(),
+            fetch_scenario_positions(),
+            fetch_scenario_rubrics(),
+            fetch_scenario_time_limits(),
+            fetch_rubrics(),
+        )
+
+        # Combine scenario junction resources
+        scenario_flags = _dedupe_by_id(
+            list(scenario_flags_selected) + list(scenario_flags_suggestions), "id"
+        )
+        scenario_positions = _dedupe_by_id(
+            list(scenario_positions_selected) + list(scenario_positions_suggestions),
+            "id",
+        )
+        scenario_rubrics = _dedupe_by_id(
+            list(scenario_rubrics_selected) + list(scenario_rubrics_suggestions), "id"
+        )
+        scenario_time_limits = _dedupe_by_id(
+            list(scenario_time_limits_selected)
+            + list(scenario_time_limits_suggestions),
+            "id",
         )
 
         # Combine selected and suggestions (dedupe)
@@ -468,12 +385,11 @@ async def get_simulation(
         department_resources = [
             d for d in departments if d.department_id in department_ids
         ]
-        # Convert QGetScenariosV4Item to QGetSimulationV4ScenarioResource
+        # Convert scenarios to SimulationScenario type
         scenario_resources = [
-            QGetSimulationV4ScenarioResource(
-                id=s.scenario_id,  # Use scenario_id as id
+            SimulationScenario(
                 scenario_id=s.scenario_id,
-                name=s.title,  # Map title to name
+                title=s.title,
                 description=s.description,
                 generated=s.generated,
             )
@@ -486,38 +402,31 @@ async def get_simulation(
         department_suggestions_ids = [d.department_id for d in departments_suggestions]
         scenario_suggestions_ids = [s.scenario_id for s in scenarios_suggestions]
 
-        # Convert departments to expected type
+        # Convert departments to expected type (simplified - no relationship arrays)
         departments_typed = [
-            QGetSimulationV4Department(
+            SimulationDepartment(
                 department_id=d.department_id,
                 name=d.name,
                 description=d.description,
                 generated=d.generated,
-                scenario_ids=[],
-                rubric_ids=[],
-                cohort_ids=[],
             )
             for d in departments
         ]
         department_resources_typed = [
-            QGetSimulationV4Department(
+            SimulationDepartment(
                 department_id=d.department_id,
                 name=d.name,
                 description=d.description,
                 generated=d.generated,
-                scenario_ids=[],
-                rubric_ids=[],
-                cohort_ids=[],
             )
             for d in department_resources
         ]
 
-        # Convert scenarios to expected type (QGetScenariosV4Item -> QGetSimulationV4ScenarioResource)
+        # Convert scenarios to expected type
         scenarios_typed = [
-            QGetSimulationV4ScenarioResource(
-                id=s.scenario_id,  # Use scenario_id as id
+            SimulationScenario(
                 scenario_id=s.scenario_id,
-                name=s.title,  # Map title to name
+                title=s.title,
                 description=s.description,
                 generated=s.generated,
             )

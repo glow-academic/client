@@ -70,8 +70,49 @@ class SimulationScenario(BaseModel):
 class SimulationScenarioPosition(BaseModel):
     """Scenario position for simulation."""
 
+    id: UUID | None = None
+    simulation_id: UUID | None = None
     scenario_id: UUID | None = None
     value: int | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioFlag(BaseModel):
+    """Scenario flag for simulation."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    flag_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    icon: str | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioRubric(BaseModel):
+    """Scenario rubric for simulation."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    rubric_id: UUID | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioTimeLimit(BaseModel):
+    """Scenario time limit for simulation."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    time_limit_seconds: int | None = None
+    generated: bool | None = None
+
+
+class SimulationRubric(BaseModel):
+    """Rubric for simulation."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
     generated: bool | None = None
 
 
@@ -320,8 +361,42 @@ class GetSimulationApiResponse(BaseModel):
     scenario_suggestions: list[UUID] | None = None
     scenarios: list[SimulationScenario] | None = None
 
+    # Scenario flags
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_flag_resources: list[SimulationScenarioFlag] | None = None
+    show_scenario_flags: bool | None = None
+    scenario_flags_agent_id: UUID | None = None
+    scenario_flags_required: bool | None = None
+    scenario_flag_suggestions: list[UUID] | None = None
+    scenario_flags: list[SimulationScenarioFlag] | None = None
+
     # Scenario positions
+    scenario_position_ids: list[UUID] | None = None
+    scenario_position_resources: list[SimulationScenarioPosition] | None = None
+    show_scenario_positions: bool | None = None
+    scenario_positions_agent_id: UUID | None = None
+    scenario_positions_required: bool | None = None
+    scenario_position_suggestions: list[UUID] | None = None
     scenario_positions: list[SimulationScenarioPosition] | None = None
+
+    # Scenario rubrics
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_rubric_resources: list[SimulationScenarioRubric] | None = None
+    show_scenario_rubrics: bool | None = None
+    scenario_rubrics_agent_id: UUID | None = None
+    scenario_rubrics_required: bool | None = None
+    scenario_rubric_suggestions: list[UUID] | None = None
+    scenario_rubrics: list[SimulationScenarioRubric] | None = None
+    rubrics: list[SimulationRubric] | None = None
+
+    # Scenario time limits
+    scenario_time_limit_ids: list[UUID] | None = None
+    scenario_time_limit_resources: list[SimulationScenarioTimeLimit] | None = None
+    show_scenario_time_limits: bool | None = None
+    scenario_time_limits_agent_id: UUID | None = None
+    scenario_time_limits_required: bool | None = None
+    scenario_time_limit_suggestions: list[UUID] | None = None
+    scenario_time_limits: list[SimulationScenarioTimeLimit] | None = None
 
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None

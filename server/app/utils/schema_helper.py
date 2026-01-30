@@ -21,13 +21,16 @@ from app.sql.types import (
     CreateTemplateV4SqlParams,
     CreateTemplateValueV4SqlParams,
     GetSchemaWithFieldsSqlParams,
+    GetSchemaWithFieldsSqlRow,
     GetTemplateArrayItemsV4SqlParams,
+    GetTemplateArrayItemsV4SqlRow,
     GetTemplateSchemaSqlParams,
     GetTemplateSchemaSqlRow,
     GetTemplateValuesV4SqlParams,
+    GetTemplateValuesV4SqlRow,
     LinkSchemaTemplateV4SqlParams,
 )
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed
 
 
 async def get_schema_with_fields(
@@ -46,24 +49,30 @@ async def get_schema_with_fields(
         List of field dictionaries with keys: schema_id, field_id, field_name,
         field_type, required, position, item_schema_id
     """
-    # Call function directly since it returns multiple rows
-    # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
+    # Use execute_sql_typed with multi_row=True for multi-row results
     params = GetSchemaWithFieldsSqlParams(schema_id=schema_id)
-    sql = load_sql("app/sql/v4/queries/schemas/get_schema_with_fields_complete.sql")
-    rows = await conn.fetch(sql, schema_id)
+    rows = cast(
+        list[GetSchemaWithFieldsSqlRow],
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/schemas/get_schema_with_fields_complete.sql",
+            params=params,
+            multi_row=True,
+        ),
+    )
 
     # Convert rows to list of dicts
     fields: list[dict[str, Any]] = []
     for row in rows:
         field_dict = {
-            "schema_id": uuid.UUID(row["schema_id"]) if row["schema_id"] else None,
-            "field_id": uuid.UUID(row["field_id"]) if row["field_id"] else None,
-            "field_name": row["field_name"],
-            "field_type": row["field_type"],
-            "required": row["required"],
-            "position": row["position"],
-            "item_schema_id": uuid.UUID(row["item_schema_id"])
-            if row["item_schema_id"]
+            "schema_id": uuid.UUID(str(row.schema_id)) if row.schema_id else None,
+            "field_id": uuid.UUID(str(row.field_id)) if row.field_id else None,
+            "field_name": row.field_name,
+            "field_type": row.field_type,
+            "required": row.required,
+            "position": row.position,
+            "item_schema_id": uuid.UUID(str(row.item_schema_id))
+            if row.item_schema_id
             else None,
         }
         fields.append(field_dict)
@@ -190,34 +199,44 @@ async def get_template_values(
     """
     # Get all scalar values
     values_params = GetTemplateValuesV4SqlParams(template_id=template_id)
-    values_sql = load_sql(
-        "app/sql/v4/queries/utils/get_template_values_v4_complete.sql"
+    values_rows_typed = cast(
+        list[GetTemplateValuesV4SqlRow],
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/utils/get_template_values_v4_complete.sql",
+            params=values_params,
+            multi_row=True,
+        ),
     )
-    values_rows_raw = await conn.fetch(values_sql, template_id)
     values_rows = [
         {
-            "name": row["name"],
-            "string_value": row["string_value"],
-            "number_value": row["number_value"],
-            "boolean_value": row["boolean_value"],
-            "field_type": row["field_type"],
+            "name": row.name,
+            "string_value": row.string_value,
+            "number_value": row.number_value,
+            "boolean_value": row.boolean_value,
+            "field_type": row.field_type,
         }
-        for row in values_rows_raw
+        for row in values_rows_typed
     ]
 
     # Get all array items
     array_params = GetTemplateArrayItemsV4SqlParams(template_id=template_id)
-    array_sql = load_sql(
-        "app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql"
+    array_items_rows_typed = cast(
+        list[GetTemplateArrayItemsV4SqlRow],
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql",
+            params=array_params,
+            multi_row=True,
+        ),
     )
-    array_items_rows_raw = await conn.fetch(array_sql, template_id)
     array_items_rows = [
         {
-            "name": row["name"],
-            "item_template_id": row["item_template_id"],
-            "position": row["position"],
+            "name": row.name,
+            "item_template_id": row.item_template_id,
+            "position": row.position,
         }
-        for row in array_items_rows_raw
+        for row in array_items_rows_typed
     ]
 
     # Build result dictionary

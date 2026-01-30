@@ -7,6 +7,8 @@ It does NOT perform any database operations. All writes are handled by domain ha
 from __future__ import annotations
 
 import json
+import logging
+import traceback
 from collections.abc import AsyncIterator
 from typing import Any, cast
 
@@ -23,6 +25,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio
 from app.socket.v4.artifacts.tool_registry import wait_for_tool_result
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 # Try to import litellm
 try:
@@ -37,6 +40,8 @@ except ImportError:
     ToolParam = Any  # type: ignore
 
 internal_sio = get_internal_sio()
+
+logger = logging.getLogger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -106,6 +111,7 @@ async def _call_llm_text_stream(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]] | list[ToolParam] | None = None,
+    openai_tools: list[dict[str, Any]] | None = None,
     tool_choice: str | ToolChoice = "auto",
     api_key: str | None = None,
     base_url: str | None = None,
@@ -114,12 +120,20 @@ async def _call_llm_text_stream(
     metadata: dict[str, Any] | None = None,
     extra_body: dict[str, Any] | None = None,
 ) -> AsyncIterator[Any]:
-    """Call LLM with streaming, preferring aresponses() API, falling back to acompletion()."""
+    """Call LLM with streaming, preferring aresponses() API, falling back to acompletion().
+
+    Args:
+        tools: Tools in responses API format (flat with name at top level)
+        openai_tools: Tools in OpenAI chat completion format (nested with function key)
+    """
     if not LITELLM_AVAILABLE:
         raise ValueError("litellm is not available")
 
     if not model or not model.strip():
         raise ValueError("model name is required but was empty or null")
+
+    # Use openai_tools for acompletion fallback (nested format with function key)
+    completion_tools = openai_tools if openai_tools else tools
 
     base_kwargs: dict[str, Any] = {
         "model": model,
@@ -133,8 +147,8 @@ async def _call_llm_text_stream(
     if base_url:
         base_kwargs["base_url"] = base_url
 
-    if tools:
-        base_kwargs["tools"] = tools
+    if completion_tools:
+        base_kwargs["tools"] = completion_tools
         base_kwargs["tool_choice"] = tool_choice
 
     merged_extra_body: dict[str, Any] | None = None
@@ -211,10 +225,29 @@ async def _call_llm_text_stream(
             if merged_extra_body:
                 responses_kwargs["extra_body"] = merged_extra_body
 
+            # Log debug info (without sensitive api_key)
+            debug_kwargs = {k: v for k, v in responses_kwargs.items() if k != "api_key"}
+            logger.info(
+                f"Attempting aresponses API - model: {model}, "
+                f"num_tools: {len(validated_tools) if tools else 0}, "
+                f"tool_choice: {tool_choice}"
+            )
+            logger.debug(f"aresponses kwargs (sans api_key): {debug_kwargs}")
             return await litellm.aresponses(**responses_kwargs)  # type: ignore
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(
+            f"aresponses API failed for model {model}, falling back to acompletion: "
+            f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+        )
 
+    # Log debug info for acompletion fallback
+    debug_base_kwargs = {k: v for k, v in base_kwargs.items() if k != "api_key"}
+    logger.info(
+        f"Using acompletion fallback - model: {model}, "
+        f"num_tools: {len(completion_tools) if completion_tools else 0}, "
+        f"tool_choice: {base_kwargs.get('tool_choice', 'none')}"
+    )
+    logger.debug(f"acompletion kwargs (sans api_key): {debug_base_kwargs}")
     return await litellm.acompletion(**base_kwargs)  # type: ignore
 
 
@@ -232,6 +265,12 @@ async def _generate_artifact_impl(
         messages = format_messages_for_litellm(data.messages)
 
         model_config = data.llm_config
+
+        # Decrypt the API key if provided (keys are stored encrypted in the database)
+        decrypted_api_key: str | None = None
+        if model_config.api_key:
+            decrypted_api_key = decrypt_api_key(model_config.api_key)
+
         extra_body: dict[str, Any] = {}
         if model_config.voice is not None:
             extra_body["voice"] = model_config.voice
@@ -241,8 +280,7 @@ async def _generate_artifact_impl(
             extra_body["length_seconds"] = model_config.length_seconds
         if model_config.response_format is not None:
             extra_body["response_format"] = model_config.response_format
-        if model_config.provider is not None:
-            extra_body["provider"] = model_config.provider
+        # Note: provider is not passed to extra_body - it's for internal routing only
         if model_config.extra_body:
             extra_body.update(model_config.extra_body)
 
@@ -320,14 +358,13 @@ async def _generate_artifact_impl(
             )
             return
 
-        stream = _call_llm_text_stream(
+        stream = await _call_llm_text_stream(
             model=model_config.model,
             messages=messages,
-            tools=responses_tools
-            if responses_tools
-            else (openai_tools if openai_tools else None),
+            tools=responses_tools,  # Flat format for aresponses API
+            openai_tools=openai_tools,  # Nested format for acompletion fallback
             tool_choice=tool_choice,
-            api_key=model_config.api_key,
+            api_key=decrypted_api_key,
             base_url=model_config.base_url,
             temperature=model_config.temperature or 0.0,
             reasoning=model_config.reasoning,

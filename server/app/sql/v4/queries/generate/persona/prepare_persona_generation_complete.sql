@@ -350,7 +350,7 @@ developer_instruction_data AS (
             ARRAY[]::text[]
         ) as developer_instruction_templates
     FROM selected_agent sa
-    INNER JOIN agents_resource a ON a.id = sa.agent_id
+    INNER JOIN agent_artifact a ON a.id = sa.agent_id
     LEFT JOIN agent_instructions_junction ai ON ai.agent_id = a.id
     LEFT JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
     GROUP BY sa.agent_id
@@ -541,8 +541,8 @@ context_data AS (
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
 
-        -- Model data
-        (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
+        -- Model data (models_resource.value contains the model name directly)
+        m.value as model_name,
         COALESCE(n_prov.name, '') as provider_name,
         COALESCE(e.base_url, '') as base_url,
         kr.key as api_key,
@@ -558,32 +558,34 @@ context_data AS (
         COALESCE(did.developer_instruction_templates, ARRAY[]::text[]) as developer_instruction_templates
 
     FROM selected_agent sa
-    INNER JOIN agents_resource a ON a.id = sa.agent_id
+    INNER JOIN agent_artifact a ON a.id = sa.agent_id
 
     -- Agent prompt
     LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
 
-    -- Model
+    -- Model: agent_models_junction.model_id -> model_artifact -> model_models_junction -> models_resource
     INNER JOIN agent_models_junction am ON am.agent_id = a.id
-    INNER JOIN models_resource m ON m.id = am.model_id
+    INNER JOIN model_artifact ma ON ma.id = am.model_id
+    INNER JOIN model_models_junction mmj ON mmj.model_id = ma.id
+    INNER JOIN models_resource m ON m.id = mmj.models_id
 
-    -- Temperature
+    -- Temperature (uses model_artifact.id)
     LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id
+    LEFT JOIN model_temperature_levels_junction mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = ma.id
     LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
 
-    -- Reasoning
+    -- Reasoning (uses model_artifact.id)
     LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id
+    LEFT JOIN model_reasoning_levels_junction mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = ma.id
     LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
 
-    -- Endpoint/base_url
-    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = m.id
+    -- Endpoint/base_url (uses model_artifact.id)
+    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = ma.id
     LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
 
-    -- API key via provider -> settings -> keys
-    LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
+    -- API key via provider -> settings -> keys (uses model_artifact.id)
+    LEFT JOIN model_providers_junction mp ON mp.model_id = ma.id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
     LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_prov.id
     LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj.provider_id

@@ -200,6 +200,10 @@ from app.api.v4.resources.roles.get import router as roles_get_router
 
 router.include_router(roles_get_router)
 # NOTE: rubrics removed - non-creatable, sync via artifact save (migration 328)
+# GET endpoint available for simulations two-pass architecture
+from app.api.v4.resources.rubrics.get import router as rubrics_get_router
+
+router.include_router(rubrics_get_router)
 from app.api.v4.resources.run_positions.create import router as run_positions_router
 
 router.include_router(run_positions_router)
@@ -208,6 +212,14 @@ from app.api.v4.resources.run_rubrics.create import router as run_rubrics_router
 router.include_router(run_rubrics_router)
 # NOTE: runs removed - non-creatable (migration 328)
 # NOTE: scenario_flags removed - non-creatable (migration 328)
+# GET/Search endpoints available for simulations two-pass architecture
+from app.api.v4.resources.scenario_flags.get import router as scenario_flags_get_router
+from app.api.v4.resources.scenario_flags.search import (
+    router as scenario_flags_search_router,
+)
+
+router.include_router(scenario_flags_get_router)
+router.include_router(scenario_flags_search_router)
 from app.api.v4.resources.setting_role_routes.create import (
     router as setting_role_routes_router,
 )
@@ -216,18 +228,42 @@ router.include_router(setting_role_routes_router)
 from app.api.v4.resources.scenario_positions.create import (
     router as scenario_positions_router,
 )
+from app.api.v4.resources.scenario_positions.get import (
+    router as scenario_positions_get_router,
+)
+from app.api.v4.resources.scenario_positions.search import (
+    router as scenario_positions_search_router,
+)
 
 router.include_router(scenario_positions_router)
+router.include_router(scenario_positions_get_router)
+router.include_router(scenario_positions_search_router)
 from app.api.v4.resources.scenario_rubrics.create import (
     router as scenario_rubrics_router,
 )
+from app.api.v4.resources.scenario_rubrics.get import (
+    router as scenario_rubrics_get_router,
+)
+from app.api.v4.resources.scenario_rubrics.search import (
+    router as scenario_rubrics_search_router,
+)
 
 router.include_router(scenario_rubrics_router)
+router.include_router(scenario_rubrics_get_router)
+router.include_router(scenario_rubrics_search_router)
 from app.api.v4.resources.scenario_time_limits.create import (
     router as scenario_time_limits_router,
 )
+from app.api.v4.resources.scenario_time_limits.get import (
+    router as scenario_time_limits_get_router,
+)
+from app.api.v4.resources.scenario_time_limits.search import (
+    router as scenario_time_limits_search_router,
+)
 
 router.include_router(scenario_time_limits_router)
+router.include_router(scenario_time_limits_get_router)
+router.include_router(scenario_time_limits_search_router)
 # NOTE: scenarios removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for simulations two-pass architecture
 from app.api.v4.resources.scenarios import router as scenarios_router

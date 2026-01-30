@@ -90,7 +90,8 @@ async def execute_sql_typed(
     conn: asyncpg.Connection,
     sql_path: str,
     params: HasToTuple | None = None,
-) -> BaseModel:
+    multi_row: bool = False,
+) -> BaseModel | list[BaseModel]:
     """Execute SQL query with typed parameters and return typed result.
 
     Loads SQL with types, executes query, applies nest, and returns
@@ -159,16 +160,16 @@ async def execute_sql_typed(
         # Ensure no semicolons or multiple statements (asyncpg doesn't allow multiple commands in prepared statements)
         function_call_sql = function_call_sql.strip().rstrip(";")
 
-        # Functions return single row (RETURNS TABLE)
+        # Fetch rows (use fetch for both single and multi-row - consistent with raw SQL path)
         if sql_params:
-            row = await conn.fetchrow(function_call_sql, *sql_params)
+            rows = await conn.fetch(function_call_sql, *sql_params)
         else:
-            row = await conn.fetchrow(function_call_sql)
+            rows = await conn.fetch(function_call_sql)
 
-        if row:
-            # Convert row to dict - asyncpg handles composite types automatically
+        if rows:
+            # Convert rows to dicts - asyncpg handles composite types automatically
             # Composite arrays are decoded as list of Record objects
-            row_dict = dict(row)
+            row_dicts = [dict(row) for row in rows]
 
             # Recursively convert Record objects to dicts and datetime to strings for composite types
             def convert_records_to_dicts(obj: Any) -> Any:
@@ -201,14 +202,21 @@ async def execute_sql_typed(
                 else:
                     return obj
 
-            row_dict = convert_records_to_dicts(row_dict)
+            row_dicts = [convert_records_to_dicts(rd) for rd in row_dicts]
 
-            # Use model_validate since we have the actual data structure
-            return OutputTypeClass.model_validate(row_dict)
+            if multi_row:
+                # Return list of models for multi-row results
+                return [OutputTypeClass.model_validate(rd) for rd in row_dicts]
+            else:
+                # Return first row for single-row results (backward compatible)
+                return OutputTypeClass.model_validate(row_dicts[0])
         else:
             # Function returned no rows - return empty result
-            empty_data: dict[str, Any] = {}
-            return OutputTypeClass.model_construct(**empty_data)
+            if multi_row:
+                return []
+            else:
+                empty_data: dict[str, Any] = {}
+                return OutputTypeClass.model_construct(**empty_data)
     else:
         # It's raw SQL - execute normally
         sql_query = load_sql_query(sql_path)

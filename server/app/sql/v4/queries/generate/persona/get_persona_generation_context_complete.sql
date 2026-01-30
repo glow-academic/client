@@ -67,22 +67,27 @@ agent_data AS (
     LIMIT 1
 ),
 -- Get model via junction traversal
+-- agent_models_junction.model_id -> model_artifact -> model_models_junction -> models_resource
 model_data AS (
     SELECT
-        m.id as model_id,
-        (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name
+        mr.id as model_id,
+        mr.value as model_name,
+        ma.id as model_artifact_id  -- Keep artifact ID for provider lookup
     FROM params p
     JOIN agent_models_junction am ON am.agent_id = p.agent_id
-    JOIN models_resource m ON m.id = am.model_id
+    JOIN model_artifact ma ON ma.id = am.model_id
+    JOIN model_models_junction mmj ON mmj.model_id = ma.id
+    JOIN models_resource mr ON mr.id = mmj.models_id
     LIMIT 1
 ),
 -- Get provider via full junction chain
+-- model_providers_junction.model_id references model_artifact.id
 provider_data AS (
     SELECT
         p_prov.id as provider_id,
         (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = p_prov.id LIMIT 1) as provider_name
     FROM model_data md
-    JOIN model_providers_junction mp ON mp.model_id = md.model_id
+    JOIN model_providers_junction mp ON mp.model_id = md.model_artifact_id
     JOIN providers_resource p_res ON p_res.id = mp.providers_id
     JOIN provider_providers_junction ppj ON ppj.providers_id = p_res.id
     JOIN provider_artifact p_prov ON p_prov.id = ppj.provider_id
@@ -135,12 +140,13 @@ active_settings AS (
         ) as settings_id
 ),
 -- Check if provider has API key in active settings
+-- model_providers_junction.model_id references model_artifact.id
 api_key_check AS (
     SELECT
         EXISTS (
             SELECT 1
             FROM model_data md
-            JOIN model_providers_junction mp ON mp.model_id = md.model_id
+            JOIN model_providers_junction mp ON mp.model_id = md.model_artifact_id
             CROSS JOIN active_settings act_s
             JOIN setting_provider_keys_junction spk ON spk.providers_id = mp.providers_id
                 AND spk.settings_id = act_s.settings_id

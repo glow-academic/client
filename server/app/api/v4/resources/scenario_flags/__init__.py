@@ -1,0 +1,1 @@
+"""Scenario flags resource endpoints."""

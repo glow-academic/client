@@ -23,6 +23,8 @@ SQL_PATH = "app/sql/v4/queries/personas/validate_persona_resource_progress_compl
 
 @internal_sio.on("generate_call_start")  # type: ignore
 @internal_sio.on("generate_call_progress")  # type: ignore
+@internal_sio.on("generate_text_start")  # type: ignore
+@internal_sio.on("generate_text_progress")  # type: ignore
 async def handle_personas_call_progress(data: dict[str, Any]) -> None:
     """Handle generate_call_* events - filter by persona artifact_type and emit persona-specific event."""
     artifact_type = data.get("artifact_type")
