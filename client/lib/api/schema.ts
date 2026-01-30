@@ -10782,15 +10782,21 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetScenarioTimeLimitsV4Item"][] | null;
         };
-        /** GetScenariosApiRequest */
+        /**
+         * GetScenariosApiRequest
+         * @description Request for getting scenarios by IDs.
+         */
         GetScenariosApiRequest: {
             /** Ids */
             ids: string[];
         };
-        /** GetScenariosApiResponse */
+        /**
+         * GetScenariosApiResponse
+         * @description Response for getting scenarios by IDs.
+         */
         GetScenariosApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+            items?: components["schemas"]["QGetScenariosV4Item"][] | null;
         };
         /**
          * GetScenariosListApiRequest
@@ -17440,6 +17446,32 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /**
+         * QGetScenariosV4Item
+         * @description Scenario item from scenarios resource query.
+         */
+        QGetScenariosV4Item: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Problem Statement Enabled */
+            problem_statement_enabled?: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled?: boolean | null;
+            /** Video Enabled */
+            video_enabled?: boolean | null;
+            /** Images Enabled */
+            images_enabled?: boolean | null;
+            /** Questions Enabled */
+            questions_enabled?: boolean | null;
+            /** Templates Enabled */
+            templates_enabled?: boolean | null;
+        };
         /** QGetSettingV4Auth */
         QGetSettingV4Auth: {
             /** Auth Id */
@@ -21599,7 +21631,7 @@ export interface components {
          */
         SearchScenariosApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
+            items?: components["schemas"]["QGetScenariosV4Item"][] | null;
         };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
@@ -21805,28 +21837,30 @@ export interface components {
         SimulationScenario: {
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Title */
-            title?: string | null;
+            /** Name */
+            name?: string | null;
             /** Description */
             description?: string | null;
-            /** Active */
-            active?: boolean | null;
             /** Generated */
             generated?: boolean | null;
-            /** Department Id */
-            department_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Position */
-            position?: number | null;
-            /** Time Limit Seconds */
-            time_limit_seconds?: number | null;
-            /** Flag Id */
-            flag_id?: string | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Show Video */
+            show_video?: boolean | null;
+            /** Show Text */
+            show_text?: boolean | null;
+            /** Show Audio */
+            show_audio?: boolean | null;
+            /** Show Copy Paste */
+            show_copy_paste?: boolean | null;
+            /** Show Images */
+            show_images?: boolean | null;
+            /** Show Questions */
+            show_questions?: boolean | null;
+            /** Show Templates */
+            show_templates?: boolean | null;
         };
         /**
          * SimulationScenarioFlag
@@ -22270,28 +22304,6 @@ export interface components {
             general_agent_id?: string | null;
         };
         /**
-         * QGetScenariosV4Item
-         * @description Scenario item from scenarios resource query.
-         */
-        app__api__v4__artifacts__simulation__types__QGetScenariosV4Item: {
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Department Id */
-            department_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-        };
-        /**
          * GetSimulationApiRequest
          * @description Request for getting a simulation by ID.
          */
@@ -22308,25 +22320,6 @@ export interface components {
          */
         app__api__v4__resources__simulations__get__GetSimulationApiResponse: {
             item?: components["schemas"]["GetSimulationV4Item"] | null;
-        };
-        /** QGetScenariosV4Item */
-        app__sql__types__QGetScenariosV4Item: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
         };
     };
     responses: never;

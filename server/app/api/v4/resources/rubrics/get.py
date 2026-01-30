@@ -44,19 +44,19 @@ async def get_rubrics_internal(
 
     Args:
         conn: Database connection
-        simulation_id: Simulation ID to fetch rubrics for
+        simulation_id: Simulation ID to fetch rubrics for (None returns all rubrics)
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of rubric items
     """
-    if not simulation_id:
-        return []
+    # Use sentinel UUID when simulation_id is None to fetch all rubrics
+    effective_simulation_id = simulation_id or UUID("00000000-0000-0000-0000-000000000000")
 
     # Generate cache key
     cache_key_val = cache_key(
         "rubrics/get",
-        {"simulation_id": str(simulation_id)},
+        {"simulation_id": str(effective_simulation_id)},
     )
 
     # Try cache (unless bypassed)
@@ -69,7 +69,7 @@ async def get_rubrics_internal(
             ]
 
     # Execute SQL
-    params = GetRubricsSqlParams(simulation_id=simulation_id)
+    params = GetRubricsSqlParams(simulation_id=effective_simulation_id)
     result = cast(
         GetRubricsSqlRow,
         await execute_sql_typed(

@@ -19,6 +19,8 @@ from app.sql.types import (
     InfraToolsGetTemplateIdV4SqlRow,
     InfraToolsGetToolIdByNameSqlParams,
     InfraToolsGetToolIdByNameSqlRow,
+    InfraToolsIsToolCreatableSqlParams,
+    InfraToolsIsToolCreatableSqlRow,
     InfraToolsLinkToolCallSqlParams,
 )
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -77,6 +79,18 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             return
 
         tool_id = tool_result.tool_id
+
+        # Check if tool is creatable (INSERT) or link-only (SELECT existing)
+        creatable_params = InfraToolsIsToolCreatableSqlParams(p_tool_id=tool_id)
+        creatable_result = cast(
+            InfraToolsIsToolCreatableSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/queries/infrastructure/tools/is_tool_creatable_complete.sql",
+                params=creatable_params,
+            ),
+        )
+        is_creatable = creatable_result.is_creatable if creatable_result else True
 
         # Get resource_type by tool_id
         resource_params = InfraToolsGetResourceTypeByToolIdSqlParams(tool_id=tool_id)
@@ -156,20 +170,62 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             conn, resource_type, rendered_values, tool_id=str(tool_id)
         )
 
-        create_resource_sql = load_sql(
-            "app/sql/v4/queries/resources/create_resource_record_complete.sql"
-        )
-        resource_row = await conn.fetchrow(
-            create_resource_sql,
-            resource_type,
-            call_db_id,
-            False,
-            json.dumps(mapped_values),
-        )
-
         resource_id = None
-        if resource_row and resource_row.get("id"):
-            resource_id = str(resource_row["id"])
+
+        if is_creatable:
+            # CREATE tool: INSERT new record
+            create_resource_sql = load_sql(
+                "app/sql/v4/queries/resources/create_resource_record_complete.sql"
+            )
+            resource_row = await conn.fetchrow(
+                create_resource_sql,
+                resource_type,
+                call_db_id,
+                False,
+                json.dumps(mapped_values),
+            )
+            if resource_row and resource_row.get("id"):
+                resource_id = str(resource_row["id"])
+        else:
+            # LINK tool: SELECT existing record by ID
+            # mapped_values should contain {"id": "<existing_resource_id>"}
+            existing_id = mapped_values.get("id")
+            if not existing_id:
+                await internal_sio.emit(
+                    "tool_result",
+                    {
+                        "call_id": call_id,
+                        "success": False,
+                        "error": f"Link tool {tool_name} requires an id in arguments",
+                    },
+                )
+                return
+
+            # Validate the resource exists
+            table_name = f"{resource_type}_resource"
+            check_sql = f"SELECT id FROM {table_name} WHERE id = $1"
+            existing_row = await conn.fetchrow(check_sql, uuid.UUID(existing_id))
+            if not existing_row:
+                await internal_sio.emit(
+                    "tool_result",
+                    {
+                        "call_id": call_id,
+                        "success": False,
+                        "error": f"Resource not found: {resource_type} with id {existing_id}",
+                    },
+                )
+                return
+
+            # Link the call to the existing resource via junction table
+            junction_table = f"call_{resource_type}_junction"
+            resource_col = f"{resource_type}_id"
+            link_sql = f"""
+                INSERT INTO {junction_table} (call_id, {resource_col})
+                VALUES ($1, $2)
+                ON CONFLICT DO NOTHING
+            """
+            await conn.execute(link_sql, call_db_id, uuid.UUID(existing_id))
+            resource_id = existing_id
 
         await internal_sio.emit(
             "tool_result",

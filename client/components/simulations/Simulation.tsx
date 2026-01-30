@@ -38,6 +38,7 @@ import { Loader2, Sparkles } from "lucide-react";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
@@ -93,6 +94,12 @@ type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
 type SimulationData = OutputOf<"/api/v4/simulations/get", "post">;
 type SimulationResourceType = ResourceType | "scenario_time_limits";
 
+// Type for flush results - each resource returns its created ID(s)
+type FlushResult = {
+  name_id?: string | null;
+  description_id?: string | null;
+};
+
 export interface SimulationProps {
   simulationId?: string;
   // Server-provided data (for server-side rendering)
@@ -146,6 +153,28 @@ function SimulationComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { isAutosaveEnabled } = useSaveContext();
+
+  // Registry of flush callbacks from creatable resource components
+  const flushRegistryRef = React.useRef<
+    Map<string, () => Promise<FlushResult | void>>
+  >(new Map());
+
+  // Create stable registerFlush callback
+  const createRegisterFlush = useCallback((key: string) => {
+    return (flush: () => Promise<FlushResult | void>) => {
+      flushRegistryRef.current.set(key, flush);
+    };
+  }, []);
+
+  // Memoize registerFlush callbacks to prevent re-renders
+  const registerFlushCallbacks = useMemo(
+    () => ({
+      names: createRegisterFlush("names"),
+      descriptions: createRegisterFlush("descriptions"),
+    }),
+    [createRegisterFlush]
+  );
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -542,12 +571,23 @@ function SimulationComponent({
   // Track last synced draftId to prevent redundant profile context updates
   const lastSyncedDraftIdRef = React.useRef<string | null>(null);
 
+  // Track when we're syncing from server data (to reset baseline, not trigger save)
+  // Defined early so it's available for onFormDataChange and formState sync effect
+  const serverSyncPendingRef = React.useRef(false);
+
   // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
     // Store formData for access in handleGenerateResources
     formDataRef.current = fd;
     const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
+    setDraftId((prev) => {
+      // If draftId is changing on initial load (null → value), mark as server sync
+      // to prevent triggering autosave for URL-based draft loading
+      if (prev === null && next !== null) {
+        serverSyncPendingRef.current = true;
+      }
+      return prev === next ? prev : next;
+    });
 
     // One-way sync to profile context (no effect dependency on selectedDraftId)
     if (next !== lastSyncedDraftIdRef.current) {
@@ -603,7 +643,7 @@ function SimulationComponent({
   // Draft change listener - watches resource IDs and patches draft
   // Only triggers when the payload actually changes, not when version changes
   useEffect(() => {
-  const hasResourceIds =
+    const hasResourceIds =
       formState.name_id ||
       formState.description_id ||
       formState.active_flag_id ||
@@ -614,13 +654,6 @@ function SimulationComponent({
       formState.scenario_rubric_ids.length > 0 ||
       formState.scenario_time_limit_ids.length > 0;
 
-    // Debug logging at effect start
-    console.debug("[Simulation Draft] Effect triggered", {
-      hasResourceIds,
-      draftPatchKey: draftPatchKey.substring(0, 100) + "...",
-      lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
-    });
-
     if (!hasResourceIds || !patchSimulationDraftActionRef.current) {
       return;
     }
@@ -628,7 +661,6 @@ function SimulationComponent({
     // Wait for version sync before patching to prevent race conditions
     // Only block if there's an actual numeric version to sync (not null for new simulations)
     if (typeof simulationData?.draft_version === "number" && !versionSyncedRef.current) {
-      console.debug("[Simulation Draft] Waiting for version sync");
       return;
     }
 
@@ -636,6 +668,13 @@ function SimulationComponent({
     // This prevents creating an unwanted draft on page load when server returns pre-populated IDs
     if (isFirstPatchRef.current) {
       isFirstPatchRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
+      return;
+    }
+
+    // If this change came from server sync, reset baseline instead of triggering save
+    if (serverSyncPendingRef.current) {
+      serverSyncPendingRef.current = false;
       lastPatchedKeyRef.current = draftPatchKey;
       return;
     }
@@ -648,16 +687,20 @@ function SimulationComponent({
     // Mark that we have pending changes (for beforeunload warning)
     hasPendingChangesRef.current = true;
 
+    // Skip autosave if disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
+    // Immediately show "Saving draft..." when autosave is enabled
+    // (actual API call is debounced, but UI reflects intent immediately)
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
+
     const timer = setTimeout(async () => {
       try {
         if (!patchSimulationDraftActionRef.current) return;
-
-        // Debug logging before API call
-        console.debug("[Simulation Draft] Calling patch API", {
-          input_draft_id: draftId,
-          expected_version: lastSavedVersionRef.current,
-          fields: Object.keys(formState).filter(k => formState[k as keyof typeof formState]),
-        });
 
         const result = await patchSimulationDraftActionRef.current({
           body: {
@@ -689,12 +732,6 @@ function SimulationComponent({
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
-        // Debug logging after success
-        console.debug("[Simulation Draft] Patch succeeded", {
-          draft_id: result.draft_id,
-          new_version: result.new_version,
-        });
-
         // This can stay as state (for UI), but it won't re-trigger patching
         // because the effect is gated by payload changes.
         if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
@@ -704,13 +741,23 @@ function SimulationComponent({
 
         // Clear pending changes flag after successful save
         hasPendingChangesRef.current = false;
-      } catch (error) {
-        // Log error for debugging
-        console.error("[Simulation Draft] Patch failed:", error);
+
+        // Notify save context that save completed and changes are saved
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", { detail: { status: "idle" } })
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+        );
+      } catch {
         // Show user feedback
         toast.error("Failed to save draft", {
           description: "Your changes may not have been saved. Please try again.",
         });
+        // Notify save context of error, then reset to idle
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", { detail: { status: "error" } })
+        );
         // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
     }, 1000);
@@ -724,6 +771,7 @@ function SimulationComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     draftPatchKey, // ✅ trigger only when payload changes
+    isAutosaveEnabled, // ✅ re-check when autosave mode changes
     // patchSimulationDraftAction and setDraftId are accessed via refs
   ]);
 
@@ -738,6 +786,139 @@ function SimulationComponent({
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
+
+  // Emit unsaved-changes event when draftPatchKey changes
+  useEffect(() => {
+    // During server sync, report no changes (baseline will be reset by autosave effect)
+    if (serverSyncPendingRef.current) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+      return;
+    }
+    // Only report changes after we've established a baseline (ref is not null)
+    const hasChanges =
+      lastPatchedKeyRef.current !== null &&
+      lastPatchedKeyRef.current !== draftPatchKey;
+    window.dispatchEvent(
+      new CustomEvent("unsaved-changes", { detail: { hasChanges } })
+    );
+  }, [draftPatchKey]);
+
+  // Flush all resources without saving to draft - returns the created IDs
+  // Used by handleSubmit when autosave is off to get IDs before final save
+  const flushAllResources = useCallback(async (): Promise<FlushResult> => {
+    const flushPromises = Array.from(flushRegistryRef.current.values()).map(
+      (flush) => flush()
+    );
+    const flushResults = await Promise.all(flushPromises);
+
+    // Merge all flush results into a single object (filter out void results)
+    const mergedFlushResults = flushResults.reduce<FlushResult>(
+      (acc, result) => (result ? { ...acc, ...result } : acc),
+      {}
+    );
+
+    return mergedFlushResults;
+  }, []);
+
+  // Flush all resources and patch draft (for manual save via Save toolbar)
+  const flushAllAndSave = useCallback(async () => {
+    const startTime = Date.now();
+    const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
+
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
+
+    try {
+      // 1. Flush all creatable resource components and collect returned IDs
+      const flushPromises = Array.from(flushRegistryRef.current.values()).map(
+        (flush) => flush()
+      );
+      const flushResults = await Promise.all(flushPromises);
+
+      // 2. Merge all flush results into a single object (filter out void results)
+      const mergedFlushResults = flushResults.reduce<FlushResult>(
+        (acc, result) => (result ? { ...acc, ...result } : acc),
+        {}
+      );
+
+      // 3. Patch draft with all resource IDs - use flush results with fallback to current formState
+      // This avoids the stale closure problem by using freshly returned IDs
+      let isNewDraft = false;
+      if (patchSimulationDraftActionRef.current) {
+        const currentFormState = formStateRef.current;
+        const result = await patchSimulationDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            // Use flush results (fresh) with fallback to formState (for non-flushed resources)
+            name_id:
+              mergedFlushResults.name_id !== undefined
+                ? mergedFlushResults.name_id
+                : currentFormState.name_id,
+            description_id:
+              mergedFlushResults.description_id !== undefined
+                ? mergedFlushResults.description_id
+                : currentFormState.description_id,
+            active_flag_id: currentFormState.active_flag_id,
+            department_ids: currentFormState.department_ids,
+            scenario_ids: currentFormState.scenario_ids,
+            scenario_flag_ids: currentFormState.scenario_flag_ids,
+            scenario_position_ids: currentFormState.scenario_position_ids,
+            scenario_rubric_ids: currentFormState.scenario_rubric_ids,
+            scenario_time_limit_ids: currentFormState.scenario_time_limit_ids,
+            expected_version: lastSavedVersionRef.current,
+          },
+        });
+
+        // Update refs
+        lastPatchedKeyRef.current = draftPatchKey;
+        if (result.new_version !== undefined && result.new_version !== null) {
+          lastSavedVersionRef.current = result.new_version;
+          setLastSavedVersion(result.new_version);
+        }
+
+        // Update URL if draft was created
+        if (!draftId && result.draft_id) {
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+          isNewDraft = true;
+        }
+      }
+
+      // Ensure minimum display duration for manual save
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_SAVING_DURATION) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, MIN_SAVING_DURATION - elapsed)
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", { detail: { status: "idle" } })
+      );
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+
+      hasPendingChangesRef.current = false;
+
+      // Show success toast for manual save
+      toast.success(isNewDraft ? "Draft created" : "Draft saved");
+    } catch {
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", { detail: { status: "error" } })
+      );
+      toast.error("Failed to save draft");
+    }
+  }, [draftId, draftPatchKey]);
+
+  // Listen for save trigger from layout
+  useEffect(() => {
+    const handleTriggerSave = () => flushAllAndSave();
+    window.addEventListener("trigger-save", handleTriggerSave);
+    return () => window.removeEventListener("trigger-save", handleTriggerSave);
+  }, [flushAllAndSave]);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
   useEffect(() => {
@@ -1154,33 +1335,61 @@ function SimulationComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
+      // When autosave is disabled, flush all resources first to create them
+      // This gets the IDs directly without saving to draft
+      let flushResults: FlushResult = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      // Get the current form state and merge with flush results
+      // Flush results take precedence (they're freshly created)
+      const baseFormState = formStateRef.current;
+      const effectiveFormState = {
+        name_id:
+          flushResults.name_id !== undefined
+            ? flushResults.name_id
+            : baseFormState.name_id,
+        description_id:
+          flushResults.description_id !== undefined
+            ? flushResults.description_id
+            : baseFormState.description_id,
+        active_flag_id: baseFormState.active_flag_id,
+        department_ids: baseFormState.department_ids,
+        scenario_ids: baseFormState.scenario_ids,
+        scenario_flag_ids: baseFormState.scenario_flag_ids,
+        scenario_position_ids: baseFormState.scenario_position_ids,
+        scenario_rubric_ids: baseFormState.scenario_rubric_ids,
+        scenario_time_limit_ids: baseFormState.scenario_time_limit_ids,
+      };
+
       // Validate required resource IDs using {resource}_required flags from simulationData
-      if (simulationData?.name_required && !formState.name_id) {
+      if (simulationData?.name_required && !effectiveFormState.name_id) {
         toast.error("Simulation name is required");
         throw new Error("Simulation name is required");
       }
 
       if (
         simulationData?.departments_required &&
-        (!formState.department_ids || formState.department_ids.length === 0)
+        (!effectiveFormState.department_ids || effectiveFormState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
       }
 
-      if (simulationData?.flag_required && !formState.active_flag_id) {
+      if (simulationData?.flag_required && !effectiveFormState.active_flag_id) {
         toast.error("Active flag is required");
         throw new Error("Active flag is required");
       }
 
-      if (simulationData?.description_required && !formState.description_id) {
+      if (simulationData?.description_required && !effectiveFormState.description_id) {
         toast.error("Description is required");
         throw new Error("Description is required");
       }
 
       if (
         simulationData?.scenarios_required &&
-        (!formState.scenario_ids || formState.scenario_ids.length === 0)
+        (!effectiveFormState.scenario_ids || effectiveFormState.scenario_ids.length === 0)
       ) {
         toast.error("Scenarios are required");
         throw new Error("Scenarios are required");
@@ -1188,8 +1397,8 @@ function SimulationComponent({
 
       if (
         simulationData?.scenario_flags_required &&
-        (!formState.scenario_flag_ids ||
-          formState.scenario_flag_ids.length === 0)
+        (!effectiveFormState.scenario_flag_ids ||
+          effectiveFormState.scenario_flag_ids.length === 0)
       ) {
         toast.error("Scenario flags are required");
         throw new Error("Scenario flags are required");
@@ -1197,8 +1406,8 @@ function SimulationComponent({
 
       if (
         simulationData?.scenario_positions_required &&
-        (!formState.scenario_position_ids ||
-          formState.scenario_position_ids.length === 0)
+        (!effectiveFormState.scenario_position_ids ||
+          effectiveFormState.scenario_position_ids.length === 0)
       ) {
         toast.error("Scenario positions are required");
         throw new Error("Scenario positions are required");
@@ -1206,8 +1415,8 @@ function SimulationComponent({
 
       if (
         simulationData?.scenario_rubrics_required &&
-        (!formState.scenario_rubric_ids ||
-          formState.scenario_rubric_ids.length === 0)
+        (!effectiveFormState.scenario_rubric_ids ||
+          effectiveFormState.scenario_rubric_ids.length === 0)
       ) {
         toast.error("Scenario rubrics are required");
         throw new Error("Scenario rubrics are required");
@@ -1215,8 +1424,8 @@ function SimulationComponent({
 
       if (
         simulationData?.scenario_time_limits_required &&
-        (!formState.scenario_time_limit_ids ||
-          formState.scenario_time_limit_ids.length === 0)
+        (!effectiveFormState.scenario_time_limit_ids ||
+          effectiveFormState.scenario_time_limit_ids.length === 0)
       ) {
         toast.error("Scenario time limits are required");
         throw new Error("Scenario time limits are required");
@@ -1241,7 +1450,7 @@ function SimulationComponent({
       }
 
       // Ensure required fields are present (TypeScript guard)
-      if (!formState.name_id) {
+      if (!effectiveFormState.name_id) {
         toast.error("Required fields are missing");
         throw new Error("Required fields are missing");
       }
@@ -1255,36 +1464,36 @@ function SimulationComponent({
               isEditMode && simulationId ? simulationId : null,
 
             // Required single-select
-            name_id: formState.name_id,
+            name_id: effectiveFormState.name_id,
 
             // Optional single-select
-            description_id: formState.description_id ?? undefined,
-            active_flag_id: formState.active_flag_id ?? undefined,
+            description_id: effectiveFormState.description_id ?? undefined,
+            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
 
             // Optional multi-select
             department_ids:
-              formState.department_ids.length > 0
-                ? formState.department_ids
+              effectiveFormState.department_ids.length > 0
+                ? effectiveFormState.department_ids
                 : undefined,
             scenario_ids:
-              formState.scenario_ids.length > 0
-                ? formState.scenario_ids
+              effectiveFormState.scenario_ids.length > 0
+                ? effectiveFormState.scenario_ids
                 : undefined,
             scenario_flag_ids:
-              formState.scenario_flag_ids.length > 0
-                ? formState.scenario_flag_ids
+              effectiveFormState.scenario_flag_ids.length > 0
+                ? effectiveFormState.scenario_flag_ids
                 : undefined,
             scenario_position_ids:
-              formState.scenario_position_ids.length > 0
-                ? formState.scenario_position_ids
+              effectiveFormState.scenario_position_ids.length > 0
+                ? effectiveFormState.scenario_position_ids
                 : undefined,
             scenario_rubric_ids:
-              formState.scenario_rubric_ids.length > 0
-                ? formState.scenario_rubric_ids
+              effectiveFormState.scenario_rubric_ids.length > 0
+                ? effectiveFormState.scenario_rubric_ids
                 : undefined,
             scenario_time_limit_ids:
-              formState.scenario_time_limit_ids.length > 0
-                ? formState.scenario_time_limit_ids
+              effectiveFormState.scenario_time_limit_ids.length > 0
+                ? effectiveFormState.scenario_time_limit_ids
                 : undefined,
           },
         });
@@ -1300,7 +1509,8 @@ function SimulationComponent({
       }
     },
     [
-      formState,
+      isAutosaveEnabled,
+      flushAllResources,
       isEditMode,
       simulationId,
       profile?.id,
@@ -1566,6 +1776,20 @@ function SimulationComponent({
     []
   );
 
+  // Compute scenario_resources with show_hints flag
+  // show_hints is based on practice_simulation mode - when practice mode is on, hints are hidden
+  // For now, default to true (show hints) since practice_simulation isn't exposed in the form yet
+  const scenarioResourcesWithShowHints = useMemo(() => {
+    const resources = stableSimulationDataFields?.scenario_resources ?? [];
+    // TODO: When practice_simulation is exposed in the API response, use it here:
+    // const isPractice = simulationData?.practice_simulation ?? false;
+    // For now, always show hints (show_hints = true)
+    return resources.map((sr) => ({
+      ...sr,
+      show_hints: true, // Will be set to !isPractice when practice mode is exposed
+    }));
+  }, [stableSimulationDataFields?.scenario_resources]);
+
   // Render step content - memoized to prevent unnecessary re-renders
   // Updated to match Persona.tsx signature
   const renderStep = useCallback(
@@ -1636,6 +1860,8 @@ function SimulationComponent({
                   placeholder="Simulation name"
                   defaultName="New Simulation"
                   hideDescription={true}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.names}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1714,6 +1940,8 @@ function SimulationComponent({
                   group_id={currentSimulationData.group_id ?? null}
                   agent_id={currentSimulationData.description_agent_id ?? null}
                   required={currentSimulationData.description_required ?? false}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.descriptions}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1897,9 +2125,7 @@ function SimulationComponent({
                   scenario_flags={currentSimulationData.scenario_flags ?? []}
                   scenario_ids={formState.scenario_ids ?? []}
                   scenarios={currentSimulationData.scenarios ?? []}
-                  scenario_resources={
-                    currentSimulationData.scenario_resources ?? []
-                  }
+                  scenario_resources={scenarioResourcesWithShowHints}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
@@ -2067,6 +2293,9 @@ function SimulationComponent({
       createScenarioPositionsAction,
       createScenarioRubricsAction,
       createScenarioTimeLimitsAction,
+      scenarioResourcesWithShowHints,
+      isAutosaveEnabled,
+      registerFlushCallbacks,
     ]
   );
 

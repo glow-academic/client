@@ -54,17 +54,19 @@ class SimulationScenario(BaseModel):
     """Scenario for simulation."""
 
     scenario_id: UUID | None = None
-    title: str | None = None
+    name: str | None = None  # Changed from title to match SQL
     description: str | None = None
-    active: bool | None = None
     generated: bool | None = None
-    department_id: UUID | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    position: int | None = None
-    time_limit_seconds: int | None = None
-    flag_id: UUID | None = None
-    rubric_id: UUID | None = None
+    # Computed show_* flags (business logic in Python)
+    show_problem_statement: bool | None = None
+    show_objectives: bool | None = None
+    show_video: bool | None = None
+    show_text: bool | None = None
+    show_audio: bool | None = None
+    show_copy_paste: bool | None = None
+    show_images: bool | None = None
+    show_questions: bool | None = None
+    show_templates: bool | None = None
 
 
 class SimulationScenarioPosition(BaseModel):
@@ -211,13 +213,16 @@ class QGetScenariosV4Item(BaseModel):
     """Scenario item from scenarios resource query."""
 
     scenario_id: UUID | None = None
-    title: str | None = None
+    name: str | None = None  # Changed from title to match SQL
     description: str | None = None
-    active: bool | None = None
     generated: bool | None = None
-    department_id: UUID | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
+    # Raw _enabled flags from SQL (business logic computed in Python)
+    problem_statement_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    video_enabled: bool | None = None
+    images_enabled: bool | None = None
+    questions_enabled: bool | None = None
+    templates_enabled: bool | None = None
 
 
 class GetScenariosSqlParams(BaseModel):

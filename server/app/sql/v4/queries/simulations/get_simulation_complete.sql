@@ -92,7 +92,14 @@ CREATE TYPE types.q_get_simulation_v4_scenario_resource AS (
     scenario_id uuid,
     name text,
     description text,
-    generated boolean
+    generated boolean,
+    -- Raw _enabled flags from scenarios_resource (business logic computed in Python)
+    problem_statement_enabled boolean,
+    objectives_enabled boolean,
+    video_enabled boolean,
+    images_enabled boolean,
+    questions_enabled boolean,
+    templates_enabled boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_scenario_flag_resource AS (
@@ -2742,7 +2749,15 @@ SELECT
             (s.id, ssj_res.scenario_id,
              COALESCE((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj_res.scenario_id LIMIT 1), ''),
              COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = ssj_res.scenario_id LIMIT 1), ''),
-             COALESCE(s.generated, false))::types.q_get_simulation_v4_scenario_resource
+             COALESCE(s.generated, false),
+             -- Raw _enabled flags (business logic computed in Python)
+             s.problem_statement_enabled,
+             s.objectives_enabled,
+             s.video_enabled,
+             s.images_enabled,
+             s.questions_enabled,
+             s.templates_enabled
+            )::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj_res.scenario_id LIMIT 1)
         )
         FROM scenarios_resource s
@@ -2768,7 +2783,15 @@ SELECT
             (s.id, ssj_all.scenario_id,
              COALESCE((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj_all.scenario_id LIMIT 1), ''),
              COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = ssj_all.scenario_id LIMIT 1), ''),
-             COALESCE(s.generated, false))::types.q_get_simulation_v4_scenario_resource
+             COALESCE(s.generated, false),
+             -- Raw _enabled flags (business logic computed in Python)
+             s.problem_statement_enabled,
+             s.objectives_enabled,
+             s.video_enabled,
+             s.images_enabled,
+             s.questions_enabled,
+             s.templates_enabled
+            )::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ssj_all.scenario_id LIMIT 1)
         ) FROM scenarios_resource s
         JOIN scenario_scenarios_junction ssj_all ON ssj_all.scenarios_id = s.id

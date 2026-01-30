@@ -62,6 +62,17 @@ export interface ScenarioFlagsProps {
     title?: string | null; // API returns title, map to name
     description?: string | null;
     generated?: boolean | null;
+    // Show flags from backend (controls which flags to render)
+    show_problem_statement?: boolean | null;
+    show_objectives?: boolean | null;
+    show_video?: boolean | null;
+    show_text?: boolean | null;
+    show_audio?: boolean | null;
+    show_copy_paste?: boolean | null;
+    show_images?: boolean | null;
+    show_questions?: boolean | null;
+    show_templates?: boolean | null;
+    show_hints?: boolean | null; // Computed on frontend based on practice_simulation
   }>;
   disabled?: boolean;
   onChange: (ids: string[]) => void;
@@ -305,6 +316,59 @@ export function ScenarioFlags({
     return map;
   }, [allFlags]);
 
+  // Filter flags based on scenario's show_x_flag booleans from backend
+  const filteredFlagOptionsByScenario = useMemo(() => {
+    const map = new Map<string, ScenarioFlagOption[]>();
+
+    flagOptionsByScenario.forEach((flags, scenarioId) => {
+      const scenarioConfig = scenario_resources?.find(
+        (s) => (s.scenario_id || s.id) === scenarioId
+      );
+
+      // If no scenario config found, show all flags (backwards compatibility)
+      if (!scenarioConfig) {
+        map.set(scenarioId, flags);
+        return;
+      }
+
+      const filtered = flags.filter((flag) => {
+        const flagName = flag.name.toLowerCase();
+
+        // Map flag names to show_* booleans
+        if (flagName === "show_problem_statement") {
+          return scenarioConfig.show_problem_statement !== false;
+        }
+        if (flagName === "show_objectives") {
+          return scenarioConfig.show_objectives !== false;
+        }
+        if (flagName === "text_enabled") {
+          return scenarioConfig.show_text !== false;
+        }
+        if (flagName === "audio_enabled") {
+          return scenarioConfig.show_audio !== false;
+        }
+        if (flagName === "copy_paste_allowed") {
+          return scenarioConfig.show_copy_paste !== false;
+        }
+        if (flagName === "show_images" || flagName === "image_input_active") {
+          return scenarioConfig.show_images !== false;
+        }
+        if (flagName === "hints_enabled") {
+          return scenarioConfig.show_hints !== false;
+        }
+        // show_video, show_questions, show_templates don't have corresponding flags yet
+        // but are available for future use
+
+        // Show all other flags by default
+        return true;
+      });
+
+      map.set(scenarioId, filtered);
+    });
+
+    return map;
+  }, [flagOptionsByScenario, scenario_resources]);
+
   const hasGenerated = useMemo(() => {
     return currentResources.some((flag) => flag.generated);
   }, [currentResources]);
@@ -359,7 +423,7 @@ export function ScenarioFlags({
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
           const selectedFlags =
             selectedFlagsByScenario.get(scenarioId) ?? new Set<string>();
-          const scenarioOptions = flagOptionsByScenario.get(scenarioId) ?? [];
+          const scenarioOptions = filteredFlagOptionsByScenario.get(scenarioId) ?? [];
           return (
             <div
               key={scenarioId}

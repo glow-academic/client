@@ -49,15 +49,27 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH rubric_data AS (
+    -- When simulation_id is sentinel UUID (all zeros), return ALL active rubrics
+    -- Otherwise return rubrics associated with the simulation
     SELECT DISTINCT
         r.id as rubric_id,
         COALESCE(r.name, '') as name,
         COALESCE(r.description, '') as description
-    FROM simulation_scenario_rubrics_junction ssrj
-    JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubric_id
-    JOIN rubrics_resource r ON r.id = srr.rubric_id
-    WHERE ssrj.simulation_id = api_get_rubrics_v4.simulation_id
-      AND ssrj.active = true
+    FROM rubrics_resource r
+    WHERE r.active = true
+      AND (
+        -- Sentinel UUID means return all rubrics (for new simulations)
+        api_get_rubrics_v4.simulation_id = '00000000-0000-0000-0000-000000000000'::uuid
+        OR
+        -- Otherwise return rubrics associated with the simulation
+        EXISTS (
+            SELECT 1 FROM simulation_scenario_rubrics_junction ssrj
+            JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubric_id
+            WHERE ssrj.simulation_id = api_get_rubrics_v4.simulation_id
+              AND ssrj.active = true
+              AND srr.rubric_id = r.id
+        )
+      )
 )
 SELECT
     COALESCE(

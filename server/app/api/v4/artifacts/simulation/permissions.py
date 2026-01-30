@@ -329,6 +329,63 @@ def compute_scenarios_required() -> bool:
 
 
 # =============================================================================
+# Scenario Show Flags (per-scenario visibility)
+# =============================================================================
+
+
+def compute_scenario_show_flags(
+    problem_statement_enabled: bool | None,
+    objectives_enabled: bool | None,
+    video_enabled: bool | None,
+    images_enabled: bool | None,
+    questions_enabled: bool | None,
+    templates_enabled: bool | None,
+) -> dict[str, bool]:
+    """Compute show flags for scenario-level flag filtering.
+
+    These flags control which scenario flags are visible in the UI.
+    The business logic is:
+    - show_problem_statement: controlled by problem_statement_enabled
+    - show_objectives: controlled by objectives_enabled
+    - show_video: controlled by video_enabled
+    - show_text/show_audio/show_copy_paste: shown when NOT in video mode
+    - show_images: controlled by images_enabled
+    - show_questions: controlled by questions_enabled
+    - show_templates: controlled by templates_enabled
+
+    Args:
+        problem_statement_enabled: Whether problem statement is enabled for scenario
+        objectives_enabled: Whether objectives are enabled for scenario
+        video_enabled: Whether video mode is enabled for scenario
+        images_enabled: Whether images are enabled for scenario
+        questions_enabled: Whether questions are enabled for scenario
+        templates_enabled: Whether templates are enabled for scenario
+
+    Returns:
+        Dictionary of show_* flags for the scenario
+    """
+    # Default to True if None (backwards compatibility)
+    ps_enabled = problem_statement_enabled if problem_statement_enabled is not None else True
+    obj_enabled = objectives_enabled if objectives_enabled is not None else True
+    vid_enabled = video_enabled if video_enabled is not None else False
+    img_enabled = images_enabled if images_enabled is not None else False
+    q_enabled = questions_enabled if questions_enabled is not None else False
+    t_enabled = templates_enabled if templates_enabled is not None else False
+
+    return {
+        "show_problem_statement": ps_enabled,
+        "show_objectives": obj_enabled,
+        "show_video": vid_enabled,
+        "show_text": not vid_enabled,  # Text mode when not video
+        "show_audio": not vid_enabled,  # Audio mode when not video
+        "show_copy_paste": not vid_enabled,  # Copy/paste when not video
+        "show_images": img_enabled,
+        "show_questions": q_enabled,
+        "show_templates": t_enabled,
+    }
+
+
+# =============================================================================
 # Missing Tools Check
 # =============================================================================
 

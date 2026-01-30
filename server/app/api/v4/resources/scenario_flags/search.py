@@ -48,14 +48,13 @@ async def search_scenario_flags_internal(
     Args:
         conn: Database connection
         simulation_id: Simulation ID context
-        scenario_ids: List of scenario IDs to search flags for
+        scenario_ids: List of scenario IDs to search flags for (empty = all scenarios)
         bypass_cache: Whether to bypass cache
 
     Returns:
         List of available scenario flag items
     """
-    if not scenario_ids:
-        return []
+    # Don't return early - empty scenario_ids means "get all flags"
 
     # Generate cache key
     cache_key_val = cache_key(

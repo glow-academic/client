@@ -34,13 +34,16 @@ END $$;
 -- Create composite type for scenario items
 CREATE TYPE types.q_get_scenarios_v4_item AS (
     scenario_id uuid,
-    title text,
+    name text,
     description text,
-    active boolean,
     generated boolean,
-    department_id uuid,
-    persona_id uuid,
-    persona_name text
+    -- Feature flags for visibility control
+    problem_statement_enabled boolean,
+    objectives_enabled boolean,
+    video_enabled boolean,
+    images_enabled boolean,
+    questions_enabled boolean,
+    templates_enabled boolean
 );
 
 CREATE OR REPLACE FUNCTION api_get_scenarios_v4(
@@ -58,18 +61,15 @@ WITH params AS (
 scenario_data AS (
     SELECT
         s.id as scenario_id,
-        s.name as title,
+        s.name,
         COALESCE(s.description, '') as description,
-        s.active as active,
         COALESCE(s.generated, false) as generated,
-        -- Get first department_id from array
-        CASE WHEN s.department_ids IS NOT NULL AND array_length(s.department_ids, 1) > 0
-             THEN s.department_ids[1]
-             ELSE NULL
-        END as department_id,
-        -- Persona info not available for scenarios_resource
-        NULL::uuid as persona_id,
-        NULL::text as persona_name
+        s.problem_statement_enabled,
+        s.objectives_enabled,
+        s.video_enabled,
+        s.images_enabled,
+        s.questions_enabled,
+        s.templates_enabled
     FROM params p
     CROSS JOIN LATERAL unnest(p.scenario_ids) AS sid
     JOIN scenarios_resource s ON s.id = sid
@@ -77,8 +77,8 @@ scenario_data AS (
 SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sd.scenario_id, sd.title, sd.description, sd.active, sd.generated, sd.department_id, sd.persona_id, sd.persona_name)::types.q_get_scenarios_v4_item
-            ORDER BY sd.title
+            (sd.scenario_id, sd.name, sd.description, sd.generated, sd.problem_statement_enabled, sd.objectives_enabled, sd.video_enabled, sd.images_enabled, sd.questions_enabled, sd.templates_enabled)::types.q_get_scenarios_v4_item
+            ORDER BY sd.name
         ) FROM scenario_data sd),
         '{}'::types.q_get_scenarios_v4_item[]
     ) as items;

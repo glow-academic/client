@@ -22,6 +22,7 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_disabled_reason,
     compute_flag_required,
     compute_name_required,
+    compute_scenario_show_flags,
     compute_scenarios_required,
     compute_show_departments,
     compute_show_description,
@@ -200,6 +201,10 @@ async def get_simulation(
         department_ids = ids_result.department_ids or []
         scenario_ids = ids_result.scenario_ids or []
 
+        # For scenario-dependent resources (flags, positions, rubrics, time_limits),
+        # use filter_scenario_ids if provided (current UI selection), otherwise use saved scenario_ids
+        effective_scenario_ids = request.filter_scenario_ids or scenario_ids
+
         # Get pool for parallel connections
         pool = get_pool()
         if not pool:
@@ -277,40 +282,40 @@ async def get_simulation(
         async def fetch_scenario_flags():
             async with pool.acquire() as c:
                 selected = await get_scenario_flags_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 suggestions = await search_scenario_flags_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 return (selected, suggestions)
 
         async def fetch_scenario_positions():
             async with pool.acquire() as c:
                 selected = await get_scenario_positions_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 suggestions = await search_scenario_positions_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 return (selected, suggestions)
 
         async def fetch_scenario_rubrics():
             async with pool.acquire() as c:
                 selected = await get_scenario_rubrics_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 suggestions = await search_scenario_rubrics_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 return (selected, suggestions)
 
         async def fetch_scenario_time_limits():
             async with pool.acquire() as c:
                 selected = await get_scenario_time_limits_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 suggestions = await search_scenario_time_limits_internal(
-                    c, request.simulation_id, scenario_ids, bypass_cache
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
                 )
                 return (selected, suggestions)
 
@@ -385,13 +390,21 @@ async def get_simulation(
         department_resources = [
             d for d in departments if d.department_id in department_ids
         ]
-        # Convert scenarios to SimulationScenario type
+        # Convert scenarios to SimulationScenario type with computed show_* flags
         scenario_resources = [
             SimulationScenario(
                 scenario_id=s.scenario_id,
-                title=s.title,
+                name=s.name,
                 description=s.description,
                 generated=s.generated,
+                **compute_scenario_show_flags(
+                    problem_statement_enabled=s.problem_statement_enabled,
+                    objectives_enabled=s.objectives_enabled,
+                    video_enabled=s.video_enabled,
+                    images_enabled=s.images_enabled,
+                    questions_enabled=s.questions_enabled,
+                    templates_enabled=s.templates_enabled,
+                ),
             )
             for s in scenarios_selected
         ]
@@ -422,13 +435,21 @@ async def get_simulation(
             for d in department_resources
         ]
 
-        # Convert scenarios to expected type
+        # Convert scenarios to expected type with computed show_* flags
         scenarios_typed = [
             SimulationScenario(
                 scenario_id=s.scenario_id,
-                title=s.title,
+                name=s.name,
                 description=s.description,
                 generated=s.generated,
+                **compute_scenario_show_flags(
+                    problem_statement_enabled=s.problem_statement_enabled,
+                    objectives_enabled=s.objectives_enabled,
+                    video_enabled=s.video_enabled,
+                    images_enabled=s.images_enabled,
+                    questions_enabled=s.questions_enabled,
+                    templates_enabled=s.templates_enabled,
+                ),
             )
             for s in scenarios
         ]
@@ -441,10 +462,11 @@ async def get_simulation(
         show_flag = compute_show_flag()
         show_scenarios = compute_show_scenarios(len(scenarios))
 
-        show_scenario_flags = bool(scenario_ids or scenario_flags)
-        show_scenario_positions = bool(scenario_ids or scenario_positions)
-        show_scenario_rubrics = bool(scenario_ids or scenario_rubrics)
-        show_scenario_time_limits = bool(scenario_ids or scenario_time_limits)
+        # Show scenario-related fields when scenarios exist or are available
+        show_scenario_flags = bool(effective_scenario_ids or scenario_flags or scenarios)
+        show_scenario_positions = bool(effective_scenario_ids or scenario_positions or scenarios)
+        show_scenario_rubrics = bool(effective_scenario_ids or scenario_rubrics or scenarios)
+        show_scenario_time_limits = bool(effective_scenario_ids or scenario_time_limits or scenarios)
 
         # Set audit context
         if access_result.actor_name:

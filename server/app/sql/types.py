@@ -10085,6 +10085,31 @@ class InfraToolsGetToolIdByNameApiResponse(BaseModel):
 
 
 
+# Generated from: infra_tools_is_tool_creatable
+
+class InfraToolsIsToolCreatableSqlParams(BaseModel):
+
+    p_tool_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_tool_id,
+        )
+
+class InfraToolsIsToolCreatableSqlRow(BaseModel):
+
+    is_creatable: bool | None = None
+
+class InfraToolsIsToolCreatableApiRequest(BaseModel):
+
+    p_tool_id: UUID
+
+class InfraToolsIsToolCreatableApiResponse(BaseModel):
+
+    is_creatable: bool | None = None
+
+
+
 # Generated from: infra_tools_link_tool_call
 
 class InfraToolsLinkToolCallSqlParams(BaseModel):
@@ -18801,13 +18826,15 @@ class GetScenariosSqlParams(BaseModel):
 class QGetScenariosV4Item(BaseModel):
 
     scenario_id: UUID | None
-    title: str | None
+    name: str | None
     description: str | None
-    active: bool | None
     generated: bool | None
-    department_id: UUID | None
-    persona_id: UUID | None
-    persona_name: str | None
+    problem_statement_enabled: bool | None
+    objectives_enabled: bool | None
+    video_enabled: bool | None
+    images_enabled: bool | None
+    questions_enabled: bool | None
+    templates_enabled: bool | None
 
 class GetScenariosSqlRow(BaseModel):
 
@@ -22328,6 +22355,12 @@ class QGetSimulationV4ScenarioResource(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
+    problem_statement_enabled: bool | None
+    objectives_enabled: bool | None
+    video_enabled: bool | None
+    images_enabled: bool | None
+    questions_enabled: bool | None
+    templates_enabled: bool | None
 
 
 
@@ -25426,6 +25459,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraToolsGetToolIdByNameApiRequest",
         "InfraToolsGetToolIdByNameApiResponse",
     ),
+    "app/sql/v4/queries/infrastructure/tools/is_tool_creatable_complete.sql": (
+        "InfraToolsIsToolCreatableSqlParams",
+        "InfraToolsIsToolCreatableSqlRow",
+        "InfraToolsIsToolCreatableApiRequest",
+        "InfraToolsIsToolCreatableApiResponse",
+    ),
     "app/sql/v4/queries/infrastructure/tools/link_tool_call_complete.sql": (
         "InfraToolsLinkToolCallSqlParams",
         "InfraToolsLinkToolCallSqlRow",
@@ -27876,6 +27915,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/infrastructure/tools/is_tool_creatable_complete.sql"]
     ) -> SqlString: ...
 
     @overload

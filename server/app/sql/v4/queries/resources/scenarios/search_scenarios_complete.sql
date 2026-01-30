@@ -43,18 +43,15 @@ WITH params AS (
 all_scenarios AS (
     SELECT
         s.id as scenario_id,
-        s.name as title,
+        s.name,
         COALESCE(s.description, '') as description,
-        s.active as active,
         COALESCE(s.generated, false) as generated,
-        -- Get first department_id from array
-        CASE WHEN s.department_ids IS NOT NULL AND array_length(s.department_ids, 1) > 0
-             THEN s.department_ids[1]
-             ELSE NULL
-        END as department_id,
-        -- Persona info not available for scenarios_resource
-        NULL::uuid as persona_id,
-        NULL::text as persona_name,
+        s.problem_statement_enabled,
+        s.objectives_enabled,
+        s.video_enabled,
+        s.images_enabled,
+        s.questions_enabled,
+        s.templates_enabled,
         s.created_at as updated_at
     FROM scenarios_resource s
     CROSS JOIN params p
@@ -81,13 +78,15 @@ all_scenarios AS (
 linked_scenarios AS (
     SELECT DISTINCT
         a.scenario_id,
-        a.title,
+        a.name,
         a.description,
-        a.active,
         a.generated,
-        a.department_id,
-        a.persona_id,
-        a.persona_name,
+        a.problem_statement_enabled,
+        a.objectives_enabled,
+        a.video_enabled,
+        a.images_enabled,
+        a.questions_enabled,
+        a.templates_enabled,
         a.updated_at
     FROM all_scenarios a
     WHERE EXISTS (
@@ -100,13 +99,15 @@ linked_scenarios AS (
 recent_scenarios AS (
     SELECT DISTINCT
         a.scenario_id,
-        a.title,
+        a.name,
         a.description,
-        a.active,
         a.generated,
-        a.department_id,
-        a.persona_id,
-        a.persona_name,
+        a.problem_statement_enabled,
+        a.objectives_enabled,
+        a.video_enabled,
+        a.images_enabled,
+        a.questions_enabled,
+        a.templates_enabled,
         a.updated_at
     FROM all_scenarios a
     ORDER BY a.updated_at DESC
@@ -115,13 +116,15 @@ recent_scenarios AS (
 filtered_scenarios AS (
     SELECT
         scenario_id,
-        title,
+        name,
         description,
-        active,
         generated,
-        department_id,
-        persona_id,
-        persona_name,
+        problem_statement_enabled,
+        objectives_enabled,
+        video_enabled,
+        images_enabled,
+        questions_enabled,
+        templates_enabled,
         updated_at
     FROM (
         SELECT * FROM all_scenarios a
@@ -141,20 +144,22 @@ filtered_scenarios AS (
 final_result AS (
     SELECT
         fs.scenario_id,
-        fs.title,
+        fs.name,
         fs.description,
-        fs.active,
         fs.generated,
-        fs.department_id,
-        fs.persona_id,
-        fs.persona_name
+        fs.problem_statement_enabled,
+        fs.objectives_enabled,
+        fs.video_enabled,
+        fs.images_enabled,
+        fs.questions_enabled,
+        fs.templates_enabled
     FROM filtered_scenarios fs
-    ORDER BY fs.title ASC
+    ORDER BY fs.name ASC
 )
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.scenario_id, q.title, q.description, q.active, q.generated, q.department_id, q.persona_id, q.persona_name)::types.q_get_scenarios_v4_item
-        ORDER BY q.title
+        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.templates_enabled)::types.q_get_scenarios_v4_item
+        ORDER BY q.name
     ),
     ARRAY[]::types.q_get_scenarios_v4_item[]
 ) as items
