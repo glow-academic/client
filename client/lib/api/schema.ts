@@ -21577,6 +21577,10 @@ export interface components {
             group_id: string;
             /** Name */
             name: string;
+            /** Html */
+            html?: string | null;
+            /** Description */
+            description?: string | null;
             /**
              * Mcp
              * @default false

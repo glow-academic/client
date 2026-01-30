@@ -256,6 +256,8 @@ export function Templates({
             agent_id: templates_agent_id,
             group_id: group_id,
             name: pending.name || "Untitled Template",
+            html: pending.html || "",
+            description: pending.description || null,
             mcp: false,
           },
         });
@@ -264,8 +266,8 @@ export function Templates({
           createdTemplateIdsRef.current.add(newTemplateId);
           newIdsMap.set(templateId, newTemplateId);
 
-          // Store the HTML override with the new ID
-          setHtmlOverrides((prev) => ({
+          // Cache the HTML locally for immediate access (now saved to backend)
+          setHtmlCache((prev) => ({
             ...prev,
             [newTemplateId]: pending.html,
           }));
@@ -560,6 +562,8 @@ export function Templates({
           agent_id: templates_agent_id,
           group_id: group_id,
           name: nextName,
+          html: editorValue,
+          description: nextDescription || null,
           mcp: false,
         },
       });
@@ -574,7 +578,8 @@ export function Templates({
             description: nextDescription || null,
           },
         ]);
-        setHtmlOverrides((prev) => ({
+        // Cache the HTML locally for immediate access
+        setHtmlCache((prev) => ({
           ...prev,
           [newTemplateId]: editorValue,
         }));
@@ -829,7 +834,7 @@ export function Templates({
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-3">
             <Button
               type="button"
               variant="ghost"

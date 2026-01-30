@@ -19097,6 +19097,8 @@ class TemplatesSqlParams(BaseModel):
     agent_id: UUID
     group_id: UUID
     name: str
+    html: str | None = None
+    description: str | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -19104,6 +19106,8 @@ class TemplatesSqlParams(BaseModel):
             self.agent_id,
             self.group_id,
             self.name,
+            self.html,
+            self.description,
             self.mcp,
         )
 
@@ -19116,6 +19120,8 @@ class TemplatesApiRequest(BaseModel):
     agent_id: UUID
     group_id: UUID
     name: str
+    html: str | None = None
+    description: str | None = None
     mcp: bool | None = False
 
 class TemplatesApiResponse(BaseModel):

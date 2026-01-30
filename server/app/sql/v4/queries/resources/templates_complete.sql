@@ -21,6 +21,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_create_templates_v4(agent_id uuid,
     group_id uuid,
     name text,
+    html text DEFAULT '',
+    description text DEFAULT NULL,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
     template_id uuid
@@ -104,8 +106,8 @@ BEGIN
     );
     
     -- INSERT INTO templates_resource table (always insert, never update)
-    INSERT INTO templates_resource(name, active, mcp)
-    VALUES (name, true, mcp)
+    INSERT INTO templates_resource(name, html, description, active, mcp)
+    VALUES (name, COALESCE(html, ''), description, true, mcp)
     RETURNING id INTO v_template_id;
 
         
