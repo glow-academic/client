@@ -16,8 +16,8 @@ from typing import Any, cast
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.persona.get import get_persona_internal
-from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
+from app.socket.v4.artifacts.persona.types import GeneratePersonaPayload
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -75,14 +75,6 @@ PERSONA_RESOURCE_TYPES = [
     "parameter_fields",
     "departments",
 ]
-
-
-class GeneratePersonaPayload(GetPersonaApiRequest):
-    """Request to generate persona resources - extends GET API request with generation-specific fields."""
-
-    agent_id: uuid.UUID  # Required: explicit agent ID from frontend
-    resource_types: list[str]  # Required: which resource types to generate
-    user_instructions: list[str] | None = None  # Optional: user instructions
 
 
 async def _persona_generate_impl(
@@ -143,11 +135,12 @@ async def _persona_generate_impl(
             draft_id=data.draft_id,
         )
 
-        # Step 2: Seed resource nodes from the persona GET result
+        # Step 2: Seed resource nodes from the persona GET result (ONLY requested types)
         seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
 
         def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
-            if resource_id:
+            # Only add seeds for requested resource types
+            if resource_id and resource_type in resource_types:
                 seed_nodes.append(
                     QGetPersonaResourceTreeV4Node(
                         resource_type=resource_type,
@@ -266,6 +259,45 @@ async def _persona_generate_impl(
                 )
                 return
 
+            # Build current resources from form state (passed from frontend)
+            current_resources: list[IPersonaResourceV4] = []
+
+            def collect_current(
+                resource_type: str, resource_ids: list[uuid.UUID] | None
+            ) -> None:
+                """Collect current resource IDs for a resource type."""
+                if resource_ids:
+                    current_resources.append(
+                        IPersonaResourceV4(
+                            resource_type=resource_type,
+                            resource_ids=resource_ids,
+                        )
+                    )
+
+            # Single-select resources (wrap in list)
+            if data.name_id:
+                collect_current("names", [data.name_id])
+            if data.description_id:
+                collect_current("descriptions", [data.description_id])
+            if data.color_id:
+                collect_current("colors", [data.color_id])
+            if data.icon_id:
+                collect_current("icons", [data.icon_id])
+            if data.instructions_id:
+                collect_current("instructions", [data.instructions_id])
+            if data.active_flag_id:
+                collect_current("flags", [data.active_flag_id])
+
+            # Multi-select resources (already lists)
+            if data.department_ids:
+                collect_current("departments", data.department_ids)
+            if data.parameter_field_ids:
+                collect_current("parameter_fields", data.parameter_field_ids)
+            if data.example_ids:
+                collect_current("examples", data.example_ids)
+            if data.parameter_ids:
+                collect_current("parameters", data.parameter_ids)
+
             # Step 5: Prepare generation (group/run creation, context fetch)
             try:
                 prepare_params = PreparePersonaGenerationSqlParams(
@@ -273,6 +305,7 @@ async def _persona_generate_impl(
                     p_agent_id=agent_id,
                     p_group_id=existing_group_id,
                     p_resources=resources if resources else None,
+                    p_current_resources=current_resources if current_resources else None,
                 )
                 prepare_row = cast(
                     PreparePersonaGenerationSqlRow,

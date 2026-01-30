@@ -1237,6 +1237,9 @@ function PersonaComponent({
       const iconShowSelected =
         (formData["iconShowSelected"] as boolean | undefined) ?? false;
 
+      // Get current form state for "current" variable in Jinja templates
+      const currentFormState = formStateRef.current;
+
       // Emit persona_generate event with GetPersonaApiRequest fields
       socket.emit("persona_generate", {
         resource_types: resourceTypes, // Simple array of strings
@@ -1252,6 +1255,29 @@ function PersonaComponent({
         icon_show_selected: iconShowSelected || false,
         mcp: false,
         persona_id: personaId || null,
+        // Form state fields for "current" variable in Jinja templates
+        name_id: currentFormState.name_id || null,
+        description_id: currentFormState.description_id || null,
+        color_id: currentFormState.color_id || null,
+        icon_id: currentFormState.icon_id || null,
+        instructions_id: currentFormState.instructions_id || null,
+        active_flag_id: currentFormState.active_flag_id || null,
+        department_ids:
+          currentFormState.department_ids.length > 0
+            ? currentFormState.department_ids
+            : null,
+        parameter_field_ids:
+          currentFormState.parameter_field_ids.length > 0
+            ? currentFormState.parameter_field_ids
+            : null,
+        example_ids:
+          currentFormState.example_ids.length > 0
+            ? currentFormState.example_ids
+            : null,
+        parameter_ids:
+          currentFormState.parameter_ids.length > 0
+            ? currentFormState.parameter_ids
+            : null,
       });
     },
     [socket, isConnected, personaId]

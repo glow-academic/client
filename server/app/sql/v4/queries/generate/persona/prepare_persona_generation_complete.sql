@@ -42,7 +42,8 @@ CREATE OR REPLACE FUNCTION socket_prepare_persona_generation_v4(
     p_profile_id uuid,
     p_agent_id uuid,
     p_group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    p_resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: array of (resource_type, resource_ids) for filtering tools and context
+    p_resources types.i_persona_resource_v4[] DEFAULT NULL,  -- Optional: array of (resource_type, resource_ids) for filtering tools and context
+    p_current_resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: form state for "current" variable in Jinja templates
 )
 RETURNS TABLE (
     run_id uuid,
@@ -77,7 +78,8 @@ WITH params AS (
         p_profile_id AS profile_id,
         p_agent_id AS agent_id,
         p_group_id AS group_id,
-        p_resources AS resources
+        p_resources AS resources,
+        p_current_resources AS current_resources
 ),
 -- Validate agent exists and is active
 selected_agent AS (
@@ -517,6 +519,106 @@ examples_resources AS (
     JOIN examples_resource e ON e.id = example_id
     WHERE r.resource_type = 'examples'
 ),
+-- Fetch current resources for "current" variable in Jinja context (form state from frontend)
+current_names_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', n.id::text, 'name', n.name)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS name_id
+    JOIN names_resource n ON n.id = name_id
+    WHERE r.resource_type = 'names'
+),
+current_descriptions_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', d.id::text, 'description', d.description)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS desc_id
+    JOIN descriptions_resource d ON d.id = desc_id
+    WHERE r.resource_type = 'descriptions'
+),
+current_colors_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', c.id::text, 'name', c.name, 'description', c.description, 'hex_code', c.hex_code)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS color_id
+    JOIN colors_resource c ON c.id = color_id
+    WHERE r.resource_type = 'colors'
+),
+current_icons_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', i.id::text, 'name', i.name, 'description', i.description, 'value', i.value)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS icon_id
+    JOIN icons_resource i ON i.id = icon_id
+    WHERE r.resource_type = 'icons'
+),
+current_instructions_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', inst.id::text, 'template', inst.template)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS inst_id
+    JOIN instructions_resource inst ON inst.id = inst_id
+    WHERE r.resource_type = 'instructions'
+),
+current_flags_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', f.id::text, 'name', f.name, 'description', f.description)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS flag_id
+    JOIN flags_resource f ON f.id = flag_id
+    WHERE r.resource_type = 'flags'
+),
+current_departments_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', d.id::text,
+            'name', (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
+            'description', (SELECT desc_data.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_data ON dd.description_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
+        )
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS dept_id
+    JOIN departments_resource d ON d.id = dept_id
+    WHERE r.resource_type = 'departments'
+),
+current_parameter_fields_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', ffj.field_id::text,
+            'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
+            'description', (SELECT desc_data.description FROM field_descriptions_junction fd JOIN descriptions_resource desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = ffj.field_id LIMIT 1)
+        )
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS field_id_val
+    JOIN fields_resource f ON f.id = field_id_val
+    JOIN field_fields_junction ffj ON ffj.fields_id = f.id
+    WHERE r.resource_type = 'parameter_fields'
+),
+current_examples_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object('id', e.id::text, 'example', e.example)
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS example_id
+    JOIN examples_resource e ON e.id = example_id
+    WHERE r.resource_type = 'examples'
+),
 -- Combine all resources into single JSONB object
 combined_resources AS (
     SELECT
@@ -529,7 +631,19 @@ combined_resources AS (
             'flags', COALESCE((SELECT resources FROM flags_resources), '[]'::jsonb),
             'departments', COALESCE((SELECT resources FROM departments_resources), '[]'::jsonb),
             'fields', COALESCE((SELECT resources FROM fields_resources), '[]'::jsonb),
-            'examples', COALESCE((SELECT resources FROM examples_resources), '[]'::jsonb)
+            'examples', COALESCE((SELECT resources FROM examples_resources), '[]'::jsonb),
+            -- Current selections (form state from frontend)
+            'current', jsonb_build_object(
+                'names', COALESCE((SELECT data FROM current_names_resources), '[]'::jsonb),
+                'descriptions', COALESCE((SELECT data FROM current_descriptions_resources), '[]'::jsonb),
+                'colors', COALESCE((SELECT data FROM current_colors_resources), '[]'::jsonb),
+                'icons', COALESCE((SELECT data FROM current_icons_resources), '[]'::jsonb),
+                'instructions', COALESCE((SELECT data FROM current_instructions_resources), '[]'::jsonb),
+                'flags', COALESCE((SELECT data FROM current_flags_resources), '[]'::jsonb),
+                'departments', COALESCE((SELECT data FROM current_departments_resources), '[]'::jsonb),
+                'parameter_fields', COALESCE((SELECT data FROM current_parameter_fields_resources), '[]'::jsonb),
+                'examples', COALESCE((SELECT data FROM current_examples_resources), '[]'::jsonb)
+            )
         ) as jinja_context
 ),
 -- Context data with agent/model config

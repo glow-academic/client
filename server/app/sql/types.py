@@ -8299,6 +8299,7 @@ class PreparePersonaGenerationSqlParams(BaseModel):
     p_agent_id: UUID
     p_group_id: UUID | None = None
     p_resources: list[IPersonaResourceV4] | None = None
+    p_current_resources: list[IPersonaResourceV4] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert p_resources composite array to tuples for asyncpg
@@ -8306,11 +8307,17 @@ class PreparePersonaGenerationSqlParams(BaseModel):
             (conn.resource_type, conn.resource_ids)
             for conn in (self.p_resources or [])
         ]
+        # Convert p_current_resources composite array to tuples for asyncpg
+        p_current_resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.p_current_resources or [])
+        ]
         return (
             self.p_profile_id,
             self.p_agent_id,
             self.p_group_id,
             p_resources_tuples,
+            p_current_resources_tuples,
         )
 
 class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
@@ -8351,6 +8358,7 @@ class PreparePersonaGenerationApiRequest(BaseModel):
     p_agent_id: UUID
     p_group_id: UUID | None = None
     p_resources: list[IPersonaResourceV4] | None = None
+    p_current_resources: list[IPersonaResourceV4] | None = None
 
 class PreparePersonaGenerationApiResponse(BaseModel):
 
