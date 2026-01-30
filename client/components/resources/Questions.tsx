@@ -211,8 +211,11 @@ export function Questions({
 
   const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const lastSavedQuestionsRef = useRef<QuestionType[]>(internalQuestions);
+  const lastReportedIdsRef = useRef<string[]>(ids); // Track last IDs reported to parent
   const isInitialMountRef = useRef(true);
   const questionIdMapRef = useRef<Map<string, string>>(new Map()); // Maps question text -> question_id
+  const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
+  onChangeRef.current = onChange;
   const flushRef = useRef<(() => Promise<{ question_ids: string[] } | void>) | undefined>(undefined);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
@@ -254,13 +257,21 @@ export function Questions({
         ],
         times: [],
       }));
-      setInternalQuestions(newQuestions);
+      // Only update if questions actually changed to prevent infinite loops
+      setInternalQuestions((prev) => {
+        const prevTexts = prev.map((q) => q.question_text);
+        const newTexts = newQuestions.map((q) => q.question_text);
+        if (JSON.stringify(prevTexts) === JSON.stringify(newTexts)) return prev;
+        return newQuestions;
+      });
       // Update mapping
       ids.forEach((id, idx) => {
         if (newQuestions[idx]?.question_text) {
           questionIdMapRef.current.set(newQuestions[idx].question_text, id);
         }
       });
+      // Keep lastReportedIdsRef in sync with external ids
+      lastReportedIdsRef.current = ids;
     }
   }, [ids, effectiveQuestionMapping]);
 
@@ -304,8 +315,13 @@ export function Questions({
     };
   }, [internalQuestions, videoLength, expandedQuestions]);
 
-  // Debounced resource creation for each question text
+  // Debounced resource creation for each question text - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -313,112 +329,64 @@ export function Questions({
       return;
     }
 
-    // Skip auto-creation if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) return;
-
     // Clear all existing timers
     debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
     debounceTimersRef.current.clear();
 
-    // Create/update resources for each question text
-    const promises: Promise<void>[] = [];
+    // Check if there are any questions that need creation
+    const hasQuestionsToCreate = internalQuestions.some(
+      (q) => q.question_text.trim() && !questionIdMapRef.current.has(q.question_text)
+    );
 
-    internalQuestions.forEach((question, index) => {
-      if (!question.question_text.trim()) {
-        return;
+    if (!hasQuestionsToCreate) {
+      // All questions already have IDs, update parent only if IDs changed (reorder/delete)
+      const allIds = internalQuestions
+        .filter((q) => q.question_text.trim())
+        .map((q) => questionIdMapRef.current.get(q.question_text))
+        .filter((id): id is string => id !== undefined);
+      // Only call onChange if IDs actually changed to prevent infinite loops
+      const lastReportedStr = JSON.stringify(lastReportedIdsRef.current);
+      const newIdsStr = JSON.stringify(allIds);
+      if (lastReportedStr !== newIdsStr) {
+        lastReportedIdsRef.current = allIds;
+        onChangeRef.current(allIds);
       }
+      return;
+    }
 
-      // Check if we already have an ID for this text
-      const existingId = questionIdMapRef.current.get(question.question_text);
-      if (existingId) {
-        return;
-      }
+    // Debounce the flush
+    const timer = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
 
-      // Debounce creation for this question text
-      const promise = (async () => {
-        const effectiveAgentId = questions_agent_id ?? agent_id;
-        if (createQuestionsAction && effectiveAgentId && group_id) {
-          try {
-            const result = await createQuestionsAction({
-              body: {
-                agent_id: effectiveAgentId,
-                group_id: group_id,
-                question_text: question.question_text,
-                allow_multiple: question.allow_multiple,
-                time_value: question.times?.[0] ?? 0,
-                mcp: false,
-              },
-            });
-            if (result.question_id) {
-              questionIdMapRef.current.set(
-                question.question_text,
-                result.question_id
-              );
-              // Update parent with all IDs
-              const allIds = internalQuestions
-                .map((q) => {
-                  if (!q.question_text.trim()) return null;
-                  return (
-                    questionIdMapRef.current.get(q.question_text) || null
-                  );
-                })
-                .filter((id): id is string => id !== null);
-              onChange(allIds);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create question resource for "${question.question_text}":`,
-              error
-            );
-          }
-        }
-      })();
-      promises.push(promise);
-
-      const timer = setTimeout(() => {
-        // Timer just tracks the debounce, promise handles the actual work
-      }, 1000);
-
-      debounceTimersRef.current.set(index, timer);
-    });
+    debounceTimersRef.current.set(0, timer);
 
     lastSavedQuestionsRef.current = internalQuestions;
 
+    // Capture ref value at effect start for cleanup
     const timersAtStart = debounceTimersRef.current;
 
     return () => {
+      // Use captured ref value for cleanup
       timersAtStart.forEach((timer) => clearTimeout(timer));
       timersAtStart.clear();
     };
-  }, [
-    internalQuestions,
-    createQuestionsAction,
-    onChange,
-    questions_agent_id,
-    agent_id,
-    group_id,
-    isAutosaveEnabled,
-  ]);
+  // Note: onChange is accessed via onChangeRef to avoid dependency issues
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [internalQuestions, createQuestionsAction, isAutosaveEnabled]);
 
-  // Flush function for manual save mode - creates pending resources and returns all IDs
+  // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ question_ids: string[] } | void> => {
     const effectiveAgentId = questions_agent_id ?? agent_id;
     if (!createQuestionsAction || !effectiveAgentId || !group_id) return;
 
-    const allIds: string[] = [];
+    // Find questions that need creation (have text but no ID)
+    const questionsToCreate = internalQuestions.filter(
+      (q) => q.question_text.trim() && !questionIdMapRef.current.has(q.question_text)
+    );
 
-    for (const question of internalQuestions) {
-      if (!question.question_text.trim()) continue;
-
-      // Check if we already have an ID for this text
-      const existingId = questionIdMapRef.current.get(question.question_text);
-      if (existingId) {
-        allIds.push(existingId);
-        continue;
-      }
-
-      // Create resource for pending question
+    // Create resources for each
+    for (const question of questionsToCreate) {
       try {
         const result = await createQuestionsAction({
           body: {
@@ -432,18 +400,23 @@ export function Questions({
         });
         if (result.question_id) {
           questionIdMapRef.current.set(question.question_text, result.question_id);
-          allIds.push(result.question_id);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(`Failed to create question resource for "${question.question_text}":`, error);
+        console.error(`Failed to create question: "${question.question_text}"`, error);
+        throw error;
       }
     }
 
     // Update parent with all IDs
-    if (allIds.length > 0) {
-      onChange(allIds);
-    }
+    const allIds = internalQuestions
+      .filter((q) => q.question_text.trim())
+      .map((q) => questionIdMapRef.current.get(q.question_text))
+      .filter((id): id is string => id !== undefined);
+
+    lastReportedIdsRef.current = allIds;
+    onChangeRef.current(allIds);
+    lastSavedQuestionsRef.current = internalQuestions;
 
     return { question_ids: allIds };
   };

@@ -275,8 +275,11 @@ export function Objectives({
 
   const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const lastSavedTextsRef = useRef<string[]>(internalTexts);
+  const lastReportedIdsRef = useRef<string[]>(ids); // Track last IDs reported to parent
   const isInitialMountRef = useRef(true);
   const objectiveIdMapRef = useRef<Map<string, string>>(new Map()); // Maps objective text -> objective_id
+  const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
+  onChangeRef.current = onChange;
   const flushRef = useRef<(() => Promise<{ objective_ids: string[] } | void>) | undefined>(undefined);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
@@ -289,19 +292,33 @@ export function Objectives({
         .map((id) => effectiveObjectiveMapping[id] || "")
         .filter((text) => text.trim() !== "");
       if (texts.length > 0) {
-        setInternalTexts(texts);
+        // Only update if texts actually changed to prevent infinite loops
+        const newTexts = texts.length > 0 ? texts : [""];
+        setInternalTexts((prev) => {
+          const prevStr = JSON.stringify(prev);
+          const newStr = JSON.stringify(newTexts);
+          if (prevStr === newStr) return prev;
+          return newTexts;
+        });
         // Update mapping
         ids.forEach((id, idx) => {
           if (texts[idx]) {
             objectiveIdMapRef.current.set(texts[idx], id);
           }
         });
+        // Keep lastReportedIdsRef in sync with external ids
+        lastReportedIdsRef.current = ids;
       }
     }
   }, [ids, effectiveObjectiveMapping]);
 
-  // Debounced resource creation for each objective text
+  // Debounced resource creation for each objective text - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -309,72 +326,37 @@ export function Objectives({
       return;
     }
 
-    // Skip auto-creation if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) return;
-
     // Clear all existing timers
     debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
     debounceTimersRef.current.clear();
 
-    // Create/update resources for each text
-    const newObjectiveIds: string[] = [];
-    // Use promises to track async operations
-    const promises: Promise<void>[] = [];
+    // Check if there are any texts that need creation
+    const hasTextsToCreate = internalTexts.some(
+      (text) => text.trim() && !objectiveIdMapRef.current.has(text)
+    );
 
-    internalTexts.forEach((text, index) => {
-      if (!text.trim()) {
-        // Skip empty texts
-        return;
+    if (!hasTextsToCreate) {
+      // All texts already have IDs, update parent only if IDs changed (reorder/delete)
+      const allIds = internalTexts
+        .filter((t) => t.trim())
+        .map((t) => objectiveIdMapRef.current.get(t))
+        .filter((id): id is string => id !== undefined);
+      // Only call onChange if IDs actually changed to prevent infinite loops
+      const lastReportedStr = JSON.stringify(lastReportedIdsRef.current);
+      const newIdsStr = JSON.stringify(allIds);
+      if (lastReportedStr !== newIdsStr) {
+        lastReportedIdsRef.current = allIds;
+        onChangeRef.current(allIds);
       }
+      return;
+    }
 
-      // Check if we already have an ID for this text
-      const existingId = objectiveIdMapRef.current.get(text);
-      if (existingId) {
-        newObjectiveIds.push(existingId);
-        return;
-      }
+    // Debounce the flush
+    const timer = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
 
-      // Debounce creation for this text
-      const promise = (async () => {
-        const effectiveAgentId = objectives_agent_id ?? agent_id;
-        if (createObjectivesAction && effectiveAgentId && group_id) {
-          try {
-            const result = await createObjectivesAction({
-              body: {
-                agent_id: effectiveAgentId,
-                group_id: group_id,
-                objective: text,
-                mcp: false,
-              },
-            });
-            if (result.objective_id) {
-              objectiveIdMapRef.current.set(text, result.objective_id);
-              // Update parent with all IDs
-              const allIds = internalTexts
-                .map((t) => {
-                  if (!t.trim()) return null;
-                  return objectiveIdMapRef.current.get(t) || null;
-                })
-                .filter((id): id is string => id !== null);
-              onChange(allIds);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create objective resource for "${text}":`,
-              error
-            );
-          }
-        }
-      })();
-      promises.push(promise);
-
-      const timer = setTimeout(() => {
-        // Timer just tracks the debounce, promise handles the actual work
-      }, 1000);
-
-      debounceTimersRef.current.set(index, timer);
-    });
+    debounceTimersRef.current.set(0, timer);
 
     lastSavedTextsRef.current = internalTexts;
 
@@ -386,34 +368,22 @@ export function Objectives({
       timersAtStart.forEach((timer) => clearTimeout(timer));
       timersAtStart.clear();
     };
-  }, [
-    internalTexts,
-    createObjectivesAction,
-    onChange,
-    objectives_agent_id,
-    agent_id,
-    group_id,
-    isAutosaveEnabled,
-  ]);
+  // Note: onChange is accessed via onChangeRef to avoid dependency issues
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [internalTexts, createObjectivesAction, isAutosaveEnabled]);
 
-  // Flush function for manual save mode - creates pending resources and returns all IDs
+  // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ objective_ids: string[] } | void> => {
     const effectiveAgentId = objectives_agent_id ?? agent_id;
     if (!createObjectivesAction || !effectiveAgentId || !group_id) return;
 
-    const allIds: string[] = [];
+    // Find texts that need creation (have text but no ID)
+    const textsToCreate = internalTexts.filter(
+      (text) => text.trim() && !objectiveIdMapRef.current.has(text)
+    );
 
-    for (const text of internalTexts) {
-      if (!text.trim()) continue;
-
-      // Check if we already have an ID for this text
-      const existingId = objectiveIdMapRef.current.get(text);
-      if (existingId) {
-        allIds.push(existingId);
-        continue;
-      }
-
-      // Create resource for pending text
+    // Create resources for each
+    for (const text of textsToCreate) {
       try {
         const result = await createObjectivesAction({
           body: {
@@ -425,18 +395,23 @@ export function Objectives({
         });
         if (result.objective_id) {
           objectiveIdMapRef.current.set(text, result.objective_id);
-          allIds.push(result.objective_id);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(`Failed to create objective resource for "${text}":`, error);
+        console.error(`Failed to create objective: "${text}"`, error);
+        throw error;
       }
     }
 
     // Update parent with all IDs
-    if (allIds.length > 0) {
-      onChange(allIds);
-    }
+    const allIds = internalTexts
+      .filter((t) => t.trim())
+      .map((t) => objectiveIdMapRef.current.get(t))
+      .filter((id): id is string => id !== undefined);
+
+    lastReportedIdsRef.current = allIds;
+    onChangeRef.current(allIds);
+    lastSavedTextsRef.current = internalTexts;
 
     return { objective_ids: allIds };
   };

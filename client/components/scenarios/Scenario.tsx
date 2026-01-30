@@ -724,7 +724,7 @@ function ScenarioComponent({
             document_ids: formState.document_ids,
             template_document_ids: formState.template_ids,
             parameter_ids: formState.parameter_ids,
-            field_ids: formState.parameter_field_ids,
+            parameter_field_ids: formState.parameter_field_ids,
             image_ids: formState.image_ids,
             objective_ids: formState.objective_ids,
             video_ids: formState.video_ids,
@@ -890,7 +890,7 @@ function ScenarioComponent({
                 ? mergedFlushResults.template_ids
                 : currentFormState.template_ids,
             parameter_ids: currentFormState.parameter_ids,
-            field_ids:
+            parameter_field_ids:
               mergedFlushResults.parameter_field_ids !== undefined
                 ? mergedFlushResults.parameter_field_ids
                 : currentFormState.parameter_field_ids,
@@ -2274,7 +2274,7 @@ function ScenarioComponent({
               effectiveFormState.parameter_ids.length > 0
                 ? effectiveFormState.parameter_ids
                 : null,
-            field_ids:
+            parameter_field_ids:
               effectiveFormState.parameter_field_ids.length > 0
                 ? effectiveFormState.parameter_field_ids
                 : null,
