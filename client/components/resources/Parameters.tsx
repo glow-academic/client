@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
@@ -70,6 +70,10 @@ export interface ParametersProps {
   showSelectedFilter?: boolean; // Whether to show only selected parameters
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
+  // AI diff view props
+  aiParameterResources?: Array<{ parameter_id?: string | null; name?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Parameters({
@@ -95,6 +99,10 @@ export function Parameters({
   showSelectedFilter = false,
   onShowSelectedChange,
   videoEnabled = false,
+  // AI diff view props
+  aiParameterResources,
+  onAccept,
+  onReject,
 }: ParametersProps) {
   const ids = useMemo(() => parameter_ids ?? [], [parameter_ids]);
   const show = show_parameters ?? false;
@@ -127,6 +135,35 @@ export function Parameters({
     () => parameter_suggestions ?? [],
     [parameter_suggestions]
   );
+
+  // AI suggestion state
+  const showDiff = !!aiParameterResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiParameterResources
+          ?.map((p) => p.parameter_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiParameterResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested parameters to selection
+  const handleAccept = useCallback(() => {
+    if (!aiParameterResources?.length) return;
+    const newIds = aiParameterResources
+      .map((p) => p.parameter_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiParameterResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
 
   // Handle search term changes
   useEffect(() => {
@@ -263,7 +300,7 @@ export function Parameters({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -278,6 +315,42 @@ export function Parameters({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <SelectableGrid<ParametersItem>
@@ -287,13 +360,17 @@ export function Parameters({
         selectedIds={ids}
         onSelect={handleSelect}
         getId={(item) => item.id}
-        renderItem={(item, isSelected) => (
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
           <div
             className={cn(
               "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
               "hover:shadow-md hover:bg-accent/50",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
+              isSelected && "ring-2 ring-primary bg-accent",
+              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
             )}
           >
             {isSelected && (
@@ -302,7 +379,14 @@ export function Parameters({
               </div>
             )}
 
-            {isSuggested(item.id) && !isSelected && (
+            {/* AI suggested badge - top right */}
+            {isAiSuggested && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-xs rounded font-medium">
+                AI Suggested
+              </div>
+            )}
+
+            {isSuggested(item.id) && !isSelected && !isAiSuggested && (
               <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                 Suggested
               </div>
@@ -317,7 +401,8 @@ export function Parameters({
               )}
             </div>
           </div>
-        )}
+        );
+        }}
         emptyMessage="No parameters found."
         disabled={disabled}
       />

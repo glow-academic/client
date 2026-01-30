@@ -1052,45 +1052,24 @@ function PersonaComponent({
         });
 
         // Update formState with the resource IDs extracted from resource objects
+        // Note: Most resources are now handled through aiFormData for diff workflow
+        // Only name_resource auto-accepts since it already has diff workflow implemented
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          // Single-select resources: extract ID from resource object
+          // Single-select resources: only name_resource auto-accepts
+          // (Names.tsx already implements diff workflow)
           if (data.name_resource?.id) updates.name_id = data.name_resource.id;
+          // color_resource is handled through aiFormData for diff workflow
+          // icon_resource is handled through aiFormData for diff workflow
+          // instructions_resource is handled through aiFormData for diff workflow
           // description_id is handled through aiFormData for diff workflow
-          if (data.color_resource?.id)
-            updates.color_id = data.color_resource.id;
-          if (data.icon_resource?.id) updates.icon_id = data.icon_resource.id;
-          if (data.instructions_resource?.id)
-            updates.instructions_id = data.instructions_resource.id;
           // flag_resource is handled through aiFormData for diff workflow
 
-          // Multi-select resources: extract IDs from resource arrays
-          if (data.parameter_field_resources?.length) {
-            const newIds = data.parameter_field_resources
-              .map((r) => r.id)
-              .filter(
-                (id): id is string =>
-                  !!id && !prev.parameter_field_ids.includes(id)
-              );
-            if (newIds.length > 0) {
-              updates.parameter_field_ids = [
-                ...prev.parameter_field_ids,
-                ...newIds,
-              ];
-            }
-          }
+          // Multi-select resources: all handled through aiFormData for diff workflow
+          // parameter_field_resources is handled through aiFormData for diff workflow
           // department_resources is handled through aiFormData for diff workflow
-          if (data.example_resources?.length) {
-            const newIds = data.example_resources
-              .map((r) => r.id)
-              .filter(
-                (id): id is string => !!id && !prev.example_ids.includes(id)
-              );
-            if (newIds.length > 0) {
-              updates.example_ids = [...prev.example_ids, ...newIds];
-            }
-          }
+          // example_resources is handled through aiFormData for diff workflow
 
           return { ...prev, ...updates };
         });
@@ -2242,6 +2221,9 @@ function PersonaComponent({
                   agent_id={currentPersonaData?.parameters_agent_id ?? null}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
+                  aiParameterResources={aiFormData.parameter_resources ?? null}
+                  onAccept={() => clearAiResource("parameter_resources")}
+                  onReject={() => clearAiResource("parameter_resources")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -2279,6 +2261,9 @@ function PersonaComponent({
                   isGenerating={isGenerating("parameter_fields")}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.parameter_fields}
+                  aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
+                  onAccept={() => clearAiResource("parameter_field_resources")}
+                  onReject={() => clearAiResource("parameter_field_resources")}
                 />
               </div>
             </StepCard>
@@ -2392,6 +2377,9 @@ function PersonaComponent({
                 required={currentPersonaData?.color_required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.colors}
+                aiResource={aiFormData.color_resource}
+                onAccept={() => clearAiResource("color_resource")}
+                onReject={() => clearAiResource("color_resource")}
               />
             </StepCard>
           );
@@ -2501,6 +2489,9 @@ function PersonaComponent({
                 group_id={currentPersonaData?.group_id ?? null}
                 agent_id={currentPersonaData?.icon_agent_id ?? null}
                 required={currentPersonaData?.icon_required ?? false}
+                aiResource={aiFormData.icon_resource}
+                onAccept={() => clearAiResource("icon_resource")}
+                onReject={() => clearAiResource("icon_resource")}
               />
             </StepCard>
           );
@@ -2608,6 +2599,9 @@ function PersonaComponent({
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.instructions}
+                aiResource={aiFormData.instructions_resource}
+                onAccept={() => clearAiResource("instructions_resource")}
+                onReject={() => clearAiResource("instructions_resource")}
               />
 
               {/* Examples Section */}
@@ -2665,6 +2659,9 @@ function PersonaComponent({
                 }
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.examples}
+                aiExampleResources={aiFormData.example_resources ?? null}
+                onAccept={() => clearAiResource("example_resources")}
+                onReject={() => clearAiResource("example_resources")}
               />
             </StepCard>
           );

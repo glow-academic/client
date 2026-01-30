@@ -16,7 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -29,6 +30,118 @@ type CreateDraftInstructionsOut = OutputOf<
   "/api/v4/resources/instructions",
   "post"
 >;
+
+// Word-based diff types and utilities
+type DiffSegment = { type: "same" | "removed" | "added"; text: string };
+
+function computeDiff(oldText: string, newText: string): DiffSegment[] {
+  // Split text into words while preserving whitespace
+  const splitWords = (text: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    for (const char of text) {
+      if (/\s/.test(char)) {
+        if (current) {
+          result.push(current);
+          current = "";
+        }
+        result.push(char);
+      } else {
+        current += char;
+      }
+    }
+    if (current) result.push(current);
+    return result;
+  };
+
+  const oldWords = splitWords(oldText);
+  const newWords = splitWords(newText);
+
+  // Simple LCS-based diff
+  const m = oldWords.length;
+  const n = newWords.length;
+
+  // Build LCS table
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (oldWords[i - 1] === newWords[j - 1]) {
+        dp[i]![j] = dp[i - 1]![j - 1]! + 1;
+      } else {
+        dp[i]![j] = Math.max(dp[i - 1]![j]!, dp[i]![j - 1]!);
+      }
+    }
+  }
+
+  // Backtrack to find diff
+  const segments: DiffSegment[] = [];
+  let i = m, j = n;
+  const tempSegments: DiffSegment[] = [];
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldWords[i - 1] === newWords[j - 1]) {
+      tempSegments.push({ type: "same", text: oldWords[i - 1]! });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i]![j - 1]! >= dp[i - 1]![j]!)) {
+      tempSegments.push({ type: "added", text: newWords[j - 1]! });
+      j--;
+    } else {
+      tempSegments.push({ type: "removed", text: oldWords[i - 1]! });
+      i--;
+    }
+  }
+
+  // Reverse and merge consecutive segments of same type
+  tempSegments.reverse();
+  for (const seg of tempSegments) {
+    if (segments.length > 0 && segments[segments.length - 1]!.type === seg.type) {
+      segments[segments.length - 1]!.text += seg.text;
+    } else {
+      segments.push({ ...seg });
+    }
+  }
+
+  return segments;
+}
+
+// Inline DiffView component
+function DiffView({
+  current,
+  proposed,
+  rows,
+}: {
+  current: string;
+  proposed: string;
+  rows: number;
+}) {
+  const segments = useMemo(() => computeDiff(current, proposed), [current, proposed]);
+
+  return (
+    <div
+      className={cn(
+        "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+        "whitespace-pre-wrap overflow-auto"
+      )}
+      style={{ minHeight: `${rows * 1.5}rem` }}
+    >
+      {segments.map((seg, i) => (
+        <span
+          key={i}
+          className={cn(
+            seg.type === "removed" && "bg-destructive/20 text-destructive line-through",
+            seg.type === "added" && "bg-success/20 text-success"
+          )}
+        >
+          {seg.text}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
@@ -64,6 +177,10 @@ export interface InstructionsProps {
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
   suggestions?: string[];
+  // AI diff view props
+  aiResource?: { id?: string | null; template?: string | null } | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Instructions({
@@ -94,6 +211,10 @@ export function Instructions({
   instructionsResource,
   instructionsId,
   suggestions,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: InstructionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = instructions_resource ?? instructionsResource ?? null;
@@ -266,6 +387,30 @@ export function Instructions({
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
+  // AI diff view state
+  const showDiff = !!aiResource?.template;
+  const currentText = internalValue || "";
+  const aiText = aiResource?.template || "";
+
+  // Accept AI suggestion - update internal value and notify parent
+  const handleAccept = useCallback(() => {
+    if (!aiResource?.id) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    saveSeqRef.current += 1;
+    const text = aiResource.template || "";
+    setInternalValue(text);
+    lastSavedValueRef.current = text;
+    lastServerTextRef.current = text;
+    isDirtyRef.current = false;
+    onInstructionsIdChange(aiResource.id);
+    onAccept?.();
+  }, [aiResource, onInstructionsIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Use instructions array if available, otherwise create placeholder mapping
   const suggestionsMapping = useMemo(() => {
     if (instructions && instructions.length > 0) {
@@ -319,7 +464,7 @@ export function Instructions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -333,6 +478,42 @@ export function Instructions({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
         {/* GenericPicker for suggestions - always show */}
@@ -372,17 +553,21 @@ export function Instructions({
           onSearchChange={onSearchChange}
         />
       </div>
-      {/* Textarea without generate button inside */}
-      <Textarea
-        id={id}
-        data-testid={dataTestId}
-        value={internalValue || ""}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        disabled={disabled}
-        rows={rows}
-      />
+      {/* Conditional: DiffView when AI suggestion pending, otherwise Textarea */}
+      {showDiff ? (
+        <DiffView current={currentText} proposed={aiText} rows={rows} />
+      ) : (
+        <Textarea
+          id={id}
+          data-testid={dataTestId}
+          value={internalValue || ""}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+          rows={rows}
+        />
+      )}
       {helpText && (
         <p className="text-xs text-muted-foreground">{helpText}</p>
       )}

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface IconItem {
@@ -71,6 +71,10 @@ export interface IconsProps {
   allIcons?: string[];
   suggestedIcons?: string[];
   iconSuggestions?: string[];
+  // AI diff view props
+  aiResource?: { id?: string | null; name?: string | null; value?: string | null } | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Icons({
@@ -98,6 +102,10 @@ export function Icons({
   allIcons,
   suggestedIcons = [],
   iconSuggestions,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;
@@ -108,6 +116,22 @@ export function Icons({
     [icon_suggestions, iconSuggestions]
   );
   const allIconsArray = useMemo(() => icons ?? [], [icons]);
+
+  // AI suggestion state
+  const showDiff = !!aiResource?.id;
+  const aiSuggestedId = aiResource?.id || null;
+
+  // Accept AI suggestion - update icon selection
+  const handleAccept = useCallback(() => {
+    if (!aiResource?.id) return;
+    onIconIdChange(aiResource.id);
+    onAccept?.();
+  }, [aiResource, onIconIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
 
   // Convert icons array to IconItem format for SelectableGrid
   const iconItems = useMemo(() => {
@@ -215,7 +239,7 @@ export function Icons({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -230,6 +254,42 @@ export function Icons({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
 
@@ -243,13 +303,16 @@ export function Icons({
             PERSONA_ICON_MAP[item.value as keyof typeof PERSONA_ICON_MAP];
           if (!IconComponent) return null;
 
+          const isAiSuggested = showDiff && item.id === aiSuggestedId;
+
           return (
             <div
               className={cn(
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -259,8 +322,15 @@ export function Icons({
                 </div>
               )}
 
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
               {/* Suggested badge - top right */}
-              {isSuggested(item.id) && !isSelected && (
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                   Suggested
                 </div>

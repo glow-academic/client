@@ -32,29 +32,28 @@ AS $$
 WITH params AS (
     SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
 ),
--- Get all available flags for the given scenarios from resource_flags_relation
--- This table links scenarios to their available flag types
+-- Get all available flags for the given scenarios from scenario_flags_resource
+-- This is the proper junction table linking scenarios to flags
 -- If scenario_ids is empty, return flags for ALL scenarios
 available_flags AS (
     SELECT
-        -- Use flag_id as the id (since resource_flags_relation doesn't have its own id)
-        f.id as id,
-        rfr.resource_id as scenario_id,
-        f.id as flag_id,
+        sfr.id,
+        sfr.scenario_id,
+        sfr.flag_id,
         f.name,
         COALESCE(f.description, '') as description,
         COALESCE(f.icon, '') as icon,
-        false as generated
+        COALESCE(sfr.generated, false) as generated
     FROM params p
-    JOIN resource_flags_relation rfr ON true
-    JOIN flags_resource f ON f.type = rfr.flag_type AND f.active = true
-    JOIN scenarios_resource sr ON sr.id = rfr.resource_id AND sr.active = true
+    JOIN scenario_flags_resource sfr ON sfr.active = true
+    JOIN flags_resource f ON f.id = sfr.flag_id AND f.active = true
+    JOIN scenarios_resource sr ON sr.id = sfr.scenario_id AND sr.active = true
     WHERE
         -- If scenario_ids is empty, return all
         COALESCE(array_length(p.scen_ids, 1), 0) = 0
         OR
         -- Otherwise filter to provided scenario_ids
-        rfr.resource_id = ANY(p.scen_ids)
+        sfr.scenario_id = ANY(p.scen_ids)
 )
 SELECT
     COALESCE(

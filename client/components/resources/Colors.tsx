@@ -20,7 +20,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getColorName } from "@/utils/color-helpers";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
@@ -93,6 +93,10 @@ export interface ColorsProps {
   colorId?: string | null;
   presetColors?: ColorItem[];
   colorSuggestions?: string[];
+  // AI diff view props
+  aiResource?: { id?: string | null; name?: string | null; hex_code?: string | null } | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Colors({
@@ -127,6 +131,10 @@ export function Colors({
   colorId: _colorId,
   presetColors,
   colorSuggestions,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: ColorsProps) {
   // Use standardized props with fallback to legacy props
   const resource = color_resource ?? colorResource ?? null;
@@ -137,6 +145,28 @@ export function Colors({
     [color_suggestions, colorSuggestions]
   );
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
+
+  // AI suggestion state
+  const showDiff = !!aiResource?.id;
+  const aiSuggestedId = aiResource?.id || null;
+
+  // Accept AI suggestion - update color selection
+  const handleAcceptAi = useCallback(() => {
+    if (!aiResource?.id) return;
+    if (onColorIdChange) {
+      onColorIdChange(aiResource.id);
+    }
+    if (aiResource.hex_code) {
+      setInternalValue(aiResource.hex_code);
+      lastSavedValueRef.current = aiResource.hex_code;
+    }
+    onAccept?.();
+  }, [aiResource, onColorIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleRejectAi = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
   
   // Track which color IDs have already had resources created (multi-select)
   const createdColorIdsRef = useRef<Set<string>>(new Set());
@@ -601,7 +631,7 @@ export function Colors({
                   size="icon"
                   className="h-6 w-6"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating}
+                  disabled={disabled || isGenerating || showDiff}
                 >
                   {isGenerating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -615,6 +645,42 @@ export function Colors({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAcceptAi}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleRejectAi}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
         )}
       </div>
 
@@ -663,13 +729,17 @@ export function Colors({
                   })
               : undefined
           }
-          renderItem={(color, isSelected) => (
+          renderItem={(color, isSelected) => {
+            const isAiSuggested = showDiff && color.id === aiSuggestedId;
+
+            return (
             <div
               className={cn(
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -679,8 +749,16 @@ export function Colors({
                 </div>
               )}
 
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
               {/* Suggested badge - top right */}
               {!isSelected &&
+                !isAiSuggested &&
                 suggestedHexCodes.has(color.hex.toLowerCase()) && (
                   <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
                     Suggested
@@ -702,7 +780,8 @@ export function Colors({
                 </div>
               </div>
             </div>
-          )}
+          );
+          }}
           emptyMessage="No colors found. Try adjusting your search."
           disabled={disabled}
           horizontal

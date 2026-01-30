@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftParameterFieldsIn = InputOf<
@@ -85,6 +85,10 @@ export interface ParameterFieldsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ parameter_field_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiParameterFieldResources?: Array<{ id?: string | null; field_id?: string | null; parameter_id?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 // Represents an available field option from parameter_fields_junction
@@ -118,6 +122,10 @@ export function ParameterFields({
   isGenerating = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiParameterFieldResources,
+  onAccept,
+  onReject,
 }: ParameterFieldsProps) {
   const show = show_parameter_fields ?? false;
   // Available fields from parameter_fields_junction (what user CAN select)
@@ -517,6 +525,50 @@ export function ParameterFields({
     return selectedResources.some((field) => field.generated);
   }, [selectedResources]);
 
+  // AI suggestion state
+  const showDiff = !!aiParameterFieldResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiParameterFieldResources
+          ?.map((f) => f.id)
+          .filter(Boolean) as string[]
+      ),
+    [aiParameterFieldResources]
+  );
+
+  // Also track by field_id for matching during rendering
+  const aiSuggestedFieldIds = useMemo(
+    () =>
+      new Set(
+        aiParameterFieldResources
+          ?.map((f) => f.field_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiParameterFieldResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested parameter fields to selection
+  const handleAcceptAi = useCallback(() => {
+    if (!aiParameterFieldResources?.length) return;
+    const newIds = aiParameterFieldResources
+      .map((f) => f.id)
+      .filter((id): id is string => !!id && !resourceIds.has(id));
+    if (newIds.length > 0) {
+      setResourceIds((prev) => {
+        const next = new Map(prev);
+        newIds.forEach((id) => next.set(id, id));
+        return next;
+      });
+    }
+    onAccept?.();
+  }, [aiParameterFieldResources, resourceIds, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleRejectAi = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show is false or no parameters selected
   if (!show || parameter_ids.length === 0) {
     return null;
@@ -545,7 +597,7 @@ export function ParameterFields({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -559,6 +611,42 @@ export function ParameterFields({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAcceptAi}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleRejectAi}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}
@@ -590,19 +678,30 @@ export function ParameterFields({
                   }
                 }}
                 getId={(item) => item.field_id}
-                renderItem={(item, isSelected) => (
+                renderItem={(item, isSelected) => {
+                  const isAiSuggested = showDiff && aiSuggestedFieldIds.has(item.field_id);
+
+                  return (
                   <div
                     className={cn(
                       "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                       "hover:shadow-md hover:bg-accent/50",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isSelected && "ring-2 ring-primary bg-accent"
+                      isSelected && "ring-2 ring-primary bg-accent",
+                      isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
                     )}
                   >
                     {/* Check icon - top right */}
                     {isSelected && (
                       <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                         <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+
+                    {/* AI suggested badge - top right */}
+                    {isAiSuggested && !isSelected && (
+                      <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                        AI Suggested
                       </div>
                     )}
 
@@ -615,7 +714,8 @@ export function ParameterFields({
                       )}
                     </div>
                   </div>
-                )}
+                );
+                }}
                 emptyMessage="No fields available for this parameter."
                 disabled={disabled}
                 horizontal

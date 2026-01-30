@@ -15,7 +15,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExamplesProps {
@@ -63,6 +64,10 @@ export interface ExamplesProps {
   // Legacy props for backward compatibility
   exampleIds?: string[];
   suggestions?: string[]; // History suggestions for autocomplete (legacy)
+  // AI diff view props
+  aiExampleResources?: Array<{ id?: string | null; example?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Examples({
@@ -90,6 +95,10 @@ export function Examples({
   // Legacy props for backward compatibility
   exampleIds,
   suggestions = [],
+  // AI diff view props
+  aiExampleResources,
+  onAccept,
+  onReject,
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -324,6 +333,33 @@ export function Examples({
     return _example_resources?.some((e) => e.generated) ?? false;
   }, [_example_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiExampleResources?.length;
+
+  // Accept AI suggestion - add AI-suggested examples to internal texts
+  const handleAccept = useCallback(() => {
+    if (!aiExampleResources?.length) return;
+    // Add AI examples to internal texts
+    const newTexts = aiExampleResources
+      .map((e) => e.example)
+      .filter((text): text is string => !!text);
+    if (newTexts.length > 0) {
+      setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
+      // Map the new example IDs
+      aiExampleResources.forEach((e) => {
+        if (e.id && e.example) {
+          exampleIdMapRef.current.set(e.example, e.id);
+        }
+      });
+    }
+    onAccept?.();
+  }, [aiExampleResources, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_examples is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -347,7 +383,7 @@ export function Examples({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -362,6 +398,61 @@ export function Examples({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      {/* AI-suggested examples preview */}
+      {showDiff && aiExampleResources && aiExampleResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Examples</p>
+          <div className="space-y-2">
+            {aiExampleResources.map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.example || ""}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <ReorderableList
