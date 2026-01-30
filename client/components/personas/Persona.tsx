@@ -1063,8 +1063,7 @@ function PersonaComponent({
           if (data.icon_resource?.id) updates.icon_id = data.icon_resource.id;
           if (data.instructions_resource?.id)
             updates.instructions_id = data.instructions_resource.id;
-          if (data.flag_resource?.id)
-            updates.active_flag_id = data.flag_resource.id;
+          // flag_resource is handled through aiFormData for diff workflow
 
           // Multi-select resources: extract IDs from resource arrays
           if (data.parameter_field_resources?.length) {
@@ -1081,16 +1080,7 @@ function PersonaComponent({
               ];
             }
           }
-          if (data.department_resources?.length) {
-            const newIds = data.department_resources
-              .map((r) => r.department_id)
-              .filter(
-                (id): id is string => !!id && !prev.department_ids.includes(id)
-              );
-            if (newIds.length > 0) {
-              updates.department_ids = [...prev.department_ids, ...newIds];
-            }
-          }
+          // department_resources is handled through aiFormData for diff workflow
           if (data.example_resources?.length) {
             const newIds = data.example_resources
               .map((r) => r.id)
@@ -2107,6 +2097,11 @@ function PersonaComponent({
                   required={currentPersonaData?.departments_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.departments_agent_id ?? null}
+                  aiDepartmentResources={
+                    aiFormData.department_resources ?? null
+                  }
+                  onAccept={() => clearAiResource("department_resources")}
+                  onReject={() => clearAiResource("department_resources")}
                 />
 
                 {/* Active Switch - using server-driven Flags component */}
@@ -2126,6 +2121,11 @@ function PersonaComponent({
                   }
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
+                  aiFlagResources={
+                    aiFormData.flag_resource ? [aiFormData.flag_resource] : null
+                  }
+                  onAccept={() => clearAiResource("flag_resource")}
+                  onReject={() => clearAiResource("flag_resource")}
                 />
               </div>
             </StepCard>

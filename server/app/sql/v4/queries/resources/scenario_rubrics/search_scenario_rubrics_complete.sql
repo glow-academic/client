@@ -33,6 +33,7 @@ WITH params AS (
     SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
 ),
 -- Get all available rubrics for the given scenarios
+-- If scenario_ids is empty, return all available scenario_rubrics
 available_rubrics AS (
     SELECT
         srr.id,
@@ -40,8 +41,13 @@ available_rubrics AS (
         srr.rubric_id,
         COALESCE(srr.generated, false) as generated
     FROM params p
-    CROSS JOIN LATERAL unnest(p.scen_ids) AS sid
-    JOIN scenario_rubrics_resource srr ON srr.scenario_id = sid AND srr.active = true
+    JOIN scenario_rubrics_resource srr ON srr.active = true
+    WHERE
+        -- If scenario_ids is empty, return all
+        COALESCE(array_length(p.scen_ids, 1), 0) = 0
+        OR
+        -- Otherwise filter to provided scenario_ids
+        srr.scenario_id = ANY(p.scen_ids)
 )
 SELECT
     COALESCE(

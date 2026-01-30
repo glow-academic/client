@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftDepartmentsIn = InputOf<
@@ -66,6 +66,13 @@ export interface DepartmentsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiDepartmentResources?: Array<{
+    department_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
   // Legacy props for backward compatibility
   departmentIds?: string[];
 }
@@ -88,6 +95,10 @@ export function Departments({
   createDepartmentsAction,
   onGenerate,
   isGenerating = false,
+  // AI diff view props
+  aiDepartmentResources,
+  onAccept,
+  onReject,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {
@@ -101,6 +112,18 @@ export function Departments({
   const suggestionsList = useMemo(
     () => department_suggestions ?? [],
     [department_suggestions]
+  );
+
+  // AI suggestion state
+  const showDiff = !!aiDepartmentResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiDepartmentResources
+          ?.map((d) => d.department_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiDepartmentResources]
   );
 
   // Track which department IDs have already had resources created
@@ -170,6 +193,23 @@ export function Departments({
     [ids, onChange, createDepartmentsAction, agent_id, group_id]
   );
 
+  // Accept AI suggestion - add AI-suggested departments to selection
+  const handleAccept = useCallback(() => {
+    if (!aiDepartmentResources?.length) return;
+    const newIds = aiDepartmentResources
+      .map((d) => d.department_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiDepartmentResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Check if any department resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
     return department_resources?.some((d) => d.generated) ?? false;
@@ -203,7 +243,7 @@ export function Departments({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -217,6 +257,42 @@ export function Departments({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}
@@ -233,39 +309,51 @@ export function Departments({
           handleSelect(newIds);
         }}
         getId={(item) => item.id}
-        renderItem={(item, isSelected) => (
-          <div
-            className={cn(
-              "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
-              "hover:shadow-md hover:bg-accent/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected && "ring-2 ring-primary bg-accent"
-            )}
-          >
-            {/* Check icon - top right */}
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3 w-3 text-primary-foreground" />
-              </div>
-            )}
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
-            {/* Suggested badge - top right */}
-            {isSuggested(item.id) && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
-                Suggested
-              </div>
-            )}
-
-            <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
-              <span className="text-sm font-medium truncate">{item.name}</span>
-              {item.description && (
-                <span className="text-xs text-muted-foreground line-clamp-2">
-                  {item.description}
-                </span>
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
+              {/* Suggested badge - top right */}
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
+                  Suggested
+                </div>
+              )}
+
+              <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
+                <span className="text-sm font-medium truncate">{item.name}</span>
+                {item.description && (
+                  <span className="text-xs text-muted-foreground line-clamp-2">
+                    {item.description}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }}
         emptyMessage="No departments available."
         disabled={disabled}
         horizontal

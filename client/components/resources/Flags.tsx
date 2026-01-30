@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Loader2, Power, Sparkles } from "lucide-react";
+import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface FlagConfig {
@@ -45,6 +45,10 @@ interface CommonFlagsProps {
   group_id?: string | null;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  // AI diff view props
+  aiFlagResources?: Array<{ id?: string | null; key?: string | null }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids
@@ -75,6 +79,9 @@ export function Flags(props: FlagsProps) {
     onChange,
     onGenerate,
     isGenerating = false,
+    aiFlagResources,
+    onAccept,
+    onReject,
   } = props;
 
   // Determine mode based on props
@@ -92,6 +99,16 @@ export function Flags(props: FlagsProps) {
   const hasGenerated = useMemo(
     () => visibleFlags.some((flag) => flag.generated),
     [visibleFlags]
+  );
+
+  // AI suggestion state
+  const showDiff = !!aiFlagResources?.length;
+  const aiSuggestedFlagIds = useMemo(
+    () =>
+      new Set(
+        aiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+      ),
+    [aiFlagResources]
   );
 
   // Get the checked state for a flag
@@ -122,6 +139,37 @@ export function Flags(props: FlagsProps) {
     [isMultiMode, onChange]
   );
 
+  // Accept AI suggestion - apply all AI-suggested flags
+  const handleAccept = useCallback(() => {
+    if (!aiFlagResources?.length) return;
+
+    for (const aiFlag of aiFlagResources) {
+      if (!aiFlag.id) continue;
+      // Find which flag this applies to and set it
+      const targetFlag = visibleFlags.find(
+        (f) => f.flag_option_id === aiFlag.id
+      );
+      if (targetFlag) {
+        if (isMultiMode) {
+          (onChange as (key: string, flagId: string | null) => void)(
+            targetFlag.key,
+            aiFlag.id
+          );
+        } else {
+          // In single mode, only apply the first flag suggestion
+          (onChange as (flagId: string | null) => void)(aiFlag.id);
+          break;
+        }
+      }
+    }
+    onAccept?.();
+  }, [aiFlagResources, visibleFlags, isMultiMode, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_flags is false or no visible flags
   if (!show_flags || visibleFlags.length === 0) {
     return null;
@@ -143,7 +191,7 @@ export function Flags(props: FlagsProps) {
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -157,6 +205,42 @@ export function Flags(props: FlagsProps) {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}
@@ -183,9 +267,20 @@ export function Flags(props: FlagsProps) {
           );
 
           const checked = isChecked(flag);
+          const isAiSuggested =
+            showDiff &&
+            !!flag.flag_option_id &&
+            aiSuggestedFlagIds.has(flag.flag_option_id);
+          const wouldChange = isAiSuggested && !checked; // AI wants to turn this ON
 
           return (
-            <div key={flag.key} className="space-y-1">
+            <div
+              key={flag.key}
+              className={cn(
+                "space-y-1 p-2 rounded-lg transition-all",
+                isAiSuggested && "ring-2 ring-success bg-success/10"
+              )}
+            >
               <div className="flex items-center gap-2">
                 <Label
                   htmlFor={`flag-${flag.key}`}
@@ -195,6 +290,11 @@ export function Flags(props: FlagsProps) {
                   {flag.label}
                   {flag.required && (
                     <span className="text-destructive">*</span>
+                  )}
+                  {isAiSuggested && (
+                    <span className="ml-2 text-xs text-success font-medium">
+                      → {wouldChange ? "ON" : "OFF"} (AI)
+                    </span>
                   )}
                 </Label>
                 <Switch

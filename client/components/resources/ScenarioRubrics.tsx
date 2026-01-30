@@ -46,7 +46,7 @@ export interface ScenarioRubricsProps {
     generated?: boolean | null;
   }>;
   rubrics?: Array<{
-    rubric_id: string | null;
+    id: string | null;
     name: string | null;
     description?: string | null;
   }>;
@@ -289,9 +289,9 @@ export function ScenarioRubrics({
 
   const rubricOptions = useMemo<ScenarioRubricOption[]>(() => {
     return allRubrics
-      .filter((rubric) => rubric.rubric_id && rubric.name)
+      .filter((rubric) => rubric.id && rubric.name)
       .map((rubric) => ({
-        id: rubric.rubric_id as string,
+        id: rubric.id as string,
         name: rubric.name as string,
         description: rubric.description ?? "",
       }));

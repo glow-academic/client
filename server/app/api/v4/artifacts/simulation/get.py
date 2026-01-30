@@ -345,8 +345,10 @@ async def get_simulation(
 
         async def fetch_rubrics():
             async with pool.acquire() as c:
+                # Always fetch ALL available rubrics (like parameters in Persona)
+                # The selection is tracked via scenario_rubrics junction
                 return await get_rubrics_internal(
-                    c, request.simulation_id, bypass_cache
+                    c, None, bypass_cache
                 )
 
         # Parallel fetch all resources

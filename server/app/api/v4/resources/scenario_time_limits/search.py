@@ -52,8 +52,7 @@ async def search_scenario_time_limits_internal(
     Returns:
         List of available scenario time limit items
     """
-    if not scenario_ids:
-        return []
+    # Note: When scenario_ids is empty, SQL returns ALL available scenario_time_limits
 
     # Generate cache key
     cache_key_val = cache_key(

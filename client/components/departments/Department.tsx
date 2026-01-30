@@ -87,13 +87,8 @@ function DepartmentComponent({
 }: DepartmentProps) {
   const router = useRouter();
   const isEditMode = !!departmentId;
-  const {
-    profile,
-    selectedDraftId,
-    setSelectedDraftId,
-    socket,
-    isConnected,
-  } = useProfile();
+  const { profile, selectedDraftId, setSelectedDraftId, socket, isConnected } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   // Generation state for AI workflows
@@ -968,16 +963,16 @@ function DepartmentComponent({
           nuqsParsers={
             departmentSearchParamsClient as Record<string, Parser<unknown>>
           }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        serverData={departmentData}
-        formFieldKeys={formFieldKeys}
-        resetSuccessMessage={resetSuccessMessage}
-        onReset={(stepId) => handleReset(stepId)}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
-        isEditMode={isEditMode}
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={departmentData}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={resetSuccessMessage}
+          onReset={(stepId) => handleReset(stepId)}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}
           registerSetFormData={(setter) => {

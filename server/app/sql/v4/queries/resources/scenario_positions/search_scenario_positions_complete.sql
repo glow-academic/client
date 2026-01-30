@@ -33,6 +33,7 @@ WITH params AS (
     SELECT simulation_id AS sim_id, scenario_ids AS scen_ids
 ),
 -- Get all available positions for the given scenarios
+-- If scenario_ids is empty, return all available scenario_positions
 available_positions AS (
     SELECT
         spr.id,
@@ -41,8 +42,13 @@ available_positions AS (
         spr.value,
         COALESCE(spr.generated, false) as generated
     FROM params p
-    CROSS JOIN LATERAL unnest(p.scen_ids) AS sid
-    JOIN scenario_positions_resource spr ON spr.scenario_id = sid
+    JOIN scenario_positions_resource spr ON true
+    WHERE
+        -- If scenario_ids is empty, return all
+        COALESCE(array_length(p.scen_ids, 1), 0) = 0
+        OR
+        -- Otherwise filter to provided scenario_ids
+        spr.scenario_id = ANY(p.scen_ids)
 )
 SELECT
     COALESCE(
