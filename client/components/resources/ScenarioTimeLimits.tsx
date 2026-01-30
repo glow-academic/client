@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { Clock, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioTimeLimitsIn = InputOf<
@@ -253,7 +253,7 @@ export function ScenarioTimeLimits({
     return timeLimitResources.some((resource) => resource.generated);
   }, [timeLimitResources]);
 
-  if (!show) {
+  if (!show || scenario_ids.length === 0) {
     return null;
   }
 
@@ -297,7 +297,7 @@ export function ScenarioTimeLimits({
           )}
         </div>
       )}
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
         {scenario_ids.map((scenarioId) => {
           const currentValue = timeLimitByScenario.get(scenarioId);
           const labelText =
@@ -305,30 +305,31 @@ export function ScenarioTimeLimits({
           return (
             <div
               key={scenarioId}
-              className="flex items-center gap-2 p-2 border rounded-md"
+              className="relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all hover:shadow-md hover:bg-accent/50"
             >
-              <Label className="text-sm w-40 truncate" title={labelText}>
-                {labelText}
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                value={currentValue ?? ""}
-                onChange={(event) =>
-                  handleChange(scenarioId, event.target.value)
-                }
-                placeholder="Seconds"
-                disabled={disabled}
-                className="w-32"
-              />
+              <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-tight truncate" title={labelText}>
+                  {labelText}
+                </h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={currentValue ?? ""}
+                    onChange={(event) =>
+                      handleChange(scenarioId, event.target.value)
+                    }
+                    placeholder="Seconds"
+                    disabled={disabled}
+                    className="w-24 h-8"
+                  />
+                  <span className="text-xs text-muted-foreground">seconds</span>
+                </div>
+              </div>
             </div>
           );
         })}
-        {scenario_ids.length === 0 && (
-          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-            No scenarios selected. Select scenarios first to set time limits.
-          </div>
-        )}
       </div>
     </div>
   );

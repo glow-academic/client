@@ -7,7 +7,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -16,8 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp, GripVertical, Loader2, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioPositionsIn = InputOf<
@@ -359,7 +357,7 @@ export function ScenarioPositions({
     ]
   );
 
-  const handleMoveUp = useCallback(
+  const handleMoveLeft = useCallback(
     (scenarioId: string) => {
       const currentPos = localPositions.get(scenarioId) || 1;
       if (currentPos > 1) {
@@ -376,7 +374,7 @@ export function ScenarioPositions({
     [localPositions, handlePositionChange]
   );
 
-  const handleMoveDown = useCallback(
+  const handleMoveRight = useCallback(
     (scenarioId: string) => {
       const currentPos = localPositions.get(scenarioId) || 1;
       const maxPos = Math.max(...Array.from(localPositions.values()));
@@ -401,8 +399,8 @@ export function ScenarioPositions({
       .map(([scenarioId]) => scenarioId);
   }, [localPositions]);
 
-  // Don't render if show_scenario_positions is false (AFTER all hooks)
-  if (!show) {
+  // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
+  if (!show || scenario_ids.length === 0) {
     return null;
   }
 
@@ -444,65 +442,49 @@ export function ScenarioPositions({
           )}
         </div>
       )}
-      <div className="space-y-2">
-        {sortedScenarios.map((scenarioId) => {
-          const position = localPositions.get(scenarioId) || 1;
-          const maxPos = Math.max(...Array.from(localPositions.values()));
-          const labelText = scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
-          return (
-            <div
-              key={scenarioId}
-              className="flex items-center gap-2 p-2 border rounded-md"
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-sm w-56 truncate" title={labelText}>
-                {labelText}
-              </Label>
-              <Label className="text-sm w-20">Position:</Label>
-              <Input
-                type="number"
-                min={1}
-                max={maxPos}
-                value={position}
-                onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
-                  if (!isNaN(newValue) && newValue >= 1) {
-                    handlePositionChange(scenarioId, newValue);
-                  }
-                }}
-                disabled={disabled}
-                className="w-20"
-              />
-              <div className="flex gap-1 ml-auto">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => handleMoveUp(scenarioId)}
-                  disabled={disabled || position <= 1}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => handleMoveDown(scenarioId)}
-                  disabled={disabled || position >= maxPos}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
+      <div className="pl-4">
+        <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2 w-0 min-w-full">
+          {sortedScenarios.map((scenarioId) => {
+            const position = localPositions.get(scenarioId) || 1;
+            const maxPos = Math.max(...Array.from(localPositions.values()));
+            const labelText = scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
+            return (
+              <div
+                key={scenarioId}
+                className="relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50"
+              >
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => handleMoveLeft(scenarioId)}
+                    disabled={disabled || position <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    #{position}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => handleMoveRight(scenarioId)}
+                    disabled={disabled || position >= maxPos}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <h3 className="font-medium text-sm leading-tight truncate text-center" title={labelText}>
+                  {labelText}
+                </h3>
               </div>
-            </div>
-          );
-        })}
-        {sortedScenarios.length === 0 && (
-          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-            No scenarios selected. Select scenarios first to manage their positions.
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

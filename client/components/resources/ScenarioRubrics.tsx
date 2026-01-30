@@ -316,7 +316,7 @@ export function ScenarioRubrics({
     return currentResources.some((resource) => resource.generated);
   }, [currentResources]);
 
-  if (!show) {
+  if (!show || scenario_ids.length === 0) {
     return null;
   }
 
@@ -360,7 +360,7 @@ export function ScenarioRubrics({
           )}
         </div>
       )}
-      <div className="space-y-2">
+      <div className="space-y-4 pl-4">
         {scenario_ids.map((scenarioId) => {
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
@@ -370,7 +370,7 @@ export function ScenarioRubrics({
           return (
             <div
               key={scenarioId}
-              className="space-y-3 rounded-lg border p-3"
+              className="space-y-2"
             >
               <Label className="text-sm font-medium" title={labelText}>
                 {labelText}
@@ -421,11 +421,6 @@ export function ScenarioRubrics({
             </div>
           );
         })}
-        {scenario_ids.length === 0 && (
-          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-            No scenarios selected. Select scenarios first to choose rubrics.
-          </div>
-        )}
       </div>
     </div>
   );

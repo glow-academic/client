@@ -8,7 +8,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = InputOf<
@@ -373,7 +372,7 @@ export function ScenarioFlags({
     return currentResources.some((flag) => flag.generated);
   }, [currentResources]);
 
-  if (!show) {
+  if (!show || scenario_ids.length === 0) {
     return null;
   }
 
@@ -417,7 +416,7 @@ export function ScenarioFlags({
           )}
         </div>
       )}
-      <div className="space-y-2">
+      <div className="space-y-4 pl-4">
         {scenario_ids.map((scenarioId) => {
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
@@ -427,7 +426,7 @@ export function ScenarioFlags({
           return (
             <div
               key={scenarioId}
-              className="space-y-2 rounded-lg border p-2"
+              className="space-y-2"
             >
               <Label className="text-sm font-medium" title={labelText}>
                 {labelText}
@@ -436,30 +435,31 @@ export function ScenarioFlags({
                 {scenarioOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
                   return (
-                    <div
+                    <button
                       key={option.id}
+                      type="button"
+                      onClick={() => handleToggle(scenarioId, option.id, !isSelected)}
+                      disabled={disabled}
                       className={cn(
-                        "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
-                        isSelected && "border-primary/50 bg-accent/40"
+                        "relative flex flex-col gap-1 rounded-lg border p-3 text-left transition-all",
+                        "hover:shadow-sm hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        isSelected && "ring-2 ring-primary bg-accent",
+                        disabled && "pointer-events-none opacity-50"
                       )}
                     >
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-medium">{option.name}</div>
-                        {option.description && (
-                          <div className="text-[11px] text-muted-foreground leading-snug">
-                            {option.description}
-                          </div>
-                        )}
-                      </div>
-                      <Switch
-                        checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          handleToggle(scenarioId, option.id, checked);
-                        }}
-                        disabled={disabled}
-                        className="shrink-0"
-                      />
-                    </div>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div className="text-xs font-medium pr-6">{option.name}</div>
+                      {option.description && (
+                        <div className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                          {option.description}
+                        </div>
+                      )}
+                    </button>
                   );
                 })}
                 {scenarioOptions.length === 0 && (
@@ -471,11 +471,6 @@ export function ScenarioFlags({
             </div>
           );
         })}
-        {scenario_ids.length === 0 && (
-          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-            No scenarios selected. Select scenarios first to choose flags.
-          </div>
-        )}
       </div>
     </div>
   );
