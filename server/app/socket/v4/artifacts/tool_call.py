@@ -184,8 +184,10 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
                 False,
                 json.dumps(mapped_values),
             )
+            already_exists = False
             if resource_row and resource_row.get("id"):
                 resource_id = str(resource_row["id"])
+                already_exists = resource_row.get("already_exists", False)
         else:
             # LINK tool: SELECT existing record by ID
             # mapped_values should contain {"id": "<existing_resource_id>"}
@@ -226,6 +228,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
             """
             await conn.execute(link_sql, call_db_id, uuid.UUID(existing_id))
             resource_id = existing_id
+            already_exists = False  # LINK tools don't have this concept
 
         await internal_sio.emit(
             "tool_result",
@@ -236,5 +239,6 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
                 "resource_type": resource_type,
                 "resource_id": resource_id,
                 "call_db_id": str(call_db_id),
+                "already_exists": already_exists,
             },
         )

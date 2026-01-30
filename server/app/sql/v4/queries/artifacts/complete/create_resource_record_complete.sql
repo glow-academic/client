@@ -1,15 +1,16 @@
 -- Create resource record dynamically
 -- Uses EXECUTE to handle dynamic TABLE names_resource based on resource_type
 -- Returns the created resource id
+-- Handles duplicate key violations by returning the existing record's id
 
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_create_resource_record_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -24,7 +25,8 @@ CREATE OR REPLACE FUNCTION api_create_resource_record_v4(
     resource_data jsonb
 )
 RETURNS TABLE (
-    id uuid
+    id uuid,
+    already_exists boolean
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -41,6 +43,9 @@ DECLARE
     v_col_default text;
     v_value text;
     v_system_columns jsonb;
+    v_unique_col text;
+    v_unique_val text;
+    v_constraint_name text;
 BEGIN
     -- Validate resource_type exists in resources enum
     IF NOT EXISTS (
@@ -122,16 +127,62 @@ BEGIN
     IF array_length(v_columns, 1) IS NULL THEN
         RAISE EXCEPTION 'No columns to insert for resource type: %', resource_type;
     END IF;
-    
+
     v_query := format(
         'INSERT INTO %I (%s) VALUES (%s) RETURNING id',
         v_table_name,
         array_to_string(v_columns, ', '),
         array_to_string(v_values, ', ')
     );
-    
-    EXECUTE v_query INTO v_resource_id;
-    
-    RETURN QUERY SELECT v_resource_id;
+
+    BEGIN
+        EXECUTE v_query INTO v_resource_id;
+        RETURN QUERY SELECT v_resource_id, false;
+    EXCEPTION
+        WHEN unique_violation THEN
+            -- Get constraint name from the error
+            GET STACKED DIAGNOSTICS v_constraint_name = CONSTRAINT_NAME;
+
+            -- Find the unique column from the constraint
+            -- Look up which column(s) this constraint covers
+            SELECT a.attname INTO v_unique_col
+            FROM pg_constraint c
+            JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
+            WHERE c.conname = v_constraint_name
+            LIMIT 1;
+
+            -- If no constraint found, try index lookup (for unique indexes)
+            IF v_unique_col IS NULL THEN
+                SELECT a.attname INTO v_unique_col
+                FROM pg_index i
+                JOIN pg_class c ON c.oid = i.indexrelid
+                JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                WHERE c.relname = v_constraint_name
+                  AND i.indisunique
+                LIMIT 1;
+            END IF;
+
+            -- Get the value that caused the conflict from resource_data
+            IF v_unique_col IS NOT NULL AND resource_data ? v_unique_col THEN
+                v_unique_val := resource_data->>v_unique_col;
+
+                -- Query for the existing record
+                v_query := format(
+                    'SELECT id FROM %I WHERE %I = %L LIMIT 1',
+                    v_table_name,
+                    v_unique_col,
+                    v_unique_val
+                );
+                EXECUTE v_query INTO v_resource_id;
+
+                IF v_resource_id IS NOT NULL THEN
+                    RETURN QUERY SELECT v_resource_id, true;
+                    RETURN;
+                END IF;
+            END IF;
+
+            -- Fallback: re-raise if we couldn't find the existing record
+            RAISE;
+    END;
 END;
 $$;

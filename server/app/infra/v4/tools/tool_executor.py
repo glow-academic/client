@@ -129,6 +129,14 @@ async def execute_tool_call(
 
             if resource_row and resource_row.get("id"):
                 resource_id = str(resource_row["id"])
+                already_exists = resource_row.get("already_exists", False)
+                if already_exists:
+                    # Resource already existed, return it as a "use" action
+                    return json.dumps({
+                        "success": True,
+                        "message": f"Resource already exists, using existing {resource_type} entry",
+                        "resource_id": resource_id,
+                    })
             else:
                 return json.dumps({
                     "success": False,

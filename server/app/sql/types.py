@@ -1234,6 +1234,7 @@ class CreateResourceRecordSqlParams(BaseModel):
 class CreateResourceRecordSqlRow(BaseModel):
 
     id: UUID | None = None
+    already_exists: bool | None = None
 
 class CreateResourceRecordApiRequest(BaseModel):
 
@@ -1245,6 +1246,7 @@ class CreateResourceRecordApiRequest(BaseModel):
 class CreateResourceRecordApiResponse(BaseModel):
 
     id: UUID | None = None
+    already_exists: bool | None = None
 
 
 
