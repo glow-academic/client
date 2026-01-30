@@ -444,10 +444,11 @@ async def _generate_artifact_impl(
         chat_messages = list(messages)  # Copy to avoid mutation
 
         # Responses input: convert to item format (messages without tool history work directly)
+        # Note: "developer" role is used for system instructions in Responses API
         responses_input: list[dict[str, Any]] = [
             {"role": m["role"], "content": m.get("content", "")}
             for m in messages
-            if m.get("role") in ("system", "user", "assistant") and not m.get("tool_calls")
+            if m.get("role") in ("system", "user", "assistant", "developer") and not m.get("tool_calls")
         ]
 
         # Determine which API mode to use (try Responses first)
