@@ -48,16 +48,19 @@ import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import type { ServerToClientEvents } from "@/lib/ws/types";
-
-// Socket event types (auto-generated from server)
-type PersonaGenerationCompletePayload =
-  Parameters<ServerToClientEvents["persona_generation_complete"]>[0];
-type PersonaGenerationProgressPayload =
-  Parameters<ServerToClientEvents["persona_generation_progress"]>[0];
-type PersonaGenerationErrorPayload =
-  Parameters<ServerToClientEvents["persona_generation_error"]>[0];
 import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+
+// Socket event types (auto-generated from server)
+type PersonaGenerationCompletePayload = Parameters<
+  ServerToClientEvents["persona_generation_complete"]
+>[0];
+type PersonaGenerationProgressPayload = Parameters<
+  ServerToClientEvents["persona_generation_progress"]
+>[0];
+type PersonaGenerationErrorPayload = Parameters<
+  ServerToClientEvents["persona_generation_error"]
+>[0];
 
 // Types defined inline using InputOf/OutputOf
 type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
@@ -197,6 +200,7 @@ function PersonaComponent({
 
   // AI-generated pending suggestions state - stores AI suggestions before user accepts/rejects
   // Uses server-generated types for full resource objects
+  // Insert sample name_resource and description_resource for initial state (for testing/demo)
   const [aiFormData, setAiFormData] = useState<{
     name_resource?: PersonaGenerationCompletePayload["name_resource"];
     description_resource?: PersonaGenerationCompletePayload["description_resource"];
@@ -996,7 +1000,9 @@ function PersonaComponent({
     // Use single group_id from personaData (no need to track multiple)
     const currentGroupId = personaData?.group_id;
 
-    const handleGenerationComplete = (data: PersonaGenerationCompletePayload) => {
+    const handleGenerationComplete = (
+      data: PersonaGenerationCompletePayload
+    ) => {
       // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "persona" ||
@@ -1050,13 +1056,11 @@ function PersonaComponent({
           const updates: Partial<typeof prev> = {};
 
           // Single-select resources: extract ID from resource object
-          if (data.name_resource?.id)
-            updates.name_id = data.name_resource.id;
+          if (data.name_resource?.id) updates.name_id = data.name_resource.id;
           // description_id is handled through aiFormData for diff workflow
           if (data.color_resource?.id)
             updates.color_id = data.color_resource.id;
-          if (data.icon_resource?.id)
-            updates.icon_id = data.icon_resource.id;
+          if (data.icon_resource?.id) updates.icon_id = data.icon_resource.id;
           if (data.instructions_resource?.id)
             updates.instructions_id = data.instructions_resource.id;
           if (data.flag_resource?.id)
@@ -1066,15 +1070,23 @@ function PersonaComponent({
           if (data.parameter_field_resources?.length) {
             const newIds = data.parameter_field_resources
               .map((r) => r.id)
-              .filter((id): id is string => !!id && !prev.parameter_field_ids.includes(id));
+              .filter(
+                (id): id is string =>
+                  !!id && !prev.parameter_field_ids.includes(id)
+              );
             if (newIds.length > 0) {
-              updates.parameter_field_ids = [...prev.parameter_field_ids, ...newIds];
+              updates.parameter_field_ids = [
+                ...prev.parameter_field_ids,
+                ...newIds,
+              ];
             }
           }
           if (data.department_resources?.length) {
             const newIds = data.department_resources
               .map((r) => r.department_id)
-              .filter((id): id is string => !!id && !prev.department_ids.includes(id));
+              .filter(
+                (id): id is string => !!id && !prev.department_ids.includes(id)
+              );
             if (newIds.length > 0) {
               updates.department_ids = [...prev.department_ids, ...newIds];
             }
@@ -1082,7 +1094,9 @@ function PersonaComponent({
           if (data.example_resources?.length) {
             const newIds = data.example_resources
               .map((r) => r.id)
-              .filter((id): id is string => !!id && !prev.example_ids.includes(id));
+              .filter(
+                (id): id is string => !!id && !prev.example_ids.includes(id)
+              );
             if (newIds.length > 0) {
               updates.example_ids = [...prev.example_ids, ...newIds];
             }
@@ -1108,7 +1122,9 @@ function PersonaComponent({
       }
     };
 
-    const handleGenerationProgress = (data: PersonaGenerationProgressPayload) => {
+    const handleGenerationProgress = (
+      data: PersonaGenerationProgressPayload
+    ) => {
       // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "persona" ||
@@ -1968,6 +1984,9 @@ function PersonaComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.names}
+                  aiResource={aiFormData.name_resource}
+                  onAccept={() => clearAiResource("name_resource")}
+                  onReject={() => clearAiResource("name_resource")}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}

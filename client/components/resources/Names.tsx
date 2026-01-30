@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
@@ -62,6 +62,10 @@ export interface NamesProps {
   } | null;
   nameId?: string | null;
   suggestions?: string[];
+  // AI diff view props
+  aiResource?: { id?: string | null; name?: string | null } | null | undefined;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Names({
@@ -89,6 +93,10 @@ export function Names({
   nameResource,
   nameId: _nameId,
   suggestions,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: NamesProps) {
   // Use standardized props with fallback to legacy props
   const resource = name_resource ?? nameResource ?? null;
@@ -99,6 +107,9 @@ export function Names({
     [name_suggestions, suggestions]
   );
   const namesArray = useMemo(() => names ?? [], [names]);
+
+  // AI suggestion state
+  const showDiff = !!aiResource?.name;
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
@@ -328,6 +339,22 @@ export function Names({
     [handleBlur]
   );
 
+  // Accept AI suggestion - update internal value and notify parent
+  const handleAccept = useCallback(() => {
+    if (!aiResource?.id) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    const text = aiResource.name || "";
+    setInternalValue(text);
+    lastSavedValueRef.current = text;
+    onNameIdChange(aiResource.id);
+    onAccept?.();
+  }, [aiResource, onNameIdChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_name is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -337,48 +364,63 @@ export function Names({
   // When input has value, measure that; otherwise measure placeholder
   const displayValue = internalValue || defaultName || "";
 
+  // AI suggestion text
+  const aiName = aiResource?.name || "";
+
   return (
     <div className="flex-1 items-end">
       <div className="flex items-end gap-1">
-        <div className="relative inline-grid grid-cols-[max-content] items-center">
-          <span
-            aria-hidden="true"
-            className="col-start-1 row-start-1 invisible whitespace-pre text-2xl font-semibold px-2 py-0.5"
-          >
-            {displayValue || "\u00A0"}
-          </span>
-          <input
-            ref={inputRef}
-            type="text"
-            id={id}
-            data-testid={dataTestId}
-            value={internalValue || ""}
-            onChange={(e) => handleChange(e.target.value)}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            placeholder={placeholder || defaultName || "Enter name"}
-            required={required}
-            disabled={disabled}
-            size={1}
-            className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
-          />
-          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute left-0 top-full z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-              <div className="p-1">
-                {filteredSuggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelectSuggestion(suggestion)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                  >
-                    {suggestion}
-                  </div>
-                ))}
+        {showDiff ? (
+          // Diff view: show current name with strikethrough and AI suggestion
+          <div className="flex items-baseline gap-2 px-2 py-0.5">
+            <span className="text-2xl font-semibold text-destructive line-through opacity-70">
+              {internalValue || defaultName || "Untitled"}
+            </span>
+            <span className="text-2xl font-semibold text-success">
+              {aiName}
+            </span>
+          </div>
+        ) : (
+          <div className="relative inline-grid grid-cols-[max-content] items-center">
+            <span
+              aria-hidden="true"
+              className="col-start-1 row-start-1 invisible whitespace-pre text-2xl font-semibold px-2 py-0.5"
+            >
+              {displayValue || "\u00A0"}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              id={id}
+              data-testid={dataTestId}
+              value={internalValue || ""}
+              onChange={(e) => handleChange(e.target.value)}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              placeholder={placeholder || defaultName || "Enter name"}
+              required={required}
+              disabled={disabled}
+              size={1}
+              className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+            />
+            {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
+              <div className="absolute left-0 top-full z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
+                <div className="p-1">
+                  {filteredSuggestions.map((suggestion, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => handleSelectSuggestion(suggestion)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
+                    >
+                      {suggestion}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
         {onGenerate && agent_id && (
           <TooltipProvider>
             <Tooltip>
@@ -389,7 +431,7 @@ export function Names({
                   size="icon"
                   className="h-8 w-8"
                   onClick={onGenerate}
-                  disabled={disabled || isGenerating}
+                  disabled={disabled || isGenerating || showDiff}
                 >
                   {isGenerating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -403,6 +445,42 @@ export function Names({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
         )}
       </div>
       {!hideDescription && (
