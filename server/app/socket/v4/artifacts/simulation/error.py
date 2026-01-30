@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.simulation.types import SimulationGenerationErrorEvent
 from app.sql.types import (
     ValidateSimulationResourceErrorSqlParams,
     ValidateSimulationResourceErrorSqlRow,
@@ -74,18 +75,17 @@ async def handle_simulations_error(data: dict[str, Any]) -> None:
         "message", "An error occurred during simulation generation"
     )
 
-    # Emit simulation-specific error event with all fields from internal event
+    # Emit simulation-specific error event with typed model
+    event = SimulationGenerationErrorEvent(
+        group_id=data.get("group_id"),
+        resource_type=resource_type,
+        resource_types=resource_types if resource_types else None,
+        resource_id=data.get("resource_id"),
+        message=error_message,
+        trace_id=data.get("trace_id"),
+    )
     await sio.emit(
         "simulation_generation_error",
-        {
-            "artifact_type": artifact_type,
-            "resource_type": resource_type,
-            "resource_types": resource_types if resource_types else None,
-            "resource_id": data.get("resource_id"),
-            "group_id": data.get("group_id"),
-            "success": False,
-            "message": error_message,
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )

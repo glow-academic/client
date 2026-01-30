@@ -11,9 +11,9 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.simulation.types import GenerateSimulationPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
-    GetSimulationApiRequest,
     GetSimulationSqlParams,
     GetSimulationSqlRow,
 )
@@ -43,16 +43,6 @@ SIMULATION_RESOURCE_TYPES = [
     "scenario_rubrics",
     "scenario_time_limits",
 ]
-
-
-class GenerateSimulationPayload(GetSimulationApiRequest):
-    """Request to generate simulation resources - extends GET API request with generation-specific fields."""
-
-    agent_type: str | None = (
-        None  # Optional: "name", "description", "departments", "flags", "scenarios", "general"/"all"
-    )
-    resource_types: list[str]  # Required: which resource types to generate
-    user_instructions: list[str] | None = None  # Optional: user instructions
 
 
 async def _simulation_generate_impl(

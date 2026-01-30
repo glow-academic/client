@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.simulation.types import SimulationGenerationProgressEvent
 from app.sql.types import (
     ValidateSimulationResourceProgressSqlParams,
 )
@@ -59,22 +60,23 @@ async def handle_simulations_call_progress(data: dict[str, Any]) -> None:
     except Exception:
         return
 
+    # Emit simulation-specific progress event with typed model
+    event = SimulationGenerationProgressEvent(
+        modality="call",
+        group_id=data.get("group_id"),
+        resource_type=resource_type,
+        resource_id=data.get("resource_id"),
+        run_id=data.get("run_id"),
+        type=data.get("type", "progress"),
+        event_type=data.get("event_type"),
+        tool_call_id=data.get("tool_call_id"),
+        tool_name=data.get("tool_name"),
+        arguments=data.get("arguments"),
+        arguments_delta=data.get("arguments_delta"),
+        trace_id=data.get("trace_id"),
+    )
     await sio.emit(
         "simulation_generation_progress",
-        {
-            "modality": "call",
-            "artifact_type": artifact_type,
-            "resource_type": resource_type,
-            "resource_id": data.get("resource_id"),
-            "run_id": data.get("run_id"),
-            "group_id": data.get("group_id"),
-            "type": data.get("type", "progress"),
-            "event_type": data.get("event_type"),
-            "tool_call_id": data.get("tool_call_id"),
-            "tool_name": data.get("tool_name"),
-            "arguments": data.get("arguments"),
-            "arguments_delta": data.get("arguments_delta"),
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )

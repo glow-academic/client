@@ -8,6 +8,10 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.simulation.types import (
+    SimulationGenerationCompleteEvent,
+    SimulationGenerationErrorEvent,
+)
 from app.sql.types import (
     GetSimulationResourceIdsByGroupIdSqlParams,
     GetSimulationResourceIdsByGroupIdSqlRow,
@@ -74,15 +78,14 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
             # Tool execution failed - this is expected and model can retry
             # Don't emit error since other successful calls may have completed
             return
+        error_event = SimulationGenerationErrorEvent(
+            group_id=group_id_str,
+            resource_type=resource_type,
+            message=f"Missing resource_id for {resource_type} tool result",
+        )
         await sio.emit(
             "simulation_generation_error",
-            {
-                "artifact_type": "simulation",
-                "resource_type": resource_type,
-                "group_id": group_id_str,
-                "success": False,
-                "message": f"Missing resource_id for {resource_type} tool result",
-            },
+            error_event.model_dump(mode="json"),
             room=sid,
         )
         return
@@ -106,51 +109,42 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
             )
     except Exception as e:
         # SQL function raised error (validation failed) - emit error to client
+        error_event = SimulationGenerationErrorEvent(
+            group_id=group_id_str,
+            resource_type=resource_type,
+            message=str(e),
+        )
         await sio.emit(
-            "artifact_generation_error",
-            {
-                "artifact_type": "simulation",
-                "resource_type": resource_type,
-                "group_id": group_id_str,
-                "success": False,
-                "message": str(e),
-            },
+            "simulation_generation_error",
+            error_event.model_dump(mode="json"),
             room=sid,
         )
         return
 
     # Emit granular event with mapped resource ID (one field set, others NULL)
+    complete_event = SimulationGenerationCompleteEvent(
+        group_id=group_id_str,
+        resource_type=resource_type,
+        name_id=str(result.name_id) if result.name_id else None,
+        description_id=str(result.description_id) if result.description_id else None,
+        active_flag_id=str(result.active_flag_id) if result.active_flag_id else None,
+        department_ids=[str(did) for did in (result.department_ids or [])],
+        scenario_ids=[str(s_id) for s_id in (result.scenario_ids or [])],
+        scenario_flag_ids=[str(sfid) for sfid in (result.scenario_flag_ids or [])],
+        scenario_position_ids=[
+            str(spid) for spid in (result.scenario_position_ids or [])
+        ],
+        scenario_rubric_ids=[str(srid) for srid in (result.scenario_rubric_ids or [])],
+        scenario_time_limit_ids=[
+            str(stlid) for stlid in (result.scenario_time_limit_ids or [])
+        ],
+        success=True,
+        message=f"{resource_type} generation completed successfully",
+        run_id=data.get("run_id"),
+        type=data.get("type", "complete"),
+    )
     await sio.emit(
         "simulation_generation_complete",
-        {
-            "artifact_type": "simulation",
-            "group_id": group_id_str,
-            "resource_type": resource_type,
-            "name_id": str(result.name_id) if result.name_id else None,
-            "description_id": str(result.description_id)
-            if result.description_id
-            else None,
-            "active_flag_id": str(result.active_flag_id)
-            if result.active_flag_id
-            else None,
-            "department_ids": [str(did) for did in (result.department_ids or [])],
-            "scenario_ids": [str(sid) for sid in (result.scenario_ids or [])],
-            "scenario_flag_ids": [
-                str(sfid) for sfid in (result.scenario_flag_ids or [])
-            ],
-            "scenario_position_ids": [
-                str(spid) for spid in (result.scenario_position_ids or [])
-            ],
-            "scenario_rubric_ids": [
-                str(srid) for srid in (result.scenario_rubric_ids or [])
-            ],
-            "scenario_time_limit_ids": [
-                str(stlid) for stlid in (result.scenario_time_limit_ids or [])
-            ],
-            "success": True,
-            "message": f"{resource_type} generation completed successfully",
-            "run_id": data.get("run_id"),
-            "type": data.get("type", "complete"),
-        },
+        complete_event.model_dump(mode="json"),
         room=sid,
     )

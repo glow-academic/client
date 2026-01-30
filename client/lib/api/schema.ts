@@ -12918,6 +12918,8 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+            /** Type */
+            type?: string | null;
             name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
             description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             color_resource?: components["schemas"]["QGetColorsV4Item"] | null;

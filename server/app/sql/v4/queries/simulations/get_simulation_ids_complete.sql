@@ -196,7 +196,7 @@ candidate_agents_data AS (
       AND (tf.tool_id IS NULL OR COALESCE(f_tool.id, NULL) IS NULL OR COALESCE(tf.value, false) = true)
       AND (
           NOT EXISTS (SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-          OR EXISTS (SELECT 1 FROM agent_departments_junction ad3 WHERE ad3.agent_id = a.id AND ad3.active = true AND ad3.department_id = ANY((SELECT p_user_dept_ids FROM params)))
+          OR EXISTS (SELECT 1 FROM agent_departments_junction ad3 WHERE ad3.agent_id = a.id AND ad3.active = true AND ad3.department_id = ANY(user_department_ids))
       )
     GROUP BY a.id, n.name, a.updated_at, af_mcp.value
 ),

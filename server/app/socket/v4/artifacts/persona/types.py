@@ -1,15 +1,18 @@
 """WebSocket-specific types for persona generation.
 
-Extends API types with fields only needed for WebSocket events.
+Extends base artifact types with persona-specific fields.
 Types are registered in OpenAPI via FastAPI endpoints, enabling
 automatic type extraction in the frontend via InputOf/OutputOf.
 """
 
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
+from app.socket.v4.artifacts.types import (
+    GenerationCompleteEvent,
+    GenerationErrorEvent,
+    GenerationProgressEvent,
+)
 from app.sql.types import (
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
@@ -60,7 +63,7 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
 # =============================================================================
 
 
-class PersonaGenerationCompleteEvent(BaseModel):
+class PersonaGenerationCompleteEvent(GenerationCompleteEvent):
     """Server-to-client event: persona_generation_complete.
 
     Emitted when a persona resource generation completes successfully.
@@ -68,11 +71,6 @@ class PersonaGenerationCompleteEvent(BaseModel):
     """
 
     artifact_type: str = "persona"
-    group_id: str
-    resource_type: str
-    run_id: str | None = None
-    success: bool
-    message: str
 
     # Single-select resources (full objects, not IDs)
     name_resource: QGetNamesV4Item | None = None
@@ -89,38 +87,19 @@ class PersonaGenerationCompleteEvent(BaseModel):
     parameter_resources: list[QGetParametersV4Item] | None = None
 
 
-class PersonaGenerationProgressEvent(BaseModel):
+class PersonaGenerationProgressEvent(GenerationProgressEvent):
     """Server-to-client event: persona_generation_progress.
 
     Emitted during persona resource generation to show progress.
     """
 
     artifact_type: str = "persona"
-    group_id: str | None = None
-    resource_type: str | None = None
-    resource_id: str | None = None
-    run_id: str | None = None
-    modality: str | None = None
-    type: str | None = None  # "start", "progress"
-    event_type: str | None = None  # "tool_call_start", "tool_call_delta", etc.
-    tool_call_id: str | None = None
-    tool_name: str | None = None
-    arguments: dict | None = None
-    arguments_delta: str | None = None
-    trace_id: str | None = None
 
 
-class PersonaGenerationErrorEvent(BaseModel):
+class PersonaGenerationErrorEvent(GenerationErrorEvent):
     """Server-to-client event: persona_generation_error.
 
     Emitted when persona resource generation fails.
     """
 
     artifact_type: str = "persona"
-    group_id: str | None = None
-    resource_type: str | None = None
-    resource_types: list[str] | None = None
-    resource_id: str | None = None
-    success: bool = False
-    message: str
-    trace_id: str | None = None
