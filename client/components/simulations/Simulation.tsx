@@ -20,7 +20,7 @@ import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateM
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags } from "@/components/resources/FlagsLegacy";
+import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
 import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
@@ -244,8 +244,8 @@ function SimulationComponent({
       departments_required: simulationData.departments_required,
       departments_agent_id: simulationData.departments_agent_id,
       departments: simulationData.departments,
-      flag_resource: simulationData.flag_resource,
-      show_flag: simulationData.show_flag,
+      flag_resources: simulationData.flag_resources,
+      show_flags: simulationData.show_flags,
       flag_required: simulationData.flag_required,
       flag_agent_id: simulationData.flag_agent_id,
       flags: simulationData.flags,
@@ -320,8 +320,8 @@ function SimulationComponent({
     simulationData?.departments_required,
     simulationData?.departments_agent_id,
     simulationData?.departments,
-    simulationData?.flag_resource,
-    simulationData?.show_flag,
+    simulationData?.flag_resources,
+    simulationData?.show_flags,
     simulationData?.flag_required,
     simulationData?.flag_agent_id,
     simulationData?.flags,
@@ -377,7 +377,11 @@ function SimulationComponent({
             stableSimulationDataFields.description_resource?.generated ?? false
           );
         case "flags":
-          return stableSimulationDataFields.flag_resource?.generated ?? false;
+          return (
+            stableSimulationDataFields.flag_resources?.some(
+              (f) => f.generated
+            ) ?? false
+          );
         case "departments":
           return (
             stableSimulationDataFields.department_resources?.some(
@@ -427,7 +431,7 @@ function SimulationComponent({
       return {
         name_id: null as string | null,
         description_id: null as string | null,
-        active_flag_id: null as string | null,
+        flag_ids: [] as string[],
         department_ids: [] as string[],
         scenario_ids: [] as string[],
         scenario_flag_ids: [] as string[],
@@ -441,7 +445,7 @@ function SimulationComponent({
     return {
       name_id: data.name_id ?? null,
       description_id: data.description_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
+      flag_ids: data.flag_ids ?? [],
       department_ids: data.department_ids ?? [],
       scenario_ids: data.scenario_ids ?? [],
       scenario_flag_ids: data.scenario_flag_ids ?? [],
@@ -467,6 +471,10 @@ function SimulationComponent({
   );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
+  const formStateFlagIdsStr = React.useMemo(
+    () => JSON.stringify(formState.flag_ids),
+    [formState.flag_ids]
+  );
   const formStateDepartmentIdsStr = React.useMemo(
     () => JSON.stringify(formState.department_ids),
     [formState.department_ids]
@@ -501,7 +509,8 @@ function SimulationComponent({
       if (
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.flag_ids) !==
+          JSON.stringify(newState.flag_ids) ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.scenario_ids) !==
@@ -525,7 +534,7 @@ function SimulationComponent({
   }, [
     simulationData?.name_id,
     simulationData?.description_id,
-    simulationData?.active_flag_id,
+    JSON.stringify(simulationData?.flag_ids ?? []),
     departmentIdsStr,
     JSON.stringify(simulationData?.scenario_ids ?? []),
     JSON.stringify(simulationData?.scenario_flag_ids ?? []),
@@ -610,7 +619,7 @@ function SimulationComponent({
       draftId: draftId || null,
       name_id: formState.name_id,
       description_id: formState.description_id,
-      active_flag_id: formState.active_flag_id,
+      flag_ids: formState.flag_ids,
       department_ids: formState.department_ids,
       scenario_ids: formState.scenario_ids,
       scenario_flag_ids: formState.scenario_flag_ids,
@@ -624,7 +633,7 @@ function SimulationComponent({
     draftId,
     formState.name_id,
     formState.description_id,
-    formState.active_flag_id,
+    formStateFlagIdsStr,
     formStateDepartmentIdsStr,
     formStateScenarioIdsStr,
     formStateScenarioFlagIdsStr,
@@ -646,7 +655,7 @@ function SimulationComponent({
     const hasResourceIds =
       formState.name_id ||
       formState.description_id ||
-      formState.active_flag_id ||
+      formState.flag_ids.length > 0 ||
       formState.department_ids.length > 0 ||
       formState.scenario_ids.length > 0 ||
       formState.scenario_flag_ids.length > 0 ||
@@ -707,7 +716,7 @@ function SimulationComponent({
             input_draft_id: draftId || null,
             name_id: formState.name_id,
             description_id: formState.description_id,
-            active_flag_id: formState.active_flag_id,
+            flag_ids: formState.flag_ids,
             department_ids: formState.department_ids,
             scenario_ids: formState.scenario_ids,
             scenario_flag_ids: formState.scenario_flag_ids,
@@ -861,7 +870,7 @@ function SimulationComponent({
               mergedFlushResults.description_id !== undefined
                 ? mergedFlushResults.description_id
                 : currentFormState.description_id,
-            active_flag_id: currentFormState.active_flag_id,
+            flag_ids: currentFormState.flag_ids,
             department_ids: currentFormState.department_ids,
             scenario_ids: currentFormState.scenario_ids,
             scenario_flag_ids: currentFormState.scenario_flag_ids,
@@ -933,7 +942,7 @@ function SimulationComponent({
       resource_type?: string;
       name_id?: string | null;
       description_id?: string | null;
-      active_flag_id?: string | null;
+      flag_ids?: string[];
       department_ids?: string[];
       scenario_ids?: string[];
       scenario_flag_ids?: string[];
@@ -975,7 +984,13 @@ function SimulationComponent({
 
           if (data.name_id) updates.name_id = data.name_id;
           if (data.description_id) updates.description_id = data.description_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.flag_ids && data.flag_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newFlagIds = data.flag_ids.filter(
+              (id) => !prev.flag_ids.includes(id)
+            );
+            updates.flag_ids = [...prev.flag_ids, ...newFlagIds];
+          }
           if (data.department_ids && data.department_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
             const newDeptIds = data.department_ids.filter(
@@ -1354,7 +1369,7 @@ function SimulationComponent({
           flushResults.description_id !== undefined
             ? flushResults.description_id
             : baseFormState.description_id,
-        active_flag_id: baseFormState.active_flag_id,
+        flag_ids: baseFormState.flag_ids,
         department_ids: baseFormState.department_ids,
         scenario_ids: baseFormState.scenario_ids,
         scenario_flag_ids: baseFormState.scenario_flag_ids,
@@ -1377,9 +1392,12 @@ function SimulationComponent({
         throw new Error("Departments are required");
       }
 
-      if (simulationData?.flag_required && !effectiveFormState.active_flag_id) {
-        toast.error("Active flag is required");
-        throw new Error("Active flag is required");
+      if (
+        simulationData?.flag_required &&
+        (!effectiveFormState.flag_ids || effectiveFormState.flag_ids.length === 0)
+      ) {
+        toast.error("At least one flag is required");
+        throw new Error("At least one flag is required");
       }
 
       if (simulationData?.description_required && !effectiveFormState.description_id) {
@@ -1468,9 +1486,12 @@ function SimulationComponent({
 
             // Optional single-select
             description_id: effectiveFormState.description_id ?? undefined,
-            active_flag_id: effectiveFormState.active_flag_id ?? undefined,
 
             // Optional multi-select
+            flag_ids:
+              effectiveFormState.flag_ids.length > 0
+                ? effectiveFormState.flag_ids
+                : undefined,
             department_ids:
               effectiveFormState.department_ids.length > 0
                 ? effectiveFormState.department_ids
@@ -1541,9 +1562,9 @@ function SimulationComponent({
       const hasDepartments =
         !(simulationData?.departments_required ?? false) ||
         formState.department_ids.length > 0;
-      const hasActiveFlag =
+      const hasFlags =
         !(simulationData?.flag_required ?? false) ||
-        !!formState.active_flag_id;
+        formState.flag_ids.length > 0;
       const hasScenarios =
         !(simulationData?.scenarios_required ?? false) ||
         formState.scenario_ids.length > 0;
@@ -1562,7 +1583,7 @@ function SimulationComponent({
 
       switch (stepId) {
         case "basic":
-          return hasName && hasDescription && hasDepartments && hasActiveFlag
+          return hasName && hasDescription && hasDepartments && hasFlags
             ? "completed"
             : "active";
         case "scenarios":
@@ -1747,7 +1768,7 @@ function SimulationComponent({
             ...prev,
             name_id: null,
             description_id: null,
-            active_flag_id: null,
+            flag_ids: [],
             department_ids: [],
           };
         case "scenarios":
@@ -1966,21 +1987,56 @@ function SimulationComponent({
                   required={currentSimulationData.departments_required ?? false}
                 />
                 <Flags
-                  flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentSimulationData.flag_resource ?? null}
-                  show_flag={currentSimulationData.show_flag ?? false}
+                  mode="multi"
                   flags={currentSimulationData.flags ?? []}
-                  disabled={disabled}
-                  onFlagIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: id }))
+                  flag_ids={
+                    // Convert flag_ids array to Record for Flags component
+                    (currentSimulationData.flags ?? []).reduce(
+                      (acc, flag) => {
+                        const isEnabled = formState.flag_ids.includes(
+                          flag.flag_option_id ?? ""
+                        );
+                        acc[flag.key] = isEnabled
+                          ? flag.flag_option_id ?? null
+                          : null;
+                        return acc;
+                      },
+                      {} as Record<string, string | null>
+                    )
                   }
+                  show_flags={currentSimulationData.show_flags ?? false}
+                  columns={2}
+                  label="Flags"
+                  disabled={disabled}
+                  onChange={(key: string, flagId: string | null) => {
+                    setFormState((prev) => {
+                      if (flagId) {
+                        // Add flag if not already present
+                        if (!prev.flag_ids.includes(flagId)) {
+                          return {
+                            ...prev,
+                            flag_ids: [...prev.flag_ids, flagId],
+                          };
+                        }
+                      } else {
+                        // Remove flag by finding the flag_option_id for this key
+                        const flag = (currentSimulationData.flags ?? []).find(
+                          (f) => f.key === key
+                        );
+                        if (flag?.flag_option_id) {
+                          return {
+                            ...prev,
+                            flag_ids: prev.flag_ids.filter(
+                              (id) => id !== flag.flag_option_id
+                            ),
+                          };
+                        }
+                      }
+                      return prev;
+                    });
+                  }}
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={currentSimulationData.flag_agent_id ?? null}
-                  required={currentSimulationData.flag_required ?? false}
-                  label="Active"
-                  helpText="Whether this simulation is active"
                 />
               </div>
             </StepCard>
@@ -2363,7 +2419,7 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
   const prevIds = {
     name_id: prevProps.simulationData?.name_id,
     description_id: prevProps.simulationData?.description_id,
-    active_flag_id: prevProps.simulationData?.active_flag_id,
+    flag_ids: prevProps.simulationData?.flag_ids,
     department_ids: prevProps.simulationData?.department_ids,
     scenario_ids: prevProps.simulationData?.scenario_ids,
     scenario_flag_ids: prevProps.simulationData?.scenario_flag_ids,
@@ -2375,7 +2431,7 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
   const nextIds = {
     name_id: nextProps.simulationData?.name_id,
     description_id: nextProps.simulationData?.description_id,
-    active_flag_id: nextProps.simulationData?.active_flag_id,
+    flag_ids: nextProps.simulationData?.flag_ids,
     department_ids: nextProps.simulationData?.department_ids,
     scenario_ids: nextProps.simulationData?.scenario_ids,
     scenario_flag_ids: nextProps.simulationData?.scenario_flag_ids,

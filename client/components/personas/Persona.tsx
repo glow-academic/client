@@ -186,6 +186,34 @@ function PersonaComponent({
   >([]);
   const [modalInstructions, setModalInstructions] = useState("");
 
+  // AI-generated pending suggestions state - stores AI suggestions before user accepts/rejects
+  const [aiFormData, setAiFormData] = useState<{
+    description_id?: string | null;
+    description_resource?: {
+      id?: string | null;
+      description?: string | null;
+    } | null;
+    // Future: name_id, name_resource, instructions_id, etc.
+  }>({
+    // Add a sample description resource example for testing/demo
+    description_id: "sample-description-id",
+    description_resource: {
+      id: "sample-description-id",
+      description: "Sample AI suggested description for this persona.",
+    },
+  });
+
+  // Clear a pending AI resource suggestion
+  const clearAiResource = useCallback((key: keyof typeof aiFormData) => {
+    setAiFormData((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      const resourceKey = key.replace("_id", "_resource") as keyof typeof prev;
+      delete next[resourceKey];
+      return next;
+    });
+  }, []);
+
   const isGenerating = useCallback(
     (resourceType: ResourceType) => generatingResources.has(resourceType),
     [generatingResources]
@@ -969,6 +997,7 @@ function PersonaComponent({
       resource_type?: string;
       name_id?: string | null;
       description_id?: string | null;
+      description_text?: string | null;
       color_id?: string | null;
       icon_id?: string | null;
       instructions_id?: string | null;
@@ -1005,13 +1034,28 @@ function PersonaComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
+        // Handle description separately - store in aiFormData for diff view workflow
+        if (data.description_id) {
+          const descId = data.description_id;
+          const descText = data.description_text ?? null;
+          setAiFormData((prev) => ({
+            ...prev,
+            description_id: descId,
+            description_resource: {
+              id: descId,
+              description: descText,
+            },
+          }));
+        }
+
         // Update formState with the resource ID that was generated
         // Only update the field that matches resource_type (others will be null)
+        // Note: description_id is now handled through aiFormData for diff workflow
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
           if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
+          // description_id is handled through aiFormData for diff workflow
           if (data.color_id) updates.color_id = data.color_id;
           if (data.icon_id) updates.icon_id = data.icon_id;
           if (data.instructions_id)
@@ -1285,8 +1329,7 @@ function PersonaComponent({
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentId(["names"])),
+    async () => handleGenerateResources(["names"], determineAgentId(["names"])),
     [handleGenerateResources, determineAgentId]
   );
 
@@ -1318,8 +1361,7 @@ function PersonaComponent({
   );
 
   const handleGenerateFlags = useCallback(
-    async () =>
-      handleGenerateResources(["flags"], determineAgentId(["flags"])),
+    async () => handleGenerateResources(["flags"], determineAgentId(["flags"])),
     [handleGenerateResources, determineAgentId]
   );
 
@@ -1336,17 +1378,13 @@ function PersonaComponent({
   );
 
   const handleGenerateIcons = useCallback(
-    async () =>
-      handleGenerateResources(["icons"], determineAgentId(["icons"])),
+    async () => handleGenerateResources(["icons"], determineAgentId(["icons"])),
     [handleGenerateResources, determineAgentId]
   );
 
   const handleGenerateParameters = useCallback(
     async () =>
-      handleGenerateResources(
-        ["parameters"],
-        determineAgentId(["parameters"])
-      ),
+      handleGenerateResources(["parameters"], determineAgentId(["parameters"])),
     [handleGenerateResources, determineAgentId]
   );
 
@@ -2031,6 +2069,9 @@ function PersonaComponent({
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.descriptions}
+                  aiResource={aiFormData.description_resource}
+                  onAccept={() => clearAiResource("description_id")}
+                  onReject={() => clearAiResource("description_id")}
                 />
 
                 {/* Department Selection */}

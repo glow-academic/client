@@ -41,6 +41,20 @@ class SimulationFlagResource(BaseModel):
     generated: bool | None = None
 
 
+class SimulationFlagConfig(BaseModel):
+    """Enriched flag config for direct client consumption."""
+
+    key: str  # "active" or "practice"
+    label: str  # "Active" or "Practice"
+    description: str | None = None
+    icon_id: str | None = None
+    flag_option_id: UUID | None = None
+    show: bool = True
+    required: bool = False
+    agent_id: UUID | None = None
+    generated: bool | None = None
+
+
 class SimulationDepartment(BaseModel):
     """Department for simulation."""
 
@@ -177,9 +191,9 @@ class GetSimulationIdsSqlRow(BaseModel):
     # Single-select IDs
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
     # Multi-select IDs
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -341,12 +355,13 @@ class GetSimulationApiResponse(BaseModel):
     description_suggestions: list[UUID] | None = None
     descriptions: list[SimulationDescriptionResource] | None = None
 
-    # Flag resource
-    active_flag_id: UUID | None = None
-    flag_resource: SimulationFlagResource | None = None
-    show_flag: bool | None = None
+    # Flag resources (multi-select like departments)
+    flag_ids: list[UUID] | None = None
+    flag_resources: list[SimulationFlagResource] | None = None
+    show_flags: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
+    flags: list[SimulationFlagConfig] | None = None
 
     # Departments
     department_ids: list[UUID] | None = None
@@ -476,9 +491,9 @@ class SaveSimulationApiRequest(BaseModel):
 
     # Optional single-select resources
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
     # Optional multi-select resources
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -507,9 +522,9 @@ class SaveSimulationSqlParams(BaseModel):
 
     # Optional single-select resources
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
     # Optional multi-select resources
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -525,7 +540,7 @@ class SaveSimulationSqlParams(BaseModel):
             self.input_simulation_id,
             self.name_id,
             self.description_id,
-            self.active_flag_id,
+            self.flag_ids,
             self.department_ids,
             self.scenario_ids,
             self.scenario_flag_ids,
@@ -592,7 +607,7 @@ class PatchSimulationDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None

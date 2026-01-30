@@ -22411,9 +22411,9 @@ class GetSimulationSqlRow(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetSimulationV4Department] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetSimulationV4FlagResource | None = None
-    show_flag: bool | None = None
+    flag_ids: list[UUID] | None = None
+    flag_resources: list[QGetSimulationV4FlagResource] | None = None
+    show_flags: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
     flags: list[QGetSimulationV4FlagOption] | None = None
@@ -22493,9 +22493,9 @@ class GetSimulationApiResponse(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetSimulationV4Department] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetSimulationV4FlagResource | None = None
-    show_flag: bool | None = None
+    flag_ids: list[UUID] | None = None
+    flag_resources: list[QGetSimulationV4FlagResource] | None = None
+    show_flags: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
     flags: list[QGetSimulationV4FlagOption] | None = None
@@ -22562,7 +22562,7 @@ class GetSimulationIdsSqlRow(BaseModel):
 
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -22593,7 +22593,7 @@ class GetSimulationIdsApiResponse(BaseModel):
 
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -22948,7 +22948,7 @@ class PatchSimulationDraftSqlParams(BaseModel):
     input_draft_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -22963,7 +22963,7 @@ class PatchSimulationDraftSqlParams(BaseModel):
             self.input_draft_id,
             self.name_id,
             self.description_id,
-            self.active_flag_id,
+            self.flag_ids,
             self.department_ids,
             self.scenario_ids,
             self.scenario_flag_ids,
@@ -22984,7 +22984,7 @@ class PatchSimulationDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -23010,7 +23010,7 @@ class SaveSimulationSqlParams(BaseModel):
     input_simulation_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
@@ -23025,7 +23025,7 @@ class SaveSimulationSqlParams(BaseModel):
             self.input_simulation_id,
             self.name_id,
             self.description_id,
-            self.active_flag_id,
+            self.flag_ids,
             self.department_ids,
             self.scenario_ids,
             self.scenario_flag_ids,
@@ -23045,7 +23045,7 @@ class SaveSimulationApiRequest(BaseModel):
     input_simulation_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None

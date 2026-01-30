@@ -12746,8 +12746,8 @@ export interface components {
             name_id?: string | null;
             /** Description Id */
             description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Scenario Ids */
@@ -20825,8 +20825,8 @@ export interface components {
             name_id: string;
             /** Description Id */
             description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Scenario Ids */
@@ -21759,6 +21759,36 @@ export interface components {
             generated?: boolean | null;
         };
         /**
+         * SimulationFlagConfig
+         * @description Enriched flag config for direct client consumption.
+         */
+        SimulationFlagConfig: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
          * SimulationFlagResource
          * @description Flag resource for simulation.
          */
@@ -22203,15 +22233,18 @@ export interface components {
             description_suggestions?: string[] | null;
             /** Descriptions */
             descriptions?: components["schemas"]["SimulationDescriptionResource"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["SimulationFlagResource"] | null;
-            /** Show Flag */
-            show_flag?: boolean | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Flag Resources */
+            flag_resources?: components["schemas"]["SimulationFlagResource"][] | null;
+            /** Show Flags */
+            show_flags?: boolean | null;
             /** Flag Agent Id */
             flag_agent_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["SimulationFlagConfig"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */

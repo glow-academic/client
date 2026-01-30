@@ -49,7 +49,6 @@ FROM (
               WHERE afr.artifact = artifact_type::artifact_type
                 AND afr.flag_type = f.type
           )
-          AND f.name LIKE artifact_type || '_%'
       ))
     ORDER BY f.name
     LIMIT limit_count

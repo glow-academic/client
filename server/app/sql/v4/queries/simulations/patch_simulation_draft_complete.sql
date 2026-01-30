@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION api_patch_simulation_draft_v4(
     input_draft_id uuid DEFAULT NULL,
     name_id uuid DEFAULT NULL,
     description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
+    flag_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     scenario_ids uuid[] DEFAULT NULL,
     scenario_flag_ids uuid[] DEFAULT NULL,
@@ -66,9 +66,13 @@ BEGIN
     IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', description_id;
     END IF;
-    
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+
+    IF flag_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM unnest(flag_ids) AS fid
+        WHERE NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = fid)
+    ) THEN
+        RAISE EXCEPTION 'Flag resource not found';
     END IF;
 
     IF scenario_flag_ids IS NOT NULL AND EXISTS (
@@ -152,13 +156,15 @@ BEGIN
                 SET version = v_new_version;
             END IF;
             
-            IF active_flag_id IS NOT NULL THEN
+            IF flag_ids IS NOT NULL THEN
+                DELETE FROM flags_drafts_connection WHERE flags_drafts_connection.draft_id = v_draft_id;
                 INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-                VALUES (v_draft_id, active_flag_id, v_new_version)
+                SELECT v_draft_id, fid, v_new_version
+                FROM UNNEST(flag_ids) AS fid
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
-            
+
             -- Handle array resources
             IF department_ids IS NOT NULL THEN
                 DELETE FROM departments_drafts_connection WHERE departments_drafts_connection.draft_id = v_draft_id;
@@ -249,13 +255,14 @@ BEGIN
         SET version = v_new_version;
     END IF;
     
-    IF active_flag_id IS NOT NULL THEN
+    IF flag_ids IS NOT NULL THEN
         INSERT INTO flags_drafts_connection (draft_id, flags_id, version)
-        VALUES (v_draft_id, active_flag_id, v_new_version)
+        SELECT v_draft_id, fid, v_new_version
+        FROM UNNEST(flag_ids) AS fid
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
-    
+
     -- Handle array resources
     IF department_ids IS NOT NULL THEN
         INSERT INTO departments_drafts_connection (draft_id, departments_id, version)

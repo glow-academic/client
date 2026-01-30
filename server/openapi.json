@@ -58308,17 +58308,20 @@
             ],
             "title": "Description Id"
           },
-          "active_flag_id": {
+          "flag_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Active Flag Id"
+            "title": "Flag Ids"
           },
           "department_ids": {
             "anyOf": [
@@ -100998,17 +101001,20 @@
             ],
             "title": "Description Id"
           },
-          "active_flag_id": {
+          "flag_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Active Flag Id"
+            "title": "Flag Ids"
           },
           "department_ids": {
             "anyOf": [
@@ -104385,6 +104391,92 @@
         "title": "SimulationDescriptionResource",
         "description": "Description resource for simulation."
       },
+      "SimulationFlagConfig": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Id"
+          },
+          "flag_option_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Option Id"
+          },
+          "show": {
+            "type": "boolean",
+            "title": "Show",
+            "default": true
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "SimulationFlagConfig",
+        "description": "Enriched flag config for direct client consumption."
+      },
       "SimulationFlagResource": {
         "properties": {
           "id": {
@@ -105852,29 +105944,36 @@
             ],
             "title": "Descriptions"
           },
-          "active_flag_id": {
+          "flag_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Active Flag Id"
+            "title": "Flag Ids"
           },
-          "flag_resource": {
+          "flag_resources": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/SimulationFlagResource"
+                "items": {
+                  "$ref": "#/components/schemas/SimulationFlagResource"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Flag Resources"
           },
-          "show_flag": {
+          "show_flags": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -105883,7 +105982,7 @@
                 "type": "null"
               }
             ],
-            "title": "Show Flag"
+            "title": "Show Flags"
           },
           "flag_agent_id": {
             "anyOf": [
@@ -105907,6 +106006,20 @@
               }
             ],
             "title": "Flag Required"
+          },
+          "flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SimulationFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flags"
           },
           "department_ids": {
             "anyOf": [

@@ -25,8 +25,8 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     name_id uuid DEFAULT NULL,
     -- Optional single-select form data
     description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
     -- Optional multi-select form data
+    flag_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     scenario_ids uuid[] DEFAULT NULL,
     scenario_flag_ids uuid[] DEFAULT NULL,
@@ -51,7 +51,7 @@ DECLARE
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
-    v_active_flag_id uuid;
+    v_flag_ids uuid[];
     v_department_ids uuid[];
     v_scenario_ids uuid[];
     v_scenario_flag_ids uuid[];
@@ -65,7 +65,7 @@ BEGIN
     v_input_simulation_id := input_simulation_id;
     v_name_id := name_id;
     v_description_id := description_id;
-    v_active_flag_id := active_flag_id;
+    v_flag_ids := COALESCE(flag_ids, ARRAY[]::uuid[]);
     v_department_ids := COALESCE(department_ids, ARRAY[]::uuid[]);
     v_scenario_ids := COALESCE(scenario_ids, ARRAY[]::uuid[]);
     v_scenario_flag_ids := COALESCE(scenario_flag_ids, ARRAY[]::uuid[]);
@@ -121,8 +121,13 @@ BEGIN
         RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
 
-    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
+    IF array_length(v_flag_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_flag_ids) AS fid
+            WHERE NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = fid)
+        ) THEN
+            RAISE EXCEPTION 'One or more flag_ids not found';
+        END IF;
     END IF;
 
     IF array_length(v_scenario_ids, 1) > 0 THEN
@@ -190,7 +195,7 @@ BEGIN
             v_simulation_id AS simulation_id,
             v_name_id AS name_id,
             v_description_id AS description_id,
-            v_active_flag_id AS active_flag_id,
+            v_flag_ids AS flag_ids,
             v_department_ids AS department_ids,
             v_scenario_ids AS scenario_ids,
             v_scenario_flag_ids AS scenario_flag_ids,
@@ -269,18 +274,19 @@ BEGIN
         WHERE x.description_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT simulation_descriptions_pkey DO NOTHING
     ),
-    -- Link simulation flags (resource ID already validated)
-    link_simulation_active_flag AS (
+    -- Link simulation flags (resource IDs already validated)
+    link_simulation_flags AS (
         INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp)
         SELECT
             x.simulation_id,
-            x.active_flag_id,
+            flag_id,
             true,
             NOW(),
             false,
             false
         FROM params x
-        WHERE x.active_flag_id IS NOT NULL
+        CROSS JOIN UNNEST(x.flag_ids) AS flag_id
+        WHERE COALESCE(array_length(x.flag_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value
     ),
     link_departments AS (

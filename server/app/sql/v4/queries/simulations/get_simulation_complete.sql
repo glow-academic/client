@@ -282,10 +282,10 @@ RETURNS TABLE (
     departments_required boolean,
     department_suggestions uuid[],
     departments types.q_get_simulation_v4_department[],
-    -- Single-select resources: flag (active)
-    active_flag_id uuid,
-    flag_resource types.q_get_simulation_v4_flag_resource,
-    show_flag boolean,
+    -- Multi-select resources: flags
+    flag_ids uuid[],
+    flag_resources types.q_get_simulation_v4_flag_resource[],
+    show_flags boolean,
     flag_agent_id uuid,
     flag_required boolean,
     flags types.q_get_simulation_v4_flag_option[],
@@ -1184,30 +1184,35 @@ description_resource_data AS (
     FROM params
     LIMIT 1
 ),
--- Flag resource data (active flag)
+-- Flag resource data (multiple flags)
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT sf.flag_id FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE LIMIT 1)
-        ) as active_flag_id,
+            -- From draft (all flags linked to draft)
+            (SELECT ARRAY_AGG(df.flags_id) FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params)),
+            -- From simulation (all flags with value = true)
+            (SELECT ARRAY_AGG(sf.flag_id) FROM simulation_flags_junction sf WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND sf.value = true),
+            ARRAY[]::uuid[]
+        ) as flag_ids,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false)
-            )::types.q_get_simulation_v4_flag_resource
+            SELECT ARRAY_AGG(
+                ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_simulation_v4_flag_resource
+            )
             FROM (
-                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
+                -- From draft first (priority 1)
+                SELECT DISTINCT ON (f.id) f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated
                 FROM flags_drafts_connection df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
-                SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
+                -- From simulation (priority 2)
+                SELECT DISTINCT ON (f.id) f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated
                 FROM simulation_flags_junction sf
                 JOIN flags_resource f ON sf.flag_id = f.id
-                WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND f.name = 'simulation_active' AND sf.value = TRUE
+                WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND sf.value = TRUE
+                  AND NOT EXISTS (SELECT 1 FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) AND df.flags_id = f.id)
             ) f
-            ORDER BY priority
-            LIMIT 1
-        ) as flag_resource
+        ) as flag_resources
     FROM params
     LIMIT 1
 ),
@@ -2576,7 +2581,7 @@ ui_flags AS (
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
         END as show_departments,
-        true as show_flag  -- Flag is a boolean toggle that should be shown
+        true as show_flags  -- Flags are boolean toggles that should be shown
     FROM params x
 ),
 missing_tools_check AS (
@@ -2723,10 +2728,10 @@ SELECT
         ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_simulation_v4_department[]
     ) as departments,
-    -- Single-select resources: flag (active)
-    frd.active_flag_id,
-    frd.flag_resource,
-    uf.show_flag,
+    -- Multi-select resources: flags
+    frd.flag_ids,
+    frd.flag_resources,
+    uf.show_flags,
     (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
     false as flag_required,
     COALESCE(

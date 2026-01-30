@@ -64,8 +64,10 @@ from app.api.v4.artifacts.simulation.types import (
     GetSimulationIdsSqlParams,
     GetSimulationIdsSqlRow,
     SimulationDepartment,
+    SimulationFlagConfig,
     SimulationScenario,
 )
+from app.api.v4.resources.flags.search import search_flags_internal
 from app.sql.types import load_sql_query
 from app.utils.sql_helper import execute_sql_typed
 
@@ -197,7 +199,7 @@ async def get_simulation(
         description_ids = (
             [ids_result.description_id] if ids_result.description_id else []
         )
-        flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
+        flag_ids = ids_result.flag_ids or []
         department_ids = ids_result.department_ids or []
         scenario_ids = ids_result.scenario_ids or []
 
@@ -244,7 +246,19 @@ async def get_simulation(
 
         async def fetch_flags():
             async with pool.acquire() as c:
-                return await get_flags_internal(c, flag_ids, bypass_cache)
+                # Get selected flags
+                selected = await get_flags_internal(c, flag_ids, bypass_cache)
+                # Search for all available simulation flags
+                available = await search_flags_internal(
+                    c,
+                    search=None,
+                    limit_count=20,
+                    offset_count=0,
+                    exclude_ids=None,
+                    bypass_cache=bypass_cache,
+                    artifact_type="simulation",
+                )
+                return (selected, available)
 
         async def fetch_departments():
             async with pool.acquire() as c:
@@ -329,7 +343,7 @@ async def get_simulation(
         (
             (names_selected, names_suggestions),
             (descriptions_selected, descriptions_suggestions),
-            flag_items,
+            (flags_selected, flags_available),
             (departments_selected, departments_suggestions),
             (scenarios_selected, scenarios_suggestions),
             (scenario_flags_selected, scenario_flags_suggestions),
@@ -384,7 +398,37 @@ async def get_simulation(
         description_resource = next(
             (d for d in descriptions if d.id == ids_result.description_id), None
         )
-        flag_resource = flag_items[0] if flag_items else None
+
+        # Build flag resources from selected flags
+        flag_resources = list(flags_selected)
+
+        # Helper function to derive key and label from flag name
+        def derive_simulation_flag_key_and_label(name: str | None) -> tuple[str, str]:
+            """Derive key and label from flag name."""
+            if not name:
+                return ("unknown", "Unknown")
+            # 'simulation_active' -> 'active', 'practice' stays 'practice'
+            key = name.replace("simulation_", "")
+            label = key.replace("_", " ").title()
+            return (key, label)
+
+        # Build flags array from available flags for the UI
+        show_flag = compute_show_flag()
+        simulation_flags = [
+            SimulationFlagConfig(
+                key=derive_simulation_flag_key_and_label(flag.name)[0],
+                label=derive_simulation_flag_key_and_label(flag.name)[1],
+                description=flag.description,
+                icon_id=flag.icon,
+                flag_option_id=flag.id,
+                show=show_flag,
+                required=compute_flag_required(),
+                agent_id=ids_result.flag_agent_id,
+                generated=flag.generated,
+            )
+            for flag in flags_available
+            if flag.id
+        ]
 
         # Selected multi-select resources
         department_resources = [
@@ -520,12 +564,13 @@ async def get_simulation(
             description_required=compute_description_required(),
             description_suggestions=description_suggestions_ids,
             descriptions=[_to_dict(d) for d in descriptions],
-            # Active flag
-            active_flag_id=ids_result.active_flag_id,
-            flag_resource=_to_dict(flag_resource) if flag_resource else None,
-            show_flag=show_flag,
+            # Flags (multi-select like departments)
+            flag_ids=flag_ids,
+            flag_resources=[_to_dict(f) for f in flag_resources],
+            show_flags=show_flag,
             flag_agent_id=ids_result.flag_agent_id,
             flag_required=compute_flag_required(),
+            flags=[f.model_dump() for f in simulation_flags],
             # Departments
             department_ids=department_ids,
             department_resources=[_to_dict(d) for d in department_resources_typed],

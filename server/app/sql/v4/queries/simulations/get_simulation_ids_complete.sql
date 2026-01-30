@@ -27,8 +27,8 @@ RETURNS TABLE (
     -- Single-select IDs
     name_id uuid,
     description_id uuid,
-    active_flag_id uuid,
     -- Multi-select IDs
+    flag_ids uuid[],
     department_ids uuid[],
     scenario_ids uuid[],
     scenario_flag_ids uuid[],
@@ -79,18 +79,17 @@ description_data AS (
         (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = (SELECT p_simulation_id FROM params) LIMIT 1)
     ) as description_id
 ),
--- Get active_flag_id (from draft first, then simulation)
+-- Get flag_ids (from draft first, then simulation)
 flag_data AS (
     SELECT COALESCE(
-        -- From draft
-        (SELECT fd.flags_id FROM flags_drafts_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params) LIMIT 1),
-        -- From simulation
-        (SELECT sf.flag_id FROM simulation_flags_junction sf
-         JOIN flags_resource f ON sf.flag_id = f.id
+        -- From draft (all flags linked to draft)
+        (SELECT ARRAY_AGG(fd.flags_id) FROM flags_drafts_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params)),
+        -- From simulation (all flags with value = true)
+        (SELECT ARRAY_AGG(sf.flag_id) FROM simulation_flags_junction sf
          WHERE sf.simulation_id = (SELECT p_simulation_id FROM params)
-           AND f.name = 'simulation_active'
-         LIMIT 1)
-    ) as active_flag_id
+           AND sf.value = true),
+        ARRAY[]::uuid[]
+    ) as flag_ids
 ),
 -- Get department_ids (from draft first, then simulation)
 department_data AS (
@@ -301,7 +300,7 @@ tools_check AS (
 SELECT
     (SELECT name_id FROM name_data),
     (SELECT description_id FROM description_data),
-    (SELECT active_flag_id FROM flag_data),
+    (SELECT flag_ids FROM flag_data),
     (SELECT department_ids FROM department_data),
     (SELECT scenario_ids FROM scenario_data),
     (SELECT scenario_flag_ids FROM scenario_flag_data),
