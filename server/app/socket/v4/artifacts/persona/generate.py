@@ -139,7 +139,7 @@ async def _persona_generate_impl(
         seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
 
         def add_seed(resource_type: str, resource_id: uuid.UUID | None) -> None:
-            # Only add seeds for requested resource types
+            # Only seed requested resource types for Jinja context and tool filtering
             if resource_id and resource_type in resource_types:
                 seed_nodes.append(
                     QGetPersonaResourceTreeV4Node(
@@ -306,6 +306,7 @@ async def _persona_generate_impl(
                     p_group_id=existing_group_id,
                     p_resources=resources if resources else None,
                     p_current_resources=current_resources if current_resources else None,
+                    p_resource_types=resource_types,  # For tool filtering
                 )
                 prepare_row = cast(
                     PreparePersonaGenerationSqlRow,

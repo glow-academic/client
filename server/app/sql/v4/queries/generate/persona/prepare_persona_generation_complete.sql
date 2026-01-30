@@ -42,8 +42,9 @@ CREATE OR REPLACE FUNCTION socket_prepare_persona_generation_v4(
     p_profile_id uuid,
     p_agent_id uuid,
     p_group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    p_resources types.i_persona_resource_v4[] DEFAULT NULL,  -- Optional: array of (resource_type, resource_ids) for filtering tools and context
-    p_current_resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: form state for "current" variable in Jinja templates
+    p_resources types.i_persona_resource_v4[] DEFAULT NULL,  -- Optional: array of (resource_type, resource_ids) for Jinja context
+    p_current_resources types.i_persona_resource_v4[] DEFAULT NULL,  -- Optional: form state for "current" variable in Jinja templates
+    p_resource_types text[] DEFAULT NULL  -- Optional: resource types to filter tools (e.g., ARRAY['names', 'colors'])
 )
 RETURNS TABLE (
     run_id uuid,
@@ -79,7 +80,8 @@ WITH params AS (
         p_agent_id AS agent_id,
         p_group_id AS group_id,
         p_resources AS resources,
-        p_current_resources AS current_resources
+        p_current_resources AS current_resources,
+        p_resource_types AS resource_types
 ),
 -- Validate agent exists and is active
 selected_agent AS (
@@ -132,7 +134,7 @@ existing_group_from_param AS (
     LIMIT 1
 ),
 create_group_if_needed AS (
-    INSERT INTO groups_entry (created_at, updated_at, session_id)
+    INSERT INTO view_groups_entry (created_at, updated_at, session_id)
     SELECT NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = p_profile_id AND view_sessions_entry.active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
@@ -324,12 +326,9 @@ agent_tools_data AS (
                 (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
-                p.resources IS NULL
+                p.resource_types IS NULL
                 OR rt.resource IS NULL
-                OR EXISTS (
-                    SELECT 1 FROM unnest(p.resources) AS r
-                    WHERE rt.resource::text = r.resource_type
-                )
+                OR rt.resource::text = ANY(p.resource_types)
             )),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
         ) as tools
