@@ -5188,6 +5188,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/persona_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persona Generation Progress Api
+         * @description Server-to-client event: Persona generation progress.
+         *
+         *     Emitted during persona resource generation to show progress.
+         */
+        post: operations["persona_generation_progress_api_socket_v4_server_persona_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/persona_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persona Generation Complete Api
+         * @description Server-to-client event: Persona generation completed.
+         *
+         *     Emitted when a persona resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
+        post: operations["persona_generation_complete_api_socket_v4_server_persona_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/persona_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persona Generation Error Api
+         * @description Server-to-client event: Persona generation error.
+         *
+         *     Emitted when persona resource generation fails.
+         */
+        post: operations["persona_generation_error_api_socket_v4_server_persona_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/benchmark/enter_response": {
         parameters: {
             query?: never;
@@ -12827,6 +12894,113 @@ export interface components {
             agent_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * PersonaGenerationCompleteEvent
+         * @description Server-to-client event: persona_generation_complete.
+         *
+         *     Emitted when a persona resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        PersonaGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default persona
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            color_resource?: components["schemas"]["QGetColorsV4Item"] | null;
+            icon_resource?: components["schemas"]["QGetIconsV4Item"] | null;
+            instructions_resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
+            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Parameter Field Resources */
+            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Example Resources */
+            example_resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
+            /** Parameter Resources */
+            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /**
+         * PersonaGenerationErrorEvent
+         * @description Server-to-client event: persona_generation_error.
+         *
+         *     Emitted when persona resource generation fails.
+         */
+        PersonaGenerationErrorEvent: {
+            /**
+             * Artifact Type
+             * @default persona
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * PersonaGenerationProgressEvent
+         * @description Server-to-client event: persona_generation_progress.
+         *
+         *     Emitted during persona resource generation to show progress.
+         */
+        PersonaGenerationProgressEvent: {
+            /**
+             * Artifact Type
+             * @default persona
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Modality */
+            modality?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
         };
         /** PointsApiRequest */
         PointsApiRequest: {
@@ -31704,6 +31878,111 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConnectionConfirmedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persona_generation_progress_api_socket_v4_server_persona_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaGenerationProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persona_generation_complete_api_socket_v4_server_persona_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaGenerationCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persona_generation_error_api_socket_v4_server_persona_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaGenerationErrorEvent"];
             };
         };
         responses: {

@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.persona.types import PersonaGenerationErrorEvent
 from app.sql.types import (
     ValidatePersonaResourceErrorSqlParams,
     ValidatePersonaResourceErrorSqlRow,
@@ -18,6 +19,22 @@ internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# =============================================================================
+
+
+@server_router.post("/persona_generation_error")
+async def persona_generation_error_api(
+    request: PersonaGenerationErrorEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Persona generation error.
+
+    Emitted when persona resource generation fails.
+    """
+    return {"success": True}
 
 SQL_PATH = "app/sql/v4/queries/personas/validate_persona_resource_error_complete.sql"
 
@@ -74,17 +91,18 @@ async def handle_personas_error(data: dict[str, Any]) -> None:
     )
 
     # Emit persona-specific error event with all fields from internal event
+    event = PersonaGenerationErrorEvent(
+        artifact_type=artifact_type or "persona",
+        group_id=data.get("group_id"),
+        resource_type=resource_type,
+        resource_types=resource_types if resource_types else None,
+        resource_id=data.get("resource_id"),
+        success=False,
+        message=error_message,
+        trace_id=data.get("trace_id"),
+    )
     await sio.emit(
         "persona_generation_error",
-        {
-            "artifact_type": artifact_type,
-            "resource_type": resource_type,
-            "resource_types": resource_types if resource_types else None,
-            "resource_id": data.get("resource_id"),
-            "group_id": data.get("group_id"),
-            "success": False,
-            "message": error_message,
-            "trace_id": data.get("trace_id"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )

@@ -2005,7 +2005,7 @@ function SimulationComponent({
                     )
                   }
                   show_flags={currentSimulationData.show_flags ?? false}
-                  columns={2}
+                  columns={1}
                   label="Flags"
                   disabled={disabled}
                   onChange={(key: string, flagId: string | null) => {

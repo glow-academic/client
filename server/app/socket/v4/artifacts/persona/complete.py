@@ -1,27 +1,29 @@
 """Persona completion handler - listens to generate_call_complete events and emits granular persona events."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.colors.get import get_colors_internal
+from app.api.v4.resources.departments.get import get_departments_internal
+from app.api.v4.resources.descriptions.get import get_descriptions_internal
+from app.api.v4.resources.examples.get import get_examples_internal
+from app.api.v4.resources.flags.get import get_flags_internal
+from app.api.v4.resources.icons.get import get_icons_internal
+from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.names.get import get_names_internal
+from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetPersonaResourceIdsByGroupIdSqlParams,
-    GetPersonaResourceIdsByGroupIdSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.socket.v4.artifacts.persona.types import PersonaGenerationCompleteEvent
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
-
-SQL_PATH = (
-    "app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql"
-)
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -46,9 +48,8 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         return
-    profile_id = uuid.UUID(profile_id_str)
 
-    # Extract all data from event (no Python filtering for resource_type - SQL handles it)
+    # Extract all data from event
     group_id_str = data.get("group_id")
     resource_type = data.get("resource_type")
     event_type = data.get("event_type")
@@ -92,27 +93,57 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    group_id = uuid.UUID(group_id_str)
     resource_id = uuid.UUID(resource_id_str)
 
-    # Query SQL function - SQL handles validation and mapping (no-op, no queries)
+    # Fetch full resource data using service layer (with caching)
+    # Build the event with the appropriate resource field populated
+    event = PersonaGenerationCompleteEvent(
+        artifact_type="persona",
+        group_id=group_id_str,
+        resource_type=resource_type,
+        run_id=data.get("run_id"),
+        success=True,
+        message=f"{resource_type} generation completed successfully",
+    )
+
     try:
         async with get_db_connection() as conn:
-            params = GetPersonaResourceIdsByGroupIdSqlParams(
-                profile_id=profile_id,
-                group_id=group_id,
-                resource_id=resource_id,
-                resource_type=resource_type,
-                artifact_type="persona",  # Always "persona" for this handler
-            )
-            result = cast(
-                GetPersonaResourceIdsByGroupIdSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
+            # Fetch the resource using the appropriate internal function
+            # Each function handles caching and returns the correct type
+            if resource_type == "names":
+                items = await get_names_internal(conn, [resource_id])
+                event.name_resource = items[0] if items else None
+            elif resource_type == "descriptions":
+                items = await get_descriptions_internal(conn, [resource_id])
+                event.description_resource = items[0] if items else None
+            elif resource_type == "colors":
+                items = await get_colors_internal(conn, [resource_id])
+                event.color_resource = items[0] if items else None
+            elif resource_type == "icons":
+                items = await get_icons_internal(conn, [resource_id])
+                event.icon_resource = items[0] if items else None
+            elif resource_type == "instructions":
+                items = await get_instructions_internal(conn, [resource_id])
+                event.instructions_resource = items[0] if items else None
+            elif resource_type == "flags":
+                items = await get_flags_internal(conn, [resource_id])
+                event.flag_resource = items[0] if items else None
+            elif resource_type == "departments":
+                items = await get_departments_internal(conn, [resource_id])
+                event.department_resources = items if items else None
+            elif resource_type == "parameter_fields" or resource_type == "fields":
+                items = await get_parameter_fields_internal(conn, [resource_id])
+                event.parameter_field_resources = items if items else None
+            elif resource_type == "examples":
+                items = await get_examples_internal(conn, [resource_id])
+                event.example_resources = items if items else None
+            elif resource_type == "parameters":
+                items = await get_parameters_internal(conn, [resource_id])
+                event.parameter_resources = items if items else None
     except Exception as e:
-        # SQL function raised error (validation failed) - emit error to client
+        # Resource fetch failed - emit error to client
         await sio.emit(
-            "artifact_generation_error",
+            "persona_generation_error",
             {
                 "artifact_type": "persona",
                 "resource_type": resource_type,
@@ -124,32 +155,27 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
-    # Emit granular event with mapped resource ID (one field set, others NULL)
+    # Emit the typed event
     await sio.emit(
         "persona_generation_complete",
-        {
-            "artifact_type": "persona",
-            "group_id": group_id_str,
-            "resource_type": resource_type,
-            "name_id": str(result.name_id) if result.name_id else None,
-            "description_id": str(result.description_id)
-            if result.description_id
-            else None,
-            "color_id": str(result.color_id) if result.color_id else None,
-            "icon_id": str(result.icon_id) if result.icon_id else None,
-            "instructions_id": str(result.instructions_id)
-            if result.instructions_id
-            else None,
-            "active_flag_id": str(result.active_flag_id)
-            if result.active_flag_id
-            else None,
-            "field_ids": [str(fid) for fid in (result.field_ids or [])],
-            "department_ids": [str(did) for did in (result.department_ids or [])],
-            "example_ids": [str(eid) for eid in (result.example_ids or [])],
-            "success": True,
-            "message": f"{resource_type} generation completed successfully",
-            "run_id": data.get("run_id"),
-            "type": data.get("type", "complete"),
-        },
+        event.model_dump(mode="json"),
         room=sid,
     )
+
+
+# =============================================================================
+# FastAPI endpoint for OpenAPI documentation
+# This registers the event type in OpenAPI, enabling frontend type extraction
+# =============================================================================
+
+
+@server_router.post("/persona_generation_complete")
+async def persona_generation_complete_api(
+    request: PersonaGenerationCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Persona generation completed.
+
+    Emitted when a persona resource is successfully generated.
+    Contains full resource objects for immediate frontend use.
+    """
+    return {"success": True}

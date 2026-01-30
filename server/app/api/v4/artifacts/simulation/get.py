@@ -244,8 +244,8 @@ async def get_simulation(
                 )
                 return (selected, suggestions)
 
-        # Simulation-specific flag names (business logic)
-        SIMULATION_FLAG_NAMES = {"simulation_active", "practice"}
+        # Simulation-specific flag names in display order (business logic)
+        SIMULATION_FLAG_NAMES_ORDERED = ["simulation_active", "practice"]
 
         async def fetch_flags():
             async with pool.acquire() as c:
@@ -261,8 +261,13 @@ async def get_simulation(
                     bypass_cache=bypass_cache,
                     artifact_type="simulation",
                 )
-                # Filter to only simulation-specific flags (business logic in Python)
-                available = [f for f in all_flags if f.name in SIMULATION_FLAG_NAMES]
+                # Filter to only simulation-specific flags and preserve order (business logic in Python)
+                flags_by_name = {f.name: f for f in all_flags}
+                available = [
+                    flags_by_name[name]
+                    for name in SIMULATION_FLAG_NAMES_ORDERED
+                    if name in flags_by_name
+                ]
                 return (selected, available)
 
         async def fetch_departments():

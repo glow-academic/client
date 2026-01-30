@@ -47,6 +47,15 @@ import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
+import type { ServerToClientEvents } from "@/lib/ws/types";
+
+// Socket event types (auto-generated from server)
+type PersonaGenerationCompletePayload =
+  Parameters<ServerToClientEvents["persona_generation_complete"]>[0];
+type PersonaGenerationProgressPayload =
+  Parameters<ServerToClientEvents["persona_generation_progress"]>[0];
+type PersonaGenerationErrorPayload =
+  Parameters<ServerToClientEvents["persona_generation_error"]>[0];
 import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
@@ -187,13 +196,18 @@ function PersonaComponent({
   const [modalInstructions, setModalInstructions] = useState("");
 
   // AI-generated pending suggestions state - stores AI suggestions before user accepts/rejects
+  // Uses server-generated types for full resource objects
   const [aiFormData, setAiFormData] = useState<{
-    description_id?: string | null;
-    description_resource?: {
-      id?: string | null;
-      description?: string | null;
-    } | null;
-    // Future: name_id, name_resource, instructions_id, etc.
+    name_resource?: PersonaGenerationCompletePayload["name_resource"];
+    description_resource?: PersonaGenerationCompletePayload["description_resource"];
+    color_resource?: PersonaGenerationCompletePayload["color_resource"];
+    icon_resource?: PersonaGenerationCompletePayload["icon_resource"];
+    instructions_resource?: PersonaGenerationCompletePayload["instructions_resource"];
+    flag_resource?: PersonaGenerationCompletePayload["flag_resource"];
+    department_resources?: PersonaGenerationCompletePayload["department_resources"];
+    parameter_field_resources?: PersonaGenerationCompletePayload["parameter_field_resources"];
+    example_resources?: PersonaGenerationCompletePayload["example_resources"];
+    parameter_resources?: PersonaGenerationCompletePayload["parameter_resources"];
   }>({});
 
   // Clear a pending AI resource suggestion
@@ -201,8 +215,6 @@ function PersonaComponent({
     setAiFormData((prev) => {
       const next = { ...prev };
       delete next[key];
-      const resourceKey = key.replace("_id", "_resource") as keyof typeof prev;
-      delete next[resourceKey];
       return next;
     });
   }, []);
@@ -984,25 +996,7 @@ function PersonaComponent({
     // Use single group_id from personaData (no need to track multiple)
     const currentGroupId = personaData?.group_id;
 
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      description_text?: string | null;
-      color_id?: string | null;
-      icon_id?: string | null;
-      instructions_id?: string | null;
-      active_flag_id?: string | null;
-      field_ids?: string[];
-      department_ids?: string[];
-      example_ids?: string[];
-      parameter_field_ids?: string[];
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
+    const handleGenerationComplete = (data: PersonaGenerationCompletePayload) => {
       // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "persona" ||
@@ -1022,61 +1016,76 @@ function PersonaComponent({
         "examples",
         "parameter_fields",
         "departments",
+        "parameters",
       ];
       if (
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
-        // Handle description separately - store in aiFormData for diff view workflow
-        if (data.description_id) {
-          const descId = data.description_id;
-          const descText = data.description_text ?? null;
-          setAiFormData((prev) => ({
-            ...prev,
-            description_id: descId,
-            description_resource: {
-              id: descId,
-              description: descText,
-            },
-          }));
-        }
+        // Store full resource objects in aiFormData for diff view workflow
+        // Server now sends full resource objects, not just IDs
+        setAiFormData((prev) => {
+          const updates: Partial<typeof prev> = {};
+          if (data.name_resource) updates.name_resource = data.name_resource;
+          if (data.description_resource)
+            updates.description_resource = data.description_resource;
+          if (data.color_resource) updates.color_resource = data.color_resource;
+          if (data.icon_resource) updates.icon_resource = data.icon_resource;
+          if (data.instructions_resource)
+            updates.instructions_resource = data.instructions_resource;
+          if (data.flag_resource) updates.flag_resource = data.flag_resource;
+          if (data.department_resources)
+            updates.department_resources = data.department_resources;
+          if (data.parameter_field_resources)
+            updates.parameter_field_resources = data.parameter_field_resources;
+          if (data.example_resources)
+            updates.example_resources = data.example_resources;
+          if (data.parameter_resources)
+            updates.parameter_resources = data.parameter_resources;
+          return { ...prev, ...updates };
+        });
 
-        // Update formState with the resource ID that was generated
-        // Only update the field that matches resource_type (others will be null)
-        // Note: description_id is now handled through aiFormData for diff workflow
+        // Update formState with the resource IDs extracted from resource objects
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.name_id) updates.name_id = data.name_id;
+          // Single-select resources: extract ID from resource object
+          if (data.name_resource?.id)
+            updates.name_id = data.name_resource.id;
           // description_id is handled through aiFormData for diff workflow
-          if (data.color_id) updates.color_id = data.color_id;
-          if (data.icon_id) updates.icon_id = data.icon_id;
-          if (data.instructions_id)
-            updates.instructions_id = data.instructions_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.parameter_field_ids && data.parameter_field_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newParameterFieldIds = data.parameter_field_ids.filter(
-              (id) => !prev.parameter_field_ids.includes(id)
-            );
-            updates.parameter_field_ids = [
-              ...prev.parameter_field_ids,
-              ...newParameterFieldIds,
-            ];
+          if (data.color_resource?.id)
+            updates.color_id = data.color_resource.id;
+          if (data.icon_resource?.id)
+            updates.icon_id = data.icon_resource.id;
+          if (data.instructions_resource?.id)
+            updates.instructions_id = data.instructions_resource.id;
+          if (data.flag_resource?.id)
+            updates.active_flag_id = data.flag_resource.id;
+
+          // Multi-select resources: extract IDs from resource arrays
+          if (data.parameter_field_resources?.length) {
+            const newIds = data.parameter_field_resources
+              .map((r) => r.id)
+              .filter((id): id is string => !!id && !prev.parameter_field_ids.includes(id));
+            if (newIds.length > 0) {
+              updates.parameter_field_ids = [...prev.parameter_field_ids, ...newIds];
+            }
           }
-          if (data.department_ids && data.department_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newDeptIds = data.department_ids.filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          if (data.department_resources?.length) {
+            const newIds = data.department_resources
+              .map((r) => r.department_id)
+              .filter((id): id is string => !!id && !prev.department_ids.includes(id));
+            if (newIds.length > 0) {
+              updates.department_ids = [...prev.department_ids, ...newIds];
+            }
           }
-          if (data.example_ids && data.example_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newExampleIds = data.example_ids.filter(
-              (id) => !prev.example_ids.includes(id)
-            );
-            updates.example_ids = [...prev.example_ids, ...newExampleIds];
+          if (data.example_resources?.length) {
+            const newIds = data.example_resources
+              .map((r) => r.id)
+              .filter((id): id is string => !!id && !prev.example_ids.includes(id));
+            if (newIds.length > 0) {
+              updates.example_ids = [...prev.example_ids, ...newIds];
+            }
           }
 
           return { ...prev, ...updates };
@@ -1099,12 +1108,7 @@ function PersonaComponent({
       }
     };
 
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
+    const handleGenerationProgress = (data: PersonaGenerationProgressPayload) => {
       // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "persona" ||
@@ -1116,13 +1120,7 @@ function PersonaComponent({
       // Handle progress updates if needed
     };
 
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
+    const handleGenerationError = (data: PersonaGenerationErrorPayload) => {
       // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "persona" ||
@@ -1142,6 +1140,7 @@ function PersonaComponent({
         "examples",
         "parameter_fields",
         "departments",
+        "parameters",
       ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
@@ -2063,8 +2062,8 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.descriptions}
                   aiResource={aiFormData.description_resource}
-                  onAccept={() => clearAiResource("description_id")}
-                  onReject={() => clearAiResource("description_id")}
+                  onAccept={() => clearAiResource("description_resource")}
+                  onReject={() => clearAiResource("description_resource")}
                 />
 
                 {/* Department Selection */}
