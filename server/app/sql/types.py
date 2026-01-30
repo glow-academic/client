@@ -18356,7 +18356,7 @@ class GetRubricsSqlParams(BaseModel):
 
 class QGetRubricsV4Item(BaseModel):
 
-    rubric_id: UUID | None
+    id: UUID | None
     name: str | None
     description: str | None
 

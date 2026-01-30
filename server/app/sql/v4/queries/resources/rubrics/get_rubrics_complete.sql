@@ -34,7 +34,7 @@ END $$;
 
 -- Create composite type for rubric items
 CREATE TYPE types.q_get_rubrics_v4_item AS (
-    rubric_id uuid,
+    id uuid,
     name text,
     description text
 );
@@ -52,7 +52,7 @@ WITH rubric_data AS (
     -- When simulation_id is sentinel UUID (all zeros), return ALL active rubrics
     -- Otherwise return rubrics associated with the simulation
     SELECT DISTINCT
-        r.id as rubric_id,
+        r.id,
         COALESCE(r.name, '') as name,
         COALESCE(r.description, '') as description
     FROM rubrics_resource r
@@ -74,7 +74,7 @@ WITH rubric_data AS (
 SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
-            (rd.rubric_id, rd.name, rd.description)::types.q_get_rubrics_v4_item
+            (rd.id, rd.name, rd.description)::types.q_get_rubrics_v4_item
             ORDER BY rd.name
         ) FROM rubric_data rd),
         '{}'::types.q_get_rubrics_v4_item[]

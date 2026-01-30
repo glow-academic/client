@@ -17561,8 +17561,8 @@ export interface components {
         };
         /** QGetRubricsV4Item */
         QGetRubricsV4Item: {
-            /** Rubric Id */
-            rubric_id: string | null;
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Description */
