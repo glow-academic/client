@@ -18,7 +18,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import dynamic from "next/dynamic";
+
+// Dynamically import Monaco to avoid SSR issues
+const Monaco = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[360px] flex items-center justify-center border rounded-md bg-muted/30">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+    </div>
+  ),
+});
 import {
   Tooltip,
   TooltipContent,
@@ -26,7 +36,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -134,6 +143,12 @@ export function Templates({
 
   const [createdTemplates, setCreatedTemplates] = useState<TemplateItem[]>([]);
 
+  // Track pending template edits (for manual save mode)
+  // Maps templateId -> { name, description, html } for templates edited but not yet flushed
+  const [pendingTemplates, setPendingTemplates] = useState<
+    Map<string, { name: string; description: string; html: string; isNew: boolean }>
+  >(new Map());
+
   const mergedTemplates = useMemo<TemplateItem[]>(() => {
     const map = new Map<string, TemplateItem>();
     templateItems.forEach((item) => map.set(item.id, item));
@@ -142,8 +157,16 @@ export function Templates({
         map.set(item.id, item);
       }
     });
+    // Include pending templates for display (before they're flushed)
+    pendingTemplates.forEach((pending, id) => {
+      map.set(id, {
+        id,
+        name: pending.name,
+        description: pending.description || null,
+      });
+    });
     return Array.from(map.values());
-  }, [templateItems, createdTemplates]);
+  }, [templateItems, createdTemplates, pendingTemplates]);
 
   // Filter templates based on search term
   const filteredTemplates = useMemo(() => {
@@ -223,10 +246,52 @@ export function Templates({
     }
 
     const allIds: string[] = [...ids];
+    const newIdsMap = new Map<string, string>(); // old temp ID -> new real ID
+
+    // First, create resources for pending templates (newly created/edited)
+    for (const [templateId, pending] of pendingTemplates.entries()) {
+      try {
+        const createResult = await createTemplatesAction({
+          body: {
+            agent_id: templates_agent_id,
+            group_id: group_id,
+            name: pending.name || "Untitled Template",
+            mcp: false,
+          },
+        });
+        if (createResult?.template_id) {
+          const newTemplateId = createResult.template_id;
+          createdTemplateIdsRef.current.add(newTemplateId);
+          newIdsMap.set(templateId, newTemplateId);
+
+          // Store the HTML override with the new ID
+          setHtmlOverrides((prev) => ({
+            ...prev,
+            [newTemplateId]: pending.html,
+          }));
+
+          // Add to created templates for display
+          setCreatedTemplates((prev) => [
+            ...prev.filter((t) => t.id !== templateId), // Remove temp entry if exists
+            {
+              id: newTemplateId,
+              name: pending.name || "Untitled Template",
+              description: pending.description || null,
+            },
+          ]);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create pending template ${templateId}:`, error);
+      }
+    }
+
+    // Update IDs array, replacing temp IDs with real ones
+    const finalIds = allIds.map((id) => newIdsMap.get(id) ?? id);
 
     // Create resources for any selected templates that haven't been created yet
-    for (const templateId of ids) {
-      if (!createdTemplateIdsRef.current.has(templateId)) {
+    for (const templateId of finalIds) {
+      if (!createdTemplateIdsRef.current.has(templateId) && !newIdsMap.has(templateId)) {
         try {
           const templateItem = mergedTemplates.find((t) => t.id === templateId);
           await createTemplatesAction({
@@ -245,7 +310,10 @@ export function Templates({
       }
     }
 
-    return { template_ids: allIds };
+    // Clear pending templates after flush
+    setPendingTemplates(new Map());
+
+    return { template_ids: finalIds };
   };
 
   // Register flush callback with parent
@@ -275,6 +343,20 @@ export function Templates({
   );
   const [htmlCache, setHtmlCache] = useState<Record<string, string>>({});
   const [htmlLoading, setHtmlLoading] = useState(false);
+  const [editorTheme, setEditorTheme] = useState<"vs-dark" | "light">("vs-dark");
+
+  // Detect dark mode for Monaco theme
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      setEditorTheme("vs-dark");
+    } else {
+      setEditorTheme("light");
+    }
+  }, []);
   const editorOriginalValueRef = useRef("");
   const editorOriginalNameRef = useRef("");
   const editorOriginalDescriptionRef = useRef("");
@@ -323,6 +405,21 @@ export function Templates({
 
   const openEditor = useCallback(
     async (templateId: string) => {
+      // Check pending templates first (for manual save mode)
+      const pending = pendingTemplates.get(templateId);
+      if (pending) {
+        setEditorTemplateId(templateId);
+        setEditorName(pending.name);
+        setEditorDescription(pending.description);
+        setEditorValue(pending.html);
+        editorOriginalNameRef.current = pending.name;
+        editorOriginalDescriptionRef.current = pending.description;
+        editorOriginalValueRef.current = pending.html;
+        setIsNewTemplate(false);
+        setEditorOpen(true);
+        return;
+      }
+
       const template = templatesById[templateId];
       // Open dialog immediately with name/description
       setEditorTemplateId(templateId);
@@ -360,7 +457,7 @@ export function Templates({
         setHtmlLoading(false);
       }
     },
-    [templatesById, htmlOverrides, htmlCache, fetchTemplateHtml]
+    [templatesById, pendingTemplates, htmlOverrides, htmlCache, fetchTemplateHtml]
   );
 
   const openCreateEditor = useCallback(() => {
@@ -375,15 +472,10 @@ export function Templates({
     setEditorOpen(true);
   }, []);
 
-  const commitTemplateEdit = useCallback(async () => {
-    if (!createTemplatesAction || !templates_agent_id || !group_id) {
-      return;
-    }
-
+  const saveTemplate = useCallback(async () => {
     const nextName = editorName.trim() || "Untitled Template";
     const nextDescription = editorDescription.trim();
-    const hasContent =
-      editorValue.trim() || nextName || nextDescription;
+    const hasContent = editorValue.trim() || nextName || nextDescription;
 
     if (!hasContent) return;
 
@@ -393,7 +485,71 @@ export function Templates({
         editorValue !== editorOriginalValueRef.current ||
         nextName !== editorOriginalNameRef.current ||
         nextDescription !== editorOriginalDescriptionRef.current;
-      if (!hasChanges) return;
+      if (!hasChanges) {
+        setEditorOpen(false);
+        return;
+      }
+    }
+
+    // If autosave is disabled, store changes locally and defer to flush
+    if (!isAutosaveEnabled) {
+      // Generate a temporary ID for new templates
+      const tempId = isNewTemplate
+        ? `temp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+        : editorTemplateId!;
+
+      // Store pending template data
+      setPendingTemplates((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(tempId, {
+          name: nextName,
+          description: nextDescription,
+          html: editorValue,
+          isNew: isNewTemplate,
+        });
+        return newMap;
+      });
+
+      // Update local display state
+      setCreatedTemplates((prev) => {
+        const filtered = prev.filter((t) => t.id !== tempId && t.id !== editorTemplateId);
+        return [
+          ...filtered,
+          {
+            id: tempId,
+            name: nextName,
+            description: nextDescription || null,
+          },
+        ];
+      });
+
+      // Store HTML override locally
+      setHtmlOverrides((prev) => ({
+        ...prev,
+        [tempId]: editorValue,
+      }));
+
+      // Update IDs in selection
+      if (isNewTemplate) {
+        onChange([...ids, tempId]);
+      } else if (editorTemplateId && tempId !== editorTemplateId) {
+        onChange(ids.map((id) => (id === editorTemplateId ? tempId : id)));
+      }
+
+      // Update editor state
+      setIsNewTemplate(false);
+      setEditorTemplateId(tempId);
+      editorOriginalValueRef.current = editorValue;
+      editorOriginalNameRef.current = nextName;
+      editorOriginalDescriptionRef.current = nextDescription;
+
+      setEditorOpen(false);
+      return;
+    }
+
+    // Autosave mode: create resource immediately
+    if (!createTemplatesAction || !templates_agent_id || !group_id) {
+      return;
     }
 
     setIsSaving(true);
@@ -435,23 +591,18 @@ export function Templates({
         editorOriginalNameRef.current = nextName;
         editorOriginalDescriptionRef.current = nextDescription;
       }
+      setEditorOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Failed to create template:", error);
     } finally {
       setIsSaving(false);
     }
-  }, [editorTemplateId, editorValue, editorName, editorDescription, isNewTemplate, createTemplatesAction, templates_agent_id, group_id, ids, onChange]);
+  }, [editorTemplateId, editorValue, editorName, editorDescription, isNewTemplate, isAutosaveEnabled, createTemplatesAction, templates_agent_id, group_id, ids, onChange]);
 
-  const handleEditorOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        void commitTemplateEdit();
-      }
-      setEditorOpen(open);
-    },
-    [commitTemplateEdit]
-  );
+  const handleEditorOpenChange = useCallback((open: boolean) => {
+    setEditorOpen(open);
+  }, []);
 
   const canCreateTemplate =
     !!createTemplatesAction && !!templates_agent_id && !!group_id && !disabled;
@@ -625,14 +776,34 @@ export function Templates({
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                  <Textarea
-                    id="template-html-editor"
-                    value={editorValue}
-                    onChange={(e) => setEditorValue(e.target.value)}
-                    className="min-h-[360px] font-mono text-xs"
-                    placeholder="Paste template HTML here..."
-                    disabled={disabled || isSaving}
-                  />
+                  <div className="border rounded-md overflow-hidden min-h-[360px]">
+                    <Monaco
+                      height="360px"
+                      defaultLanguage="html"
+                      value={editorValue}
+                      onChange={(value) => setEditorValue(value ?? "")}
+                      theme={editorTheme}
+                      options={{
+                        readOnly: disabled || isSaving,
+                        wordWrap: "on",
+                        minimap: { enabled: false },
+                        fontSize: 13,
+                        lineNumbers: "on",
+                        scrollBeyondLastLine: false,
+                        folding: true,
+                        lineDecorationsWidth: 10,
+                        lineNumbersMinChars: 3,
+                        renderLineHighlight: "all",
+                        automaticLayout: true,
+                        scrollbar: {
+                          vertical: "visible",
+                          horizontal: "visible",
+                          verticalScrollbarSize: 8,
+                          horizontalScrollbarSize: 8,
+                        },
+                      }}
+                    />
+                  </div>
                 )}
               </div>
               <div className="space-y-2">
@@ -658,14 +829,30 @@ export function Templates({
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
-              variant="secondary"
+              variant="ghost"
               onClick={() => handleEditorOpenChange(false)}
               disabled={isSaving}
             >
-              Close
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={saveTemplate}
+              disabled={disabled || isSaving || htmlLoading}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : isNewTemplate ? (
+                "Create"
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

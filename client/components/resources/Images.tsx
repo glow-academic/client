@@ -134,14 +134,14 @@ export function Images({
     Array<{ id: string; name: string; upload_id: string }>
   >(() => {
     // Initialize from image_resources or images array
-    // API returns image_id, not id
+    // API returns image_id, not id. Use upload_id for downloads.
     if (image_resources && image_resources.length > 0) {
       return image_resources
         .filter((img) => (img.image_id || img.id) && img.name)
         .map((img) => ({
           id: (img.image_id ?? img.id)!,
           name: img.name!,
-          upload_id: (img.image_id ?? img.id)!,
+          upload_id: img.upload_id || (img.image_id ?? img.id)!,
         }));
     }
     if (ids.length > 0 && allImages.length > 0) {
@@ -685,7 +685,7 @@ export function Images({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setPreviewImageId(img.id);
+                    setPreviewImageId(img.upload_id);
                   }}
                   className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
                   disabled={disabled}
@@ -705,7 +705,7 @@ export function Images({
                   <X className="h-3.5 w-3.5 text-primary-foreground" />
                 </button>
                 <ImageViewer
-                  imageId={img.id}
+                  imageId={img.upload_id}
                   name={img.name}
                   bare={true}
                 />
@@ -781,7 +781,7 @@ export function Images({
             <ImageViewer
               imageId={previewImageId}
               name={
-                selectedImages.find((img) => img.id === previewImageId)?.name ||
+                selectedImages.find((img) => img.upload_id === previewImageId)?.name ||
                 "Image"
               }
             />

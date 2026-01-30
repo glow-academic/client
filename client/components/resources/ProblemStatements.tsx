@@ -222,8 +222,15 @@ export function ProblemStatements({
   const problemStatementsById = useMemo(() => {
     const mapping: Record<string, string> = {};
     problemStatementsArray.forEach((ps) => {
-      if (ps.id && ps.problem_statement) {
-        mapping[ps.id] = ps.problem_statement;
+      if (ps.problem_statement) {
+        // Map by problem_statement_id (API's primary key)
+        if (ps.problem_statement_id) {
+          mapping[ps.problem_statement_id] = ps.problem_statement;
+        }
+        // Also map by id for backwards compatibility
+        if (ps.id) {
+          mapping[ps.id] = ps.problem_statement;
+        }
       }
     });
     return mapping;
