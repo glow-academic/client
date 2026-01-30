@@ -16,6 +16,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.simulation.permissions import (
+    SIMULATION_RESOURCES,
     compute_can_edit,
     compute_departments_required,
     compute_description_required,
@@ -31,6 +32,8 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_show_scenarios,
     has_access,
 )
+from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.types import CandidateAgent
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -176,6 +179,28 @@ async def get_simulation(
             GetSimulationIdsSqlRow,
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
+
+        # === PYTHON-BASED AGENT SELECTION ===
+        candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
+        user_dept_set = set(user_department_ids) if user_department_ids else None
+
+        # Select best agents for scenario resources
+        agent_ids = select_agents_for_artifact(
+            candidates=candidate_agents,
+            artifact_resources=SIMULATION_RESOURCES,
+            resources_needed=[
+                "scenario_flags",
+                "scenario_positions",
+                "scenario_rubrics",
+                "scenario_time_limits",
+            ],
+            user_department_ids=user_dept_set,
+        )
+
+        scenario_flags_agent_id = agent_ids.get("scenario_flags")
+        scenario_positions_agent_id = agent_ids.get("scenario_positions")
+        scenario_rubrics_agent_id = agent_ids.get("scenario_rubrics")
+        scenario_time_limits_agent_id = agent_ids.get("scenario_time_limits")
 
         # === PYTHON BUSINESS LOGIC ===
 
@@ -603,7 +628,7 @@ async def get_simulation(
             scenario_flag_ids=ids_result.scenario_flag_ids or [],
             scenario_flag_resources=[_to_dict(sf) for sf in scenario_flags],
             show_scenario_flags=show_scenario_flags,
-            scenario_flags_agent_id=None,
+            scenario_flags_agent_id=scenario_flags_agent_id,
             scenario_flags_required=False,
             scenario_flag_suggestions=[],
             scenario_flags=[_to_dict(sf) for sf in scenario_flags],
@@ -611,7 +636,7 @@ async def get_simulation(
             scenario_position_ids=ids_result.scenario_position_ids or [],
             scenario_position_resources=[_to_dict(sp) for sp in scenario_positions],
             show_scenario_positions=show_scenario_positions,
-            scenario_positions_agent_id=None,
+            scenario_positions_agent_id=scenario_positions_agent_id,
             scenario_positions_required=False,
             scenario_position_suggestions=[],
             scenario_positions=[_to_dict(sp) for sp in scenario_positions],
@@ -619,7 +644,7 @@ async def get_simulation(
             scenario_rubric_ids=ids_result.scenario_rubric_ids or [],
             scenario_rubric_resources=[_to_dict(sr) for sr in scenario_rubrics],
             show_scenario_rubrics=show_scenario_rubrics,
-            scenario_rubrics_agent_id=None,
+            scenario_rubrics_agent_id=scenario_rubrics_agent_id,
             scenario_rubrics_required=True,
             scenario_rubric_suggestions=[],
             scenario_rubrics=[_to_dict(sr) for sr in scenario_rubrics],
@@ -630,7 +655,7 @@ async def get_simulation(
                 _to_dict(stl) for stl in scenario_time_limits
             ],
             show_scenario_time_limits=show_scenario_time_limits,
-            scenario_time_limits_agent_id=None,
+            scenario_time_limits_agent_id=scenario_time_limits_agent_id,
             scenario_time_limits_required=False,
             scenario_time_limit_suggestions=[],
             scenario_time_limits=[_to_dict(stl) for stl in scenario_time_limits],

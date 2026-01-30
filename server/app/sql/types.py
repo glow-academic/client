@@ -22541,82 +22541,6 @@ class GetSimulationApiResponse(BaseModel):
 
 
 
-# Generated from: get_simulation_ids
-
-class GetSimulationIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetSimulationIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    name_agent_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    scenarios_agent_id: UUID | None = None
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    scenarios_has_tools: bool | None = None
-
-class GetSimulationIdsApiRequest(BaseModel):
-
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetSimulationIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-    name_agent_id: UUID | None = None
-    description_agent_id: UUID | None = None
-    flag_agent_id: UUID | None = None
-    departments_agent_id: UUID | None = None
-    scenarios_agent_id: UUID | None = None
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-    names_has_tools: bool | None = None
-    descriptions_has_tools: bool | None = None
-    flags_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    scenarios_has_tools: bool | None = None
-
-
-
 # Generated from: get_simulation_resource_ids_by_group_id
 
 class GetSimulationResourceIdsByGroupIdSqlParams(BaseModel):
@@ -26817,12 +26741,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationApiRequest",
         "GetSimulationApiResponse",
     ),
-    "app/sql/v4/queries/simulations/get_simulation_ids_complete.sql": (
-        "GetSimulationIdsSqlParams",
-        "GetSimulationIdsSqlRow",
-        "GetSimulationIdsApiRequest",
-        "GetSimulationIdsApiResponse",
-    ),
     "app/sql/v4/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql": (
         "GetSimulationResourceIdsByGroupIdSqlParams",
         "GetSimulationResourceIdsByGroupIdSqlRow",
@@ -29047,11 +28965,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/get_simulation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

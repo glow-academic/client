@@ -20,7 +20,6 @@ from app.api.v4.artifacts.persona.permissions import (
     PERSONA_CONTENT_RESOURCES,
     PERSONA_PARAMETERS_RESOURCES,
     PERSONA_RESOURCES,
-    CandidateAgent,
     compute_can_edit,
     compute_color_required,
     compute_departments_required,
@@ -44,9 +43,9 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_parameter_fields,
     compute_show_parameters,
     has_access,
-    select_agents_for_artifact,
-    select_multi_resource_agent,
 )
+from app.api.v4.permissions import select_agents_for_artifact, select_multi_resource_agent
+from app.api.v4.types import CandidateAgent
 from app.api.v4.artifacts.persona.types import (
     GetPersonaApiRequest,
     GetPersonaApiResponse,
@@ -180,19 +179,7 @@ async def get_persona_internal(
     instructions_has_tools = ids_result.instructions_has_tools or False
 
     # === PARSE CANDIDATE AGENTS FROM QUERY 2 AND COMPUTE AGENT IDS IN PYTHON ===
-    # Composite type returns as Record with named fields
-    candidate_agents = [
-        CandidateAgent(
-            agent_id=ca["agent_id"],
-            agent_name=ca["agent_name"],
-            tool_resources=set(ca["tool_resources"] or []),
-            department_ids=set(ca["department_ids"] or []),
-            updated_at=ca["updated_at"],
-            is_active=True,  # Query 2 only returns active agents
-            is_mcp=ca["is_mcp"] or False,
-        )
-        for ca in (ids_result.candidate_agents or [])
-    ]
+    candidate_agents = CandidateAgent.from_sql_rows(ids_result.candidate_agents)
 
     # Use Python scoring to select best agents for each resource
     user_dept_set = set(user_department_ids) if user_department_ids else None

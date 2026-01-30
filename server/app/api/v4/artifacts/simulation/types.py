@@ -210,6 +210,9 @@ class GetSimulationIdsSqlRow(BaseModel):
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
 
+    # Candidate agents (for Python-side agent scoring)
+    candidate_agents: list[dict] | None = None
+
     # Tools existence flags
     names_has_tools: bool | None = None
     descriptions_has_tools: bool | None = None

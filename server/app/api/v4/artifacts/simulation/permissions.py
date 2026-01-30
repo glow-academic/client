@@ -6,6 +6,29 @@ following the two-pass architecture pattern.
 
 from uuid import UUID
 
+from app.api.v4.permissions import select_agents_for_artifact
+from app.api.v4.types import CandidateAgent
+
+# Re-export for use in get.py
+__all__ = [
+    "CandidateAgent",
+    "select_agents_for_artifact",
+    "SIMULATION_RESOURCES",
+]
+
+# Simulation-specific resource definitions
+SIMULATION_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "scenarios",
+    "scenario_flags",
+    "scenario_positions",
+    "scenario_rubrics",
+    "scenario_time_limits",
+}
+
 # =============================================================================
 # Access Control
 # =============================================================================
