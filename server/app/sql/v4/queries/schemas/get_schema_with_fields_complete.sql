@@ -16,7 +16,7 @@ END $$;
 
 -- 2) Create function
 CREATE OR REPLACE FUNCTION api_get_schema_with_fields_v4(
-    p_schema_id uuid
+    schema_id uuid
 )
 RETURNS TABLE (
     schema_id uuid,
@@ -39,6 +39,6 @@ AS $$
         ar.position,
         NULL::uuid as item_schema_id
     FROM args_resource ar
-    WHERE ar.id = p_schema_id
+    WHERE ar.id = $1
     ORDER BY ar.position, ar.name;
 $$;

@@ -9888,17 +9888,17 @@ class InfrastructureProfileResolveFromDepartmentApiResponse(BaseModel):
 
 class InfraToolsCreateCallForToolSqlParams(BaseModel):
 
-    p_external_call_id: str
-    p_run_id: UUID
-    p_template_id: UUID
-    p_arguments_raw: str
+    external_call_id: str
+    run_id: UUID
+    template_id: UUID
+    arguments_raw: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_external_call_id,
-            self.p_run_id,
-            self.p_template_id,
-            self.p_arguments_raw,
+            self.external_call_id,
+            self.run_id,
+            self.template_id,
+            self.arguments_raw,
         )
 
 class InfraToolsCreateCallForToolSqlRow(BaseModel):
@@ -9907,10 +9907,10 @@ class InfraToolsCreateCallForToolSqlRow(BaseModel):
 
 class InfraToolsCreateCallForToolApiRequest(BaseModel):
 
-    p_external_call_id: str
-    p_run_id: UUID
-    p_template_id: UUID
-    p_arguments_raw: str
+    external_call_id: str
+    run_id: UUID
+    template_id: UUID
+    arguments_raw: str
 
 class InfraToolsCreateCallForToolApiResponse(BaseModel):
 
@@ -9922,11 +9922,11 @@ class InfraToolsCreateCallForToolApiResponse(BaseModel):
 
 class InfraToolsGetResourceTypeByToolIdSqlParams(BaseModel):
 
-    p_tool_id: UUID
+    tool_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_tool_id,
+            self.tool_id,
         )
 
 class InfraToolsGetResourceTypeByToolIdSqlRow(BaseModel):
@@ -9935,7 +9935,7 @@ class InfraToolsGetResourceTypeByToolIdSqlRow(BaseModel):
 
 class InfraToolsGetResourceTypeByToolIdApiRequest(BaseModel):
 
-    p_tool_id: UUID
+    tool_id: UUID
 
 class InfraToolsGetResourceTypeByToolIdApiResponse(BaseModel):
 
@@ -9947,11 +9947,11 @@ class InfraToolsGetResourceTypeByToolIdApiResponse(BaseModel):
 
 class InfraToolsGetSchemaFieldsV4SqlParams(BaseModel):
 
-    p_schema_id: UUID
+    schema_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_schema_id,
+            self.schema_id,
         )
 
 class InfraToolsGetSchemaFieldsV4SqlRow(BaseModel):
@@ -9963,7 +9963,7 @@ class InfraToolsGetSchemaFieldsV4SqlRow(BaseModel):
 
 class InfraToolsGetSchemaFieldsV4ApiRequest(BaseModel):
 
-    p_schema_id: UUID
+    schema_id: UUID
 
 class InfraToolsGetSchemaFieldsV4ApiResponse(BaseModel):
 
@@ -10053,11 +10053,11 @@ class InfraToolsGetToolCallResultV4ApiResponse(BaseModel):
 
 class InfraToolsGetToolIdByNameSqlParams(BaseModel):
 
-    p_tool_name: str
+    tool_name: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_tool_name,
+            self.tool_name,
         )
 
 class InfraToolsGetToolIdByNameSqlRow(BaseModel):
@@ -10066,7 +10066,7 @@ class InfraToolsGetToolIdByNameSqlRow(BaseModel):
 
 class InfraToolsGetToolIdByNameApiRequest(BaseModel):
 
-    p_tool_name: str
+    tool_name: str
 
 class InfraToolsGetToolIdByNameApiResponse(BaseModel):
 
@@ -10078,13 +10078,13 @@ class InfraToolsGetToolIdByNameApiResponse(BaseModel):
 
 class InfraToolsLinkToolCallSqlParams(BaseModel):
 
-    p_tool_id: UUID
-    p_call_id: UUID
+    tool_id: UUID
+    call_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_tool_id,
-            self.p_call_id,
+            self.tool_id,
+            self.call_id,
         )
 
 class InfraToolsLinkToolCallSqlRow(BaseModel):
@@ -10093,8 +10093,8 @@ class InfraToolsLinkToolCallSqlRow(BaseModel):
 
 class InfraToolsLinkToolCallApiRequest(BaseModel):
 
-    p_tool_id: UUID
-    p_call_id: UUID
+    tool_id: UUID
+    call_id: UUID
 
 class InfraToolsLinkToolCallApiResponse(BaseModel):
 
@@ -21190,11 +21190,11 @@ class ValidateScenarioResourceProgressApiResponse(BaseModel):
 
 class GetSchemaWithFieldsSqlParams(BaseModel):
 
-    p_schema_id: UUID
+    schema_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_schema_id,
+            self.schema_id,
         )
 
 class GetSchemaWithFieldsSqlRow(BaseModel):
@@ -21208,7 +21208,7 @@ class GetSchemaWithFieldsSqlRow(BaseModel):
 
 class GetSchemaWithFieldsApiRequest(BaseModel):
 
-    p_schema_id: UUID
+    schema_id: UUID
 
 class GetSchemaWithFieldsApiResponse(BaseModel):
 
@@ -24226,11 +24226,11 @@ class CreateTemplateValueV4ApiResponse(BaseModel):
 
 class GetTemplateArrayItemsV4SqlParams(BaseModel):
 
-    p_template_id: UUID
+    template_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_template_id,
+            self.template_id,
         )
 
 class GetTemplateArrayItemsV4SqlRow(BaseModel):
@@ -24240,7 +24240,7 @@ class GetTemplateArrayItemsV4SqlRow(BaseModel):
 
 class GetTemplateArrayItemsV4ApiRequest(BaseModel):
 
-    p_template_id: UUID
+    template_id: UUID
 
 class GetTemplateArrayItemsV4ApiResponse(BaseModel):
 
@@ -24253,11 +24253,11 @@ class GetTemplateArrayItemsV4ApiResponse(BaseModel):
 
 class GetTemplateValuesV4SqlParams(BaseModel):
 
-    p_template_id: UUID
+    template_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.p_template_id,
+            self.template_id,
         )
 
 class GetTemplateValuesV4SqlRow(BaseModel):
@@ -24270,7 +24270,7 @@ class GetTemplateValuesV4SqlRow(BaseModel):
 
 class GetTemplateValuesV4ApiRequest(BaseModel):
 
-    p_template_id: UUID
+    template_id: UUID
 
 class GetTemplateValuesV4ApiResponse(BaseModel):
 

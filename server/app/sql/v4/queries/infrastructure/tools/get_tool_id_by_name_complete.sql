@@ -16,7 +16,7 @@ END $$;
 
 -- 2) Create function
 CREATE OR REPLACE FUNCTION infra_get_tool_id_by_name_v4(
-    p_tool_name text
+    tool_name text
 )
 RETURNS TABLE (
     tool_id uuid
@@ -28,7 +28,7 @@ AS $$
     FROM tool_artifact t
     JOIN tool_names_junction tn ON tn.tool_id = t.id
     JOIN names_resource n ON n.id = tn.name_id
-    WHERE n.name = p_tool_name
+    WHERE n.name = tool_name
       AND EXISTS (
           SELECT 1
           FROM tool_flags_junction tf

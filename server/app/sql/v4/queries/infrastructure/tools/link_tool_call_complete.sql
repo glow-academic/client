@@ -16,8 +16,8 @@ END $$;
 
 -- 2) Create function
 CREATE OR REPLACE FUNCTION infra_link_tool_call_v4(
-    p_tool_id uuid,
-    p_call_id uuid
+    tool_id uuid,
+    call_id uuid
 )
 RETURNS TABLE (
     success boolean
@@ -26,7 +26,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     INSERT INTO tool_calls_junction (tool_id, call_id)
-    VALUES (p_tool_id, p_call_id)
+    VALUES ($1, $2)
     ON CONFLICT DO NOTHING;
 
     SELECT true as success;

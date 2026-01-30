@@ -16,7 +16,7 @@ END $$;
 
 -- 2) Create function
 CREATE OR REPLACE FUNCTION infra_get_schema_fields_v4(
-    p_schema_id uuid
+    schema_id uuid
 )
 RETURNS TABLE (
     id uuid,
@@ -29,6 +29,6 @@ STABLE
 AS $$
     SELECT id, name, field_type, ''::text as template
     FROM args_resource
-    WHERE args_resource.id = p_schema_id
+    WHERE args_resource.id = $1
     ORDER BY position;
 $$;

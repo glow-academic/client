@@ -16,7 +16,7 @@ END $$;
 
 -- 2) Create function (deprecated - returns empty result)
 CREATE OR REPLACE FUNCTION utils_get_template_array_items_v4(
-    p_template_id uuid
+    template_id uuid
 )
 RETURNS TABLE (
     name text,

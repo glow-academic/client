@@ -16,7 +16,7 @@ END $$;
 
 -- 2) Create function
 CREATE OR REPLACE FUNCTION infra_get_resource_type_by_tool_id_v4(
-    p_tool_id uuid
+    tool_id uuid
 )
 RETURNS TABLE (
     resource_type text
@@ -26,7 +26,7 @@ STABLE
 AS $$
     SELECT rtr.resource::text as resource_type
     FROM resource_tools_relation rtr
-    WHERE rtr.tool_id = p_tool_id
+    WHERE rtr.tool_id = $1
       AND rtr.active = true
     LIMIT 1;
 $$;
