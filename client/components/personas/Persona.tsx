@@ -194,14 +194,7 @@ function PersonaComponent({
       description?: string | null;
     } | null;
     // Future: name_id, name_resource, instructions_id, etc.
-  }>({
-    // Add a sample description resource example for testing/demo
-    description_id: "sample-description-id",
-    description_resource: {
-      id: "sample-description-id",
-      description: "Sample AI suggested description for this persona.",
-    },
-  });
+  }>({});
 
   // Clear a pending AI resource suggestion
   const clearAiResource = useCallback((key: keyof typeof aiFormData) => {

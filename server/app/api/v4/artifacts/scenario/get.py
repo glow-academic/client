@@ -678,6 +678,17 @@ async def get_scenario(
                 )
                 return (selected, suggestions)
 
+        # Scenario-specific flag names (business logic)
+        SCENARIO_FLAG_NAMES = {
+            "scenario_active",
+            "video_enabled",
+            "problem_statement_enabled",
+            "objectives_enabled",
+            "images_enabled",
+            "scenario_use_templates",
+            "questions_enabled",
+        }
+
         async def fetch_all_scenario_flags():
             """Fetch ALL available scenario flags, not just selected ones."""
             async with pool.acquire() as c:
@@ -696,16 +707,18 @@ async def get_scenario(
                     if fid
                 ]
                 selected = await get_flags_internal(c, all_selected_ids, bypass_cache)
-                # Search for all available scenario flags
-                suggestions = await search_flags_internal(
+                # Search for all available scenario flags (by type)
+                all_flags = await search_flags_internal(
                     c,
                     None,
-                    20,
+                    50,
                     0,
                     all_selected_ids,
                     bypass_cache,
                     artifact_type="scenario",
                 )
+                # Filter to only scenario-specific flags (business logic in Python)
+                suggestions = [f for f in all_flags if f.name in SCENARIO_FLAG_NAMES]
                 return (selected, suggestions)
 
         async def fetch_departments():

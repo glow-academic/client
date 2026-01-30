@@ -501,6 +501,24 @@ fields_resources AS (
     JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     WHERE r.resource_type = 'fields'
 ),
+parameters_resources AS (
+    SELECT
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', pa.id::text,
+                    'name', (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM parameter_descriptions_junction pd JOIN descriptions_resource desc_data ON pd.description_id = desc_data.id WHERE pd.parameter_id = pa.id LIMIT 1)
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS param_id
+    JOIN parameter_artifact pa ON pa.id = param_id
+    WHERE r.resource_type = 'parameters'
+),
 examples_resources AS (
     SELECT
         COALESCE(
@@ -608,6 +626,20 @@ current_parameter_fields_resources AS (
     JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     WHERE r.resource_type = 'parameter_fields'
 ),
+current_parameters_resources AS (
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', pa.id::text,
+            'name', (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1),
+            'description', (SELECT desc_data.description FROM parameter_descriptions_junction pd JOIN descriptions_resource desc_data ON pd.description_id = desc_data.id WHERE pd.parameter_id = pa.id LIMIT 1)
+        )
+    ), '[]'::jsonb) as data
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.current_resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS param_id
+    JOIN parameter_artifact pa ON pa.id = param_id
+    WHERE r.resource_type = 'parameters'
+),
 current_examples_resources AS (
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object('id', e.id::text, 'example', e.example)
@@ -630,6 +662,7 @@ combined_resources AS (
             'flags', COALESCE((SELECT resources FROM flags_resources), '[]'::jsonb),
             'departments', COALESCE((SELECT resources FROM departments_resources), '[]'::jsonb),
             'fields', COALESCE((SELECT resources FROM fields_resources), '[]'::jsonb),
+            'parameters', COALESCE((SELECT resources FROM parameters_resources), '[]'::jsonb),
             'examples', COALESCE((SELECT resources FROM examples_resources), '[]'::jsonb),
             -- Current selections (form state from frontend)
             'current', jsonb_build_object(
@@ -641,6 +674,7 @@ combined_resources AS (
                 'flags', COALESCE((SELECT data FROM current_flags_resources), '[]'::jsonb),
                 'departments', COALESCE((SELECT data FROM current_departments_resources), '[]'::jsonb),
                 'parameter_fields', COALESCE((SELECT data FROM current_parameter_fields_resources), '[]'::jsonb),
+                'parameters', COALESCE((SELECT data FROM current_parameters_resources), '[]'::jsonb),
                 'examples', COALESCE((SELECT data FROM current_examples_resources), '[]'::jsonb)
             )
         ) as jinja_context

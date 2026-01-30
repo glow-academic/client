@@ -46,7 +46,7 @@ async def execute_tool_call(
 
     Args:
         conn: Database connection
-        tool_name: Name of the tool (e.g., "create_names", "link_names")
+        tool_name: Name of the tool (e.g., "create_names", "use_names")
         arguments: Tool arguments from the model
         run_id: Optional run ID for linking calls
 
@@ -72,7 +72,7 @@ async def execute_tool_call(
 
         tool_id = tool_result.tool_id
 
-        # Check if tool is creatable (INSERT) or link-only (SELECT existing)
+        # Check if tool is creatable (INSERT) or use-only (SELECT existing)
         creatable_params = InfraToolsIsToolCreatableSqlParams(p_tool_id=tool_id)
         creatable_result = await execute_sql_typed(
             conn,
@@ -136,12 +136,12 @@ async def execute_tool_call(
                 })
 
         else:
-            # LINK tool: SELECT existing record by ID
+            # USE tool: SELECT existing record by ID
             existing_id = mapped_values.get("id")
             if not existing_id:
                 return json.dumps({
                     "success": False,
-                    "message": f"Link tool {tool_name} requires an id argument. Please provide a valid {resource_type} id.",
+                    "message": f"Use tool {tool_name} requires an id argument. Please provide a valid {resource_type} id.",
                 })
 
             # Validate the resource exists
@@ -164,7 +164,7 @@ async def execute_tool_call(
             resource_id = existing_id
 
         # Success!
-        action = "created" if is_creatable else "linked"
+        action = "created" if is_creatable else "used"
         return json.dumps({
             "success": True,
             "message": f"Successfully {action} {resource_type} entry",

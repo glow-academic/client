@@ -244,20 +244,25 @@ async def get_simulation(
                 )
                 return (selected, suggestions)
 
+        # Simulation-specific flag names (business logic)
+        SIMULATION_FLAG_NAMES = {"simulation_active", "practice"}
+
         async def fetch_flags():
             async with pool.acquire() as c:
                 # Get selected flags
                 selected = await get_flags_internal(c, flag_ids, bypass_cache)
-                # Search for all available simulation flags
-                available = await search_flags_internal(
+                # Search for all available simulation flags (by type)
+                all_flags = await search_flags_internal(
                     c,
                     search=None,
-                    limit_count=20,
+                    limit_count=50,
                     offset_count=0,
                     exclude_ids=None,
                     bypass_cache=bypass_cache,
                     artifact_type="simulation",
                 )
+                # Filter to only simulation-specific flags (business logic in Python)
+                available = [f for f in all_flags if f.name in SIMULATION_FLAG_NAMES]
                 return (selected, available)
 
         async def fetch_departments():

@@ -344,18 +344,23 @@ async def get_persona_internal(
             )
             return (selected, suggestions)
 
+    # Persona-specific flag names (business logic)
+    PERSONA_FLAG_NAMES = {"persona_active"}
+
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags_internal(c, flag_ids, bypass_cache)
-            suggestions = await search_flags_internal(
+            all_flags = await search_flags_internal(
                 c,
                 None,
-                20,
+                50,
                 0,
                 flag_ids,
                 bypass_cache,
                 artifact_type="persona",
             )
+            # Filter to only persona-specific flags (business logic in Python)
+            suggestions = [f for f in all_flags if f.name in PERSONA_FLAG_NAMES]
             return (selected, suggestions)
 
     async def fetch_departments():
