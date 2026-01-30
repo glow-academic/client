@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, GripVertical, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioPositionsIn = InputOf<
@@ -451,9 +451,15 @@ export function ScenarioPositions({
             return (
               <div
                 key={scenarioId}
-                className="relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50"
+                className="relative flex flex-col justify-between p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50"
               >
-                <div className="flex items-center justify-between gap-1 mb-2">
+                <div className="flex items-start gap-2">
+                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab flex-shrink-0 mt-0.5" />
+                  <h3 className="font-medium text-sm leading-tight line-clamp-2" title={labelText}>
+                    {labelText}
+                  </h3>
+                </div>
+                <div className="flex items-center justify-between">
                   <Button
                     type="button"
                     variant="ghost"
@@ -464,9 +470,6 @@ export function ScenarioPositions({
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    #{position}
-                  </span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -478,9 +481,6 @@ export function ScenarioPositions({
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
-                <h3 className="font-medium text-sm leading-tight truncate text-center" title={labelText}>
-                  {labelText}
-                </h3>
               </div>
             );
           })}

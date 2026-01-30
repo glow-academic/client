@@ -8,6 +8,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -15,8 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Loader2, Power, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = InputOf<
@@ -431,35 +431,37 @@ export function ScenarioFlags({
               <Label className="text-sm font-medium" title={labelText}>
                 {labelText}
               </Label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {scenarioOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
                   return (
-                    <button
+                    <div
                       key={option.id}
-                      type="button"
-                      onClick={() => handleToggle(scenarioId, option.id, !isSelected)}
-                      disabled={disabled}
-                      className={cn(
-                        "relative flex flex-col gap-1 rounded-lg border p-3 text-left transition-all",
-                        "hover:shadow-sm hover:bg-accent/50",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        isSelected && "ring-2 ring-primary bg-accent",
-                        disabled && "pointer-events-none opacity-50"
-                      )}
+                      className="space-y-1 p-2 rounded-lg transition-all"
                     >
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 z-10 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        </div>
-                      )}
-                      <div className="text-xs font-medium pr-6">{option.name}</div>
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`flag-${scenarioId}-${option.id}`}
+                          className="text-sm flex items-center gap-1 flex-1"
+                        >
+                          <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                          {option.name}
+                        </Label>
+                        <Switch
+                          id={`flag-${scenarioId}-${option.id}`}
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleToggle(scenarioId, option.id, checked)
+                          }
+                          disabled={disabled}
+                        />
+                      </div>
                       {option.description && (
-                        <div className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                        <p className="text-xs text-muted-foreground pl-5">
                           {option.description}
-                        </div>
+                        </p>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
                 {scenarioOptions.length === 0 && (

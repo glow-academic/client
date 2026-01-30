@@ -300,8 +300,25 @@ export function ScenarioTimeLimits({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
         {scenario_ids.map((scenarioId) => {
           const currentValue = timeLimitByScenario.get(scenarioId);
+          const minutes = currentValue != null ? Math.floor(currentValue / 60) : null;
+          const seconds = currentValue != null ? currentValue % 60 : null;
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
+
+          const handleMinutesChange = (value: string) => {
+            const newMinutes = value.trim() === "" ? 0 : Math.max(0, parseInt(value, 10) || 0);
+            const currentSeconds = seconds ?? 0;
+            const totalSeconds = newMinutes * 60 + currentSeconds;
+            handleChange(scenarioId, totalSeconds > 0 ? String(totalSeconds) : "");
+          };
+
+          const handleSecondsChange = (value: string) => {
+            const newSeconds = value.trim() === "" ? 0 : Math.min(59, Math.max(0, parseInt(value, 10) || 0));
+            const currentMinutes = minutes ?? 0;
+            const totalSeconds = currentMinutes * 60 + newSeconds;
+            handleChange(scenarioId, totalSeconds > 0 ? String(totalSeconds) : "");
+          };
+
           return (
             <div
               key={scenarioId}
@@ -315,16 +332,25 @@ export function ScenarioTimeLimits({
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     type="number"
-                    min={1}
-                    value={currentValue ?? ""}
-                    onChange={(event) =>
-                      handleChange(scenarioId, event.target.value)
-                    }
-                    placeholder="Seconds"
+                    min={0}
+                    value={minutes ?? ""}
+                    onChange={(event) => handleMinutesChange(event.target.value)}
+                    placeholder="0"
                     disabled={disabled}
-                    className="w-24 h-8"
+                    className="w-16 h-8"
                   />
-                  <span className="text-xs text-muted-foreground">seconds</span>
+                  <span className="text-xs text-muted-foreground">min</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={seconds ?? ""}
+                    onChange={(event) => handleSecondsChange(event.target.value)}
+                    placeholder="0"
+                    disabled={disabled}
+                    className="w-16 h-8"
+                  />
+                  <span className="text-xs text-muted-foreground">sec</span>
                 </div>
               </div>
             </div>
