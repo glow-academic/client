@@ -14,7 +14,6 @@ import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 from app.api.v4.artifacts.persona.get import get_persona_internal
 from app.api.v4.artifacts.persona.types import GetPersonaApiRequest
@@ -27,10 +26,15 @@ from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetPersonaResourceTreeSqlParams,
     GetPersonaResourceTreeSqlRow,
+    IPersonaResourceV4,
+    InsertGenerationMessagesSqlParams,
+    InsertGenerationMessagesSqlRow,
+    PreparePersonaGenerationSqlParams,
+    PreparePersonaGenerationSqlRow,
     QGetPersonaResourceTreeV4Node,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -74,45 +78,6 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     agent_id: uuid.UUID  # Required: explicit agent ID from frontend
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
-
-
-class PreparePersonaGenerationSqlParams(BaseModel):
-    """Parameters for prepare_persona_generation SQL function."""
-
-    p_profile_id: uuid.UUID
-    p_agent_id: uuid.UUID
-    p_group_id: uuid.UUID | None = None
-    p_resources: list[dict[str, Any]] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources to SQL composite type format
-        resources = None
-        if self.p_resources:
-            resources = [
-                (r["resource_type"], [uuid.UUID(rid) for rid in r["resource_ids"]])
-                for r in self.p_resources
-            ]
-        return (
-            self.p_profile_id,
-            self.p_agent_id,
-            self.p_group_id,
-            resources,
-        )
-
-
-class InsertGenerationMessagesSqlParams(BaseModel):
-    """Parameters for insert_generation_messages SQL function."""
-
-    p_run_id: uuid.UUID
-    p_developer_messages: list[str] | None = None
-    p_user_messages: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_run_id,
-            self.p_developer_messages,
-            self.p_user_messages,
-        )
 
 
 async def _persona_generate_impl(
@@ -239,10 +204,10 @@ async def _persona_generate_impl(
                     )
 
                 resources = [
-                    {
-                        "resource_type": resource_type,
-                        "resource_ids": sorted(resource_ids),
-                    }
+                    IPersonaResourceV4(
+                        resource_type=resource_type,
+                        resource_ids=[uuid.UUID(rid) for rid in sorted(resource_ids)],
+                    )
                     for resource_type, resource_ids in resources_by_type.items()
                 ]
 
@@ -253,23 +218,148 @@ async def _persona_generate_impl(
             # This SQL function handles rate limit validation (fail fast),
             # group/run creation, and fetches all context in one call
             try:
-                prepare_sql = load_sql(SQL_PATH_PREPARE)
                 prepare_params = PreparePersonaGenerationSqlParams(
                     p_profile_id=profile_id,
                     p_agent_id=agent_id,
                     p_group_id=existing_group_id,
                     p_resources=resources if resources else None,
                 )
-                prepare_row = await conn.fetchrow(
-                    prepare_sql, *prepare_params.to_tuple()
+                prepare_row = cast(
+                    PreparePersonaGenerationSqlRow,
+                    await execute_sql_typed(
+                        conn, SQL_PATH_PREPARE, params=prepare_params
+                    ),
                 )
 
-                if not prepare_row:
+                if not prepare_row.run_id:
+                    # Run diagnostic queries to determine the actual failure reason
+                    failure_reasons: list[str] = []
+
+                    # Check 1: Agent exists and is active
+                    agent_check = await conn.fetchrow(
+                        """
+                        SELECT
+                            a.id,
+                            EXISTS (
+                                SELECT 1 FROM agent_flags_junction af
+                                JOIN flags_resource f ON af.flag_id = f.id
+                                WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true
+                            ) as is_active
+                        FROM agent_artifact a
+                        WHERE a.id = $1
+                        """,
+                        agent_id,
+                    )
+                    if not agent_check:
+                        failure_reasons.append(f"Agent {agent_id} does not exist")
+                    elif not agent_check["is_active"]:
+                        failure_reasons.append(f"Agent {agent_id} is not active")
+
+                    # Check 2: API key configuration exists
+                    key_check = await conn.fetchrow(
+                        """
+                        SELECT COUNT(*) as key_count
+                        FROM setting_artifact s
+                        JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id AND spk.active = true
+                        JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
+                        WHERE EXISTS (
+                            SELECT 1 FROM setting_flags_junction sf
+                            JOIN flags_resource f ON sf.flag_id = f.id
+                            WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE
+                        )
+                        """,
+                    )
+                    if not key_check or key_check["key_count"] == 0:
+                        failure_reasons.append("No active API key configured in settings")
+
+                    # Check 3: Rate limit configured for profile
+                    rate_check = await conn.fetchrow(
+                        """
+                        SELECT
+                            rl.requests_per_day,
+                            (
+                                SELECT COUNT(*)::bigint
+                                FROM profile_runs_junction prj
+                                JOIN view_runs_entry mr ON mr.id = prj.run_id
+                                WHERE prj.profile_id = $1
+                                AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+                            ) as runs_today
+                        FROM profile_artifact prof
+                        LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
+                        LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+                        WHERE prof.id = $1
+                        """,
+                        profile_id,
+                    )
+                    if rate_check:
+                        if rate_check["requests_per_day"] is None:
+                            failure_reasons.append("Profile has no rate limit configured (requests_per_day is NULL)")
+                        elif rate_check["runs_today"] >= rate_check["requests_per_day"]:
+                            failure_reasons.append(
+                                f"Rate limit exceeded ({rate_check['runs_today']}/{rate_check['requests_per_day']} requests today)"
+                            )
+
+                    # Check 4: Agent has a model configured
+                    model_check = await conn.fetchrow(
+                        """
+                        SELECT
+                            m.id as model_id,
+                            (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
+                            p_prov.id as provider_id,
+                            (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = p_prov.id LIMIT 1) as provider_name
+                        FROM agent_artifact a
+                        LEFT JOIN agent_models_junction am ON am.agent_id = a.id
+                        LEFT JOIN models_resource m ON m.id = am.model_id
+                        LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
+                        LEFT JOIN providers_resource p_res ON p_res.id = mp.providers_id
+                        LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = p_res.id
+                        LEFT JOIN provider_artifact p_prov ON p_prov.id = ppj.provider_id
+                        WHERE a.id = $1
+                        """,
+                        agent_id,
+                    )
+                    if not model_check or not model_check["model_id"]:
+                        failure_reasons.append(f"Agent {agent_id} has no model configured")
+                    elif not model_check["provider_id"]:
+                        failure_reasons.append(f"Model {model_check['model_name']} has no provider configured")
+
+                    # Check 5: Provider has API key in active settings
+                    if model_check and model_check["provider_id"]:
+                        provider_key_check = await conn.fetchrow(
+                            """
+                            SELECT
+                                spk.key_id,
+                                kr.key IS NOT NULL as has_key
+                            FROM setting_artifact s
+                            JOIN setting_provider_keys_junction spk ON spk.settings_id = s.id AND spk.active = true
+                            JOIN model_providers_junction mp ON mp.providers_id = spk.providers_id
+                            JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
+                            WHERE mp.model_id = $1
+                            AND EXISTS (
+                                SELECT 1 FROM setting_flags_junction sf
+                                JOIN flags_resource f ON sf.flag_id = f.id
+                                WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE
+                            )
+                            LIMIT 1
+                            """,
+                            model_check["model_id"],
+                        )
+                        if not provider_key_check:
+                            failure_reasons.append(
+                                f"No API key configured for provider '{model_check['provider_name']}' in active settings"
+                            )
+
+                    error_detail = "; ".join(failure_reasons) if failure_reasons else "Unknown reason (check server logs for SQL details)"
+                    logger.error(
+                        f"Persona generation preparation failed - "
+                        f"profile_id={profile_id}, agent_id={agent_id}, "
+                        f"reason: {error_detail}"
+                    )
                     await emit_to_internal(
                         "generate_call_error",
                         GenerateErrorApiRequest(
                             sid=sid,
-                            error_message="Failed to prepare persona generation",
+                            error_message=f"Failed to prepare persona generation: {error_detail}",
                             artifact_type="persona",
                             group_id=str(existing_group_id)
                             if existing_group_id
@@ -306,24 +396,22 @@ async def _persona_generate_impl(
                 raise
 
             # Extract context from prepare result
-            run_id = prepare_row["run_id"]
-            group_id = prepare_row["group_id"]
-            trace_id = prepare_row["trace_id"]
-            agent_name = prepare_row["agent_name"]
-            system_prompt = prepare_row["system_prompt"]
-            model_name = prepare_row["model_name"]
-            provider_name = prepare_row["provider_name"]
-            base_url = prepare_row["base_url"]
-            api_key = prepare_row["api_key"]
-            temperature = prepare_row["temperature"]
-            reasoning = prepare_row["reasoning"]
-            voice = prepare_row["voice"]
-            quality = prepare_row["quality"]
-            tools = prepare_row["tools"]
-            developer_instruction_templates = prepare_row[
-                "developer_instruction_templates"
-            ]
-            jinja_context = prepare_row["jinja_context"]
+            run_id = prepare_row.run_id
+            group_id = prepare_row.group_id
+            trace_id = prepare_row.trace_id
+            agent_name = prepare_row.agent_name
+            system_prompt = prepare_row.system_prompt
+            model_name = prepare_row.model_name
+            provider_name = prepare_row.provider_name
+            base_url = prepare_row.base_url
+            api_key = prepare_row.api_key
+            temperature = prepare_row.temperature
+            reasoning = prepare_row.reasoning
+            voice = prepare_row.voice
+            quality = prepare_row.quality
+            tools = prepare_row.tools
+            developer_instruction_templates = prepare_row.developer_instruction_templates
+            jinja_context = prepare_row.jinja_context
 
             # Step 5: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
@@ -332,7 +420,6 @@ async def _persona_generate_impl(
             )
 
             # Step 6: Insert pre-rendered messages
-            insert_sql = load_sql(SQL_PATH_INSERT_MESSAGES)
             insert_params = InsertGenerationMessagesSqlParams(
                 p_run_id=run_id,
                 p_developer_messages=rendered_developer_messages
@@ -342,9 +429,14 @@ async def _persona_generate_impl(
                 if data.user_instructions
                 else None,
             )
-            insert_row = await conn.fetchrow(insert_sql, *insert_params.to_tuple())
+            insert_row = cast(
+                InsertGenerationMessagesSqlRow,
+                await execute_sql_typed(
+                    conn, SQL_PATH_INSERT_MESSAGES, params=insert_params
+                ),
+            )
 
-            if not insert_row:
+            if not insert_row.message_id:
                 await emit_to_internal(
                     "generate_call_error",
                     GenerateErrorApiRequest(
@@ -358,8 +450,8 @@ async def _persona_generate_impl(
                 )
                 return
 
-            message_id = insert_row["message_id"]
-            messages = insert_row["messages"]
+            message_id = insert_row.message_id
+            messages = insert_row.messages
 
             # Step 7: Emit simplified payload to generate_artifact handler
             # The AI handler only needs to decrypt API key and stream LLM

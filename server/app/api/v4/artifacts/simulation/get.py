@@ -319,13 +319,13 @@ async def get_simulation(
         can_edit = compute_can_edit(
             user_role=user_role,
             simulation_department_ids=simulation_department_ids,
-            usage_count=cohort_usage_count,
+            cohort_usage_count=cohort_usage_count,
         )
 
         disabled_reason = compute_disabled_reason(
             user_role=user_role,
             simulation_department_ids=simulation_department_ids,
-            usage_count=cohort_usage_count,
+            cohort_usage_count=cohort_usage_count,
         )
 
         # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
@@ -337,9 +337,6 @@ async def get_simulation(
         )
         flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
         department_ids = ids_result.department_ids or []
-        # For new simulation, use user's departments if simulation has none
-        if request.simulation_id is None and not department_ids and user_department_ids:
-            department_ids = user_department_ids
         scenario_ids = ids_result.scenario_ids or []
 
         # Get pool for parallel connections
@@ -495,8 +492,10 @@ async def get_simulation(
                 department_id=d.department_id,
                 name=d.name,
                 description=d.description,
-                icon=getattr(d, "icon", None),
                 generated=d.generated,
+                scenario_ids=[],
+                rubric_ids=[],
+                cohort_ids=[],
             )
             for d in departments
         ]
@@ -505,8 +504,10 @@ async def get_simulation(
                 department_id=d.department_id,
                 name=d.name,
                 description=d.description,
-                icon=getattr(d, "icon", None),
                 generated=d.generated,
+                scenario_ids=[],
+                rubric_ids=[],
+                cohort_ids=[],
             )
             for d in department_resources
         ]
