@@ -21,7 +21,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 
 import type { ProfileItem } from "@/app/(main)/layout-server";
-import type { PracticeOut } from "@/app/(main)/practice/page";
+import type { PracticeOut } from "@/app/(main)/practice/custom/page";
 import {
   GenericForm,
   type StepStatus,

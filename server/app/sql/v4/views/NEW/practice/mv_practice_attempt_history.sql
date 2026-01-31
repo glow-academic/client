@@ -60,6 +60,10 @@ SELECT
     BOOL_OR(passed) AS has_passed,
     SUM(COALESCE(time_taken, 0))::int AS total_time_seconds,
 
+    -- Rubric points (for pass_pct computation in Python)
+    MAX(rubric_total_points)::int AS rubric_total_points,
+    MAX(rubric_pass_points)::int AS rubric_pass_points,
+
     -- Arrays for display (IDs only - join to _resource at query time)
     ARRAY_AGG(DISTINCT scenario_id) FILTER (WHERE scenario_id IS NOT NULL) AS scenario_ids,
     ARRAY_AGG(DISTINCT persona_id) FILTER (WHERE persona_id IS NOT NULL) AS persona_ids

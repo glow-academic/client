@@ -50,12 +50,9 @@ SELECT
     MIN(attempt_created_at) AS first_attempt_at,
     MAX(attempt_created_at) AS last_attempt_at,
 
-    -- Computed status
-    CASE
-        WHEN BOOL_OR(passed) = TRUE THEN 'passed'
-        WHEN COUNT(DISTINCT attempt_id) > 0 THEN 'in-progress'
-        ELSE 'not-started'
-    END AS status
+    -- Rubric points (for pass_pct computation in Python)
+    MAX(rubric_total_points)::int AS rubric_total_points,
+    MAX(rubric_pass_points)::int AS rubric_pass_points
 
 FROM mv_practice_chat_facts
 WHERE is_archived = FALSE  -- Exclude archived practice attempts
@@ -80,10 +77,6 @@ CREATE INDEX mv_practice_simulation_status_profile_id_idx
 -- Secondary lookup: simulation across profiles
 CREATE INDEX mv_practice_simulation_status_simulation_id_idx
     ON mv_practice_simulation_status (simulation_id);
-
--- Status filtering
-CREATE INDEX mv_practice_simulation_status_status_idx
-    ON mv_practice_simulation_status (status);
 
 -- Score-based sorting
 CREATE INDEX mv_practice_simulation_status_highest_score_idx

@@ -1147,6 +1147,229 @@ class RefreshHomeMvsNewApiResponse(BaseModel):
 
 
 
+# Generated from: get_practice_context
+
+class GetPracticeContextSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class GetPracticeContextSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_cohort_ids: list[UUID] | None = None
+    accessible_cohort_ids: list[UUID] | None = None
+    pass_threshold: float | None = None
+
+class GetPracticeContextApiRequest(BaseModel):
+
+    pass
+
+class GetPracticeContextApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_cohort_ids: list[UUID] | None = None
+    accessible_cohort_ids: list[UUID] | None = None
+    pass_threshold: float | None = None
+
+
+
+# Generated from: get_practice_history_new
+
+class GetPracticeHistoryNewSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    show_archived: bool | None = False
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.profile_ids,
+            self.infinite_mode,
+            self.show_archived,
+            self.search,
+            self.sort_by,
+            self.sort_order,
+            self.page,
+            self.page_size,
+        )
+
+class QGetPracticeHistoryNewV4Attempt(BaseModel):
+
+    attempt_id: UUID | None
+    attempt_created_at: datetime | None
+    profile_id: UUID | None
+    simulation_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    department_ids: list[UUID] | None
+    cohort_name: str | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    scenario_ids: list[UUID] | None
+    scenario_titles: list[str] | None
+    time_limit_seconds: int | None
+    infinite_mode: bool | None
+    num_chats: int | None
+    num_chats_completed: int | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    score_percent: float | None
+    has_passed: bool | None
+    total_time_seconds: int | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    is_archived: bool | None
+    practice_simulation: bool | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QGetPracticeHistoryNewV4FilterOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetPracticeHistoryNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    total_count: int | None = None
+    attempts: list[QGetPracticeHistoryNewV4Attempt] | None = None
+    simulation_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
+    scenario_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
+    profile_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
+
+class GetPracticeHistoryNewApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    show_archived: bool | None = False
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+class GetPracticeHistoryNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    total_count: int | None = None
+    attempts: list[QGetPracticeHistoryNewV4Attempt] | None = None
+    simulation_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
+    scenario_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
+    profile_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
+
+
+
+# Generated from: get_practice_overview_new
+
+class GetPracticeOverviewNewSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_ids,
+        )
+
+class QGetPracticeOverviewNewV4SimulationCard(BaseModel):
+
+    simulation_id: UUID | None
+    simulation_name: str | None
+    simulation_description: str | None
+    time_limit: int | None
+    persona_color: str | None
+    persona_icon: str | None
+    cohort_names: list[str] | None
+    standard_group_ids: list[UUID] | None
+    attempt_count: int | None
+    completed_count: int | None
+    highest_score: int | None
+    has_passed: bool | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    practice_simulation: bool | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QGetPracticeOverviewNewV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetPracticeOverviewNewV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetPracticeOverviewNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    has_data: bool | None = None
+    simulation_cards: list[QGetPracticeOverviewNewV4SimulationCard] | None = None
+    standard_groups: list[QGetPracticeOverviewNewV4StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewNewV4Standard] | None = None
+
+class GetPracticeOverviewNewApiRequest(BaseModel):
+
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetPracticeOverviewNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    has_data: bool | None = None
+    simulation_cards: list[QGetPracticeOverviewNewV4SimulationCard] | None = None
+    standard_groups: list[QGetPracticeOverviewNewV4StandardGroup] | None = None
+    standards: list[QGetPracticeOverviewNewV4Standard] | None = None
+
+
+
 # Generated from: refresh_mv_all
 
 class RefreshMvAllSqlParams(BaseModel):
@@ -24908,6 +25131,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshHomeMvsNewApiRequest",
         "RefreshHomeMvsNewApiResponse",
     ),
+    "app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql": (
+        "GetPracticeContextSqlParams",
+        "GetPracticeContextSqlRow",
+        "GetPracticeContextApiRequest",
+        "GetPracticeContextApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/NEW/practice/get_practice_history_new_complete.sql": (
+        "GetPracticeHistoryNewSqlParams",
+        "GetPracticeHistoryNewSqlRow",
+        "GetPracticeHistoryNewApiRequest",
+        "GetPracticeHistoryNewApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/NEW/practice/get_practice_overview_new_complete.sql": (
+        "GetPracticeOverviewNewSqlParams",
+        "GetPracticeOverviewNewSqlRow",
+        "GetPracticeOverviewNewApiRequest",
+        "GetPracticeOverviewNewApiResponse",
+    ),
     "app/sql/v4/queries/analytics/refresh_mv_all_complete.sql": (
         "RefreshMvAllSqlParams",
         "RefreshMvAllSqlRow",
@@ -27543,6 +27784,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/NEW/home/refresh_home_mvs_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_history_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_overview_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload

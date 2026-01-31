@@ -17,14 +17,15 @@ Structure:
 from fastapi import APIRouter
 
 from app.api.v4.analytics.NEW.home import router as home_router
+from app.api.v4.analytics.NEW.practice import router as practice_router
 
 router = APIRouter(prefix="/NEW", tags=["analytics", "new"])
 
 # Include section routers
 router.include_router(home_router)
+router.include_router(practice_router)
 
 # Future sections (uncomment as implemented):
-# from app.api.v4.analytics.NEW.practice import router as practice_router
 # from app.api.v4.analytics.NEW.dashboard import router as dashboard_router
 # from app.api.v4.analytics.NEW.reports import router as reports_router
 # from app.api.v4.analytics.NEW.pricing import router as pricing_router
@@ -32,7 +33,6 @@ router.include_router(home_router)
 # from app.api.v4.analytics.NEW.health import router as health_router
 # from app.api.v4.analytics.NEW.benchmark import router as benchmark_router
 
-# router.include_router(practice_router)
 # router.include_router(dashboard_router)
 # router.include_router(reports_router)
 # router.include_router(pricing_router)

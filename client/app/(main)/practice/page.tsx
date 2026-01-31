@@ -15,10 +15,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/analytics/practice/get", "post">;
-type PracticeOut = OutputOf<"/api/v4/analytics/practice/get", "post">;
-type PracticeHistoryIn = InputOf<"/api/v4/analytics/practice/list", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v4/analytics/practice/list", "post">;
+type PracticeIn = InputOf<"/api/v4/analytics/NEW/practice/get", "post">;
+type PracticeOut = OutputOf<"/api/v4/analytics/NEW/practice/get", "post">;
+type PracticeHistoryIn = InputOf<"/api/v4/analytics/NEW/practice/list", "post">;
+type PracticeHistoryOut = OutputOf<"/api/v4/analytics/NEW/practice/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.
@@ -28,7 +28,7 @@ type PracticeHistoryOut = OutputOf<"/api/v4/analytics/practice/list", "post">;
 const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/practice/get", input, {
+  return api.post("/analytics/NEW/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -49,7 +49,7 @@ const getPracticeHistory = async (
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/practice/list", input, {
+  return api.post("/analytics/NEW/practice/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -269,14 +269,20 @@ async function PracticeHistorySection({
   historySortOrder: string;
   departmentIds: string[];
 }) {
-  // Build history filters for practice (simplified: department_ids only)
+  // Build history filters for practice (NEW endpoint)
   // profile_id removed - comes from X-Profile-Id header automatically
   // Convert camelCase to snake_case for API
+  // Default date range: last year
+  const now = new Date();
+  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   const historyFilters: PracticeHistoryIn = {
     body: {
+      start_date: oneYearAgo.toISOString(),
+      end_date: now.toISOString(),
       department_ids: departmentIds,
-      page_offset: historyPage * historyPageSize,
+      page: historyPage,
       page_size: historyPageSize,
+      show_archived: false,
       ...(historySearch && { search: historySearch }),
       ...(historyProfileIds &&
         historyProfileIds.length > 0 && {
@@ -325,7 +331,7 @@ async function PracticeHistorySection({
       };
     }
   );
-  const scenarioOptions = (historyData.scenario_options_junction || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),

@@ -4406,6 +4406,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/analytics/NEW/practice/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Practice Get
+         * @description Get practice overview with simulation cards.
+         *
+         *     SQL handles: aggregation, all metadata JOINs
+         *     Python handles: only business logic (status, pass_pct, cohort formatting)
+         */
+        post: operations["practice_get_api_v4_analytics_NEW_practice_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/analytics/NEW/practice/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Practice List
+         * @description Get paginated practice history with attempts.
+         *
+         *     SQL handles: filtering, sorting, pagination, all metadata JOINs
+         *     Python handles: only business logic (score_status, show_view, show_continue, pass_pct)
+         */
+        post: operations["practice_list_api_v4_analytics_NEW_practice_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/attempts/simulation/get": {
         parameters: {
             query?: never;
@@ -9885,6 +9931,75 @@ export interface components {
             /** Scenario Options Junction */
             scenario_options_junction?: components["schemas"]["QGetPracticeHistoryV4ScenarioOption"][] | null;
         };
+        /**
+         * GetPracticeHistoryNewClientRequest
+         * @description Client API request for practice history.
+         *
+         *     Note: Practice history supports multi-user view (profile_ids filter).
+         */
+        GetPracticeHistoryNewClientRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /**
+             * Show Archived
+             * @default false
+             */
+            show_archived: boolean | null;
+            /** Search */
+            search?: string | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
+        };
+        /**
+         * GetPracticeHistoryNewResponse
+         * @description Client-facing API response for practice history.
+         */
+        GetPracticeHistoryNewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["PracticeHistoryAttempt"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["FilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["FilterOption"][] | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["FilterOption"][] | null;
+        };
         /** GetPracticeOverviewApiRequest */
         GetPracticeOverviewApiRequest: {
             /** Department Ids */
@@ -9928,6 +10043,34 @@ export interface components {
             draft_parameter_item_ids?: unknown | null;
             /** Draft Department Ids */
             draft_department_ids?: unknown | null;
+        };
+        /**
+         * GetPracticeOverviewNewClientRequest
+         * @description Client API request for practice overview.
+         *
+         *     Note: profile_id is NOT included here - it comes from the X-Profile-Id header.
+         */
+        GetPracticeOverviewNewClientRequest: {
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /**
+         * GetPracticeOverviewNewResponse
+         * @description Client-facing API response for practice overview.
+         */
+        GetPracticeOverviewNewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Mode */
+            mode?: string | null;
+            /** Has Data */
+            has_data?: boolean | null;
+            /** Items */
+            items?: components["schemas"]["PracticeSimulationCard"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /** GetPricingAnalyticsApiRequest */
         GetPricingAnalyticsApiRequest: {
@@ -13364,6 +13507,114 @@ export interface components {
         PointsApiResponse: {
             /** Point Id */
             point_id?: string | null;
+        };
+        /**
+         * PracticeHistoryAttempt
+         * @description Attempt record for practice history.
+         *
+         *     SQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.
+         */
+        PracticeHistoryAttempt: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Date */
+            date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Num Scenarios */
+            num_scenarios?: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed?: number | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Persona Names Junction */
+            persona_names_junction?: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Titles */
+            scenario_titles?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string[] | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Score */
+            score?: number | null;
+            /** Score Status */
+            score_status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Show View */
+            show_view?: boolean | null;
+            /** Show Continue */
+            show_continue?: boolean | null;
+            /**
+             * Practice Simulation
+             * @default true
+             */
+            practice_simulation: boolean;
+            /** Practice Scenario Id */
+            practice_scenario_id?: string | null;
+        };
+        /**
+         * PracticeSimulationCard
+         * @description Simulation card for practice overview.
+         *
+         *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
+         */
+        PracticeSimulationCard: {
+            /** View Mode */
+            view_mode: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Simulation Description */
+            simulation_description?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Num Sessions */
+            num_sessions?: number | null;
+            /** Highest Score */
+            highest_score?: number | null;
+            /** Standard Groups */
+            standard_groups?: string[] | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Has Passed */
+            has_passed?: boolean | null;
+            /** Status */
+            status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string | null;
+            /**
+             * Practice Simulation
+             * @default true
+             */
+            practice_simulation: boolean;
+            /** Practice Scenario Id */
+            practice_scenario_id?: string | null;
         };
         /** PricingApiRequest */
         PricingApiRequest: {
@@ -30964,6 +31215,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshHomeMvsNewApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    practice_get_api_v4_analytics_NEW_practice_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPracticeOverviewNewClientRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPracticeOverviewNewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    practice_list_api_v4_analytics_NEW_practice_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPracticeHistoryNewClientRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPracticeHistoryNewResponse"];
                 };
             };
             /** @description Validation Error */
