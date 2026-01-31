@@ -4752,10 +4752,13 @@ class GetCohortAccessSqlParams(BaseModel):
 class GetCohortAccessSqlRow(BaseModel):
 
     actor_name: str | None = None
+    cohort_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
     user_role: str | None = None
     user_department_ids: list[UUID] | None = None
     cohort_department_ids: list[UUID] | None = None
-    cohort_exists: bool | None = None
+    usage_count: int | None = None
 
 class GetCohortAccessApiRequest(BaseModel):
 
@@ -4765,10 +4768,13 @@ class GetCohortAccessApiRequest(BaseModel):
 class GetCohortAccessApiResponse(BaseModel):
 
     actor_name: str | None = None
+    cohort_exists: bool | None = None
+    draft_version: int | None = None
+    group_id: UUID | None = None
     user_role: str | None = None
     user_department_ids: list[UUID] | None = None
     cohort_department_ids: list[UUID] | None = None
-    cohort_exists: bool | None = None
+    usage_count: int | None = None
 
 
 
@@ -4959,6 +4965,72 @@ class GetCohortApiResponse(BaseModel):
     simulation_positions_required: bool | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
+
+
+
+# Generated from: get_cohort_ids
+
+class GetCohortIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    cohort_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.cohort_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+class GetCohortIdsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_values: list[int] | None = None
+    name_suggestions: list[UUID] | None = None
+    description_suggestions: list[UUID] | None = None
+    department_suggestions: list[UUID] | None = None
+    simulation_suggestions: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    simulations_has_tools: bool | None = None
+
+class GetCohortIdsApiRequest(BaseModel):
+
+    cohort_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetCohortIdsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_values: list[int] | None = None
+    name_suggestions: list[UUID] | None = None
+    description_suggestions: list[UUID] | None = None
+    department_suggestions: list[UUID] | None = None
+    simulation_suggestions: list[UUID] | None = None
+    candidate_agents: Any | None = None
+    names_has_tools: bool | None = None
+    descriptions_has_tools: bool | None = None
+    flags_has_tools: bool | None = None
+    departments_has_tools: bool | None = None
+    simulations_has_tools: bool | None = None
 
 
 
@@ -24941,6 +25013,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetCohortApiRequest",
         "GetCohortApiResponse",
     ),
+    "app/sql/v4/queries/cohorts/get_cohort_ids_complete.sql": (
+        "GetCohortIdsSqlParams",
+        "GetCohortIdsSqlRow",
+        "GetCohortIdsApiRequest",
+        "GetCohortIdsApiResponse",
+    ),
     "app/sql/v4/queries/cohorts/get_cohort_resource_ids_by_group_id_complete.sql": (
         "GetCohortResourceIdsByGroupIdSqlParams",
         "GetCohortResourceIdsByGroupIdSqlRow",
@@ -27484,6 +27562,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

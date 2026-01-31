@@ -3109,7 +3109,7 @@
           "cohorts"
         ],
         "summary": "Get Cohort",
-        "description": "Get cohort information - handles both new (cohort_id = NULL) and detail (cohort_id provided).\n\nTwo-pass architecture:\n- Query 1: access check (role + department access)\n- Query 2: ID + search data (resource IDs + suggestions)\n- Pass 2: resource fetching by IDs for cache reuse\n\nPermissions + UI flags computed in Python.",
+        "description": "Get cohort information using two-pass architecture.\n\nThis is a thin HTTP wrapper around get_cohort_internal().\n\nQuery 1: Access check (user role, departments, cohort state)\nQuery 2: ID fetching (resource IDs, suggestions, agents)\nPass 2: Parallel resource fetching (each resource type has own cache)",
         "operationId": "get_cohort_api_v4_cohorts_get_post",
         "parameters": [
           {
@@ -26635,6 +26635,318 @@
         "type": "object",
         "title": "BulkDeleteStaffApiResponse"
       },
+      "CohortDepartment": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "title": "CohortDepartment",
+        "description": "Department for cohort."
+      },
+      "CohortDescriptionResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "title": "CohortDescriptionResource",
+        "description": "Description resource for cohort."
+      },
+      "CohortFlagResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "title": "CohortFlagResource",
+        "description": "Flag resource for cohort."
+      },
+      "CohortNameResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "title": "CohortNameResource",
+        "description": "Name resource for cohort."
+      },
+      "CohortSimulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "title": "CohortSimulation",
+        "description": "Simulation for cohort."
+      },
+      "CohortSimulationPosition": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp"
+          }
+        },
+        "type": "object",
+        "title": "CohortSimulationPosition",
+        "description": "Simulation position for cohort."
+      },
       "ColorsApiRequest": {
         "properties": {
           "agent_id": {
@@ -32075,22 +32387,11 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
           }
         },
         "type": "object",
-        "title": "GetCohortApiRequest"
+        "title": "GetCohortApiRequest",
+        "description": "Request for getting a single cohort."
       },
       "GetCohortApiResponse": {
         "properties": {
@@ -32176,7 +32477,7 @@
           "name_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetCohortV4NameResource"
+                "$ref": "#/components/schemas/CohortNameResource"
               },
               {
                 "type": "null"
@@ -32236,7 +32537,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4NameResource"
+                  "$ref": "#/components/schemas/CohortNameResource"
                 },
                 "type": "array"
               },
@@ -32261,7 +32562,7 @@
           "description_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetCohortV4DescriptionResource"
+                "$ref": "#/components/schemas/CohortDescriptionResource"
               },
               {
                 "type": "null"
@@ -32321,7 +32622,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4DescriptionResource"
+                  "$ref": "#/components/schemas/CohortDescriptionResource"
                 },
                 "type": "array"
               },
@@ -32346,7 +32647,7 @@
           "flag_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetCohortV4FlagResource"
+                "$ref": "#/components/schemas/CohortFlagResource"
               },
               {
                 "type": "null"
@@ -32387,6 +32688,20 @@
             ],
             "title": "Flag Required"
           },
+          "flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CohortFlagResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flags"
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -32406,7 +32721,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4Department"
+                  "$ref": "#/components/schemas/CohortDepartment"
                 },
                 "type": "array"
               },
@@ -32469,7 +32784,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4Department"
+                  "$ref": "#/components/schemas/CohortDepartment"
                 },
                 "type": "array"
               },
@@ -32498,7 +32813,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4Simulation"
+                  "$ref": "#/components/schemas/CohortSimulation"
                 },
                 "type": "array"
               },
@@ -32561,7 +32876,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4Simulation"
+                  "$ref": "#/components/schemas/CohortSimulation"
                 },
                 "type": "array"
               },
@@ -32575,7 +32890,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetCohortV4SimulationPosition"
+                  "$ref": "#/components/schemas/CohortSimulationPosition"
                 },
                 "type": "array"
               },
@@ -32645,7 +32960,8 @@
           }
         },
         "type": "object",
-        "title": "GetCohortApiResponse"
+        "title": "GetCohortApiResponse",
+        "description": "Response for getting a single cohort."
       },
       "GetCohortsApiRequest": {
         "properties": {
@@ -62153,348 +62469,6 @@
           "pass_points"
         ],
         "title": "QGetBenchmarkOverviewV4StandardGroup"
-      },
-      "QGetCohortV4Department": {
-        "properties": {
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "name",
-          "description",
-          "generated"
-        ],
-        "title": "QGetCohortV4Department"
-      },
-      "QGetCohortV4DescriptionResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "description",
-          "generated"
-        ],
-        "title": "QGetCohortV4DescriptionResource"
-      },
-      "QGetCohortV4FlagResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "icon",
-          "generated"
-        ],
-        "title": "QGetCohortV4FlagResource"
-      },
-      "QGetCohortV4NameResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "generated"
-        ],
-        "title": "QGetCohortV4NameResource"
-      },
-      "QGetCohortV4Simulation": {
-        "properties": {
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id",
-          "name",
-          "description",
-          "time_limit",
-          "generated"
-        ],
-        "title": "QGetCohortV4Simulation"
-      },
-      "QGetCohortV4SimulationPosition": {
-        "properties": {
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id",
-          "value",
-          "generated",
-          "mcp"
-        ],
-        "title": "QGetCohortV4SimulationPosition"
       },
       "QGetCohortsV4Item": {
         "properties": {

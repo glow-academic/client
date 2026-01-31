@@ -6,6 +6,53 @@ department membership, and cohort usage.
 
 from uuid import UUID
 
+from app.api.v4.permissions import (
+    select_agents_for_artifact,
+    select_multi_resource_agent,
+)
+from app.api.v4.types import CandidateAgent
+
+# Re-export for backwards compatibility
+__all__ = [
+    "CandidateAgent",
+    "select_agents_for_artifact",
+    "select_multi_resource_agent",
+    "COHORT_RESOURCES",
+    "COHORT_BASIC_RESOURCES",
+    # Permission functions
+    "compute_can_edit",
+    "compute_disabled_reason",
+    "has_access",
+    # UI show flags
+    "compute_show_name",
+    "compute_show_description",
+    "compute_show_flag",
+    "compute_show_departments",
+    "compute_show_simulations",
+    "compute_show_simulation_positions",
+    # Required field flags
+    "compute_name_required",
+    "compute_description_required",
+    "compute_flag_required",
+    "compute_departments_required",
+    "compute_simulations_required",
+    "compute_simulation_positions_required",
+]
+
+# ========== Agent Scoring - Cohort-specific Constants ==========
+
+# Cohort-specific resource definitions (hardcoded, rarely changes)
+COHORT_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "flags",
+    "departments",
+    "simulations",
+}
+
+# Multi-resource agent definitions for cohort
+COHORT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
+
 # =============================================================================
 # Core Permission Functions
 # =============================================================================

@@ -37,7 +37,7 @@ class CohortFlagResource(BaseModel):
     id: UUID | None = None
     name: str | None = None
     description: str | None = None
-    icon_id: UUID | None = None
+    icon: str | None = None
     generated: bool | None = None
 
 
@@ -120,6 +120,7 @@ class GetCohortApiResponse(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
+    flags: list[CohortFlagResource] | None = None
 
     # Departments
     department_ids: list[UUID] | None = None
@@ -380,6 +381,9 @@ class PatchCohortDraftApiResponse(BaseModel):
 # =============================================================================
 # SQL Row Types (for internal use)
 # =============================================================================
+# Note: GetCohortAccessSqlParams, GetCohortAccessSqlRow, GetCohortIdsSqlParams,
+# and GetCohortIdsSqlRow are now auto-generated in app/sql/types.py from the
+# corresponding SQL files in app/sql/v4/queries/cohorts/
 
 
 class ListCohortSqlCohort(BaseModel):
