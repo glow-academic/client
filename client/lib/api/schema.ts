@@ -4347,8 +4347,9 @@ export interface paths {
          * Home Get
          * @description Get home overview with simulation cards.
          *
-         *     Uses SQL function that queries mv_home_simulation_status with JOINs
-         *     to _resource tables for metadata.
+         *     Uses two-pass pattern:
+         *     1. Context query for user info and permissions
+         *     2. Data query for simulation cards and metadata
          */
         post: operations["home_get_api_v4_analytics_NEW_home_get_post"];
         delete?: never;
@@ -4370,8 +4371,10 @@ export interface paths {
          * Home List
          * @description Get paginated home history with attempts.
          *
-         *     Uses SQL function that queries mv_home_attempt_history with JOINs
-         *     to _resource tables for metadata.
+         *     Uses two-pass pattern:
+         *     1. Context query for user info, permissions, and pass threshold
+         *     2. Data query with mode and accessible cohorts for filtering
+         *     3. Python computes score_status for each attempt using pass threshold
          */
         post: operations["home_list_api_v4_analytics_NEW_home_list_post"];
         delete?: never;
@@ -8803,39 +8806,6 @@ export interface components {
             /** Scenario Options Junction */
             scenario_options_junction?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
         };
-        /** GetHomeHistoryNewApiRequest */
-        GetHomeHistoryNewApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
-        };
         /** GetHomeHistoryNewApiResponse */
         GetHomeHistoryNewApiResponse: {
             /** Actor Name */
@@ -8850,10 +8820,57 @@ export interface components {
             page_size?: number | null;
             /** Total Pages */
             total_pages?: number | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
+        };
+        /**
+         * GetHomeHistoryNewClientRequest
+         * @description Client API request for home history.
+         *
+         *     Note: mode and accessible_cohort_ids are NOT included here - they are
+         *     internal parameters injected by the Python backend from the context query.
+         */
+        GetHomeHistoryNewClientRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: unknown | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
         };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
@@ -8900,6 +8917,8 @@ export interface components {
             actor_name?: string | null;
             /** Mode */
             mode?: string | null;
+            /** Has Data */
+            has_data?: boolean | null;
             /** Items */
             items?: components["schemas"]["QGetHomeOverviewNewV4SimulationCard"][] | null;
             /** Standard Groups */
@@ -15731,42 +15750,52 @@ export interface components {
         QGetHomeHistoryNewV4Attempt: {
             /** Attempt Id */
             attempt_id: string | null;
+            /** Date */
+            date: string | null;
             /** Profile Id */
             profile_id: string | null;
             /** Profile Name */
             profile_name: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
             /** Simulation Name */
             simulation_name: string | null;
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Cohort Name */
-            cohort_name: string | null;
-            /** Attempt Created At */
-            attempt_created_at: string | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Num Chats */
-            num_chats: number | null;
-            /** Num Chats Completed */
-            num_chats_completed: number | null;
             /** Num Scenarios */
             num_scenarios: number | null;
             /** Num Scenarios Completed */
             num_scenarios_completed: number | null;
-            /** Score Percent */
-            score_percent: number | null;
-            /** Has Passed */
-            has_passed: boolean | null;
-            /** Total Time Seconds */
-            total_time_seconds: number | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Persona Names Junction */
+            persona_names_junction: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: string[] | null;
+            /** Score */
+            score: number | null;
             /** Score Status */
             score_status: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
+            /** Scenario Titles */
+            scenario_titles: string[] | null;
+            /** Is Archived */
+            is_archived: boolean | null;
+            /** Show View */
+            show_view: boolean | null;
+            /** Show Continue */
+            show_continue: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+            /** Pass Pct */
+            pass_pct: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string[] | null;
+            /** Practice Scenario Id */
+            practice_scenario_id: string | null;
         };
         /** QGetHomeHistoryNewV4FilterOption */
         QGetHomeHistoryNewV4FilterOption: {
@@ -15852,36 +15881,48 @@ export interface components {
         };
         /** QGetHomeOverviewNewV4SimulationCard */
         QGetHomeOverviewNewV4SimulationCard: {
+            /** View Mode */
+            view_mode: string | null;
             /** Simulation Id */
             simulation_id: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
+            /** Simulation Title */
+            simulation_title: string | null;
             /** Simulation Description */
             simulation_description: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Color */
-            color: string | null;
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Cohort Name */
-            cohort_name: string | null;
-            /** Attempt Count */
-            attempt_count: number | null;
-            /** Completed Count */
-            completed_count: number | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Num Sessions */
+            num_sessions: number | null;
             /** Highest Score */
             highest_score: number | null;
+            /** Standard Groups */
+            standard_groups: string[] | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
             /** Has Passed */
             has_passed: boolean | null;
+            /** Pass Rate */
+            pass_rate: number | null;
             /** Status */
             status: string | null;
-            /** First Attempt At */
-            first_attempt_at: string | null;
-            /** Last Attempt At */
-            last_attempt_at: string | null;
-            /** Pass Threshold */
-            pass_threshold: number | null;
+            /** Completion Pct */
+            completion_pct: number | null;
+            /** Passed Count */
+            passed_count: number | null;
+            /** In Progress Count */
+            in_progress_count: number | null;
+            /** Not Started Count */
+            not_started_count: number | null;
+            /** Pass Pct */
+            pass_pct: number | null;
+            /** Cohort Name */
+            cohort_name: string | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string | null;
         };
         /** QGetHomeOverviewNewV4Standard */
         QGetHomeOverviewNewV4Standard: {
@@ -30876,7 +30917,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetHomeHistoryNewApiRequest"];
+                "application/json": components["schemas"]["GetHomeHistoryNewClientRequest"];
             };
         };
         responses: {

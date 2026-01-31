@@ -888,6 +888,39 @@ class ValidateAgentResourceProgressApiResponse(BaseModel):
 
 
 
+# Generated from: get_home_context
+
+class GetHomeContextSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class GetHomeContextSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_cohort_ids: list[UUID] | None = None
+    accessible_cohort_ids: list[UUID] | None = None
+    pass_threshold: float | None = None
+
+class GetHomeContextApiRequest(BaseModel):
+
+    pass
+
+class GetHomeContextApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    user_cohort_ids: list[UUID] | None = None
+    accessible_cohort_ids: list[UUID] | None = None
+    pass_threshold: float | None = None
+
+
+
 # Generated from: get_home_history_new
 
 class GetHomeHistoryNewSqlParams(BaseModel):
@@ -895,12 +928,17 @@ class GetHomeHistoryNewSqlParams(BaseModel):
     start_date: str
     end_date: str
     profile_id: UUID
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    infinite_mode: bool | None = None
+    mode: str
+    accessible_cohort_ids: list[UUID]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
     sort_by: str | None = None
     sort_order: str | None = None
     page: int | None = 0
@@ -911,12 +949,17 @@ class GetHomeHistoryNewSqlParams(BaseModel):
             self.start_date,
             self.end_date,
             self.profile_id,
+            self.mode,
+            self.accessible_cohort_ids,
             self.cohort_ids,
             self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.search,
+            self.profile_ids,
             self.simulation_ids,
             self.scenario_ids,
             self.infinite_mode,
-            self.search,
             self.sort_by,
             self.sort_order,
             self.page,
@@ -926,24 +969,29 @@ class GetHomeHistoryNewSqlParams(BaseModel):
 class QGetHomeHistoryNewV4Attempt(BaseModel):
 
     attempt_id: UUID | None
+    date: datetime | None
     profile_id: UUID | None
     profile_name: str | None
-    simulation_id: UUID | None
     simulation_name: str | None
-    cohort_id: UUID | None
-    cohort_name: str | None
-    attempt_created_at: datetime | None
-    infinite_mode: bool | None
-    num_chats: int | None
-    num_chats_completed: int | None
     num_scenarios: int | None
     num_scenarios_completed: int | None
-    score_percent: float | None
-    has_passed: bool | None
-    total_time_seconds: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
+    score: int | None
     score_status: str | None
+    simulation_id: UUID | None
     scenario_ids: list[UUID] | None
-    persona_ids: list[UUID] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names_junction: list[str] | None
+    practice_scenario_id: UUID | None
 
 
 
@@ -962,19 +1010,25 @@ class GetHomeHistoryNewSqlRow(BaseModel):
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
+    profile_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
     simulation_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
-    scenario_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
+    scenario_options_junction: list[QGetHomeHistoryNewV4FilterOption] | None = None
 
 class GetHomeHistoryNewApiRequest(BaseModel):
 
     start_date: str
     end_date: str
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    infinite_mode: bool | None = None
+    mode: str
+    accessible_cohort_ids: list[UUID]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
     sort_by: str | None = None
     sort_order: str | None = None
     page: int | None = 0
@@ -988,8 +1042,9 @@ class GetHomeHistoryNewApiResponse(BaseModel):
     page: int | None = None
     page_size: int | None = None
     total_pages: int | None = None
+    profile_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
     simulation_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
-    scenario_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
+    scenario_options_junction: list[QGetHomeHistoryNewV4FilterOption] | None = None
 
 
 
@@ -1000,8 +1055,8 @@ class GetHomeOverviewNewSqlParams(BaseModel):
     start_date: str
     end_date: str
     profile_id: UUID
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -1018,28 +1073,34 @@ class QGetHomeOverviewNewV4Simulation(BaseModel):
     name: str | None
     description: str | None
     time_limit: int | None
-    department_ids: list[UUID] | None
+    department_ids: list[str] | None
 
 
 
 
 class QGetHomeOverviewNewV4SimulationCard(BaseModel):
 
+    view_mode: str | None
     simulation_id: UUID | None
-    simulation_name: str | None
+    simulation_title: str | None
     simulation_description: str | None
-    icon: str | None
+    simulation_name: str | None
+    time_limit: int | None
+    num_sessions: int | None
+    highest_score: int | None
+    standard_groups: list[str] | None
     color: str | None
-    cohort_id: UUID | None
-    cohort_name: str | None
-    attempt_count: int | None
-    completed_count: int | None
-    highest_score: float | None
+    icon: str | None
     has_passed: bool | None
+    pass_rate: int | None
     status: str | None
-    first_attempt_at: datetime | None
-    last_attempt_at: datetime | None
-    pass_threshold: float | None
+    completion_pct: int | None
+    passed_count: int | None
+    in_progress_count: int | None
+    not_started_count: int | None
+    pass_pct: int | None
+    cohort_name: str | None
+    cohort_names_junction: str | None
 
 
 
@@ -1067,6 +1128,7 @@ class GetHomeOverviewNewSqlRow(BaseModel):
 
     actor_name: str | None = None
     mode: str | None = None
+    has_data: bool | None = None
     items: list[QGetHomeOverviewNewV4SimulationCard] | None = None
     standard_groups: list[QGetHomeOverviewNewV4StandardGroup] | None = None
     standards: list[QGetHomeOverviewNewV4Standard] | None = None
@@ -1076,13 +1138,14 @@ class GetHomeOverviewNewApiRequest(BaseModel):
 
     start_date: str
     end_date: str
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetHomeOverviewNewApiResponse(BaseModel):
 
     actor_name: str | None = None
     mode: str | None = None
+    has_data: bool | None = None
     items: list[QGetHomeOverviewNewV4SimulationCard] | None = None
     standard_groups: list[QGetHomeOverviewNewV4StandardGroup] | None = None
     standards: list[QGetHomeOverviewNewV4Standard] | None = None
@@ -24860,6 +24923,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateAgentResourceProgressApiRequest",
         "ValidateAgentResourceProgressApiResponse",
     ),
+    "app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql": (
+        "GetHomeContextSqlParams",
+        "GetHomeContextSqlRow",
+        "GetHomeContextApiRequest",
+        "GetHomeContextApiResponse",
+    ),
     "app/sql/v4/queries/analytics/NEW/home/get_home_history_new_complete.sql": (
         "GetHomeHistoryNewSqlParams",
         "GetHomeHistoryNewSqlRow",
@@ -27493,6 +27562,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/validate_agent_resource_progress_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

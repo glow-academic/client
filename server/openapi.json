@@ -20549,7 +20549,7 @@
           "home"
         ],
         "summary": "Home Get",
-        "description": "Get home overview with simulation cards.\n\nUses SQL function that queries mv_home_simulation_status with JOINs\nto _resource tables for metadata.",
+        "description": "Get home overview with simulation cards.\n\nUses two-pass pattern:\n1. Context query for user info and permissions\n2. Data query for simulation cards and metadata",
         "operationId": "home_get_api_v4_analytics_NEW_home_get_post",
         "parameters": [
           {
@@ -20656,7 +20656,7 @@
           "home"
         ],
         "summary": "Home List",
-        "description": "Get paginated home history with attempts.\n\nUses SQL function that queries mv_home_attempt_history with JOINs\nto _resource tables for metadata.",
+        "description": "Get paginated home history with attempts.\n\nUses two-pass pattern:\n1. Context query for user info, permissions, and pass threshold\n2. Data query with mode and accessible cohorts for filtering\n3. Python computes score_status for each attempt using pass threshold",
         "operationId": "home_list_api_v4_analytics_NEW_home_list_post",
         "parameters": [
           {
@@ -20713,7 +20713,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetHomeHistoryNewApiRequest"
+                "$ref": "#/components/schemas/GetHomeHistoryNewClientRequest"
               }
             }
           }
@@ -38554,152 +38554,6 @@
         "type": "object",
         "title": "GetHomeHistoryApiResponse"
       },
-      "GetHomeHistoryNewApiRequest": {
-        "properties": {
-          "start_date": {
-            "type": "string",
-            "title": "Start Date"
-          },
-          "end_date": {
-            "type": "string",
-            "title": "End Date"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "sort_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sort By"
-          },
-          "sort_order": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sort Order"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page",
-            "default": 0
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Size",
-            "default": 20
-          }
-        },
-        "type": "object",
-        "required": [
-          "start_date",
-          "end_date"
-        ],
-        "title": "GetHomeHistoryNewApiRequest"
-      },
       "GetHomeHistoryNewApiResponse": {
         "properties": {
           "actor_name": {
@@ -38771,6 +38625,20 @@
             ],
             "title": "Total Pages"
           },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeHistoryNewV4FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          },
           "simulation_options": {
             "anyOf": [
               {
@@ -38785,7 +38653,7 @@
             ],
             "title": "Simulation Options"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -38797,11 +38665,196 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           }
         },
         "type": "object",
         "title": "GetHomeHistoryNewApiResponse"
+      },
+      "GetHomeHistoryNewClientRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetHomeHistoryNewClientRequest",
+        "description": "Client API request for home history.\n\nNote: mode and accessible_cohort_ids are NOT included here - they are\ninternal parameters injected by the Python backend from the context query."
       },
       "GetHomeOverviewApiRequest": {
         "properties": {
@@ -39017,6 +39070,17 @@
               }
             ],
             "title": "Mode"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
           },
           "items": {
             "anyOf": [
@@ -73392,6 +73456,18 @@
             ],
             "title": "Attempt Id"
           },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
           "profile_id": {
             "anyOf": [
               {
@@ -73415,18 +73491,6 @@
             ],
             "title": "Profile Name"
           },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
           "simulation_name": {
             "anyOf": [
               {
@@ -73437,74 +73501,6 @@
               }
             ],
             "title": "Simulation Name"
-          },
-          "cohort_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Id"
-          },
-          "cohort_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Name"
-          },
-          "attempt_created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Created At"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "num_chats": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Chats"
-          },
-          "num_chats_completed": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Chats Completed"
           },
           "num_scenarios": {
             "anyOf": [
@@ -73528,18 +73524,7 @@
             ],
             "title": "Num Scenarios Completed"
           },
-          "score_percent": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score Percent"
-          },
-          "has_passed": {
+          "infinite_mode": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -73548,9 +73533,9 @@
                 "type": "null"
               }
             ],
-            "title": "Has Passed"
+            "title": "Infinite Mode"
           },
-          "total_time_seconds": {
+          "time_limit": {
             "anyOf": [
               {
                 "type": "integer"
@@ -73559,7 +73544,46 @@
                 "type": "null"
               }
             ],
-            "title": "Total Time Seconds"
+            "title": "Time Limit"
+          },
+          "persona_names_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Names Junction"
+          },
+          "persona_colors_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors Junction"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
           },
           "score_status": {
             "anyOf": [
@@ -73571,6 +73595,18 @@
               }
             ],
             "title": "Score Status"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
           },
           "scenario_ids": {
             "anyOf": [
@@ -73587,12 +73623,11 @@
             ],
             "title": "Scenario Ids"
           },
-          "persona_ids": {
+          "scenario_titles": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "string"
                 },
                 "type": "array"
               },
@@ -73600,30 +73635,130 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Ids"
+            "title": "Scenario Titles"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "show_view": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show View"
+          },
+          "show_continue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Continue"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_names_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names Junction"
+          },
+          "practice_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Scenario Id"
           }
         },
         "type": "object",
         "required": [
           "attempt_id",
+          "date",
           "profile_id",
           "profile_name",
-          "simulation_id",
           "simulation_name",
-          "cohort_id",
-          "cohort_name",
-          "attempt_created_at",
-          "infinite_mode",
-          "num_chats",
-          "num_chats_completed",
           "num_scenarios",
           "num_scenarios_completed",
-          "score_percent",
-          "has_passed",
-          "total_time_seconds",
+          "infinite_mode",
+          "time_limit",
+          "persona_names_junction",
+          "persona_colors_junction",
+          "score",
           "score_status",
+          "simulation_id",
           "scenario_ids",
-          "persona_ids"
+          "scenario_titles",
+          "is_archived",
+          "show_view",
+          "show_continue",
+          "practice_simulation",
+          "pass_pct",
+          "department_ids",
+          "cohort_names_junction",
+          "practice_scenario_id"
         ],
         "title": "QGetHomeHistoryNewV4Attempt"
       },
@@ -74086,8 +74221,7 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "string"
                 },
                 "type": "array"
               },
@@ -74110,6 +74244,17 @@
       },
       "QGetHomeOverviewNewV4SimulationCard": {
         "properties": {
+          "view_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Mode"
+          },
           "simulation_id": {
             "anyOf": [
               {
@@ -74122,7 +74267,7 @@
             ],
             "title": "Simulation Id"
           },
-          "simulation_name": {
+          "simulation_title": {
             "anyOf": [
               {
                 "type": "string"
@@ -74131,7 +74276,7 @@
                 "type": "null"
               }
             ],
-            "title": "Simulation Name"
+            "title": "Simulation Title"
           },
           "simulation_description": {
             "anyOf": [
@@ -74144,7 +74289,7 @@
             ],
             "title": "Simulation Description"
           },
-          "icon": {
+          "simulation_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -74153,7 +74298,54 @@
                 "type": "null"
               }
             ],
-            "title": "Icon"
+            "title": "Simulation Name"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "num_sessions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Sessions"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
           },
           "color": {
             "anyOf": [
@@ -74166,19 +74358,7 @@
             ],
             "title": "Color"
           },
-          "cohort_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Id"
-          },
-          "cohort_name": {
+          "icon": {
             "anyOf": [
               {
                 "type": "string"
@@ -74187,40 +74367,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Name"
-          },
-          "attempt_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Count"
-          },
-          "completed_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed Count"
-          },
-          "highest_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Highest Score"
+            "title": "Icon"
           },
           "has_passed": {
             "anyOf": [
@@ -74233,6 +74380,17 @@
             ],
             "title": "Has Passed"
           },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
           "status": {
             "anyOf": [
               {
@@ -74244,59 +74402,107 @@
             ],
             "title": "Status"
           },
-          "first_attempt_at": {
+          "completion_pct": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "First Attempt At"
+            "title": "Completion Pct"
           },
-          "last_attempt_at": {
+          "passed_count": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Attempt At"
+            "title": "Passed Count"
           },
-          "pass_threshold": {
+          "in_progress_count": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Pass Threshold"
+            "title": "In Progress Count"
+          },
+          "not_started_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Started Count"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "cohort_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Name"
+          },
+          "cohort_names_junction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names Junction"
           }
         },
         "type": "object",
         "required": [
+          "view_mode",
           "simulation_id",
-          "simulation_name",
+          "simulation_title",
           "simulation_description",
-          "icon",
-          "color",
-          "cohort_id",
-          "cohort_name",
-          "attempt_count",
-          "completed_count",
+          "simulation_name",
+          "time_limit",
+          "num_sessions",
           "highest_score",
+          "standard_groups",
+          "color",
+          "icon",
           "has_passed",
+          "pass_rate",
           "status",
-          "first_attempt_at",
-          "last_attempt_at",
-          "pass_threshold"
+          "completion_pct",
+          "passed_count",
+          "in_progress_count",
+          "not_started_count",
+          "pass_pct",
+          "cohort_name",
+          "cohort_names_junction"
         ],
         "title": "QGetHomeOverviewNewV4SimulationCard"
       },
