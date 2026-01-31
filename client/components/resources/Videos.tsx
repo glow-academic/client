@@ -91,6 +91,13 @@ export interface VideosProps {
     upload_id?: string;
     message?: string;
   }>;
+  // AI diff view props
+  aiVideoResources?: Array<{
+    video_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Videos({
@@ -119,6 +126,10 @@ export function Videos({
   isAutosaveEnabled = true,
   registerFlush,
   finalizeUploadAction,
+  // AI diff view props
+  aiVideoResources,
+  onAccept,
+  onReject,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;

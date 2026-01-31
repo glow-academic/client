@@ -1826,6 +1826,7 @@ function PersonaComponent({
       instructions: "Instructions",
       flags: "Flags",
       examples: "Examples",
+      parameters: "Parameters",
       parameter_fields: "Parameter Fields",
       departments: "Departments",
     }),

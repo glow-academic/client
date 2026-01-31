@@ -90,6 +90,13 @@ export interface ImagesProps {
     upload_id?: string;
     message?: string;
   }>;
+  // AI diff view props
+  aiImageResources?: Array<{
+    image_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Images({
@@ -120,6 +127,10 @@ export function Images({
   isAutosaveEnabled = true,
   registerFlush,
   finalizeUploadAction,
+  // AI diff view props
+  aiImageResources,
+  onAccept,
+  onReject,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;

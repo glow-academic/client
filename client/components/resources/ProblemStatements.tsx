@@ -69,6 +69,15 @@ export interface ProblemStatementsProps {
     | undefined;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
+  // AI diff view props
+  aiResource?: {
+    problem_statement_id?: string | null;
+    name?: string | null;
+    problem_statement?: string | null;
+    generated?: boolean | null;
+  } | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function ProblemStatements({
@@ -93,6 +102,10 @@ export function ProblemStatements({
   createProblemStatementsAction,
   searchTerm,
   onSearchChange,
+  // AI diff view props
+  aiResource,
+  onAccept,
+  onReject,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;

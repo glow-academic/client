@@ -101,15 +101,16 @@ BEGIN
         UPDATE simulation_artifact
         SET updated_at = NOW()
         WHERE id = v_simulation_id;
+
+        -- Check if simulation exists (must be right after UPDATE, before any other statements)
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Simulation not found: %', v_input_simulation_id;
+        END IF;
+
         -- Upsert group via junction table
         INSERT INTO simulation_groups_junction (simulation_id, group_id)
         VALUES (v_simulation_id, v_group_id)
         ON CONFLICT DO NOTHING;
-
-        -- Check if simulation exists
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'Simulation not found: %', v_input_simulation_id;
-        END IF;
     END IF;
 
     -- Validate required resource IDs exist

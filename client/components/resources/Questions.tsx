@@ -82,6 +82,13 @@ export interface QuestionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiQuestionResources?: Array<{
+    question_id?: string | null;
+    question_text?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -123,6 +130,10 @@ export function Questions({
   videoLength = null,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiQuestionResources,
+  onAccept,
+  onReject,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);

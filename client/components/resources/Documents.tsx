@@ -83,6 +83,13 @@ export interface DocumentsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ document_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiDocumentResources?: Array<{
+    document_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Documents({
@@ -106,6 +113,10 @@ export function Documents({
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiDocumentResources,
+  onAccept,
+  onReject,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
   const show = show_documents ?? false;

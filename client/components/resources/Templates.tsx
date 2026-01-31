@@ -86,6 +86,13 @@ export interface TemplatesProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ template_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiTemplateResources?: Array<{
+    template_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Templates({
@@ -110,6 +117,10 @@ export function Templates({
   showSelectedFilter = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiTemplateResources,
+  onAccept,
+  onReject,
 }: TemplatesProps) {
   const createCardId = "__create_template__";
   const ids = useMemo(() => template_ids ?? [], [template_ids]);

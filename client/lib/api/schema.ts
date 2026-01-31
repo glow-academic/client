@@ -5188,6 +5188,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/scenario_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Generation Complete Api
+         * @description Server-to-client event: Scenario generation completed.
+         *
+         *     Emitted when a scenario resource is successfully generated.
+         *     Contains full resource objects for immediate frontend use.
+         */
+        post: operations["scenario_generation_complete_api_socket_v4_server_scenario_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/persona_generation_progress": {
         parameters: {
             query?: never;
@@ -14684,6 +14707,23 @@ export interface components {
             /** Group Id */
             group_id: string | null;
         };
+        /** QGetDocumentsV4Item */
+        QGetDocumentsV4Item: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Upload Id */
+            upload_id: string | null;
+        };
         /** QGetEvalAttemptV4Attempt */
         QGetEvalAttemptV4Attempt: {
             /** Id */
@@ -15674,6 +15714,21 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetImagesV4Item */
+        QGetImagesV4Item: {
+            /** Image Id */
+            image_id: string | null;
+            /** Name */
+            name: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetInstructionsV4Item */
         QGetInstructionsV4Item: {
             /** Id */
@@ -16087,6 +16142,15 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetObjectivesV4Item */
+        QGetObjectivesV4Item: {
+            /** Objective Id */
+            objective_id: string | null;
+            /** Objective */
+            objective: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetParameterFieldsV4Item */
         QGetParameterFieldsV4Item: {
             /** Id */
@@ -16186,6 +16250,23 @@ export interface components {
         };
         /** QGetPersonaResourceV4Item */
         QGetPersonaResourceV4Item: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Image Model */
+            image_model: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetPersonasV4Item */
+        QGetPersonasV4Item: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -17096,6 +17177,17 @@ export interface components {
             /** Debug Info */
             debug_info: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
         };
+        /** QGetProblemStatementsV4Item */
+        QGetProblemStatementsV4Item: {
+            /** Problem Statement Id */
+            problem_statement_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Problem Statement */
+            problem_statement: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetProfileContextV4Auth */
         QGetProfileContextV4Auth: {
             /** Auth Id */
@@ -17367,6 +17459,17 @@ export interface components {
             id: string | null;
             /** Name */
             name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetQuestionsV4Item */
+        QGetQuestionsV4Item: {
+            /** Question Id */
+            question_id: string | null;
+            /** Question Text */
+            question_text: string | null;
+            /** Allow Multiple */
+            allow_multiple: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -18645,6 +18748,25 @@ export interface components {
             can_duplicate: boolean | null;
             /** Updated At */
             updated_at: string | null;
+        };
+        /** QGetVideosV4Item */
+        QGetVideosV4Item: {
+            /** Video Id */
+            video_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Length Seconds */
+            length_seconds: number | null;
+            /** Completed */
+            completed: boolean | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QListAgentsV4Agent */
         QListAgentsV4Agent: {
@@ -21182,6 +21304,55 @@ export interface components {
             icon?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * ScenarioGenerationCompleteEvent
+         * @description Server-to-client event: scenario_generation_complete.
+         *
+         *     Emitted when a scenario resource generation completes successfully.
+         *     Contains full resource objects (not just IDs) for immediate frontend use.
+         */
+        ScenarioGenerationCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default scenario
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
+            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
+            problem_statement_resource?: components["schemas"]["QGetProblemStatementsV4Item"] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Persona Resources */
+            persona_resources?: components["schemas"]["QGetPersonasV4Item"][] | null;
+            /** Document Resources */
+            document_resources?: components["schemas"]["QGetDocumentsV4Item"][] | null;
+            /** Template Resources */
+            template_resources?: components["schemas"]["QGetTemplatesV4Item"][] | null;
+            /** Objective Resources */
+            objective_resources?: components["schemas"]["QGetObjectivesV4Item"][] | null;
+            /** Question Resources */
+            question_resources?: components["schemas"]["QGetQuestionsV4Item"][] | null;
+            /** Image Resources */
+            image_resources?: components["schemas"]["QGetImagesV4Item"][] | null;
+            /** Video Resources */
+            video_resources?: components["schemas"]["QGetVideosV4Item"][] | null;
+            /** Parameter Resources */
+            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
+            /** Parameter Field Resources */
+            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
         };
         /**
          * ScenarioImage
@@ -31880,6 +32051,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConnectionConfirmedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_generation_complete_api_socket_v4_server_scenario_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioGenerationCompleteEvent"];
             };
         };
         responses: {

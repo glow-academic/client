@@ -452,7 +452,6 @@ SELECT
              END,
              CASE
                  WHEN simd.perm_dept_ids IS NULL AND up.role != 'superadmin' THEN false
-                 WHEN simd.practice_simulation = true THEN false
                  WHEN simd.total_cohort_links > 0 THEN false
                  WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false

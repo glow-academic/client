@@ -49,6 +49,7 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { ServerToClientEvents } from "@/lib/ws/types";
 import { Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
@@ -98,6 +99,11 @@ type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
+
+// Socket event types (auto-generated from server)
+type ScenarioGenerationCompletePayload = Parameters<
+  ServerToClientEvents["scenario_generation_complete"]
+>[0];
 
 type ScenarioResourceType =
   | "names"
@@ -219,6 +225,34 @@ function ScenarioComponent({
     GenerateRegenerateModalResource[]
   >([]);
   const [modalInstructions, setModalInstructions] = useState("");
+
+  // AI-generated pending suggestions state - stores AI suggestions before user accepts/rejects
+  // Uses server-generated types for full resource objects
+  const [aiFormData, setAiFormData] = useState<{
+    name_resource?: ScenarioGenerationCompletePayload["name_resource"];
+    description_resource?: ScenarioGenerationCompletePayload["description_resource"];
+    problem_statement_resource?: ScenarioGenerationCompletePayload["problem_statement_resource"];
+    department_resources?: ScenarioGenerationCompletePayload["department_resources"];
+    persona_resources?: ScenarioGenerationCompletePayload["persona_resources"];
+    document_resources?: ScenarioGenerationCompletePayload["document_resources"];
+    template_resources?: ScenarioGenerationCompletePayload["template_resources"];
+    objective_resources?: ScenarioGenerationCompletePayload["objective_resources"];
+    question_resources?: ScenarioGenerationCompletePayload["question_resources"];
+    image_resources?: ScenarioGenerationCompletePayload["image_resources"];
+    video_resources?: ScenarioGenerationCompletePayload["video_resources"];
+    parameter_resources?: ScenarioGenerationCompletePayload["parameter_resources"];
+    parameter_field_resources?: ScenarioGenerationCompletePayload["parameter_field_resources"];
+  }>({});
+
+  // Clear a pending AI resource suggestion
+  // Note: We explicitly set to undefined instead of using delete to ensure
+  // React properly detects the state change and triggers re-renders
+  const clearAiResource = useCallback((key: keyof typeof aiFormData) => {
+    setAiFormData((prev) => ({
+      ...prev,
+      [key]: undefined,
+    }));
+  }, []);
 
   const isGenerating = useCallback(
     (resourceType: ScenarioResourceType) =>
@@ -1169,34 +1203,9 @@ function ScenarioComponent({
 
     const currentGroupId = scenarioData?.group_id;
 
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      resource_id?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      problem_statement_id?: string | null;
-      objective_ids?: string[];
-      department_ids?: string[];
-      persona_ids?: string[];
-      document_ids?: string[];
-      template_ids?: string[];
-      parameter_ids?: string[];
-      parameter_field_ids?: string[];
-      image_ids?: string[];
-      video_ids?: string[];
-      question_ids?: string[];
-      active_flag_id?: string | null;
-      objectives_enabled_flag_id?: string | null;
-      images_enabled_flag_id?: string | null;
-      video_enabled_flag_id?: string | null;
-      questions_enabled_flag_id?: string | null;
-      problem_statement_enabled_flag_id?: string | null;
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
+    const handleGenerationComplete = (
+      data: ScenarioGenerationCompletePayload
+    ) => {
       if (
         data.artifact_type !== "scenario" ||
         !data.group_id ||
@@ -1226,152 +1235,44 @@ function ScenarioComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ScenarioResourceType)
       ) {
-        setFormState((prev) => {
-          const updates: Partial<ScenarioFormState> = {};
-
-          if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id) updates.description_id = data.description_id;
-          if (data.problem_statement_id)
-            updates.problem_statement_id = data.problem_statement_id;
-          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-          if (data.objectives_enabled_flag_id)
-            updates.objectives_enabled_flag_id =
-              data.objectives_enabled_flag_id;
-          if (data.images_enabled_flag_id)
-            updates.images_enabled_flag_id = data.images_enabled_flag_id;
-          if (data.video_enabled_flag_id)
-            updates.video_enabled_flag_id = data.video_enabled_flag_id;
-          if (data.questions_enabled_flag_id)
-            updates.questions_enabled_flag_id = data.questions_enabled_flag_id;
-          if (data.problem_statement_enabled_flag_id)
-            updates.problem_statement_enabled_flag_id =
-              data.problem_statement_enabled_flag_id;
-
-          if (data.objective_ids && data.objective_ids.length > 0) {
-            const newIds = data.objective_ids.filter(
-              (id) => !prev.objective_ids.includes(id)
-            );
-            updates.objective_ids = [...prev.objective_ids, ...newIds];
-          }
-          if (data.department_ids && data.department_ids.length > 0) {
-            const newIds = data.department_ids.filter(
-              (id) => !prev.department_ids.includes(id)
-            );
-            updates.department_ids = [...prev.department_ids, ...newIds];
-          }
-          if (data.persona_ids && data.persona_ids.length > 0) {
-            const newIds = data.persona_ids.filter(
-              (id) => !prev.persona_ids.includes(id)
-            );
-            updates.persona_ids = [...prev.persona_ids, ...newIds];
-          }
-          if (data.document_ids && data.document_ids.length > 0) {
-            const newIds = data.document_ids.filter(
-              (id) => !prev.document_ids.includes(id)
-            );
-            updates.document_ids = [...prev.document_ids, ...newIds];
-          }
-          if (data.template_ids && data.template_ids.length > 0) {
-            const newIds = data.template_ids.filter(
-              (id) => !prev.template_ids.includes(id)
-            );
-            updates.template_ids = [...prev.template_ids, ...newIds];
-          }
-          if (data.parameter_ids && data.parameter_ids.length > 0) {
-            const newIds = data.parameter_ids.filter(
-              (id) => !prev.parameter_ids.includes(id)
-            );
-            updates.parameter_ids = [...prev.parameter_ids, ...newIds];
-          }
-          if (data.parameter_field_ids && data.parameter_field_ids.length > 0) {
-            const newIds = data.parameter_field_ids.filter(
-              (id) => !prev.parameter_field_ids.includes(id)
-            );
-            updates.parameter_field_ids = [
-              ...prev.parameter_field_ids,
-              ...newIds,
-            ];
-          }
-          if (data.image_ids && data.image_ids.length > 0) {
-            const newIds = data.image_ids.filter(
-              (id) => !prev.image_ids.includes(id)
-            );
-            updates.image_ids = [...prev.image_ids, ...newIds];
-          }
-          if (data.video_ids && data.video_ids.length > 0) {
-            updates.video_ids = data.video_ids;
-          }
-          if (data.question_ids && data.question_ids.length > 0) {
-            const newIds = data.question_ids.filter(
-              (id) => !prev.question_ids.includes(id)
-            );
-            updates.question_ids = [...prev.question_ids, ...newIds];
-          }
-
-          if (data.resource_id && data.resource_type) {
-            const resourceId = data.resource_id;
-            switch (data.resource_type) {
-              case "names":
-                updates.name_id = resourceId;
-                break;
-              case "descriptions":
-                updates.description_id = resourceId;
-                break;
-              case "problem_statements":
-                updates.problem_statement_id = resourceId;
-                break;
-              case "objectives":
-                updates.objective_ids = prev.objective_ids.includes(resourceId)
-                  ? prev.objective_ids
-                  : [...prev.objective_ids, resourceId];
-                break;
-              case "departments":
-                updates.department_ids = prev.department_ids.includes(
-                  resourceId
-                )
-                  ? prev.department_ids
-                  : [...prev.department_ids, resourceId];
-                break;
-              case "personas":
-                updates.persona_ids = prev.persona_ids.includes(resourceId)
-                  ? prev.persona_ids
-                  : [...prev.persona_ids, resourceId];
-                break;
-              case "documents":
-                updates.document_ids = prev.document_ids.includes(resourceId)
-                  ? prev.document_ids
-                  : [...prev.document_ids, resourceId];
-                break;
-              case "templates":
-                updates.template_ids = prev.template_ids.includes(resourceId)
-                  ? prev.template_ids
-                  : [...prev.template_ids, resourceId];
-                break;
-              case "parameters":
-                updates.parameter_ids = prev.parameter_ids.includes(resourceId)
-                  ? prev.parameter_ids
-                  : [...prev.parameter_ids, resourceId];
-                break;
-              case "images":
-                updates.image_ids = prev.image_ids.includes(resourceId)
-                  ? prev.image_ids
-                  : [...prev.image_ids, resourceId];
-                break;
-              case "videos":
-                updates.video_ids = [resourceId];
-                break;
-              case "questions":
-                updates.question_ids = prev.question_ids.includes(resourceId)
-                  ? prev.question_ids
-                  : [...prev.question_ids, resourceId];
-                break;
-              default:
-                break;
-            }
-          }
-
+        // Store full resources in aiFormData for diff view workflow
+        setAiFormData((prev) => {
+          const updates: Partial<typeof prev> = {};
+          if (data.name_resource) updates.name_resource = data.name_resource;
+          if (data.description_resource)
+            updates.description_resource = data.description_resource;
+          if (data.problem_statement_resource)
+            updates.problem_statement_resource = data.problem_statement_resource;
+          if (data.department_resources)
+            updates.department_resources = data.department_resources;
+          if (data.persona_resources)
+            updates.persona_resources = data.persona_resources;
+          if (data.document_resources)
+            updates.document_resources = data.document_resources;
+          if (data.template_resources)
+            updates.template_resources = data.template_resources;
+          if (data.objective_resources)
+            updates.objective_resources = data.objective_resources;
+          if (data.question_resources)
+            updates.question_resources = data.question_resources;
+          if (data.image_resources)
+            updates.image_resources = data.image_resources;
+          if (data.video_resources)
+            updates.video_resources = data.video_resources;
+          if (data.parameter_resources)
+            updates.parameter_resources = data.parameter_resources;
+          if (data.parameter_field_resources)
+            updates.parameter_field_resources = data.parameter_field_resources;
           return { ...prev, ...updates };
         });
+
+        // Only auto-accept name_resource (names are auto-applied without user confirmation)
+        if (data.name_resource?.id) {
+          setFormState((prev) => ({
+            ...prev,
+            name_id: String(data.name_resource!.id),
+          }));
+        }
 
         setGeneratingResources((prev) => {
           const next = new Set(prev);
@@ -2539,6 +2440,9 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftDescriptionsOut>)
                       | undefined
                   }
+                  aiResource={aiFormData.description_resource}
+                  onAccept={() => clearAiResource("description_resource")}
+                  onReject={() => clearAiResource("description_resource")}
                 />
 
                 <Departments
@@ -2563,6 +2467,9 @@ function ScenarioComponent({
                   agent_id={currentScenarioData?.departments_agent_id ?? null}
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
+                  aiDepartmentResources={aiFormData.department_resources ?? null}
+                  onAccept={() => clearAiResource("department_resources")}
+                  onReject={() => clearAiResource("department_resources")}
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
@@ -2690,6 +2597,9 @@ function ScenarioComponent({
                       ) => Promise<CreateDraftProblemStatementsOut>)
                     | undefined
                 }
+                aiResource={aiFormData.problem_statement_resource}
+                onAccept={() => clearAiResource("problem_statement_resource")}
+                onReject={() => clearAiResource("problem_statement_resource")}
               />
             </StepCard>
           );
@@ -2763,6 +2673,9 @@ function ScenarioComponent({
                 isGenerating={isGenerating("objectives")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.objectives}
+                aiObjectiveResources={aiFormData.objective_resources ?? null}
+                onAccept={() => clearAiResource("objective_resources")}
+                onReject={() => clearAiResource("objective_resources")}
               />
             </StepCard>
           );
@@ -2841,6 +2754,9 @@ function ScenarioComponent({
                   onGenerate={handleGeneratePersonas}
                   isGenerating={isGenerating("personas")}
                   videoEnabled={videoEnabled}
+                  aiPersonaResources={aiFormData.persona_resources ?? null}
+                  onAccept={() => clearAiResource("persona_resources")}
+                  onReject={() => clearAiResource("persona_resources")}
                 />
               </div>
             </StepCard>
@@ -2920,6 +2836,9 @@ function ScenarioComponent({
                   onGenerate={handleGenerateDocuments}
                   isGenerating={isGenerating("documents")}
                   videoEnabled={videoEnabled}
+                  aiDocumentResources={aiFormData.document_resources ?? null}
+                  onAccept={() => clearAiResource("document_resources")}
+                  onReject={() => clearAiResource("document_resources")}
                 />
               </div>
             </StepCard>
@@ -2998,6 +2917,9 @@ function ScenarioComponent({
                 isGenerating={isGenerating("templates")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.templates}
+                aiTemplateResources={aiFormData.template_resources ?? null}
+                onAccept={() => clearAiResource("template_resources")}
+                onReject={() => clearAiResource("template_resources")}
               />
             </StepCard>
           );
@@ -3182,6 +3104,9 @@ function ScenarioComponent({
                 maxImages={3}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.images}
+                aiImageResources={aiFormData.image_resources ?? null}
+                onAccept={() => clearAiResource("image_resources")}
+                onReject={() => clearAiResource("image_resources")}
               />
             </StepCard>
           );
@@ -3247,6 +3172,9 @@ function ScenarioComponent({
                 isGenerating={isGenerating("videos")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.videos}
+                aiVideoResources={aiFormData.video_resources ?? null}
+                onAccept={() => clearAiResource("video_resources")}
+                onReject={() => clearAiResource("video_resources")}
               />
             </StepCard>
           );
@@ -3320,6 +3248,9 @@ function ScenarioComponent({
                 isGenerating={isGenerating("questions")}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.questions}
+                aiQuestionResources={aiFormData.question_resources ?? null}
+                onAccept={() => clearAiResource("question_resources")}
+                onReject={() => clearAiResource("question_resources")}
               />
             </StepCard>
           );

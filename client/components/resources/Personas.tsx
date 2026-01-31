@@ -96,6 +96,13 @@ export interface PersonasProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ persona_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiPersonaResources?: Array<{
+    persona_id?: string | null;
+    name?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Personas({
@@ -119,6 +126,10 @@ export function Personas({
   videoEnabled = false,
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiPersonaResources,
+  onAccept,
+  onReject,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
   const show = show_personas ?? false;

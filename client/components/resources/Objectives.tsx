@@ -196,6 +196,13 @@ export interface ObjectivesProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
+  // AI diff view props
+  aiObjectiveResources?: Array<{
+    objective_id?: string | null;
+    objective?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Objectives({
@@ -222,6 +229,10 @@ export function Objectives({
   objectiveMapping = {},
   isAutosaveEnabled = true,
   registerFlush,
+  // AI diff view props
+  aiObjectiveResources,
+  onAccept,
+  onReject,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);
