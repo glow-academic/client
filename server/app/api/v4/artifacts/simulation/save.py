@@ -93,7 +93,7 @@ async def save_simulation(
         access_params = CheckSaveAccessSqlParams(
             profile_id=profile_id,
             simulation_id=request.input_simulation_id,
-            draft_id=request.draft_id,
+            draft_id=None,  # Not using draft_id - passing explicit values directly
         )
 
         access_result = await execute_sql_typed(
@@ -111,9 +111,6 @@ async def save_simulation(
             )
             cohort_usage_count = getattr(access_result, "cohort_usage_count", 0) or 0
             simulation_exists = getattr(access_result, "simulation_exists", None)
-            draft_department_ids = (
-                getattr(access_result, "draft_department_ids", None) or []
-            )
 
             if request.input_simulation_id:
                 # Update mode
@@ -152,8 +149,9 @@ async def save_simulation(
                         )
             else:
                 # Create mode
-                # Check create permission using Python
-                if not compute_can_create(user_role, draft_department_ids):
+                # Use department_ids from request (explicit values, not from draft)
+                request_department_ids = [str(d) for d in request.department_ids] if request.department_ids else []
+                if not compute_can_create(user_role, request_department_ids):
                     raise HTTPException(
                         status_code=403,
                         detail="You don't have permission to create simulations.",
