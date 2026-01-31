@@ -227,13 +227,13 @@ export default function Home({ homeData }: HomeProps) {
       // if (ai !== bi) return ai - bi;
 
       // 3) cohort name alpha as a softer signal
-      const ca = (a?.cohort_name || "").toLowerCase();
-      const cb = (b?.cohort_name || "").toLowerCase();
+      const ca = (a?.cohort_names_junction || "").toLowerCase();
+      const cb = (b?.cohort_names_junction || "").toLowerCase();
       if (ca !== cb) return ca < cb ? -1 : 1;
 
       // 4) title alpha
-      const ta = (a?.simulation_title || "").toLowerCase();
-      const tb = (b?.simulation_title || "").toLowerCase();
+      const ta = (a?.simulation_name || "").toLowerCase();
+      const tb = (b?.simulation_name || "").toLowerCase();
       if (ta !== tb) return ta < tb ? -1 : 1;
 
       return 0;
@@ -264,13 +264,13 @@ export default function Home({ homeData }: HomeProps) {
       // if (ai !== bi) return ai - bi;
 
       // 3) cohort name alpha as a softer signal
-      const ca = (a?.cohort_name || "").toLowerCase();
-      const cb = (b?.cohort_name || "").toLowerCase();
+      const ca = (a?.cohort_names_junction || "").toLowerCase();
+      const cb = (b?.cohort_names_junction || "").toLowerCase();
       if (ca !== cb) return ca < cb ? -1 : 1;
 
       // 4) title alpha
-      const ta = (a?.simulation_title || "").toLowerCase();
-      const tb = (b?.simulation_title || "").toLowerCase();
+      const ta = (a?.simulation_name || "").toLowerCase();
+      const tb = (b?.simulation_name || "").toLowerCase();
       if (ta !== tb) return ta < tb ? -1 : 1;
 
       return 0;
@@ -342,9 +342,7 @@ export default function Home({ homeData }: HomeProps) {
                         ? ViewMode.MEMBER
                         : ViewMode.INSTRUCTIONAL
                     }
-                    {...(item.cohort_name && { cohortName: item.cohort_name })}
-                    {...(item.cohort_names_junction &&
-                      !item.cohort_name && { cohortName: item.cohort_names_junction })}
+                    {...(item.cohort_names_junction && { cohortName: item.cohort_names_junction })}
                     simulationName={item.simulation_name || ""}
                     status={
                       (item.status || "not-started") as
@@ -425,7 +423,7 @@ export default function Home({ homeData }: HomeProps) {
                       {...(typeof item.highest_score === "number" && {
                         highestScore: item.highest_score,
                       })}
-                      simulationTitle={item.simulation_title || ""}
+                      simulationTitle={item.simulation_name || ""}
                       simulationDescription={item.simulation_description || ""}
                       standard_groups={buildStandardGroupsDict(
                         item.standard_groups || []
@@ -452,8 +450,8 @@ export default function Home({ homeData }: HomeProps) {
                       {...(typeof item.has_passed === "boolean" && {
                         hasPassed: item.has_passed,
                       })}
-                      {...(typeof item.pass_rate === "number" && {
-                        passRate: item.pass_rate,
+                      {...(typeof item.pass_pct === "number" && {
+                        passRate: item.pass_pct,
                       })}
                       type="cohort"
                       onStartSimulation={handleStartSimulation}

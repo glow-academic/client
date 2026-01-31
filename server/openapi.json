@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -96,11 +96,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/list": {
@@ -193,11 +189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/save": {
@@ -290,11 +282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/duplicate": {
@@ -387,11 +375,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/delete": {
@@ -484,11 +468,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/draft": {
@@ -581,11 +561,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/docs": {
@@ -670,11 +646,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/get": {
@@ -767,11 +739,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/list": {
@@ -864,11 +832,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/save": {
@@ -961,11 +925,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/duplicate": {
@@ -1058,11 +1018,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/delete": {
@@ -1155,11 +1111,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/draft": {
@@ -1252,11 +1204,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/simulations/get": {
@@ -1349,11 +1297,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/list": {
@@ -1446,11 +1390,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/save": {
@@ -1543,11 +1483,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/duplicate": {
@@ -1640,11 +1576,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/delete": {
@@ -1737,11 +1669,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/draft": {
@@ -1834,11 +1762,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/documents/list": {
@@ -1931,11 +1855,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/get": {
@@ -2028,11 +1948,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/save": {
@@ -2125,11 +2041,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/duplicate": {
@@ -2222,11 +2134,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/delete": {
@@ -2319,11 +2227,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/draft": {
@@ -2416,11 +2320,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/departments/get": {
@@ -2513,11 +2413,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/list": {
@@ -2610,11 +2506,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/save": {
@@ -2707,11 +2599,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/duplicate": {
@@ -2804,11 +2692,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/delete": {
@@ -2901,11 +2785,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/draft": {
@@ -2998,11 +2878,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/list": {
@@ -3095,11 +2971,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/get": {
@@ -3192,11 +3064,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/save": {
@@ -3289,11 +3157,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/duplicate": {
@@ -3386,11 +3250,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/delete": {
@@ -3483,11 +3343,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/draft": {
@@ -3580,11 +3436,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/evals/list": {
@@ -3677,11 +3529,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/get": {
@@ -3774,11 +3622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/save": {
@@ -3871,11 +3715,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/duplicate": {
@@ -3968,11 +3808,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/delete": {
@@ -4065,11 +3901,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/draft": {
@@ -4162,11 +3994,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/get": {
@@ -4259,11 +4087,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/list": {
@@ -4356,11 +4180,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/save": {
@@ -4453,11 +4273,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/duplicate": {
@@ -4550,11 +4366,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/delete": {
@@ -4647,11 +4459,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/draft": {
@@ -4744,11 +4552,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/settings/list": {
@@ -4841,11 +4645,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/get": {
@@ -4938,11 +4738,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/save": {
@@ -5035,11 +4831,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/duplicate": {
@@ -5132,11 +4924,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/draft": {
@@ -5229,11 +5017,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/agents/get": {
@@ -5326,11 +5110,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/list": {
@@ -5423,11 +5203,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/save": {
@@ -5520,11 +5296,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/duplicate": {
@@ -5617,11 +5389,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/delete": {
@@ -5714,11 +5482,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/draft": {
@@ -5811,11 +5575,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/models/get": {
@@ -5908,11 +5668,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/list": {
@@ -6005,11 +5761,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/save": {
@@ -6102,11 +5854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/duplicate": {
@@ -6199,11 +5947,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/delete": {
@@ -6296,11 +6040,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/draft": {
@@ -6393,11 +6133,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/providers/list": {
@@ -6490,11 +6226,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/get": {
@@ -6587,11 +6319,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/save": {
@@ -6684,11 +6412,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/duplicate": {
@@ -6781,11 +6505,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/delete": {
@@ -6878,11 +6598,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/draft": {
@@ -6975,11 +6691,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/parameters/get": {
@@ -7072,11 +6784,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/list": {
@@ -7169,11 +6877,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/save": {
@@ -7266,11 +6970,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/duplicate": {
@@ -7363,11 +7063,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/delete": {
@@ -7460,11 +7156,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/draft": {
@@ -7557,11 +7249,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/fields/get": {
@@ -7654,11 +7342,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/list": {
@@ -7751,11 +7435,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/save": {
@@ -7848,11 +7528,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/duplicate": {
@@ -7945,11 +7621,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/delete": {
@@ -8042,11 +7714,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/draft": {
@@ -8139,11 +7807,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/profiles/get": {
@@ -8236,11 +7900,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/list": {
@@ -8333,11 +7993,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/save": {
@@ -8430,11 +8086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/draft": {
@@ -8527,11 +8179,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/delete": {
@@ -8624,11 +8272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/auths/get": {
@@ -8721,11 +8365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/list": {
@@ -8818,11 +8458,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/save": {
@@ -8915,11 +8551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/duplicate": {
@@ -9012,11 +8644,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/delete": {
@@ -9109,11 +8737,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/draft": {
@@ -9206,11 +8830,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/tools/list": {
@@ -9303,11 +8923,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/get": {
@@ -9400,11 +9016,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/save": {
@@ -9497,11 +9109,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/duplicate": {
@@ -9594,11 +9202,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/delete": {
@@ -9691,11 +9295,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/draft": {
@@ -9788,11 +9388,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/group/get": {
@@ -9886,12 +9482,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "group"
-        ]
+        }
       }
     },
     "/api/v4/resources/args": {
@@ -9984,11 +9575,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args_outputs": {
@@ -10081,11 +9668,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/cohorts/get": {
@@ -10178,11 +9761,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors": {
@@ -10275,11 +9854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors/get": {
@@ -10372,11 +9947,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors/search": {
@@ -10468,11 +10039,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments/get": {
@@ -10565,11 +10132,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments/search": {
@@ -10661,11 +10224,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions": {
@@ -10758,11 +10317,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions/get": {
@@ -10855,11 +10410,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions/search": {
@@ -10951,11 +10502,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/documents/get": {
@@ -11048,11 +10595,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/emails": {
@@ -11145,11 +10688,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/endpoints": {
@@ -11242,11 +10781,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples": {
@@ -11339,11 +10874,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples/get": {
@@ -11436,11 +10967,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples/search": {
@@ -11532,11 +11059,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields/get": {
@@ -11629,11 +11152,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields/search": {
@@ -11725,11 +11244,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields": {
@@ -11822,11 +11337,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields/get": {
@@ -11919,11 +11430,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields/search": {
@@ -12016,11 +11523,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags/get": {
@@ -12113,11 +11616,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags/search": {
@@ -12209,11 +11708,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_positions": {
@@ -12306,11 +11801,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_rubrics": {
@@ -12403,11 +11894,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons/get": {
@@ -12500,11 +11987,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons/search": {
@@ -12596,11 +12079,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images": {
@@ -12693,11 +12172,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images/get": {
@@ -12790,11 +12265,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions": {
@@ -12887,11 +12358,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions/get": {
@@ -12984,11 +12451,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions/search": {
@@ -13080,11 +12543,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/items": {
@@ -13177,11 +12636,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys": {
@@ -13274,11 +12729,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names": {
@@ -13371,11 +12822,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names/get": {
@@ -13468,11 +12915,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names/search": {
@@ -13565,11 +13008,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives": {
@@ -13662,11 +13101,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives/get": {
@@ -13759,11 +13194,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options": {
@@ -13856,11 +13287,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters/get": {
@@ -13953,11 +13380,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters/search": {
@@ -14049,11 +13472,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/personas/get": {
@@ -14146,11 +13565,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/points": {
@@ -14243,11 +13658,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/pricing": {
@@ -14340,11 +13751,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -14437,11 +13844,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements/get": {
@@ -14534,11 +13937,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/prompts": {
@@ -14631,11 +14030,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/protocols": {
@@ -14728,11 +14123,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions": {
@@ -14825,11 +14216,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions/get": {
@@ -14922,11 +14309,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/request_limits": {
@@ -15019,11 +14402,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/roles/get": {
@@ -15116,11 +14495,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/rubrics/get": {
@@ -15213,11 +14588,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_positions": {
@@ -15310,11 +14681,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_rubrics": {
@@ -15407,11 +14774,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_flags/get": {
@@ -15504,11 +14867,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_flags/search": {
@@ -15601,11 +14960,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/setting_role_routes": {
@@ -15698,11 +15053,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -15795,11 +15146,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions/get": {
@@ -15892,11 +15239,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions/search": {
@@ -15989,11 +15332,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics": {
@@ -16086,11 +15425,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics/get": {
@@ -16183,11 +15518,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics/search": {
@@ -16280,11 +15611,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits": {
@@ -16377,11 +15704,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits/get": {
@@ -16474,11 +15797,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits/search": {
@@ -16571,11 +15890,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios/get": {
@@ -16668,11 +15983,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios/search": {
@@ -16765,11 +16076,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/settings/get": {
@@ -16862,11 +16169,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions": {
@@ -16959,11 +16262,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions/get": {
@@ -17056,11 +16355,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions/search": {
@@ -17153,11 +16448,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/get": {
@@ -17250,11 +16541,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/batch": {
@@ -17347,11 +16634,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/search": {
@@ -17444,11 +16727,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/slugs": {
@@ -17541,11 +16820,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -17638,11 +16913,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates": {
@@ -17735,11 +17006,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates/get": {
@@ -17832,11 +17099,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates/html": {
@@ -17929,11 +17192,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates/search": {
@@ -18025,11 +17284,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/values": {
@@ -18122,11 +17377,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos": {
@@ -18219,11 +17470,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos/get": {
@@ -18316,11 +17563,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/voices": {
@@ -18413,11 +17656,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads": {
@@ -18510,11 +17749,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/analytics/home/get": {
@@ -18609,13 +17844,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/analytics/home/list": {
@@ -18710,13 +17939,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/analytics/reports/get": {
@@ -18811,13 +18034,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/analytics/reports/report": {
@@ -18912,15 +18129,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "reports",
-          "reports",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/analytics/reports/list": {
@@ -19016,14 +18225,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "reports",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/analytics/activity/get": {
@@ -19118,13 +18320,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/analytics/activity/list": {
@@ -19219,13 +18415,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/analytics/dashboard/get": {
@@ -19320,13 +18510,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/analytics/dashboard/list": {
@@ -19421,13 +18605,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/analytics/practice/get": {
@@ -19522,13 +18700,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/analytics/practice/list": {
@@ -19623,13 +18795,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/analytics/leaderboard/get": {
@@ -19724,13 +18890,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/analytics/leaderboard/list": {
@@ -19825,13 +18985,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/analytics/pricing/get": {
@@ -19926,13 +19080,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/analytics/pricing/list": {
@@ -20027,13 +19175,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/analytics/benchmark/get": {
@@ -20128,13 +19270,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/analytics/benchmark/list": {
@@ -20229,13 +19365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/analytics/health/get": {
@@ -20330,13 +19460,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/analytics/health/list": {
@@ -20431,13 +19555,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/analytics/refresh": {
@@ -20530,11 +19648,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v4/analytics/NEW/home/get": {
@@ -20549,7 +19663,7 @@
           "home"
         ],
         "summary": "Home Get",
-        "description": "Get home overview with simulation cards.\n\nUses two-pass pattern:\n1. Context query for user info and permissions\n2. Data query for raw simulation data + metadata\n3. Python transforms raw data to simulation cards",
+        "description": "Get home overview with simulation cards.\n\nSQL handles: aggregation, all metadata JOINs\nPython handles: only business logic (status, pass_pct, completion_pct, cohort formatting)",
         "operationId": "home_get_api_v4_analytics_NEW_home_get_post",
         "parameters": [
           {
@@ -20632,16 +19746,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/analytics/NEW/home/list": {
@@ -20656,7 +19761,7 @@
           "home"
         ],
         "summary": "Home List",
-        "description": "Get paginated home history with attempts.\n\nUses two-pass pattern:\n1. Context query for user info, permissions, and pass threshold\n2. Data query for raw attempts + metadata\n3. Python handles: search, filters, sort, pagination, computed fields",
+        "description": "Get paginated home history with attempts.\n\nSQL handles: filtering, sorting, pagination, all metadata JOINs\nPython handles: only business logic (score_status, show_view, show_continue, pass_pct)",
         "operationId": "home_list_api_v4_analytics_NEW_home_list_post",
         "parameters": [
           {
@@ -20739,16 +19844,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/analytics/NEW/home/refresh": {
@@ -20846,16 +19942,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/attempts/simulation/get": {
@@ -20950,13 +20037,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts",
-          "attempts",
-          "simulation"
-        ]
+        }
       }
     },
     "/api/v4/attempts/simulation/archive": {
@@ -21051,13 +20132,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts",
-          "attempts",
-          "simulation"
-        ]
+        }
       }
     },
     "/api/v4/attempts/benchmark/get": {
@@ -21152,13 +20227,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts",
-          "attempts",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/attempts/benchmark/archive": {
@@ -21253,13 +20322,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts",
-          "attempts",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/attempts/general/get": {
@@ -21354,13 +20417,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts",
-          "attempts",
-          "general"
-        ]
+        }
       }
     },
     "/api/v4/attempts/practice/get": {
@@ -21455,13 +20512,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts",
-          "attempts",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/process": {
@@ -21556,13 +20607,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/search": {
@@ -21657,13 +20702,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/save": {
@@ -21758,13 +20797,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/delete": {
@@ -21859,13 +20892,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/process": {
@@ -21960,13 +20987,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/search": {
@@ -22061,13 +21082,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/save": {
@@ -22162,13 +21177,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/delete": {
@@ -22263,13 +21272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/decrypt/key": {
@@ -22362,11 +21365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "decrypt"
-        ]
+        }
       }
     },
     "/api/v4/export/certificate": {
@@ -22457,11 +21456,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "export"
-        ]
+        }
       }
     },
     "/api/v4/export/report": {
@@ -22553,12 +21548,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "export",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/uploads/get/{upload_id}": {
@@ -22660,11 +21650,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/save": {
@@ -22745,11 +21731,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -22828,11 +21810,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/save/{upload_id}": {
@@ -22922,11 +21900,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -23014,11 +21988,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -23106,11 +22076,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/save/{upload_id}/finalize": {
@@ -23202,11 +22168,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/auth/login": {
@@ -23299,11 +22261,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/context": {
@@ -23396,11 +22354,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/email": {
@@ -23493,11 +22447,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/upsert": {
@@ -23590,11 +22540,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/simulatable": {
@@ -23687,11 +22633,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/emulate": {
@@ -23784,11 +22726,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/debug/debug": {
@@ -23881,11 +22819,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "debug"
-        ]
+        }
       }
     },
     "/socket/v4/client/connect": {
@@ -23912,11 +22846,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/disconnect": {
@@ -23943,11 +22873,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/enter": {
@@ -23995,12 +22921,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/join": {
@@ -24048,12 +22969,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/leave": {
@@ -24101,12 +23017,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -24154,12 +23065,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/advance": {
@@ -24207,12 +23113,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/stop": {
@@ -24260,12 +23161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/next": {
@@ -24313,12 +23209,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/end": {
@@ -24366,12 +23257,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/run_start": {
@@ -24419,12 +23305,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/runs_start_all": {
@@ -24472,12 +23353,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -24524,11 +23400,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/scenario_generation_complete": {
@@ -24575,11 +23447,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_progress": {
@@ -24626,11 +23494,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_complete": {
@@ -24677,11 +23541,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_error": {
@@ -24728,11 +23588,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/enter_response": {
@@ -24780,12 +23636,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/enter_error": {
@@ -24833,12 +23684,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/joined": {
@@ -24886,12 +23732,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/join_error": {
@@ -24939,12 +23780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/leave_error": {
@@ -24992,12 +23828,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/advance_error": {
@@ -25045,12 +23876,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/advanced": {
@@ -25098,12 +23924,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/stopped": {
@@ -25151,12 +23972,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/stop_error": {
@@ -25204,12 +24020,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/completed": {
@@ -25257,12 +24068,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/end_error": {
@@ -25310,12 +24116,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/run_started": {
@@ -25363,12 +24164,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/run_start_error": {
@@ -25416,12 +24212,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_started": {
@@ -25469,12 +24260,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_error": {
@@ -25522,12 +24308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -25551,10 +24332,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/authorize": {
@@ -25698,10 +24476,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/token": {
@@ -25745,10 +24520,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/userinfo": {
@@ -25800,10 +24572,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/jwks": {
@@ -25823,10 +24592,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/.well-known/oauth-authorization-server": {
@@ -30236,14 +29002,7 @@
       "FilterOption": {
         "properties": {
           "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Value"
           },
           "label": {
@@ -30270,6 +29029,9 @@
           }
         },
         "type": "object",
+        "required": [
+          "value"
+        ],
         "title": "FilterOption",
         "description": "Filter option for history dropdowns."
       },
@@ -38634,55 +37396,6 @@
             ],
             "title": "Department Ids"
           },
-          "roles": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulation_filters": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Filters"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "profile_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Ids"
-          },
           "simulation_ids": {
             "anyOf": [
               {
@@ -38723,6 +37436,17 @@
               }
             ],
             "title": "Infinite Mode"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
           },
           "sort_by": {
             "anyOf": [
@@ -38777,7 +37501,7 @@
           "end_date"
         ],
         "title": "GetHomeHistoryNewClientRequest",
-        "description": "Client API request for home history.\n\nNote: mode and accessible_cohort_ids are NOT included here - they are\ninternal parameters injected by the Python backend from the context query."
+        "description": "Client API request for home history.\n\nNote: Home history is single-user (profile from auth header).\nFilters like roles, simulation_filters, profile_ids are not applicable."
       },
       "GetHomeHistoryNewResponse": {
         "properties": {
@@ -38850,20 +37574,6 @@
             ],
             "title": "Total Pages"
           },
-          "profile_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Options"
-          },
           "simulation_options": {
             "anyOf": [
               {
@@ -38878,7 +37588,7 @@
             ],
             "title": "Simulation Options"
           },
-          "scenario_options_junction": {
+          "scenario_options": {
             "anyOf": [
               {
                 "items": {
@@ -38890,12 +37600,12 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options Junction"
+            "title": "Scenario Options"
           }
         },
         "type": "object",
         "title": "GetHomeHistoryNewResponse",
-        "description": "Client-facing API response for home history.\n\nContains transformed attempts and filter options."
+        "description": "Client-facing API response for home history."
       },
       "GetHomeOverviewApiRequest": {
         "properties": {
@@ -39164,25 +37874,11 @@
               }
             ],
             "title": "Standards"
-          },
-          "simulations": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulations"
           }
         },
         "type": "object",
         "title": "GetHomeOverviewNewResponse",
-        "description": "Client-facing API response for home overview.\n\nContains transformed simulation cards (items) ready for frontend consumption."
+        "description": "Client-facing API response for home overview."
       },
       "GetIconsApiRequest": {
         "properties": {
@@ -54442,15 +53138,8 @@
       "HistoryAttempt": {
         "properties": {
           "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Attempt Id"
           },
           "date": {
@@ -54486,6 +53175,18 @@
               }
             ],
             "title": "Profile Name"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
           },
           "simulation_name": {
             "anyOf": [
@@ -54570,40 +53271,6 @@
             ],
             "title": "Persona Colors Junction"
           },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "score_status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score Status"
-          },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
           "scenario_ids": {
             "anyOf": [
               {
@@ -54633,61 +53300,6 @@
             ],
             "title": "Scenario Titles"
           },
-          "is_archived": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Archived"
-          },
-          "show_view": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show View"
-          },
-          "show_continue": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Continue"
-          },
-          "practice_simulation": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Simulation"
-          },
-          "pass_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Pct"
-          },
           "department_ids": {
             "anyOf": [
               {
@@ -54716,22 +53328,68 @@
             ],
             "title": "Cohort Names Junction"
           },
-          "practice_scenario_id": {
+          "score": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Practice Scenario Id"
+            "title": "Score"
+          },
+          "score_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Status"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "show_view": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show View"
+          },
+          "show_continue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Continue"
           }
         },
         "type": "object",
+        "required": [
+          "attempt_id"
+        ],
         "title": "HistoryAttempt",
-        "description": "Attempt record for home history.\n\nThis is the client-facing type returned by the API.\nPython computes fields like score_status, show_view, show_continue."
+        "description": "Attempt record for home history.\n\nSQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct."
       },
       "IProcessCsvV4ColumnMapping": {
         "properties": {
@@ -106811,49 +105469,13 @@
       "SimulationCard": {
         "properties": {
           "view_mode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "View Mode"
           },
           "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Simulation Id"
-          },
-          "simulation_title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Title"
-          },
-          "simulation_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Description"
           },
           "simulation_name": {
             "anyOf": [
@@ -106865,6 +105487,17 @@
               }
             ],
             "title": "Simulation Name"
+          },
+          "simulation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Description"
           },
           "time_limit": {
             "anyOf": [
@@ -106946,17 +105579,6 @@
             ],
             "title": "Has Passed"
           },
-          "pass_rate": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Rate"
-          },
           "status": {
             "anyOf": [
               {
@@ -106967,6 +105589,17 @@
               }
             ],
             "title": "Status"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
           },
           "completion_pct": {
             "anyOf": [
@@ -107012,28 +105645,6 @@
             ],
             "title": "Not Started Count"
           },
-          "pass_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Pct"
-          },
-          "cohort_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Name"
-          },
           "cohort_names_junction": {
             "anyOf": [
               {
@@ -107047,8 +105658,12 @@
           }
         },
         "type": "object",
+        "required": [
+          "view_mode",
+          "simulation_id"
+        ],
         "title": "SimulationCard",
-        "description": "Simulation card for home overview.\n\nThis is the client-facing type returned by the API.\nPython computes fields like status, pass_pct, cohort_names from raw SQL data."
+        "description": "Simulation card for home overview.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction."
       },
       "SimulationDepartment": {
         "properties": {
@@ -107292,72 +105907,6 @@
         "type": "object",
         "title": "SimulationFlagResource",
         "description": "Flag resource for simulation."
-      },
-      "SimulationMapping": {
-        "properties": {
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "title": "SimulationMapping",
-        "description": "Simulation metadata for mapping."
       },
       "SimulationNameResource": {
         "properties": {
@@ -107976,15 +106525,8 @@
       "StandardGroupMapping": {
         "properties": {
           "standard_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Standard Group Id"
           },
           "name": {
@@ -108033,8 +106575,11 @@
           }
         },
         "type": "object",
+        "required": [
+          "standard_group_id"
+        ],
         "title": "StandardGroupMapping",
-        "description": "Standard group metadata for mapping."
+        "description": "Standard group metadata for sidebar/legend."
       },
       "StandardGroupsApiRequest": {
         "properties": {
@@ -108114,15 +106659,8 @@
       "StandardMapping": {
         "properties": {
           "standard_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Standard Id"
           },
           "standard_group_id": {
@@ -108172,8 +106710,11 @@
           }
         },
         "type": "object",
+        "required": [
+          "standard_id"
+        ],
         "title": "StandardMapping",
-        "description": "Standard metadata for mapping."
+        "description": "Standard metadata for sidebar/legend."
       },
       "TemplatesApiRequest": {
         "properties": {

@@ -1,12 +1,16 @@
--- Get NEW home overview with items and mappings
--- REFACTORED: Uses mv_home_attempt_history + _resource tables only
--- Business logic (status, pass_pct, completion_pct, cohort formatting) moved to Python
+-- Get NEW home overview with simulation cards
+-- REFACTORED: All JOINs done in SQL, only business logic in Python
 --
--- Data flow:
--- 1. mv_home_attempt_history → raw attempt data (filtered by date, profile/cohort)
--- 2. Aggregate by simulation_id → simulation-level metrics
--- 3. Join to _resource tables → metadata (names, colors, etc.)
--- 4. Return raw data → Python computes status, pass_pct, formats cohort names
+-- SQL handles:
+--   - Aggregation by simulation
+--   - JOINs to _resource tables for names, colors, etc.
+--   - Mode determination
+--
+-- Python handles (business logic only):
+--   - status (passed/in-progress/not-started)
+--   - pass_pct / pass_rate (calculation from rubric points)
+--   - completion_pct (for instructional mode)
+--   - cohort_names_junction (formatting "A, B, and C")
 
 -- 1) Drop function first (breaks dependency on types)
 DO $$
@@ -39,20 +43,27 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
--- Raw simulation data type (Python will compute status, pass_pct, etc.)
-CREATE TYPE types.q_get_home_overview_new_v4_raw_simulation AS (
+-- Simulation card with all metadata JOINed (Python only computes derived fields)
+CREATE TYPE types.q_get_home_overview_new_v4_simulation_card AS (
+    -- Core IDs
     simulation_id uuid,
+    -- JOINed metadata (no Python lookups needed)
+    simulation_name text,
+    simulation_description text,
+    time_limit int,
+    department_ids text[],
+    persona_color text,
+    persona_icon text,
+    cohort_names text[],
+    standard_group_ids uuid[],
     -- Metrics from MV aggregation
     attempt_count int,
     completed_count int,
     highest_score int,
     has_passed boolean,
-    -- Rubric points (for Python to compute pass_pct)
+    -- Raw data for Python business logic
     rubric_total_points int,
     rubric_pass_points int,
-    -- IDs for metadata lookups
-    persona_ids uuid[],
-    cohort_ids uuid[],
     -- Instructional mode counts (NULL for member mode)
     passed_count int,
     in_progress_count int,
@@ -60,29 +71,7 @@ CREATE TYPE types.q_get_home_overview_new_v4_raw_simulation AS (
     total_members int
 );
 
--- Simulation metadata mapping
-CREATE TYPE types.q_get_home_overview_new_v4_simulation AS (
-    simulation_id uuid,
-    name text,
-    description text,
-    time_limit int,
-    department_ids text[]
-);
-
--- Persona metadata mapping
-CREATE TYPE types.q_get_home_overview_new_v4_persona AS (
-    persona_id uuid,
-    color text,
-    icon text
-);
-
--- Cohort metadata mapping
-CREATE TYPE types.q_get_home_overview_new_v4_cohort AS (
-    cohort_id uuid,
-    name text
-);
-
--- Standard group mapping
+-- Standard group mapping (for sidebar/legend)
 CREATE TYPE types.q_get_home_overview_new_v4_standard_group AS (
     standard_group_id uuid,
     name text,
@@ -91,20 +80,13 @@ CREATE TYPE types.q_get_home_overview_new_v4_standard_group AS (
     pass_points int
 );
 
--- Standard mapping
+-- Standard mapping (for sidebar/legend)
 CREATE TYPE types.q_get_home_overview_new_v4_standard AS (
     standard_id uuid,
     standard_group_id uuid,
     name text,
     description text,
     points int
-);
-
--- Rubric to standard_groups mapping
-CREATE TYPE types.q_get_home_overview_new_v4_rubric AS (
-    simulation_id uuid,
-    rubric_id uuid,
-    standard_group_ids uuid[]
 );
 
 -- 4) Recreate function
@@ -119,13 +101,9 @@ RETURNS TABLE (
     actor_name text,
     mode text,
     has_data boolean,
-    -- Raw simulation data (Python will transform to simulation cards)
-    raw_simulations types.q_get_home_overview_new_v4_raw_simulation[],
-    -- Metadata mappings (Python will use for lookups)
-    simulations types.q_get_home_overview_new_v4_simulation[],
-    personas types.q_get_home_overview_new_v4_persona[],
-    cohorts types.q_get_home_overview_new_v4_cohort[],
-    rubrics types.q_get_home_overview_new_v4_rubric[],
+    -- Simulation cards with metadata already JOINed
+    simulation_cards types.q_get_home_overview_new_v4_simulation_card[],
+    -- Standard mappings (for sidebar/legend, not per-simulation)
     standard_groups types.q_get_home_overview_new_v4_standard_group[],
     standards types.q_get_home_overview_new_v4_standard[]
 )
@@ -197,7 +175,11 @@ member_sim_status AS (
         MAX(mah.rubric_total_points) AS rubric_total_points,
         MAX(mah.rubric_pass_points) AS rubric_pass_points,
         ARRAY_AGG(DISTINCT pid) FILTER (WHERE pid IS NOT NULL) AS persona_ids,
-        ARRAY_AGG(DISTINCT mah.cohort_id) FILTER (WHERE mah.cohort_id IS NOT NULL) AS cohort_ids
+        ARRAY_AGG(DISTINCT mah.cohort_id) FILTER (WHERE mah.cohort_id IS NOT NULL) AS cohort_ids,
+        NULL::int AS passed_count,
+        NULL::int AS in_progress_count,
+        NULL::int AS not_started_count,
+        NULL::int AS total_members
     FROM params p
     CROSS JOIN mode_info mi
     CROSS JOIN mv_home_attempt_history mah
@@ -213,7 +195,6 @@ member_sim_status AS (
 ),
 
 -- INSTRUCTIONAL MODE: First get per-profile status, then aggregate
--- Step 1: Get each profile's overall status per simulation
 inst_profile_status AS (
     SELECT
         mah.simulation_id,
@@ -238,7 +219,7 @@ inst_profile_status AS (
     GROUP BY mah.simulation_id, mah.profile_id
 ),
 
--- Step 2a: Aggregate persona_ids per simulation
+-- Aggregate persona_ids per simulation
 inst_persona_ids AS (
     SELECT
         simulation_id,
@@ -248,7 +229,7 @@ inst_persona_ids AS (
     GROUP BY simulation_id
 ),
 
--- Step 2b: Aggregate cohort_ids per simulation
+-- Aggregate cohort_ids per simulation
 inst_cohort_ids AS (
     SELECT
         simulation_id,
@@ -258,11 +239,11 @@ inst_cohort_ids AS (
     GROUP BY simulation_id
 ),
 
--- Step 2c: Aggregate profile statuses per simulation
+-- Aggregate profile statuses per simulation
 inst_sim_status AS (
     SELECT
         ips.simulation_id,
-        COUNT(*)::int AS attempt_count,  -- total profiles with attempts
+        COUNT(*)::int AS attempt_count,
         COUNT(*) FILTER (WHERE ips.profile_has_completed)::int AS completed_count,
         MAX(ips.profile_highest_score)::int AS highest_score,
         BOOL_OR(ips.profile_has_passed) AS has_passed,
@@ -270,7 +251,6 @@ inst_sim_status AS (
         MAX(ips.rubric_pass_points) AS rubric_pass_points,
         COALESCE(ipi.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
         COALESCE(ici.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-        -- Count profiles by mutually exclusive status
         COUNT(*) FILTER (WHERE ips.profile_has_passed)::int AS passed_count,
         COUNT(*) FILTER (WHERE NOT ips.profile_has_passed AND ips.profile_has_completed)::int AS in_progress_count,
         COUNT(*)::int AS total_members
@@ -282,21 +262,7 @@ inst_sim_status AS (
 
 -- Combine member and instructional results
 all_sim_status AS (
-    SELECT
-        simulation_id,
-        attempt_count,
-        completed_count,
-        highest_score,
-        has_passed,
-        rubric_total_points,
-        rubric_pass_points,
-        persona_ids,
-        cohort_ids,
-        NULL::int AS passed_count,
-        NULL::int AS in_progress_count,
-        NULL::int AS not_started_count,
-        NULL::int AS total_members
-    FROM member_sim_status
+    SELECT * FROM member_sim_status
     UNION ALL
     SELECT
         simulation_id,
@@ -315,36 +281,17 @@ all_sim_status AS (
     FROM inst_sim_status
 ),
 
--- Get all simulation IDs we need metadata for
-all_simulation_ids AS (
-    SELECT DISTINCT simulation_id FROM all_sim_status
-),
-
--- Get all persona IDs we need metadata for
-all_persona_ids AS (
-    SELECT DISTINCT pid AS persona_id
-    FROM all_sim_status
-    CROSS JOIN LATERAL unnest(persona_ids) AS pid
-),
-
--- Get all cohort IDs we need metadata for
-all_cohort_ids AS (
-    SELECT DISTINCT cid AS cohort_id
-    FROM all_sim_status
-    CROSS JOIN LATERAL unnest(cohort_ids) AS cid
-),
-
--- Get scenario IDs for time limit calculation
+-- Get scenario IDs for time limit and rubric
 sim_scenarios AS (
     SELECT DISTINCT
         mah.simulation_id,
         sid AS scenario_id
     FROM mv_home_attempt_history mah
     CROSS JOIN LATERAL unnest(mah.scenario_ids) AS sid
-    WHERE mah.simulation_id IN (SELECT simulation_id FROM all_simulation_ids)
+    WHERE mah.simulation_id IN (SELECT simulation_id FROM all_sim_status)
 ),
 
--- Get time limits per simulation from scenario_time_limits_resource
+-- Get time limits per simulation
 sim_time_limits AS (
     SELECT
         ss.simulation_id,
@@ -355,7 +302,7 @@ sim_time_limits AS (
     GROUP BY ss.simulation_id
 ),
 
--- Get rubric info per simulation from scenario_rubrics_resource
+-- Get rubric info per simulation
 sim_rubrics AS (
     SELECT DISTINCT ON (ss.simulation_id)
         ss.simulation_id,
@@ -366,48 +313,69 @@ sim_rubrics AS (
     ORDER BY ss.simulation_id, srr.created_at
 ),
 
--- Metadata: simulations
-simulations_meta AS (
+-- Get standard_group_ids per simulation from rubrics
+sim_standard_groups AS (
     SELECT
-        (sr.id, sr.name, sr.description, COALESCE(stl.time_limit, 0),
-         COALESCE(sr.department_ids::text[], ARRAY[]::text[]))::types.q_get_home_overview_new_v4_simulation AS simulation
-    FROM all_simulation_ids asi
-    JOIN simulations_resource sr ON sr.id = asi.simulation_id AND sr.active = true
-    LEFT JOIN sim_time_limits stl ON stl.simulation_id = sr.id
-),
-
--- Metadata: personas
-personas_meta AS (
-    SELECT
-        (pr.id, pr.color, pr.icon)::types.q_get_home_overview_new_v4_persona AS persona
-    FROM all_persona_ids api
-    JOIN personas_resource pr ON pr.id = api.persona_id AND pr.active = true
-),
-
--- Metadata: cohorts
-cohorts_meta AS (
-    SELECT
-        (cr.id, cr.name)::types.q_get_home_overview_new_v4_cohort AS cohort
-    FROM all_cohort_ids aci
-    JOIN cohorts_resource cr ON cr.id = aci.cohort_id AND cr.active = true
-),
-
--- Metadata: rubrics with standard_group_ids
-rubrics_meta AS (
-    SELECT
-        (smr.simulation_id, rr.id, rr.standard_group_ids)::types.q_get_home_overview_new_v4_rubric AS rubric
+        smr.simulation_id,
+        rr.standard_group_ids
     FROM sim_rubrics smr
     JOIN rubrics_resource rr ON rr.id = smr.rubric_id AND rr.active = true
 ),
 
--- Get all standard_group_ids from rubrics
+-- JOIN all metadata to simulation status
+simulation_cards AS (
+    SELECT
+        ass.simulation_id,
+        -- JOINed simulation metadata
+        sr.name AS simulation_name,
+        sr.description AS simulation_description,
+        COALESCE(stl.time_limit, 0) AS time_limit,
+        sr.department_ids::text[] AS department_ids,
+        -- JOINed persona metadata (first persona)
+        persona_meta.color AS persona_color,
+        persona_meta.icon AS persona_icon,
+        -- JOINed cohort names
+        COALESCE(cohort_agg.names, ARRAY[]::text[]) AS cohort_names,
+        -- JOINed standard_group_ids
+        COALESCE(ssg.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
+        -- Metrics
+        ass.attempt_count,
+        ass.completed_count,
+        ass.highest_score,
+        ass.has_passed,
+        ass.rubric_total_points,
+        ass.rubric_pass_points,
+        ass.passed_count,
+        ass.in_progress_count,
+        ass.not_started_count,
+        ass.total_members
+    FROM all_sim_status ass
+    JOIN simulations_resource sr ON sr.id = ass.simulation_id AND sr.active = true
+    LEFT JOIN sim_time_limits stl ON stl.simulation_id = ass.simulation_id
+    LEFT JOIN sim_standard_groups ssg ON ssg.simulation_id = ass.simulation_id
+    -- Get first persona's color/icon
+    LEFT JOIN LATERAL (
+        SELECT pr.color, pr.icon
+        FROM unnest(ass.persona_ids) WITH ORDINALITY AS u(pid, ord)
+        JOIN personas_resource pr ON pr.id = pid AND pr.active = true
+        ORDER BY ord
+        LIMIT 1
+    ) persona_meta ON true
+    -- Aggregate cohort names
+    LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(cr.name ORDER BY cr.name) AS names
+        FROM unnest(ass.cohort_ids) AS cid
+        JOIN cohorts_resource cr ON cr.id = cid AND cr.active = true
+    ) cohort_agg ON true
+),
+
+-- Get all standard_group_ids for standard_groups/standards mappings
 all_standard_group_ids AS (
-    SELECT DISTINCT unnest(rr.standard_group_ids) AS standard_group_id
-    FROM sim_rubrics smr
-    JOIN rubrics_resource rr ON rr.id = smr.rubric_id AND rr.active = true
+    SELECT DISTINCT unnest(standard_group_ids) AS standard_group_id
+    FROM sim_standard_groups
 ),
 
--- Metadata: standard_groups
+-- Standard groups mapping (for sidebar/legend)
 standard_groups_meta AS (
     SELECT
         (sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_get_home_overview_new_v4_standard_group AS standard_group
@@ -415,7 +383,7 @@ standard_groups_meta AS (
     JOIN standard_groups_resource sg ON sg.id = asgi.standard_group_id AND sg.active = true
 ),
 
--- Metadata: standards
+-- Standards mapping (for sidebar/legend)
 standards_meta AS (
     SELECT
         (st.id, st.standard_group_id, st.name, st.description, st.points)::types.q_get_home_overview_new_v4_standard AS standard
@@ -424,38 +392,26 @@ standards_meta AS (
       AND st.active = true
 ),
 
--- Build raw simulations array
-raw_simulations_agg AS (
+-- Aggregate simulation cards
+simulation_cards_agg AS (
     SELECT COALESCE(ARRAY_AGG(
-        (simulation_id, attempt_count, completed_count, highest_score, has_passed,
-         rubric_total_points, rubric_pass_points, persona_ids, cohort_ids,
+        (simulation_id, simulation_name, simulation_description, time_limit, department_ids,
+         persona_color, persona_icon, cohort_names, standard_group_ids,
+         attempt_count, completed_count, highest_score, has_passed,
+         rubric_total_points, rubric_pass_points,
          passed_count, in_progress_count, not_started_count, total_members
-        )::types.q_get_home_overview_new_v4_raw_simulation
-    ), ARRAY[]::types.q_get_home_overview_new_v4_raw_simulation[]) AS raw_simulations
-    FROM all_sim_status
+        )::types.q_get_home_overview_new_v4_simulation_card
+    ), ARRAY[]::types.q_get_home_overview_new_v4_simulation_card[]) AS cards
+    FROM simulation_cards
 ),
 
--- Aggregate metadata
-simulations_agg AS (
-    SELECT COALESCE(ARRAY_AGG(simulation), ARRAY[]::types.q_get_home_overview_new_v4_simulation[]) AS simulations
-    FROM simulations_meta
-),
-personas_agg AS (
-    SELECT COALESCE(ARRAY_AGG(persona), ARRAY[]::types.q_get_home_overview_new_v4_persona[]) AS personas
-    FROM personas_meta
-),
-cohorts_agg AS (
-    SELECT COALESCE(ARRAY_AGG(cohort), ARRAY[]::types.q_get_home_overview_new_v4_cohort[]) AS cohorts
-    FROM cohorts_meta
-),
-rubrics_agg AS (
-    SELECT COALESCE(ARRAY_AGG(rubric), ARRAY[]::types.q_get_home_overview_new_v4_rubric[]) AS rubrics
-    FROM rubrics_meta
-),
+-- Aggregate standard groups
 standard_groups_agg AS (
     SELECT COALESCE(ARRAY_AGG(standard_group), ARRAY[]::types.q_get_home_overview_new_v4_standard_group[]) AS standard_groups
     FROM standard_groups_meta
 ),
+
+-- Aggregate standards
 standards_agg AS (
     SELECT COALESCE(ARRAY_AGG(standard), ARRAY[]::types.q_get_home_overview_new_v4_standard[]) AS standards
     FROM standards_meta
@@ -465,11 +421,7 @@ SELECT
     COALESCE(pi.name, 'System')::text AS actor_name,
     COALESCE(mi.mode, 'instructional')::text AS mode,
     (SELECT COUNT(*) > 0 FROM all_sim_status)::boolean AS has_data,
-    (SELECT raw_simulations FROM raw_simulations_agg) AS raw_simulations,
-    (SELECT simulations FROM simulations_agg) AS simulations,
-    (SELECT personas FROM personas_agg) AS personas,
-    (SELECT cohorts FROM cohorts_agg) AS cohorts,
-    (SELECT rubrics FROM rubrics_agg) AS rubrics,
+    (SELECT cards FROM simulation_cards_agg) AS simulation_cards,
     (SELECT standard_groups FROM standard_groups_agg) AS standard_groups,
     (SELECT standards FROM standards_agg) AS standards
 FROM profile_info pi

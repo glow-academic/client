@@ -177,6 +177,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   // Extract pagination and filter params from search params
+  // Note: historyProfileIds removed - home history is single-user (uses auth header)
   const historyPage = searchParamsObj.get("historyPage")
     ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
     : 0;
@@ -184,9 +185,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
     : 10;
   const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historyProfileIds = searchParamsObj.get("historyProfileIds")
-    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
-    : undefined;
   const historySimulationIds = searchParamsObj.get("historySimulationIds")
     ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
     : undefined;
@@ -213,11 +211,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
+  // Note: historyProfileIds removed - home history is single-user
   const historyKey = [
     historyPage,
     historyPageSize,
     historySearch || "",
-    (historyProfileIds || []).join(","),
     (historySimulationIds || []).join(","),
     (historyScenarioIds || []).join(","),
     historyInfiniteMode === undefined
@@ -269,7 +267,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             historySearch={historySearch}
-            historyProfileIds={historyProfileIds}
             historySimulationIds={historySimulationIds}
             historyScenarioIds={historyScenarioIds}
             historyInfiniteMode={historyInfiniteMode}
@@ -288,7 +285,6 @@ async function HomeHistorySection({
   historyPage,
   historyPageSize,
   historySearch,
-  historyProfileIds,
   historySimulationIds,
   historyScenarioIds,
   historyInfiniteMode,
@@ -305,7 +301,6 @@ async function HomeHistorySection({
   historyPage: number;
   historyPageSize: number;
   historySearch?: string | undefined;
-  historyProfileIds?: string[] | undefined;
   historySimulationIds?: string[] | undefined;
   historyScenarioIds?: string[] | undefined;
   historyInfiniteMode?: boolean | undefined;
@@ -314,6 +309,7 @@ async function HomeHistorySection({
 }) {
   // Build history filters matching logic from page.tsx
   // profileId removed - comes from X-Profile-Id header automatically
+  // roles and profile_ids removed - home history is single-user
   // Convert camelCase to snake_case for API
   const historyFilters: HomeHistoryIn = {
     body: {
@@ -321,14 +317,9 @@ async function HomeHistorySection({
       end_date: defaultFilters.endDate,
       cohort_ids: defaultFilters.cohortIds,
       department_ids: defaultFilters.departmentIds,
-      roles: defaultFilters.roles,
       page: historyPage,
       page_size: historyPageSize,
       ...(historySearch && { search: historySearch }),
-      ...(historyProfileIds &&
-        historyProfileIds.length > 0 && {
-          profile_ids: historyProfileIds,
-        }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
           simulation_ids: historySimulationIds,
@@ -347,21 +338,15 @@ async function HomeHistorySection({
 
   const historyData = await getHomeHistory(historyFilters);
 
-  // Calculate archived/unarchived counts from data (home history API doesn't provide these)
+  // Home history data is never archived (MV filters out archived)
   const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter((item) => item.is_archived).length;
-  const unarchivedCount = dataArray.filter((item) => !item.is_archived).length;
+  const archivedCount = 0;
+  const unarchivedCount = dataArray.length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profile_options || []).map((opt) => {
-    const count = typeof opt.count === "number" ? opt.count : undefined;
-    return {
-      value: String(opt.value || ""),
-      label: String(opt.label || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
+  // Note: profile_options removed - home history is single-user
+  const profileOptions: { value: string; label: string; count?: number }[] = [];
   const simulationOptions = (historyData.simulation_options || []).map(
     (opt) => {
       const count = typeof opt.count === "number" ? opt.count : undefined;
@@ -372,7 +357,7 @@ async function HomeHistorySection({
       };
     }
   );
-  const scenarioOptions = (historyData.scenario_options_junction || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+  const scenarioOptions = (historyData.scenario_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
     const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
       value: String(opt.value || ""),

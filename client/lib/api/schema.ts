@@ -4347,10 +4347,8 @@ export interface paths {
          * Home Get
          * @description Get home overview with simulation cards.
          *
-         *     Uses two-pass pattern:
-         *     1. Context query for user info and permissions
-         *     2. Data query for raw simulation data + metadata
-         *     3. Python transforms raw data to simulation cards
+         *     SQL handles: aggregation, all metadata JOINs
+         *     Python handles: only business logic (status, pass_pct, completion_pct, cohort formatting)
          */
         post: operations["home_get_api_v4_analytics_NEW_home_get_post"];
         delete?: never;
@@ -4372,10 +4370,8 @@ export interface paths {
          * Home List
          * @description Get paginated home history with attempts.
          *
-         *     Uses two-pass pattern:
-         *     1. Context query for user info, permissions, and pass threshold
-         *     2. Data query for raw attempts + metadata
-         *     3. Python handles: search, filters, sort, pagination, computed fields
+         *     SQL handles: filtering, sorting, pagination, all metadata JOINs
+         *     Python handles: only business logic (score_status, show_view, show_continue, pass_pct)
          */
         post: operations["home_list_api_v4_analytics_NEW_home_list_post"];
         delete?: never;
@@ -7296,7 +7292,7 @@ export interface components {
          */
         FilterOption: {
             /** Value */
-            value?: string | null;
+            value: string;
             /** Label */
             label?: string | null;
             /** Count */
@@ -8823,8 +8819,8 @@ export interface components {
          * GetHomeHistoryNewClientRequest
          * @description Client API request for home history.
          *
-         *     Note: mode and accessible_cohort_ids are NOT included here - they are
-         *     internal parameters injected by the Python backend from the context query.
+         *     Note: Home history is single-user (profile from auth header).
+         *     Filters like roles, simulation_filters, profile_ids are not applicable.
          */
         GetHomeHistoryNewClientRequest: {
             /** Start Date */
@@ -8835,20 +8831,14 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
             /** Simulation Ids */
             simulation_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Infinite Mode */
             infinite_mode?: boolean | null;
+            /** Search */
+            search?: string | null;
             /** Sort By */
             sort_by?: string | null;
             /** Sort Order */
@@ -8867,8 +8857,6 @@ export interface components {
         /**
          * GetHomeHistoryNewResponse
          * @description Client-facing API response for home history.
-         *
-         *     Contains transformed attempts and filter options.
          */
         GetHomeHistoryNewResponse: {
             /** Actor Name */
@@ -8883,12 +8871,10 @@ export interface components {
             page_size?: number | null;
             /** Total Pages */
             total_pages?: number | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["FilterOption"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["FilterOption"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["FilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["FilterOption"][] | null;
         };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
@@ -8932,8 +8918,6 @@ export interface components {
         /**
          * GetHomeOverviewNewResponse
          * @description Client-facing API response for home overview.
-         *
-         *     Contains transformed simulation cards (items) ready for frontend consumption.
          */
         GetHomeOverviewNewResponse: {
             /** Actor Name */
@@ -8948,8 +8932,6 @@ export interface components {
             standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["SimulationMapping"][] | null;
         };
         /** GetIconsApiRequest */
         GetIconsApiRequest: {
@@ -11910,18 +11892,22 @@ export interface components {
          * HistoryAttempt
          * @description Attempt record for home history.
          *
-         *     This is the client-facing type returned by the API.
-         *     Python computes fields like score_status, show_view, show_continue.
+         *     SQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.
          */
         HistoryAttempt: {
-            /** Attempt Id */
-            attempt_id?: string | null;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
             /** Date */
             date?: string | null;
             /** Profile Id */
             profile_id?: string | null;
             /** Profile Name */
             profile_name?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
             /** Simulation Name */
             simulation_name?: string | null;
             /** Num Scenarios */
@@ -11936,32 +11922,24 @@ export interface components {
             persona_names_junction?: string[] | null;
             /** Persona Colors Junction */
             persona_colors_junction?: string[] | null;
-            /** Score */
-            score?: number | null;
-            /** Score Status */
-            score_status?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Scenario Titles */
             scenario_titles?: string[] | null;
-            /** Is Archived */
-            is_archived?: boolean | null;
-            /** Show View */
-            show_view?: boolean | null;
-            /** Show Continue */
-            show_continue?: boolean | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Cohort Names Junction */
             cohort_names_junction?: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Score Status */
+            score_status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Show View */
+            show_view?: boolean | null;
+            /** Show Continue */
+            show_continue?: boolean | null;
         };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
@@ -22371,20 +22349,20 @@ export interface components {
          * SimulationCard
          * @description Simulation card for home overview.
          *
-         *     This is the client-facing type returned by the API.
-         *     Python computes fields like status, pass_pct, cohort_names from raw SQL data.
+         *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
          */
         SimulationCard: {
             /** View Mode */
-            view_mode?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Simulation Title */
-            simulation_title?: string | null;
-            /** Simulation Description */
-            simulation_description?: string | null;
+            view_mode: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
             /** Simulation Name */
             simulation_name?: string | null;
+            /** Simulation Description */
+            simulation_description?: string | null;
             /** Time Limit */
             time_limit?: number | null;
             /** Num Sessions */
@@ -22399,10 +22377,10 @@ export interface components {
             icon?: string | null;
             /** Has Passed */
             has_passed?: boolean | null;
-            /** Pass Rate */
-            pass_rate?: number | null;
             /** Status */
             status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
             /** Completion Pct */
             completion_pct?: number | null;
             /** Passed Count */
@@ -22411,10 +22389,6 @@ export interface components {
             in_progress_count?: number | null;
             /** Not Started Count */
             not_started_count?: number | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Cohort Name */
-            cohort_name?: string | null;
             /** Cohort Names Junction */
             cohort_names_junction?: string | null;
         };
@@ -22489,22 +22463,6 @@ export interface components {
             icon_id?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /**
-         * SimulationMapping
-         * @description Simulation metadata for mapping.
-         */
-        SimulationMapping: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
         };
         /**
          * SimulationNameResource
@@ -22683,11 +22641,14 @@ export interface components {
         };
         /**
          * StandardGroupMapping
-         * @description Standard group metadata for mapping.
+         * @description Standard group metadata for sidebar/legend.
          */
         StandardGroupMapping: {
-            /** Standard Group Id */
-            standard_group_id?: string | null;
+            /**
+             * Standard Group Id
+             * Format: uuid
+             */
+            standard_group_id: string;
             /** Name */
             name?: string | null;
             /** Description */
@@ -22732,11 +22693,14 @@ export interface components {
         };
         /**
          * StandardMapping
-         * @description Standard metadata for mapping.
+         * @description Standard metadata for sidebar/legend.
          */
         StandardMapping: {
-            /** Standard Id */
-            standard_id?: string | null;
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
             /** Standard Group Id */
             standard_group_id?: string | null;
             /** Name */

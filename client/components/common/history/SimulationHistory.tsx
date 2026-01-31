@@ -73,7 +73,7 @@ import { toast } from "sonner";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 // Use strong server types directly (union of all history endpoint types)
-type HomeHistoryData = NonNullable<OutputOf<"/api/v4/analytics/home/list", "post">["data"]>;
+type HomeHistoryData = NonNullable<OutputOf<"/api/v4/analytics/NEW/home/list", "post">["data"]>;
 type DashboardHistoryData = NonNullable<OutputOf<"/api/v4/analytics/dashboard/list", "post">["data"]>;
 type PracticeHistoryData = NonNullable<OutputOf<"/api/v4/analytics/practice/list", "post">["data"]>;
 export type HistoryDataItem =
@@ -127,7 +127,9 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
     (!item.infinite_mode || isInfiniteWindowOpen);
 
   const buttonText = wantContinue ? "Continue" : "View";
-  const linkHref = `/${item.practice_simulation ? "practice" : "home"}/a/${item.attempt_id}`;
+  // practice_simulation only exists on practice endpoint - defaults to false for home/dashboard
+  const isPractice = "practice_simulation" in item && item.practice_simulation;
+  const linkHref = `/${isPractice ? "practice" : "home"}/a/${item.attempt_id}`;
 
   const isOwnAttempt = profile?.id === item.profile_id;
   const shouldShowRetry =
@@ -152,7 +154,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(
-        `/${item.practice_simulation ? "practice" : "home"}/a/${attemptId}`,
+        `/${isPractice ? "practice" : "home"}/a/${attemptId}`,
       );
     };
 
@@ -184,7 +186,7 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, item.practice_simulation, item.attempt_id]);
+  }, [router, isPractice, item.attempt_id]);
 
   const handleStartSimulation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -212,13 +214,12 @@ function HistoryRowActions({ item }: { item: HistoryDataItem }) {
         profile?.role === "guest"
           ? ""
           : String(profile?.id || "");
+      // practice_scenario_id only exists on practice endpoint
+      const practiceScenarioId = "practice_scenario_id" in item ? item.practice_scenario_id : null;
       emitStartSimulation({
         simulation_id: String(item.simulation_id),
         profile_id: profileIdForEmit,
-        scenario_id:
-          item.practice_simulation && item.practice_scenario_id
-            ? item.practice_scenario_id
-            : null,
+        scenario_id: isPractice && practiceScenarioId ? practiceScenarioId : null,
         ...(item.infinite_mode ? { infinite: true } : {}),
       });
     } catch {
@@ -848,7 +849,8 @@ export default function SimulationHistory({
             hour12: false,
           });
 
-          const isArchived = row.original.is_archived;
+          // is_archived only exists on dashboard/practice endpoints - defaults to false for home
+          const isArchived = "is_archived" in row.original ? row.original.is_archived : false;
 
           return (
             <div className="flex items-center justify-between">

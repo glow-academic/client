@@ -1,11 +1,16 @@
--- Get NEW home history - raw attempt data for Python to process
--- REFACTORED: Uses mv_home_attempt_history + _resource tables only
--- Business logic (search, sort, pagination, score_status, filter options) moved to Python
+-- Get NEW home history - attempt data with metadata JOINed
+-- REFACTORED: All JOINs done in SQL, only business logic in Python
 --
--- Data flow:
--- 1. mv_home_attempt_history → raw attempt data (filtered by date, profile_id)
--- 2. Join to _resource tables → metadata (names, colors, etc.)
--- 3. Return raw data → Python does search, sort, pagination, computed fields
+-- SQL handles:
+--   - Filtering (date, cohort, department, simulation, scenario, search, infinite_mode)
+--   - Sorting and pagination
+--   - JOINs to _resource tables for names, colors, titles
+--   - Filter options
+--
+-- Python handles (business logic only):
+--   - score_status (classification based on pass_threshold)
+--   - show_view, show_continue (conditional logic)
+--   - pass_pct (calculation from rubric points)
 
 -- 1) Drop function first (breaks dependency on types)
 DO $$
@@ -38,15 +43,24 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
--- Raw attempt data type (Python will compute score_status, show_view, show_continue)
-CREATE TYPE types.q_get_home_history_new_v4_raw_attempt AS (
+-- Attempt data with all metadata JOINed (Python only computes derived fields)
+CREATE TYPE types.q_get_home_history_new_v4_attempt AS (
+    -- Core attempt data
     attempt_id uuid,
     attempt_created_at timestamptz,
     profile_id uuid,
     simulation_id uuid,
-    cohort_id uuid,
-    department_id uuid,
-    -- From MV
+    -- JOINed metadata (no Python lookups needed)
+    profile_name text,
+    simulation_name text,
+    department_ids uuid[],
+    cohort_name text,
+    persona_names text[],
+    persona_colors text[],
+    scenario_ids uuid[],
+    scenario_titles text[],
+    time_limit_seconds int,
+    -- Raw data for Python business logic
     infinite_mode boolean,
     num_chats int,
     num_chats_completed int,
@@ -56,71 +70,43 @@ CREATE TYPE types.q_get_home_history_new_v4_raw_attempt AS (
     has_passed boolean,
     total_time_seconds int,
     rubric_total_points int,
-    rubric_pass_points int,
-    scenario_ids uuid[],
-    persona_ids uuid[]
+    rubric_pass_points int
 );
 
--- Simulation metadata
-CREATE TYPE types.q_get_home_history_new_v4_simulation AS (
-    simulation_id uuid,
-    name text,
-    description text,
-    department_ids uuid[]
-);
-
--- Profile metadata
-CREATE TYPE types.q_get_home_history_new_v4_profile AS (
-    profile_id uuid,
-    name text
-);
-
--- Persona metadata
-CREATE TYPE types.q_get_home_history_new_v4_persona AS (
-    persona_id uuid,
-    name text,
-    color text
-);
-
--- Scenario metadata
-CREATE TYPE types.q_get_home_history_new_v4_scenario AS (
-    scenario_id uuid,
-    name text
-);
-
--- Cohort metadata
-CREATE TYPE types.q_get_home_history_new_v4_cohort AS (
-    cohort_id uuid,
-    name text
-);
-
--- Time limit per scenario
-CREATE TYPE types.q_get_home_history_new_v4_time_limit AS (
-    scenario_id uuid,
-    time_limit_seconds int
+-- Filter option for dropdowns
+CREATE TYPE types.q_get_home_history_new_v4_filter_option AS (
+    value text,
+    label text,
+    count int
 );
 
 -- 4) Recreate function
--- Simplified: only takes date range and profile_id for SQL filtering
--- Python handles: search, additional filters, sort, pagination
 CREATE OR REPLACE FUNCTION api_get_home_history_new_v4(
     start_date text,
     end_date text,
     profile_id uuid,
+    -- Filters
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    simulation_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    infinite_mode boolean DEFAULT NULL,
+    search text DEFAULT NULL,
+    -- Sorting
+    sort_by text DEFAULT 'date',
+    sort_order text DEFAULT 'desc',
+    -- Pagination
+    page int DEFAULT 0,
+    page_size int DEFAULT 20
 )
 RETURNS TABLE (
     actor_name text,
-    -- Raw attempt data (Python will filter, sort, paginate, compute fields)
-    raw_attempts types.q_get_home_history_new_v4_raw_attempt[],
-    -- Metadata mappings for Python lookups
-    simulations types.q_get_home_history_new_v4_simulation[],
-    profiles types.q_get_home_history_new_v4_profile[],
-    personas types.q_get_home_history_new_v4_persona[],
-    scenarios types.q_get_home_history_new_v4_scenario[],
-    cohorts types.q_get_home_history_new_v4_cohort[],
-    time_limits types.q_get_home_history_new_v4_time_limit[]
+    total_count int,
+    -- Attempt data with metadata already JOINed
+    attempts types.q_get_home_history_new_v4_attempt[],
+    -- Filter options
+    simulation_options types.q_get_home_history_new_v4_filter_option[],
+    scenario_options types.q_get_home_history_new_v4_filter_option[]
 )
 LANGUAGE sql
 STABLE
@@ -131,10 +117,18 @@ WITH params AS (
         end_date::timestamptz AS end_date,
         profile_id AS profile_id,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        COALESCE(simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
+        COALESCE(scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
+        infinite_mode AS infinite_mode,
+        NULLIF(TRIM(search), '') AS search,
+        COALESCE(sort_by, 'date') AS sort_by,
+        COALESCE(sort_order, 'desc') AS sort_order,
+        COALESCE(page, 0) AS page,
+        COALESCE(page_size, 20) AS page_size
 ),
 
--- Get profile info
+-- Get profile info (for actor_name)
 profile_info AS (
     SELECT
         pr.id,
@@ -144,8 +138,8 @@ profile_info AS (
       AND pr.active = true
 ),
 
--- Get raw attempts from MV, filtered by date and profile
-raw_attempts AS (
+-- Base attempt data from MV with simulation JOIN for filtering/sorting
+base_attempts AS (
     SELECT
         mah.attempt_id,
         mah.attempt_created_at,
@@ -164,130 +158,158 @@ raw_attempts AS (
         mah.rubric_total_points,
         mah.rubric_pass_points,
         mah.scenario_ids,
-        mah.persona_ids
+        mah.persona_ids,
+        -- JOIN simulation for name (needed for search/sort)
+        sr.name AS simulation_name,
+        sr.department_ids AS sim_department_ids
     FROM params p
     CROSS JOIN mv_home_attempt_history mah
+    JOIN simulations_resource sr ON sr.id = mah.simulation_id AND sr.active = true
     WHERE mah.profile_id = p.profile_id
       AND mah.attempt_created_at >= p.start_date
       AND mah.attempt_created_at < p.end_date
+      -- Cohort filter
       AND (cardinality(p.cohort_ids) = 0 OR mah.cohort_id = ANY(p.cohort_ids))
+      -- Department filter
       AND (cardinality(p.department_ids) = 0 OR mah.department_id = ANY(p.department_ids))
+      -- Simulation filter
+      AND (cardinality(p.simulation_ids) = 0 OR mah.simulation_id = ANY(p.simulation_ids))
+      -- Scenario filter (any match)
+      AND (cardinality(p.scenario_ids) = 0 OR mah.scenario_ids && p.scenario_ids)
+      -- Infinite mode filter
+      AND (p.infinite_mode IS NULL OR mah.infinite_mode = p.infinite_mode)
+      -- Search filter (simulation name)
+      AND (p.search IS NULL OR sr.name ILIKE '%' || p.search || '%')
 ),
 
--- Collect all unique IDs for metadata lookups
-all_simulation_ids AS (
-    SELECT DISTINCT simulation_id FROM raw_attempts WHERE simulation_id IS NOT NULL
-),
-all_persona_ids AS (
-    SELECT DISTINCT pid AS persona_id
-    FROM raw_attempts
-    CROSS JOIN LATERAL unnest(persona_ids) AS pid
-    WHERE pid IS NOT NULL
-),
-all_scenario_ids AS (
-    SELECT DISTINCT sid AS scenario_id
-    FROM raw_attempts
-    CROSS JOIN LATERAL unnest(scenario_ids) AS sid
-    WHERE sid IS NOT NULL
-),
-all_cohort_ids AS (
-    SELECT DISTINCT cohort_id FROM raw_attempts WHERE cohort_id IS NOT NULL
+-- Count total before pagination
+total_count_cte AS (
+    SELECT COUNT(*)::int AS total_count FROM base_attempts
 ),
 
--- Metadata: simulations
-simulations_meta AS (
+-- Sort and paginate
+sorted_paginated AS (
+    SELECT ba.*
+    FROM base_attempts ba, params p
+    ORDER BY
+        CASE WHEN p.sort_by = 'date' AND p.sort_order = 'desc' THEN ba.attempt_created_at END DESC NULLS LAST,
+        CASE WHEN p.sort_by = 'date' AND p.sort_order = 'asc' THEN ba.attempt_created_at END ASC NULLS LAST,
+        CASE WHEN p.sort_by = 'score' AND p.sort_order = 'desc' THEN ba.score_percent END DESC NULLS LAST,
+        CASE WHEN p.sort_by = 'score' AND p.sort_order = 'asc' THEN ba.score_percent END ASC NULLS LAST,
+        CASE WHEN p.sort_by = 'simulation_name' AND p.sort_order = 'desc' THEN ba.simulation_name END DESC NULLS LAST,
+        CASE WHEN p.sort_by = 'simulation_name' AND p.sort_order = 'asc' THEN ba.simulation_name END ASC NULLS LAST,
+        ba.attempt_created_at DESC NULLS LAST
+    LIMIT (SELECT page_size FROM params)
+    OFFSET (SELECT page * page_size FROM params)
+),
+
+-- JOIN all metadata for paginated results
+-- This is the key change: JOINs happen in SQL, not Python
+attempts_with_metadata AS (
     SELECT
-        (sr.id, sr.name, sr.description, sr.department_ids)::types.q_get_home_history_new_v4_simulation AS simulation
-    FROM all_simulation_ids asi
-    JOIN simulations_resource sr ON sr.id = asi.simulation_id AND sr.active = true
+        sp.attempt_id,
+        sp.attempt_created_at,
+        sp.profile_id,
+        sp.simulation_id,
+        -- Profile name
+        pi.name AS profile_name,
+        -- Simulation metadata
+        sp.simulation_name,
+        sp.sim_department_ids AS department_ids,
+        -- Cohort name
+        cr.name AS cohort_name,
+        -- Persona names and colors (via LATERAL)
+        COALESCE(persona_agg.names, ARRAY[]::text[]) AS persona_names,
+        COALESCE(persona_agg.colors, ARRAY[]::text[]) AS persona_colors,
+        -- Scenario IDs and titles (via LATERAL)
+        sp.scenario_ids,
+        COALESCE(scenario_agg.titles, ARRAY[]::text[]) AS scenario_titles,
+        -- Time limit (sum of scenario time limits)
+        COALESCE(time_limit_agg.total_seconds, 0)::int AS time_limit_seconds,
+        -- Raw data for Python business logic
+        sp.infinite_mode,
+        sp.num_chats,
+        sp.num_chats_completed,
+        sp.num_scenarios,
+        sp.num_scenarios_completed,
+        sp.score_percent,
+        sp.has_passed,
+        sp.total_time_seconds,
+        sp.rubric_total_points,
+        sp.rubric_pass_points
+    FROM sorted_paginated sp
+    LEFT JOIN profile_info pi ON pi.id = sp.profile_id
+    LEFT JOIN cohorts_resource cr ON cr.id = sp.cohort_id AND cr.active = true
+    -- Aggregate persona names/colors
+    LEFT JOIN LATERAL (
+        SELECT
+            ARRAY_AGG(pr.name ORDER BY ord) AS names,
+            ARRAY_AGG(pr.color ORDER BY ord) AS colors
+        FROM UNNEST(sp.persona_ids) WITH ORDINALITY AS u(pid, ord)
+        JOIN personas_resource pr ON pr.id = pid AND pr.active = true
+    ) persona_agg ON true
+    -- Aggregate scenario titles
+    LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(scr.name ORDER BY ord) AS titles
+        FROM UNNEST(sp.scenario_ids) WITH ORDINALITY AS u(sid, ord)
+        JOIN scenarios_resource scr ON scr.id = sid AND scr.active = true
+    ) scenario_agg ON true
+    -- Sum time limits
+    LEFT JOIN LATERAL (
+        SELECT SUM(stlr.time_limit_seconds) AS total_seconds
+        FROM UNNEST(sp.scenario_ids) AS sid
+        JOIN scenario_time_limits_resource stlr ON stlr.scenario_id = sid AND stlr.active = true
+    ) time_limit_agg ON true
 ),
 
--- Metadata: profiles (just the current user for home history)
-profiles_meta AS (
+-- Filter options: simulations (from ALL filtered data)
+simulation_options AS (
     SELECT
-        (pi.id, pi.name)::types.q_get_home_history_new_v4_profile AS profile
-    FROM profile_info pi
+        (ba.simulation_id::text, ba.simulation_name, COUNT(*)::int)::types.q_get_home_history_new_v4_filter_option AS option
+    FROM base_attempts ba
+    GROUP BY ba.simulation_id, ba.simulation_name
+    ORDER BY COUNT(*) DESC, ba.simulation_name ASC
 ),
 
--- Metadata: personas
-personas_meta AS (
+-- Filter options: scenarios (from ALL filtered data)
+scenario_options AS (
     SELECT
-        (pr.id, pr.name, pr.color)::types.q_get_home_history_new_v4_persona AS persona
-    FROM all_persona_ids api
-    JOIN personas_resource pr ON pr.id = api.persona_id AND pr.active = true
+        (sid::text, scr.name, COUNT(*)::int)::types.q_get_home_history_new_v4_filter_option AS option
+    FROM base_attempts ba
+    CROSS JOIN LATERAL unnest(ba.scenario_ids) AS sid
+    JOIN scenarios_resource scr ON scr.id = sid AND scr.active = true
+    GROUP BY sid, scr.name
+    ORDER BY COUNT(*) DESC, scr.name ASC
 ),
 
--- Metadata: scenarios
-scenarios_meta AS (
-    SELECT
-        (sr.id, sr.name)::types.q_get_home_history_new_v4_scenario AS scenario
-    FROM all_scenario_ids asi
-    JOIN scenarios_resource sr ON sr.id = asi.scenario_id AND sr.active = true
-),
-
--- Metadata: cohorts
-cohorts_meta AS (
-    SELECT
-        (cr.id, cr.name)::types.q_get_home_history_new_v4_cohort AS cohort
-    FROM all_cohort_ids aci
-    JOIN cohorts_resource cr ON cr.id = aci.cohort_id AND cr.active = true
-),
-
--- Metadata: time limits per scenario
-time_limits_meta AS (
-    SELECT
-        (stlr.scenario_id, stlr.time_limit_seconds)::types.q_get_home_history_new_v4_time_limit AS time_limit
-    FROM all_scenario_ids asi
-    JOIN scenario_time_limits_resource stlr ON stlr.scenario_id = asi.scenario_id AND stlr.active = true
-),
-
--- Aggregate raw attempts
-raw_attempts_agg AS (
+-- Aggregate attempts
+attempts_agg AS (
     SELECT COALESCE(ARRAY_AGG(
-        (attempt_id, attempt_created_at, profile_id, simulation_id, cohort_id, department_id,
+        (attempt_id, attempt_created_at, profile_id, simulation_id,
+         profile_name, simulation_name, department_ids, cohort_name,
+         persona_names, persona_colors, scenario_ids, scenario_titles, time_limit_seconds,
          infinite_mode, num_chats, num_chats_completed, num_scenarios, num_scenarios_completed,
-         score_percent, has_passed, total_time_seconds, rubric_total_points, rubric_pass_points,
-         scenario_ids, persona_ids
-        )::types.q_get_home_history_new_v4_raw_attempt
-        ORDER BY attempt_created_at DESC
-    ), ARRAY[]::types.q_get_home_history_new_v4_raw_attempt[]) AS raw_attempts
-    FROM raw_attempts
+         score_percent, has_passed, total_time_seconds, rubric_total_points, rubric_pass_points
+        )::types.q_get_home_history_new_v4_attempt
+    ), ARRAY[]::types.q_get_home_history_new_v4_attempt[]) AS attempts
+    FROM attempts_with_metadata
 ),
 
--- Aggregate metadata
-simulations_agg AS (
-    SELECT COALESCE(ARRAY_AGG(simulation), ARRAY[]::types.q_get_home_history_new_v4_simulation[]) AS simulations
-    FROM simulations_meta
+-- Aggregate filter options
+simulation_options_agg AS (
+    SELECT COALESCE(ARRAY_AGG(option), ARRAY[]::types.q_get_home_history_new_v4_filter_option[]) AS options
+    FROM simulation_options
 ),
-profiles_agg AS (
-    SELECT COALESCE(ARRAY_AGG(profile), ARRAY[]::types.q_get_home_history_new_v4_profile[]) AS profiles
-    FROM profiles_meta
-),
-personas_agg AS (
-    SELECT COALESCE(ARRAY_AGG(persona), ARRAY[]::types.q_get_home_history_new_v4_persona[]) AS personas
-    FROM personas_meta
-),
-scenarios_agg AS (
-    SELECT COALESCE(ARRAY_AGG(scenario), ARRAY[]::types.q_get_home_history_new_v4_scenario[]) AS scenarios
-    FROM scenarios_meta
-),
-cohorts_agg AS (
-    SELECT COALESCE(ARRAY_AGG(cohort), ARRAY[]::types.q_get_home_history_new_v4_cohort[]) AS cohorts
-    FROM cohorts_meta
-),
-time_limits_agg AS (
-    SELECT COALESCE(ARRAY_AGG(time_limit), ARRAY[]::types.q_get_home_history_new_v4_time_limit[]) AS time_limits
-    FROM time_limits_meta
+scenario_options_agg AS (
+    SELECT COALESCE(ARRAY_AGG(option), ARRAY[]::types.q_get_home_history_new_v4_filter_option[]) AS options
+    FROM scenario_options
 )
 
 SELECT
     COALESCE(pi.name, 'System')::text AS actor_name,
-    (SELECT raw_attempts FROM raw_attempts_agg) AS raw_attempts,
-    (SELECT simulations FROM simulations_agg) AS simulations,
-    (SELECT profiles FROM profiles_agg) AS profiles,
-    (SELECT personas FROM personas_agg) AS personas,
-    (SELECT scenarios FROM scenarios_agg) AS scenarios,
-    (SELECT cohorts FROM cohorts_agg) AS cohorts,
-    (SELECT time_limits FROM time_limits_agg) AS time_limits
+    (SELECT total_count FROM total_count_cte) AS total_count,
+    (SELECT attempts FROM attempts_agg) AS attempts,
+    (SELECT options FROM simulation_options_agg) AS simulation_options,
+    (SELECT options FROM scenario_options_agg) AS scenario_options
 FROM profile_info pi
 $$;

@@ -1,13 +1,15 @@
 """Home overview endpoint - POST /home/get.
 
 Uses two-pass pattern:
-1. Query 1 (Context): Fetch user context, permissions, and settings
-2. Query 2 (Data): Fetch raw simulation data from MV + metadata from _resource tables
-3. Python Business Logic: Transform raw data → simulation cards
+1. Query 1 (Context): Fetch user context for mode computation
+2. Query 2 (Data): Fetch simulation cards with all JOINs in SQL
+3. Python Business Logic: Compute derived fields (status, pass_pct, completion_pct, cohort_names_junction)
+
+SQL handles: aggregation, all JOINs for metadata
+Python handles: only business logic computations
 """
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -23,7 +25,6 @@ from app.api.v4.analytics.NEW.home.permissions import (
 from app.api.v4.analytics.NEW.home.types import (
     GetHomeOverviewNewResponse,
     SimulationCard,
-    SimulationMapping,
     StandardGroupMapping,
     StandardMapping,
 )
@@ -36,7 +37,7 @@ from app.sql.types import (
     GetHomeOverviewNewApiRequest,
     GetHomeOverviewNewSqlParams,
     GetHomeOverviewNewSqlRow,
-    QGetHomeOverviewNewV4RawSimulation,
+    QGetHomeOverviewNewV4SimulationCard,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -49,135 +50,72 @@ DATA_SQL_PATH = "app/sql/v4/queries/analytics/NEW/home/get_home_overview_new_com
 router = APIRouter()
 
 
-def _build_metadata_lookups(
-    data: GetHomeOverviewNewSqlRow,
-) -> tuple[dict[UUID, Any], dict[UUID, Any], dict[UUID, Any], dict[UUID, list[UUID]]]:
-    """Build lookup dictionaries from metadata arrays.
-
-    Returns:
-        Tuple of (simulations_by_id, personas_by_id, cohorts_by_id, rubrics_by_sim_id)
-    """
-    # Simulation metadata lookup
-    simulations_by_id: dict[UUID, Any] = {}
-    if data.simulations:
-        for sim in data.simulations:
-            if sim.simulation_id:
-                simulations_by_id[sim.simulation_id] = sim
-
-    # Persona metadata lookup
-    personas_by_id: dict[UUID, Any] = {}
-    if data.personas:
-        for persona in data.personas:
-            if persona.persona_id:
-                personas_by_id[persona.persona_id] = persona
-
-    # Cohort metadata lookup
-    cohorts_by_id: dict[UUID, Any] = {}
-    if data.cohorts:
-        for cohort in data.cohorts:
-            if cohort.cohort_id:
-                cohorts_by_id[cohort.cohort_id] = cohort
-
-    # Rubric → standard_group_ids lookup (by simulation_id)
-    rubrics_by_sim_id: dict[UUID, list[UUID]] = {}
-    if data.rubrics:
-        for rubric in data.rubrics:
-            if rubric.simulation_id and rubric.standard_group_ids:
-                rubrics_by_sim_id[rubric.simulation_id] = rubric.standard_group_ids
-
-    return simulations_by_id, personas_by_id, cohorts_by_id, rubrics_by_sim_id
-
-
-def _transform_raw_simulation(
-    raw: QGetHomeOverviewNewV4RawSimulation,
+def _transform_simulation_card(
+    card: QGetHomeOverviewNewV4SimulationCard,
     mode: str,
-    simulations_by_id: dict[UUID, Any],
-    personas_by_id: dict[UUID, Any],
-    cohorts_by_id: dict[UUID, Any],
-    rubrics_by_sim_id: dict[UUID, list[UUID]],
 ) -> SimulationCard:
-    """Transform a raw simulation record to a SimulationCard.
+    """Transform SQL simulation card to API response.
+
+    SQL has already JOINed all metadata (names, colors, etc.).
+    Python only computes derived business logic fields.
 
     Args:
-        raw: Raw simulation data from SQL.
+        card: Simulation card from SQL with metadata already JOINed.
         mode: 'member' or 'instructional'.
-        simulations_by_id: Simulation metadata lookup.
-        personas_by_id: Persona metadata lookup.
-        cohorts_by_id: Cohort metadata lookup.
-        rubrics_by_sim_id: Rubric standard_group_ids lookup.
 
     Returns:
         SimulationCard ready for API response.
     """
-    sim_id = raw.simulation_id
-
-    # Get simulation metadata
-    sim_meta = simulations_by_id.get(sim_id) if sim_id else None
-    sim_name = sim_meta.name if sim_meta else None
-    sim_description = sim_meta.description if sim_meta else None
-    time_limit = sim_meta.time_limit if sim_meta else None
-
-    # Get persona color/icon (use first persona)
-    color = None
-    icon = None
-    if raw.persona_ids:
-        for pid in raw.persona_ids:
-            persona = personas_by_id.get(pid)
-            if persona:
-                color = persona.color
-                icon = persona.icon
-                break
-
-    # Get cohort names
-    cohort_names: list[str] = []
-    if raw.cohort_ids:
-        for cid in raw.cohort_ids:
-            cohort = cohorts_by_id.get(cid)
-            if cohort and cohort.name:
-                cohort_names.append(cohort.name)
-
-    # Get standard_group_ids
-    standard_group_ids: list[str] = []
-    if sim_id and sim_id in rubrics_by_sim_id:
-        standard_group_ids = [str(sg_id) for sg_id in rubrics_by_sim_id[sim_id]]
+    # === PYTHON BUSINESS LOGIC: Compute derived fields ===
 
     # Compute pass_pct from rubric points
-    pass_pct = compute_pass_pct(raw.rubric_total_points, raw.rubric_pass_points)
+    pass_pct = compute_pass_pct(card.rubric_total_points, card.rubric_pass_points)
 
     # Compute status based on mode
     if mode == "member":
-        status = compute_status(raw.has_passed, raw.completed_count)
-        completion_pct = None  # Not applicable for member mode
+        status = compute_status(card.has_passed, card.completed_count)
+        completion_pct = None
     else:
         status = compute_status_instructional(
-            raw.passed_count, raw.in_progress_count, raw.total_members
+            card.passed_count, card.in_progress_count, card.total_members
         )
         completion_pct = compute_completion_pct(
-            raw.passed_count, raw.in_progress_count, raw.total_members
+            card.passed_count, card.in_progress_count, card.total_members
         )
+
+    # Format cohort names as "A, B, and C"
+    cohort_names_junction = format_cohort_names(card.cohort_names)
+
+    # Convert standard_group_ids to strings
+    standard_groups = (
+        [str(sg_id) for sg_id in card.standard_group_ids]
+        if card.standard_group_ids
+        else None
+    )
+
+    # simulation_id should never be None, but handle it gracefully
+    if not card.simulation_id:
+        raise ValueError("simulation_id is required")
 
     return SimulationCard(
         view_mode=mode,
-        simulation_id=sim_id,
-        simulation_title=sim_name,
-        simulation_description=sim_description,
-        simulation_name=sim_name,
-        time_limit=time_limit,
-        num_sessions=raw.attempt_count,
-        highest_score=raw.highest_score,
-        standard_groups=standard_group_ids if standard_group_ids else None,
-        color=color,
-        icon=icon,
-        has_passed=raw.has_passed,
-        pass_rate=pass_pct,
+        simulation_id=card.simulation_id,
+        simulation_name=card.simulation_name,
+        simulation_description=card.simulation_description,
+        time_limit=card.time_limit,
+        num_sessions=card.attempt_count,
+        highest_score=card.highest_score,
+        standard_groups=standard_groups,
+        color=card.persona_color,
+        icon=card.persona_icon,
+        has_passed=card.has_passed,
         status=status,
-        completion_pct=completion_pct,
-        passed_count=raw.passed_count,
-        in_progress_count=raw.in_progress_count,
-        not_started_count=raw.not_started_count,
         pass_pct=pass_pct,
-        cohort_name=cohort_names[0] if cohort_names else None,
-        cohort_names_junction=format_cohort_names(cohort_names),
+        completion_pct=completion_pct,
+        passed_count=card.passed_count,
+        in_progress_count=card.in_progress_count,
+        not_started_count=card.not_started_count,
+        cohort_names_junction=cohort_names_junction,
     )
 
 
@@ -196,10 +134,8 @@ async def home_get(
 ) -> GetHomeOverviewNewResponse:
     """Get home overview with simulation cards.
 
-    Uses two-pass pattern:
-    1. Context query for user info and permissions
-    2. Data query for raw simulation data + metadata
-    3. Python transforms raw data to simulation cards
+    SQL handles: aggregation, all metadata JOINs
+    Python handles: only business logic (status, pass_pct, completion_pct, cohort formatting)
     """
     tags = ["home", "new"]
 
@@ -230,7 +166,7 @@ async def home_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # === QUERY 1: Context (cheap, always fresh) ===
+        # === QUERY 1: Context (for mode computation) ===
         context_params = GetHomeContextSqlParams(profile_id=profile_id)
         context = cast(
             GetHomeContextSqlRow,
@@ -240,11 +176,11 @@ async def home_get(
         # === PYTHON BUSINESS LOGIC: Compute mode ===
         mode = compute_mode(context.user_role)
 
-        # === QUERY 2: Data Fetching (raw simulation data + metadata) ===
+        # === QUERY 2: Data (simulation cards with all JOINs in SQL) ===
         request_dict = request.model_dump(mode="json")
         data_params = GetHomeOverviewNewSqlParams(
             **request_dict, profile_id=profile_id
-        )  # type: ignore[arg-type]
+        )
         sql_params = data_params.to_tuple()
 
         data = cast(
@@ -258,28 +194,13 @@ async def home_get(
                 http_request, actor={"name": context.actor_name, "id": profile_id}
             )
 
-        # === PYTHON BUSINESS LOGIC: Transform raw data to simulation cards ===
-        (
-            simulations_by_id,
-            personas_by_id,
-            cohorts_by_id,
-            rubrics_by_sim_id,
-        ) = _build_metadata_lookups(data)
-
+        # === TRANSFORM: Only compute business logic fields ===
         items: list[SimulationCard] = []
-        if data.raw_simulations:
-            for raw_sim in data.raw_simulations:
-                card = _transform_raw_simulation(
-                    raw_sim,
-                    mode,
-                    simulations_by_id,
-                    personas_by_id,
-                    cohorts_by_id,
-                    rubrics_by_sim_id,
-                )
-                items.append(card)
+        if data.simulation_cards:
+            for card in data.simulation_cards:
+                items.append(_transform_simulation_card(card, mode))
 
-        # Convert metadata to client-facing types
+        # === CONVERT STANDARD GROUPS/STANDARDS ===
         standard_groups = None
         if data.standard_groups:
             standard_groups = [
@@ -291,6 +212,7 @@ async def home_get(
                     pass_points=sg.pass_points,
                 )
                 for sg in data.standard_groups
+                if sg.standard_group_id
             ]
 
         standards = None
@@ -304,19 +226,7 @@ async def home_get(
                     points=st.points,
                 )
                 for st in data.standards
-            ]
-
-        simulations = None
-        if data.simulations:
-            simulations = [
-                SimulationMapping(
-                    simulation_id=sim.simulation_id,
-                    name=sim.name,
-                    description=sim.description,
-                    time_limit=sim.time_limit,
-                    department_ids=sim.department_ids,
-                )
-                for sim in data.simulations
+                if st.standard_id
             ]
 
         # === BUILD RESPONSE ===
@@ -327,7 +237,6 @@ async def home_get(
             items=items,
             standard_groups=standard_groups,
             standards=standards,
-            simulations=simulations,
         )
 
         # Cache response
