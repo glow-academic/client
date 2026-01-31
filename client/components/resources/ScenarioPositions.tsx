@@ -83,6 +83,8 @@ export interface ScenarioPositionsProps {
   onPositionIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ scenario_position_ids: string[] } | void>) => void;
 }
 
 export function ScenarioPositions({
@@ -107,6 +109,7 @@ export function ScenarioPositions({
   onPositionIdsChange,
   onGenerate,
   isGenerating = false,
+  registerFlush,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
   const allPositions = useMemo(() => scenario_positions ?? [], [scenario_positions]);
@@ -167,7 +170,13 @@ export function ScenarioPositions({
   const [positionIdsByScenario, setPositionIdsByScenario] = useState<
     Map<string, string>
   >(new Map());
+  const positionIdsByScenarioRef = useRef<Map<string, string>>(new Map());
+  // Keep ref in sync with state for use in useEffect without causing loops
+  positionIdsByScenarioRef.current = positionIdsByScenario;
   const createdPositionKeysRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ scenario_position_ids: string[] } | void>) | null>(null);
 
   useEffect(() => {
     const next = new Map<string, string>();
@@ -178,8 +187,47 @@ export function ScenarioPositions({
         next.set(scenarioId, positionId);
       }
     });
-    setPositionIdsByScenario(next);
+    // Only update if content actually changed
+    setPositionIdsByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(next.entries()).sort());
+      return prevKey === nextKey ? prev : next;
+    });
   }, [currentPositions, scenarioPositionIds]);
+
+  // Sync positionIdsByScenario to parent via onPositionIdsChange (must be in useEffect, not during setState)
+  // Use ref for onPositionIdsChange to avoid dependency that changes every render
+  const onPositionIdsChangeRef = useRef(onPositionIdsChange);
+  onPositionIdsChangeRef.current = onPositionIdsChange;
+  const prevIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (!onPositionIdsChangeRef.current) return;
+    const ids = scenario_ids
+      .map((scenarioId) => positionIdsByScenario.get(scenarioId))
+      .filter((value): value is string => Boolean(value));
+    // Only emit if IDs actually changed to prevent infinite loops
+    const idsKey = ids.join(",");
+    const prevKey = prevIdsRef.current.join(",");
+    if (idsKey !== prevKey) {
+      prevIdsRef.current = ids;
+      onPositionIdsChangeRef.current(ids);
+    }
+  }, [positionIdsByScenario, scenario_ids]);
+
+  // Update flush function - returns current IDs from local state
+  flushRef.current = async (): Promise<{ scenario_position_ids: string[] } | void> => {
+    const ids = scenario_ids
+      .map((scenarioId) => positionIdsByScenario.get(scenarioId))
+      .filter((value): value is string => Boolean(value));
+    return { scenario_position_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Build position map from current positions
   const positionMap = useMemo(() => {
@@ -206,86 +254,23 @@ export function ScenarioPositions({
 
   // Update local positions when scenario_ids or currentPositions change
   useEffect(() => {
-    const newMap = new Map<string, number>();
-    scenario_ids.forEach((scenarioId, index) => {
-      const existingPosition = positionMap.get(scenarioId);
-      newMap.set(scenarioId, existingPosition ?? index + 1);
+    setLocalPositions((prev) => {
+      const newMap = new Map<string, number>();
+      scenario_ids.forEach((scenarioId, index) => {
+        const existingPosition = positionMap.get(scenarioId);
+        newMap.set(scenarioId, existingPosition ?? index + 1);
+      });
+      // Only update if content actually changed
+      if (prev.size !== newMap.size) return newMap;
+      for (const [key, value] of newMap) {
+        if (prev.get(key) !== value) return newMap;
+      }
+      return prev; // No change, return same reference
     });
-    setLocalPositions(newMap);
   }, [scenario_ids, positionMap]);
 
-  useEffect(() => {
-    const shouldCreateResource =
-      createScenarioPositionsAction &&
-      agent_id &&
-      group_id &&
-      simulation_id;
-    if (!shouldCreateResource) {
-      return;
-    }
-
-    scenario_ids.forEach((scenarioId, index) => {
-      const value = localPositions.get(scenarioId) ?? index + 1;
-      const existingId = positionIdsByScenario.get(scenarioId);
-      const existingValue = positionMap.get(scenarioId);
-      if (existingId && existingValue === value) {
-        return;
-      }
-
-      const key = `${scenarioId}:${value}`;
-      if (createdPositionKeysRef.current.has(key)) {
-        return;
-      }
-      createdPositionKeysRef.current.add(key);
-
-      // Resolve resource ID to artifact ID for the API
-      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
-
-      void (async () => {
-        try {
-          const result = await createScenarioPositionsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: group_id,
-              simulation_id: simulation_id,
-              scenario_id: artifactScenarioId,
-              value: value,
-              mcp: false,
-            },
-          });
-
-          if (!result?.id) {
-            return;
-          }
-
-          setPositionIdsByScenario((prev) => {
-            const next = new Map(prev);
-            next.set(scenarioId, result.id as string);
-            if (onPositionIdsChange) {
-              const nextIds = scenario_ids
-                .map((id) => next.get(id))
-                .filter((id): id is string => Boolean(id));
-              onPositionIdsChange(nextIds);
-            }
-            return next;
-          });
-        } catch {
-          // Resource creation errors are handled by API; keep UI state intact.
-        }
-      })();
-    });
-  }, [
-    scenario_ids,
-    localPositions,
-    positionIdsByScenario,
-    positionMap,
-    createScenarioPositionsAction,
-    agent_id,
-    group_id,
-    simulation_id,
-    onPositionIdsChange,
-    artifactIdMap,
-  ]);
+  // Auto-creation of positions is now handled only on explicit user action (handlePositionChange)
+  // to prevent infinite loops and unwanted API calls on component mount
 
   const handlePositionChange = useCallback(
     (scenarioId: string, newValue: number) => {
@@ -337,12 +322,6 @@ export function ScenarioPositions({
           setPositionIdsByScenario((prev) => {
             const next = new Map(prev);
             next.set(scenarioId, result.id as string);
-            if (onPositionIdsChange) {
-              const nextIds = scenario_ids
-                .map((id) => next.get(id))
-                .filter((id): id is string => Boolean(id));
-              onPositionIdsChange(nextIds);
-            }
             return next;
           });
         } catch {

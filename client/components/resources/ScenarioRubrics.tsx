@@ -81,6 +81,8 @@ export interface ScenarioRubricsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ scenario_rubric_ids: string[] } | void>) => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -113,6 +115,7 @@ export function ScenarioRubrics({
   createScenarioRubricsAction,
   onGenerate,
   isGenerating = false,
+  registerFlush,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
@@ -178,6 +181,9 @@ export function ScenarioRubrics({
   >(new Map());
   const createdRubricKeysRef = useRef<Set<string>>(new Set());
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ scenario_rubric_ids: string[] } | void>) | null>(null);
+
   useEffect(() => {
     const nextRubrics = new Map<string, string | null>();
     const nextIds = new Map<string, string>();
@@ -197,11 +203,23 @@ export function ScenarioRubrics({
       }
     });
 
-    setRubricIdByScenario(nextRubrics);
-    setScenarioRubricIdsByScenario(nextIds);
+    // Only update if content actually changed
+    setRubricIdByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextRubrics.entries()).sort());
+      return prevKey === nextKey ? prev : nextRubrics;
+    });
+    setScenarioRubricIdsByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
+      return prevKey === nextKey ? prev : nextIds;
+    });
   }, [currentResources, scenario_ids]);
 
   // Sync scenarioRubricIdsByScenario to parent via onChange (must be in useEffect, not during setState)
+  // Use ref for onChange to avoid dependency that changes every render
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const prevIdsRef = useRef<string[]>([]);
   useEffect(() => {
     const ids = scenario_ids
@@ -212,9 +230,24 @@ export function ScenarioRubrics({
     const prevKey = prevIdsRef.current.join(",");
     if (idsKey !== prevKey) {
       prevIdsRef.current = ids;
-      onChange(ids);
+      onChangeRef.current(ids);
     }
-  }, [scenarioRubricIdsByScenario, scenario_ids, onChange]);
+  }, [scenarioRubricIdsByScenario, scenario_ids]);
+
+  // Update flush function - returns current IDs from local state
+  flushRef.current = async (): Promise<{ scenario_rubric_ids: string[] } | void> => {
+    const ids = scenario_ids
+      .map((scenarioId) => scenarioRubricIdsByScenario.get(scenarioId))
+      .filter((value): value is string => Boolean(value));
+    return { scenario_rubric_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const createScenarioRubric = useCallback(
     async (scenarioId: string, rubricId: string) => {

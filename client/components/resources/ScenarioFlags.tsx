@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Loader2, Power, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -43,7 +44,7 @@ export interface ScenarioFlagsProps {
     flag_id: string | null;
     name: string | null;
     description?: string | null;
-    icon_id?: string | null;
+    icon?: string | null;
     generated?: boolean | null;
   }>;
   scenario_ids?: string[];
@@ -88,12 +89,15 @@ export interface ScenarioFlagsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
 }
 
 type ScenarioFlagOption = {
   id: string;
   name: string;
   description?: string;
+  icon?: string;
 };
 
 export function ScenarioFlags({
@@ -115,6 +119,7 @@ export function ScenarioFlags({
   createScenarioFlagsAction,
   onGenerate,
   isGenerating = false,
+  registerFlush,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
   const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
@@ -182,6 +187,9 @@ export function ScenarioFlags({
   >(new Map());
   const createdFlagKeysRef = useRef<Set<string>>(new Set());
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ scenario_flag_ids: string[] } | void>) | null>(null);
+
   useEffect(() => {
     const nextSelected = new Map<string, Set<string>>();
     const nextResourceIds = new Map<string, string>();
@@ -207,17 +215,51 @@ export function ScenarioFlags({
       }
     });
 
-    setSelectedFlagsByScenario(nextSelected);
-    setScenarioFlagResourceIds(nextResourceIds);
+    // Only update if content actually changed (compare by serializing)
+    setSelectedFlagsByScenario((prev) => {
+      const prevKey = JSON.stringify(
+        Array.from(prev.entries()).map(([k, v]) => [k, Array.from(v).sort()])
+      );
+      const nextKey = JSON.stringify(
+        Array.from(nextSelected.entries()).map(([k, v]) => [k, Array.from(v).sort()])
+      );
+      return prevKey === nextKey ? prev : nextSelected;
+    });
+    setScenarioFlagResourceIds((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
+      return prevKey === nextKey ? prev : nextResourceIds;
+    });
   }, [currentResources, scenario_ids]);
 
-  const emitAllIds = useCallback(
-    (resourceIds: Map<string, string>) => {
-      const ids = Array.from(resourceIds.values());
-      onChange(ids);
-    },
-    [onChange]
-  );
+  // Sync scenarioFlagResourceIds to parent via onChange (must be in useEffect, not during setState)
+  // Use ref for onChange to avoid dependency that changes every render
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const prevIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    const ids = Array.from(scenarioFlagResourceIds.values());
+    // Only emit if IDs actually changed to prevent infinite loops
+    const idsKey = ids.join(",");
+    const prevKey = prevIdsRef.current.join(",");
+    if (idsKey !== prevKey) {
+      prevIdsRef.current = ids;
+      onChangeRef.current(ids);
+    }
+  }, [scenarioFlagResourceIds]);
+
+  // Update flush function - returns current IDs from local state
+  flushRef.current = async (): Promise<{ scenario_flag_ids: string[] } | void> => {
+    const ids = Array.from(scenarioFlagResourceIds.values());
+    return { scenario_flag_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const createScenarioFlag = useCallback(
     async (scenarioId: string, flagId: string) => {
@@ -252,8 +294,6 @@ export function ScenarioFlags({
         setScenarioFlagResourceIds((prev) => {
           const next = new Map(prev);
           next.set(key, resultId);
-          // Emit after building the updated map
-          emitAllIds(next);
           return next;
         });
       } catch {
@@ -264,7 +304,6 @@ export function ScenarioFlags({
       createScenarioFlagsAction,
       agent_id,
       group_id,
-      emitAllIds,
       artifactIdMap,
     ]
   );
@@ -291,12 +330,11 @@ export function ScenarioFlags({
         setScenarioFlagResourceIds((prev) => {
           const next = new Map(prev);
           next.delete(key);
-          emitAllIds(next);
           return next;
         });
       }
     },
-    [createScenarioFlag, emitAllIds]
+    [createScenarioFlag]
   );
 
   // Group flags by scenario_id (resource ID) from the SQL query
@@ -315,6 +353,7 @@ export function ScenarioFlags({
           id: flag.flag_id as string,
           name: flag.name as string,
           description: flag.description ?? "",
+          icon: flag.icon ?? undefined,
         });
       });
 
@@ -440,6 +479,9 @@ export function ScenarioFlags({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {scenarioOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
+                  const IconComponent = option.icon
+                    ? getPersonaIconComponent(option.icon)
+                    : null;
                   return (
                     <div
                       key={option.id}
@@ -450,7 +492,11 @@ export function ScenarioFlags({
                           htmlFor={`flag-${scenarioId}-${option.id}`}
                           className="text-sm flex items-center gap-1 flex-1"
                         >
-                          <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                          {IconComponent ? (
+                            <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
                           {option.name}
                         </Label>
                         <Switch

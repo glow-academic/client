@@ -19,7 +19,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { Check, Loader2, Sparkles, Upload, Video } from "lucide-react";
+import { Check, Loader2, Sparkles, Upload, Video, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
@@ -528,6 +528,33 @@ export function Videos({
     return video_resources?.some((v) => v.generated) ?? false;
   }, [video_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiVideoResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiVideoResources
+          ?.map((v) => v.video_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiVideoResources]
+  );
+
+  // Accept AI suggestion - select the first AI-suggested video
+  const handleAccept = useCallback(() => {
+    if (!aiVideoResources?.length) return;
+    const firstSuggested = aiVideoResources[0];
+    if (firstSuggested?.video_id) {
+      onChange([firstSuggested.video_id]);
+    }
+    onAccept?.();
+  }, [aiVideoResources, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_videos is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -560,7 +587,7 @@ export function Videos({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating}
+                      disabled={disabled || isGenerating || showDiff}
                     >
                       {isGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -574,6 +601,42 @@ export function Videos({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            )}
+            {showDiff && (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-success hover:text-success"
+                        onClick={handleAccept}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Accept</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={handleReject}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reject</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
             )}
           </div>
         ) : (
@@ -640,6 +703,17 @@ export function Videos({
           clearActionLabel="No Video"
         />
       </div>
+
+      {/* AI Suggested Video Preview */}
+      {showDiff && aiVideoResources && aiVideoResources.length > 0 && (
+        <div className="mb-2 p-3 rounded-lg border-2 border-success bg-success/10">
+          <p className="text-sm font-medium text-success mb-2">AI Suggested Video</p>
+          <div className="flex items-center gap-2">
+            <Video className="h-4 w-4 text-success" />
+            <span className="text-sm">{aiVideoResources[0]?.name || "Video"}</span>
+          </div>
+        </div>
+      )}
 
       {/* Video Preview Container (matching ContentSection pattern) */}
       <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">

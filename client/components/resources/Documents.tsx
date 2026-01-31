@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Eye, Loader2, Sparkles } from "lucide-react";
+import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
@@ -260,6 +260,35 @@ export function Documents({
     return document_resources?.some((d) => d.generated) ?? false;
   }, [document_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiDocumentResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiDocumentResources
+          ?.map((d) => d.document_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiDocumentResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested documents to selection
+  const handleAccept = useCallback(() => {
+    if (!aiDocumentResources?.length) return;
+    const newIds = aiDocumentResources
+      .map((d) => d.document_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiDocumentResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_documents is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -288,7 +317,7 @@ export function Documents({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -303,6 +332,42 @@ export function Documents({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
 
@@ -315,6 +380,7 @@ export function Documents({
         horizontal={true}
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
           // Find the full document data for DocumentViewer
           const fullDoc = filteredDocuments.find(
@@ -345,7 +411,8 @@ export function Documents({
                 "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
                 "hover:shadow-md",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary"
+                isSelected && "ring-2 ring-primary",
+                isAiSuggested && !isSelected && "ring-2 ring-success"
               )}
             >
               {/* Preview button - top left */}
@@ -375,8 +442,15 @@ export function Documents({
                 </div>
               )}
 
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
               {/* Suggested badge - top right */}
-              {suggested && !isSelected && (
+              {suggested && !isSelected && !isAiSuggested && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                   Suggested
                 </div>

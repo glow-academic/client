@@ -19,7 +19,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { Brain, Check, Loader2, Sparkles } from "lucide-react";
+import { Brain, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 // Utility function to generate gradient from hex color
@@ -272,6 +272,35 @@ export function Personas({
     return persona_resources?.some((p) => p.generated) ?? false;
   }, [persona_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiPersonaResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiPersonaResources
+          ?.map((p) => p.persona_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiPersonaResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested personas to selection
+  const handleAccept = useCallback(() => {
+    if (!aiPersonaResources?.length) return;
+    const newIds = aiPersonaResources
+      .map((p) => p.persona_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiPersonaResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_personas is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -300,7 +329,7 @@ export function Personas({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -315,6 +344,42 @@ export function Personas({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
 
@@ -327,6 +392,7 @@ export function Personas({
         horizontal={true}
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
           const IconComponent = getPersonaIconComponent(item.icon || "") || Brain;
           const hexColor = item.color || "#64748b";
 
@@ -336,7 +402,8 @@ export function Personas({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -346,8 +413,15 @@ export function Personas({
                 </div>
               )}
 
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
               {/* Suggested badge - top right */}
-              {suggested && !isSelected && (
+              {suggested && !isSelected && !isAiSuggested && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                   Suggested
                 </div>

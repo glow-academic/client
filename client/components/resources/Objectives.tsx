@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2 } from "lucide-react";
+import { Check, GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -486,6 +486,33 @@ export function Objectives({
     return _objective_resources?.some((o) => o.generated) ?? false;
   }, [_objective_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiObjectiveResources?.length;
+
+  // Accept AI suggestion - add AI-suggested objectives to internal texts
+  const handleAccept = useCallback(() => {
+    if (!aiObjectiveResources?.length) return;
+    // Add AI objectives to internal texts
+    const newTexts = aiObjectiveResources
+      .map((o) => o.objective)
+      .filter((text): text is string => !!text);
+    if (newTexts.length > 0) {
+      setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
+      // Map the new objective IDs
+      aiObjectiveResources.forEach((o) => {
+        if (o.objective_id && o.objective) {
+          objectiveIdMapRef.current.set(o.objective, o.objective_id);
+        }
+      });
+    }
+    onAccept?.();
+  }, [aiObjectiveResources, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_objectives is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -512,7 +539,7 @@ export function Objectives({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -527,9 +554,65 @@ export function Objectives({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       
+      {/* AI-suggested objectives preview */}
+      {showDiff && aiObjectiveResources && aiObjectiveResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Objectives</p>
+          <div className="space-y-2">
+            {aiObjectiveResources.map((item, idx) => (
+              <div
+                key={item.objective_id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.objective || ""}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Objectives List (matching ContentSection pattern) */}
       {internalTexts.length === 0 && (
         <div>

@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
@@ -628,6 +628,35 @@ export function Templates({
     return template_resources?.some((t) => t.generated) ?? false;
   }, [template_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiTemplateResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiTemplateResources
+          ?.map((t) => t.template_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiTemplateResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested templates to selection
+  const handleAccept = useCallback(() => {
+    if (!aiTemplateResources?.length) return;
+    const newIds = aiTemplateResources
+      .map((t) => t.template_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiTemplateResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_templates is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -656,7 +685,7 @@ export function Templates({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -670,6 +699,42 @@ export function Templates({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}
@@ -699,6 +764,8 @@ export function Templates({
         }}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
           if (item.id === createCardId) {
             return (
               <div
@@ -719,7 +786,8 @@ export function Templates({
                 "relative flex flex-col gap-3 p-5 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -729,8 +797,15 @@ export function Templates({
                 </div>
               )}
 
+              {/* AI suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-3 right-3 z-10 px-2 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
               {/* Suggested badge - top right */}
-              {isSuggested(item.id) && !isSelected && (
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
                 <div className="absolute top-3 right-3 z-10 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">
                   Suggested
                 </div>

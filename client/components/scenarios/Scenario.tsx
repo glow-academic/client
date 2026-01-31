@@ -242,7 +242,227 @@ function ScenarioComponent({
     video_resources?: ScenarioGenerationCompletePayload["video_resources"];
     parameter_resources?: ScenarioGenerationCompletePayload["parameter_resources"];
     parameter_field_resources?: ScenarioGenerationCompletePayload["parameter_field_resources"];
-  }>({});
+    // Flags use a different structure for AI suggestions (id + key)
+    flag_resources?: Array<{ id?: string | null; key?: string | null }>;
+  }>({
+    // Sample AI-generated data for testing/demo - using actual IDs from the database
+    // This demonstrates what AI suggestions look like before user accepts/rejects
+
+    // Single-select resources (name, description, problem_statement)
+    name_resource: {
+      id: "019b995c-8e99-7849-8778-5f785feb57f5",
+      name: "Aggressive (High)",
+      generated: true,
+    },
+    description_resource: {
+      id: "019b995c-8e9a-77b6-8e3c-fadd882fdfed",
+      description:
+        "Low engagement and a tendency to avoid conflict or assertiveness.",
+      generated: true,
+    },
+    problem_statement_resource: {
+      problem_statement_id: "019b3be4-36e6-7bd6-9788-de65d7a31abd",
+      name: "180_proj_Help with Loops in a Busy Lab",
+      problem_statement:
+        "A student stands quietly at the edge of a cluster of classmates in the basement lab, clutching their notes on the MyMathHelper.java assignment, hesitating before approaching you with a question.",
+      generated: true,
+    },
+
+    // Multi-select resources - Departments (real IDs from database)
+    department_resources: [
+      {
+        department_id: "019bb25e-e624-7450-8897-a72c55c26107",
+        name: "Purdue Chem",
+        description: null,
+        generated: true,
+      },
+      {
+        department_id: "019bb25e-e624-73da-8cef-166028a1065a",
+        name: "Purdue CS",
+        description: null,
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Personas (real IDs from database)
+    persona_resources: [
+      {
+        persona_id: "019bb25e-e60c-7363-892a-bac713ba75ea",
+        name: "Aggressive (High)",
+        description: null,
+        color: null,
+        icon: null,
+        image_model: null,
+        generated: true,
+      },
+      {
+        persona_id: "019bb25e-e60c-735e-ab74-35a73988ae2c",
+        name: "Aggressive (Low)",
+        description: null,
+        color: null,
+        icon: null,
+        image_model: null,
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Documents (real IDs from database)
+    document_resources: [
+      {
+        document_id: "019bb25e-e619-7834-9cb3-66671ca36a7d",
+        name: "Academic Integrity Policy",
+        description: null,
+        file_path: null,
+        mime_type: null,
+        upload_id: null,
+        generated: true,
+      },
+      {
+        document_id: "019bb25e-e619-77d6-928f-43f7b93cbb0a",
+        name: "BIOL110-Lab1",
+        description: null,
+        file_path: null,
+        mime_type: null,
+        upload_id: null,
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Templates (real ID from database)
+    template_resources: [
+      {
+        template_id: "019bc71d-3eb1-73c4-9ddf-745df91c95e0",
+        name: "Template HTML: Template: Homework",
+        description: "",
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Objectives (sample AI-generated objectives)
+    objective_resources: [
+      {
+        objective_id: "sample-obj-1",
+        objective: "Demonstrate effective communication strategies when addressing student concerns",
+        generated: true,
+      },
+      {
+        objective_id: "sample-obj-2",
+        objective: "Apply conflict resolution techniques in academic settings",
+        generated: true,
+      },
+      {
+        objective_id: "sample-obj-3",
+        objective: "Recognize and respond appropriately to signs of student distress",
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Questions (real IDs from database)
+    question_resources: [
+      {
+        question_id: "019b3be4-3703-79cf-8ee3-ce9851255782",
+        question_text: "In the video, how does the professor handle the upset student?",
+        allow_multiple: false,
+        generated: true,
+      },
+      {
+        question_id: "019b3be4-3703-79ab-a675-9e8c0f7b6b12",
+        question_text: "In the video, what action violated FERPA?",
+        allow_multiple: false,
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Images (real ID from database)
+    image_resources: [
+      {
+        image_id: "019b4159-2535-7781-9419-6be634e4eadf",
+        name: "Classroom",
+        file_path: "image/classroom.jpg",
+        mime_type: "image/jpeg",
+        upload_id: "019b4159-2534-76c6-a1bd-292393d6966f",
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Videos (real ID from database)
+    video_resources: [
+      {
+        video_id: "019b3be4-3cf5-73c1-b491-4a534c9ffe9f",
+        name: "Academic Integrity Training",
+        length_seconds: 8,
+        completed: true,
+        file_path: "video/cheating.mp4",
+        mime_type: "video/mp4",
+        upload_id: "019b3be4-3cf0-7022-ba14-835ebde34447",
+        generated: true,
+      },
+    ],
+
+    // Multi-select resources - Parameters (real IDs from database)
+    parameter_resources: [
+      {
+        parameter_id: "019bb25e-e620-7f9a-a3b6-8b7230c1e51c",
+        name: "Class",
+        description: null,
+        value: null,
+        generated: true,
+        persona_parameter: null,
+        document_parameter: null,
+        scenario_parameter: true,
+        video_parameter: null,
+        conditional: null,
+      },
+      {
+        parameter_id: "019bb25e-e621-700f-b494-72649843abfc",
+        name: "Crowdedness",
+        description: null,
+        value: null,
+        generated: true,
+        persona_parameter: null,
+        document_parameter: null,
+        scenario_parameter: true,
+        video_parameter: null,
+        conditional: null,
+      },
+    ],
+
+    // Multi-select resources - Parameter Fields (real IDs from database)
+    // Note: field_id comes from parameter_fields, id is only set when already selected
+    parameter_field_resources: [
+      {
+        id: null,
+        field_id: "019bb25e-e5f8-7cd7-b8ca-96716f527321",
+        parameter_id: "019bb25e-e620-7f9a-a3b6-8b7230c1e51c",
+        name: "BIOL 110",
+        description: null,
+        generated: true,
+        conditional_parameter_id: null,
+      },
+      {
+        id: null,
+        field_id: "019bb25e-e5f8-7cd3-aade-bc9cfbbaef93",
+        parameter_id: "019bb25e-e620-7f9a-a3b6-8b7230c1e51c",
+        name: "BIOL 204",
+        description: null,
+        generated: true,
+        conditional_parameter_id: null,
+      },
+    ],
+
+    // Multi-select resources - Flags (real IDs from database)
+    // Format: { id: flag_option_id, key: flag_key }
+    flag_resources: [
+      {
+        id: "019b995a-86ef-77dc-8ddc-2013a6e3194f",
+        key: "images_enabled",
+      },
+      {
+        id: "019b995a-86ef-77a3-a2a6-e6b760a9fcfe",
+        key: "objectives_enabled",
+      },
+    ],
+  });
 
   // Clear a pending AI resource suggestion
   // Note: We explicitly set to undefined instead of using delete to ensure
@@ -2372,6 +2592,9 @@ function ScenarioComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
+                  aiResource={aiFormData.name_resource ?? null}
+                  onAccept={() => clearAiResource("name_resource")}
+                  onReject={() => clearAiResource("name_resource")}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -2512,6 +2735,9 @@ function ScenarioComponent({
                   }}
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("scenario_flags")}
+                  aiFlagResources={aiFormData.flag_resources ?? null}
+                  onAccept={() => clearAiResource("flag_resources")}
+                  onReject={() => clearAiResource("flag_resources")}
                 />
               </div>
             </StepCard>
@@ -3001,6 +3227,9 @@ function ScenarioComponent({
                   onGenerate={handleGenerateParameters}
                   isGenerating={isGenerating("parameters")}
                   videoEnabled={videoEnabled}
+                  aiParameterResources={aiFormData.parameter_resources ?? null}
+                  onAccept={() => clearAiResource("parameter_resources")}
+                  onReject={() => clearAiResource("parameter_resources")}
                 />
                 <ParameterFields
                   parameter_field_ids={formState.parameter_field_ids}
@@ -3036,6 +3265,9 @@ function ScenarioComponent({
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.parameter_fields}
+                  aiParameterFieldResources={aiFormData.parameter_field_resources ?? null}
+                  onAccept={() => clearAiResource("parameter_field_resources")}
+                  onReject={() => clearAiResource("parameter_field_resources")}
                 />
               </div>
             </StepCard>

@@ -69,6 +69,8 @@ export interface ScenarioTimeLimitsProps {
   onTimeLimitIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>) => void;
 }
 
 export function ScenarioTimeLimits({
@@ -89,6 +91,7 @@ export function ScenarioTimeLimits({
   onTimeLimitIdsChange,
   onGenerate,
   isGenerating = false,
+  registerFlush,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(
@@ -153,6 +156,9 @@ export function ScenarioTimeLimits({
   >(new Map());
   const createdTimeLimitKeysRef = useRef<Set<string>>(new Set());
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ scenario_time_limit_ids: string[] } | void>) | null>(null);
+
   useEffect(() => {
     const nextLimits = new Map<string, number | null>();
     const nextIds = new Map<string, string>();
@@ -172,14 +178,26 @@ export function ScenarioTimeLimits({
       }
     });
 
-    setTimeLimitByScenario(nextLimits);
-    setTimeLimitIdsByScenario(nextIds);
+    // Only update if content actually changed
+    setTimeLimitByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextLimits.entries()).sort());
+      return prevKey === nextKey ? prev : nextLimits;
+    });
+    setTimeLimitIdsByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
+      return prevKey === nextKey ? prev : nextIds;
+    });
   }, [scenario_ids, timeLimitResources]);
 
   // Sync timeLimitIdsByScenario to parent via onTimeLimitIdsChange (must be in useEffect, not during setState)
+  // Use ref for onTimeLimitIdsChange to avoid dependency that changes every render
+  const onTimeLimitIdsChangeRef = useRef(onTimeLimitIdsChange);
+  onTimeLimitIdsChangeRef.current = onTimeLimitIdsChange;
   const prevIdsRef = useRef<string[]>([]);
   useEffect(() => {
-    if (!onTimeLimitIdsChange) return;
+    if (!onTimeLimitIdsChangeRef.current) return;
     const ids = scenario_ids
       .map((scenarioId) => timeLimitIdsByScenario.get(scenarioId))
       .filter((value): value is string => Boolean(value));
@@ -188,9 +206,24 @@ export function ScenarioTimeLimits({
     const prevKey = prevIdsRef.current.join(",");
     if (idsKey !== prevKey) {
       prevIdsRef.current = ids;
-      onTimeLimitIdsChange(ids);
+      onTimeLimitIdsChangeRef.current(ids);
     }
-  }, [timeLimitIdsByScenario, scenario_ids, onTimeLimitIdsChange]);
+  }, [timeLimitIdsByScenario, scenario_ids]);
+
+  // Update flush function - returns current IDs from local state
+  flushRef.current = async (): Promise<{ scenario_time_limit_ids: string[] } | void> => {
+    const ids = scenario_ids
+      .map((scenarioId) => timeLimitIdsByScenario.get(scenarioId))
+      .filter((value): value is string => Boolean(value));
+    return { scenario_time_limit_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const createTimeLimit = useCallback(
     async (scenarioId: string, value: number) => {

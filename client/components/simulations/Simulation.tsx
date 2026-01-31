@@ -98,6 +98,10 @@ type SimulationResourceType = ResourceType | "scenario_time_limits";
 type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
+  scenario_flag_ids?: string[];
+  scenario_position_ids?: string[];
+  scenario_rubric_ids?: string[];
+  scenario_time_limit_ids?: string[];
 };
 
 export interface SimulationProps {
@@ -172,6 +176,10 @@ function SimulationComponent({
     () => ({
       names: createRegisterFlush("names"),
       descriptions: createRegisterFlush("descriptions"),
+      scenario_flags: createRegisterFlush("scenario_flags"),
+      scenario_positions: createRegisterFlush("scenario_positions"),
+      scenario_rubrics: createRegisterFlush("scenario_rubrics"),
+      scenario_time_limits: createRegisterFlush("scenario_time_limits"),
     }),
     [createRegisterFlush]
   );
@@ -873,10 +881,22 @@ function SimulationComponent({
             flag_ids: currentFormState.flag_ids,
             department_ids: currentFormState.department_ids,
             scenario_ids: currentFormState.scenario_ids,
-            scenario_flag_ids: currentFormState.scenario_flag_ids,
-            scenario_position_ids: currentFormState.scenario_position_ids,
-            scenario_rubric_ids: currentFormState.scenario_rubric_ids,
-            scenario_time_limit_ids: currentFormState.scenario_time_limit_ids,
+            scenario_flag_ids:
+              mergedFlushResults.scenario_flag_ids !== undefined
+                ? mergedFlushResults.scenario_flag_ids
+                : currentFormState.scenario_flag_ids,
+            scenario_position_ids:
+              mergedFlushResults.scenario_position_ids !== undefined
+                ? mergedFlushResults.scenario_position_ids
+                : currentFormState.scenario_position_ids,
+            scenario_rubric_ids:
+              mergedFlushResults.scenario_rubric_ids !== undefined
+                ? mergedFlushResults.scenario_rubric_ids
+                : currentFormState.scenario_rubric_ids,
+            scenario_time_limit_ids:
+              mergedFlushResults.scenario_time_limit_ids !== undefined
+                ? mergedFlushResults.scenario_time_limit_ids
+                : currentFormState.scenario_time_limit_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -2199,6 +2219,7 @@ function SimulationComponent({
                   required={
                     currentSimulationData.scenario_flags_required ?? false
                   }
+                  registerFlush={registerFlushCallbacks.scenario_flags}
                 />
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
@@ -2238,6 +2259,7 @@ function SimulationComponent({
                   required={
                     currentSimulationData.scenario_positions_required ?? false
                   }
+                  registerFlush={registerFlushCallbacks.scenario_positions}
                 />
                 <ScenarioRubrics
                   scenario_rubric_ids={
@@ -2284,6 +2306,7 @@ function SimulationComponent({
                     currentSimulationData.scenario_rubrics_required ??
                     false
                   }
+                  registerFlush={registerFlushCallbacks.scenario_rubrics}
                 />
                 <ScenarioTimeLimits
                   scenario_time_limit_ids={
@@ -2315,6 +2338,7 @@ function SimulationComponent({
                   required={
                     currentSimulationData.scenario_time_limits_required ?? false
                   }
+                  registerFlush={registerFlushCallbacks.scenario_time_limits}
                 />
               </div>
             </StepCard>

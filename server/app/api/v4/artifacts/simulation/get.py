@@ -626,7 +626,7 @@ async def get_simulation(
             scenarios=[_to_dict(s) for s in scenarios_typed],
             # Scenario flags
             scenario_flag_ids=ids_result.scenario_flag_ids or [],
-            scenario_flag_resources=[_to_dict(sf) for sf in scenario_flags],
+            scenario_flag_resources=[_to_dict(sf) for sf in scenario_flags_selected],
             show_scenario_flags=show_scenario_flags,
             scenario_flags_agent_id=scenario_flags_agent_id,
             scenario_flags_required=False,
@@ -634,7 +634,7 @@ async def get_simulation(
             scenario_flags=[_to_dict(sf) for sf in scenario_flags],
             # Scenario positions
             scenario_position_ids=ids_result.scenario_position_ids or [],
-            scenario_position_resources=[_to_dict(sp) for sp in scenario_positions],
+            scenario_position_resources=[_to_dict(sp) for sp in scenario_positions_selected],
             show_scenario_positions=show_scenario_positions,
             scenario_positions_agent_id=scenario_positions_agent_id,
             scenario_positions_required=False,
@@ -642,7 +642,7 @@ async def get_simulation(
             scenario_positions=[_to_dict(sp) for sp in scenario_positions],
             # Scenario rubrics
             scenario_rubric_ids=ids_result.scenario_rubric_ids or [],
-            scenario_rubric_resources=[_to_dict(sr) for sr in scenario_rubrics],
+            scenario_rubric_resources=[_to_dict(sr) for sr in scenario_rubrics_selected],
             show_scenario_rubrics=show_scenario_rubrics,
             scenario_rubrics_agent_id=scenario_rubrics_agent_id,
             scenario_rubrics_required=True,
@@ -652,7 +652,7 @@ async def get_simulation(
             # Scenario time limits
             scenario_time_limit_ids=ids_result.scenario_time_limit_ids or [],
             scenario_time_limit_resources=[
-                _to_dict(stl) for stl in scenario_time_limits
+                _to_dict(stl) for stl in scenario_time_limits_selected
             ],
             show_scenario_time_limits=show_scenario_time_limits,
             scenario_time_limits_agent_id=scenario_time_limits_agent_id,

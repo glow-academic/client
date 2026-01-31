@@ -560,6 +560,35 @@ export function Images({
     return image_resources?.some((i) => i.generated) ?? false;
   }, [image_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiImageResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiImageResources
+          ?.map((i) => i.image_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiImageResources]
+  );
+
+  // Accept AI suggestion - add AI-suggested images to selection
+  const handleAccept = useCallback(() => {
+    if (!aiImageResources?.length) return;
+    const newIds = aiImageResources
+      .map((i) => i.image_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiImageResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_images is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -592,7 +621,7 @@ export function Images({
                       size="icon"
                       className="h-6 w-6"
                       onClick={onGenerate}
-                      disabled={disabled || isGenerating}
+                      disabled={disabled || isGenerating || showDiff}
                     >
                       {isGenerating ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -606,6 +635,42 @@ export function Images({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            )}
+            {showDiff && (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-success hover:text-success"
+                        onClick={handleAccept}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Accept</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={handleReject}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reject</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
             )}
           </div>
         ) : (
@@ -685,6 +750,46 @@ export function Images({
         {/* Image Grid - Horizontal Scrollable Row (matching ContentSection pattern) */}
         <div className="overflow-x-auto">
           <div className="flex gap-2 pb-2">
+            {/* Display AI suggested images (not yet selected) */}
+            {showDiff && aiImageResources?.filter(
+              (ai) => ai.image_id && !ids.includes(ai.image_id)
+            ).map((ai) => {
+              const imgData = allImages.find((i) => (i.image_id ?? i.id) === ai.image_id);
+              if (!imgData || !ai.image_id) return null;
+              return (
+                <div
+                  key={ai.image_id}
+                  className="relative aspect-square w-32 min-w-[8rem] border-2 border-success rounded-lg overflow-hidden bg-success/10 shrink-0"
+                >
+                  {/* AI suggested badge - top right */}
+                  <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    AI Suggested
+                  </div>
+                  {/* Preview button - top left */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewImageId(imgData.upload_id || ai.image_id!);
+                    }}
+                    className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                    disabled={disabled}
+                  >
+                    <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                  </button>
+                  <ImageViewer
+                    imageId={imgData.upload_id || ai.image_id!}
+                    name={ai.name || "Image"}
+                    bare={true}
+                  />
+                  {/* Image name at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
+                    <span className="truncate block">{ai.name || "Image"}</span>
+                  </div>
+                </div>
+              );
+            })}
+
             {/* Display selected images */}
             {selectedImages.map((img) => (
               <div

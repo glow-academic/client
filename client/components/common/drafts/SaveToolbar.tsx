@@ -21,16 +21,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSaveContext } from "@/contexts/save-context";
 import { FileText, Loader2, Plus, RefreshCw, Save } from "lucide-react";
@@ -167,8 +161,30 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2 pr-2">
-        {/* Autosave toggle - always visible */}
+      <div className="flex items-center gap-2 pr-4">
+        {/* Save Draft Button - only shown when there are unsaved changes */}
+        {isAutosaveLoaded && hasUnsavedChanges && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleSaveClick}
+            disabled={saveStatus === "saving"}
+          >
+            {saveStatus === "saving" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving Draft...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Draft
+              </>
+            )}
+          </Button>
+        )}
+
+        {/* Autosave toggle */}
         {isAutosaveLoaded && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <RefreshCw className="h-3 w-3" />
@@ -180,87 +196,51 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
           </div>
         )}
 
-        {/* Save Draft Icon Button with Tooltip */}
-        {isAutosaveLoaded && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={hasUnsavedChanges ? "default" : "outline"}
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleSaveClick}
-                disabled={saveStatus === "saving" || !hasUnsavedChanges}
-              >
-                {saveStatus === "saving" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {saveStatus === "saving" ? "Saving Draft..." : "Save Draft"}
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Draft Picker Icon Button with Tooltip */}
-        <Tooltip>
-          <DropdownMenu>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default" size="icon" className="h-8 w-8">
-                  <FileText className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>Drafts</TooltipContent>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Drafts</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-
-              {filteredDrafts.length === 0 ? (
-                <DropdownMenuItem disabled>
-                  No drafts available
-                </DropdownMenuItem>
-              ) : (
-                filteredDrafts
-                  .filter((draft) => draft.id !== null)
-                  .map((draft) => (
-                    <DropdownMenuItem
-                      key={draft.id}
-                      onClick={() => attemptDraftSwitch(draft.id!)}
-                      className={
-                        selectedDraftId === draft.id ? "bg-accent" : ""
-                      }
-                    >
-                      <div className="flex flex-col gap-1 flex-1 min-w-0">
-                        <span className="font-medium truncate">
-                          {getDraftName(draft)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {draft.updated_at
-                            ? new Date(draft.updated_at).toLocaleString()
-                            : ""}
-                        </span>
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-              )}
-
-              {/* Only show "Create new draft" if we're currently editing an existing draft */}
-              {searchParams.get("draftId") && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={attemptCreateNew}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create new draft
+        {/* Draft Picker Button */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="default" size="sm">
+              <FileText className="h-4 w-4" />
+              Drafts
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {filteredDrafts.length === 0 ? (
+              <DropdownMenuItem disabled>No drafts available</DropdownMenuItem>
+            ) : (
+              filteredDrafts
+                .filter((draft) => draft.id !== null)
+                .map((draft) => (
+                  <DropdownMenuItem
+                    key={draft.id}
+                    onClick={() => attemptDraftSwitch(draft.id!)}
+                    className={selectedDraftId === draft.id ? "bg-accent" : ""}
+                  >
+                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                      <span className="font-medium truncate">
+                        {getDraftName(draft)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {draft.updated_at
+                          ? new Date(draft.updated_at).toLocaleString()
+                          : ""}
+                      </span>
+                    </div>
                   </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Tooltip>
+                ))
+            )}
+            {/* Only show "Create new draft" if we're currently editing an existing draft */}
+            {searchParams.get("draftId") && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={attemptCreateNew}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create new draft
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Discard Changes Confirmation Dialog */}

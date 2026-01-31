@@ -29,6 +29,7 @@ import {
   PlusCircle,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -699,6 +700,45 @@ export function Questions({
     return _question_resources?.some((q) => q.generated) ?? false;
   }, [_question_resources]);
 
+  // AI suggestion state
+  const showDiff = !!aiQuestionResources?.length;
+
+  // Accept AI suggestion - add AI-suggested questions to internal questions
+  const handleAccept = useCallback(() => {
+    if (!aiQuestionResources?.length) return;
+    // Add AI questions to internal questions
+    const newQuestions = aiQuestionResources
+      .filter((q) => q.question_text)
+      .map((q, idx) => ({
+        id: q.question_id || `ai-${idx}`,
+        question_text: q.question_text || "",
+        allow_multiple: false,
+        options: [
+          { id: "", option_text: "", type: "discrete" as const, is_correct: false },
+          { id: "", option_text: "", type: "discrete" as const, is_correct: false },
+        ],
+        times: [],
+      }));
+    if (newQuestions.length > 0) {
+      setInternalQuestions((prev) => [
+        ...prev.filter((q) => q.question_text.trim()),
+        ...newQuestions,
+      ]);
+      // Map the new question IDs
+      aiQuestionResources.forEach((q) => {
+        if (q.question_id && q.question_text) {
+          questionIdMapRef.current.set(q.question_text, q.question_id);
+        }
+      });
+    }
+    onAccept?.();
+  }, [aiQuestionResources, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_questions is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -726,7 +766,7 @@ export function Questions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -741,6 +781,62 @@ export function Questions({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* AI-suggested questions preview */}
+      {showDiff && aiQuestionResources && aiQuestionResources.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-sm font-medium text-success">AI Suggested Questions</p>
+          <div className="space-y-2">
+            {aiQuestionResources.map((item, idx) => (
+              <div
+                key={item.question_id || idx}
+                className={cn(
+                  "p-3 rounded-lg border-2 border-success bg-success/10",
+                  "text-sm"
+                )}
+              >
+                {item.question_text || ""}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
