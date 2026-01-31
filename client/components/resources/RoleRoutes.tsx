@@ -105,7 +105,7 @@ export function RoleRoutes({
     Map<string, Set<string>>
   >(new Map());
   // Map: "roleId:routeId" -> role_routes_resource id
-  const [, setRoleRouteIdMap] = useState<
+  const [roleRouteIdMap, setRoleRouteIdMap] = useState<
     Map<string, string>
   >(new Map());
   const createdKeysRef = useRef<Set<string>>(new Set());
@@ -131,13 +131,18 @@ export function RoleRoutes({
     setRoleRouteIdMap(nextIdMap);
   }, [currentResources]);
 
-  const emitIds = useCallback(
-    (next: Map<string, string>) => {
-      const ids = Array.from(next.values());
+  // Sync roleRouteIdMap to parent via onChange (must be in useEffect, not during setState)
+  const prevIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    const ids = Array.from(roleRouteIdMap.values());
+    // Only emit if IDs actually changed to prevent infinite loops
+    const idsKey = ids.join(",");
+    const prevKey = prevIdsRef.current.join(",");
+    if (idsKey !== prevKey) {
+      prevIdsRef.current = ids;
       onChange(ids);
-    },
-    [onChange]
-  );
+    }
+  }, [roleRouteIdMap, onChange]);
 
   const createRoleRoute = useCallback(
     async (roleId: string, routeId: string) => {
@@ -165,17 +170,17 @@ export function RoleRoutes({
           return;
         }
 
+        // Update state - useEffect will sync to parent via onChange
         setRoleRouteIdMap((prev) => {
           const next = new Map(prev);
           next.set(key, result.role_routes_id as string);
-          emitIds(next);
           return next;
         });
       } catch {
         // Resource creation errors are handled by API
       }
     },
-    [createRoleRoutesAction, agent_id, group_id, emitIds]
+    [createRoleRoutesAction, agent_id, group_id]
   );
 
   const handleToggle = useCallback(
@@ -200,15 +205,15 @@ export function RoleRoutes({
           }
           return next;
         });
+        // Clear the ID - useEffect will sync to parent via onChange
         setRoleRouteIdMap((prev) => {
           const next = new Map(prev);
           next.delete(key);
-          emitIds(next);
           return next;
         });
       }
     },
-    [createRoleRoute, emitIds]
+    [createRoleRoute]
   );
 
   const routeItems = useMemo(() => {

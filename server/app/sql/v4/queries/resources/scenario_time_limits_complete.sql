@@ -43,8 +43,8 @@ DECLARE
     v_run_id uuid;
     v_resource_id uuid;
 BEGIN
-    -- Validate that scenario exists
-    IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE id = api_create_scenario_time_limits_v4.scenario_id) THEN
+    -- Validate that scenario exists (check _resource table, not _artifact, since FK references _resource)
+    IF NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = api_create_scenario_time_limits_v4.scenario_id) THEN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_time_limits_v4.scenario_id;
     END IF;
 

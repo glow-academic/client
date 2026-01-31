@@ -9,6 +9,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -123,17 +124,23 @@ export function ScenarioTimeLimits({
     return map;
   }, [scenarios, scenario_resources]);
   // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
-  // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
+  // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
   const artifactIdMap = useMemo(() => {
     const map = new Map<string, string>();
     (scenarios ?? []).forEach((s) => {
-      const id = s.scenario_id || s.id;
-      // For scenarios_resource data, scenario_id IS the ID (not a foreign key)
-      if (id) map.set(id, id);
+      // s.id = scenarios_resource.id (denormalized), s.scenario_id = scenario_artifact.id (canonical)
+      if (s.id && s.scenario_id) {
+        map.set(s.id, s.scenario_id);
+      } else if (s.scenario_id) {
+        map.set(s.scenario_id, s.scenario_id);
+      }
     });
     (scenario_resources ?? []).forEach((s) => {
-      const id = s.scenario_id || s.id;
-      if (id) map.set(id, id);
+      if (s.id && s.scenario_id) {
+        map.set(s.id, s.scenario_id);
+      } else if (s.scenario_id) {
+        map.set(s.scenario_id, s.scenario_id);
+      }
     });
     return map;
   }, [scenarios, scenario_resources]);
@@ -169,16 +176,21 @@ export function ScenarioTimeLimits({
     setTimeLimitIdsByScenario(nextIds);
   }, [scenario_ids, timeLimitResources]);
 
-  const emitIds = useCallback(
-    (next: Map<string, string>) => {
-      if (!onTimeLimitIdsChange) return;
-      const ids = scenario_ids
-        .map((scenarioId) => next.get(scenarioId))
-        .filter((value): value is string => Boolean(value));
+  // Sync timeLimitIdsByScenario to parent via onTimeLimitIdsChange (must be in useEffect, not during setState)
+  const prevIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (!onTimeLimitIdsChange) return;
+    const ids = scenario_ids
+      .map((scenarioId) => timeLimitIdsByScenario.get(scenarioId))
+      .filter((value): value is string => Boolean(value));
+    // Only emit if IDs actually changed to prevent infinite loops
+    const idsKey = ids.join(",");
+    const prevKey = prevIdsRef.current.join(",");
+    if (idsKey !== prevKey) {
+      prevIdsRef.current = ids;
       onTimeLimitIdsChange(ids);
-    },
-    [onTimeLimitIdsChange, scenario_ids]
-  );
+    }
+  }, [timeLimitIdsByScenario, scenario_ids, onTimeLimitIdsChange]);
 
   const createTimeLimit = useCallback(
     async (scenarioId: string, value: number) => {
@@ -209,10 +221,10 @@ export function ScenarioTimeLimits({
           return;
         }
 
+        // Update state - useEffect will sync to parent via onTimeLimitIdsChange
         setTimeLimitIdsByScenario((prev) => {
           const next = new Map(prev);
           next.set(scenarioId, result.id as string);
-          emitIds(next);
           return next;
         });
       } catch {
@@ -223,7 +235,6 @@ export function ScenarioTimeLimits({
       createScenarioTimeLimitsAction,
       agent_id,
       group_id,
-      emitIds,
       artifactIdMap,
     ]
   );
@@ -300,6 +311,7 @@ export function ScenarioTimeLimits({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
         {scenario_ids.map((scenarioId) => {
           const currentValue = timeLimitByScenario.get(scenarioId);
+          const isUnlimited = currentValue === null;
           const minutes = currentValue != null ? Math.floor(currentValue / 60) : null;
           const seconds = currentValue != null ? currentValue % 60 : null;
           const labelText =
@@ -319,6 +331,16 @@ export function ScenarioTimeLimits({
             handleChange(scenarioId, totalSeconds > 0 ? String(totalSeconds) : "");
           };
 
+          const handleUnlimitedToggle = (checked: boolean) => {
+            if (checked) {
+              // Set to unlimited (null/empty)
+              handleChange(scenarioId, "");
+            } else {
+              // Set a default value when switching from unlimited
+              handleChange(scenarioId, "60"); // Default to 1 minute
+            }
+          };
+
           return (
             <div
               key={scenarioId}
@@ -330,27 +352,40 @@ export function ScenarioTimeLimits({
                   {labelText}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={minutes ?? ""}
-                    onChange={(event) => handleMinutesChange(event.target.value)}
-                    placeholder="0"
-                    disabled={disabled}
-                    className="w-16 h-8"
-                  />
-                  <span className="text-xs text-muted-foreground">min</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={seconds ?? ""}
-                    onChange={(event) => handleSecondsChange(event.target.value)}
-                    placeholder="0"
-                    disabled={disabled}
-                    className="w-16 h-8"
-                  />
-                  <span className="text-xs text-muted-foreground">sec</span>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={isUnlimited}
+                      onCheckedChange={handleUnlimitedToggle}
+                      disabled={disabled}
+                    />
+                    <span className="text-xs text-muted-foreground">Unlimited</span>
+                  </div>
+                  {!isUnlimited && (
+                    <>
+                      <div className="w-px h-4 bg-border mx-1" />
+                      <Input
+                        type="number"
+                        min={0}
+                        value={minutes ?? ""}
+                        onChange={(event) => handleMinutesChange(event.target.value)}
+                        placeholder="0"
+                        disabled={disabled}
+                        className="w-16 h-8"
+                      />
+                      <span className="text-xs text-muted-foreground">min</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={seconds ?? ""}
+                        onChange={(event) => handleSecondsChange(event.target.value)}
+                        placeholder="0"
+                        disabled={disabled}
+                        className="w-16 h-8"
+                      />
+                      <span className="text-xs text-muted-foreground">sec</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

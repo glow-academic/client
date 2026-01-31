@@ -45,13 +45,13 @@ DECLARE
     v_run_id uuid;
     v_resource_id uuid;
 BEGIN
-    -- Validate that simulation exists
+    -- Validate that simulation exists (simulation_scenarios_junction references simulation_artifact)
     IF NOT EXISTS (SELECT 1 FROM simulation_artifact WHERE id = api_create_scenario_positions_v4.simulation_id) THEN
         RAISE EXCEPTION 'Simulation % does not exist', api_create_scenario_positions_v4.simulation_id;
     END IF;
-    
-    -- Validate that scenario exists
-    IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE id = api_create_scenario_positions_v4.scenario_id) THEN
+
+    -- Validate that scenario exists (check _resource table, not _artifact, since FK references _resource)
+    IF NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = api_create_scenario_positions_v4.scenario_id) THEN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_positions_v4.scenario_id;
     END IF;
     

@@ -151,17 +151,23 @@ export function ScenarioFlags({
     return map;
   }, [scenarios, scenario_resources]);
   // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
-  // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
+  // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
   const artifactIdMap = useMemo(() => {
     const map = new Map<string, string>();
     (scenarios ?? []).forEach((s) => {
-      const id = s.scenario_id || s.id;
-      // For scenarios_resource data, scenario_id IS the ID (not a foreign key)
-      if (id) map.set(id, id);
+      // s.id = scenarios_resource.id (denormalized), s.scenario_id = scenario_artifact.id (canonical)
+      if (s.id && s.scenario_id) {
+        map.set(s.id, s.scenario_id);
+      } else if (s.scenario_id) {
+        map.set(s.scenario_id, s.scenario_id);
+      }
     });
     (scenario_resources ?? []).forEach((s) => {
-      const id = s.scenario_id || s.id;
-      if (id) map.set(id, id);
+      if (s.id && s.scenario_id) {
+        map.set(s.id, s.scenario_id);
+      } else if (s.scenario_id) {
+        map.set(s.scenario_id, s.scenario_id);
+      }
     });
     return map;
   }, [scenarios, scenario_resources]);

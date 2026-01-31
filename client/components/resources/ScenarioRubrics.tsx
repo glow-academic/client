@@ -148,18 +148,24 @@ export function ScenarioRubrics({
     });
     return map;
   }, [scenarios, scenario_resources]);
-  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
-  // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
+  // Map resource ID → artifact ID for API calls
+  // Note: After SQL fix, API now accepts scenarios_resource.id directly, but we keep mapping for consistency
   const artifactIdMap = useMemo(() => {
     const map = new Map<string, string>();
     (scenarios ?? []).forEach((s) => {
-      const id = s.scenario_id || s.id;
-      // For scenarios_resource data, scenario_id IS the ID (not a foreign key)
-      if (id) map.set(id, id);
+      // s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
+      if (s.id && s.scenario_id) {
+        map.set(s.id, s.scenario_id);
+      } else if (s.scenario_id) {
+        map.set(s.scenario_id, s.scenario_id);
+      }
     });
     (scenario_resources ?? []).forEach((s) => {
-      const id = s.scenario_id || s.id;
-      if (id) map.set(id, id);
+      if (s.id && s.scenario_id) {
+        map.set(s.id, s.scenario_id);
+      } else if (s.scenario_id) {
+        map.set(s.scenario_id, s.scenario_id);
+      }
     });
     return map;
   }, [scenarios, scenario_resources]);
@@ -195,15 +201,20 @@ export function ScenarioRubrics({
     setScenarioRubricIdsByScenario(nextIds);
   }, [currentResources, scenario_ids]);
 
-  const emitIds = useCallback(
-    (next: Map<string, string>) => {
-      const ids = scenario_ids
-        .map((scenarioId) => next.get(scenarioId))
-        .filter((value): value is string => Boolean(value));
+  // Sync scenarioRubricIdsByScenario to parent via onChange (must be in useEffect, not during setState)
+  const prevIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    const ids = scenario_ids
+      .map((scenarioId) => scenarioRubricIdsByScenario.get(scenarioId))
+      .filter((value): value is string => Boolean(value));
+    // Only emit if IDs actually changed to prevent infinite loops
+    const idsKey = ids.join(",");
+    const prevKey = prevIdsRef.current.join(",");
+    if (idsKey !== prevKey) {
+      prevIdsRef.current = ids;
       onChange(ids);
-    },
-    [onChange, scenario_ids]
-  );
+    }
+  }, [scenarioRubricIdsByScenario, scenario_ids, onChange]);
 
   const createScenarioRubric = useCallback(
     async (scenarioId: string, rubricId: string) => {
@@ -216,7 +227,7 @@ export function ScenarioRubrics({
       }
       createdRubricKeysRef.current.add(key);
 
-      // Resolve resource ID to artifact ID for the API
+      // Resolve resource ID to artifact ID for the API (now optional since SQL accepts both)
       const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
 
       try {
@@ -234,10 +245,10 @@ export function ScenarioRubrics({
           return;
         }
 
+        // Update state - useEffect will sync to parent via onChange
         setScenarioRubricIdsByScenario((prev) => {
           const next = new Map(prev);
           next.set(scenarioId, result.id as string);
-          emitIds(next);
           return next;
         });
       } catch {
@@ -248,7 +259,6 @@ export function ScenarioRubrics({
       createScenarioRubricsAction,
       agent_id,
       group_id,
-      emitIds,
       artifactIdMap,
     ]
   );
@@ -264,27 +274,27 @@ export function ScenarioRubrics({
       });
 
       if (nextRubricId === null) {
+        // Clear selection - useEffect will sync to parent via onChange
         setScenarioRubricIdsByScenario((prev) => {
           const next = new Map(prev);
           next.delete(scenarioId);
-          emitIds(next);
           return next;
         });
         return;
       }
 
+      // Clear existing before creating new - useEffect will sync to parent via onChange
       setScenarioRubricIdsByScenario((prev) => {
         const next = new Map(prev);
         if (next.has(scenarioId)) {
           next.delete(scenarioId);
-          emitIds(next);
         }
         return next;
       });
 
       void createScenarioRubric(scenarioId, nextRubricId);
     },
-    [createScenarioRubric, emitIds]
+    [createScenarioRubric]
   );
 
   const rubricOptions = useMemo<ScenarioRubricOption[]>(() => {

@@ -43,12 +43,12 @@ DECLARE
     v_params_jsonb jsonb;
     v_run_id uuid;
 BEGIN
-    -- Validate scenario and rubric exist
-    IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE id = api_create_scenario_rubrics_v4.scenario_id) THEN
+    -- Validate scenario and rubric exist (check _resource tables, not _artifact, since FK references _resource)
+    IF NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = api_create_scenario_rubrics_v4.scenario_id) THEN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_rubrics_v4.scenario_id;
     END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM rubric_artifact WHERE id = api_create_scenario_rubrics_v4.rubric_id) THEN
+
+    IF NOT EXISTS (SELECT 1 FROM rubrics_resource WHERE id = api_create_scenario_rubrics_v4.rubric_id) THEN
         RAISE EXCEPTION 'Rubric % does not exist', api_create_scenario_rubrics_v4.rubric_id;
     END IF;
     
