@@ -5,6 +5,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -121,6 +122,18 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
         )
         return
 
+    # For scenarios, fetch full objects for AI diff view
+    scenario_resources = None
+    if resource_type == "scenarios" and result.scenario_ids:
+        try:
+            async with get_db_connection() as conn:
+                scenario_resources = await get_scenarios_internal(
+                    conn, result.scenario_ids, bypass_cache=True
+                )
+        except Exception:
+            # If fetch fails, continue without full objects (IDs are still available)
+            pass
+
     # Emit granular event with mapped resource ID (one field set, others NULL)
     complete_event = SimulationGenerationCompleteEvent(
         group_id=group_id_str,
@@ -130,6 +143,7 @@ async def handle_simulation_artifact_complete(data: dict[str, Any]) -> None:
         active_flag_id=str(result.active_flag_id) if result.active_flag_id else None,
         department_ids=[str(did) for did in (result.department_ids or [])],
         scenario_ids=[str(s_id) for s_id in (result.scenario_ids or [])],
+        scenario_resources=scenario_resources,
         scenario_flag_ids=[str(sfid) for sfid in (result.scenario_flag_ids or [])],
         scenario_position_ids=[
             str(spid) for spid in (result.scenario_position_ids or [])

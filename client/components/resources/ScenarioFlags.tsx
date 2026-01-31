@@ -89,6 +89,8 @@ export interface ScenarioFlagsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
 }
@@ -119,6 +121,7 @@ export function ScenarioFlags({
   createScenarioFlagsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
   registerFlush,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
@@ -263,7 +266,7 @@ export function ScenarioFlags({
 
   const createScenarioFlag = useCallback(
     async (scenarioId: string, flagId: string) => {
-      if (!createScenarioFlagsAction || !group_id) {
+      if (!isAutosaveEnabled || !createScenarioFlagsAction || !group_id) {
         return;
       }
       const key = `${scenarioId}:${flagId}`;
@@ -301,6 +304,7 @@ export function ScenarioFlags({
       }
     },
     [
+      isAutosaveEnabled,
       createScenarioFlagsAction,
       agent_id,
       group_id,

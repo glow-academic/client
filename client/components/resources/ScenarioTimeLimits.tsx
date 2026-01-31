@@ -69,6 +69,8 @@ export interface ScenarioTimeLimitsProps {
   onTimeLimitIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>) => void;
 }
@@ -91,6 +93,7 @@ export function ScenarioTimeLimits({
   onTimeLimitIdsChange,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
   registerFlush,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
@@ -227,7 +230,7 @@ export function ScenarioTimeLimits({
 
   const createTimeLimit = useCallback(
     async (scenarioId: string, value: number) => {
-      if (!createScenarioTimeLimitsAction || !group_id) {
+      if (!isAutosaveEnabled || !createScenarioTimeLimitsAction || !group_id) {
         return;
       }
       const key = `${scenarioId}:${value}`;
@@ -265,6 +268,7 @@ export function ScenarioTimeLimits({
       }
     },
     [
+      isAutosaveEnabled,
       createScenarioTimeLimitsAction,
       agent_id,
       group_id,

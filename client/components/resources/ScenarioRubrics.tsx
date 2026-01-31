@@ -81,6 +81,8 @@ export interface ScenarioRubricsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_rubric_ids: string[] } | void>) => void;
 }
@@ -115,6 +117,7 @@ export function ScenarioRubrics({
   createScenarioRubricsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
   registerFlush,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
@@ -251,7 +254,7 @@ export function ScenarioRubrics({
 
   const createScenarioRubric = useCallback(
     async (scenarioId: string, rubricId: string) => {
-      if (!createScenarioRubricsAction || !group_id) {
+      if (!isAutosaveEnabled || !createScenarioRubricsAction || !group_id) {
         return;
       }
       const key = `${scenarioId}:${rubricId}`;
@@ -289,6 +292,7 @@ export function ScenarioRubrics({
       }
     },
     [
+      isAutosaveEnabled,
       createScenarioRubricsAction,
       agent_id,
       group_id,

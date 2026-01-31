@@ -83,6 +83,8 @@ export interface ScenarioPositionsProps {
   onPositionIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_position_ids: string[] } | void>) => void;
 }
@@ -109,6 +111,7 @@ export function ScenarioPositions({
   onPositionIdsChange,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
   registerFlush,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
@@ -178,11 +181,13 @@ export function ScenarioPositions({
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<{ scenario_position_ids: string[] } | void>) | null>(null);
 
+  // Initialize positionIdsByScenario from server resources
+  // Use the resource's own id field, NOT index-based correlation with scenarioPositionIds
   useEffect(() => {
     const next = new Map<string, string>();
-    currentPositions.forEach((pos, index) => {
+    currentPositions.forEach((pos) => {
       const scenarioId = pos.scenario_id;
-      const positionId = scenarioPositionIds[index];
+      const positionId = pos.id; // Use the resource's own ID, not index correlation
       if (scenarioId && positionId) {
         next.set(scenarioId, positionId);
       }
@@ -193,7 +198,7 @@ export function ScenarioPositions({
       const nextKey = JSON.stringify(Array.from(next.entries()).sort());
       return prevKey === nextKey ? prev : next;
     });
-  }, [currentPositions, scenarioPositionIds]);
+  }, [currentPositions]);
 
   // Sync positionIdsByScenario to parent via onPositionIdsChange (must be in useEffect, not during setState)
   // Use ref for onPositionIdsChange to avoid dependency that changes every render
@@ -291,6 +296,7 @@ export function ScenarioPositions({
       onChange(positionsArray);
 
       const shouldCreateResource =
+        isAutosaveEnabled &&
         createScenarioPositionsAction &&
         agent_id &&
         group_id &&
@@ -333,6 +339,7 @@ export function ScenarioPositions({
       localPositions,
       simulation_id,
       onChange,
+      isAutosaveEnabled,
       createScenarioPositionsAction,
       agent_id,
       group_id,

@@ -199,6 +199,26 @@ function SimulationComponent({
   >([]);
   const [modalInstructions, setModalInstructions] = useState("");
 
+  // AI form data state for AI diff view - stores pending AI suggestions
+  const [aiFormData, setAiFormData] = useState<{
+    scenario_resources?: Array<{
+      scenario_id?: string | null;
+      name?: string | null;
+      title?: string | null;
+    }>;
+  }>({});
+
+  // Clear AI resource suggestion for a specific key
+  const clearAiResource = useCallback(
+    (key: keyof typeof aiFormData) => {
+      setAiFormData((prev) => ({
+        ...prev,
+        [key]: undefined,
+      }));
+    },
+    []
+  );
+
   const isGenerating = useCallback(
     (resourceType: SimulationResourceType) =>
       generatingResources.has(resourceType),
@@ -965,6 +985,11 @@ function SimulationComponent({
       flag_ids?: string[];
       department_ids?: string[];
       scenario_ids?: string[];
+      scenario_resources?: Array<{
+        scenario_id?: string | null;
+        name?: string | null;
+        title?: string | null;
+      }>;
       scenario_flag_ids?: string[];
       scenario_position_ids?: string[];
       scenario_rubric_ids?: string[];
@@ -1018,13 +1043,8 @@ function SimulationComponent({
             );
             updates.department_ids = [...prev.department_ids, ...newDeptIds];
           }
-          if (data.scenario_ids && data.scenario_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newScenarioIds = data.scenario_ids.filter(
-              (id) => !prev.scenario_ids.includes(id)
-            );
-            updates.scenario_ids = [...prev.scenario_ids, ...newScenarioIds];
-          }
+          // For scenarios, store in aiFormData for diff view instead of auto-applying
+          // This is handled separately below after formState update
           if (data.scenario_flag_ids && data.scenario_flag_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
             const newScenarioFlagIds = data.scenario_flag_ids.filter(
@@ -1079,6 +1099,18 @@ function SimulationComponent({
 
           return { ...prev, ...updates };
         });
+
+        // Store scenario_resources in aiFormData for AI diff view
+        if (
+          data.resource_type === "scenarios" &&
+          data.scenario_resources &&
+          data.scenario_resources.length > 0
+        ) {
+          setAiFormData((prev) => ({
+            ...prev,
+            scenario_resources: data.scenario_resources,
+          }));
+        }
 
         // Remove from generating set
         setGeneratingResources((prev) => {
@@ -2186,6 +2218,9 @@ function SimulationComponent({
                   required={currentSimulationData.scenarios_required ?? false}
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
+                  aiScenarioResources={aiFormData.scenario_resources ?? null}
+                  onAccept={() => clearAiResource("scenario_resources")}
+                  onReject={() => clearAiResource("scenario_resources")}
                 />
                 <ScenarioFlags
                   scenario_flag_ids={formState.scenario_flag_ids ?? []}
@@ -2219,6 +2254,7 @@ function SimulationComponent({
                   required={
                     currentSimulationData.scenario_flags_required ?? false
                   }
+                  isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.scenario_flags}
                 />
                 <ScenarioPositions
@@ -2259,6 +2295,7 @@ function SimulationComponent({
                   required={
                     currentSimulationData.scenario_positions_required ?? false
                   }
+                  isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.scenario_positions}
                 />
                 <ScenarioRubrics
@@ -2306,6 +2343,7 @@ function SimulationComponent({
                     currentSimulationData.scenario_rubrics_required ??
                     false
                   }
+                  isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.scenario_rubrics}
                 />
                 <ScenarioTimeLimits
@@ -2338,6 +2376,7 @@ function SimulationComponent({
                   required={
                     currentSimulationData.scenario_time_limits_required ?? false
                   }
+                  isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.scenario_time_limits}
                 />
               </div>
@@ -2376,6 +2415,8 @@ function SimulationComponent({
       scenarioResourcesWithShowHints,
       isAutosaveEnabled,
       registerFlushCallbacks,
+      aiFormData,
+      clearAiResource,
     ]
   );
 

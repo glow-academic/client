@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
@@ -66,6 +66,14 @@ export interface ScenariosProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   showSelectedOnly?: boolean;
+  // AI diff view props
+  aiScenarioResources?: Array<{
+    scenario_id?: string | null;
+    name?: string | null;
+    title?: string | null;
+  }> | null;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function Scenarios({
@@ -88,6 +96,10 @@ export function Scenarios({
   isGenerating = false,
   searchTerm,
   showSelectedOnly = false,
+  // AI diff view props
+  aiScenarioResources,
+  onAccept,
+  onReject,
 }: ScenariosProps) {
   const ids = useMemo(() => scenario_ids ?? [], [scenario_ids]);
   const show = show_scenarios ?? false;
@@ -95,6 +107,18 @@ export function Scenarios({
   const suggestionsList = useMemo(
     () => scenario_suggestions ?? [],
     [scenario_suggestions]
+  );
+
+  // AI suggestion state
+  const showDiff = !!aiScenarioResources?.length;
+  const aiSuggestedIds = useMemo(
+    () =>
+      new Set(
+        aiScenarioResources
+          ?.map((s) => s.scenario_id)
+          .filter(Boolean) as string[]
+      ),
+    [aiScenarioResources]
   );
 
   // Track which scenario IDs have already had resources created
@@ -217,6 +241,23 @@ export function Scenarios({
     return scenario_resources?.some((s) => s.generated) ?? false;
   }, [scenario_resources]);
 
+  // Accept AI suggestion - add AI-suggested scenarios to selection
+  const handleAccept = useCallback(() => {
+    if (!aiScenarioResources?.length) return;
+    const newIds = aiScenarioResources
+      .map((s) => s.scenario_id)
+      .filter((id): id is string => !!id && !ids.includes(id));
+    if (newIds.length > 0) {
+      onChange([...ids, ...newIds]);
+    }
+    onAccept?.();
+  }, [aiScenarioResources, ids, onChange, onAccept]);
+
+  // Reject AI suggestion - just clear the pending state
+  const handleReject = useCallback(() => {
+    onReject?.();
+  }, [onReject]);
+
   // Don't render if show_scenarios is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -245,7 +286,7 @@ export function Scenarios({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || isGenerating}
+                    disabled={disabled || isGenerating || showDiff}
                   >
                     {isGenerating ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -260,6 +301,42 @@ export function Scenarios({
               </Tooltip>
             </TooltipProvider>
           )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       )}
       <SelectableGrid<ScenarioItem>
@@ -269,41 +346,52 @@ export function Scenarios({
         selectedIds={ids}
         onSelect={handleGridSelect}
         getId={(item) => item.id}
-        renderItem={(item, isSelected) => (
-          <div
-            className={cn(
-              "relative rounded-lg border bg-card p-3 text-left text-card-foreground shadow-sm transition-all",
-              "hover:border-primary hover:shadow-md focus-visible:outline-none",
-              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isSelected
-                ? "border-transparent ring-2 ring-primary bg-primary/5"
-                : "border-input"
-            )}
-          >
-            {/* Suggested badge - top right */}
-            {isSuggested(item.id) && !isSelected && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
-                Suggested
-              </div>
-            )}
-            {/* Check icon - top right */}
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
-                <Check className="h-3 w-3 text-primary-foreground" />
-              </div>
-            )}
-            <div className="space-y-1">
-              <div className="text-sm font-semibold text-foreground">
-                {item.name}
-              </div>
-              {item.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {item.description}
-                </p>
+        renderItem={(item, isSelected) => {
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div
+              className={cn(
+                "relative rounded-lg border bg-card p-3 text-left text-card-foreground shadow-sm transition-all",
+                "hover:border-primary hover:shadow-md focus-visible:outline-none",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected
+                  ? "border-transparent ring-2 ring-primary bg-primary/5"
+                  : "border-input",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
               )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+              {/* AI Suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+              {/* Suggested badge - top right */}
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
+                  Suggested
+                </div>
+              )}
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-foreground">
+                  {item.name}
+                </div>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }}
         emptyMessage={
           normalizedSearch
             ? `No scenarios match "${searchTerm?.trim()}".`
