@@ -1,12 +1,15 @@
 -- Materialized View: mv_practice_simulation_status
--- Pre-aggregates simulation status for the Practice page.
+-- Overview aggregation for PRACTICE section - simulation cards showing status.
 --
--- Grain: One row per (profile_id, simulation_id) for practice attempts
--- Purpose: Practice page (same structure as home but for practice)
+-- Grain: One row per (profile_id, simulation_id)
+-- Purpose: Practice overview page - simulation cards showing status
 --
--- Source: Aggregates from mv_chat_facts WHERE attempt_type = 'practice'
+-- Section: PRACTICE
+-- Source: Aggregate from mv_practice_chat_facts
+--
+-- Note: Practice does not use cohort_id in the grain (unlike Home)
 -- ============================================================================
--- Step 1: Drop all indexes (if exists)
+-- Step 1: Drop all indexes on mv_practice_simulation_status materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -24,13 +27,13 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- Step 2: Drop materialized view if exists
+-- Step 2: Drop mv_practice_simulation_status materialized view if it exists
 -- ============================================================================
 
 DROP MATERIALIZED VIEW IF EXISTS mv_practice_simulation_status CASCADE;
 
 -- ============================================================================
--- Step 3: Create Materialized View
+-- Step 3: Create mv_practice_simulation_status Materialized View
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_practice_simulation_status AS
@@ -38,26 +41,25 @@ SELECT
     -- Keys
     profile_id,
     simulation_id,
-    cohort_id,
 
-    -- Pre-aggregated metrics
-    COUNT(*)::int AS attempt_count,
-    COUNT(*) FILTER (WHERE completed = TRUE)::int AS completed_count,
+    -- Aggregated metrics
+    COUNT(DISTINCT attempt_id)::int AS attempt_count,
+    COUNT(DISTINCT attempt_id) FILTER (WHERE completed = TRUE)::int AS completed_count,
     MAX(grade_percent) AS highest_score,
-    BOOL_OR(passed = TRUE) AS has_passed,
+    BOOL_OR(passed) AS has_passed,
     MIN(attempt_created_at) AS first_attempt_at,
     MAX(attempt_created_at) AS last_attempt_at,
 
-    -- Status calculation
+    -- Computed status
     CASE
-        WHEN BOOL_OR(passed = TRUE) THEN 'passed'
-        WHEN COUNT(*) > 0 THEN 'in-progress'
+        WHEN BOOL_OR(passed) = TRUE THEN 'passed'
+        WHEN COUNT(DISTINCT attempt_id) > 0 THEN 'in-progress'
         ELSE 'not-started'
-    END::text AS status
+    END AS status
 
-FROM mv_chat_facts
-WHERE attempt_type = 'practice'
-GROUP BY profile_id, simulation_id, cohort_id
+FROM mv_practice_chat_facts
+WHERE is_archived = FALSE  -- Exclude archived practice attempts
+GROUP BY profile_id, simulation_id
 WITH NO DATA;
 
 -- ============================================================================
@@ -65,37 +67,32 @@ WITH NO DATA;
 -- ============================================================================
 
 CREATE UNIQUE INDEX mv_practice_simulation_status_pk
-    ON mv_practice_simulation_status (profile_id, simulation_id, COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid));
+    ON mv_practice_simulation_status (profile_id, simulation_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
--- Primary access pattern: profile lookup
+-- Primary lookup: profile's simulations
 CREATE INDEX mv_practice_simulation_status_profile_id_idx
     ON mv_practice_simulation_status (profile_id);
 
--- Simulation filter
+-- Secondary lookup: simulation across profiles
 CREATE INDEX mv_practice_simulation_status_simulation_id_idx
     ON mv_practice_simulation_status (simulation_id);
 
--- Cohort filter
-CREATE INDEX mv_practice_simulation_status_cohort_id_idx
-    ON mv_practice_simulation_status (cohort_id)
-    WHERE cohort_id IS NOT NULL;
-
--- Status filter
+-- Status filtering
 CREATE INDEX mv_practice_simulation_status_status_idx
     ON mv_practice_simulation_status (status);
 
--- Profile + status composite
-CREATE INDEX mv_practice_simulation_status_profile_status_idx
-    ON mv_practice_simulation_status (profile_id, status);
+-- Score-based sorting
+CREATE INDEX mv_practice_simulation_status_highest_score_idx
+    ON mv_practice_simulation_status (highest_score DESC NULLS LAST)
+    WHERE highest_score IS NOT NULL;
 
--- Has passed filter
-CREATE INDEX mv_practice_simulation_status_has_passed_idx
-    ON mv_practice_simulation_status (has_passed)
-    WHERE has_passed = TRUE;
+-- Time-based sorting
+CREATE INDEX mv_practice_simulation_status_last_attempt_idx
+    ON mv_practice_simulation_status (last_attempt_at DESC);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

@@ -1,12 +1,14 @@
 -- Materialized View: mv_dashboard_simulation
--- Pre-aggregates simulation/scenario performance metrics for Dashboard.
+-- Simulation/Scenario performance aggregation for DASHBOARD section.
 --
 -- Grain: One row per (simulation_id, scenario_id, cohort_id)
--- Purpose: Dashboard simulation/scenario performance
+-- Purpose: Simulation and scenario performance breakdown
 --
--- Source: Aggregates from mv_chat_facts grouped by simulation + scenario + cohort
+-- Section: DASHBOARD
+-- Source: Aggregate from mv_dashboard_chat_facts
+--
 -- ============================================================================
--- Step 1: Drop all indexes (if exists)
+-- Step 1: Drop all indexes on mv_dashboard_simulation materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -24,13 +26,13 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- Step 2: Drop materialized view if exists
+-- Step 2: Drop mv_dashboard_simulation materialized view if it exists
 -- ============================================================================
 
 DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_simulation CASCADE;
 
 -- ============================================================================
--- Step 3: Create Materialized View
+-- Step 3: Create mv_dashboard_simulation Materialized View
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_dashboard_simulation AS
@@ -41,20 +43,16 @@ SELECT
     cohort_id,
 
     -- Aggregated metrics
-    COUNT(*)::int AS attempt_count,
-    ROUND(AVG(grade_percent), 2) AS avg_score,
-    ROUND(
-        CASE
-            WHEN COUNT(*) > 0
-            THEN (COUNT(*) FILTER (WHERE passed = TRUE)::numeric / COUNT(*)) * 100
-            ELSE 0
-        END,
-    2) AS pass_rate,
-    ROUND(AVG(time_taken))::int AS avg_time_seconds
+    COUNT(DISTINCT attempt_id)::int AS attempt_count,
+    TRUNC(AVG(grade_percent), 2) AS avg_score,
+    TRUNC(
+        (COUNT(*) FILTER (WHERE passed = TRUE)::numeric / NULLIF(COUNT(*), 0)) * 100.0,
+        2
+    ) AS pass_rate,
+    TRUNC(AVG(COALESCE(time_taken, 0)), 0)::int AS avg_time_seconds
 
-FROM mv_chat_facts
-WHERE attempt_type = 'general'
-  AND is_archived = FALSE
+FROM mv_dashboard_chat_facts
+WHERE is_archived = FALSE  -- Exclude archived
 GROUP BY simulation_id, scenario_id, cohort_id
 WITH NO DATA;
 
@@ -63,37 +61,51 @@ WITH NO DATA;
 -- ============================================================================
 
 CREATE UNIQUE INDEX mv_dashboard_simulation_pk
-    ON mv_dashboard_simulation (simulation_id, scenario_id, COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid));
+    ON mv_dashboard_simulation (
+        simulation_id,
+        scenario_id,
+        COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid)
+    );
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
--- Primary access pattern: simulation lookup
+-- Primary lookup: simulation
 CREATE INDEX mv_dashboard_simulation_simulation_id_idx
     ON mv_dashboard_simulation (simulation_id);
 
--- Scenario filter
+-- Scenario filtering
 CREATE INDEX mv_dashboard_simulation_scenario_id_idx
     ON mv_dashboard_simulation (scenario_id);
 
--- Cohort filter
+-- Cohort filtering
 CREATE INDEX mv_dashboard_simulation_cohort_id_idx
     ON mv_dashboard_simulation (cohort_id)
     WHERE cohort_id IS NOT NULL;
 
--- Composite for dashboard queries
+-- Composite: simulation + scenario for breakdown queries
+CREATE INDEX mv_dashboard_simulation_sim_scenario_idx
+    ON mv_dashboard_simulation (simulation_id, scenario_id);
+
+-- Composite: cohort + simulation for admin queries
 CREATE INDEX mv_dashboard_simulation_cohort_simulation_idx
     ON mv_dashboard_simulation (cohort_id, simulation_id)
     WHERE cohort_id IS NOT NULL;
 
--- Pass rate ranking
-CREATE INDEX mv_dashboard_simulation_pass_rate_idx
-    ON mv_dashboard_simulation (pass_rate DESC NULLS LAST);
-
--- Average score ranking
+-- Score-based sorting
 CREATE INDEX mv_dashboard_simulation_avg_score_idx
-    ON mv_dashboard_simulation (avg_score DESC NULLS LAST);
+    ON mv_dashboard_simulation (avg_score DESC NULLS LAST)
+    WHERE avg_score IS NOT NULL;
+
+-- Pass rate sorting
+CREATE INDEX mv_dashboard_simulation_pass_rate_idx
+    ON mv_dashboard_simulation (pass_rate DESC NULLS LAST)
+    WHERE pass_rate IS NOT NULL;
+
+-- Attempt count sorting
+CREATE INDEX mv_dashboard_simulation_attempt_count_idx
+    ON mv_dashboard_simulation (attempt_count DESC);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

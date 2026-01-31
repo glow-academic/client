@@ -1,12 +1,14 @@
 -- Materialized View: mv_dashboard_persona
--- Pre-aggregates persona performance metrics for Dashboard.
+-- Persona performance aggregation for DASHBOARD section.
 --
 -- Grain: One row per (persona_id, simulation_id, cohort_id)
--- Purpose: Dashboard persona performance chart
+-- Purpose: Persona performance charts
 --
--- Source: Aggregates from mv_chat_facts grouped by persona + simulation + cohort
+-- Section: DASHBOARD
+-- Source: Aggregate from mv_dashboard_chat_facts WHERE persona_id IS NOT NULL
+--
 -- ============================================================================
--- Step 1: Drop all indexes (if exists)
+-- Step 1: Drop all indexes on mv_dashboard_persona materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -24,13 +26,13 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- Step 2: Drop materialized view if exists
+-- Step 2: Drop mv_dashboard_persona materialized view if it exists
 -- ============================================================================
 
 DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_persona CASCADE;
 
 -- ============================================================================
--- Step 3: Create Materialized View
+-- Step 3: Create mv_dashboard_persona Materialized View
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_dashboard_persona AS
@@ -42,24 +44,27 @@ SELECT
 
     -- Aggregated metrics
     COUNT(*)::int AS session_count,
-    ROUND(AVG(grade_percent), 2) AS avg_score,
-    ROUND(AVG(num_messages_total), 2) AS avg_messages,
-    -- Average persona response time (avg of array median per chat)
-    ROUND(AVG(
-        CASE
-            WHEN ARRAY_LENGTH(message_time_taken_seconds, 1) > 0
-            THEN (
-                SELECT AVG(v)::numeric
-                FROM unnest(message_time_taken_seconds) AS v
-            )
-            ELSE NULL
-        END
-    ), 2) AS avg_response_time_sec
+    TRUNC(AVG(grade_percent), 2) AS avg_score,
+    TRUNC(
+        (COUNT(*) FILTER (WHERE passed = TRUE)::numeric / NULLIF(COUNT(*), 0)) * 100.0,
+        2
+    ) AS pass_rate,
+    TRUNC(AVG(num_messages_total), 2) AS avg_messages,
+    -- Average response time from message_time_taken_seconds array
+    TRUNC(
+        AVG(
+            CASE
+                WHEN CARDINALITY(message_time_taken_seconds) > 0
+                THEN (SELECT AVG(t)::numeric FROM UNNEST(message_time_taken_seconds) AS t)
+                ELSE NULL
+            END
+        ),
+        2
+    ) AS avg_response_time_sec
 
-FROM mv_chat_facts
-WHERE attempt_type = 'general'
-  AND is_archived = FALSE
-  AND persona_id IS NOT NULL
+FROM mv_dashboard_chat_facts
+WHERE persona_id IS NOT NULL
+  AND is_archived = FALSE  -- Exclude archived
 GROUP BY persona_id, simulation_id, cohort_id
 WITH NO DATA;
 
@@ -68,33 +73,51 @@ WITH NO DATA;
 -- ============================================================================
 
 CREATE UNIQUE INDEX mv_dashboard_persona_pk
-    ON mv_dashboard_persona (persona_id, simulation_id, COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid));
+    ON mv_dashboard_persona (
+        persona_id,
+        simulation_id,
+        COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid)
+    );
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
--- Primary access pattern: persona lookup
+-- Primary lookup: persona
 CREATE INDEX mv_dashboard_persona_persona_id_idx
     ON mv_dashboard_persona (persona_id);
 
--- Simulation filter
+-- Simulation filtering
 CREATE INDEX mv_dashboard_persona_simulation_id_idx
     ON mv_dashboard_persona (simulation_id);
 
--- Cohort filter
+-- Cohort filtering
 CREATE INDEX mv_dashboard_persona_cohort_id_idx
     ON mv_dashboard_persona (cohort_id)
     WHERE cohort_id IS NOT NULL;
 
--- Composite for dashboard queries
+-- Composite: simulation + persona for simulation-scoped queries
+CREATE INDEX mv_dashboard_persona_simulation_persona_idx
+    ON mv_dashboard_persona (simulation_id, persona_id);
+
+-- Composite: cohort + simulation for admin queries
 CREATE INDEX mv_dashboard_persona_cohort_simulation_idx
     ON mv_dashboard_persona (cohort_id, simulation_id)
     WHERE cohort_id IS NOT NULL;
 
--- Score ranking
+-- Score-based sorting
 CREATE INDEX mv_dashboard_persona_avg_score_idx
-    ON mv_dashboard_persona (avg_score DESC NULLS LAST);
+    ON mv_dashboard_persona (avg_score DESC NULLS LAST)
+    WHERE avg_score IS NOT NULL;
+
+-- Pass rate sorting
+CREATE INDEX mv_dashboard_persona_pass_rate_idx
+    ON mv_dashboard_persona (pass_rate DESC NULLS LAST)
+    WHERE pass_rate IS NOT NULL;
+
+-- Session count sorting
+CREATE INDEX mv_dashboard_persona_session_count_idx
+    ON mv_dashboard_persona (session_count DESC);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

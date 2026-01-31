@@ -1,13 +1,14 @@
 -- Materialized View: mv_dashboard_rubric
--- Pre-aggregates rubric/skill performance metrics for Dashboard.
+-- Skill/Rubric performance aggregation for DASHBOARD section.
 --
 -- Grain: One row per (rubric_id, cohort_id)
--- Purpose: Dashboard skill performance / rubric heatmap
+-- Purpose: Rubric heatmap, skill performance
 --
--- Source: Aggregates from mv_chat_facts grouped by rubric + cohort
--- Note: For standard group breakdown, join at query time via rubrics_resource.standard_group_ids
+-- Section: DASHBOARD
+-- Source: Aggregate from mv_dashboard_chat_facts WHERE rubric_id IS NOT NULL
+--
 -- ============================================================================
--- Step 1: Drop all indexes (if exists)
+-- Step 1: Drop all indexes on mv_dashboard_rubric materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -25,13 +26,13 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- Step 2: Drop materialized view if exists
+-- Step 2: Drop mv_dashboard_rubric materialized view if it exists
 -- ============================================================================
 
 DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_rubric CASCADE;
 
 -- ============================================================================
--- Step 3: Create Materialized View
+-- Step 3: Create mv_dashboard_rubric Materialized View
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_dashboard_rubric AS
@@ -41,15 +42,14 @@ SELECT
     cohort_id,
 
     -- Aggregated metrics
-    COUNT(*)::int AS attempt_count,
-    ROUND(AVG(grade_percent), 2) AS avg_score,
+    COUNT(DISTINCT attempt_id)::int AS attempt_count,
+    TRUNC(AVG(grade_percent), 2) AS avg_score,
     SUM(rubric_total_points)::int AS total_points,
     SUM(rubric_pass_points)::int AS pass_points
 
-FROM mv_chat_facts
-WHERE attempt_type = 'general'
-  AND is_archived = FALSE
-  AND rubric_id IS NOT NULL
+FROM mv_dashboard_chat_facts
+WHERE rubric_id IS NOT NULL
+  AND is_archived = FALSE  -- Exclude archived
 GROUP BY rubric_id, cohort_id
 WITH NO DATA;
 
@@ -58,24 +58,32 @@ WITH NO DATA;
 -- ============================================================================
 
 CREATE UNIQUE INDEX mv_dashboard_rubric_pk
-    ON mv_dashboard_rubric (rubric_id, COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid));
+    ON mv_dashboard_rubric (
+        rubric_id,
+        COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid)
+    );
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
--- Primary access pattern: rubric lookup
+-- Primary lookup: rubric
 CREATE INDEX mv_dashboard_rubric_rubric_id_idx
     ON mv_dashboard_rubric (rubric_id);
 
--- Cohort filter
+-- Cohort filtering
 CREATE INDEX mv_dashboard_rubric_cohort_id_idx
     ON mv_dashboard_rubric (cohort_id)
     WHERE cohort_id IS NOT NULL;
 
--- Average score ranking
+-- Score-based sorting for heatmaps
 CREATE INDEX mv_dashboard_rubric_avg_score_idx
-    ON mv_dashboard_rubric (avg_score DESC NULLS LAST);
+    ON mv_dashboard_rubric (avg_score DESC NULLS LAST)
+    WHERE avg_score IS NOT NULL;
+
+-- Attempt count sorting
+CREATE INDEX mv_dashboard_rubric_attempt_count_idx
+    ON mv_dashboard_rubric (attempt_count DESC);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data
