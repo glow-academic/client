@@ -194,7 +194,7 @@ export function ScenarioTimeLimits({
 
   const createTimeLimit = useCallback(
     async (scenarioId: string, value: number) => {
-      if (!createScenarioTimeLimitsAction || !agent_id || !group_id) {
+      if (!createScenarioTimeLimitsAction || !group_id) {
         return;
       }
       const key = `${scenarioId}:${value}`;
@@ -209,7 +209,7 @@ export function ScenarioTimeLimits({
       try {
         const result = await createScenarioTimeLimitsAction({
           body: {
-            agent_id: agent_id,
+            agent_id: agent_id ?? null,  // Pass null for user-initiated (non-AI) selections
             group_id: group_id,
             scenario_id: artifactScenarioId,
             time_limit_seconds: value,

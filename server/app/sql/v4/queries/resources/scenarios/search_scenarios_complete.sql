@@ -40,6 +40,7 @@ WITH params AS (
         COALESCE(exclude_ids, ARRAY[]::uuid[]) AS exclude_ids
 ),
 -- All active scenarios with search filtering
+-- Joins through scenario_artifact to ensure deleted scenarios don't appear (like personas pattern)
 all_scenarios AS (
     SELECT
         s.id as scenario_id,
@@ -54,6 +55,10 @@ all_scenarios AS (
         s.templates_enabled,
         s.created_at as updated_at
     FROM scenarios_resource s
+    -- Join to scenario_scenarios_junction to get the artifact link
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id AND ssj.active = true
+    -- Join to scenario_artifact to ensure it exists (not deleted)
+    JOIN scenario_artifact sa ON sa.id = ssj.scenario_id
     CROSS JOIN params p
     -- Only include active scenarios
     WHERE s.active = true

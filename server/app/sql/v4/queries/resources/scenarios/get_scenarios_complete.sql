@@ -58,6 +58,7 @@ AS $$
 WITH params AS (
     SELECT ids AS scenario_ids
 ),
+-- Joins through scenario_artifact to ensure deleted scenarios don't appear (like personas pattern)
 scenario_data AS (
     SELECT
         s.id as scenario_id,
@@ -73,6 +74,10 @@ scenario_data AS (
     FROM params p
     CROSS JOIN LATERAL unnest(p.scenario_ids) AS sid
     JOIN scenarios_resource s ON s.id = sid
+    -- Join to scenario_scenarios_junction to get the artifact link
+    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id AND ssj.active = true
+    -- Join to scenario_artifact to ensure it exists (not deleted)
+    JOIN scenario_artifact sa ON sa.id = ssj.scenario_id
 )
 SELECT
     COALESCE(

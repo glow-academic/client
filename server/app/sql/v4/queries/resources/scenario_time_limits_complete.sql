@@ -48,6 +48,47 @@ BEGIN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_time_limits_v4.scenario_id;
     END IF;
 
+    -- Check if scenario_time_limits already exists (match on scenario_id)
+    SELECT r.id INTO v_resource_id
+    FROM scenario_time_limits_resource r
+    WHERE r.scenario_id = api_create_scenario_time_limits_v4.scenario_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        -- Update existing record with new time limit
+        UPDATE scenario_time_limits_resource
+        SET time_limit_seconds = api_create_scenario_time_limits_v4.time_limit_seconds,
+            mcp = api_create_scenario_time_limits_v4.mcp
+        WHERE id = v_resource_id;
+
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
+    -- When agent_id is NULL, skip tool lookup and insert directly (user-initiated, not agent-generated)
+    IF api_create_scenario_time_limits_v4.agent_id IS NULL THEN
+        INSERT INTO scenario_time_limits_resource (
+            scenario_id,
+            time_limit_seconds,
+            generated,
+            mcp,
+            active,
+            created_at
+        )
+        VALUES (
+            api_create_scenario_time_limits_v4.scenario_id,
+            api_create_scenario_time_limits_v4.time_limit_seconds,
+            false,  -- Not AI-generated when no agent
+            mcp,
+            true,
+            NOW()
+        )
+        RETURNING id INTO v_resource_id;
+
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     -- Lookup tool_id from agent_tools_junction + resource_tools_relation
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
@@ -61,7 +102,7 @@ BEGIN
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1;
-    
+
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource scenario_time_limits', agent_id;
@@ -70,24 +111,12 @@ BEGIN
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
-            SELECT 1 FROM agent_flags_junction 
-            WHERE agent_id = api_create_scenario_time_limits_v4.agent_id 
-               
+            SELECT 1 FROM agent_flags_junction
+            WHERE agent_id = api_create_scenario_time_limits_v4.agent_id
               AND value = true
         ) THEN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
-    END IF;
-
-    -- Check if scenario_time_limits already exists (match on scenario_id)
-    SELECT r.id INTO v_resource_id
-    FROM scenario_time_limits_resource r
-    WHERE r.scenario_id = api_create_scenario_time_limits_v4.scenario_id
-    LIMIT 1;
-
-    IF v_resource_id IS NOT NULL THEN
-        RETURN QUERY SELECT v_resource_id;
-        RETURN;
     END IF;
 
     

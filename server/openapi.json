@@ -1363,7 +1363,7 @@
           "simulations"
         ],
         "summary": "Get Simulation List",
-        "description": "Get simulations list with Python-computed permissions.",
+        "description": "Get simulations list with SQL-computed permissions.",
         "operationId": "get_simulation_list_api_v4_simulations_list_post",
         "parameters": [
           {

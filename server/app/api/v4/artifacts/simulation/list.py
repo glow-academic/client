@@ -1,19 +1,13 @@
 """Simulations list endpoint - v4 API following DHH principles.
 
-Uses Python-computed permissions for each simulation item.
+Permissions (can_edit, can_delete, can_duplicate) are computed in SQL.
 """
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.simulation.permissions import (
-    compute_can_delete,
-    compute_can_duplicate,
-    compute_can_edit,
-)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -51,7 +45,7 @@ async def get_simulation_list(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSimulationsListApiResponse:
-    """Get simulations list with Python-computed permissions."""
+    """Get simulations list with SQL-computed permissions."""
     tags = ["simulations"]
 
     # Check for cache bypass header (for testing)
@@ -101,41 +95,9 @@ async def get_simulation_list(
         if result.actor_name:
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Extract user context for Python permission computation
-        user_role = getattr(result, "user_role", None)
-
-        # Process simulations with Python-computed permissions
-        raw_simulations = result.simulations or []
-        simulations_with_permissions = []
-
-        for sim in raw_simulations:
-            # Get simulation-specific context
-            sim_department_ids_raw = getattr(sim, "department_ids", None) or []
-            # Convert string UUIDs to UUID objects if needed
-            sim_department_ids = [
-                UUID(d) if isinstance(d, str) else d for d in sim_department_ids_raw
-            ]
-            usage_count = getattr(sim, "usage_count", 0) or 0
-
-            # Compute permissions in Python
-            can_edit = compute_can_edit(user_role, sim_department_ids, usage_count)
-            can_delete = compute_can_delete(user_role, sim_department_ids, usage_count)
-            can_duplicate = compute_can_duplicate(user_role)
-
-            # Build simulation with permissions
-            sim_dict = sim.model_dump() if hasattr(sim, "model_dump") else dict(sim)
-            sim_dict["can_edit"] = can_edit
-            sim_dict["can_delete"] = can_delete
-            sim_dict["can_duplicate"] = can_duplicate
-
-            simulations_with_permissions.append(sim_dict)
-
-        # Build result dict with updated simulations
-        result_dict = result.model_dump()
-        result_dict["simulations"] = simulations_with_permissions
-
-        # Convert to API response
-        api_response = GetSimulationsListApiResponse.model_validate(result_dict)
+        # Permissions (can_edit, can_delete, can_duplicate) are computed in SQL
+        # Convert to API response directly
+        api_response = GetSimulationsListApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

@@ -221,7 +221,7 @@ export function ScenarioFlags({
 
   const createScenarioFlag = useCallback(
     async (scenarioId: string, flagId: string) => {
-      if (!createScenarioFlagsAction || !agent_id || !group_id) {
+      if (!createScenarioFlagsAction || !group_id) {
         return;
       }
       const key = `${scenarioId}:${flagId}`;
@@ -236,7 +236,7 @@ export function ScenarioFlags({
       try {
         const result = await createScenarioFlagsAction({
           body: {
-            agent_id: agent_id,
+            agent_id: agent_id ?? null,  // Pass null for user-initiated (non-AI) selections
             group_id: group_id,
             scenario_id: artifactScenarioId,
             flag_id: flagId,

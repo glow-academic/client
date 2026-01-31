@@ -317,7 +317,7 @@ export interface paths {
         put?: never;
         /**
          * Get Simulation List
-         * @description Get simulations list with Python-computed permissions.
+         * @description Get simulations list with SQL-computed permissions.
          */
         post: operations["get_simulation_list_api_v4_simulations_list_post"];
         delete?: never;

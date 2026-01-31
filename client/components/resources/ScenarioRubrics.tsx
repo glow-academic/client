@@ -218,7 +218,7 @@ export function ScenarioRubrics({
 
   const createScenarioRubric = useCallback(
     async (scenarioId: string, rubricId: string) => {
-      if (!createScenarioRubricsAction || !agent_id || !group_id) {
+      if (!createScenarioRubricsAction || !group_id) {
         return;
       }
       const key = `${scenarioId}:${rubricId}`;
@@ -233,7 +233,7 @@ export function ScenarioRubrics({
       try {
         const result = await createScenarioRubricsAction({
           body: {
-            agent_id: agent_id,
+            agent_id: agent_id ?? null,  // Pass null for user-initiated (non-AI) selections
             group_id: group_id,
             scenario_id: artifactScenarioId,
             rubric_id: rubricId,

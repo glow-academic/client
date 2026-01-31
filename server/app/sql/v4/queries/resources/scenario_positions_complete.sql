@@ -54,18 +54,52 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = api_create_scenario_positions_v4.scenario_id) THEN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_positions_v4.scenario_id;
     END IF;
-    
+
+    -- Check if scenario_positions already exists (match on scenario_id + value)
+    SELECT r.id INTO v_resource_id
+    FROM scenario_positions_resource r
+    WHERE r.scenario_id = api_create_scenario_positions_v4.scenario_id
+      AND r.value = api_create_scenario_positions_v4.value
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
+    -- When agent_id is NULL, skip tool lookup and insert directly (user-initiated, not agent-generated)
+    IF api_create_scenario_positions_v4.agent_id IS NULL THEN
+        INSERT INTO scenario_positions_resource (
+            scenario_id,
+            value,
+            generated,
+            mcp,
+            created_at
+        )
+        VALUES (
+            api_create_scenario_positions_v4.scenario_id,
+            api_create_scenario_positions_v4.value,
+            false,  -- Not AI-generated when no agent
+            mcp,
+            NOW()
+        )
+        RETURNING id INTO v_resource_id;
+
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     -- Validate that simulation_scenarios_junction junction exists (scenario must be linked to simulation first)
     IF NOT EXISTS (
-        SELECT 1 FROM simulation_scenarios_junction 
-        WHERE simulation_id = api_create_scenario_positions_v4.simulation_id 
+        SELECT 1 FROM simulation_scenarios_junction
+        WHERE simulation_id = api_create_scenario_positions_v4.simulation_id
           AND scenario_id = api_create_scenario_positions_v4.scenario_id
     ) THEN
-        RAISE EXCEPTION 'Scenario % must be linked to simulation % before setting position', 
-            api_create_scenario_positions_v4.scenario_id, 
+        RAISE EXCEPTION 'Scenario % must be linked to simulation % before setting position',
+            api_create_scenario_positions_v4.scenario_id,
             api_create_scenario_positions_v4.simulation_id;
     END IF;
-    
+
     -- Lookup tool_id from agent_tools_junction + resource_tools_relation
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
@@ -79,34 +113,21 @@ BEGIN
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1;
-    
+
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource scenario_positions', agent_id;
     END IF;
-    
+
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
-            SELECT 1 FROM agent_flags_junction 
-            WHERE agent_id = api_create_scenario_positions_v4.agent_id 
-               
+            SELECT 1 FROM agent_flags_junction
+            WHERE agent_id = api_create_scenario_positions_v4.agent_id
               AND value = true
         ) THEN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
-    END IF;
-
-    -- Check if scenario_positions already exists (match on simulation_id + scenario_id)
-    SELECT r.id INTO v_resource_id
-    FROM scenario_positions_resource r
-    WHERE r.simulation_id = api_create_scenario_positions_v4.simulation_id
-      AND r.scenario_id = api_create_scenario_positions_v4.scenario_id
-    LIMIT 1;
-
-    IF v_resource_id IS NOT NULL THEN
-        RETURN QUERY SELECT v_resource_id;
-        RETURN;
     END IF;
 
     

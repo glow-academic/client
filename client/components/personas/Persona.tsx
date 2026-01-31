@@ -2813,6 +2813,9 @@ function PersonaComponent({
       isAutosaveEnabled,
       registerFlushCallbacks,
       createParameterFieldsAction,
+      // AI form data for accept/reject functionality
+      aiFormData,
+      clearAiResource,
     ]
   );
 
