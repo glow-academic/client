@@ -1317,6 +1317,13 @@ async def compile_sql_types(
         if tests_sql_dir.exists():
             sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
 
+        # TEMPORARY: Exclude views/NEW/ directory (work in progress MVs)
+        # TODO: Remove this exclusion once the NEW MVs are ready
+        sql_file_paths = [
+            f for f in sql_file_paths
+            if "/views/NEW/" not in str(f)
+        ]
+
         if not sql_file_paths:
             return (
                 True,
@@ -1374,6 +1381,11 @@ async def compile_sql_types(
                 tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
                 if tests_sql_dir.exists():
                     sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
+                # TEMPORARY: Exclude views/NEW/ directory (work in progress MVs)
+                sql_file_paths = [
+                    f for f in sql_file_paths
+                    if "/views/NEW/" not in str(f)
+                ]
                 if not sql_file_paths:
                     return (
                         True,

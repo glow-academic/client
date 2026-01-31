@@ -4334,6 +4334,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/analytics/NEW/home/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Home Get
+         * @description Get home overview with simulation cards.
+         *
+         *     Uses SQL function that queries mv_home_simulation_status with JOINs
+         *     to _resource tables for metadata.
+         */
+        post: operations["home_get_api_v4_analytics_NEW_home_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/analytics/NEW/home/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Home List
+         * @description Get paginated home history with attempts.
+         *
+         *     Uses SQL function that queries mv_home_attempt_history with JOINs
+         *     to _resource tables for metadata.
+         */
+        post: operations["home_list_api_v4_analytics_NEW_home_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/analytics/NEW/home/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Home Refresh
+         * @description Refresh all home section materialized views.
+         *
+         *     Uses SQL function that refreshes MVs in dependency order:
+         *     1. mv_home_chat_facts (base fact table)
+         *     2. mv_home_simulation_status (depends on chat_facts)
+         *     3. mv_home_attempt_history (depends on chat_facts)
+         *     4. mv_home_certificate_status (depends on chat_facts)
+         */
+        post: operations["home_refresh_api_v4_analytics_NEW_home_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/attempts/simulation/get": {
         parameters: {
             query?: never;
@@ -8731,6 +8803,58 @@ export interface components {
             /** Scenario Options Junction */
             scenario_options_junction?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
         };
+        /** GetHomeHistoryNewApiRequest */
+        GetHomeHistoryNewApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Search */
+            search?: string | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
+        };
+        /** GetHomeHistoryNewApiResponse */
+        GetHomeHistoryNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["QGetHomeHistoryNewV4Attempt"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
+        };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
             /** Start Date */
@@ -8758,6 +8882,32 @@ export interface components {
             standards?: components["schemas"]["QGetHomeOverviewV4Standard"][] | null;
             /** Simulations */
             simulations?: components["schemas"]["QGetHomeOverviewV4Simulation"][] | null;
+        };
+        /** GetHomeOverviewNewApiRequest */
+        GetHomeOverviewNewApiRequest: {
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /** GetHomeOverviewNewApiResponse */
+        GetHomeOverviewNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Mode */
+            mode?: string | null;
+            /** Items */
+            items?: components["schemas"]["QGetHomeOverviewNewV4SimulationCard"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetHomeOverviewNewV4StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetHomeOverviewNewV4Standard"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetHomeOverviewNewV4Simulation"][] | null;
         };
         /** GetIconsApiRequest */
         GetIconsApiRequest: {
@@ -15577,6 +15727,56 @@ export interface components {
             /** Sample Count */
             sample_count: number | null;
         };
+        /** QGetHomeHistoryNewV4Attempt */
+        QGetHomeHistoryNewV4Attempt: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Cohort Name */
+            cohort_name: string | null;
+            /** Attempt Created At */
+            attempt_created_at: string | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Num Chats */
+            num_chats: number | null;
+            /** Num Chats Completed */
+            num_chats_completed: number | null;
+            /** Num Scenarios */
+            num_scenarios: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed: number | null;
+            /** Score Percent */
+            score_percent: number | null;
+            /** Has Passed */
+            has_passed: boolean | null;
+            /** Total Time Seconds */
+            total_time_seconds: number | null;
+            /** Score Status */
+            score_status: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+        };
+        /** QGetHomeHistoryNewV4FilterOption */
+        QGetHomeHistoryNewV4FilterOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+            /** Count */
+            count: number | null;
+        };
         /** QGetHomeHistoryV4AttemptHistoryRow */
         QGetHomeHistoryV4AttemptHistoryRow: {
             /** Attempt Id */
@@ -15636,6 +15836,78 @@ export interface components {
             label: string | null;
             /** Count */
             count: number | null;
+        };
+        /** QGetHomeOverviewNewV4Simulation */
+        QGetHomeOverviewNewV4Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetHomeOverviewNewV4SimulationCard */
+        QGetHomeOverviewNewV4SimulationCard: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Simulation Name */
+            simulation_name: string | null;
+            /** Simulation Description */
+            simulation_description: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Color */
+            color: string | null;
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Cohort Name */
+            cohort_name: string | null;
+            /** Attempt Count */
+            attempt_count: number | null;
+            /** Completed Count */
+            completed_count: number | null;
+            /** Highest Score */
+            highest_score: number | null;
+            /** Has Passed */
+            has_passed: boolean | null;
+            /** Status */
+            status: string | null;
+            /** First Attempt At */
+            first_attempt_at: string | null;
+            /** Last Attempt At */
+            last_attempt_at: string | null;
+            /** Pass Threshold */
+            pass_threshold: number | null;
+        };
+        /** QGetHomeOverviewNewV4Standard */
+        QGetHomeOverviewNewV4Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetHomeOverviewNewV4StandardGroup */
+        QGetHomeOverviewNewV4StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
         };
         /** QGetHomeOverviewV4Simulation */
         QGetHomeOverviewV4Simulation: {
@@ -20475,6 +20747,25 @@ export interface components {
         QuestionsApiResponse: {
             /** Question Id */
             question_id?: string | null;
+        };
+        /** RefreshHomeMvsNewApiRequest */
+        RefreshHomeMvsNewApiRequest: {
+            /**
+             * Concurrent
+             * @default true
+             */
+            concurrent: boolean | null;
+        };
+        /** RefreshHomeMvsNewApiResponse */
+        RefreshHomeMvsNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Refreshed Mvs */
+            refreshed_mvs?: string[] | null;
+            /** Duration Ms */
+            duration_ms?: number | null;
         };
         /** RefreshViewApiRequest */
         RefreshViewApiRequest: {
@@ -30522,6 +30813,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshViewApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    home_get_api_v4_analytics_NEW_home_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetHomeOverviewNewApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHomeOverviewNewApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    home_list_api_v4_analytics_NEW_home_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetHomeHistoryNewApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHomeHistoryNewApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    home_refresh_api_v4_analytics_NEW_home_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshHomeMvsNewApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshHomeMvsNewApiResponse"];
                 };
             };
             /** @description Validation Error */

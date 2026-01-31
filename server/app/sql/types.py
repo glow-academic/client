@@ -888,6 +888,241 @@ class ValidateAgentResourceProgressApiResponse(BaseModel):
 
 
 
+# Generated from: get_home_history_new
+
+class GetHomeHistoryNewSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    infinite_mode: bool | None = None
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.infinite_mode,
+            self.search,
+            self.sort_by,
+            self.sort_order,
+            self.page,
+            self.page_size,
+        )
+
+class QGetHomeHistoryNewV4Attempt(BaseModel):
+
+    attempt_id: UUID | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_id: UUID | None
+    simulation_name: str | None
+    cohort_id: UUID | None
+    cohort_name: str | None
+    attempt_created_at: datetime | None
+    infinite_mode: bool | None
+    num_chats: int | None
+    num_chats_completed: int | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    score_percent: float | None
+    has_passed: bool | None
+    total_time_seconds: int | None
+    score_status: str | None
+    scenario_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+
+
+
+
+class QGetHomeHistoryNewV4FilterOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetHomeHistoryNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetHomeHistoryNewV4Attempt] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    simulation_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
+    scenario_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
+
+class GetHomeHistoryNewApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    infinite_mode: bool | None = None
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+class GetHomeHistoryNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetHomeHistoryNewV4Attempt] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+    simulation_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
+    scenario_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
+
+
+
+# Generated from: get_home_overview_new
+
+class GetHomeOverviewNewSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+        )
+
+class QGetHomeOverviewNewV4Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[UUID] | None
+
+
+
+
+class QGetHomeOverviewNewV4SimulationCard(BaseModel):
+
+    simulation_id: UUID | None
+    simulation_name: str | None
+    simulation_description: str | None
+    icon: str | None
+    color: str | None
+    cohort_id: UUID | None
+    cohort_name: str | None
+    attempt_count: int | None
+    completed_count: int | None
+    highest_score: float | None
+    has_passed: bool | None
+    status: str | None
+    first_attempt_at: datetime | None
+    last_attempt_at: datetime | None
+    pass_threshold: float | None
+
+
+
+
+class QGetHomeOverviewNewV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetHomeOverviewNewV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetHomeOverviewNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    items: list[QGetHomeOverviewNewV4SimulationCard] | None = None
+    standard_groups: list[QGetHomeOverviewNewV4StandardGroup] | None = None
+    standards: list[QGetHomeOverviewNewV4Standard] | None = None
+    simulations: list[QGetHomeOverviewNewV4Simulation] | None = None
+
+class GetHomeOverviewNewApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+
+class GetHomeOverviewNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    mode: str | None = None
+    items: list[QGetHomeOverviewNewV4SimulationCard] | None = None
+    standard_groups: list[QGetHomeOverviewNewV4StandardGroup] | None = None
+    standards: list[QGetHomeOverviewNewV4Standard] | None = None
+    simulations: list[QGetHomeOverviewNewV4Simulation] | None = None
+
+
+
+# Generated from: refresh_home_mvs_new
+
+class RefreshHomeMvsNewSqlParams(BaseModel):
+
+    profile_id: UUID
+    concurrent: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.concurrent,
+        )
+
+class RefreshHomeMvsNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    refreshed_mvs: list[str] | None = None
+    duration_ms: int | None = None
+
+class RefreshHomeMvsNewApiRequest(BaseModel):
+
+    concurrent: bool | None = True
+
+class RefreshHomeMvsNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    success: bool | None = None
+    refreshed_mvs: list[str] | None = None
+    duration_ms: int | None = None
+
+
+
 # Generated from: refresh_mv_all
 
 class RefreshMvAllSqlParams(BaseModel):
@@ -24625,6 +24860,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateAgentResourceProgressApiRequest",
         "ValidateAgentResourceProgressApiResponse",
     ),
+    "app/sql/v4/queries/analytics/NEW/home/get_home_history_new_complete.sql": (
+        "GetHomeHistoryNewSqlParams",
+        "GetHomeHistoryNewSqlRow",
+        "GetHomeHistoryNewApiRequest",
+        "GetHomeHistoryNewApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/NEW/home/get_home_overview_new_complete.sql": (
+        "GetHomeOverviewNewSqlParams",
+        "GetHomeOverviewNewSqlRow",
+        "GetHomeOverviewNewApiRequest",
+        "GetHomeOverviewNewApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/NEW/home/refresh_home_mvs_new_complete.sql": (
+        "RefreshHomeMvsNewSqlParams",
+        "RefreshHomeMvsNewSqlRow",
+        "RefreshHomeMvsNewApiRequest",
+        "RefreshHomeMvsNewApiResponse",
+    ),
     "app/sql/v4/queries/analytics/refresh_mv_all_complete.sql": (
         "RefreshMvAllSqlParams",
         "RefreshMvAllSqlRow",
@@ -27240,6 +27493,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/agents/validate_agent_resource_progress_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_history_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_overview_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/home/refresh_home_mvs_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload

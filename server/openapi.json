@@ -20537,6 +20537,327 @@
         ]
       }
     },
+    "/api/v4/analytics/NEW/home/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ],
+        "summary": "Home Get",
+        "description": "Get home overview with simulation cards.\n\nUses SQL function that queries mv_home_simulation_status with JOINs\nto _resource tables for metadata.",
+        "operationId": "home_get_api_v4_analytics_NEW_home_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHomeOverviewNewApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHomeOverviewNewApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/analytics/NEW/home/list": {
+      "post": {
+        "tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ],
+        "summary": "Home List",
+        "description": "Get paginated home history with attempts.\n\nUses SQL function that queries mv_home_attempt_history with JOINs\nto _resource tables for metadata.",
+        "operationId": "home_list_api_v4_analytics_NEW_home_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHomeHistoryNewApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHomeHistoryNewApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/analytics/NEW/home/refresh": {
+      "post": {
+        "tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ],
+        "summary": "Home Refresh",
+        "description": "Refresh all home section materialized views.\n\nUses SQL function that refreshes MVs in dependency order:\n1. mv_home_chat_facts (base fact table)\n2. mv_home_simulation_status (depends on chat_facts)\n3. mv_home_attempt_history (depends on chat_facts)\n4. mv_home_certificate_status (depends on chat_facts)",
+        "operationId": "home_refresh_api_v4_analytics_NEW_home_refresh_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshHomeMvsNewApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshHomeMvsNewApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
+      }
+    },
     "/api/v4/attempts/simulation/get": {
       "post": {
         "tags": [
@@ -38233,6 +38554,255 @@
         "type": "object",
         "title": "GetHomeHistoryApiResponse"
       },
+      "GetHomeHistoryNewApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetHomeHistoryNewApiRequest"
+      },
+      "GetHomeHistoryNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeHistoryNewV4Attempt"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeHistoryNewV4FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeHistoryNewV4FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          }
+        },
+        "type": "object",
+        "title": "GetHomeHistoryNewApiResponse"
+      },
       "GetHomeOverviewApiRequest": {
         "properties": {
           "start_date": {
@@ -38375,6 +38945,138 @@
         },
         "type": "object",
         "title": "GetHomeOverviewApiResponse"
+      },
+      "GetHomeOverviewNewApiRequest": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetHomeOverviewNewApiRequest"
+      },
+      "GetHomeOverviewNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeOverviewNewV4SimulationCard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeOverviewNewV4StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeOverviewNewV4Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetHomeOverviewNewV4Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          }
+        },
+        "type": "object",
+        "title": "GetHomeOverviewNewApiResponse"
       },
       "GetIconsApiRequest": {
         "properties": {
@@ -72676,6 +73378,299 @@
         ],
         "title": "QGetHealthListV4Metric"
       },
+      "QGetHomeHistoryNewV4Attempt": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "cohort_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Name"
+          },
+          "attempt_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Created At"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "num_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Chats"
+          },
+          "num_chats_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Chats Completed"
+          },
+          "num_scenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios"
+          },
+          "num_scenarios_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios Completed"
+          },
+          "score_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Percent"
+          },
+          "has_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Passed"
+          },
+          "total_time_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Time Seconds"
+          },
+          "score_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Status"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "profile_id",
+          "profile_name",
+          "simulation_id",
+          "simulation_name",
+          "cohort_id",
+          "cohort_name",
+          "attempt_created_at",
+          "infinite_mode",
+          "num_chats",
+          "num_chats_completed",
+          "num_scenarios",
+          "num_scenarios_completed",
+          "score_percent",
+          "has_passed",
+          "total_time_seconds",
+          "score_status",
+          "scenario_ids",
+          "persona_ids"
+        ],
+        "title": "QGetHomeHistoryNewV4Attempt"
+      },
+      "QGetHomeHistoryNewV4FilterOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "QGetHomeHistoryNewV4FilterOption"
+      },
       "QGetHomeHistoryV4AttemptHistoryRow": {
         "properties": {
           "attempt_id": {
@@ -73039,6 +74034,410 @@
           "count"
         ],
         "title": "QGetHomeHistoryV4Option"
+      },
+      "QGetHomeOverviewNewV4Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "time_limit",
+          "department_ids"
+        ],
+        "title": "QGetHomeOverviewNewV4Simulation"
+      },
+      "QGetHomeOverviewNewV4SimulationCard": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "simulation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Description"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "cohort_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Name"
+          },
+          "attempt_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Count"
+          },
+          "completed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Count"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "has_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Passed"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "first_attempt_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Attempt At"
+          },
+          "last_attempt_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attempt At"
+          },
+          "pass_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Threshold"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "simulation_name",
+          "simulation_description",
+          "icon",
+          "color",
+          "cohort_id",
+          "cohort_name",
+          "attempt_count",
+          "completed_count",
+          "highest_score",
+          "has_passed",
+          "status",
+          "first_attempt_at",
+          "last_attempt_at",
+          "pass_threshold"
+        ],
+        "title": "QGetHomeOverviewNewV4SimulationCard"
+      },
+      "QGetHomeOverviewNewV4Standard": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "standard_group_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetHomeOverviewNewV4Standard"
+      },
+      "QGetHomeOverviewNewV4StandardGroup": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points"
+        ],
+        "title": "QGetHomeOverviewNewV4StandardGroup"
       },
       "QGetHomeOverviewV4Simulation": {
         "properties": {
@@ -99664,6 +101063,77 @@
         },
         "type": "object",
         "title": "QuestionsApiResponse"
+      },
+      "RefreshHomeMvsNewApiRequest": {
+        "properties": {
+          "concurrent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concurrent",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "RefreshHomeMvsNewApiRequest"
+      },
+      "RefreshHomeMvsNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "refreshed_mvs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refreshed Mvs"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "title": "RefreshHomeMvsNewApiResponse"
       },
       "RefreshViewApiRequest": {
         "properties": {
