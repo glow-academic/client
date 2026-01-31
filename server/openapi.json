@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema",
+    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -96,7 +96,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/list": {
@@ -189,7 +193,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/save": {
@@ -282,7 +290,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/duplicate": {
@@ -375,7 +387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/delete": {
@@ -468,7 +484,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/draft": {
@@ -561,7 +581,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/docs": {
@@ -646,7 +670,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/scenarios/get": {
@@ -739,7 +767,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/list": {
@@ -832,7 +864,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/save": {
@@ -925,7 +961,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/duplicate": {
@@ -1018,7 +1058,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/delete": {
@@ -1111,7 +1155,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/draft": {
@@ -1204,7 +1252,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/simulations/get": {
@@ -1297,7 +1349,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/list": {
@@ -1390,7 +1446,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/save": {
@@ -1483,7 +1543,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/duplicate": {
@@ -1576,7 +1640,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/delete": {
@@ -1669,7 +1737,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/draft": {
@@ -1762,7 +1834,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/documents/list": {
@@ -1855,7 +1931,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/get": {
@@ -1948,7 +2028,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/save": {
@@ -2041,7 +2125,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/duplicate": {
@@ -2134,7 +2222,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/delete": {
@@ -2227,7 +2319,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/draft": {
@@ -2320,7 +2416,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/departments/get": {
@@ -2413,7 +2513,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/list": {
@@ -2506,7 +2610,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/save": {
@@ -2599,7 +2707,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/duplicate": {
@@ -2692,7 +2804,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/delete": {
@@ -2785,7 +2901,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/draft": {
@@ -2878,7 +2998,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/cohorts/list": {
@@ -2971,7 +3095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/get": {
@@ -3064,7 +3192,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/save": {
@@ -3157,7 +3289,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/duplicate": {
@@ -3250,7 +3386,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/delete": {
@@ -3343,7 +3483,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/draft": {
@@ -3436,7 +3580,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/evals/list": {
@@ -3529,7 +3677,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/get": {
@@ -3622,7 +3774,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/save": {
@@ -3715,7 +3871,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/duplicate": {
@@ -3808,7 +3968,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/delete": {
@@ -3901,7 +4065,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/draft": {
@@ -3994,7 +4162,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/rubrics/get": {
@@ -4087,7 +4259,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/list": {
@@ -4180,7 +4356,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/save": {
@@ -4273,7 +4453,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/duplicate": {
@@ -4366,7 +4550,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/delete": {
@@ -4459,7 +4647,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/draft": {
@@ -4552,7 +4744,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/settings/list": {
@@ -4645,7 +4841,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/get": {
@@ -4738,7 +4938,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/save": {
@@ -4831,7 +5035,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/duplicate": {
@@ -4924,7 +5132,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/draft": {
@@ -5017,7 +5229,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/agents/get": {
@@ -5110,7 +5326,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/list": {
@@ -5203,7 +5423,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/save": {
@@ -5296,7 +5520,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/duplicate": {
@@ -5389,7 +5617,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/delete": {
@@ -5482,7 +5714,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/draft": {
@@ -5575,7 +5811,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/models/get": {
@@ -5668,7 +5908,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/list": {
@@ -5761,7 +6005,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/save": {
@@ -5854,7 +6102,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/duplicate": {
@@ -5947,7 +6199,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/delete": {
@@ -6040,7 +6296,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/draft": {
@@ -6133,7 +6393,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/providers/list": {
@@ -6226,7 +6490,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/get": {
@@ -6319,7 +6587,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/save": {
@@ -6412,7 +6684,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/duplicate": {
@@ -6505,7 +6781,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/delete": {
@@ -6598,7 +6878,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/draft": {
@@ -6691,7 +6975,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/parameters/get": {
@@ -6784,7 +7072,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/list": {
@@ -6877,7 +7169,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/save": {
@@ -6970,7 +7266,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/duplicate": {
@@ -7063,7 +7363,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/delete": {
@@ -7156,7 +7460,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/draft": {
@@ -7249,7 +7557,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/fields/get": {
@@ -7342,7 +7654,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/list": {
@@ -7435,7 +7751,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/save": {
@@ -7528,7 +7848,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/duplicate": {
@@ -7621,7 +7945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/delete": {
@@ -7714,7 +8042,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/draft": {
@@ -7807,7 +8139,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/profiles/get": {
@@ -7900,7 +8236,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/list": {
@@ -7993,7 +8333,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/save": {
@@ -8086,7 +8430,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/draft": {
@@ -8179,7 +8527,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/delete": {
@@ -8272,7 +8624,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/auths/get": {
@@ -8365,7 +8721,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/list": {
@@ -8458,7 +8818,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/save": {
@@ -8551,7 +8915,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/duplicate": {
@@ -8644,7 +9012,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/delete": {
@@ -8737,7 +9109,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/draft": {
@@ -8830,7 +9206,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/tools/list": {
@@ -8923,7 +9303,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/get": {
@@ -9016,7 +9400,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/save": {
@@ -9109,7 +9497,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/duplicate": {
@@ -9202,7 +9594,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/delete": {
@@ -9295,7 +9691,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/draft": {
@@ -9388,7 +9788,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/group/get": {
@@ -9482,7 +9886,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v4/resources/args": {
@@ -9575,7 +9984,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args_outputs": {
@@ -9668,7 +10081,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/cohorts/get": {
@@ -9761,7 +10178,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors": {
@@ -9854,7 +10275,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors/get": {
@@ -9947,7 +10372,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors/search": {
@@ -10039,7 +10468,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/departments/get": {
@@ -10132,7 +10565,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/departments/search": {
@@ -10224,7 +10661,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions": {
@@ -10317,7 +10758,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions/get": {
@@ -10410,7 +10855,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions/search": {
@@ -10502,7 +10951,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/documents/get": {
@@ -10595,7 +11048,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/emails": {
@@ -10688,7 +11145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/endpoints": {
@@ -10781,7 +11242,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples": {
@@ -10874,7 +11339,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples/get": {
@@ -10967,7 +11436,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples/search": {
@@ -11059,7 +11532,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/fields/get": {
@@ -11152,7 +11629,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/fields/search": {
@@ -11244,7 +11725,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameter_fields": {
@@ -11337,7 +11822,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameter_fields/get": {
@@ -11430,7 +11919,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameter_fields/search": {
@@ -11523,7 +12016,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/flags/get": {
@@ -11616,7 +12113,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/flags/search": {
@@ -11708,7 +12209,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_positions": {
@@ -11801,7 +12306,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_rubrics": {
@@ -11894,7 +12403,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/icons/get": {
@@ -11987,7 +12500,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/icons/search": {
@@ -12079,7 +12596,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/images": {
@@ -12172,7 +12693,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/images/get": {
@@ -12265,7 +12790,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions": {
@@ -12358,7 +12887,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions/get": {
@@ -12451,7 +12984,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions/search": {
@@ -12543,7 +13080,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/items": {
@@ -12636,7 +13177,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/keys": {
@@ -12729,7 +13274,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names": {
@@ -12822,7 +13371,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names/get": {
@@ -12915,7 +13468,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names/search": {
@@ -13008,7 +13565,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/objectives": {
@@ -13101,7 +13662,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/objectives/get": {
@@ -13194,7 +13759,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/options": {
@@ -13287,7 +13856,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameters/get": {
@@ -13380,7 +13953,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameters/search": {
@@ -13472,7 +14049,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/personas/get": {
@@ -13565,7 +14146,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/points": {
@@ -13658,7 +14243,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/pricing": {
@@ -13751,7 +14340,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -13844,7 +14437,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/problem_statements/get": {
@@ -13937,7 +14534,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/prompts": {
@@ -14030,7 +14631,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/protocols": {
@@ -14123,7 +14728,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/questions": {
@@ -14216,7 +14825,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/questions/get": {
@@ -14309,7 +14922,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/request_limits": {
@@ -14402,7 +15019,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/roles/get": {
@@ -14495,7 +15116,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/rubrics/get": {
@@ -14588,7 +15213,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_positions": {
@@ -14681,7 +15310,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_rubrics": {
@@ -14774,7 +15407,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_flags/get": {
@@ -14867,7 +15504,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_flags/search": {
@@ -14960,7 +15601,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/setting_role_routes": {
@@ -15053,7 +15698,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -15146,7 +15795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions/get": {
@@ -15239,7 +15892,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions/search": {
@@ -15332,7 +15989,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubrics": {
@@ -15425,7 +16086,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubrics/get": {
@@ -15518,7 +16183,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubrics/search": {
@@ -15611,7 +16280,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_time_limits": {
@@ -15704,7 +16377,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_time_limits/get": {
@@ -15797,7 +16474,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_time_limits/search": {
@@ -15890,7 +16571,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenarios/get": {
@@ -15983,7 +16668,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenarios/search": {
@@ -16076,7 +16765,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/settings/get": {
@@ -16169,7 +16862,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_positions": {
@@ -16262,7 +16959,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_positions/get": {
@@ -16355,7 +17056,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_positions/search": {
@@ -16448,7 +17153,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations/get": {
@@ -16541,7 +17250,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations/batch": {
@@ -16634,7 +17347,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations/search": {
@@ -16727,7 +17444,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/slugs": {
@@ -16820,7 +17541,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -16913,7 +17638,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/templates": {
@@ -17006,7 +17735,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/templates/get": {
@@ -17099,7 +17832,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/templates/html": {
@@ -17192,7 +17929,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/templates/search": {
@@ -17284,7 +18025,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/values": {
@@ -17377,7 +18122,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/videos": {
@@ -17470,7 +18219,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/videos/get": {
@@ -17563,7 +18316,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/voices": {
@@ -17656,7 +18413,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/uploads": {
@@ -17749,7 +18510,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/analytics/home/get": {
@@ -17844,7 +18609,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "home"
+        ]
       }
     },
     "/api/v4/analytics/home/list": {
@@ -17939,7 +18710,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "home"
+        ]
       }
     },
     "/api/v4/analytics/reports/get": {
@@ -18034,7 +18811,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "reports"
+        ]
       }
     },
     "/api/v4/analytics/reports/report": {
@@ -18129,7 +18912,15 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "reports",
+          "reports",
+          "reports"
+        ]
       }
     },
     "/api/v4/analytics/reports/list": {
@@ -18225,7 +19016,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "reports",
+          "reports"
+        ]
       }
     },
     "/api/v4/analytics/activity/get": {
@@ -18320,7 +19118,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "activity"
+        ]
       }
     },
     "/api/v4/analytics/activity/list": {
@@ -18415,7 +19219,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "activity"
+        ]
       }
     },
     "/api/v4/analytics/dashboard/get": {
@@ -18510,7 +19320,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "dashboard"
+        ]
       }
     },
     "/api/v4/analytics/dashboard/list": {
@@ -18605,7 +19421,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "dashboard"
+        ]
       }
     },
     "/api/v4/analytics/practice/get": {
@@ -18700,7 +19522,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "practice"
+        ]
       }
     },
     "/api/v4/analytics/practice/list": {
@@ -18795,7 +19623,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "practice"
+        ]
       }
     },
     "/api/v4/analytics/leaderboard/get": {
@@ -18890,7 +19724,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/analytics/leaderboard/list": {
@@ -18985,7 +19825,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/analytics/pricing/get": {
@@ -19080,7 +19926,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "pricing"
+        ]
       }
     },
     "/api/v4/analytics/pricing/list": {
@@ -19175,7 +20027,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "pricing"
+        ]
       }
     },
     "/api/v4/analytics/benchmark/get": {
@@ -19270,7 +20128,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/analytics/benchmark/list": {
@@ -19365,7 +20229,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/analytics/health/get": {
@@ -19460,7 +20330,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "health"
+        ]
       }
     },
     "/api/v4/analytics/health/list": {
@@ -19555,7 +20431,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "health"
+        ]
       }
     },
     "/api/v4/analytics/refresh": {
@@ -19648,7 +20530,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics"
+        ]
       }
     },
     "/api/v4/analytics/NEW/home/get": {
@@ -19746,7 +20632,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
       }
     },
     "/api/v4/analytics/NEW/home/list": {
@@ -19844,7 +20739,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
       }
     },
     "/api/v4/analytics/NEW/home/refresh": {
@@ -19942,7 +20846,123 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/analytics/NEW/home/attempt": {
+      "post": {
+        "tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ],
+        "summary": "Home Attempt Detail",
+        "description": "Get home attempt detail with parallel MV fetching.\n\nUses three-MV architecture with pool-based parallel fetch:\n- MV 1: mv_home_attempts (attempt-level aggregates)\n- MV 2: mv_home_chats (chat-level data with grades/feedbacks)\n- MV 3: mv_home_messages (message-level data with strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
+        "operationId": "home_attempt_detail_api_v4_analytics_NEW_home_attempt_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAttemptDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAttemptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "home"
+        ]
       }
     },
     "/api/v4/analytics/NEW/practice/get": {
@@ -20040,7 +21060,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "practice"
+        ]
       }
     },
     "/api/v4/analytics/NEW/practice/list": {
@@ -20138,7 +21167,123 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "practice"
+        ]
+      }
+    },
+    "/api/v4/analytics/NEW/practice/attempt": {
+      "post": {
+        "tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "practice"
+        ],
+        "summary": "Practice Attempt Detail",
+        "description": "Get practice attempt detail with parallel MV fetching.\n\nUses three-MV architecture with pool-based parallel fetch:\n- MV 1: mv_practice_attempts (attempt-level aggregates)\n- MV 2: mv_practice_chats (chat-level data with grades/feedbacks)\n- MV 3: mv_practice_messages (message-level data with hints/strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
+        "operationId": "practice_attempt_detail_api_v4_analytics_NEW_practice_attempt_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPracticeAttemptDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPracticeAttemptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "new",
+          "analytics",
+          "new",
+          "practice"
+        ]
       }
     },
     "/api/v4/attempts/simulation/get": {
@@ -20233,7 +21378,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "simulation"
+        ]
       }
     },
     "/api/v4/attempts/simulation/archive": {
@@ -20328,7 +21479,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "simulation"
+        ]
       }
     },
     "/api/v4/attempts/benchmark/get": {
@@ -20423,7 +21580,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/attempts/benchmark/archive": {
@@ -20518,7 +21681,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/attempts/general/get": {
@@ -20613,7 +21782,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "general"
+        ]
       }
     },
     "/api/v4/attempts/practice/get": {
@@ -20708,7 +21883,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "practice"
+        ]
       }
     },
     "/api/v4/bulk/staff/process": {
@@ -20803,7 +21984,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/staff/search": {
@@ -20898,7 +22085,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/staff/save": {
@@ -20993,7 +22186,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/staff/delete": {
@@ -21088,7 +22287,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/document/process": {
@@ -21183,7 +22388,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/bulk/document/search": {
@@ -21278,7 +22489,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/bulk/document/save": {
@@ -21373,7 +22590,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/bulk/document/delete": {
@@ -21468,7 +22691,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/decrypt/key": {
@@ -21561,7 +22790,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "decrypt"
+        ]
       }
     },
     "/api/v4/export/certificate": {
@@ -21652,7 +22885,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "export"
+        ]
       }
     },
     "/api/v4/export/report": {
@@ -21744,7 +22981,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "export",
+          "reports"
+        ]
       }
     },
     "/api/v4/uploads/get/{upload_id}": {
@@ -21846,7 +23088,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
     "/api/v4/uploads/save": {
@@ -21927,7 +23173,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       },
       "post": {
         "tags": [
@@ -22006,7 +23256,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
     "/api/v4/uploads/save/{upload_id}": {
@@ -22096,7 +23350,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       },
       "head": {
         "tags": [
@@ -22184,7 +23442,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       },
       "patch": {
         "tags": [
@@ -22272,7 +23534,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
     "/api/v4/uploads/save/{upload_id}/finalize": {
@@ -22364,7 +23630,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
     "/api/v4/auth/login": {
@@ -22457,7 +23727,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/context": {
@@ -22550,7 +23824,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/email": {
@@ -22643,7 +23921,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/upsert": {
@@ -22736,7 +24018,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/simulatable": {
@@ -22829,7 +24115,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/emulate": {
@@ -22922,7 +24212,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/debug/debug": {
@@ -23015,7 +24309,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "debug"
+        ]
       }
     },
     "/socket/v4/client/connect": {
@@ -23042,7 +24340,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/disconnect": {
@@ -23069,7 +24371,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/enter": {
@@ -23117,7 +24423,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/join": {
@@ -23165,7 +24476,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/leave": {
@@ -23213,7 +24529,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -23261,7 +24582,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/advance": {
@@ -23309,7 +24635,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/stop": {
@@ -23357,7 +24688,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/next": {
@@ -23405,7 +24741,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/end": {
@@ -23453,7 +24794,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/run_start": {
@@ -23501,7 +24847,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/runs_start_all": {
@@ -23549,7 +24900,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -23596,7 +24952,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/scenario_generation_complete": {
@@ -23643,7 +25003,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/persona_generation_progress": {
@@ -23690,7 +25054,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/persona_generation_complete": {
@@ -23737,7 +25105,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/persona_generation_error": {
@@ -23784,7 +25156,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/enter_response": {
@@ -23832,7 +25208,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/enter_error": {
@@ -23880,7 +25261,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/joined": {
@@ -23928,7 +25314,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/join_error": {
@@ -23976,7 +25367,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/leave_error": {
@@ -24024,7 +25420,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/advance_error": {
@@ -24072,7 +25473,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/advanced": {
@@ -24120,7 +25526,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/stopped": {
@@ -24168,7 +25579,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/stop_error": {
@@ -24216,7 +25632,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/completed": {
@@ -24264,7 +25685,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/end_error": {
@@ -24312,7 +25738,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/run_started": {
@@ -24360,7 +25791,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/run_start_error": {
@@ -24408,7 +25844,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_started": {
@@ -24456,7 +25897,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_error": {
@@ -24504,7 +25950,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -24528,7 +25979,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/authorize": {
@@ -24672,7 +26126,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/token": {
@@ -24716,7 +26173,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/userinfo": {
@@ -24768,7 +26228,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/jwks": {
@@ -24788,7 +26251,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/.well-known/oauth-authorization-server": {
@@ -24879,6 +26345,79 @@
   },
   "components": {
     "schemas": {
+      "AggregatedResults": {
+        "properties": {
+          "total_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Score"
+          },
+          "total_possible_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Possible Points"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "chats_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats Completed"
+          },
+          "total_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chats"
+          }
+        },
+        "type": "object",
+        "title": "AggregatedResults",
+        "description": "Aggregated results for the attempt."
+      },
       "ArgsApiRequest": {
         "properties": {
           "agent_id": {
@@ -25062,6 +26601,90 @@
         },
         "type": "object",
         "title": "ArgsOutputsApiResponse"
+      },
+      "AttemptData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "AttemptData",
+        "description": "Attempt-level data."
       },
       "BaseModel": {
         "properties": {},
@@ -25917,6 +27540,207 @@
         },
         "type": "object",
         "title": "BulkDeleteStaffApiResponse"
+      },
+      "ChatData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "scenario_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "is_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Current"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FeedbackEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MessageData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ChatData",
+        "description": "Chat with scenario, persona, grade, and messages."
       },
       "CohortDepartment": {
         "properties": {
@@ -29195,6 +31019,59 @@
         "title": "ExportRequest",
         "description": "Export request - extends GetReportsBundleApiRequest with export-specific options."
       },
+      "FeedbackEntry": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "title": "FeedbackEntry",
+        "description": "Feedback by standard for grading state."
+      },
       "FilterOption": {
         "properties": {
           "value": {
@@ -30627,6 +32504,115 @@
         },
         "type": "object",
         "title": "GetAgentsListApiResponse"
+      },
+      "GetAttemptDetailRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GetAttemptDetailRequest",
+        "description": "Client API request for attempt detail."
+      },
+      "GetAttemptDetailResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "attempt_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Exists"
+          },
+          "access_denied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Denied"
+          },
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttemptData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulationData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats"
+          },
+          "timer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimerData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aggregated_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregatedResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "GetAttemptDetailResponse",
+        "description": "Client-facing API response for attempt detail."
       },
       "GetAuthApiRequest": {
         "properties": {
@@ -42961,6 +44947,115 @@
         "type": "object",
         "title": "GetPracticeAttemptApiResponse"
       },
+      "GetPracticeAttemptDetailRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GetPracticeAttemptDetailRequest",
+        "description": "Client API request for practice attempt detail."
+      },
+      "GetPracticeAttemptDetailResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "attempt_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Exists"
+          },
+          "access_denied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Denied"
+          },
+          "attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PracticeAttemptData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulationData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PracticeChatData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chats"
+          },
+          "timer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimerData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aggregated_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregatedResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "GetPracticeAttemptDetailResponse",
+        "description": "Client-facing API response for practice attempt detail."
+      },
       "GetPracticeHistoryApiRequest": {
         "properties": {
           "department_ids": {
@@ -53602,6 +55697,91 @@
         "title": "GetVideoV4Item",
         "description": "Video item returned from get endpoint."
       },
+      "GradeData": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "title": "GradeData",
+        "description": "Grade information for a chat."
+      },
       "GroupPositionsApiRequest": {
         "properties": {
           "agent_id": {
@@ -53726,6 +55906,76 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HighlightEntry": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "title": "HighlightEntry",
+        "description": "Highlight entry within a strength."
+      },
+      "HintEntry": {
+        "properties": {
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "title": "HintEntry",
+        "description": "Hint entry (PRACTICE-specific)."
       },
       "HistoryAttempt": {
         "properties": {
@@ -54254,6 +56504,69 @@
         },
         "type": "object",
         "title": "ImagesApiResponse"
+      },
+      "ImprovementEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "replacements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReplacementEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ImprovementEntry",
+        "description": "Improvement feedback with replacements."
       },
       "InstructionsApiRequest": {
         "properties": {
@@ -56244,6 +58557,93 @@
         "type": "object",
         "title": "ListScenarioApiSimulation",
         "description": "Simulation in list response."
+      },
+      "MessageData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrengthEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strengths"
+          },
+          "improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImprovementEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "MessageData",
+        "description": "Message with content and feedback data."
       },
       "NamesApiRequest": {
         "properties": {
@@ -59981,6 +62381,290 @@
         "type": "object",
         "title": "PointsApiResponse"
       },
+      "PracticeAttemptData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "PracticeAttemptData",
+        "description": "Attempt-level data (PRACTICE)."
+      },
+      "PracticeChatData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "scenario_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Name"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "is_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Current"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FeedbackEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PracticeMessageData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "PracticeChatData",
+        "description": "Chat with scenario, persona, grade, and messages (PRACTICE)."
+      },
       "PracticeHistoryAttempt": {
         "properties": {
           "attempt_id": {
@@ -60264,6 +62948,107 @@
         ],
         "title": "PracticeHistoryAttempt",
         "description": "Attempt record for practice history.\n\nSQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct."
+      },
+      "PracticeMessageData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HintEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          },
+          "strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrengthEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strengths"
+          },
+          "improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImprovementEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "PracticeMessageData",
+        "description": "Message with content, hints, and feedback data (PRACTICE)."
       },
       "PracticeSimulationCard": {
         "properties": {
@@ -100607,6 +103392,46 @@
         "type": "object",
         "title": "RefreshViewApiResponse"
       },
+      "ReplacementEntry": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "replace_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replace Text"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "title": "ReplacementEntry",
+        "description": "Replacement entry within an improvement."
+      },
       "RequestLimitsApiRequest": {
         "properties": {
           "agent_id": {
@@ -106713,6 +109538,102 @@
         "title": "SimulationCard",
         "description": "Simulation card for home overview.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction."
       },
+      "SimulationData": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "image_input_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Input Active"
+          },
+          "copy_paste_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Paste Allowed"
+          }
+        },
+        "type": "object",
+        "title": "SimulationData",
+        "description": "Simulation metadata."
+      },
       "SimulationDepartment": {
         "properties": {
           "department_id": {
@@ -107764,6 +110685,69 @@
         "title": "StandardMapping",
         "description": "Standard metadata for sidebar/legend."
       },
+      "StrengthEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HighlightEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "StrengthEntry",
+        "description": "Strength feedback with highlights."
+      },
       "TemplatesApiRequest": {
         "properties": {
           "agent_id": {
@@ -107840,6 +110824,57 @@
         },
         "type": "object",
         "title": "TemplatesApiResponse"
+      },
+      "TimerData": {
+        "properties": {
+          "elapsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "exceeded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exceeded"
+          },
+          "formatted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted"
+          }
+        },
+        "type": "object",
+        "title": "TimerData",
+        "description": "Timer information."
       },
       "UploadsApiRequest": {
         "properties": {

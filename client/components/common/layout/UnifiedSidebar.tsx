@@ -147,12 +147,8 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const {
-    profile,
-    isLoading,
-    availableSections,
-    isAuthenticated,
-  } = useProfile();
+  const { profile, isLoading, availableSections, isAuthenticated } =
+    useProfile();
 
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
@@ -170,6 +166,15 @@ export function UnifiedSidebar({
         section: "home",
       });
     }
+    // Practice - all users
+    if (availableSections.includes("practice")) {
+      menu.push({
+        title: "Practice",
+        url: "#",
+        icon: Target,
+        section: "practice",
+      });
+    }
 
     // Leaderboard - Available for all authorized users as root-level item
     if (availableSections.includes("leaderboard")) {
@@ -181,23 +186,11 @@ export function UnifiedSidebar({
       });
     }
 
-    // Practice - all users
-    if (availableSections.includes("practice")) {
-      menu.push({
-        title: "Practice",
-        url: "#",
-        icon: Target,
-        section: "practice",
-      });
-    }
-
     // Analytics - Available from instructional level and up
     // Check for parent section "analytics" - if present, show all subsections
     if (
       profile.role &&
-      ["instructional", "admin", "superadmin"].includes(
-        profile.role
-      ) &&
+      ["instructional", "admin", "superadmin"].includes(profile.role) &&
       availableSections.includes("analytics")
     ) {
       const analyticsItems: MenuItem[] = [];
@@ -305,8 +298,7 @@ export function UnifiedSidebar({
     // Engine - Available for admin and superadmin
     // Check for parent section "engine" - if present, show all subsections
     if (
-      (profile.role === "admin" ||
-        profile.role === "superadmin") &&
+      (profile.role === "admin" || profile.role === "superadmin") &&
       availableSections.includes("engine")
     ) {
       const engineItems: MenuItem[] = [];
@@ -343,10 +335,7 @@ export function UnifiedSidebar({
 
     // System - Available for superadmin only
     // Check for parent section "system" - if present, show all subsections
-    if (
-      profile.role === "superadmin" &&
-      availableSections.includes("system")
-    ) {
+    if (profile.role === "superadmin" && availableSections.includes("system")) {
       const systemItems: MenuItem[] = [];
 
       // Show all system subsections when parent section is available
@@ -380,10 +369,7 @@ export function UnifiedSidebar({
     }
 
     // Health - Available for superadmin only, top-level
-    if (
-      profile.role === "superadmin" &&
-      availableSections.includes("health")
-    ) {
+    if (profile.role === "superadmin" && availableSections.includes("health")) {
       menu.push({
         title: "Health",
         url: "#",
@@ -407,8 +393,7 @@ export function UnifiedSidebar({
 
     // Settings - Available for admin and superadmin, root level (bottom)
     if (
-      (profile.role === "admin" ||
-        profile.role === "superadmin") &&
+      (profile.role === "admin" || profile.role === "superadmin") &&
       availableSections.includes("settings")
     ) {
       menu.push({
@@ -626,11 +611,7 @@ export function UnifiedSidebar({
                       style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                     >
                       <AvatarFallback>
-                        {!profile
-                          ? "GU"
-                          : getInitials(
-                              profile?.name || ""
-                            )}
+                        {!profile ? "GU" : getInitials(profile?.name || "")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5 leading-none text-left">

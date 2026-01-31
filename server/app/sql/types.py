@@ -888,6 +888,85 @@ class ValidateAgentResourceProgressApiResponse(BaseModel):
 
 
 
+# Generated from: get_home_attempt_detail
+
+class GetHomeAttemptDetailSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class GetHomeAttemptDetailSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    access_denied: bool | None = None
+    actor_name: str | None = None
+    out_attempt_id: UUID | None = None
+    attempt_created_at: str | None = None
+    infinite_mode: bool | None = None
+    total_chats: int | None = None
+    completed_chats: int | None = None
+    total_score: float | None = None
+    all_passed: bool | None = None
+    elapsed_seconds: int | None = None
+    rubric_total_points: int | None = None
+    rubric_pass_points: int | None = None
+    scenario_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_id: UUID | None = None
+    profile_id_out: UUID | None = None
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    simulation_name: str | None = None
+    simulation_description: str | None = None
+    time_limit: int | None = None
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    image_input_active: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_name: str | None = None
+
+class GetHomeAttemptDetailApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetHomeAttemptDetailApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    access_denied: bool | None = None
+    actor_name: str | None = None
+    out_attempt_id: UUID | None = None
+    attempt_created_at: str | None = None
+    infinite_mode: bool | None = None
+    total_chats: int | None = None
+    completed_chats: int | None = None
+    total_score: float | None = None
+    all_passed: bool | None = None
+    elapsed_seconds: int | None = None
+    rubric_total_points: int | None = None
+    rubric_pass_points: int | None = None
+    scenario_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_id: UUID | None = None
+    profile_id_out: UUID | None = None
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    simulation_name: str | None = None
+    simulation_description: str | None = None
+    time_limit: int | None = None
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    image_input_active: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_name: str | None = None
+
+
+
 # Generated from: get_home_context
 
 class GetHomeContextSqlParams(BaseModel):
@@ -1144,6 +1223,85 @@ class RefreshHomeMvsNewApiResponse(BaseModel):
     success: bool | None = None
     refreshed_mvs: list[str] | None = None
     duration_ms: int | None = None
+
+
+
+# Generated from: get_practice_attempt_detail
+
+class GetPracticeAttemptDetailSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class GetPracticeAttemptDetailSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    access_denied: bool | None = None
+    actor_name: str | None = None
+    out_attempt_id: UUID | None = None
+    attempt_created_at: str | None = None
+    infinite_mode: bool | None = None
+    is_archived: bool | None = None
+    total_chats: int | None = None
+    completed_chats: int | None = None
+    total_score: float | None = None
+    all_passed: bool | None = None
+    elapsed_seconds: int | None = None
+    rubric_total_points: int | None = None
+    rubric_pass_points: int | None = None
+    scenario_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_id: UUID | None = None
+    profile_id_out: UUID | None = None
+    department_id: UUID | None = None
+    simulation_name: str | None = None
+    simulation_description: str | None = None
+    time_limit: int | None = None
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    image_input_active: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_name: str | None = None
+
+class GetPracticeAttemptDetailApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetPracticeAttemptDetailApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    access_denied: bool | None = None
+    actor_name: str | None = None
+    out_attempt_id: UUID | None = None
+    attempt_created_at: str | None = None
+    infinite_mode: bool | None = None
+    is_archived: bool | None = None
+    total_chats: int | None = None
+    completed_chats: int | None = None
+    total_score: float | None = None
+    all_passed: bool | None = None
+    elapsed_seconds: int | None = None
+    rubric_total_points: int | None = None
+    rubric_pass_points: int | None = None
+    scenario_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_id: UUID | None = None
+    profile_id_out: UUID | None = None
+    department_id: UUID | None = None
+    simulation_name: str | None = None
+    simulation_description: str | None = None
+    time_limit: int | None = None
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    image_input_active: bool | None = None
+    copy_paste_allowed: bool | None = None
+    profile_name: str | None = None
 
 
 
@@ -25107,6 +25265,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateAgentResourceProgressApiRequest",
         "ValidateAgentResourceProgressApiResponse",
     ),
+    "app/sql/v4/queries/analytics/NEW/home/get_home_attempt_detail_complete.sql": (
+        "GetHomeAttemptDetailSqlParams",
+        "GetHomeAttemptDetailSqlRow",
+        "GetHomeAttemptDetailApiRequest",
+        "GetHomeAttemptDetailApiResponse",
+    ),
     "app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql": (
         "GetHomeContextSqlParams",
         "GetHomeContextSqlRow",
@@ -25130,6 +25294,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshHomeMvsNewSqlRow",
         "RefreshHomeMvsNewApiRequest",
         "RefreshHomeMvsNewApiResponse",
+    ),
+    "app/sql/v4/queries/analytics/NEW/practice/get_practice_attempt_detail_complete.sql": (
+        "GetPracticeAttemptDetailSqlParams",
+        "GetPracticeAttemptDetailSqlRow",
+        "GetPracticeAttemptDetailApiRequest",
+        "GetPracticeAttemptDetailApiResponse",
     ),
     "app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql": (
         "GetPracticeContextSqlParams",
@@ -27768,6 +27938,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_attempt_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -27784,6 +27959,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/NEW/home/refresh_home_mvs_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_attempt_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -4406,6 +4406,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/analytics/NEW/home/attempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Home Attempt Detail
+         * @description Get home attempt detail with parallel MV fetching.
+         *
+         *     Uses three-MV architecture with pool-based parallel fetch:
+         *     - MV 1: mv_home_attempts (attempt-level aggregates)
+         *     - MV 2: mv_home_chats (chat-level data with grades/feedbacks)
+         *     - MV 3: mv_home_messages (message-level data with strengths/improvements)
+         *
+         *     Each query runs on its own connection from the pool for true parallelism.
+         */
+        post: operations["home_attempt_detail_api_v4_analytics_NEW_home_attempt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/analytics/NEW/practice/get": {
         parameters: {
             query?: never;
@@ -4446,6 +4473,33 @@ export interface paths {
          *     Python handles: only business logic (score_status, show_view, show_continue, pass_pct)
          */
         post: operations["practice_list_api_v4_analytics_NEW_practice_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/analytics/NEW/practice/attempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Practice Attempt Detail
+         * @description Get practice attempt detail with parallel MV fetching.
+         *
+         *     Uses three-MV architecture with pool-based parallel fetch:
+         *     - MV 1: mv_practice_attempts (attempt-level aggregates)
+         *     - MV 2: mv_practice_chats (chat-level data with grades/feedbacks)
+         *     - MV 3: mv_practice_messages (message-level data with hints/strengths/improvements)
+         *
+         *     Each query runs on its own connection from the pool for true parallelism.
+         */
+        post: operations["practice_attempt_detail_api_v4_analytics_NEW_practice_attempt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5915,6 +5969,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AggregatedResults
+         * @description Aggregated results for the attempt.
+         */
+        AggregatedResults: {
+            /** Total Score */
+            total_score?: number | null;
+            /** Total Possible Points */
+            total_possible_points?: number | null;
+            /** Percentage */
+            percentage?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Chats Completed */
+            chats_completed?: number | null;
+            /** Total Chats */
+            total_chats?: number | null;
+        };
         /** ArgsApiRequest */
         ArgsApiRequest: {
             /**
@@ -5987,6 +6059,29 @@ export interface components {
         ArgsOutputsApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /**
+         * AttemptData
+         * @description Attempt-level data.
+         */
+        AttemptData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
         };
         /** BaseModel */
         BaseModel: Record<string, never>;
@@ -6316,6 +6411,48 @@ export interface components {
             deleted_count?: number | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /**
+         * ChatData
+         * @description Chat with scenario, persona, grade, and messages.
+         */
+        ChatData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Scenario Name */
+            scenario_name?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Persona Icon */
+            persona_icon?: string | null;
+            /** Persona Color */
+            persona_color?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Is Current */
+            is_current?: boolean | null;
+            /** Position */
+            position?: number | null;
+            grade?: components["schemas"]["GradeData"] | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
+            /** Messages */
+            messages?: components["schemas"]["MessageData"][] | null;
         };
         /**
          * CohortDepartment
@@ -7333,6 +7470,20 @@ export interface components {
             brightspace_format: boolean;
         };
         /**
+         * FeedbackEntry
+         * @description Feedback by standard for grading state.
+         */
+        FeedbackEntry: {
+            /** Id */
+            id?: string | null;
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Total */
+            total?: number | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
+        /**
          * FilterOption
          * @description Filter option for history dropdowns.
          */
@@ -7591,6 +7742,35 @@ export interface components {
             actor_name?: string | null;
             /** Agents */
             agents?: components["schemas"]["QListAgentsV4Agent"][] | null;
+        };
+        /**
+         * GetAttemptDetailRequest
+         * @description Client API request for attempt detail.
+         */
+        GetAttemptDetailRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /**
+         * GetAttemptDetailResponse
+         * @description Client-facing API response for attempt detail.
+         */
+        GetAttemptDetailResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Attempt Exists */
+            attempt_exists?: boolean | null;
+            /** Access Denied */
+            access_denied?: boolean | null;
+            attempt?: components["schemas"]["AttemptData"] | null;
+            simulation?: components["schemas"]["SimulationData"] | null;
+            /** Chats */
+            chats?: components["schemas"]["ChatData"][] | null;
+            timer?: components["schemas"]["TimerData"] | null;
+            aggregated_results?: components["schemas"]["AggregatedResults"] | null;
         };
         /** GetAuthApiRequest */
         GetAuthApiRequest: {
@@ -9883,6 +10063,35 @@ export interface components {
             /** All Simulation Scenarios */
             all_simulation_scenarios?: components["schemas"]["QGetPracticeAttemptV4AllSimulationScenario"][] | null;
         };
+        /**
+         * GetPracticeAttemptDetailRequest
+         * @description Client API request for practice attempt detail.
+         */
+        GetPracticeAttemptDetailRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /**
+         * GetPracticeAttemptDetailResponse
+         * @description Client-facing API response for practice attempt detail.
+         */
+        GetPracticeAttemptDetailResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Attempt Exists */
+            attempt_exists?: boolean | null;
+            /** Access Denied */
+            access_denied?: boolean | null;
+            attempt?: components["schemas"]["PracticeAttemptData"] | null;
+            simulation?: components["schemas"]["SimulationData"] | null;
+            /** Chats */
+            chats?: components["schemas"]["PracticeChatData"][] | null;
+            timer?: components["schemas"]["TimerData"] | null;
+            aggregated_results?: components["schemas"]["AggregatedResults"] | null;
+        };
         /** GetPracticeHistoryApiRequest */
         GetPracticeHistoryApiRequest: {
             /** Department Ids */
@@ -11970,6 +12179,26 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /**
+         * GradeData
+         * @description Grade information for a chat.
+         */
+        GradeData: {
+            /** Id */
+            id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Description */
+            description?: string | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Total Points */
+            total_points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
         /** GroupPositionsApiRequest */
         GroupPositionsApiRequest: {
             /**
@@ -12030,6 +12259,28 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HighlightEntry
+         * @description Highlight entry within a strength.
+         */
+        HighlightEntry: {
+            /** Section */
+            section?: string | null;
+            /** Idx */
+            idx?: number | null;
+        };
+        /**
+         * HintEntry
+         * @description Hint entry (PRACTICE-specific).
+         */
+        HintEntry: {
+            /** Message Id */
+            message_id?: string | null;
+            /** Hint */
+            hint?: string | null;
+            /** Idx */
+            idx?: number | null;
         };
         /**
          * HistoryAttempt
@@ -12150,6 +12401,25 @@ export interface components {
         ImagesApiResponse: {
             /** Image Id */
             image_id?: string | null;
+        };
+        /**
+         * ImprovementEntry
+         * @description Improvement feedback with replacements.
+         */
+        ImprovementEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message Id */
+            message_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Replacements */
+            replacements?: components["schemas"]["ReplacementEntry"][] | null;
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
@@ -12633,6 +12903,29 @@ export interface components {
             time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
+        };
+        /**
+         * MessageData
+         * @description Message with content and feedback data.
+         */
+        MessageData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Content */
+            content?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Strengths */
+            strengths?: components["schemas"]["StrengthEntry"][] | null;
+            /** Improvements */
+            improvements?: components["schemas"]["ImprovementEntry"][] | null;
         };
         /** NamesApiRequest */
         NamesApiRequest: {
@@ -13509,6 +13802,71 @@ export interface components {
             point_id?: string | null;
         };
         /**
+         * PracticeAttemptData
+         * @description Attempt-level data (PRACTICE).
+         */
+        PracticeAttemptData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+        };
+        /**
+         * PracticeChatData
+         * @description Chat with scenario, persona, grade, and messages (PRACTICE).
+         */
+        PracticeChatData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Scenario Name */
+            scenario_name?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Persona Icon */
+            persona_icon?: string | null;
+            /** Persona Color */
+            persona_color?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Is Current */
+            is_current?: boolean | null;
+            /** Position */
+            position?: number | null;
+            grade?: components["schemas"]["GradeData"] | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
+            /** Messages */
+            messages?: components["schemas"]["PracticeMessageData"][] | null;
+        };
+        /**
          * PracticeHistoryAttempt
          * @description Attempt record for practice history.
          *
@@ -13569,6 +13927,31 @@ export interface components {
             practice_simulation: boolean;
             /** Practice Scenario Id */
             practice_scenario_id?: string | null;
+        };
+        /**
+         * PracticeMessageData
+         * @description Message with content, hints, and feedback data (PRACTICE).
+         */
+        PracticeMessageData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Content */
+            content?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Hints */
+            hints?: components["schemas"]["HintEntry"][] | null;
+            /** Strengths */
+            strengths?: components["schemas"]["StrengthEntry"][] | null;
+            /** Improvements */
+            improvements?: components["schemas"]["ImprovementEntry"][] | null;
         };
         /**
          * PracticeSimulationCard
@@ -20989,6 +21372,18 @@ export interface components {
             /** Status */
             status?: string | null;
         };
+        /**
+         * ReplacementEntry
+         * @description Replacement entry within an improvement.
+         */
+        ReplacementEntry: {
+            /** Section */
+            section?: string | null;
+            /** Replace Text */
+            replace_text?: string | null;
+            /** Idx */
+            idx?: number | null;
+        };
         /** RequestLimitsApiRequest */
         RequestLimitsApiRequest: {
             /**
@@ -22644,6 +23039,28 @@ export interface components {
             cohort_names_junction?: string | null;
         };
         /**
+         * SimulationData
+         * @description Simulation metadata.
+         */
+        SimulationData: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled?: boolean | null;
+            /** Image Input Active */
+            image_input_active?: boolean | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed?: boolean | null;
+        };
+        /**
          * SimulationDepartment
          * @description Department for simulation.
          */
@@ -22961,6 +23378,25 @@ export interface components {
             /** Points */
             points?: number | null;
         };
+        /**
+         * StrengthEntry
+         * @description Strength feedback with highlights.
+         */
+        StrengthEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message Id */
+            message_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Highlights */
+            highlights?: components["schemas"]["HighlightEntry"][] | null;
+        };
         /** TemplatesApiRequest */
         TemplatesApiRequest: {
             /**
@@ -22989,6 +23425,20 @@ export interface components {
         TemplatesApiResponse: {
             /** Template Id */
             template_id?: string | null;
+        };
+        /**
+         * TimerData
+         * @description Timer information.
+         */
+        TimerData: {
+            /** Elapsed */
+            elapsed?: number | null;
+            /** Limit */
+            limit?: number | null;
+            /** Exceeded */
+            exceeded?: boolean | null;
+            /** Formatted */
+            formatted?: string | null;
         };
         /** UploadsApiRequest */
         UploadsApiRequest: {
@@ -31228,6 +31678,43 @@ export interface operations {
             };
         };
     };
+    home_attempt_detail_api_v4_analytics_NEW_home_attempt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAttemptDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAttemptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     practice_get_api_v4_analytics_NEW_practice_get_post: {
         parameters: {
             query?: never;
@@ -31289,6 +31776,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPracticeHistoryNewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    practice_attempt_detail_api_v4_analytics_NEW_practice_attempt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPracticeAttemptDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPracticeAttemptDetailResponse"];
                 };
             };
             /** @description Validation Error */
