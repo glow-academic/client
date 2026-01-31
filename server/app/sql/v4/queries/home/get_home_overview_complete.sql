@@ -360,16 +360,15 @@ sim_persona_meta AS (
     LEFT JOIN personas_resource p ON p.id = sm.persona_id
     GROUP BY sm.simulation_id
 ),
--- Standard view_groups_entry per simulation - uses rubric_id from sim_meta (derived from filt)
+-- Standard view_groups_entry per simulation - uses rubrics_resource.standard_group_ids (denormalized)
 sim_standard_groups AS (
     SELECT
         sme.simulation_id,
-        ARRAY_AGG(sg.id::text ORDER BY sg.id) FILTER (WHERE sg.id IS NOT NULL) AS standard_group_ids
+        ARRAY(SELECT sg_id::text FROM unnest(rr.standard_group_ids) AS sg_id ORDER BY sg_id) AS standard_group_ids
     FROM sim_meta sme
-    JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = sme.rubric_id AND rsg.active = true
-    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
+    JOIN rubrics_resource rr ON rr.id = sme.rubric_id AND rr.active = true
     WHERE sme.rubric_id IS NOT NULL
-    GROUP BY sme.simulation_id
+      AND cardinality(rr.standard_group_ids) > 0
 ),
 -- TA VIEW: Primary cohort per simulation for the TA
 -- Uses denormalized fields: current_profile.cohort_ids, cohorts_resource.simulation_ids, cohorts_resource.department_ids
@@ -545,26 +544,27 @@ inst_rows AS (
     LEFT JOIN sim_standard_groups ssg ON ssg.simulation_id = s.simulation_id
     WHERE NOT EXISTS (SELECT 1 FROM profile_type_lookup prl WHERE prl.is_member_mode)
 ),
-all_rubric_ids AS (
-    SELECT DISTINCT rubric_id FROM sim_meta
+-- Get all standard_group_ids from rubrics used in sim_meta (using denormalized rubrics_resource.standard_group_ids)
+all_standard_group_ids AS (
+    SELECT DISTINCT unnest(rr.standard_group_ids) AS standard_group_id
+    FROM sim_meta sme
+    JOIN rubrics_resource rr ON rr.id = sme.rubric_id AND rr.active = true
+    WHERE sme.rubric_id IS NOT NULL
 ),
 -- Standard view_groups_entry mapping (as array)
 standard_groups_array AS (
-    SELECT 
+    SELECT
         (sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_get_home_overview_v4_standard_group AS standard_group
-    FROM rubric_standard_groups_junction rsg
-    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
-    WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
+    FROM all_standard_group_ids asg
+    JOIN standard_groups_resource sg ON sg.id = asg.standard_group_id AND sg.active = true
 ),
 -- Standards mapping (as array)
 standards_array AS (
-    SELECT 
+    SELECT
         (st.id, st.standard_group_id, st.name, st.description, st.points)::types.q_get_home_overview_v4_standard AS standard
     FROM standards_resource st
-    WHERE st.standard_group_id IN (
-        SELECT rsg.standard_group_id FROM rubric_standard_groups_junction rsg
-        WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
-    )
+    WHERE st.standard_group_id IN (SELECT standard_group_id FROM all_standard_group_ids)
+      AND st.active = true
 ),
 -- Simulation mapping (as array) - uses sim_meta for time_limit, simulations_resource for departments
 simulation_array AS (
