@@ -19104,7 +19104,7 @@ class GetSimulationPositionsSqlParams(BaseModel):
             self.simulation_ids,
         )
 
-class QGetSimulationPositionsV4Item(BaseModel):
+class QGetSimulationPositionsV4GetItem(BaseModel):
 
     id: UUID | None
     simulation_id: UUID | None
@@ -19114,7 +19114,7 @@ class QGetSimulationPositionsV4Item(BaseModel):
 
 class GetSimulationPositionsSqlRow(BaseModel):
 
-    items: list[QGetSimulationPositionsV4Item] | None = None
+    items: list[QGetSimulationPositionsV4GetItem] | None = None
 
 class GetSimulationPositionsApiRequest(BaseModel):
 
@@ -19122,7 +19122,7 @@ class GetSimulationPositionsApiRequest(BaseModel):
 
 class GetSimulationPositionsApiResponse(BaseModel):
 
-    items: list[QGetSimulationPositionsV4Item] | None = None
+    items: list[QGetSimulationPositionsV4GetItem] | None = None
 
 
 
@@ -19143,9 +19143,17 @@ class SearchSimulationPositionsSqlParams(BaseModel):
             self.exclude_ids,
         )
 
+class QSearchSimulationPositionsV4Item(BaseModel):
+
+    id: UUID | None
+    simulation_id: UUID | None
+    value: int | None
+    generated: bool | None
+    mcp: bool | None
+
 class SearchSimulationPositionsSqlRow(BaseModel):
 
-    items: list[QGetSimulationPositionsV4Item] | None = None
+    items: list[QSearchSimulationPositionsV4Item] | None = None
 
 class SearchSimulationPositionsApiRequest(BaseModel):
 
@@ -19156,7 +19164,7 @@ class SearchSimulationPositionsApiRequest(BaseModel):
 
 class SearchSimulationPositionsApiResponse(BaseModel):
 
-    items: list[QGetSimulationPositionsV4Item] | None = None
+    items: list[QSearchSimulationPositionsV4Item] | None = None
 
 
 
@@ -19236,11 +19244,11 @@ class GetSimulationsBatchApiResponse(BaseModel):
 
 class GetSimulationsSqlParams(BaseModel):
 
-    id: UUID
+    p_simulation_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.id,
+            self.p_simulation_id,
         )
 
 class QGetSimulationsV4Item(BaseModel):
@@ -19257,7 +19265,7 @@ class GetSimulationsSqlRow(BaseModel):
 
 class GetSimulationsApiRequest(BaseModel):
 
-    id: UUID
+    p_simulation_id: UUID
 
 class GetSimulationsApiResponse(BaseModel):
 

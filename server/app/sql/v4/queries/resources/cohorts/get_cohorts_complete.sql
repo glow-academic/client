@@ -58,6 +58,7 @@ CREATE TYPE types.q_get_cohorts_v4_item AS (
 );
 
 -- Create function
+-- Now accepts resource IDs (from cohorts_resource) and queries directly
 CREATE OR REPLACE FUNCTION api_get_cohorts_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -67,30 +68,39 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH cohort_departments AS (
+WITH cohort_artifact_mapping AS (
+    -- Map resource IDs back to artifact IDs for junction table lookups
     SELECT
-        cd.cohort_id,
+        ccj.cohorts_id AS resource_id,
+        ccj.cohort_id AS artifact_id
+    FROM cohort_cohorts_junction ccj
+    WHERE ccj.cohorts_id = ANY(ids)
+      AND ccj.active = true
+),
+cohort_departments AS (
+    SELECT
+        cam.resource_id,
         ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
-    FROM cohort_departments_junction cd
+    FROM cohort_artifact_mapping cam
+    JOIN cohort_departments_junction cd ON cd.cohort_id = cam.artifact_id
     WHERE cd.active = true
-      AND cd.cohort_id = ANY(ids)
-    GROUP BY cd.cohort_id
+    GROUP BY cam.resource_id
 )
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            c.id,
-            (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1),
-            COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), ''),
-            EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE),
+            cr.id,
+            COALESCE(cr.name, ''),
+            COALESCE(cr.description, ''),
+            cr.active,
             COALESCE(cdd.department_ids, ARRAY[]::text[])
         )::types.q_get_cohorts_v4_item
-        ORDER BY array_position(ids, c.id)
+        ORDER BY array_position(ids, cr.id)
     ),
     ARRAY[]::types.q_get_cohorts_v4_item[]
 ) as items
-FROM cohort_artifact c
-LEFT JOIN cohort_departments cdd ON cdd.cohort_id = c.id
-WHERE c.id = ANY(ids)
-  AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true);
+FROM cohorts_resource cr
+LEFT JOIN cohort_departments cdd ON cdd.resource_id = cr.id
+WHERE cr.id = ANY(ids)
+  AND cr.active = true;
 $$;

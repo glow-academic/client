@@ -75,11 +75,20 @@ export default async function AttemptPage({
         body: { attempt_id: attemptId },
       });
 
+    // Map API field names to what the component expects
+    // API uses: chats_entry, scenario_documents_junction
+    // Component expects: chats, scenario_documents
+    const mappedAttemptData = {
+      ...attemptData,
+      chats: attemptData.chats_entry,
+      scenario_documents: attemptData.scenario_documents_junction,
+    };
+
     return (
       <div className="space-y-6">
         <AttemptChatSetup
           attempt_id={attemptId}
-          attempt_data={attemptData}
+          attempt_data={mappedAttemptData}
         />
       </div>
     );

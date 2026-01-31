@@ -647,34 +647,8 @@ settings_thresholds AS (
     LIMIT 1
 ),
 -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
--- Gets simulations linked to cohorts + practice simulations without cohorts
-filtered_simulation_ids AS (
-    SELECT DISTINCT s.id AS simulation_id
-    FROM simulation_artifact s
-    WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
-      AND (
-          -- If cohort_ids provided, get simulations linked to those cohorts
-                      (cardinality((SELECT cohort_ids FROM params)::uuid[]) > 0 AND EXISTS (
-              SELECT 1 
-              FROM cohort_simulations_junction cs 
-              WHERE cs.simulation_id = s.id 
-                            AND cs.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
-                AND cs.active = TRUE
-          ))
-          OR
-          -- Always include practice simulations without cohorts
-          (EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
-           AND NOT EXISTS (
-               SELECT 1 
-               FROM cohort_simulations_junction cs2 
-               WHERE cs2.simulation_id = s.id 
-                 AND cs2.active = TRUE
-           ))
-          OR
-          -- If no cohort_ids provided, include all simulations
-                      (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0)
-      )
-),
+-- Note: cohort_ids are now resource IDs that match mv_dashboard_facts.cohort_id directly
+-- No need for filtered_simulation_ids - we filter by cohort_id directly in the filt CTE
 -- Use mv_dashboard_facts with backward compatibility columns
 filt AS (
     SELECT
@@ -732,7 +706,7 @@ filt AS (
         -- Reports always filters by profile_id (required parameter)
         AND f.profile_id = (SELECT target_profile_id FROM params)
         -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
-        AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+        AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]))
         -- Filter by department_ids (empty array = all departments)
         AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
 ),
@@ -806,7 +780,7 @@ filt AS (
                 -- Reports always filters by profile_id
                 AND f.profile_id = (SELECT target_profile_id FROM params)
                 -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
-                AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]))
                 -- Filter by department_ids (empty array = all departments)
                 AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
                 ORDER BY f.profile_id, f.simulation_id, f.attempt_created_at
@@ -2285,7 +2259,7 @@ filt AS (
                   AND (
                       'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR f.is_archived = FALSE
                   )
-                  AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                  AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]))
                   AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
             ),
             cohort_list AS (

@@ -206,34 +206,8 @@ filt AS (
       )
       AND (cardinality((SELECT roles FROM params)::text[]) = 0 OR
            COALESCE((SELECT r.role FROM roles_resource r WHERE r.id = f.role_id LIMIT 1), 'member'::profile_type)::text = ANY((SELECT roles FROM params)::text[]))
-      AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.simulation_id IN (
-          SELECT DISTINCT s.id
-          FROM simulation_artifact s
-          WHERE EXISTS (
-            SELECT 1 FROM simulation_flags_junction sf
-            JOIN flags_resource f_flag ON sf.flag_id = f_flag.id
-            WHERE sf.simulation_id = s.id
-              AND f_flag.name = 'simulation_active'
-              AND sf.value = TRUE
-          )
-            AND (
-                EXISTS (
-                    SELECT 1
-                    FROM cohort_simulations_junction cs
-                    WHERE cs.simulation_id = s.id
-                      AND cs.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
-                      AND cs.active = TRUE
-                )
-                OR
-                (EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f_flag ON sf.flag_id = f_flag.id WHERE sf.simulation_id = s.id AND f_flag.name = 'practice' AND sf.value = TRUE)
-                 AND NOT EXISTS (
-                     SELECT 1
-                     FROM cohort_simulations_junction cs2
-                     WHERE cs2.simulation_id = s.id
-                       AND cs2.active = TRUE
-                 ))
-            )
-      ))
+      -- Filter by cohort_id directly (cohort_ids are now resource IDs matching mv_dashboard_facts.cohort_id)
+      AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]))
       AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR f.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
 ),
 profile_stats AS (

@@ -16,23 +16,11 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop type if exists
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT typname
-        FROM pg_type
-        WHERE typname LIKE 'q_get_simulation_positions_v4_%'
-          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
-    LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
-    END LOOP;
-END $$;
+-- Drop type if exists (only drop this specific type, not with pattern match)
+DROP TYPE IF EXISTS types.q_get_simulation_positions_v4_get_item CASCADE;
 
 -- Create composite type for simulation position items
-CREATE TYPE types.q_get_simulation_positions_v4_item AS (
+CREATE TYPE types.q_get_simulation_positions_v4_get_item AS (
     id uuid,
     simulation_id uuid,
     value integer,
@@ -44,7 +32,7 @@ CREATE OR REPLACE FUNCTION api_get_simulation_positions_v4(
     simulation_ids uuid[]
 )
 RETURNS TABLE (
-    items types.q_get_simulation_positions_v4_item[]
+    items types.q_get_simulation_positions_v4_get_item[]
 )
 LANGUAGE sql
 STABLE
@@ -66,9 +54,9 @@ position_data AS (
 SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pd.id, pd.simulation_id, pd.value, pd.generated, pd.mcp)::types.q_get_simulation_positions_v4_item
+            (pd.id, pd.simulation_id, pd.value, pd.generated, pd.mcp)::types.q_get_simulation_positions_v4_get_item
             ORDER BY pd.value, pd.simulation_id
         ) FROM position_data pd),
-        '{}'::types.q_get_simulation_positions_v4_item[]
+        '{}'::types.q_get_simulation_positions_v4_get_item[]
     ) as items;
 $$;

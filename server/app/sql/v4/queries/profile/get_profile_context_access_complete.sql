@@ -139,28 +139,38 @@ department_ids_data AS (
             AND df.value = true
       )
 ),
-cohort_ids_data AS (
-    -- Get cohort IDs for the profile
-    SELECT COALESCE(
-        ARRAY_AGG(pc.cohort_id ORDER BY pc.created_at),
-        ARRAY[]::uuid[]
-    ) as cohort_ids
+cohort_ids_internal AS (
+    -- Get cohort artifact and resource IDs for the profile
+    -- artifact_id is used for junction lookups, resource_id is returned for analytics
+    SELECT
+        pc.cohort_id AS artifact_id,
+        ccj.cohorts_id AS resource_id,
+        pc.created_at
     FROM profile_cohorts_junction pc
+    JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = pc.cohort_id AND ccj.active = true
     JOIN cohort_artifact c ON c.id = pc.cohort_id
     WHERE pc.profile_id = (SELECT profile_id FROM params)
       AND pc.active = true
       AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
 ),
-simulation_ids_data AS (
-    -- Get simulation IDs for the profile's cohorts
+cohort_ids_data AS (
+    -- Return resource IDs for analytics (matches mv_dashboard_facts.cohort_id)
     SELECT COALESCE(
-        ARRAY_AGG(DISTINCT cs.simulation_id ORDER BY cs.simulation_id),
+        ARRAY_AGG(resource_id ORDER BY created_at),
+        ARRAY[]::uuid[]
+    ) as cohort_ids
+    FROM cohort_ids_internal
+),
+simulation_ids_data AS (
+    -- Get simulation resource IDs for the profile's cohorts (matches mv_dashboard_facts.simulation_id)
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT ssj.simulations_id ORDER BY ssj.simulations_id),
         ARRAY[]::uuid[]
     ) as simulation_ids
     FROM cohort_simulations_junction cs
+    JOIN simulation_simulations_junction ssj ON ssj.simulation_id = cs.simulation_id AND ssj.active = true
     JOIN simulation_artifact s ON s.id = cs.simulation_id
-    CROSS JOIN cohort_ids_data cid
-    WHERE cs.cohort_id = ANY(cid.cohort_ids)
+    WHERE cs.cohort_id = ANY(SELECT artifact_id FROM cohort_ids_internal)
       AND cs.active = true
       AND EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
 ),

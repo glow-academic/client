@@ -40,9 +40,19 @@ DECLARE
     v_draft_id uuid;
     v_new_version int;
     v_draft_exists boolean := false;
-    v_profile_id uuid := profile_id;
+    v_profile_artifact_id uuid := profile_id;  -- Input is profile_artifact.id
+    v_profile_resource_id uuid;  -- Will be looked up from junction
     v_group_id uuid;
 BEGIN
+    -- Look up profiles_resource.id from profile_artifact.id via junction table
+    SELECT pp.profiles_id INTO v_profile_resource_id
+    FROM profile_profiles_junction pp
+    WHERE pp.profile_id = v_profile_artifact_id
+    LIMIT 1;
+
+    IF v_profile_resource_id IS NULL THEN
+        RAISE EXCEPTION 'Profile resource not found for artifact: %', v_profile_artifact_id;
+    END IF;
     -- Validate resource IDs exist (error if missing and provided)
     IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
@@ -72,7 +82,7 @@ BEGIN
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
+            VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_artifact_id AND active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
         
@@ -81,7 +91,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM profiles_drafts_connection pdj WHERE pdj.draft_id = drafts_entry.id AND pdj.profiles_id = v_profile_resource_id)
           AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -163,7 +173,7 @@ BEGIN
     -- Create new draft with group
     -- First create a group for this draft
     INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
+    VALUES (NOW(), NOW(), (SELECT id FROM view_sessions_entry WHERE view_sessions_entry.profile_id = v_profile_artifact_id AND active = true ORDER BY created_at DESC LIMIT 1))
     RETURNING id INTO v_group_id;
     
     -- Create new draft with group_id
@@ -171,9 +181,9 @@ BEGIN
     VALUES ('cohort'::artifact_type, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
 
-    -- Link profile to draft
+    -- Link profile to draft (using profiles_resource.id, not profile_artifact.id)
     INSERT INTO profiles_drafts_connection (draft_id, profiles_id, version)
-    VALUES (v_draft_id, v_profile_id, v_new_version);
+    VALUES (v_draft_id, v_profile_resource_id, v_new_version);
     
     -- Link resources to draft
     IF name_id IS NOT NULL THEN

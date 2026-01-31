@@ -37,7 +37,7 @@ export interface AttemptChatSetupProps {
   attempt_id: string;
 
   // Explicit attempt data type - self-contained
-  // Note: API field names differ (chats_entry, scenario_documents_junction) - passed with type assertion
+  // Note: API returns chats_entry, scenario_documents_junction but pages map to chats, scenario_documents
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attempt_data: any;
 }
@@ -1484,7 +1484,8 @@ export function AttemptChatSetup({
       const props: MessagesViewProps = {
         messages: currentChatData?.messages?.map((m) => ({
           id: m.id,
-          type: m.type === "user" ? "query" : "response",
+          // API returns "query" or "response" directly
+          type: m.type === "query" ? "query" : "response",
           content: m.content,
           created_at: m.created_at,
           completed: m.completed ?? null,
@@ -1528,7 +1529,8 @@ export function AttemptChatSetup({
         messages:
           currentChatData?.messages?.map((m) => ({
             id: m.id,
-            type: m.type === "user" ? "query" : "response",
+            // API returns "query" or "response" directly
+            type: m.type === "query" ? "query" : "response",
             content: m.content,
             created_at: m.created_at,
             completed: m.completed ?? null,

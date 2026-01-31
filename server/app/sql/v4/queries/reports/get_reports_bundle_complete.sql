@@ -244,6 +244,16 @@ settings_thresholds AS (
     )
     LIMIT 1
 ),
+-- Map cohort resource IDs to artifact IDs for junction table lookups
+cohort_artifact_mapping AS (
+    SELECT
+        ccj.cohorts_id AS resource_id,
+        ccj.cohort_id AS artifact_id
+    FROM cohort_cohorts_junction ccj
+    CROSS JOIN params p
+    WHERE ccj.cohorts_id = ANY(p.cohort_ids)
+      AND ccj.active = true
+),
 -- Start FROM profile_artifact to include all matching profiles, even without attempts
 filtered_profiles AS (
     SELECT 
@@ -267,10 +277,11 @@ filtered_profiles AS (
             (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1),
             'member'::profile_type
         ) = ANY((SELECT roles FROM params)::profile_type[]))
+        -- Filter by cohort using artifact mapping (cohort_ids are now resource IDs)
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
-            SELECT 1 FROM profile_cohorts_junction cp 
-            WHERE cp.profile_id = p.id 
-              AND cp.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]) 
+            SELECT 1 FROM profile_cohorts_junction cp
+            JOIN cohort_artifact_mapping cam ON cam.artifact_id = cp.cohort_id
+            WHERE cp.profile_id = p.id
               AND cp.active = true
         ))
         AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR EXISTS (
@@ -324,31 +335,8 @@ filt AS (
     WHERE f.attempt_created_at >= (SELECT start_date FROM params)
       AND f.attempt_created_at < (SELECT end_date FROM params)
       AND f.profile_id IN (SELECT id FROM filtered_profiles)
-      AND (
-          cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR
-          f.simulation_id IN (
-              SELECT DISTINCT s.id
-              FROM simulation_artifact s
-              WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f_flag ON sf.flag_id = f_flag.id WHERE sf.simulation_id = s.id AND f_flag.name = 'simulation_active' AND sf.value = TRUE)
-                AND (
-                    EXISTS (
-                        SELECT 1
-                        FROM cohort_simulations_junction cs
-                        WHERE cs.simulation_id = s.id
-                          AND cs.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
-                          AND cs.active = TRUE
-                    )
-                    OR
-                    (EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f_flag ON sf.flag_id = f_flag.id WHERE sf.simulation_id = s.id AND f_flag.name = 'practice' AND sf.value = TRUE)
-                     AND NOT EXISTS (
-                         SELECT 1
-                         FROM cohort_simulations_junction cs2
-                         WHERE cs2.simulation_id = s.id
-                           AND cs2.active = TRUE
-                     ))
-                )
-          )
-      )
+      -- Filter by cohort_id directly (cohort_ids are now resource IDs matching mv_dashboard_facts.cohort_id)
+      AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR f.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]))
       AND (cardinality((SELECT profile_ids FROM params)::uuid[]) = 0 OR f.profile_id = ANY((SELECT profile_ids FROM params)::uuid[]))
       AND (cardinality((SELECT simulation_ids FROM params)::uuid[]) = 0 OR f.simulation_id = ANY((SELECT simulation_ids FROM params)::uuid[]))
       AND (cardinality((SELECT scenario_ids FROM params)::uuid[]) = 0 OR f.scenario_id = ANY((SELECT scenario_ids FROM params)::uuid[]))
