@@ -4349,7 +4349,8 @@ export interface paths {
          *
          *     Uses two-pass pattern:
          *     1. Context query for user info and permissions
-         *     2. Data query for simulation cards and metadata
+         *     2. Data query for raw simulation data + metadata
+         *     3. Python transforms raw data to simulation cards
          */
         post: operations["home_get_api_v4_analytics_NEW_home_get_post"];
         delete?: never;
@@ -4373,8 +4374,8 @@ export interface paths {
          *
          *     Uses two-pass pattern:
          *     1. Context query for user info, permissions, and pass threshold
-         *     2. Data query with mode and accessible cohorts for filtering
-         *     3. Python computes score_status for each attempt using pass threshold
+         *     2. Data query for raw attempts + metadata
+         *     3. Python handles: search, filters, sort, pagination, computed fields
          */
         post: operations["home_list_api_v4_analytics_NEW_home_list_post"];
         delete?: never;
@@ -7289,6 +7290,18 @@ export interface components {
              */
             brightspace_format: boolean;
         };
+        /**
+         * FilterOption
+         * @description Filter option for history dropdowns.
+         */
+        FilterOption: {
+            /** Value */
+            value?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
+        };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
             /** Upload Id */
@@ -8806,27 +8819,6 @@ export interface components {
             /** Scenario Options Junction */
             scenario_options_junction?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
         };
-        /** GetHomeHistoryNewApiResponse */
-        GetHomeHistoryNewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["QGetHomeHistoryNewV4Attempt"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["QGetHomeHistoryNewV4FilterOption"][] | null;
-        };
         /**
          * GetHomeHistoryNewClientRequest
          * @description Client API request for home history.
@@ -8872,6 +8864,32 @@ export interface components {
              */
             page_size: number | null;
         };
+        /**
+         * GetHomeHistoryNewResponse
+         * @description Client-facing API response for home history.
+         *
+         *     Contains transformed attempts and filter options.
+         */
+        GetHomeHistoryNewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["HistoryAttempt"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["FilterOption"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["FilterOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["FilterOption"][] | null;
+        };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
             /** Start Date */
@@ -8911,8 +8929,13 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /** GetHomeOverviewNewApiResponse */
-        GetHomeOverviewNewApiResponse: {
+        /**
+         * GetHomeOverviewNewResponse
+         * @description Client-facing API response for home overview.
+         *
+         *     Contains transformed simulation cards (items) ready for frontend consumption.
+         */
+        GetHomeOverviewNewResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Mode */
@@ -8920,13 +8943,13 @@ export interface components {
             /** Has Data */
             has_data?: boolean | null;
             /** Items */
-            items?: components["schemas"]["QGetHomeOverviewNewV4SimulationCard"][] | null;
+            items?: components["schemas"]["SimulationCard"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetHomeOverviewNewV4StandardGroup"][] | null;
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
-            standards?: components["schemas"]["QGetHomeOverviewNewV4Standard"][] | null;
+            standards?: components["schemas"]["StandardMapping"][] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetHomeOverviewNewV4Simulation"][] | null;
+            simulations?: components["schemas"]["SimulationMapping"][] | null;
         };
         /** GetIconsApiRequest */
         GetIconsApiRequest: {
@@ -11882,6 +11905,63 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HistoryAttempt
+         * @description Attempt record for home history.
+         *
+         *     This is the client-facing type returned by the API.
+         *     Python computes fields like score_status, show_view, show_continue.
+         */
+        HistoryAttempt: {
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Date */
+            date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Num Scenarios */
+            num_scenarios?: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed?: number | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Persona Names Junction */
+            persona_names_junction?: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction?: string[] | null;
+            /** Score */
+            score?: number | null;
+            /** Score Status */
+            score_status?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Titles */
+            scenario_titles?: string[] | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Show View */
+            show_view?: boolean | null;
+            /** Show Continue */
+            show_continue?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string[] | null;
+            /** Practice Scenario Id */
+            practice_scenario_id?: string | null;
         };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
@@ -15746,66 +15826,6 @@ export interface components {
             /** Sample Count */
             sample_count: number | null;
         };
-        /** QGetHomeHistoryNewV4Attempt */
-        QGetHomeHistoryNewV4Attempt: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Num Scenarios */
-            num_scenarios: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed: number | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Persona Names Junction */
-            persona_names_junction: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: string[] | null;
-            /** Score */
-            score: number | null;
-            /** Score Status */
-            score_status: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Scenario Titles */
-            scenario_titles: string[] | null;
-            /** Is Archived */
-            is_archived: boolean | null;
-            /** Show View */
-            show_view: boolean | null;
-            /** Show Continue */
-            show_continue: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id: string | null;
-        };
-        /** QGetHomeHistoryNewV4FilterOption */
-        QGetHomeHistoryNewV4FilterOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
         /** QGetHomeHistoryV4AttemptHistoryRow */
         QGetHomeHistoryV4AttemptHistoryRow: {
             /** Attempt Id */
@@ -15865,90 +15885,6 @@ export interface components {
             label: string | null;
             /** Count */
             count: number | null;
-        };
-        /** QGetHomeOverviewNewV4Simulation */
-        QGetHomeOverviewNewV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetHomeOverviewNewV4SimulationCard */
-        QGetHomeOverviewNewV4SimulationCard: {
-            /** View Mode */
-            view_mode: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Simulation Title */
-            simulation_title: string | null;
-            /** Simulation Description */
-            simulation_description: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Num Sessions */
-            num_sessions: number | null;
-            /** Highest Score */
-            highest_score: number | null;
-            /** Standard Groups */
-            standard_groups: string[] | null;
-            /** Color */
-            color: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Has Passed */
-            has_passed: boolean | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Status */
-            status: string | null;
-            /** Completion Pct */
-            completion_pct: number | null;
-            /** Passed Count */
-            passed_count: number | null;
-            /** In Progress Count */
-            in_progress_count: number | null;
-            /** Not Started Count */
-            not_started_count: number | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Cohort Name */
-            cohort_name: string | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string | null;
-        };
-        /** QGetHomeOverviewNewV4Standard */
-        QGetHomeOverviewNewV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetHomeOverviewNewV4StandardGroup */
-        QGetHomeOverviewNewV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
         };
         /** QGetHomeOverviewV4Simulation */
         QGetHomeOverviewV4Simulation: {
@@ -22432,6 +22368,57 @@ export interface components {
             items?: components["schemas"]["QGetTemplatesV4Item"][] | null;
         };
         /**
+         * SimulationCard
+         * @description Simulation card for home overview.
+         *
+         *     This is the client-facing type returned by the API.
+         *     Python computes fields like status, pass_pct, cohort_names from raw SQL data.
+         */
+        SimulationCard: {
+            /** View Mode */
+            view_mode?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Title */
+            simulation_title?: string | null;
+            /** Simulation Description */
+            simulation_description?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Num Sessions */
+            num_sessions?: number | null;
+            /** Highest Score */
+            highest_score?: number | null;
+            /** Standard Groups */
+            standard_groups?: string[] | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Has Passed */
+            has_passed?: boolean | null;
+            /** Pass Rate */
+            pass_rate?: number | null;
+            /** Status */
+            status?: string | null;
+            /** Completion Pct */
+            completion_pct?: number | null;
+            /** Passed Count */
+            passed_count?: number | null;
+            /** In Progress Count */
+            in_progress_count?: number | null;
+            /** Not Started Count */
+            not_started_count?: number | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Cohort Name */
+            cohort_name?: string | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string | null;
+        };
+        /**
          * SimulationDepartment
          * @description Department for simulation.
          */
@@ -22502,6 +22489,22 @@ export interface components {
             icon_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * SimulationMapping
+         * @description Simulation metadata for mapping.
+         */
+        SimulationMapping: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * SimulationNameResource
@@ -22678,6 +22681,22 @@ export interface components {
             /** Slugs Id */
             slugs_id?: string | null;
         };
+        /**
+         * StandardGroupMapping
+         * @description Standard group metadata for mapping.
+         */
+        StandardGroupMapping: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
             /**
@@ -22710,6 +22729,22 @@ export interface components {
         StandardGroupsApiResponse: {
             /** Standard Group Id */
             standard_group_id?: string | null;
+        };
+        /**
+         * StandardMapping
+         * @description Standard metadata for mapping.
+         */
+        StandardMapping: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
         };
         /** TemplatesApiRequest */
         TemplatesApiRequest: {
@@ -30890,7 +30925,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetHomeOverviewNewApiResponse"];
+                    "application/json": components["schemas"]["GetHomeOverviewNewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30927,7 +30962,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetHomeHistoryNewApiResponse"];
+                    "application/json": components["schemas"]["GetHomeHistoryNewResponse"];
                 };
             };
             /** @description Validation Error */

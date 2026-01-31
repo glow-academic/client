@@ -1,11 +1,14 @@
 -- Materialized View: mv_home_attempt_history
--- History aggregation for HOME section - paginated list of attempts.
+-- Attempt-level aggregation for HOME section.
 --
 -- Grain: One row per attempt
--- Purpose: Home history page - paginated list of attempts
+-- Purpose: Main MV for both home overview AND home history endpoints
+--          - Overview: aggregate by simulation_id with date filtering
+--          - History: paginated list of attempts with date filtering
 --
 -- Section: HOME
 -- Source: Aggregate from mv_home_chat_facts grouped by attempt_id
+-- Dependencies: Only uses mv_home_chat_facts (which only uses _entry and _connection tables)
 --
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_home_attempt_history materialized view (if it exists)
@@ -58,6 +61,11 @@ SELECT
     TRUNC(AVG(grade_percent), 2) AS score_percent,
     BOOL_OR(passed) AS has_passed,
     SUM(COALESCE(time_taken, 0))::int AS total_time_seconds,
+
+    -- Rubric points (for computing pass_pct in Python)
+    -- Takes MAX since all chats in an attempt share the same rubric
+    MAX(rubric_total_points)::int AS rubric_total_points,
+    MAX(rubric_pass_points)::int AS rubric_pass_points,
 
     -- Arrays for display (IDs only - join to _resource at query time)
     ARRAY_AGG(DISTINCT scenario_id) FILTER (WHERE scenario_id IS NOT NULL) AS scenario_ids,

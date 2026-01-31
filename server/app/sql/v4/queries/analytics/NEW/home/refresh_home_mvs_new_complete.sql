@@ -50,9 +50,10 @@ DECLARE
     start_time timestamptz;
     end_time timestamptz;
     mv_name text;
+    -- Note: mv_home_simulation_status removed - it doesn't support date filtering
+    -- Overview queries now aggregate from mv_home_attempt_history instead
     mv_list text[] := ARRAY[
         'mv_home_chat_facts',
-        'mv_home_simulation_status',
         'mv_home_attempt_history',
         'mv_home_certificate_status'
     ];

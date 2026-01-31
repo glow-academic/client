@@ -928,123 +928,118 @@ class GetHomeHistoryNewSqlParams(BaseModel):
     start_date: str
     end_date: str
     profile_id: UUID
-    mode: str
-    accessible_cohort_ids: list[UUID]
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    roles: Any | None = None
-    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
-    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    infinite_mode: bool | None = None
-    sort_by: str | None = None
-    sort_order: str | None = None
-    page: int | None = 0
-    page_size: int | None = 20
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.start_date,
             self.end_date,
             self.profile_id,
-            self.mode,
-            self.accessible_cohort_ids,
             self.cohort_ids,
             self.department_ids,
-            self.roles,
-            self.simulation_filters,
-            self.search,
-            self.profile_ids,
-            self.simulation_ids,
-            self.scenario_ids,
-            self.infinite_mode,
-            self.sort_by,
-            self.sort_order,
-            self.page,
-            self.page_size,
         )
 
-class QGetHomeHistoryNewV4Attempt(BaseModel):
+class QGetHomeHistoryNewV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetHomeHistoryNewV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    color: str | None
+
+
+
+
+class QGetHomeHistoryNewV4Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetHomeHistoryNewV4RawAttempt(BaseModel):
 
     attempt_id: UUID | None
-    date: datetime | None
+    attempt_created_at: datetime | None
     profile_id: UUID | None
-    profile_name: str | None
-    simulation_name: str | None
+    simulation_id: UUID | None
+    cohort_id: UUID | None
+    department_id: UUID | None
+    infinite_mode: bool | None
+    num_chats: int | None
+    num_chats_completed: int | None
     num_scenarios: int | None
     num_scenarios_completed: int | None
-    infinite_mode: bool | None
-    time_limit: int | None
-    persona_names_junction: list[str] | None
-    persona_colors_junction: list[str] | None
-    score: int | None
-    score_status: str | None
-    simulation_id: UUID | None
+    score_percent: float | None
+    has_passed: bool | None
+    total_time_seconds: int | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
     scenario_ids: list[UUID] | None
-    scenario_titles: list[str] | None
-    is_archived: bool | None
-    show_view: bool | None
-    show_continue: bool | None
-    practice_simulation: bool | None
-    pass_pct: int | None
-    department_ids: list[str] | None
-    cohort_names_junction: list[str] | None
-    practice_scenario_id: UUID | None
+    persona_ids: list[UUID] | None
 
 
 
 
-class QGetHomeHistoryNewV4FilterOption(BaseModel):
+class QGetHomeHistoryNewV4Scenario(BaseModel):
 
-    value: str | None
-    label: str | None
-    count: int | None
+    scenario_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetHomeHistoryNewV4Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    department_ids: list[UUID] | None
+
+
+
+
+class QGetHomeHistoryNewV4TimeLimit(BaseModel):
+
+    scenario_id: UUID | None
+    time_limit_seconds: int | None
 
 class GetHomeHistoryNewSqlRow(BaseModel):
 
     actor_name: str | None = None
-    data: list[QGetHomeHistoryNewV4Attempt] | None = None
-    total_count: int | None = None
-    page: int | None = None
-    page_size: int | None = None
-    total_pages: int | None = None
-    profile_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
-    simulation_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
-    scenario_options_junction: list[QGetHomeHistoryNewV4FilterOption] | None = None
+    raw_attempts: list[QGetHomeHistoryNewV4RawAttempt] | None = None
+    simulations: list[QGetHomeHistoryNewV4Simulation] | None = None
+    profiles: list[QGetHomeHistoryNewV4Profile] | None = None
+    personas: list[QGetHomeHistoryNewV4Persona] | None = None
+    scenarios: list[QGetHomeHistoryNewV4Scenario] | None = None
+    cohorts: list[QGetHomeHistoryNewV4Cohort] | None = None
+    time_limits: list[QGetHomeHistoryNewV4TimeLimit] | None = None
 
 class GetHomeHistoryNewApiRequest(BaseModel):
 
     start_date: str
     end_date: str
-    mode: str
-    accessible_cohort_ids: list[UUID]
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    roles: Any | None = None
-    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    search: str | None = None
-    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    infinite_mode: bool | None = None
-    sort_by: str | None = None
-    sort_order: str | None = None
-    page: int | None = 0
-    page_size: int | None = 20
 
 class GetHomeHistoryNewApiResponse(BaseModel):
 
     actor_name: str | None = None
-    data: list[QGetHomeHistoryNewV4Attempt] | None = None
-    total_count: int | None = None
-    page: int | None = None
-    page_size: int | None = None
-    total_pages: int | None = None
-    profile_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
-    simulation_options: list[QGetHomeHistoryNewV4FilterOption] | None = None
-    scenario_options_junction: list[QGetHomeHistoryNewV4FilterOption] | None = None
+    raw_attempts: list[QGetHomeHistoryNewV4RawAttempt] | None = None
+    simulations: list[QGetHomeHistoryNewV4Simulation] | None = None
+    profiles: list[QGetHomeHistoryNewV4Profile] | None = None
+    personas: list[QGetHomeHistoryNewV4Persona] | None = None
+    scenarios: list[QGetHomeHistoryNewV4Scenario] | None = None
+    cohorts: list[QGetHomeHistoryNewV4Cohort] | None = None
+    time_limits: list[QGetHomeHistoryNewV4TimeLimit] | None = None
 
 
 
@@ -1067,6 +1062,51 @@ class GetHomeOverviewNewSqlParams(BaseModel):
             self.department_ids,
         )
 
+class QGetHomeOverviewNewV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+
+
+
+
+class QGetHomeOverviewNewV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    color: str | None
+    icon: str | None
+
+
+
+
+class QGetHomeOverviewNewV4RawSimulation(BaseModel):
+
+    simulation_id: UUID | None
+    attempt_count: int | None
+    completed_count: int | None
+    highest_score: int | None
+    has_passed: bool | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    persona_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+    passed_count: int | None
+    in_progress_count: int | None
+    not_started_count: int | None
+    total_members: int | None
+
+
+
+
+class QGetHomeOverviewNewV4Rubric(BaseModel):
+
+    simulation_id: UUID | None
+    rubric_id: UUID | None
+    standard_group_ids: list[UUID] | None
+
+
+
+
 class QGetHomeOverviewNewV4Simulation(BaseModel):
 
     simulation_id: UUID | None
@@ -1074,33 +1114,6 @@ class QGetHomeOverviewNewV4Simulation(BaseModel):
     description: str | None
     time_limit: int | None
     department_ids: list[str] | None
-
-
-
-
-class QGetHomeOverviewNewV4SimulationCard(BaseModel):
-
-    view_mode: str | None
-    simulation_id: UUID | None
-    simulation_title: str | None
-    simulation_description: str | None
-    simulation_name: str | None
-    time_limit: int | None
-    num_sessions: int | None
-    highest_score: int | None
-    standard_groups: list[str] | None
-    color: str | None
-    icon: str | None
-    has_passed: bool | None
-    pass_rate: int | None
-    status: str | None
-    completion_pct: int | None
-    passed_count: int | None
-    in_progress_count: int | None
-    not_started_count: int | None
-    pass_pct: int | None
-    cohort_name: str | None
-    cohort_names_junction: str | None
 
 
 
@@ -1129,10 +1142,13 @@ class GetHomeOverviewNewSqlRow(BaseModel):
     actor_name: str | None = None
     mode: str | None = None
     has_data: bool | None = None
-    items: list[QGetHomeOverviewNewV4SimulationCard] | None = None
+    raw_simulations: list[QGetHomeOverviewNewV4RawSimulation] | None = None
+    simulations: list[QGetHomeOverviewNewV4Simulation] | None = None
+    personas: list[QGetHomeOverviewNewV4Persona] | None = None
+    cohorts: list[QGetHomeOverviewNewV4Cohort] | None = None
+    rubrics: list[QGetHomeOverviewNewV4Rubric] | None = None
     standard_groups: list[QGetHomeOverviewNewV4StandardGroup] | None = None
     standards: list[QGetHomeOverviewNewV4Standard] | None = None
-    simulations: list[QGetHomeOverviewNewV4Simulation] | None = None
 
 class GetHomeOverviewNewApiRequest(BaseModel):
 
@@ -1146,10 +1162,13 @@ class GetHomeOverviewNewApiResponse(BaseModel):
     actor_name: str | None = None
     mode: str | None = None
     has_data: bool | None = None
-    items: list[QGetHomeOverviewNewV4SimulationCard] | None = None
+    raw_simulations: list[QGetHomeOverviewNewV4RawSimulation] | None = None
+    simulations: list[QGetHomeOverviewNewV4Simulation] | None = None
+    personas: list[QGetHomeOverviewNewV4Persona] | None = None
+    cohorts: list[QGetHomeOverviewNewV4Cohort] | None = None
+    rubrics: list[QGetHomeOverviewNewV4Rubric] | None = None
     standard_groups: list[QGetHomeOverviewNewV4StandardGroup] | None = None
     standards: list[QGetHomeOverviewNewV4Standard] | None = None
-    simulations: list[QGetHomeOverviewNewV4Simulation] | None = None
 
 
 
