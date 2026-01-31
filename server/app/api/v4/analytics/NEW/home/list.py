@@ -168,7 +168,7 @@ async def home_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header
+        # Get profile_id from header (this is the artifact ID)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -176,8 +176,23 @@ async def home_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Resolve artifact ID to resource ID via junction table
+        resource_id = await conn.fetchval(
+            """
+            SELECT profiles_id FROM profile_profiles_junction
+            WHERE profile_id = $1 AND active = true
+            LIMIT 1
+            """,
+            profile_id,
+        )
+        if not resource_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile not found. Please sign in again.",
+            )
+
         # === QUERY 1: Context (for pass_threshold) ===
-        context_params = GetHomeContextSqlParams(profile_id=profile_id)
+        context_params = GetHomeContextSqlParams(profile_id=resource_id)
         context = cast(
             GetHomeContextSqlRow,
             await execute_sql_typed(conn, CONTEXT_SQL_PATH, params=context_params),
@@ -188,7 +203,7 @@ async def home_list(
         data_params = GetHomeHistoryNewSqlParams(
             start_date=request_dict["start_date"],
             end_date=request_dict["end_date"],
-            profile_id=profile_id,
+            profile_id=resource_id,
             cohort_ids=request_dict.get("cohort_ids"),
             department_ids=request_dict.get("department_ids"),
             simulation_ids=request_dict.get("simulation_ids"),

@@ -404,6 +404,27 @@ async def get_profile_context(
             async with pool.acquire() as c:
                 return await get_roles_internal(c, bypass_cache)
 
+        async def fetch_earliest_attempt_date():
+            """Fetch earliest attempt date across all departments the profile belongs to."""
+            if not profile_id:
+                return None
+            async with pool.acquire() as c:
+                return await c.fetchval(
+                    """
+                    SELECT MIN(sa.created_at)
+                    FROM profile_departments_junction pd_effective
+                    JOIN profile_departments_junction pd_all
+                        ON pd_all.department_id = pd_effective.department_id
+                        AND pd_all.active = true
+                    JOIN profile_profiles_junction ppj ON ppj.profile_id = pd_all.profile_id
+                    JOIN simulation_attempts_profiles_connection sapc ON sapc.profiles_id = ppj.profiles_id
+                    JOIN view_simulation_attempts_entry sa ON sa.id = sapc.attempt_id
+                    WHERE pd_effective.profile_id = $1
+                      AND pd_effective.active = true
+                    """,
+                    profile_id,
+                )
+
         # Execute all fetches in parallel
         (
             departments_raw,
@@ -412,6 +433,7 @@ async def get_profile_context(
             settings_theme,
             drafts_raw,
             roles_raw,
+            earliest_attempt_date,
         ) = await asyncio.gather(
             fetch_departments(),
             fetch_cohorts(),
@@ -419,6 +441,7 @@ async def get_profile_context(
             fetch_settings_theme(),
             fetch_drafts(),
             fetch_roles(),
+            fetch_earliest_attempt_date(),
         )
 
         pass2_time = (time.time() - pass2_start) * 1000  # ms
@@ -501,7 +524,7 @@ async def get_profile_context(
             departments=departments,
             cohorts=cohorts,
             simulations=simulations,
-            earliest_attempt_date=None,  # Not fetched in 2-pass
+            earliest_attempt_date=earliest_attempt_date.isoformat() if earliest_attempt_date else None,
             scoped_roles=access_result.scoped_roles,
             role_resources=role_resources,
             # Settings - ID from Pass 1, colors/thresholds from lightweight theme query

@@ -151,7 +151,7 @@ accessible_cohorts AS (
     JOIN cohorts_resource cr ON cr.id = user_cohort_id AND cr.active = true
     CROSS JOIN params p
     WHERE (cardinality(p.cohort_ids) = 0 OR cr.id = ANY(p.cohort_ids))
-      AND (cardinality(p.department_ids) = 0 OR cr.department_ids && p.department_ids)
+      AND (cardinality(p.department_ids) = 0 OR cardinality(cr.department_ids) = 0 OR cr.department_ids && p.department_ids)
 ),
 
 -- Get simulations from those cohorts

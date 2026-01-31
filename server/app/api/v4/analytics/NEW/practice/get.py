@@ -149,7 +149,7 @@ async def practice_get(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header
+        # Get profile_id from header (this is the artifact ID)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -157,8 +157,23 @@ async def practice_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Resolve artifact ID to resource ID via junction table
+        resource_id = await conn.fetchval(
+            """
+            SELECT profiles_id FROM profile_profiles_junction
+            WHERE profile_id = $1 AND active = true
+            LIMIT 1
+            """,
+            profile_id,
+        )
+        if not resource_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile not found. Please sign in again.",
+            )
+
         # === QUERY 1: Context (for mode computation) ===
-        context_params = GetPracticeContextSqlParams(profile_id=profile_id)
+        context_params = GetPracticeContextSqlParams(profile_id=resource_id)
         context = cast(
             GetPracticeContextSqlRow,
             await execute_sql_typed(conn, CONTEXT_SQL_PATH, params=context_params),
@@ -167,7 +182,7 @@ async def practice_get(
         # === QUERY 2: Data (simulation cards with all JOINs in SQL) ===
         request_dict = request.model_dump(mode="json")
         data_params = GetPracticeOverviewNewSqlParams(
-            **request_dict, profile_id=profile_id
+            **request_dict, profile_id=resource_id
         )
         sql_params = data_params.to_tuple()
 

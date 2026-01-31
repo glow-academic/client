@@ -130,7 +130,7 @@ cohort_simulations AS (
     CROSS JOIN LATERAL unnest(pi.user_cohort_ids) AS user_cohort_id
     JOIN cohorts_resource cr ON cr.id = user_cohort_id AND cr.active = true
     CROSS JOIN params p
-    WHERE (cardinality(p.department_ids) = 0 OR cr.department_ids && p.department_ids)
+    WHERE (cardinality(p.department_ids) = 0 OR cardinality(cr.department_ids) = 0 OR cr.department_ids && p.department_ids)
 ),
 
 -- Aggregate practice simulation status from mv_practice_attempt_history (like HOME)
