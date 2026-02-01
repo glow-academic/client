@@ -487,12 +487,15 @@ async def get_profile_context(
         }
         theme_tokens = derive_theme_tokens(theme_primitives)
 
-        # Build artifact_agent_ids map
+        # Build artifact_agent_ids map - take first agent_id for backward compatibility
         artifact_agent_ids_map: dict[str, UUID | None] = {}
         if access_result.artifact_agent_ids:
             for item in access_result.artifact_agent_ids:
                 if item.artifact:
-                    artifact_agent_ids_map[item.artifact] = item.general_agent_id
+                    # Take first agent_id for backward compatibility
+                    artifact_agent_ids_map[item.artifact] = (
+                        item.agent_ids[0] if item.agent_ids else None
+                    )
 
         # Set audit context
         if access_result.actor_name and profile_id:

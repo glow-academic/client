@@ -2141,7 +2141,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/home/get": {
+    "/api/v4/training/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2151,20 +2151,23 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Home Get
-         * @description Get home overview with simulation cards.
+         * Training Get
+         * @description Get training overview with simulation cards.
+         *
+         *     Unified endpoint for home and practice overview, differentiated by
+         *     `practice: bool` parameter.
          *
          *     Uses simulation overview view internal handler for data.
          *     Python handles only business logic (status, pass_pct, completion_pct, cohort formatting).
          */
-        post: operations["home_get_api_v4_home_get_post"];
+        post: operations["training_get_api_v4_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/home/list": {
+    "/api/v4/training/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2174,20 +2177,23 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Home List
-         * @description Get paginated home history with attempts.
+         * Training List
+         * @description Get paginated training history with attempts.
+         *
+         *     Unified endpoint for home and practice history, differentiated by
+         *     `practice: bool` parameter.
          *
          *     Uses simulation history view internal handler for data.
          *     Python handles only business logic (score_status, show_view, show_continue, pass_pct).
          */
-        post: operations["home_list_api_v4_home_list_post"];
+        post: operations["training_list_api_v4_training_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/home/refresh": {
+    "/api/v4/training/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2197,8 +2203,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Home Refresh
-         * @description Refresh all home section materialized views.
+         * Training Refresh
+         * @description Refresh all training section materialized views.
          *
          *     Uses SQL function that refreshes MVs in dependency order:
          *     1. mv_home_chat_facts (base fact table)
@@ -2206,14 +2212,14 @@ export interface paths {
          *     3. mv_home_attempt_history (depends on chat_facts)
          *     4. mv_home_certificate_status (depends on chat_facts)
          */
-        post: operations["home_refresh_api_v4_home_refresh_post"];
+        post: operations["training_refresh_api_v4_training_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/home/attempt": {
+    "/api/v4/attempt/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2223,90 +2229,20 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Home Attempt Detail
-         * @description Get home attempt detail with parallel MV fetching.
+         * Attempt Get
+         * @description Get attempt detail with parallel MV fetching.
+         *
+         *     Unified endpoint for home and practice attempt detail, differentiated by
+         *     `practice: bool` parameter.
          *
          *     Uses view internal handlers with pool-based parallel fetch:
          *     - View 1: simulation_attempts (attempt-level aggregates)
          *     - View 2: simulation_chats (chat-level data with grades/feedbacks)
-         *     - View 3: simulation_messages (message-level data with strengths/improvements)
+         *     - View 3: simulation_messages (message-level data with strengths/improvements/hints)
          *
          *     Each query runs on its own connection from the pool for true parallelism.
          */
-        post: operations["home_attempt_detail_api_v4_home_attempt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/practice/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Practice Get
-         * @description Get practice overview with simulation cards.
-         *
-         *     Uses simulation overview view internal handler for data.
-         *     Python handles only business logic (status, pass_pct, cohort formatting).
-         */
-        post: operations["practice_get_api_v4_practice_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/practice/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Practice List
-         * @description Get paginated practice history with attempts.
-         *
-         *     Uses simulation history view internal handler for data.
-         *     Python handles only business logic (score_status, show_view, show_continue, pass_pct).
-         */
-        post: operations["practice_list_api_v4_practice_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/practice/attempt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Practice Attempt Detail
-         * @description Get practice attempt detail with parallel MV fetching.
-         *
-         *     Uses view internal handlers with pool-based parallel fetch:
-         *     - View 1: simulation_attempts (attempt-level aggregates)
-         *     - View 2: simulation_chats (chat-level data with grades/feedbacks)
-         *     - View 3: simulation_messages (message-level data with hints/strengths/improvements)
-         *
-         *     Each query runs on its own connection from the pool for true parallelism.
-         */
-        post: operations["practice_attempt_detail_api_v4_practice_attempt_post"];
+        post: operations["attempt_get_api_v4_attempt_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5477,6 +5413,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/training/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Start Api
+         * @description Client-to-server event: Start a new training session.
+         */
+        post: operations["training_start_api_socket_v4_client_training_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Message Api
+         * @description Client-to-server event: Send a message during attempt simulation.
+         */
+        post: operations["attempt_message_api_socket_v4_client_attempt_message_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Grade Api
+         * @description Client-to-server event: Grade simulation attempt.
+         */
+        post: operations["attempt_grade_api_socket_v4_client_attempt_grade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/benchmark/enter": {
         parameters: {
             query?: never;
@@ -5691,6 +5687,186 @@ export interface paths {
          * @description Server-to-client event: Connection confirmed after WebSocket establishment.
          */
         post: operations["connection_confirmed_api_socket_v4_server_connection_confirmed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training/started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Started Api
+         * @description Server-to-client event: Training session created successfully.
+         */
+        post: operations["training_started_api_socket_v4_server_training_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Progress Api
+         * @description Server-to-client event: Training generation progress update.
+         */
+        post: operations["training_progress_api_socket_v4_server_training_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Complete Api
+         * @description Server-to-client event: Training generation completed.
+         */
+        post: operations["training_complete_api_socket_v4_server_training_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/training/error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Training Error Api
+         * @description Server-to-client event: Training generation error occurred.
+         */
+        post: operations["training_error_api_socket_v4_server_training_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/message_sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Message Sent Api
+         * @description Server-to-client event: Message received and assistant placeholder created.
+         */
+        post: operations["attempt_message_sent_api_socket_v4_server_attempt_message_sent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/graded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Graded Api
+         * @description Server-to-client event: Simulation grading completed.
+         */
+        post: operations["attempt_graded_api_socket_v4_server_attempt_graded_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Progress Api
+         * @description Server-to-client event: Attempt generation progress update.
+         */
+        post: operations["attempt_progress_api_socket_v4_server_attempt_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Complete Api
+         * @description Server-to-client event: Attempt generation completed.
+         */
+        post: operations["attempt_complete_api_socket_v4_server_attempt_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Error Api
+         * @description Server-to-client event: Attempt generation error occurred.
+         */
+        post: operations["attempt_error_api_socket_v4_server_attempt_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6399,8 +6575,47 @@ export interface components {
             id?: string | null;
         };
         /**
+         * AttemptCompleteEvent
+         * @description Server-to-client event: attempt_complete.
+         *
+         *     Emitted when message generation completes and is saved to DB.
+         */
+        AttemptCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default attempt
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Message Id */
+            message_id?: string | null;
+            /** Final Content */
+            final_content?: string | null;
+            /**
+             * Completed
+             * @default true
+             */
+            completed: boolean;
+        };
+        /**
          * AttemptData
          * @description Attempt-level data.
+         *
+         *     cohort_id is only populated when practice=False.
+         *     is_archived is only populated when practice=True.
          */
         AttemptData: {
             /**
@@ -6416,10 +6631,202 @@ export interface components {
             profile_id?: string | null;
             /** Profile Name */
             profile_name?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
             /** Department Id */
             department_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+        };
+        /**
+         * AttemptErrorEvent
+         * @description Server-to-client event: attempt_error.
+         *
+         *     Emitted when an error occurs during attempt generation.
+         */
+        AttemptErrorEvent: {
+            /**
+             * Artifact Type
+             * @default attempt
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Message Id */
+            message_id?: string | null;
+        };
+        /**
+         * AttemptGradePayload
+         * @description Request payload for attempt_grade WebSocket event.
+         *
+         *     Ends the simulation and triggers grading.
+         */
+        AttemptGradePayload: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Grade Agent Id
+             * Format: uuid
+             */
+            grade_agent_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Chat Id */
+            chat_id?: string | null;
+        };
+        /**
+         * AttemptGradedEvent
+         * @description Server-to-client event: attempt_graded.
+         *
+         *     Emitted when simulation grading completes.
+         */
+        AttemptGradedEvent: {
+            /**
+             * Artifact Type
+             * @default attempt
+             */
+            artifact_type: string;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
+        /**
+         * AttemptMessagePayload
+         * @description Request payload for attempt_message WebSocket event.
+         *
+         *     Sends a user message during an active simulation chat.
+         */
+        AttemptMessagePayload: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Chat Agent Id
+             * Format: uuid
+             */
+            chat_agent_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /** Message */
+            message: string;
+            /**
+             * Voice Mode
+             * @default false
+             */
+            voice_mode: boolean;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+        };
+        /**
+         * AttemptMessageSentEvent
+         * @description Server-to-client event: attempt_message_sent.
+         *
+         *     Emitted when a user message is received and assistant placeholder created.
+         */
+        AttemptMessageSentEvent: {
+            /**
+             * Artifact Type
+             * @default attempt
+             */
+            artifact_type: string;
+            /** Chat Id */
+            chat_id: string;
+            /** User Message Id */
+            user_message_id: string;
+            /** Assistant Message Id */
+            assistant_message_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+        };
+        /**
+         * AttemptProgressEvent
+         * @description Server-to-client event: attempt_progress.
+         *
+         *     Emitted during message generation to stream tokens.
+         */
+        AttemptProgressEvent: {
+            /**
+             * Artifact Type
+             * @default attempt
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Modality */
+            modality?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Message Id */
+            message_id?: string | null;
+            /** Delta */
+            delta?: string | null;
+            /** Accumulated Content */
+            accumulated_content?: string | null;
         };
         /**
          * AttemptViewItem
@@ -8231,6 +8638,11 @@ export interface components {
         /**
          * GetAttemptDetailRequest
          * @description Client API request for attempt detail.
+         *
+         *     Args:
+         *         attempt_id: The attempt ID to fetch details for.
+         *         practice: If True, includes hints in messages and is_archived in attempt.
+         *             If False, includes cohort_id in attempt.
          */
         GetAttemptDetailRequest: {
             /**
@@ -8238,6 +8650,11 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
         };
         /**
          * GetAttemptDetailResponse
@@ -9701,67 +10118,6 @@ export interface components {
             /** Scenario Options Junction */
             scenario_options_junction?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
         };
-        /**
-         * GetHomeHistoryNewClientRequest
-         * @description Client API request for home history.
-         *
-         *     Note: Home history is single-user (profile from auth header).
-         *     Filters like roles, simulation_filters, profile_ids are not applicable.
-         */
-        GetHomeHistoryNewClientRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
-        };
-        /**
-         * GetHomeHistoryNewResponse
-         * @description Client-facing API response for home history.
-         */
-        GetHomeHistoryNewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["HistoryAttempt"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__artifacts__home__types__FilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["app__api__v4__artifacts__home__types__FilterOption"][] | null;
-        };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
             /** Start Date */
@@ -9789,35 +10145,6 @@ export interface components {
             standards?: components["schemas"]["QGetHomeOverviewV4Standard"][] | null;
             /** Simulations */
             simulations?: components["schemas"]["QGetHomeOverviewV4Simulation"][] | null;
-        };
-        /** GetHomeOverviewNewApiRequest */
-        GetHomeOverviewNewApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * GetHomeOverviewNewResponse
-         * @description Client-facing API response for home overview.
-         */
-        GetHomeOverviewNewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Mode */
-            mode?: string | null;
-            /** Has Data */
-            has_data?: boolean | null;
-            /** Items */
-            items?: components["schemas"]["SimulationCard"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /** GetIconsApiRequest */
         GetIconsApiRequest: {
@@ -10825,35 +11152,6 @@ export interface components {
             /** All Simulation Scenarios */
             all_simulation_scenarios?: components["schemas"]["QGetPracticeAttemptV4AllSimulationScenario"][] | null;
         };
-        /**
-         * GetPracticeAttemptDetailRequest
-         * @description Client API request for practice attempt detail.
-         */
-        GetPracticeAttemptDetailRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-        };
-        /**
-         * GetPracticeAttemptDetailResponse
-         * @description Client-facing API response for practice attempt detail.
-         */
-        GetPracticeAttemptDetailResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Attempt Exists */
-            attempt_exists?: boolean | null;
-            /** Access Denied */
-            access_denied?: boolean | null;
-            attempt?: components["schemas"]["PracticeAttemptData"] | null;
-            simulation?: components["schemas"]["SimulationData"] | null;
-            /** Chats */
-            chats?: components["schemas"]["PracticeChatData"][] | null;
-            timer?: components["schemas"]["TimerData"] | null;
-            aggregated_results?: components["schemas"]["AggregatedResults"] | null;
-        };
         /** GetPracticeHistoryApiRequest */
         GetPracticeHistoryApiRequest: {
             /** Department Ids */
@@ -10902,75 +11200,6 @@ export interface components {
             /** Scenario Options Junction */
             scenario_options_junction?: components["schemas"]["QGetPracticeHistoryV4ScenarioOption"][] | null;
         };
-        /**
-         * GetPracticeHistoryNewClientRequest
-         * @description Client API request for practice history.
-         *
-         *     Note: Practice history supports multi-user view (profile_ids filter).
-         */
-        GetPracticeHistoryNewClientRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /**
-             * Show Archived
-             * @default false
-             */
-            show_archived: boolean | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
-        };
-        /**
-         * GetPracticeHistoryNewResponse
-         * @description Client-facing API response for practice history.
-         */
-        GetPracticeHistoryNewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["PracticeHistoryAttempt"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__artifacts__practice__types__FilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["app__api__v4__artifacts__practice__types__FilterOption"][] | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["app__api__v4__artifacts__practice__types__FilterOption"][] | null;
-        };
         /** GetPracticeOverviewApiRequest */
         GetPracticeOverviewApiRequest: {
             /** Department Ids */
@@ -11014,34 +11243,6 @@ export interface components {
             draft_parameter_item_ids?: unknown | null;
             /** Draft Department Ids */
             draft_department_ids?: unknown | null;
-        };
-        /**
-         * GetPracticeOverviewNewClientRequest
-         * @description Client API request for practice overview.
-         *
-         *     Note: profile_id is NOT included here - it comes from the X-Profile-Id header.
-         */
-        GetPracticeOverviewNewClientRequest: {
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * GetPracticeOverviewNewResponse
-         * @description Client-facing API response for practice overview.
-         */
-        GetPracticeOverviewNewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Mode */
-            mode?: string | null;
-            /** Has Data */
-            has_data?: boolean | null;
-            /** Items */
-            items?: components["schemas"]["PracticeSimulationCard"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /** GetPricingAnalyticsApiRequest */
         GetPricingAnalyticsApiRequest: {
@@ -12902,6 +13103,142 @@ export interface components {
             tools?: components["schemas"]["QGetToolsListV4Tool"][] | null;
         };
         /**
+         * GetTrainingHistoryRequest
+         * @description Client API request for training history.
+         *
+         *     Args:
+         *         practice: If True, returns practice history. If False, returns home history.
+         *         start_date: Start date filter (required).
+         *         end_date: End date filter (required).
+         *         cohort_ids: Filter by cohorts.
+         *         department_ids: Filter by departments.
+         *         simulation_ids: Filter by simulations.
+         *         scenario_ids: Filter by scenarios.
+         *         infinite_mode: Filter by infinite mode.
+         *         search: Search string.
+         *         sort_by: Sort field ('date' | 'score' | 'simulation_name').
+         *         sort_order: Sort order ('asc' | 'desc').
+         *         page: Page number (0-indexed).
+         *         page_size: Page size.
+         *         profile_ids: Filter by profiles (practice mode only, ignored when practice=False).
+         *         show_archived: Show archived attempts (practice mode only, ignored when practice=False).
+         */
+        GetTrainingHistoryRequest: {
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /** Start Date */
+            start_date: string;
+            /** End Date */
+            end_date: string;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Search */
+            search?: string | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /**
+             * Show Archived
+             * @default false
+             */
+            show_archived: boolean | null;
+        };
+        /**
+         * GetTrainingHistoryResponse
+         * @description Client-facing API response for training history.
+         */
+        GetTrainingHistoryResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["TrainingHistoryAttempt"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
+        };
+        /**
+         * GetTrainingOverviewRequest
+         * @description Client API request for training overview.
+         *
+         *     Args:
+         *         practice: If True, returns practice simulations. If False, returns home simulations.
+         *         department_ids: Filter by departments (applies to both modes).
+         *         simulation_ids: Filter by simulations (ignored when practice=True).
+         *         cohort_ids: Filter by cohorts (ignored when practice=True).
+         *         start_date: Filter by start date (ignored when practice=True).
+         *         end_date: Filter by end date (ignored when practice=True).
+         */
+        GetTrainingOverviewRequest: {
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+        };
+        /**
+         * GetTrainingOverviewResponse
+         * @description Client-facing API response for training overview.
+         */
+        GetTrainingOverviewResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Mode */
+            mode?: string | null;
+            /** Has Data */
+            has_data?: boolean | null;
+            /** Items */
+            items?: components["schemas"]["TrainingSimulationCard"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardMapping"][] | null;
+        };
+        /**
          * GetVideoApiRequest
          * @description Request for getting a video by ID.
          */
@@ -13044,7 +13381,7 @@ export interface components {
         };
         /**
          * HintEntry
-         * @description Hint entry (PRACTICE-specific).
+         * @description Hint entry (practice mode only).
          */
         HintEntry: {
             /** Message Id */
@@ -13065,59 +13402,6 @@ export interface components {
             hint?: string | null;
             /** Idx */
             idx?: number | null;
-        };
-        /**
-         * HistoryAttempt
-         * @description Attempt record for home history.
-         *
-         *     SQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.
-         */
-        HistoryAttempt: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Date */
-            date?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Num Scenarios */
-            num_scenarios?: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed?: number | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Persona Names Junction */
-            persona_names_junction?: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Titles */
-            scenario_titles?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string[] | null;
-            /** Score */
-            score?: number | null;
-            /** Score Status */
-            score_status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Show View */
-            show_view?: boolean | null;
-            /** Show Continue */
-            show_continue?: boolean | null;
         };
         /**
          * HistoryViewItem
@@ -13808,6 +14092,8 @@ export interface components {
         /**
          * MessageData
          * @description Message with content and feedback data.
+         *
+         *     The hints field is only populated when practice=True.
          */
         MessageData: {
             /**
@@ -13827,6 +14113,8 @@ export interface components {
             strengths?: components["schemas"]["StrengthEntry"][] | null;
             /** Improvements */
             improvements?: components["schemas"]["ImprovementEntry"][] | null;
+            /** Hints */
+            hints?: components["schemas"]["HintEntry"][] | null;
         };
         /**
          * MessageViewItem
@@ -14798,204 +15086,6 @@ export interface components {
         PointsApiResponse: {
             /** Point Id */
             point_id?: string | null;
-        };
-        /**
-         * PracticeAttemptData
-         * @description Attempt-level data (PRACTICE).
-         */
-        PracticeAttemptData: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Created At */
-            created_at?: string | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Is Archived */
-            is_archived?: boolean | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-        };
-        /**
-         * PracticeChatData
-         * @description Chat with scenario, persona, grade, and messages (PRACTICE).
-         */
-        PracticeChatData: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Scenario Name */
-            scenario_name?: string | null;
-            /** Problem Statement */
-            problem_statement?: string | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Objectives */
-            objectives?: string[] | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
-            /** Persona Color */
-            persona_color?: string | null;
-            /** Completed */
-            completed?: boolean | null;
-            /** Is Current */
-            is_current?: boolean | null;
-            /** Position */
-            position?: number | null;
-            grade?: components["schemas"]["GradeData"] | null;
-            /** Feedbacks */
-            feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
-            /** Messages */
-            messages?: components["schemas"]["PracticeMessageData"][] | null;
-        };
-        /**
-         * PracticeHistoryAttempt
-         * @description Attempt record for practice history.
-         *
-         *     SQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.
-         */
-        PracticeHistoryAttempt: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Date */
-            date?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Num Scenarios */
-            num_scenarios?: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed?: number | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Persona Names Junction */
-            persona_names_junction?: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Titles */
-            scenario_titles?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string[] | null;
-            /** Is Archived */
-            is_archived?: boolean | null;
-            /** Score */
-            score?: number | null;
-            /** Score Status */
-            score_status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Show View */
-            show_view?: boolean | null;
-            /** Show Continue */
-            show_continue?: boolean | null;
-            /**
-             * Practice Simulation
-             * @default true
-             */
-            practice_simulation: boolean;
-            /** Practice Scenario Id */
-            practice_scenario_id?: string | null;
-        };
-        /**
-         * PracticeMessageData
-         * @description Message with content, hints, and feedback data (PRACTICE).
-         */
-        PracticeMessageData: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Content */
-            content?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Completed */
-            completed?: boolean | null;
-            /** Hints */
-            hints?: components["schemas"]["HintEntry"][] | null;
-            /** Strengths */
-            strengths?: components["schemas"]["StrengthEntry"][] | null;
-            /** Improvements */
-            improvements?: components["schemas"]["ImprovementEntry"][] | null;
-        };
-        /**
-         * PracticeSimulationCard
-         * @description Simulation card for practice overview.
-         *
-         *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
-         */
-        PracticeSimulationCard: {
-            /** View Mode */
-            view_mode: string;
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Simulation Description */
-            simulation_description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Num Sessions */
-            num_sessions?: number | null;
-            /** Highest Score */
-            highest_score?: number | null;
-            /** Standard Groups */
-            standard_groups?: string[] | null;
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Has Passed */
-            has_passed?: boolean | null;
-            /** Status */
-            status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string | null;
-            /**
-             * Practice Simulation
-             * @default true
-             */
-            practice_simulation: boolean;
-            /** Practice Scenario Id */
-            practice_scenario_id?: string | null;
         };
         /** PricingApiRequest */
         PricingApiRequest: {
@@ -24029,53 +24119,6 @@ export interface components {
             items?: components["schemas"]["QGetTemplatesV4Item"][] | null;
         };
         /**
-         * SimulationCard
-         * @description Simulation card for home overview.
-         *
-         *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
-         */
-        SimulationCard: {
-            /** View Mode */
-            view_mode: string;
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Simulation Description */
-            simulation_description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Num Sessions */
-            num_sessions?: number | null;
-            /** Highest Score */
-            highest_score?: number | null;
-            /** Standard Groups */
-            standard_groups?: string[] | null;
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Has Passed */
-            has_passed?: boolean | null;
-            /** Status */
-            status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Completion Pct */
-            completion_pct?: number | null;
-            /** Passed Count */
-            passed_count?: number | null;
-            /** In Progress Count */
-            in_progress_count?: number | null;
-            /** Not Started Count */
-            not_started_count?: number | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string | null;
-        };
-        /**
          * SimulationData
          * @description Simulation metadata.
          */
@@ -24534,6 +24577,266 @@ export interface components {
             /** Formatted */
             formatted?: string | null;
         };
+        /**
+         * TrainingCompleteEvent
+         * @description Server-to-client event: training_complete.
+         *
+         *     Emitted when scenario generation completes.
+         */
+        TrainingCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default training
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Type */
+            type?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+        };
+        /**
+         * TrainingErrorEvent
+         * @description Server-to-client event: training_error.
+         *
+         *     Emitted when an error occurs during training generation.
+         */
+        TrainingErrorEvent: {
+            /**
+             * Artifact Type
+             * @default training
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+        };
+        /**
+         * TrainingHistoryAttempt
+         * @description Attempt record for training history.
+         *
+         *     SQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.
+         *     Some fields are only populated based on mode:
+         *     - is_archived, practice_simulation, practice_scenario_id: practice mode only
+         */
+        TrainingHistoryAttempt: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Date */
+            date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Num Scenarios */
+            num_scenarios?: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed?: number | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Persona Names Junction */
+            persona_names_junction?: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Titles */
+            scenario_titles?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string[] | null;
+            /** Score */
+            score?: number | null;
+            /** Score Status */
+            score_status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Show View */
+            show_view?: boolean | null;
+            /** Show Continue */
+            show_continue?: boolean | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Practice Scenario Id */
+            practice_scenario_id?: string | null;
+        };
+        /**
+         * TrainingProgressEvent
+         * @description Server-to-client event: training_progress.
+         *
+         *     Emitted during scenario generation to stream progress.
+         */
+        TrainingProgressEvent: {
+            /**
+             * Artifact Type
+             * @default training
+             */
+            artifact_type: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Modality */
+            modality?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+        };
+        /**
+         * TrainingSimulationCard
+         * @description Simulation card for training overview.
+         *
+         *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
+         *     Some fields are only populated based on mode:
+         *     - completion_pct, passed_count, in_progress_count, not_started_count: instructional mode only
+         *     - practice_simulation, practice_scenario_id: practice mode only
+         */
+        TrainingSimulationCard: {
+            /** View Mode */
+            view_mode: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Simulation Description */
+            simulation_description?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Num Sessions */
+            num_sessions?: number | null;
+            /** Highest Score */
+            highest_score?: number | null;
+            /** Standard Groups */
+            standard_groups?: string[] | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Has Passed */
+            has_passed?: boolean | null;
+            /** Status */
+            status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string | null;
+            /** Completion Pct */
+            completion_pct?: number | null;
+            /** Passed Count */
+            passed_count?: number | null;
+            /** In Progress Count */
+            in_progress_count?: number | null;
+            /** Not Started Count */
+            not_started_count?: number | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Practice Scenario Id */
+            practice_scenario_id?: string | null;
+        };
+        /**
+         * TrainingStartPayload
+         * @description Request payload for training_start WebSocket event.
+         *
+         *     Starts a new training session. Creates attempt + chat entries.
+         */
+        TrainingStartPayload: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+        };
+        /**
+         * TrainingStartedEvent
+         * @description Server-to-client event: training_started.
+         *
+         *     Emitted when a new training session is created successfully.
+         */
+        TrainingStartedEvent: {
+            /**
+             * Artifact Type
+             * @default training
+             */
+            artifact_type: string;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Scenario Data */
+            scenario_data?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /** UploadsApiRequest */
         UploadsApiRequest: {
             /**
@@ -24666,30 +24969,6 @@ export interface components {
         VoicesApiResponse: {
             /** Voices Id */
             voices_id?: string | null;
-        };
-        /**
-         * FilterOption
-         * @description Filter option for history dropdowns.
-         */
-        app__api__v4__artifacts__home__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
-         * FilterOption
-         * @description Filter option for history dropdowns.
-         */
-        app__api__v4__artifacts__practice__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
         };
         /**
          * GetSimulationApiRequest
@@ -24852,6 +25131,18 @@ export interface components {
             basic_agent_id?: string | null;
             /** General Agent Id */
             general_agent_id?: string | null;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for history dropdowns.
+         */
+        app__api__v4__artifacts__training__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
         };
         /**
          * GetSimulationApiRequest
@@ -28667,7 +28958,7 @@ export interface operations {
             };
         };
     };
-    home_get_api_v4_home_get_post: {
+    training_get_api_v4_training_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28680,7 +28971,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetHomeOverviewNewApiRequest"];
+                "application/json": components["schemas"]["GetTrainingOverviewRequest"];
             };
         };
         responses: {
@@ -28690,7 +28981,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetHomeOverviewNewResponse"];
+                    "application/json": components["schemas"]["GetTrainingOverviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -28704,7 +28995,7 @@ export interface operations {
             };
         };
     };
-    home_list_api_v4_home_list_post: {
+    training_list_api_v4_training_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28717,7 +29008,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetHomeHistoryNewClientRequest"];
+                "application/json": components["schemas"]["GetTrainingHistoryRequest"];
             };
         };
         responses: {
@@ -28727,7 +29018,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetHomeHistoryNewResponse"];
+                    "application/json": components["schemas"]["GetTrainingHistoryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -28741,7 +29032,7 @@ export interface operations {
             };
         };
     };
-    home_refresh_api_v4_home_refresh_post: {
+    training_refresh_api_v4_training_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28778,7 +29069,7 @@ export interface operations {
             };
         };
     };
-    home_attempt_detail_api_v4_home_attempt_post: {
+    attempt_get_api_v4_attempt_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28802,117 +29093,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAttemptDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    practice_get_api_v4_practice_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPracticeOverviewNewClientRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeOverviewNewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    practice_list_api_v4_practice_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPracticeHistoryNewClientRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeHistoryNewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    practice_attempt_detail_api_v4_practice_attempt_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPracticeAttemptDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeAttemptDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -34650,6 +34830,111 @@ export interface operations {
             };
         };
     };
+    training_start_api_socket_v4_client_training_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_message_api_socket_v4_client_attempt_message_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptMessagePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_grade_api_socket_v4_client_attempt_grade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptGradePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     benchmark_enter_api_socket_v4_client_benchmark_enter_post: {
         parameters: {
             query?: never;
@@ -35010,6 +35295,321 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConnectionConfirmedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_started_api_socket_v4_server_training_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_progress_api_socket_v4_server_training_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_complete_api_socket_v4_server_training_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_error_api_socket_v4_server_training_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_message_sent_api_socket_v4_server_attempt_message_sent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptMessageSentEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_graded_api_socket_v4_server_attempt_graded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptGradedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_progress_api_socket_v4_server_attempt_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_complete_api_socket_v4_server_attempt_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_error_api_socket_v4_server_attempt_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptErrorEvent"];
             };
         };
         responses: {

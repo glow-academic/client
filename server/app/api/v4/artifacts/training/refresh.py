@@ -1,4 +1,4 @@
-"""Home refresh endpoint - POST /home/refresh.
+"""Training refresh endpoint - POST /training/refresh.
 
 Uses api_refresh_home_mvs_new_v4 SQL function to refresh all home MVs in dependency order.
 """
@@ -29,16 +29,16 @@ router = APIRouter()
     "/refresh",
     response_model=RefreshHomeMvsNewApiResponse,
     dependencies=[
-        audit_activity("home.refresh", "{{ actor.name }} refreshed home MVs")
+        audit_activity("training.refresh", "{{ actor.name }} refreshed training MVs")
     ],
 )
-async def home_refresh(
+async def training_refresh(
     request: RefreshHomeMvsNewApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshHomeMvsNewApiResponse:
-    """Refresh all home section materialized views.
+    """Refresh all training section materialized views.
 
     Uses SQL function that refreshes MVs in dependency order:
     1. mv_home_chat_facts (base fact table)
@@ -46,7 +46,7 @@ async def home_refresh(
     3. mv_home_attempt_history (depends on chat_facts)
     4. mv_home_certificate_status (depends on chat_facts)
     """
-    tags = ["home"]
+    tags = ["training", "home"]
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -96,7 +96,7 @@ async def home_refresh(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="home_refresh",
+            operation="training_refresh",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

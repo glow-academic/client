@@ -1,7 +1,9 @@
-"""Practice history endpoint - POST /practice/list.
+"""Training history endpoint - POST /training/list.
 
-Uses simulation history view internal handler for data fetching.
-Python handles business logic: score_status, show_view, show_continue, pass_pct.
+Unified endpoint for both home and practice history, differentiated by
+`practice: bool` parameter. Uses simulation history view internal handler
+for data fetching. Python handles business logic: score_status, show_view,
+show_continue, pass_pct.
 """
 
 from datetime import datetime
@@ -10,17 +12,17 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.practice.permissions import (
+from app.api.v4.artifacts.training.permissions import (
     compute_pass_pct,
     compute_score_status,
     compute_show_continue,
     compute_show_view,
 )
-from app.api.v4.artifacts.practice.types import (
+from app.api.v4.artifacts.training.types import (
     FilterOption,
-    GetPracticeHistoryNewClientRequest,
-    GetPracticeHistoryNewResponse,
-    PracticeHistoryAttempt,
+    GetTrainingHistoryRequest,
+    GetTrainingHistoryResponse,
+    TrainingHistoryAttempt,
 )
 from app.api.v4.views.simulation.history.get import get_simulation_history_internal
 from app.api.v4.views.simulation.history.types import HistoryViewItem
@@ -28,6 +30,8 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetHomeContextSqlParams,
+    GetHomeContextSqlRow,
     GetPracticeContextSqlParams,
     GetPracticeContextSqlRow,
 )
@@ -36,7 +40,10 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-CONTEXT_SQL_PATH = (
+HOME_CONTEXT_SQL_PATH = (
+    "app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql"
+)
+PRACTICE_CONTEXT_SQL_PATH = (
     "app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql"
 )
 
@@ -46,7 +53,8 @@ router = APIRouter()
 def _transform_attempt(
     attempt: HistoryViewItem,
     pass_threshold: float | None,
-) -> PracticeHistoryAttempt:
+    practice: bool,
+) -> TrainingHistoryAttempt:
     """Transform history view item to API response.
 
     Python only computes derived business logic fields.
@@ -54,9 +62,10 @@ def _transform_attempt(
     Args:
         attempt: History view item with metadata already JOINed.
         pass_threshold: Pass threshold from context for score classification.
+        practice: Whether this is practice mode.
 
     Returns:
-        PracticeHistoryAttempt ready for API response.
+        TrainingHistoryAttempt ready for API response.
     """
     # === PYTHON BUSINESS LOGIC: Compute derived fields ===
 
@@ -69,8 +78,9 @@ def _transform_attempt(
     # Compute score (round score_percent)
     score = round(attempt.score_percent) if attempt.score_percent is not None else None
 
-    # Get is_archived from the attempt
-    is_archived = attempt.is_archived
+    # Get is_archived from the attempt (only meaningful for practice mode)
+    # For home history, MV filters out archived, so always False
+    is_archived = attempt.is_archived if practice else False
 
     # Compute show_view and show_continue
     show_view = compute_show_view(is_archived)
@@ -97,7 +107,7 @@ def _transform_attempt(
     # Derive practice_scenario_id from scenario_ids (first one if available)
     practice_scenario_id = attempt.scenario_ids[0] if attempt.scenario_ids else None
 
-    return PracticeHistoryAttempt(
+    return TrainingHistoryAttempt(
         attempt_id=attempt.attempt_id,
         date=attempt.attempt_created_at.isoformat() if attempt.attempt_created_at else None,
         profile_id=attempt.profile_id,
@@ -114,38 +124,41 @@ def _transform_attempt(
         scenario_titles=attempt.scenario_names,  # scenario_names maps to scenario_titles
         department_ids=department_ids,
         cohort_names_junction=cohort_names,
-        is_archived=is_archived,
         score=score,
         score_status=score_status,
         pass_pct=pass_pct,
         show_view=show_view,
         show_continue=show_continue,
-        practice_simulation=True,  # Always True for practice
-        practice_scenario_id=practice_scenario_id,
+        # Practice-only fields
+        is_archived=is_archived if practice else None,
+        practice_simulation=True if practice else None,
+        practice_scenario_id=practice_scenario_id if practice else None,
     )
 
 
 @router.post(
     "/list",
-    response_model=GetPracticeHistoryNewResponse,
+    response_model=GetTrainingHistoryResponse,
     dependencies=[
-        audit_activity(
-            "practice.list", "{{ actor.name }} viewed practice history"
-        )
+        audit_activity("training.list", "{{ actor.name }} viewed training history")
     ],
 )
-async def practice_list(
-    request: GetPracticeHistoryNewClientRequest,
+async def training_list(
+    request: GetTrainingHistoryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetPracticeHistoryNewResponse:
-    """Get paginated practice history with attempts.
+) -> GetTrainingHistoryResponse:
+    """Get paginated training history with attempts.
+
+    Unified endpoint for home and practice history, differentiated by
+    `practice: bool` parameter.
 
     Uses simulation history view internal handler for data.
     Python handles only business logic (score_status, show_view, show_continue, pass_pct).
     """
-    tags = ["practice", "history"]
+    practice = request.practice
+    tags = ["training", "history", "practice" if practice else "home"]
 
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -160,7 +173,7 @@ async def practice_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetPracticeHistoryNewResponse.model_validate(cached["data"])
+            return GetTrainingHistoryResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -190,11 +203,18 @@ async def practice_list(
             )
 
         # === QUERY: Context (for pass_threshold and actor_name) ===
-        context_params = GetPracticeContextSqlParams(profile_id=resource_id)
-        context = cast(
-            GetPracticeContextSqlRow,
-            await execute_sql_typed(conn, CONTEXT_SQL_PATH, params=context_params),
-        )
+        if practice:
+            context_params = GetPracticeContextSqlParams(profile_id=resource_id)
+            context = cast(
+                GetPracticeContextSqlRow,
+                await execute_sql_typed(conn, PRACTICE_CONTEXT_SQL_PATH, params=context_params),
+            )
+        else:
+            context_params_home = GetHomeContextSqlParams(profile_id=resource_id)
+            context = cast(
+                GetHomeContextSqlRow,
+                await execute_sql_typed(conn, HOME_CONTEXT_SQL_PATH, params=context_params_home),
+            )
 
         # Set audit context
         if context.actor_name:
@@ -212,13 +232,14 @@ async def practice_list(
         page_offset = page * page_size
 
         # === FETCH DATA FROM VIEW INTERNAL HANDLER ===
+        # Pass practice-only filters only when practice=True
         history_result = await get_simulation_history_internal(
             conn=conn,
             profile_id=resource_id,
             simulation_ids=request.simulation_ids,
             cohort_ids=request.cohort_ids,
             department_ids=request.department_ids,
-            practice=True,  # Practice mode
+            practice=practice,
             date_from=date_from,
             date_to=date_to,
             scenario_ids=request.scenario_ids,
@@ -228,15 +249,16 @@ async def practice_list(
             sort_order=request.sort_order,
             page_limit=page_size,
             page_offset=page_offset,
-            profile_ids=request.profile_ids,
-            show_archived=request.show_archived or False,
+            # Practice-only filters
+            profile_ids=request.profile_ids if practice else None,
+            show_archived=request.show_archived or False if practice else False,
             bypass_cache=bypass_cache,
         )
 
         # === TRANSFORM: Only compute business logic fields ===
-        attempts: list[PracticeHistoryAttempt] = []
+        attempts: list[TrainingHistoryAttempt] = []
         for attempt in history_result.items:
-            attempts.append(_transform_attempt(attempt, context.pass_threshold))
+            attempts.append(_transform_attempt(attempt, context.pass_threshold, practice))
 
         # === CONVERT FILTER OPTIONS ===
         simulation_options = None
@@ -253,8 +275,9 @@ async def practice_list(
                 for opt in history_result.scenario_options
             ]
 
+        # Practice-only: profile filter options
         profile_options = None
-        if history_result.profile_options:
+        if practice and history_result.profile_options:
             profile_options = [
                 FilterOption(value=opt.value, label=opt.label, count=opt.count)
                 for opt in history_result.profile_options
@@ -265,7 +288,7 @@ async def practice_list(
         total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
         # === BUILD RESPONSE ===
-        api_response = GetPracticeHistoryNewResponse(
+        api_response = GetTrainingHistoryResponse(
             actor_name=history_result.actor_name or context.actor_name,
             data=attempts,
             total_count=total_count,
@@ -279,7 +302,7 @@ async def practice_list(
 
         # Cache response
         profile_specific_tags = tags + [
-            f"practice:profile:{profile_id}",
+            f"training:profile:{profile_id}",
             f"history:profile:{profile_id}",
         ]
         await set_cached(
@@ -301,7 +324,7 @@ async def practice_list(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="practice_list",
+            operation="training_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

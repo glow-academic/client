@@ -1,7 +1,9 @@
-"""Home overview endpoint - POST /home/get.
+"""Training overview endpoint - POST /training/get.
 
-Uses simulation overview view internal handler for data fetching.
-Python handles business logic: status, pass_pct, completion_pct, cohort formatting.
+Unified endpoint for both home and practice overview, differentiated by
+`practice: bool` parameter. Uses simulation overview view internal handler
+for data fetching. Python handles business logic: status, pass_pct,
+completion_pct, cohort formatting.
 """
 
 from typing import Annotated, Any
@@ -9,7 +11,7 @@ from typing import Annotated, Any
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.home.permissions import (
+from app.api.v4.artifacts.training.permissions import (
     compute_completion_pct,
     compute_mode,
     compute_pass_pct,
@@ -17,20 +19,18 @@ from app.api.v4.artifacts.home.permissions import (
     compute_status_instructional,
     format_cohort_names,
 )
-from app.api.v4.artifacts.home.types import (
-    GetHomeOverviewNewResponse,
-    SimulationCard,
+from app.api.v4.artifacts.training.types import (
+    GetTrainingOverviewRequest,
+    GetTrainingOverviewResponse,
     StandardGroupMapping,
     StandardMapping,
+    TrainingSimulationCard,
 )
 from app.api.v4.views.simulation.overview.get import get_simulation_overview_internal
 from app.api.v4.views.simulation.overview.types import OverviewViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetHomeOverviewNewApiRequest,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -41,17 +41,19 @@ router = APIRouter()
 def _transform_simulation_card(
     card: OverviewViewItem,
     mode: str,
-) -> SimulationCard:
+    practice: bool,
+) -> TrainingSimulationCard:
     """Transform overview view item to API response.
 
     Python only computes derived business logic fields.
 
     Args:
         card: Overview view item with metadata already JOINed.
-        mode: 'member' or 'instructional'.
+        mode: 'member', 'instructional', or 'practice'.
+        practice: Whether this is practice mode.
 
     Returns:
-        SimulationCard ready for API response.
+        TrainingSimulationCard ready for API response.
     """
     # === PYTHON BUSINESS LOGIC: Compute derived fields ===
 
@@ -59,16 +61,17 @@ def _transform_simulation_card(
     pass_pct = compute_pass_pct(card.rubric_total_points, card.rubric_pass_points)
 
     # Compute status based on mode
-    if mode == "member":
-        status = compute_status(card.has_passed, card.completed_count)
-        completion_pct = None
-    else:
+    if mode == "instructional":
         status = compute_status_instructional(
             card.passed_count, card.in_progress_count, card.total_members
         )
         completion_pct = compute_completion_pct(
             card.passed_count, card.in_progress_count, card.total_members
         )
+    else:
+        # 'member' or 'practice' mode
+        status = compute_status(card.has_passed, card.completed_count)
+        completion_pct = None
 
     # Format cohort names as "A, B, and C"
     cohort_names_junction = format_cohort_names(card.cohort_names)
@@ -80,7 +83,7 @@ def _transform_simulation_card(
         else None
     )
 
-    return SimulationCard(
+    return TrainingSimulationCard(
         view_mode=mode,
         simulation_id=card.simulation_id,
         simulation_name=card.simulation_name,
@@ -94,33 +97,41 @@ def _transform_simulation_card(
         has_passed=card.has_passed,
         status=status,
         pass_pct=pass_pct,
-        completion_pct=completion_pct,
-        passed_count=card.passed_count,
-        in_progress_count=card.in_progress_count,
-        not_started_count=card.not_started_count,
         cohort_names_junction=cohort_names_junction,
+        # Instructional mode only
+        completion_pct=completion_pct if mode == "instructional" else None,
+        passed_count=card.passed_count if mode == "instructional" else None,
+        in_progress_count=card.in_progress_count if mode == "instructional" else None,
+        not_started_count=card.not_started_count if mode == "instructional" else None,
+        # Practice mode only
+        practice_simulation=True if practice else None,
+        practice_scenario_id=None,  # Not needed at overview level
     )
 
 
 @router.post(
     "/get",
-    response_model=GetHomeOverviewNewResponse,
+    response_model=GetTrainingOverviewResponse,
     dependencies=[
-        audit_activity("home.get", "{{ actor.name }} viewed home overview")
+        audit_activity("training.get", "{{ actor.name }} viewed training overview")
     ],
 )
-async def home_get(
-    request: GetHomeOverviewNewApiRequest,
+async def training_get(
+    request: GetTrainingOverviewRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetHomeOverviewNewResponse:
-    """Get home overview with simulation cards.
+) -> GetTrainingOverviewResponse:
+    """Get training overview with simulation cards.
+
+    Unified endpoint for home and practice overview, differentiated by
+    `practice: bool` parameter.
 
     Uses simulation overview view internal handler for data.
     Python handles only business logic (status, pass_pct, completion_pct, cohort formatting).
     """
-    tags = ["home"]
+    practice = request.practice
+    tags = ["training", "practice" if practice else "home"]
 
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -135,7 +146,7 @@ async def home_get(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetHomeOverviewNewResponse.model_validate(cached["data"])
+            return GetTrainingOverviewResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -165,20 +176,21 @@ async def home_get(
             )
 
         # === FETCH DATA FROM VIEW INTERNAL HANDLER ===
+        # Pass home-only filters only when practice=False
         overview_result = await get_simulation_overview_internal(
             conn=conn,
             profile_id=resource_id,
-            simulation_ids=request.simulation_ids,
-            cohort_ids=request.cohort_ids,
+            simulation_ids=request.simulation_ids if not practice else None,
+            cohort_ids=request.cohort_ids if not practice else None,
             department_ids=request.department_ids,
-            practice=False,  # Home mode = non-practice
-            start_date=request.start_date,
-            end_date=request.end_date,
+            practice=practice,
+            start_date=request.start_date if not practice else None,
+            end_date=request.end_date if not practice else None,
             bypass_cache=bypass_cache,
         )
 
         # === PYTHON BUSINESS LOGIC: Compute mode ===
-        mode = compute_mode(overview_result.user_role)
+        mode = compute_mode(practice, overview_result.user_role)
 
         # Set audit context
         if overview_result.actor_name:
@@ -188,9 +200,9 @@ async def home_get(
             )
 
         # === TRANSFORM: Only compute business logic fields ===
-        items: list[SimulationCard] = []
+        items: list[TrainingSimulationCard] = []
         for card in overview_result.items:
-            items.append(_transform_simulation_card(card, mode))
+            items.append(_transform_simulation_card(card, mode, practice))
 
         # === CONVERT STANDARD GROUPS/STANDARDS ===
         standard_groups = None
@@ -220,7 +232,7 @@ async def home_get(
             ]
 
         # === BUILD RESPONSE ===
-        api_response = GetHomeOverviewNewResponse(
+        api_response = GetTrainingOverviewResponse(
             actor_name=overview_result.actor_name,
             mode=mode,
             has_data=overview_result.has_data,
@@ -249,7 +261,7 @@ async def home_get(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="home_get",
+            operation="training_get",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

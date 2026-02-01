@@ -40,7 +40,7 @@ END $$;
 -- Create composite type for artifact agent ID mapping
 CREATE TYPE types.q_get_profile_context_access_v4_artifact_agent AS (
     artifact text,
-    general_agent_id uuid
+    agent_ids uuid[]
 );
 
 -- Create function
@@ -283,10 +283,27 @@ redirect_path_computed AS (
     FROM profile_type pt
 ),
 artifact_agent_ids_data AS (
-    -- Get artifact agent IDs using unified computation
+    -- Get artifact agent IDs supporting two matching paths:
+    -- 1. Direct: artifact -> artifact_resources_relation -> tool resources
+    -- 2. Bindings: artifact -> artifact_view_relation -> view_entry_relation -> tool_bindings_junction
+
     WITH artifact_resources AS (
+        -- Path 1: Direct resource requirements
         SELECT artifact, ARRAY_AGG(resource::text) as required_resources
         FROM artifact_resources_relation
+        GROUP BY artifact
+    ),
+    artifact_entries AS (
+        -- Path 2: Get entry types via view relations
+        SELECT DISTINCT
+            avr.artifact,
+            ver.entry
+        FROM artifact_view_relation avr
+        JOIN view_entry_relation ver ON ver.view = avr.view
+    ),
+    artifact_entry_array AS (
+        SELECT artifact, ARRAY_AGG(DISTINCT entry::text) as required_entries
+        FROM artifact_entries
         GROUP BY artifact
     ),
     eligible_agents AS (
@@ -314,6 +331,7 @@ artifact_agent_ids_data AS (
         )
     ),
     agent_tool_resources AS (
+        -- Get tool resources for each agent (for Path 1)
         SELECT
             ea.agent_id,
             ea.updated_at,
@@ -327,24 +345,56 @@ artifact_agent_ids_data AS (
         LEFT JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id AND rt.active = true
         GROUP BY ea.agent_id, ea.updated_at
     ),
+    agent_tool_bindings AS (
+        -- Get tool bindings for each agent (for Path 2)
+        SELECT
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT br.entry::text) FILTER (WHERE br.entry IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_entries
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
+        LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
+        LEFT JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
+        GROUP BY ea.agent_id
+    ),
+    all_artifacts AS (
+        -- Union of artifacts from both paths
+        SELECT artifact::text as artifact FROM artifact_resources
+        UNION
+        SELECT artifact::text as artifact FROM artifact_entry_array
+    ),
     scored_agents AS (
         SELECT
-            ar.artifact::text as artifact,
+            aa.artifact,
             atr.agent_id,
             atr.updated_at,
+            -- Check Path 1 (resources)
             CASE
-                WHEN ar.required_resources <@ atr.tool_resources THEN 1
+                WHEN ar.required_resources IS NOT NULL
+                     AND ar.required_resources <@ atr.tool_resources THEN 1
                 ELSE 0
             END as has_all_resources,
-            COALESCE(
-                CARDINALITY(
-                    ARRAY(SELECT unnest(ar.required_resources) INTERSECT SELECT unnest(atr.tool_resources))
-                ),
-                0
-            ) as matching_count,
-            CARDINALITY(atr.tool_resources) as total_tool_count
-        FROM artifact_resources ar
+            -- Check Path 2 (bindings)
+            CASE
+                WHEN aea.required_entries IS NOT NULL
+                     AND aea.required_entries <@ atb.tool_entries THEN 1
+                ELSE 0
+            END as has_all_bindings,
+            COALESCE(CARDINALITY(atr.tool_resources), 0) as total_tool_count
+        FROM all_artifacts aa
         CROSS JOIN agent_tool_resources atr
+        LEFT JOIN artifact_resources ar ON ar.artifact::text = aa.artifact
+        LEFT JOIN artifact_entry_array aea ON aea.artifact::text = aa.artifact
+        LEFT JOIN agent_tool_bindings atb ON atb.agent_id = atr.agent_id
+    ),
+    qualified_agents AS (
+        -- Agent qualifies if it matches either path
+        SELECT artifact, agent_id, updated_at, total_tool_count
+        FROM scored_agents
+        WHERE has_all_resources = 1 OR has_all_bindings = 1
     ),
     ranked_agents AS (
         SELECT
@@ -353,24 +403,28 @@ artifact_agent_ids_data AS (
             ROW_NUMBER() OVER (
                 PARTITION BY artifact
                 ORDER BY
-                    has_all_resources DESC,
-                    matching_count DESC,
                     total_tool_count ASC,
                     updated_at DESC,
                     agent_id ASC
             ) as rank
-        FROM scored_agents
-        WHERE has_all_resources = 1
+        FROM qualified_agents
+    ),
+    aggregated_agents AS (
+        -- Aggregate all qualifying agents per artifact into arrays
+        SELECT
+            artifact,
+            ARRAY_AGG(agent_id ORDER BY rank) as agent_ids
+        FROM ranked_agents
+        GROUP BY artifact
     )
     SELECT COALESCE(
         ARRAY_AGG(
-            (ra.artifact, ra.agent_id)::types.q_get_profile_context_access_v4_artifact_agent
-            ORDER BY ra.artifact
+            (aa.artifact, aa.agent_ids)::types.q_get_profile_context_access_v4_artifact_agent
+            ORDER BY aa.artifact
         ),
         ARRAY[]::types.q_get_profile_context_access_v4_artifact_agent[]
     ) as artifact_agent_ids
-    FROM ranked_agents ra
-    WHERE ra.rank = 1
+    FROM aggregated_agents aa
 ),
 actor_name_computed AS (
     SELECT

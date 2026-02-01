@@ -9894,16 +9894,16 @@
         ]
       }
     },
-    "/api/v4/home/get": {
+    "/api/v4/training/get": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
-          "home"
+          "training"
         ],
-        "summary": "Home Get",
-        "description": "Get home overview with simulation cards.\n\nUses simulation overview view internal handler for data.\nPython handles only business logic (status, pass_pct, completion_pct, cohort formatting).",
-        "operationId": "home_get_api_v4_home_get_post",
+        "summary": "Training Get",
+        "description": "Get training overview with simulation cards.\n\nUnified endpoint for home and practice overview, differentiated by\n`practice: bool` parameter.\n\nUses simulation overview view internal handler for data.\nPython handles only business logic (status, pass_pct, completion_pct, cohort formatting).",
+        "operationId": "training_get_api_v4_training_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9959,7 +9959,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetHomeOverviewNewApiRequest"
+                "$ref": "#/components/schemas/GetTrainingOverviewRequest"
               }
             }
           }
@@ -9970,7 +9970,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetHomeOverviewNewResponse"
+                  "$ref": "#/components/schemas/GetTrainingOverviewResponse"
                 }
               }
             }
@@ -9989,20 +9989,20 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
-          "home"
+          "training"
         ]
       }
     },
-    "/api/v4/home/list": {
+    "/api/v4/training/list": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
-          "home"
+          "training"
         ],
-        "summary": "Home List",
-        "description": "Get paginated home history with attempts.\n\nUses simulation history view internal handler for data.\nPython handles only business logic (score_status, show_view, show_continue, pass_pct).",
-        "operationId": "home_list_api_v4_home_list_post",
+        "summary": "Training List",
+        "description": "Get paginated training history with attempts.\n\nUnified endpoint for home and practice history, differentiated by\n`practice: bool` parameter.\n\nUses simulation history view internal handler for data.\nPython handles only business logic (score_status, show_view, show_continue, pass_pct).",
+        "operationId": "training_list_api_v4_training_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10058,7 +10058,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetHomeHistoryNewClientRequest"
+                "$ref": "#/components/schemas/GetTrainingHistoryRequest"
               }
             }
           }
@@ -10069,7 +10069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetHomeHistoryNewResponse"
+                  "$ref": "#/components/schemas/GetTrainingHistoryResponse"
                 }
               }
             }
@@ -10088,20 +10088,20 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
-          "home"
+          "training"
         ]
       }
     },
-    "/api/v4/home/refresh": {
+    "/api/v4/training/refresh": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
-          "home"
+          "training"
         ],
-        "summary": "Home Refresh",
-        "description": "Refresh all home section materialized views.\n\nUses SQL function that refreshes MVs in dependency order:\n1. mv_home_chat_facts (base fact table)\n2. mv_home_simulation_status (depends on chat_facts)\n3. mv_home_attempt_history (depends on chat_facts)\n4. mv_home_certificate_status (depends on chat_facts)",
-        "operationId": "home_refresh_api_v4_home_refresh_post",
+        "summary": "Training Refresh",
+        "description": "Refresh all training section materialized views.\n\nUses SQL function that refreshes MVs in dependency order:\n1. mv_home_chat_facts (base fact table)\n2. mv_home_simulation_status (depends on chat_facts)\n3. mv_home_attempt_history (depends on chat_facts)\n4. mv_home_certificate_status (depends on chat_facts)",
+        "operationId": "training_refresh_api_v4_training_refresh_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10187,20 +10187,20 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
-          "home"
+          "training"
         ]
       }
     },
-    "/api/v4/home/attempt": {
+    "/api/v4/attempt/get": {
       "post": {
         "tags": [
           "v4",
           "artifacts",
-          "home"
+          "attempt"
         ],
-        "summary": "Home Attempt Detail",
-        "description": "Get home attempt detail with parallel MV fetching.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
-        "operationId": "home_attempt_detail_api_v4_home_attempt_post",
+        "summary": "Attempt Get",
+        "description": "Get attempt detail with parallel MV fetching.\n\nUnified endpoint for home and practice attempt detail, differentiated by\n`practice: bool` parameter.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with strengths/improvements/hints)\n\nEach query runs on its own connection from the pool for true parallelism.",
+        "operationId": "attempt_get_api_v4_attempt_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10286,304 +10286,7 @@
         "x-cache-tags": [
           "v4",
           "artifacts",
-          "home"
-        ]
-      }
-    },
-    "/api/v4/practice/get": {
-      "post": {
-        "tags": [
-          "v4",
-          "artifacts",
-          "practice"
-        ],
-        "summary": "Practice Get",
-        "description": "Get practice overview with simulation cards.\n\nUses simulation overview view internal handler for data.\nPython handles only business logic (status, pass_pct, cohort formatting).",
-        "operationId": "practice_get_api_v4_practice_get_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetPracticeOverviewNewClientRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetPracticeOverviewNewResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "practice"
-        ]
-      }
-    },
-    "/api/v4/practice/list": {
-      "post": {
-        "tags": [
-          "v4",
-          "artifacts",
-          "practice"
-        ],
-        "summary": "Practice List",
-        "description": "Get paginated practice history with attempts.\n\nUses simulation history view internal handler for data.\nPython handles only business logic (score_status, show_view, show_continue, pass_pct).",
-        "operationId": "practice_list_api_v4_practice_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetPracticeHistoryNewClientRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetPracticeHistoryNewResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "practice"
-        ]
-      }
-    },
-    "/api/v4/practice/attempt": {
-      "post": {
-        "tags": [
-          "v4",
-          "artifacts",
-          "practice"
-        ],
-        "summary": "Practice Attempt Detail",
-        "description": "Get practice attempt detail with parallel MV fetching.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with hints/strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
-        "operationId": "practice_attempt_detail_api_v4_practice_attempt_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetPracticeAttemptDetailRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetPracticeAttemptDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "practice"
+          "attempt"
         ]
       }
     },
@@ -25827,6 +25530,159 @@
         ]
       }
     },
+    "/socket/v4/client/training/start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client"
+        ],
+        "summary": "Training Start Api",
+        "description": "Client-to-server event: Start a new training session.",
+        "operationId": "training_start_api_socket_v4_client_training_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Training Start Api Socket V4 Client Training Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v4/client/attempt/message": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client"
+        ],
+        "summary": "Attempt Message Api",
+        "description": "Client-to-server event: Send a message during attempt simulation.",
+        "operationId": "attempt_message_api_socket_v4_client_attempt_message_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptMessagePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Message Api Socket V4 Client Attempt Message Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v4/client/attempt/grade": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client"
+        ],
+        "summary": "Attempt Grade Api",
+        "description": "Client-to-server event: Grade simulation attempt.",
+        "operationId": "attempt_grade_api_socket_v4_client_attempt_grade_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptGradePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Grade Api Socket V4 Client Attempt Grade Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v4/client/benchmark/enter": {
       "post": {
         "tags": [
@@ -26387,6 +26243,465 @@
                   },
                   "type": "object",
                   "title": "Response Connection Confirmed Api Socket V4 Server Connection Confirmed Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/training/started": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Training Started Api",
+        "description": "Server-to-client event: Training session created successfully.",
+        "operationId": "training_started_api_socket_v4_server_training_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingStartedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Training Started Api Socket V4 Server Training Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/training/progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Training Progress Api",
+        "description": "Server-to-client event: Training generation progress update.",
+        "operationId": "training_progress_api_socket_v4_server_training_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingProgressEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Training Progress Api Socket V4 Server Training Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/training/complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Training Complete Api",
+        "description": "Server-to-client event: Training generation completed.",
+        "operationId": "training_complete_api_socket_v4_server_training_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingCompleteEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Training Complete Api Socket V4 Server Training Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/training/error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Training Error Api",
+        "description": "Server-to-client event: Training generation error occurred.",
+        "operationId": "training_error_api_socket_v4_server_training_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingErrorEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Training Error Api Socket V4 Server Training Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/message_sent": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Message Sent Api",
+        "description": "Server-to-client event: Message received and assistant placeholder created.",
+        "operationId": "attempt_message_sent_api_socket_v4_server_attempt_message_sent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptMessageSentEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Message Sent Api Socket V4 Server Attempt Message Sent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/graded": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Graded Api",
+        "description": "Server-to-client event: Simulation grading completed.",
+        "operationId": "attempt_graded_api_socket_v4_server_attempt_graded_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptGradedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Graded Api Socket V4 Server Attempt Graded Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Progress Api",
+        "description": "Server-to-client event: Attempt generation progress update.",
+        "operationId": "attempt_progress_api_socket_v4_server_attempt_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptProgressEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Progress Api Socket V4 Server Attempt Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Complete Api",
+        "description": "Server-to-client event: Attempt generation completed.",
+        "operationId": "attempt_complete_api_socket_v4_server_attempt_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptCompleteEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Complete Api Socket V4 Server Attempt Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Error Api",
+        "description": "Server-to-client event: Attempt generation error occurred.",
+        "operationId": "attempt_error_api_socket_v4_server_attempt_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptErrorEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Error Api Socket V4 Server Attempt Error Post"
                 }
               }
             }
@@ -28051,6 +28366,100 @@
         "type": "object",
         "title": "ArgsOutputsApiResponse"
       },
+      "AttemptCompleteEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "attempt"
+          },
+          "group_id": {
+            "type": "string",
+            "title": "Group Id"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "final_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Content"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "resource_type",
+          "success",
+          "message"
+        ],
+        "title": "AttemptCompleteEvent",
+        "description": "Server-to-client event: attempt_complete.\n\nEmitted when message generation completes and is saved to DB."
+      },
       "AttemptData": {
         "properties": {
           "id": {
@@ -28103,6 +28512,18 @@
             ],
             "title": "Profile Name"
           },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
           "cohort_id": {
             "anyOf": [
               {
@@ -28115,7 +28536,147 @@
             ],
             "title": "Cohort Id"
           },
-          "department_id": {
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "AttemptData",
+        "description": "Attempt-level data.\n\ncohort_id is only populated when practice=False.\nis_archived is only populated when practice=True."
+      },
+      "AttemptErrorEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "attempt"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          },
+          "resource_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Types"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": false
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AttemptErrorEvent",
+        "description": "Server-to-client event: attempt_error.\n\nEmitted when an error occurs during attempt generation."
+      },
+      "AttemptGradePayload": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "grade_agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Grade Agent Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -28125,15 +28686,397 @@
                 "type": "null"
               }
             ],
-            "title": "Department Id"
+            "title": "Chat Id"
           }
         },
         "type": "object",
         "required": [
-          "id"
+          "simulation_id",
+          "grade_agent_id",
+          "attempt_id"
         ],
-        "title": "AttemptData",
-        "description": "Attempt-level data."
+        "title": "AttemptGradePayload",
+        "description": "Request payload for attempt_grade WebSocket event.\n\nEnds the simulation and triggers grading."
+      },
+      "AttemptGradedEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "attempt"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "attempt_id"
+        ],
+        "title": "AttemptGradedEvent",
+        "description": "Server-to-client event: attempt_graded.\n\nEmitted when simulation grading completes."
+      },
+      "AttemptMessagePayload": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "chat_agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Agent Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "voice_mode": {
+            "type": "boolean",
+            "title": "Voice Mode",
+            "default": false
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "chat_agent_id",
+          "chat_id",
+          "message"
+        ],
+        "title": "AttemptMessagePayload",
+        "description": "Request payload for attempt_message WebSocket event.\n\nSends a user message during an active simulation chat."
+      },
+      "AttemptMessageSentEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "attempt"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "user_message_id": {
+            "type": "string",
+            "title": "User Message Id"
+          },
+          "assistant_message_id": {
+            "type": "string",
+            "title": "Assistant Message Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "user_message_id",
+          "assistant_message_id"
+        ],
+        "title": "AttemptMessageSentEvent",
+        "description": "Server-to-client event: attempt_message_sent.\n\nEmitted when a user message is received and assistant placeholder created."
+      },
+      "AttemptProgressEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "attempt"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Name"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "arguments_delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments Delta"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "accumulated_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accumulated Content"
+          }
+        },
+        "type": "object",
+        "title": "AttemptProgressEvent",
+        "description": "Server-to-client event: attempt_progress.\n\nEmitted during message generation to stream tokens."
       },
       "AttemptViewItem": {
         "properties": {
@@ -34460,6 +35403,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Attempt Id"
+          },
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
           }
         },
         "type": "object",
@@ -34467,7 +35415,7 @@
           "attempt_id"
         ],
         "title": "GetAttemptDetailRequest",
-        "description": "Client API request for attempt detail."
+        "description": "Client API request for attempt detail.\n\nArgs:\n    attempt_id: The attempt ID to fetch details for.\n    practice: If True, includes hints in messages and is_archived in attempt.\n        If False, includes cohort_id in attempt."
       },
       "GetAttemptDetailResponse": {
         "properties": {
@@ -41879,257 +42827,6 @@
         "type": "object",
         "title": "GetHomeHistoryApiResponse"
       },
-      "GetHomeHistoryNewClientRequest": {
-        "properties": {
-          "start_date": {
-            "type": "string",
-            "title": "Start Date"
-          },
-          "end_date": {
-            "type": "string",
-            "title": "End Date"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "sort_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sort By"
-          },
-          "sort_order": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sort Order"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page",
-            "default": 0
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Size",
-            "default": 20
-          }
-        },
-        "type": "object",
-        "required": [
-          "start_date",
-          "end_date"
-        ],
-        "title": "GetHomeHistoryNewClientRequest",
-        "description": "Client API request for home history.\n\nNote: Home history is single-user (profile from auth header).\nFilters like roles, simulation_filters, profile_ids are not applicable."
-      },
-      "GetHomeHistoryNewResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/HistoryAttempt"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "total_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Count"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Pages"
-          },
-          "simulation_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__home__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Options"
-          },
-          "scenario_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__home__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Options"
-          }
-        },
-        "type": "object",
-        "title": "GetHomeHistoryNewResponse",
-        "description": "Client-facing API response for home history."
-      },
       "GetHomeOverviewApiRequest": {
         "properties": {
           "start_date": {
@@ -42272,136 +42969,6 @@
         },
         "type": "object",
         "title": "GetHomeOverviewApiResponse"
-      },
-      "GetHomeOverviewNewApiRequest": {
-        "properties": {
-          "start_date": {
-            "type": "string",
-            "title": "Start Date"
-          },
-          "end_date": {
-            "type": "string",
-            "title": "End Date"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "start_date",
-          "end_date"
-        ],
-        "title": "GetHomeOverviewNewApiRequest"
-      },
-      "GetHomeOverviewNewResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "mode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mode"
-          },
-          "has_data": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Has Data"
-          },
-          "items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SimulationCard"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Items"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardGroupMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
-          },
-          "standards": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards"
-          }
-        },
-        "type": "object",
-        "title": "GetHomeOverviewNewResponse",
-        "description": "Client-facing API response for home overview."
       },
       "GetIconsApiRequest": {
         "properties": {
@@ -47538,115 +48105,6 @@
         "type": "object",
         "title": "GetPracticeAttemptApiResponse"
       },
-      "GetPracticeAttemptDetailRequest": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Attempt Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "GetPracticeAttemptDetailRequest",
-        "description": "Client API request for practice attempt detail."
-      },
-      "GetPracticeAttemptDetailResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "attempt_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Exists"
-          },
-          "access_denied": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Access Denied"
-          },
-          "attempt": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PracticeAttemptData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "simulation": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimulationData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "chats": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PracticeChatData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chats"
-          },
-          "timer": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TimerData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "aggregated_results": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AggregatedResults"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "GetPracticeAttemptDetailResponse",
-        "description": "Client-facing API response for practice attempt detail."
-      },
       "GetPracticeHistoryApiRequest": {
         "properties": {
           "department_ids": {
@@ -47886,298 +48344,6 @@
         },
         "type": "object",
         "title": "GetPracticeHistoryApiResponse"
-      },
-      "GetPracticeHistoryNewClientRequest": {
-        "properties": {
-          "start_date": {
-            "type": "string",
-            "title": "Start Date"
-          },
-          "end_date": {
-            "type": "string",
-            "title": "End Date"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "profile_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Ids"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "show_archived": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Archived",
-            "default": false
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "sort_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sort By"
-          },
-          "sort_order": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sort Order"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page",
-            "default": 0
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Size",
-            "default": 20
-          }
-        },
-        "type": "object",
-        "required": [
-          "start_date",
-          "end_date"
-        ],
-        "title": "GetPracticeHistoryNewClientRequest",
-        "description": "Client API request for practice history.\n\nNote: Practice history supports multi-user view (profile_ids filter)."
-      },
-      "GetPracticeHistoryNewResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PracticeHistoryAttempt"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "total_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Count"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Pages"
-          },
-          "simulation_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__practice__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Options"
-          },
-          "scenario_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__practice__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Options"
-          },
-          "profile_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__practice__types__FilterOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Options"
-          }
-        },
-        "type": "object",
-        "title": "GetPracticeHistoryNewResponse",
-        "description": "Client-facing API response for practice history."
       },
       "GetPracticeOverviewApiRequest": {
         "properties": {
@@ -48428,110 +48594,6 @@
         },
         "type": "object",
         "title": "GetPracticeOverviewApiResponse"
-      },
-      "GetPracticeOverviewNewClientRequest": {
-        "properties": {
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "title": "GetPracticeOverviewNewClientRequest",
-        "description": "Client API request for practice overview.\n\nNote: profile_id is NOT included here - it comes from the X-Profile-Id header."
-      },
-      "GetPracticeOverviewNewResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "mode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mode"
-          },
-          "has_data": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Has Data"
-          },
-          "items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PracticeSimulationCard"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Items"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardGroupMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
-          },
-          "standards": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards"
-          }
-        },
-        "type": "object",
-        "title": "GetPracticeOverviewNewResponse",
-        "description": "Client-facing API response for practice overview."
       },
       "GetPricingAnalyticsApiRequest": {
         "properties": {
@@ -58159,6 +58221,464 @@
         "type": "object",
         "title": "GetToolsListApiResponse"
       },
+      "GetTrainingHistoryRequest": {
+        "properties": {
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          },
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size",
+            "default": 20
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "show_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Archived",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "GetTrainingHistoryRequest",
+        "description": "Client API request for training history.\n\nArgs:\n    practice: If True, returns practice history. If False, returns home history.\n    start_date: Start date filter (required).\n    end_date: End date filter (required).\n    cohort_ids: Filter by cohorts.\n    department_ids: Filter by departments.\n    simulation_ids: Filter by simulations.\n    scenario_ids: Filter by scenarios.\n    infinite_mode: Filter by infinite mode.\n    search: Search string.\n    sort_by: Sort field ('date' | 'score' | 'simulation_name').\n    sort_order: Sort order ('asc' | 'desc').\n    page: Page number (0-indexed).\n    page_size: Page size.\n    profile_ids: Filter by profiles (practice mode only, ignored when practice=False).\n    show_archived: Show archived attempts (practice mode only, ignored when practice=False)."
+      },
+      "GetTrainingHistoryResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingHistoryAttempt"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Pages"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__training__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__training__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__training__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingHistoryResponse",
+        "description": "Client-facing API response for training history."
+      },
+      "GetTrainingOverviewRequest": {
+        "properties": {
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingOverviewRequest",
+        "description": "Client API request for training overview.\n\nArgs:\n    practice: If True, returns practice simulations. If False, returns home simulations.\n    department_ids: Filter by departments (applies to both modes).\n    simulation_ids: Filter by simulations (ignored when practice=True).\n    cohort_ids: Filter by cohorts (ignored when practice=True).\n    start_date: Filter by start date (ignored when practice=True).\n    end_date: Filter by end date (ignored when practice=True)."
+      },
+      "GetTrainingOverviewResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSimulationCard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardGroupMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingOverviewResponse",
+        "description": "Client-facing API response for training overview."
+      },
       "GetVideoApiRequest": {
         "properties": {
           "id": {
@@ -58595,7 +59115,7 @@
         },
         "type": "object",
         "title": "HintEntry",
-        "description": "Hint entry (PRACTICE-specific)."
+        "description": "Hint entry (practice mode only)."
       },
       "HintItem": {
         "properties": {
@@ -58637,262 +59157,6 @@
         "type": "object",
         "title": "HintItem",
         "description": "Hint for a message (practice-specific)."
-      },
-      "HistoryAttempt": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Attempt Id"
-          },
-          "date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "profile_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Name"
-          },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "simulation_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Name"
-          },
-          "num_scenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Scenarios"
-          },
-          "num_scenarios_completed": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Scenarios Completed"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "persona_names_junction": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Names Junction"
-          },
-          "persona_colors_junction": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Colors Junction"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Titles"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohort_names_junction": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Names Junction"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "score_status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score Status"
-          },
-          "pass_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Pct"
-          },
-          "show_view": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show View"
-          },
-          "show_continue": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Continue"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "HistoryAttempt",
-        "description": "Attempt record for home history.\n\nSQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct."
       },
       "HistoryViewItem": {
         "properties": {
@@ -61677,6 +61941,20 @@
               }
             ],
             "title": "Improvements"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HintEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
           }
         },
         "type": "object",
@@ -61684,7 +61962,7 @@
           "id"
         ],
         "title": "MessageData",
-        "description": "Message with content and feedback data."
+        "description": "Message with content and feedback data.\n\nThe hints field is only populated when practice=True."
       },
       "MessageViewItem": {
         "properties": {
@@ -65773,847 +66051,6 @@
         },
         "type": "object",
         "title": "PointsApiResponse"
-      },
-      "PracticeAttemptData": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "is_archived": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Archived"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "profile_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Name"
-          },
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "title": "PracticeAttemptData",
-        "description": "Attempt-level data (PRACTICE)."
-      },
-      "PracticeChatData": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "scenario_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Name"
-          },
-          "problem_statement": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement"
-          },
-          "show_problem_statement": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Problem Statement"
-          },
-          "show_objectives": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Objectives"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "persona_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Name"
-          },
-          "persona_icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Icon"
-          },
-          "persona_color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Color"
-          },
-          "completed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed"
-          },
-          "is_current": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Current"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "grade": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GradeData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "feedbacks": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/FeedbackEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedbacks"
-          },
-          "messages": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PracticeMessageData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Messages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "title": "PracticeChatData",
-        "description": "Chat with scenario, persona, grade, and messages (PRACTICE)."
-      },
-      "PracticeHistoryAttempt": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Attempt Id"
-          },
-          "date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "profile_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Name"
-          },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "simulation_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Name"
-          },
-          "num_scenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Scenarios"
-          },
-          "num_scenarios_completed": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Scenarios Completed"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "persona_names_junction": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Names Junction"
-          },
-          "persona_colors_junction": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Colors Junction"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Titles"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohort_names_junction": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Names Junction"
-          },
-          "is_archived": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Archived"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "score_status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score Status"
-          },
-          "pass_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Pct"
-          },
-          "show_view": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show View"
-          },
-          "show_continue": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Continue"
-          },
-          "practice_simulation": {
-            "type": "boolean",
-            "title": "Practice Simulation",
-            "default": true
-          },
-          "practice_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Scenario Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "PracticeHistoryAttempt",
-        "description": "Attempt record for practice history.\n\nSQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct."
-      },
-      "PracticeMessageData": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "completed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed"
-          },
-          "hints": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/HintEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints"
-          },
-          "strengths": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StrengthEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Strengths"
-          },
-          "improvements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ImprovementEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Improvements"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "title": "PracticeMessageData",
-        "description": "Message with content, hints, and feedback data (PRACTICE)."
-      },
-      "PracticeSimulationCard": {
-        "properties": {
-          "view_mode": {
-            "type": "string",
-            "title": "View Mode"
-          },
-          "simulation_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Id"
-          },
-          "simulation_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Name"
-          },
-          "simulation_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "num_sessions": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Sessions"
-          },
-          "highest_score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Highest Score"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "has_passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Has Passed"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          },
-          "pass_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Pct"
-          },
-          "cohort_names_junction": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Names Junction"
-          },
-          "practice_simulation": {
-            "type": "boolean",
-            "title": "Practice Simulation",
-            "default": true
-          },
-          "practice_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Scenario Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "view_mode",
-          "simulation_id"
-        ],
-        "title": "PracticeSimulationCard",
-        "description": "Simulation card for practice overview.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction."
       },
       "PricingApiRequest": {
         "properties": {
@@ -112821,205 +112258,6 @@
         "type": "object",
         "title": "SearchTemplatesApiResponse"
       },
-      "SimulationCard": {
-        "properties": {
-          "view_mode": {
-            "type": "string",
-            "title": "View Mode"
-          },
-          "simulation_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Id"
-          },
-          "simulation_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Name"
-          },
-          "simulation_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "num_sessions": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Num Sessions"
-          },
-          "highest_score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Highest Score"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "has_passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Has Passed"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          },
-          "pass_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Pct"
-          },
-          "completion_pct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completion Pct"
-          },
-          "passed_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passed Count"
-          },
-          "in_progress_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "In Progress Count"
-          },
-          "not_started_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Not Started Count"
-          },
-          "cohort_names_junction": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Names Junction"
-          }
-        },
-        "type": "object",
-        "required": [
-          "view_mode",
-          "simulation_id"
-        ],
-        "title": "SimulationCard",
-        "description": "Simulation card for home overview.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction."
-      },
       "SimulationData": {
         "properties": {
           "id": {
@@ -114540,6 +113778,919 @@
         "title": "TimerData",
         "description": "Timer information."
       },
+      "TrainingCompleteEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "training"
+          },
+          "group_id": {
+            "type": "string",
+            "title": "Group Id"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "resource_type",
+          "success",
+          "message"
+        ],
+        "title": "TrainingCompleteEvent",
+        "description": "Server-to-client event: training_complete.\n\nEmitted when scenario generation completes."
+      },
+      "TrainingErrorEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "training"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          },
+          "resource_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Types"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": false
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "TrainingErrorEvent",
+        "description": "Server-to-client event: training_error.\n\nEmitted when an error occurs during training generation."
+      },
+      "TrainingHistoryAttempt": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "num_scenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios"
+          },
+          "num_scenarios_completed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios Completed"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "persona_names_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Names Junction"
+          },
+          "persona_colors_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors Junction"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Titles"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_names_junction": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names Junction"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "score_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Status"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "show_view": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show View"
+          },
+          "show_continue": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Continue"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "practice_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TrainingHistoryAttempt",
+        "description": "Attempt record for training history.\n\nSQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.\nSome fields are only populated based on mode:\n- is_archived, practice_simulation, practice_scenario_id: practice mode only"
+      },
+      "TrainingProgressEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "training"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Name"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "arguments_delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments Delta"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          }
+        },
+        "type": "object",
+        "title": "TrainingProgressEvent",
+        "description": "Server-to-client event: training_progress.\n\nEmitted during scenario generation to stream progress."
+      },
+      "TrainingSimulationCard": {
+        "properties": {
+          "view_mode": {
+            "type": "string",
+            "title": "View Mode"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "simulation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "num_sessions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Sessions"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "has_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Passed"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "pass_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Pct"
+          },
+          "cohort_names_junction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names Junction"
+          },
+          "completion_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Pct"
+          },
+          "passed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Count"
+          },
+          "in_progress_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Progress Count"
+          },
+          "not_started_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Started Count"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "practice_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "view_mode",
+          "simulation_id"
+        ],
+        "title": "TrainingSimulationCard",
+        "description": "Simulation card for training overview.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.\nSome fields are only populated based on mode:\n- completion_pct, passed_count, in_progress_count, not_started_count: instructional mode only\n- practice_simulation, practice_scenario_id: practice mode only"
+      },
+      "TrainingStartPayload": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "agent_id"
+        ],
+        "title": "TrainingStartPayload",
+        "description": "Request payload for training_start WebSocket event.\n\nStarts a new training session. Creates attempt + chat entries."
+      },
+      "TrainingStartedEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "training"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "scenario_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "attempt_id",
+          "chat_id"
+        ],
+        "title": "TrainingStartedEvent",
+        "description": "Server-to-client event: training_started.\n\nEmitted when a new training session is created successfully."
+      },
       "UploadsApiRequest": {
         "properties": {
           "agent_id": {
@@ -114869,78 +115020,6 @@
         },
         "type": "object",
         "title": "VoicesApiResponse"
-      },
-      "app__api__v4__artifacts__home__types__FilterOption": {
-        "properties": {
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "value"
-        ],
-        "title": "FilterOption",
-        "description": "Filter option for history dropdowns."
-      },
-      "app__api__v4__artifacts__practice__types__FilterOption": {
-        "properties": {
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "value"
-        ],
-        "title": "FilterOption",
-        "description": "Filter option for history dropdowns."
       },
       "app__api__v4__artifacts__simulation__types__GetSimulationApiRequest": {
         "properties": {
@@ -115920,6 +115999,42 @@
         "type": "object",
         "title": "GetSimulationApiResponse",
         "description": "Response for getting a single simulation."
+      },
+      "app__api__v4__artifacts__training__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for history dropdowns."
       },
       "app__api__v4__resources__simulations__get__GetSimulationApiRequest": {
         "properties": {

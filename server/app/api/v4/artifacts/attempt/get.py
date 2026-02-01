@@ -1,6 +1,8 @@
-"""Home attempt detail endpoint - POST /home/attempt.
+"""Attempt detail endpoint - POST /attempt/get.
 
-Uses view internal handlers with parallel query execution:
+Unified endpoint for both home and practice attempt detail, differentiated by
+`practice: bool` parameter. Uses view internal handlers with parallel query
+execution:
 1. Query 1 (Attempt): Attempt-level data via simulation_attempts view
 2. Query 2 (Chats): Chat-level data via simulation_chats view
 3. Query 3 (Messages): Message-level data via simulation_messages view
@@ -17,7 +19,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.home.types import (
+from app.api.v4.artifacts.attempt.permissions import check_attempt_access
+from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AttemptData,
     ChatData,
@@ -26,6 +29,7 @@ from app.api.v4.artifacts.home.types import (
     GetAttemptDetailResponse,
     GradeData,
     HighlightEntry,
+    HintEntry,
     ImprovementEntry,
     MessageData,
     ReplacementEntry,
@@ -74,28 +78,32 @@ def _format_timer(elapsed: int, limit: int | None, infinite_mode: bool) -> Timer
 
 
 @router.post(
-    "/attempt",
+    "/get",
     response_model=GetAttemptDetailResponse,
     dependencies=[
-        audit_activity("home.attempt", "{{ actor.name }} viewed home attempt detail")
+        audit_activity("attempt.get", "{{ actor.name }} viewed attempt detail")
     ],
 )
-async def home_attempt_detail(
+async def attempt_get(
     request: GetAttemptDetailRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAttemptDetailResponse:
-    """Get home attempt detail with parallel MV fetching.
+    """Get attempt detail with parallel MV fetching.
+
+    Unified endpoint for home and practice attempt detail, differentiated by
+    `practice: bool` parameter.
 
     Uses view internal handlers with pool-based parallel fetch:
     - View 1: simulation_attempts (attempt-level aggregates)
     - View 2: simulation_chats (chat-level data with grades/feedbacks)
-    - View 3: simulation_messages (message-level data with strengths/improvements)
+    - View 3: simulation_messages (message-level data with strengths/improvements/hints)
 
     Each query runs on its own connection from the pool for true parallelism.
     """
-    tags = ["home", "attempt"]
+    practice = request.practice
+    tags = ["attempt", "practice" if practice else "home"]
 
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -133,32 +141,33 @@ async def home_attempt_detail(
 
         async def fetch_attempt(aid: UUID, pid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Use view internal handler with practice=False for home
+                # Use view internal handler with practice flag
                 return await get_simulation_attempts_internal(
                     conn=c,
                     attempt_ids=[aid],
-                    practice=False,
+                    practice=practice,
                     profile_id=pid,
                     bypass_cache=bypass_cache,
                 )
 
         async def fetch_chats(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Use view internal handler with practice=False for home
+                # Use view internal handler with practice flag
                 return await get_simulation_chats_internal(
                     conn=c,
                     attempt_id=aid,
-                    practice=False,
+                    practice=practice,
                     bypass_cache=bypass_cache,
                 )
 
         async def fetch_messages(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Use view internal handler with practice=False for home
+                # Use view internal handler with practice flag
+                # This includes hints when practice=True
                 return await get_simulation_messages_internal(
                     conn=c,
                     attempt_id=aid,
-                    practice=False,
+                    practice=practice,
                     bypass_cache=bypass_cache,
                 )
 
@@ -187,7 +196,7 @@ async def home_attempt_detail(
             )
 
         # Check if profile matches (permission check)
-        if attempt_item.profile_id != profile_id:
+        if not check_attempt_access(attempt_item.profile_id, profile_id):
             return GetAttemptDetailResponse(
                 attempt_exists=True,
                 access_denied=True,
@@ -258,6 +267,19 @@ async def home_attempt_detail(
                             )
                         )
 
+                # Transform hints (practice mode only)
+                hints: list[HintEntry] | None = None
+                if practice and msg.hints:
+                    hints = []
+                    for h in msg.hints:
+                        hints.append(
+                            HintEntry(
+                                message_id=h.message_id,
+                                hint=h.hint,
+                                idx=h.idx,
+                            )
+                        )
+
                 messages.append(
                     MessageData(
                         id=msg.message_id,
@@ -269,6 +291,7 @@ async def home_attempt_detail(
                         completed=msg.completed,
                         strengths=strengths,
                         improvements=improvements,
+                        hints=hints,  # Only populated when practice=True
                     )
                 )
 
@@ -304,8 +327,8 @@ async def home_attempt_detail(
                     scenario_id=chat_item.scenario_id,
                     scenario_name=chat_item.scenario_name,
                     problem_statement=chat_item.problem_statement,
-                    show_problem_statement=True,  # Default for home
-                    show_objectives=True,  # Default for home
+                    show_problem_statement=True,
+                    show_objectives=True,
                     objectives=chat_item.objective,
                     persona_id=chat_item.persona_id,
                     persona_name=chat_item.persona_name,
@@ -331,8 +354,11 @@ async def home_attempt_detail(
             infinite_mode=attempt_item.infinite_mode,
             profile_id=attempt_item.profile_id,
             profile_name=attempt_item.profile_name,
-            cohort_id=attempt_item.cohort_id,
             department_id=attempt_item.department_id,
+            # Home mode only
+            cohort_id=attempt_item.cohort_id if not practice else None,
+            # Practice mode only
+            is_archived=False if practice else None,  # Practice attempts from view are not archived
         )
 
         # === BUILD SIMULATION DATA ===
@@ -408,7 +434,7 @@ async def home_attempt_detail(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="home_attempt",
+            operation="attempt_get",
             sql_query="view_internals: attempts, chats, messages",
             sql_params=None,
             request=http_request,

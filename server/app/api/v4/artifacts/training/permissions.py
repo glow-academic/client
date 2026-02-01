@@ -1,12 +1,15 @@
-"""Business logic and permissions for practice analytics API.
+"""Business logic and permissions for unified training API.
 
-This module contains business logic that was previously embedded in SQL,
+This module contains business logic for both home and practice modes,
 following the two-pass pattern where Python handles mode determination
 and score classification while SQL handles data retrieval.
 
 Functions for overview endpoint:
+- compute_mode: Determine view mode based on practice flag and user role
 - compute_pass_pct: Calculate pass percentage from rubric points
 - compute_status: Determine simulation status (passed/in-progress/not-started)
+- compute_status_instructional: Determine status for instructional mode
+- compute_completion_pct: Calculate completion percentage for instructional mode
 - format_cohort_names: Format cohort names as "A, B, and C"
 
 Functions for history endpoint:
@@ -18,15 +21,24 @@ Functions for history endpoint:
 from __future__ import annotations
 
 
-def compute_mode() -> str:
-    """Return the view mode for practice.
+def compute_mode(practice: bool, user_role: str | None = None) -> str:
+    """Determine view mode from practice flag and user role.
 
-    Practice endpoints always return 'practice' mode.
+    Args:
+        practice: If True, returns 'practice' mode.
+        user_role: The user's role from profiles_resource (e.g., 'member',
+            'instructional', 'admin', 'superadmin'). Only used when practice=False.
 
     Returns:
-        'practice' - always.
+        'practice' if practice=True,
+        'instructional' for instructional/admin/superadmin roles when practice=False,
+        'member' for all others when practice=False.
     """
-    return "practice"
+    if practice:
+        return "practice"
+    if user_role in ("instructional", "admin", "superadmin"):
+        return "instructional"
+    return "member"
 
 
 def compute_score_status(
@@ -80,7 +92,7 @@ def compute_status(
     has_passed: bool | None,
     completed_count: int | None,
 ) -> str:
-    """Determine simulation status for practice mode.
+    """Determine simulation status for member or practice mode.
 
     Args:
         has_passed: Whether the user has passed any attempt.
@@ -96,6 +108,55 @@ def compute_status(
     if completed_count and completed_count > 0:
         return "in-progress"
     return "not-started"
+
+
+def compute_status_instructional(
+    passed_count: int | None,
+    in_progress_count: int | None,
+    total_members: int | None,
+) -> str:
+    """Determine simulation status for instructional mode.
+
+    Args:
+        passed_count: Number of members who passed.
+        in_progress_count: Number of members in progress.
+        total_members: Total number of members.
+
+    Returns:
+        'passed' if all members passed or no members,
+        'in-progress' if any have started,
+        'not-started' otherwise.
+    """
+    if total_members is None or total_members == 0:
+        return "passed"  # No members = considered complete
+    if passed_count == total_members:
+        return "passed"
+    if (passed_count or 0) > 0 or (in_progress_count or 0) > 0:
+        return "in-progress"
+    return "not-started"
+
+
+def compute_completion_pct(
+    passed_count: int | None,
+    in_progress_count: int | None,
+    total_members: int | None,
+) -> int:
+    """Calculate completion percentage for instructional mode.
+
+    Completion = (passed + in_progress) / total * 100
+
+    Args:
+        passed_count: Number of members who passed.
+        in_progress_count: Number of members in progress.
+        total_members: Total number of members.
+
+    Returns:
+        Completion percentage (0-100), 0 if no members.
+    """
+    if not total_members or total_members == 0:
+        return 0
+    started = (passed_count or 0) + (in_progress_count or 0)
+    return round(100.0 * started / total_members)
 
 
 def format_cohort_names(names: list[str] | None) -> str | None:

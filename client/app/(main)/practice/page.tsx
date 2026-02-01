@@ -15,10 +15,11 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/practice/get", "post">;
-type PracticeOut = OutputOf<"/api/v4/practice/get", "post">;
-type PracticeHistoryIn = InputOf<"/api/v4/practice/list", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v4/practice/list", "post">;
+// Using unified training endpoints with practice: true for practice mode
+type PracticeIn = InputOf<"/api/v4/training/get", "post">;
+type PracticeOut = OutputOf<"/api/v4/training/get", "post">;
+type PracticeHistoryIn = InputOf<"/api/v4/training/list", "post">;
+type PracticeHistoryOut = OutputOf<"/api/v4/training/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.
@@ -28,7 +29,7 @@ type PracticeHistoryOut = OutputOf<"/api/v4/practice/list", "post">;
 const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/practice/get", input, {
+  return api.post("/training/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -49,7 +50,7 @@ const getPracticeHistory = async (
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/practice/list", input, {
+  return api.post("/training/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -119,7 +120,9 @@ export default async function PracticePage({
   // Build practice filters (only department_ids) - convert to snake_case
   // profile_id removed - comes from X-Profile-Id header automatically
   // Always pass department_ids (never empty array) - use all IDs from profile context
+  // practice: true for practice mode (uses unified training endpoint)
   const practiceFiltersBody: PracticeIn["body"] = {
+    practice: true,
     department_ids: profileContext.department_ids || [], // Always pass (non-empty from profile context)
   };
 
@@ -269,14 +272,16 @@ async function PracticeHistorySection({
   historySortOrder: string;
   departmentIds: string[];
 }) {
-  // Build history filters for practice (NEW endpoint)
+  // Build history filters for practice (uses unified training endpoint)
   // profile_id removed - comes from X-Profile-Id header automatically
   // Convert camelCase to snake_case for API
   // Default date range: last year
+  // practice: true for practice mode
   const now = new Date();
   const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   const historyFilters: PracticeHistoryIn = {
     body: {
+      practice: true,
       start_date: oneYearAgo.toISOString(),
       end_date: now.toISOString(),
       department_ids: departmentIds,

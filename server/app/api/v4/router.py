@@ -32,11 +32,11 @@ from app.api.v4.artifacts.document import router as documents_router
 from app.api.v4.artifacts.eval import router as evals_router
 from app.api.v4.artifacts.field import router as fields_router
 from app.api.v4.artifacts.group import router as group_router
-from app.api.v4.artifacts.home import router as home_artifact_router
 from app.api.v4.artifacts.model import router as models_router
 from app.api.v4.artifacts.parameter import router as parameters_router
 from app.api.v4.artifacts.persona import router as personas_router
-from app.api.v4.artifacts.practice import router as practice_artifact_router
+from app.api.v4.artifacts.training import router as training_artifact_router
+from app.api.v4.artifacts.attempt import router as attempt_artifact_router
 from app.api.v4.artifacts.profile import router as profile_router
 from app.api.v4.artifacts.provider import router as providers_router
 from app.api.v4.artifacts.rubric import router as rubrics_router
@@ -130,8 +130,8 @@ router.include_router(profile_router)
 router.include_router(auth_artifact_router)
 router.include_router(tools_router)
 router.include_router(group_router)
-router.include_router(home_artifact_router)
-router.include_router(practice_artifact_router)
+router.include_router(training_artifact_router)
+router.include_router(attempt_artifact_router)
 
 # ============================================================================
 # Resources

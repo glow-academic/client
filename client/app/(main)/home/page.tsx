@@ -16,10 +16,11 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v4/home/get", "post">;
-type HomeOut = OutputOf<"/api/v4/home/get", "post">;
-type HomeHistoryIn = InputOf<"/api/v4/home/list", "post">;
-type HomeHistoryOut = OutputOf<"/api/v4/home/list", "post">;
+// Using unified training endpoints with practice: false for home
+type HomeIn = InputOf<"/api/v4/training/get", "post">;
+type HomeOut = OutputOf<"/api/v4/training/get", "post">;
+type HomeHistoryIn = InputOf<"/api/v4/training/list", "post">;
+type HomeHistoryOut = OutputOf<"/api/v4/training/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Home overview responses can get large and exceed Next.js 2MB cache limit.
@@ -29,7 +30,7 @@ type HomeHistoryOut = OutputOf<"/api/v4/home/list", "post">;
 const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/home/get", input, {
+  return api.post("/training/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -49,7 +50,7 @@ const getHomeHistory = async (
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/home/list", input, {
+  return api.post("/training/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -167,8 +168,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
   // profileId removed - comes from X-Profile-Id header automatically
   // Convert camelCase to snake_case for API
+  // practice: false for home mode (uses unified training endpoint)
   const homeFilters: HomeIn = {
     body: {
+      practice: false,
       start_date: defaultFilters.startDate,
       end_date: defaultFilters.endDate,
       cohort_ids: defaultFilters.cohortIds, // Always non-empty
@@ -311,8 +314,10 @@ async function HomeHistorySection({
   // profileId removed - comes from X-Profile-Id header automatically
   // roles and profile_ids removed - home history is single-user
   // Convert camelCase to snake_case for API
+  // practice: false for home mode (uses unified training endpoint)
   const historyFilters: HomeHistoryIn = {
     body: {
+      practice: false,
       start_date: defaultFilters.startDate,
       end_date: defaultFilters.endDate,
       cohort_ids: defaultFilters.cohortIds,
