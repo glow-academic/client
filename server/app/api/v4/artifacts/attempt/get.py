@@ -51,6 +51,7 @@ from app.api.v4.artifacts.attempt.types import (
     RubricEntry,
     RubricStructureData,
     ScenarioDocumentEntry,
+    ScenarioEntry,
     SimulationData,
     StandardAchievement,
     StandardEntry,
@@ -73,6 +74,7 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.templates.get import get_templates_internal
@@ -391,6 +393,7 @@ async def attempt_get(
             question_ids: list[UUID],
             option_ids: list[UUID],
             problem_statement_ids: list[UUID],
+            scenario_ids: list[UUID],
             rubric_ids: list[UUID],
             standard_group_ids: list[UUID],
             standard_ids: list[UUID],
@@ -410,6 +413,7 @@ async def attempt_get(
                 "questions": {},
                 "options": {},
                 "problem_statements": {},
+                "scenarios": {},
                 "rubrics": {},
                 "standard_groups": {},
                 "standards": {},
@@ -506,6 +510,16 @@ async def attempt_get(
                         if item.problem_statement_id:
                             result["problem_statements"][item.problem_statement_id] = {
                                 "problem_statement": item.problem_statement,
+                            }
+
+                # Fetch scenarios
+                if scenario_ids:
+                    items = await get_scenarios_internal(c, scenario_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.scenario_id:
+                            result["scenarios"][item.scenario_id] = {
+                                "name": item.name,
+                                "description": item.description,
                             }
 
                 # Fetch rubrics
@@ -737,6 +751,7 @@ async def attempt_get(
         all_question_ids: list[UUID] = []
         all_option_ids: list[UUID] = []
         all_problem_statement_ids: list[UUID] = []
+        all_scenario_ids: list[UUID] = []
         all_rubric_ids: list[UUID] = []
         all_standard_group_ids: list[UUID] = []
         all_standard_ids: list[UUID] = []
@@ -760,6 +775,8 @@ async def attempt_get(
                 all_option_ids.extend(chat_item.option_ids)
             if chat_item.problem_statement_id:
                 all_problem_statement_ids.append(chat_item.problem_statement_id)
+            if chat_item.scenario_id:
+                all_scenario_ids.append(chat_item.scenario_id)
             if chat_item.rubric_id:
                 all_rubric_ids.append(chat_item.rubric_id)
             if chat_item.standard_group_ids:
@@ -778,6 +795,7 @@ async def attempt_get(
             question_ids=list(set(all_question_ids)),
             option_ids=list(set(all_option_ids)),
             problem_statement_ids=list(set(all_problem_statement_ids)),
+            scenario_ids=list(set(all_scenario_ids)),
             rubric_ids=list(set(all_rubric_ids)),
             standard_group_ids=list(set(all_standard_group_ids)),
             standard_ids=list(set(all_standard_ids)),
@@ -894,15 +912,16 @@ async def attempt_get(
 
             # Build grade data
             grade = None
-            if chat_item.grade_id:
+            # Build grade from chat grade composite + rubric metadata for points
+            if chat_item.grade:
+                rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {}) if chat_item.rubric_id else {}
                 grade = GradeData(
-                    id=chat_item.grade_id,
-                    score=chat_item.grade_score,
-                    passed=chat_item.grade_passed,
-                    description=chat_item.grade_description,
-                    time_taken=chat_item.grade_time_taken,
-                    total_points=chat_item.rubric_total_points,
-                    pass_points=chat_item.rubric_pass_points,
+                    score=chat_item.grade.score,
+                    passed=chat_item.grade.passed,
+                    description=chat_item.grade.description,
+                    time_taken=chat_item.grade.time_taken,
+                    total_points=rubric_meta.get("total_points"),
+                    pass_points=rubric_meta.get("pass_points"),
                 )
 
             # Transform feedbacks (with standard_group_id from standards metadata)
@@ -1116,6 +1135,16 @@ async def attempt_get(
                     for t_id in chat_item.template_ids
                 ]
 
+            # Scenario resource (enriched from internal handler)
+            scenario_entry: ScenarioEntry | None = None
+            if chat_item.scenario_id:
+                scenario_meta = resource_meta["scenarios"].get(chat_item.scenario_id, {})
+                scenario_entry = ScenarioEntry(
+                    scenario_id=chat_item.scenario_id,
+                    name=scenario_meta.get("name"),
+                    description=scenario_meta.get("description"),
+                )
+
             # Rubric/Grade resources (enriched from internal handlers)
             rubric_entry: RubricEntry | None = None
             if chat_item.rubric_id:
@@ -1157,11 +1186,9 @@ async def attempt_get(
             chats.append(
                 ChatData(
                     id=chat_item.chat_id,
-                    scenario_id=chat_item.scenario_id,
-                    scenario_name=chat_item.scenario_name,
-                    completed=chat_item.chat_completed,
-                    is_current=chat_item.is_current_chat,
-                    position=chat_item.chat_position,
+                    completed=chat_item.completed,
+                    is_current=chat_item.is_current,
+                    position=chat_item.position,
                     grade=grade,
                     feedbacks=feedbacks,
                     messages=messages,
@@ -1174,6 +1201,8 @@ async def attempt_get(
                     # Extended fields
                     grading_state=grading_state_data,
                     hints=hints_by_msg,
+                    # Scenario resource (enriched from internal handler)
+                    scenario=scenario_entry,
                     # Normal/General View resources
                     problem_statement=problem_statement_entry,
                     objectives=objectives_entries,

@@ -283,6 +283,19 @@ class PersonaEntry(BaseModel):
 
 
 # -----------------------------------------------------------------------------
+# Scenario entry types (enriched from internal handlers)
+# -----------------------------------------------------------------------------
+
+
+class ScenarioEntry(BaseModel):
+    """Scenario entry with resource metadata."""
+
+    scenario_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+# -----------------------------------------------------------------------------
 # Rubric/Grade entry types (enriched from internal handlers)
 # -----------------------------------------------------------------------------
 
@@ -426,15 +439,14 @@ class MessageData(BaseModel):
 
 
 class GradeData(BaseModel):
-    """Grade information for a chat."""
+    """Grade information for a chat (no id - not a resource)."""
 
-    id: UUID | None = None
-    score: int | None = None
+    score: float | None = None
     passed: bool | None = None
     description: str | None = None
     time_taken: int | None = None
-    total_points: int | None = None
-    pass_points: int | None = None
+    total_points: float | None = None
+    pass_points: float | None = None
 
 
 class HintsByMessage(BaseModel):
@@ -454,8 +466,6 @@ class ChatData(BaseModel):
     """
 
     id: UUID
-    scenario_id: UUID | None = None
-    scenario_name: str | None = None
     completed: bool | None = None
     is_current: bool | None = None
     position: int | None = None
@@ -474,6 +484,9 @@ class ChatData(BaseModel):
     grading_state: GradingStateData | None = None
     dynamic_rubric: DynamicRubricData | None = None
     hints: list[HintsByMessage] | None = None
+
+    # --- Scenario resource (enriched from internal handler) ---
+    scenario: ScenarioEntry | None = None
 
     # --- Normal/General View resources ---
     problem_statement: ProblemStatementEntry | None = None

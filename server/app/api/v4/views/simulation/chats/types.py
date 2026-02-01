@@ -25,6 +25,15 @@ class ResponseItem(BaseModel):
     created_at: datetime | None = None
 
 
+class GradeItem(BaseModel):
+    """Grade composite type (no id - not a resource, no rubric points - fetched via rubric handler)."""
+
+    score: float | None = None
+    passed: bool | None = None
+    description: str | None = None
+    time_taken: int | None = None
+
+
 class ChatViewItem(BaseModel):
     """Single chat from the simulation chats view."""
 
@@ -34,14 +43,10 @@ class ChatViewItem(BaseModel):
     # Foreign keys
     attempt_id: UUID | None = None
 
-    # Resource IDs (singular)
+    # Resource IDs (singular - metadata fetched via internal handlers)
     scenario_id: UUID | None = None
     rubric_id: UUID | None = None
     problem_statement_id: UUID | None = None
-
-    # Resource metadata (JOINed from _resource tables)
-    scenario_name: str | None = None
-    rubric_name: str | None = None
 
     # Practice flag
     practice: bool = False
@@ -55,20 +60,14 @@ class ChatViewItem(BaseModel):
     show_objectives: bool | None = None
     show_problem_statement: bool | None = None
 
-    # Chat data
-    chat_created_at: datetime | None = None
-    chat_completed: bool = False
-    chat_position: int | None = None
-    is_current_chat: bool = False
+    # Chat metadata (top-level)
+    created_at: datetime | None = None
+    completed: bool = False
+    position: int | None = None
+    is_current: bool = False
 
-    # Grade data
-    grade_id: UUID | None = None
-    grade_score: float | None = None
-    grade_passed: bool | None = None
-    grade_description: str | None = None
-    grade_time_taken: int | None = None
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
+    # Grade (composite type - no id, no rubric points)
+    grade: GradeItem | None = None
 
     # Feedbacks
     feedbacks: list[FeedbackItem] | None = None

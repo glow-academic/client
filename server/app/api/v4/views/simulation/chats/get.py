@@ -11,6 +11,7 @@ from app.api.v4.views.simulation.chats.types import (
     FeedbackItem,
     GetChatsRequest,
     GetChatsResponse,
+    GradeItem,
     ResponseItem,
 )
 from app.infra.v4.activity.audit import audit_activity
@@ -105,6 +106,16 @@ async def get_simulation_chats_internal(
                     for r in item.responses
                 ]
 
+            # Transform grade
+            grade = None
+            if item.grade:
+                grade = GradeItem(
+                    score=item.grade.score,
+                    passed=item.grade.passed,
+                    description=item.grade.description,
+                    time_taken=item.grade.time_taken,
+                )
+
             items.append(
                 ChatViewItem(
                     chat_id=item.chat_id,
@@ -112,8 +123,6 @@ async def get_simulation_chats_internal(
                     scenario_id=item.scenario_id,
                     rubric_id=item.rubric_id,
                     problem_statement_id=item.problem_statement_id,
-                    scenario_name=item.scenario_name,
-                    rubric_name=item.rubric_name,
                     practice=item.practice or False,
                     copy_paste_allowed=item.copy_paste_allowed,
                     text_enabled=item.text_enabled,
@@ -122,17 +131,13 @@ async def get_simulation_chats_internal(
                     show_images=item.show_images,
                     show_objectives=item.show_objectives,
                     show_problem_statement=item.show_problem_statement,
-                    chat_created_at=item.chat_created_at,
-                    chat_completed=item.chat_completed or False,
-                    chat_position=item.chat_position,
-                    is_current_chat=item.is_current_chat or False,
-                    grade_id=item.grade_id,
-                    grade_score=item.grade_score,
-                    grade_passed=item.grade_passed,
-                    grade_description=item.grade_description,
-                    grade_time_taken=item.grade_time_taken,
-                    rubric_total_points=item.rubric_total_points,
-                    rubric_pass_points=item.rubric_pass_points,
+                    # Chat metadata (top-level)
+                    created_at=item.created_at,
+                    completed=item.completed or False,
+                    position=item.position,
+                    is_current=item.is_current or False,
+                    # Grade (composite)
+                    grade=grade,
                     feedbacks=feedbacks,
                     # Resource IDs - Normal/General View
                     persona_ids=list(item.persona_ids) if item.persona_ids else None,

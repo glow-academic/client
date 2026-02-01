@@ -61,6 +61,14 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_response AS (
     created_at timestamptz
 );
 
+-- Grade composite type (no grade_id - not a resource, no rubric points - fetched via rubric handler)
+CREATE TYPE types.q_get_simulation_chats_view_v4_grade AS (
+    score float,
+    passed boolean,
+    description text,
+    time_taken int
+);
+
 -- Main chat item type (IDs from MV - metadata fetched separately via internal handlers)
 CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     -- Primary key
@@ -69,14 +77,10 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     -- Foreign keys
     attempt_id uuid,
 
-    -- Resource IDs (singular)
+    -- Resource IDs (singular - metadata fetched via internal handlers)
     scenario_id uuid,
     rubric_id uuid,
     problem_statement_id uuid,
-
-    -- Resource metadata (JOINed from _resource tables)
-    scenario_name text,
-    rubric_name text,
 
     -- Practice flag
     practice boolean,
@@ -90,20 +94,14 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     show_objectives boolean,
     show_problem_statement boolean,
 
-    -- Chat data
-    chat_created_at timestamptz,
-    chat_completed boolean,
-    chat_position int,
-    is_current_chat boolean,
+    -- Chat metadata (top-level)
+    created_at timestamptz,
+    completed boolean,
+    position int,
+    is_current boolean,
 
-    -- Grade data
-    grade_id uuid,
-    grade_score float,
-    grade_passed boolean,
-    grade_description text,
-    grade_time_taken int,
-    rubric_total_points int,
-    rubric_pass_points int,
+    -- Grade (composite type - no id, no rubric points)
+    grade types.q_get_simulation_chats_view_v4_grade,
 
     -- Feedbacks (with standard name JOINed)
     feedbacks types.q_get_simulation_chats_view_v4_feedback[],
@@ -201,7 +199,7 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.responses) AS r ON true
         GROUP BY mv.chat_id
     ),
-    -- JOIN resource metadata (only scenario and rubric names - others fetched via internal handlers)
+    -- No resource JOINs needed - all metadata fetched via internal handlers
     with_resources AS (
         SELECT
             mv.chat_id,
@@ -209,9 +207,6 @@ AS $$
             mv.scenario_id,
             mv.rubric_id,
             mv.problem_statement_id,
-            -- Resource names (only scenario and rubric - persona/objective fetched separately)
-            scen.name AS scenario_name,
-            rub.name AS rubric_name,
             -- Flags
             mv.practice,
             -- Chat-level flags (directly from MV)
@@ -222,19 +217,13 @@ AS $$
             mv.show_images,
             mv.show_objectives,
             mv.show_problem_statement,
-            -- Chat data
-            mv.chat_created_at,
-            mv.chat_completed,
-            mv.chat_position,
-            mv.is_current_chat,
-            -- Grade data
-            mv.grade_id,
-            mv.grade_score,
-            mv.grade_passed,
-            mv.grade_description,
-            mv.grade_time_taken,
-            mv.rubric_total_points,
-            mv.rubric_pass_points,
+            -- Chat metadata (top-level)
+            mv.chat_created_at AS created_at,
+            mv.chat_completed AS completed,
+            mv.chat_position AS position,
+            mv.is_current_chat AS is_current,
+            -- Grade (composite type)
+            (mv.grade_score, mv.grade_passed, mv.grade_description, mv.grade_time_taken)::types.q_get_simulation_chats_view_v4_grade AS grade,
             -- Feedbacks
             ft.feedbacks,
             -- Resource IDs - Normal/General View
@@ -253,8 +242,6 @@ AS $$
             mv.standard_group_ids,
             mv.standard_ids
         FROM mv_data mv
-        LEFT JOIN scenarios_resource scen ON scen.id = mv.scenario_id AND scen.active = TRUE
-        LEFT JOIN rubrics_resource rub ON rub.id = mv.rubric_id AND rub.active = TRUE
         LEFT JOIN feedbacks_transformed ft ON ft.chat_id = mv.chat_id
         LEFT JOIN responses_transformed rt ON rt.chat_id = mv.chat_id
     ),
@@ -268,8 +255,6 @@ AS $$
                     scenario_id,
                     rubric_id,
                     problem_statement_id,
-                    scenario_name,
-                    rubric_name,
                     practice,
                     copy_paste_allowed,
                     text_enabled,
@@ -278,17 +263,11 @@ AS $$
                     show_images,
                     show_objectives,
                     show_problem_statement,
-                    chat_created_at,
-                    chat_completed,
-                    chat_position,
-                    is_current_chat,
-                    grade_id,
-                    grade_score,
-                    grade_passed,
-                    grade_description,
-                    grade_time_taken,
-                    rubric_total_points,
-                    rubric_pass_points,
+                    created_at,
+                    completed,
+                    position,
+                    is_current,
+                    grade,
                     feedbacks,
                     persona_ids,
                     objective_ids,
@@ -302,7 +281,7 @@ AS $$
                     standard_group_ids,
                     standard_ids
                 )::types.q_get_simulation_chats_view_v4_item
-                ORDER BY chat_position
+                ORDER BY position
             ),
             ARRAY[]::types.q_get_simulation_chats_view_v4_item[]
         ) AS items
