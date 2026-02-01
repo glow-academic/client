@@ -36,35 +36,32 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
--- Drop and recreate strength type (message_id removed - implied)
+-- Drop and recreate strength type (id/message_id removed - implied by parent)
 DROP TYPE IF EXISTS types.mv_strength CASCADE;
 CREATE TYPE types.mv_strength AS (
-    id uuid,
     name text,
     description text,
     highlights types.mv_highlight[]
 );
 
--- Drop and recreate improvement type (message_id removed - implied)
+-- Drop and recreate improvement type (id/message_id removed - implied by parent)
 DROP TYPE IF EXISTS types.mv_improvement CASCADE;
 CREATE TYPE types.mv_improvement AS (
-    id uuid,
     name text,
     description text,
     replacements types.mv_replacement[]
 );
 
--- Drop and recreate hint type (message_id removed - implied)
+-- Drop and recreate hint type (message_id removed - implied by parent)
 DROP TYPE IF EXISTS types.mv_hint CASCADE;
 CREATE TYPE types.mv_hint AS (
     hint text,
     idx int
 );
 
--- Drop and recreate mv_content type (only persona_id - metadata fetched via handler)
+-- Drop and recreate mv_content type (id removed, only persona_id - metadata fetched via handler)
 DROP TYPE IF EXISTS types.mv_content CASCADE;
 CREATE TYPE types.mv_content AS (
-    id uuid,
     content text,
     persona_id uuid,        -- persona ID (NULL for user messages, fetch metadata via handler)
     created_at timestamptz
@@ -112,12 +109,12 @@ highlights_agg AS (
     WHERE h.active = TRUE
     GROUP BY h.strength_id
 ),
--- Aggregate strengths per message with their highlights (message_id removed - implied)
+-- Aggregate strengths per message with their highlights (id/message_id removed - implied)
 strengths_agg AS (
     SELECT
         s.message_id,
         ARRAY_AGG(
-            (s.id, s.name, s.description,
+            (s.name, s.description,
              COALESCE(ha.highlights, ARRAY[]::types.mv_highlight[]))::types.mv_strength
             ORDER BY s.created_at
         ) AS strengths
@@ -138,12 +135,12 @@ replacements_agg AS (
     WHERE r.active = TRUE
     GROUP BY r.improvement_id
 ),
--- Aggregate improvements per message with their replacements (message_id removed - implied)
+-- Aggregate improvements per message with their replacements (id/message_id removed - implied)
 improvements_agg AS (
     SELECT
         i.message_id,
         ARRAY_AGG(
-            (i.id, i.name, i.description,
+            (i.name, i.description,
              COALESCE(ra.replacements, ARRAY[]::types.mv_replacement[]))::types.mv_improvement
             ORDER BY i.created_at
         ) AS improvements
@@ -164,13 +161,12 @@ hints_agg AS (
     WHERE h.active = TRUE
     GROUP BY h.message_id
 ),
--- Aggregate contents per message (only persona_id - metadata fetched via handler)
+-- Aggregate contents per message (id removed, only persona_id - metadata fetched via handler)
 contents_agg AS (
     SELECT
         sce.simulation_message_id AS message_id,
         ARRAY_AGG(
             (
-                ce.id,
                 ce.content,
                 sce.persona_id,
                 ce.created_at

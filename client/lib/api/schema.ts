@@ -6866,59 +6866,18 @@ export interface components {
             cohort_id?: string | null;
             /** Department Id */
             department_id?: string | null;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Cohort Name */
-            cohort_name?: string | null;
-            /** Department Name */
-            department_name?: string | null;
             /**
              * Practice
              * @default false
              */
             practice: boolean;
-            /** Attempt Created At */
-            attempt_created_at?: string | null;
             /**
              * Infinite Mode
              * @default false
              */
             infinite_mode: boolean;
-            /**
-             * Total Chats
-             * @default 0
-             */
-            total_chats: number;
-            /**
-             * Completed Chats
-             * @default 0
-             */
-            completed_chats: number;
-            /**
-             * Total Score
-             * @default 0
-             */
-            total_score: number;
-            /**
-             * All Passed
-             * @default false
-             */
-            all_passed: boolean;
-            /**
-             * Elapsed Seconds
-             * @default 0
-             */
-            elapsed_seconds: number;
-            /** Rubric Total Points */
-            rubric_total_points?: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points?: number | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /**
          * AvailableContinuationOptions
@@ -7272,10 +7231,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Scenario Name */
-            scenario_name?: string | null;
             /** Completed */
             completed?: boolean | null;
             /** Is Current */
@@ -7301,6 +7256,7 @@ export interface components {
             dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
             /** Hints */
             hints?: components["schemas"]["HintsByMessage"][] | null;
+            scenario?: components["schemas"]["ScenarioEntry"] | null;
             problem_statement?: components["schemas"]["ProblemStatementEntry"] | null;
             /** Objectives */
             objectives?: components["schemas"]["ObjectiveEntry"][] | null;
@@ -7320,6 +7276,11 @@ export interface components {
             documents?: components["schemas"]["DocumentEntry"][] | null;
             /** Templates */
             templates?: components["schemas"]["TemplateEntry"][] | null;
+            rubric?: components["schemas"]["RubricEntry"] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupEntry"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardEntry"][] | null;
         };
         /**
          * ChatViewItem
@@ -7339,15 +7300,6 @@ export interface components {
             rubric_id?: string | null;
             /** Problem Statement Id */
             problem_statement_id?: string | null;
-            /** Scenario Name */
-            scenario_name?: string | null;
-            /** Rubric Name */
-            rubric_name?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
             /** Copy Paste Allowed */
             copy_paste_allowed?: boolean | null;
             /** Text Enabled */
@@ -7362,34 +7314,14 @@ export interface components {
             show_objectives?: boolean | null;
             /** Show Problem Statement */
             show_problem_statement?: boolean | null;
-            /** Chat Created At */
-            chat_created_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
             /**
-             * Chat Completed
+             * Completed
              * @default false
              */
-            chat_completed: boolean;
-            /** Chat Position */
-            chat_position?: number | null;
-            /**
-             * Is Current Chat
-             * @default false
-             */
-            is_current_chat: boolean;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Description */
-            grade_description?: string | null;
-            /** Grade Time Taken */
-            grade_time_taken?: number | null;
-            /** Rubric Total Points */
-            rubric_total_points?: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points?: number | null;
+            completed: boolean;
+            grade?: components["schemas"]["GradeItem"] | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["FeedbackItem"][] | null;
             /** Persona Ids */
@@ -7410,6 +7342,10 @@ export interface components {
             video_ids?: string[] | null;
             /** Document Ids */
             document_ids?: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
         };
         /**
          * CohortDepartment
@@ -7564,36 +7500,17 @@ export interface components {
         };
         /**
          * ContentItem
-         * @description Content item with raw persona/profile data.
+         * @description Content item with persona_id only.
          *
-         *     Business logic to compute display name/color/icon is in permissions.py.
+         *     Persona/profile metadata fetched via internal handlers in service layer.
          */
         ContentItem: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
             /** Content */
             content?: string | null;
             /** Persona Id */
             persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Persona Color */
-            persona_color?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
             /** Created At */
             created_at?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
         };
         /**
          * ContinuationOption
@@ -8542,12 +8459,16 @@ export interface components {
         /**
          * FeedbackEntry
          * @description Feedback by standard for grading state.
+         *
+         *     standard_group_id is derived from standards metadata lookup.
          */
         FeedbackEntry: {
             /** Id */
             id?: string | null;
             /** Standard Id */
             standard_id?: string | null;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
             /** Total */
             total?: number | null;
             /** Feedback */
@@ -8883,11 +8804,6 @@ export interface components {
              * @description List of attempt IDs to fetch
              */
             attempt_ids: string[];
-            /**
-             * Practice
-             * @description Filter by practice mode. None=all, True=practice, False=home
-             */
-            practice?: boolean | null;
         };
         /**
          * GetAttemptsResponse
@@ -9092,19 +9008,10 @@ export interface components {
         GetChatsRequest: {
             /**
              * Attempt Id
-             * @description Filter by attempt ID
+             * Format: uuid
+             * @description Attempt ID to fetch chats for
              */
-            attempt_id?: string | null;
-            /**
-             * Chat Ids
-             * @description List of specific chat IDs to fetch
-             */
-            chat_ids?: string[] | null;
-            /**
-             * Practice
-             * @description Filter by practice mode. None=all, True=practice, False=home
-             */
-            practice?: boolean | null;
+            attempt_id: string;
         };
         /**
          * GetChatsResponse
@@ -10504,28 +10411,16 @@ export interface components {
         /**
          * GetMessagesRequest
          * @description Request for getting message data.
+         *
+         *     Note: Practice filtering is done at attempt level, not here.
          */
         GetMessagesRequest: {
             /**
              * Attempt Id
-             * @description Filter by attempt ID
+             * Format: uuid
+             * @description Attempt ID to fetch messages for
              */
-            attempt_id?: string | null;
-            /**
-             * Chat Id
-             * @description Filter by chat ID
-             */
-            chat_id?: string | null;
-            /**
-             * Message Ids
-             * @description List of specific message IDs to fetch
-             */
-            message_ids?: string[] | null;
-            /**
-             * Practice
-             * @description Filter by practice mode. None=all, True=practice, False=home
-             */
-            practice?: boolean | null;
+            attempt_id: string;
         };
         /**
          * GetMessagesResponse
@@ -13508,11 +13403,9 @@ export interface components {
         };
         /**
          * GradeData
-         * @description Grade information for a chat.
+         * @description Grade information for a chat (no id - not a resource).
          */
         GradeData: {
-            /** Id */
-            id?: string | null;
             /** Score */
             score?: number | null;
             /** Passed */
@@ -13525,6 +13418,20 @@ export interface components {
             total_points?: number | null;
             /** Pass Points */
             pass_points?: number | null;
+        };
+        /**
+         * GradeItem
+         * @description Grade composite type (no id - not a resource, no rubric points - fetched via rubric handler).
+         */
+        GradeItem: {
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Description */
+            description?: string | null;
+            /** Time Taken */
+            time_taken?: number | null;
         };
         /**
          * GradingStateData
@@ -13635,11 +13542,9 @@ export interface components {
         };
         /**
          * HintItem
-         * @description Hint for a message (practice-specific).
+         * @description Hint for a message (practice-specific, message_id implied by parent).
          */
         HintItem: {
-            /** Message Id */
-            message_id?: string | null;
             /** Hint */
             hint?: string | null;
             /** Idx */
@@ -13855,16 +13760,9 @@ export interface components {
         };
         /**
          * ImprovementItem
-         * @description Improvement feedback for a message.
+         * @description Improvement feedback for a message (id/message_id implied by parent).
          */
         ImprovementItem: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Message Id */
-            message_id?: string | null;
             /** Name */
             name?: string | null;
             /** Description */
@@ -14387,6 +14285,8 @@ export interface components {
         /**
          * MessageViewItem
          * @description Single message from the simulation messages view.
+         *
+         *     Position derived in service layer, practice on attempt level.
          */
         MessageViewItem: {
             /**
@@ -14398,13 +14298,6 @@ export interface components {
             chat_id?: string | null;
             /** Attempt Id */
             attempt_id?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /** Content */
-            content?: string | null;
             /** Type */
             type?: string | null;
             /** Created At */
@@ -14414,8 +14307,6 @@ export interface components {
              * @default false
              */
             completed: boolean;
-            /** Message Position */
-            message_position?: number | null;
             /** Contents */
             contents?: components["schemas"]["ContentItem"][] | null;
             /** Strengths */
@@ -22910,6 +22801,22 @@ export interface components {
             role_routes_id?: string | null;
         };
         /**
+         * RubricEntry
+         * @description Rubric entry with resource metadata.
+         */
+        RubricEntry: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Total Points */
+            total_points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
          * RubricStructureData
          * @description Rubric structure data.
          */
@@ -23651,6 +23558,18 @@ export interface components {
             upload_id?: string | null;
             /** Field Ids */
             field_ids?: string[] | null;
+        };
+        /**
+         * ScenarioEntry
+         * @description Scenario entry with resource metadata.
+         */
+        ScenarioEntry: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /**
          * ScenarioField
@@ -24808,6 +24727,22 @@ export interface components {
             achieved?: boolean | null;
         };
         /**
+         * StandardEntry
+         * @description Standard entry with resource metadata.
+         */
+        StandardEntry: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+        };
+        /**
          * StandardFeedback
          * @description Feedback for a standard.
          */
@@ -24816,6 +24751,22 @@ export interface components {
             standard_id?: string | null;
             /** Feedback */
             feedback?: string | null;
+        };
+        /**
+         * StandardGroupEntry
+         * @description Standard group entry with resource metadata.
+         */
+        StandardGroupEntry: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
         };
         /**
          * StandardGroupItem
@@ -24929,16 +24880,9 @@ export interface components {
         };
         /**
          * StrengthItem
-         * @description Strength feedback for a message.
+         * @description Strength feedback for a message (id/message_id implied by parent).
          */
         StrengthItem: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Message Id */
-            message_id?: string | null;
             /** Name */
             name?: string | null;
             /** Description */

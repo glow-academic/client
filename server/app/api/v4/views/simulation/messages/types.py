@@ -22,18 +22,16 @@ class ReplacementItem(BaseModel):
 
 
 class StrengthItem(BaseModel):
-    """Strength feedback for a message (message_id implied by parent)."""
+    """Strength feedback for a message (id/message_id implied by parent)."""
 
-    id: UUID
     name: str | None = None
     description: str | None = None
     highlights: list[HighlightItem] | None = None
 
 
 class ImprovementItem(BaseModel):
-    """Improvement feedback for a message (message_id implied by parent)."""
+    """Improvement feedback for a message (id/message_id implied by parent)."""
 
-    id: UUID
     name: str | None = None
     description: str | None = None
     replacements: list[ReplacementItem] | None = None
@@ -52,7 +50,6 @@ class ContentItem(BaseModel):
     Persona/profile metadata fetched via internal handlers in service layer.
     """
 
-    id: UUID
     content: str | None = None
     persona_id: UUID | None = None  # NULL for user messages, fetch metadata via handler
     created_at: datetime | None = None
@@ -93,15 +90,7 @@ class GetMessagesRequest(BaseModel):
     Note: Practice filtering is done at attempt level, not here.
     """
 
-    attempt_id: UUID | None = Field(
-        default=None, description="Filter by attempt ID"
-    )
-    chat_id: UUID | None = Field(
-        default=None, description="Filter by chat ID"
-    )
-    message_ids: list[UUID] | None = Field(
-        default=None, description="List of specific message IDs to fetch"
-    )
+    attempt_id: UUID = Field(description="Attempt ID to fetch messages for")
 
 
 class GetMessagesResponse(BaseModel):

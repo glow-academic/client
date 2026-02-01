@@ -58,17 +58,15 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_replacement AS (
     idx int
 );
 
--- Strength type (message_id removed - implied by parent message)
+-- Strength type (id/message_id removed - implied by parent message)
 CREATE TYPE types.q_get_simulation_messages_view_v4_strength AS (
-    id uuid,
     name text,
     description text,
     highlights types.q_get_simulation_messages_view_v4_highlight[]
 );
 
--- Improvement type (message_id removed - implied by parent message)
+-- Improvement type (id/message_id removed - implied by parent message)
 CREATE TYPE types.q_get_simulation_messages_view_v4_improvement AS (
-    id uuid,
     name text,
     description text,
     replacements types.q_get_simulation_messages_view_v4_replacement[]
@@ -80,9 +78,8 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_hint AS (
     idx int
 );
 
--- Content type (only persona_id - metadata fetched via handler)
+-- Content type (id removed, only persona_id - metadata fetched via handler)
 CREATE TYPE types.q_get_simulation_messages_view_v4_content AS (
-    id uuid,
     content text,
     persona_id uuid,        -- persona ID (NULL for user messages, fetch metadata via handler)
     created_at timestamptz
@@ -118,9 +115,7 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_simulation_messages_view_v4(
-    attempt_id_filter uuid DEFAULT NULL,
-    chat_id_filter uuid DEFAULT NULL,
-    message_ids uuid[] DEFAULT NULL
+    attempt_id_filter uuid
 )
 RETURNS TABLE (
     items types.q_get_simulation_messages_view_v4_item[]
@@ -129,49 +124,38 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Parameter normalization
-    params AS (
-        SELECT
-            attempt_id_filter AS attempt_id_filter,
-            chat_id_filter AS chat_id_filter,
-            COALESCE(message_ids, ARRAY[]::uuid[]) AS message_ids
-    ),
-    -- Fetch from MV with filters (practice filtered at attempt level)
+    -- Fetch from MV filtered by attempt (practice filtered at attempt level)
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_messages mv, params p
-        WHERE (p.attempt_id_filter IS NULL OR mv.attempt_id = p.attempt_id_filter)
-          AND (p.chat_id_filter IS NULL OR mv.chat_id = p.chat_id_filter)
-          AND (CARDINALITY(p.message_ids) = 0 OR mv.message_id = ANY(p.message_ids))
+        FROM mv_simulation_messages mv
+        WHERE mv.attempt_id = attempt_id_filter
     ),
-    -- Transform contents (MV types.mv_content -> query types, only persona_id)
+    -- Transform contents (MV types.mv_content -> query types, id removed, only persona_id)
     contents_transformed AS (
         SELECT
             mv.message_id,
             COALESCE(
                 ARRAY_AGG(
                     (
-                        (c).id,
                         (c).content,
                         (c).persona_id,
                         (c).created_at
                     )::types.q_get_simulation_messages_view_v4_content
                     ORDER BY (c).created_at
-                ) FILTER (WHERE (c).id IS NOT NULL),
+                ) FILTER (WHERE (c).content IS NOT NULL),
                 ARRAY[]::types.q_get_simulation_messages_view_v4_content[]
             ) AS contents
         FROM mv_data mv
         LEFT JOIN LATERAL unnest(mv.contents) AS c ON true
         GROUP BY mv.message_id
     ),
-    -- Transform strengths (MV types.mv_strength -> query types, message_id implied)
+    -- Transform strengths (MV types.mv_strength -> query types, id/message_id implied)
     strengths_transformed AS (
         SELECT
             mv.message_id,
             COALESCE(
                 ARRAY_AGG(
                     (
-                        (s).id,
                         (s).name,
                         (s).description,
                         -- Transform highlights
@@ -186,22 +170,20 @@ AS $$
                             FROM unnest((s).highlights) AS h
                         )
                     )::types.q_get_simulation_messages_view_v4_strength
-                    ORDER BY (s).id
-                ) FILTER (WHERE (s).id IS NOT NULL),
+                ) FILTER (WHERE (s).name IS NOT NULL),
                 ARRAY[]::types.q_get_simulation_messages_view_v4_strength[]
             ) AS strengths
         FROM mv_data mv
         LEFT JOIN LATERAL unnest(mv.strengths) AS s ON true
         GROUP BY mv.message_id
     ),
-    -- Transform improvements (MV types.mv_improvement -> query types, message_id implied)
+    -- Transform improvements (MV types.mv_improvement -> query types, id/message_id implied)
     improvements_transformed AS (
         SELECT
             mv.message_id,
             COALESCE(
                 ARRAY_AGG(
                     (
-                        (i).id,
                         (i).name,
                         (i).description,
                         -- Transform replacements
@@ -216,8 +198,7 @@ AS $$
                             FROM unnest((i).replacements) AS r
                         )
                     )::types.q_get_simulation_messages_view_v4_improvement
-                    ORDER BY (i).id
-                ) FILTER (WHERE (i).id IS NOT NULL),
+                ) FILTER (WHERE (i).name IS NOT NULL),
                 ARRAY[]::types.q_get_simulation_messages_view_v4_improvement[]
             ) AS improvements
         FROM mv_data mv

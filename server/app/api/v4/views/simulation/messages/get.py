@@ -32,9 +32,7 @@ router = APIRouter()
 
 async def get_simulation_messages_internal(
     conn: asyncpg.Connection,
-    attempt_id: UUID | None = None,
-    chat_id: UUID | None = None,
-    message_ids: list[UUID] | None = None,
+    attempt_id: UUID,
     bypass_cache: bool = False,
 ) -> list[MessageViewItem]:
     """Internal function for fetching message data.
@@ -44,9 +42,7 @@ async def get_simulation_messages_internal(
 
     Args:
         conn: Database connection
-        attempt_id: Filter by attempt ID
-        chat_id: Filter by chat ID
-        message_ids: List of specific message IDs to fetch
+        attempt_id: Attempt ID to fetch messages for
         bypass_cache: Skip cache lookup
 
     Returns:
@@ -58,11 +54,7 @@ async def get_simulation_messages_internal(
 
     cache_key_val = cache_key(
         "views/simulation/messages/get",
-        {
-            "attempt_id": str(attempt_id) if attempt_id else None,
-            "chat_id": str(chat_id) if chat_id else None,
-            "message_ids": [str(m) for m in message_ids] if message_ids else None,
-        },
+        {"attempt_id": str(attempt_id)},
     )
 
     if not bypass_cache:
@@ -71,11 +63,7 @@ async def get_simulation_messages_internal(
             return [MessageViewItem.model_validate(item) for item in cached["items"]]
 
     # Execute SQL query
-    params = GetSimulationMessagesViewSqlParams(
-        attempt_id_filter=attempt_id,
-        chat_id_filter=chat_id,
-        message_ids=message_ids,
-    )
+    params = GetSimulationMessagesViewSqlParams(attempt_id_filter=attempt_id)
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
@@ -83,12 +71,11 @@ async def get_simulation_messages_internal(
     items: list[MessageViewItem] = []
     if result and result.items:
         for item in result.items:
-            # Transform strengths (message_id implied by parent)
+            # Transform strengths (id/message_id implied by parent)
             strengths = None
             if item.strengths:
                 strengths = [
                     StrengthItem(
-                        id=s.id,
                         name=s.name,
                         description=s.description,
                         highlights=[
@@ -101,12 +88,11 @@ async def get_simulation_messages_internal(
                     for s in item.strengths
                 ]
 
-            # Transform improvements (message_id implied by parent)
+            # Transform improvements (id/message_id implied by parent)
             improvements = None
             if item.improvements:
                 improvements = [
                     ImprovementItem(
-                        id=i.id,
                         name=i.name,
                         description=i.description,
                         replacements=[
@@ -134,12 +120,11 @@ async def get_simulation_messages_internal(
                     for h in item.hints
                 ]
 
-            # Transform contents (only persona_id - metadata fetched via handler)
+            # Transform contents (id removed, only persona_id - metadata fetched via handler)
             contents = None
             if item.contents:
                 contents = [
                     ContentItem(
-                        id=c.id,
                         content=c.content,
                         persona_id=c.persona_id,
                         created_at=c.created_at,
@@ -205,8 +190,6 @@ async def get_messages(
         items = await get_simulation_messages_internal(
             conn=conn,
             attempt_id=request.attempt_id,
-            chat_id=request.chat_id,
-            message_ids=request.message_ids,
             bypass_cache=bypass_cache,
         )
 

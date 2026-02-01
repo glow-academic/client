@@ -25645,20 +25645,13 @@ class GetSimulationHistoryViewApiResponse(BaseModel):
 
 class GetSimulationMessagesViewSqlParams(BaseModel):
 
-    attempt_id_filter: UUID | None = None
-    chat_id_filter: UUID | None = None
-    message_ids: list[UUID] | None = None
+    attempt_id_filter: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id_filter,
-            self.chat_id_filter,
-            self.message_ids,
-        )
+        return (self.attempt_id_filter,)
 
 class QGetSimulationMessagesViewV4Content(BaseModel):
 
-    id: UUID | None
     content: str | None
     persona_id: UUID | None
     created_at: datetime | None
@@ -25682,7 +25675,6 @@ class QGetSimulationMessagesViewV4Replacement(BaseModel):
 
 class QGetSimulationMessagesViewV4Improvement(BaseModel):
 
-    id: UUID | None
     name: str | None
     description: str | None
     replacements: list[QGetSimulationMessagesViewV4Replacement] | None
@@ -25697,7 +25689,6 @@ class QGetSimulationMessagesViewV4Highlight(BaseModel):
 
 class QGetSimulationMessagesViewV4Strength(BaseModel):
 
-    id: UUID | None
     name: str | None
     description: str | None
     highlights: list[QGetSimulationMessagesViewV4Highlight] | None
@@ -25721,9 +25712,7 @@ class GetSimulationMessagesViewSqlRow(BaseModel):
 
 class GetSimulationMessagesViewApiRequest(BaseModel):
 
-    attempt_id_filter: UUID | None = None
-    chat_id_filter: UUID | None = None
-    message_ids: list[UUID] | None = None
+    attempt_id_filter: UUID
 
 class GetSimulationMessagesViewApiResponse(BaseModel):
 
