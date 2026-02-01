@@ -30629,6 +30629,17 @@
             ],
             "title": "Show Problem Statement"
           },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
+          },
           "created_at": {
             "anyOf": [
               {

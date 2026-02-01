@@ -57,6 +57,9 @@ class ChatViewItem(BaseModel):
     show_objectives: bool | None = None
     show_problem_statement: bool | None = None
 
+    # Time limit (denormalized, 0 = no limit)
+    time_limit_seconds: int | None = None
+
     # Chat metadata (top-level, position/is_current derived in service layer)
     created_at: datetime | None = None
     completed: bool = False

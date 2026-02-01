@@ -12,7 +12,6 @@ then results are assembled in Python.
 """
 
 import asyncio
-import json
 from collections import defaultdict
 from typing import Annotated, Any
 from uuid import UUID
@@ -22,9 +21,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.attempt.permissions import (
     check_attempt_access,
+    compute_achieved_standards,
     compute_attempt_aggregates,
     compute_chat_position_and_current,
     compute_current_chat_index,
+    compute_passed_standards,
     compute_percentage,
     compute_total_possible_points,
 )
@@ -227,28 +228,6 @@ async def attempt_get(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_simulation_time_limit(sim_id: UUID) -> int:
-            """Fetch simulation time limit (sum of scenario time limits).
-
-            Other config (flags, rubric_id) available from chats MV.
-            """
-            async with pool.acquire() as c:
-                time_limit = await c.fetchval(
-                    """
-                    SELECT COALESCE(
-                        SUM(stlr.time_limit_seconds),
-                        0
-                    )::int
-                    FROM simulation_scenario_time_limits_junction sstl
-                    JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
-                    WHERE sstl.simulation_id = $1
-                      AND sstl.active = true
-                      AND stlr.active = true
-                    """,
-                    sim_id,
-                )
-                return time_limit or 0
-
         async def fetch_resource_metadata(
             image_ids: list[UUID],
             video_ids: list[UUID],
@@ -426,53 +405,6 @@ async def attempt_get(
 
             return result
 
-        async def fetch_chat_grading_state(chat_ids: list[UUID]) -> dict[UUID, dict[str, Any]]:
-            """Fetch grading state for chats: achieved_standards, passed_standards.
-
-            Note: grade_description and feedback_by_standard_id are in chats MV.
-            Hints are in messages MV.
-            This fetch is kept for achieved/passed which are derivable - judgment call.
-            """
-            if not chat_ids:
-                return {}
-            async with pool.acquire() as c:
-                result: dict[UUID, dict[str, Any]] = {cid: {} for cid in chat_ids}
-
-                # Fetch achieved and passed standards (derivable but kept for now)
-                grading_rows = await c.fetch(
-                    """
-                    SELECT
-                        g.chat_id,
-                        COALESCE(
-                            (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'achieved', true))
-                             FROM simulation_feedbacks_entry f
-                             JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = f.id AND fsc.active = true
-                             WHERE f.grade_id = g.id AND f.active = true),
-                            '[]'::json
-                        ) as achieved_standards,
-                        COALESCE(
-                            (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'passed', f.total >= COALESCE(sg.pass_points, 0)))
-                             FROM simulation_feedbacks_entry f
-                             JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = f.id AND fsc.active = true
-                             LEFT JOIN standards_resource s ON s.id = fsc.standard_id AND s.active = true
-                             LEFT JOIN standard_groups_resource sg ON sg.id = s.standard_group_id AND sg.active = true
-                             WHERE f.grade_id = g.id AND f.active = true),
-                            '[]'::json
-                        ) as passed_standards
-                    FROM simulation_grades_entry g
-                    WHERE g.chat_id = ANY($1) AND g.active = true
-                    """,
-                    chat_ids,
-                )
-                for row in grading_rows:
-                    chat_id = row["chat_id"]
-                    result[chat_id]["grading_state"] = {
-                        "achieved_standards": row["achieved_standards"],
-                        "passed_standards": row["passed_standards"],
-                    }
-
-                return result
-
         # === EXECUTE ALL QUERIES IN PARALLEL ===
         # First batch: attempt, chats, messages (needed to get simulation_id and chat_ids)
         attempt_result, chats_result, messages_result = await asyncio.gather(
@@ -543,28 +475,12 @@ async def attempt_get(
                 actor={"name": profile_name, "id": profile_id},
             )
 
-        # === SECOND BATCH: Fetch extended data ===
-        # Now that we have simulation_id and chat_ids, fetch extended data
+        # === COMPUTE TIME LIMIT FROM CHATS ===
+        # Sum time_limit_seconds from all chats (denormalized from scenario_time_limits)
         simulation_id = attempt_item.simulation_id
         chat_ids = [c.chat_id for c in (chats_result or [])]
-
-        # Fetch time_limit and grading state in parallel
-        time_limit_seconds: int = 0
-        chat_grading_state: dict[UUID, dict[str, Any]] = {}
-
-        async def fetch_time_limit_or_zero(sim_id: UUID | None) -> int:
-            if not sim_id:
-                return 0
-            return await fetch_simulation_time_limit(sim_id)
-
-        async def fetch_grading_or_empty(cids: list[UUID]) -> dict[UUID, dict[str, Any]]:
-            if not cids:
-                return {}
-            return await fetch_chat_grading_state(cids)
-
-        time_limit_seconds, chat_grading_state = await asyncio.gather(
-            fetch_time_limit_or_zero(simulation_id),
-            fetch_grading_or_empty(chat_ids),
+        time_limit_seconds = sum(
+            c.time_limit_seconds or 0 for c in (chats_result or [])
         )
 
         # === GROUP MESSAGES BY CHAT_ID ===
@@ -788,38 +704,43 @@ async def attempt_get(
                         )
                     )
 
-            # Build grading state from chat_grading_state (achieved/passed) + chats MV (description/feedback)
+            # Build grading state - derive achieved/passed from feedbacks + resource_meta
             grading_state_data: GradingStateData | None = None
-            chat_gs = chat_grading_state.get(chat_item.chat_id, {}).get("grading_state")
-            if chat_gs or chat_item.grade or chat_item.feedbacks:
-                # achieved_standards and passed_standards from grading state fetch
+            if chat_item.grade or chat_item.feedbacks:
+                # Derive achieved_standards and passed_standards from feedbacks
                 achieved = None
                 passed = None
-                if chat_gs:
-                    achieved_raw = chat_gs.get("achieved_standards") or []
-                    if isinstance(achieved_raw, str):
-                        achieved_raw = json.loads(achieved_raw)
-                    passed_raw = chat_gs.get("passed_standards") or []
-                    if isinstance(passed_raw, str):
-                        passed_raw = json.loads(passed_raw)
+                if chat_item.feedbacks:
+                    # Build feedbacks as dicts for the compute functions
+                    feedbacks_dicts = [
+                        {"standard_id": fb.standard_id, "total": fb.total}
+                        for fb in chat_item.feedbacks
+                    ]
 
+                    # Compute achieved standards (any standard with feedback is achieved)
+                    achieved_raw = compute_achieved_standards(feedbacks_dicts)
                     if achieved_raw:
                         achieved = [
                             StandardAchievement(
-                                standard_id=a.get("standard_id") if isinstance(a, dict) else None,
-                                achieved=a.get("achieved") if isinstance(a, dict) else None,
+                                standard_id=a.get("standard_id"),
+                                achieved=a.get("achieved"),
                             )
                             for a in achieved_raw
-                            if isinstance(a, dict)
                         ]
+
+                    # Compute passed standards (total >= standard_group pass_points)
+                    passed_raw = compute_passed_standards(
+                        feedbacks_dicts,
+                        resource_meta["standard_groups"],
+                        resource_meta["standards"],
+                    )
                     if passed_raw:
                         passed = [
                             StandardPass(
-                                standard_id=p.get("standard_id") if isinstance(p, dict) else None,
-                                passed=p.get("passed") if isinstance(p, dict) else None,
+                                standard_id=p.get("standard_id"),
+                                passed=p.get("passed"),
                             )
                             for p in passed_raw
-                            if isinstance(p, dict)
                         ]
 
                 # grade_description from chats MV

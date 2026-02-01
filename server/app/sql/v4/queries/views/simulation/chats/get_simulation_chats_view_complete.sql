@@ -91,6 +91,9 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     show_objectives boolean,
     show_problem_statement boolean,
 
+    -- Time limit (denormalized, 0 = no limit)
+    time_limit_seconds int,
+
     -- Chat metadata (top-level, position/is_current derived in service layer)
     created_at timestamptz,
     completed boolean,
@@ -199,6 +202,8 @@ AS $$
             mv.show_images,
             mv.show_objectives,
             mv.show_problem_statement,
+            -- Time limit (denormalized)
+            mv.time_limit_seconds,
             -- Chat metadata (top-level, position/is_current derived in service layer)
             mv.chat_created_at AS created_at,
             mv.chat_completed AS completed,
@@ -242,6 +247,7 @@ AS $$
                     show_images,
                     show_objectives,
                     show_problem_statement,
+                    time_limit_seconds,
                     created_at,
                     completed,
                     grade,

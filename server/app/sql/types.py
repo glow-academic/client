@@ -25620,6 +25620,7 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     show_images: bool | None
     show_objectives: bool | None
     show_problem_statement: bool | None
+    time_limit_seconds: int | None
     created_at: datetime | None
     completed: bool | None
     grade: QGetSimulationChatsViewV4Grade | None

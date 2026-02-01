@@ -111,6 +111,8 @@ base_chats AS (
         c.show_images,
         c.show_objectives,
         c.show_problem_statement,
+        -- Time limit (denormalized from scenario_time_limits)
+        c.time_limit_seconds,
         lg.grade_id
     FROM simulation_chats_entry c
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
@@ -268,6 +270,9 @@ SELECT
     bc.show_images,
     bc.show_objectives,
     bc.show_problem_statement,
+
+    -- Time limit (denormalized)
+    bc.time_limit_seconds,
 
     -- Chat data (position/is_current derived in service layer)
     bc.chat_created_at,

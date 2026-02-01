@@ -7314,6 +7314,8 @@ export interface components {
             show_objectives?: boolean | null;
             /** Show Problem Statement */
             show_problem_statement?: boolean | null;
+            /** Time Limit Seconds */
+            time_limit_seconds?: number | null;
             /** Created At */
             created_at?: string | null;
             /**
