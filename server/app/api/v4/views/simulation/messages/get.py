@@ -35,19 +35,18 @@ async def get_simulation_messages_internal(
     attempt_id: UUID | None = None,
     chat_id: UUID | None = None,
     message_ids: list[UUID] | None = None,
-    practice: bool | None = None,
     bypass_cache: bool = False,
 ) -> list[MessageViewItem]:
     """Internal function for fetching message data.
 
     This can be reused by analytics routes that need message data.
+    Note: Practice filtering is done at attempt level, not here.
 
     Args:
         conn: Database connection
         attempt_id: Filter by attempt ID
         chat_id: Filter by chat ID
         message_ids: List of specific message IDs to fetch
-        practice: Filter by practice mode
         bypass_cache: Skip cache lookup
 
     Returns:
@@ -63,7 +62,6 @@ async def get_simulation_messages_internal(
             "attempt_id": str(attempt_id) if attempt_id else None,
             "chat_id": str(chat_id) if chat_id else None,
             "message_ids": [str(m) for m in message_ids] if message_ids else None,
-            "practice": practice,
         },
     )
 
@@ -77,7 +75,6 @@ async def get_simulation_messages_internal(
         attempt_id_filter=attempt_id,
         chat_id_filter=chat_id,
         message_ids=message_ids,
-        practice_filter=practice,
     )
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
@@ -86,13 +83,12 @@ async def get_simulation_messages_internal(
     items: list[MessageViewItem] = []
     if result and result.items:
         for item in result.items:
-            # Transform strengths
+            # Transform strengths (message_id implied by parent)
             strengths = None
             if item.strengths:
                 strengths = [
                     StrengthItem(
                         id=s.id,
-                        message_id=s.message_id,
                         name=s.name,
                         description=s.description,
                         highlights=[
@@ -105,13 +101,12 @@ async def get_simulation_messages_internal(
                     for s in item.strengths
                 ]
 
-            # Transform improvements
+            # Transform improvements (message_id implied by parent)
             improvements = None
             if item.improvements:
                 improvements = [
                     ImprovementItem(
                         id=i.id,
-                        message_id=i.message_id,
                         name=i.name,
                         description=i.description,
                         replacements=[
@@ -128,20 +123,18 @@ async def get_simulation_messages_internal(
                     for i in item.improvements
                 ]
 
-            # Transform hints (practice-specific)
+            # Transform hints (message_id implied by parent)
             hints = None
             if item.hints:
                 hints = [
                     HintItem(
-                        message_id=h.message_id,
                         hint=h.hint,
                         idx=h.idx,
                     )
                     for h in item.hints
                 ]
 
-            # Transform contents - raw data only
-            # Business logic (name/color/icon) is applied by artifact layer
+            # Transform contents (only persona_id - metadata fetched via handler)
             contents = None
             if item.contents:
                 contents = [
@@ -149,10 +142,6 @@ async def get_simulation_messages_internal(
                         id=c.id,
                         content=c.content,
                         persona_id=c.persona_id,
-                        persona_name=c.persona_name,
-                        persona_color=c.persona_color,
-                        persona_icon=c.persona_icon,
-                        profile_name=c.profile_name,
                         created_at=c.created_at,
                     )
                     for c in item.contents
@@ -163,12 +152,9 @@ async def get_simulation_messages_internal(
                     message_id=item.message_id,
                     chat_id=item.chat_id,
                     attempt_id=item.attempt_id,
-                    practice=item.practice or False,
-                    content=item.content,
                     type=item.type,
                     created_at=item.created_at,
                     completed=item.completed or False,
-                    message_position=item.message_position,
                     contents=contents,
                     strengths=strengths,
                     improvements=improvements,
@@ -221,7 +207,6 @@ async def get_messages(
             attempt_id=request.attempt_id,
             chat_id=request.chat_id,
             message_ids=request.message_ids,
-            practice=request.practice,
             bypass_cache=bypass_cache,
         )
 

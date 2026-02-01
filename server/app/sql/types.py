@@ -25648,14 +25648,12 @@ class GetSimulationMessagesViewSqlParams(BaseModel):
     attempt_id_filter: UUID | None = None
     chat_id_filter: UUID | None = None
     message_ids: list[UUID] | None = None
-    practice_filter: bool | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.attempt_id_filter,
             self.chat_id_filter,
             self.message_ids,
-            self.practice_filter,
         )
 
 class QGetSimulationMessagesViewV4Content(BaseModel):
@@ -25663,10 +25661,6 @@ class QGetSimulationMessagesViewV4Content(BaseModel):
     id: UUID | None
     content: str | None
     persona_id: UUID | None
-    persona_name: str | None
-    persona_color: str | None
-    persona_icon: str | None
-    profile_name: str | None
     created_at: datetime | None
 
 
@@ -25674,7 +25668,6 @@ class QGetSimulationMessagesViewV4Content(BaseModel):
 
 class QGetSimulationMessagesViewV4Hint(BaseModel):
 
-    message_id: UUID | None
     hint: str | None
     idx: int | None
 
@@ -25690,7 +25683,6 @@ class QGetSimulationMessagesViewV4Replacement(BaseModel):
 class QGetSimulationMessagesViewV4Improvement(BaseModel):
 
     id: UUID | None
-    message_id: UUID | None
     name: str | None
     description: str | None
     replacements: list[QGetSimulationMessagesViewV4Replacement] | None
@@ -25706,7 +25698,6 @@ class QGetSimulationMessagesViewV4Highlight(BaseModel):
 class QGetSimulationMessagesViewV4Strength(BaseModel):
 
     id: UUID | None
-    message_id: UUID | None
     name: str | None
     description: str | None
     highlights: list[QGetSimulationMessagesViewV4Highlight] | None
@@ -25716,12 +25707,9 @@ class QGetSimulationMessagesViewV4Item(BaseModel):
     message_id: UUID | None
     chat_id: UUID | None
     attempt_id: UUID | None
-    practice: bool | None
-    content: str | None
     type: str | None
     created_at: datetime | None
     completed: bool | None
-    message_position: int | None
     contents: list[QGetSimulationMessagesViewV4Content] | None
     strengths: list[QGetSimulationMessagesViewV4Strength] | None
     improvements: list[QGetSimulationMessagesViewV4Improvement] | None
@@ -25736,7 +25724,6 @@ class GetSimulationMessagesViewApiRequest(BaseModel):
     attempt_id_filter: UUID | None = None
     chat_id_filter: UUID | None = None
     message_ids: list[UUID] | None = None
-    practice_filter: bool | None = None
 
 class GetSimulationMessagesViewApiResponse(BaseModel):
 

@@ -2,7 +2,8 @@
 -- Message-level data for simulation attempt detail views.
 --
 -- Grain: One row per message
--- Filter: archived = FALSE only (practice is a column, not a filter)
+-- Filter: archived = FALSE only
+-- Note: Practice filtering done at attempt level, position derived in service layer
 --
 -- Purpose: Provides message-level data with strengths/improvements for parallel fetching
 -- Section: SIMULATION (unified view - both home and practice)
@@ -13,6 +14,7 @@
 -- ============================================================================
 
 -- Create types if they don't exist (shared with mv_home_messages)
+-- Note: message_id removed from nested types - implied by parent message
 DO $$
 BEGIN
     CREATE TYPE types.mv_highlight AS (
@@ -34,53 +36,37 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
-DO $$
-BEGIN
-    CREATE TYPE types.mv_strength AS (
-        id uuid,
-        message_id uuid,
-        name text,
-        description text,
-        highlights types.mv_highlight[]
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Drop and recreate strength type (message_id removed - implied)
+DROP TYPE IF EXISTS types.mv_strength CASCADE;
+CREATE TYPE types.mv_strength AS (
+    id uuid,
+    name text,
+    description text,
+    highlights types.mv_highlight[]
+);
 
-DO $$
-BEGIN
-    CREATE TYPE types.mv_improvement AS (
-        id uuid,
-        message_id uuid,
-        name text,
-        description text,
-        replacements types.mv_replacement[]
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Drop and recreate improvement type (message_id removed - implied)
+DROP TYPE IF EXISTS types.mv_improvement CASCADE;
+CREATE TYPE types.mv_improvement AS (
+    id uuid,
+    name text,
+    description text,
+    replacements types.mv_replacement[]
+);
 
-DO $$
-BEGIN
-    CREATE TYPE types.mv_hint AS (
-        message_id uuid,
-        hint text,
-        idx int
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Drop and recreate hint type (message_id removed - implied)
+DROP TYPE IF EXISTS types.mv_hint CASCADE;
+CREATE TYPE types.mv_hint AS (
+    hint text,
+    idx int
+);
 
--- Drop and recreate mv_content type (raw data - business logic applied in Python)
+-- Drop and recreate mv_content type (only persona_id - metadata fetched via handler)
 DROP TYPE IF EXISTS types.mv_content CASCADE;
 CREATE TYPE types.mv_content AS (
     id uuid,
     content text,
-    persona_id uuid,        -- persona ID (NULL for user messages)
-    persona_name text,      -- persona name (NULL for user messages)
-    persona_color text,     -- persona color (NULL for user messages)
-    persona_icon text,      -- persona icon (NULL for user messages)
-    profile_name text,      -- actor name (populated for user messages)
+    persona_id uuid,        -- persona ID (NULL for user messages, fetch metadata via handler)
     created_at timestamptz
 );
 
@@ -114,15 +100,6 @@ DROP MATERIALIZED VIEW IF EXISTS mv_simulation_messages CASCADE;
 
 CREATE MATERIALIZED VIEW mv_simulation_messages AS
 WITH
--- Get the latest grade per chat for linking feedbacks
-latest_grade_per_chat AS (
-    SELECT DISTINCT ON (g.chat_id)
-        g.id AS grade_id,
-        g.chat_id
-    FROM simulation_grades_entry g
-    WHERE g.active = TRUE
-    ORDER BY g.chat_id, g.created_at DESC
-),
 -- Aggregate highlights per strength
 highlights_agg AS (
     SELECT
@@ -135,12 +112,12 @@ highlights_agg AS (
     WHERE h.active = TRUE
     GROUP BY h.strength_id
 ),
--- Aggregate strengths per message with their highlights
+-- Aggregate strengths per message with their highlights (message_id removed - implied)
 strengths_agg AS (
     SELECT
         s.message_id,
         ARRAY_AGG(
-            (s.id, s.message_id, s.name, s.description,
+            (s.id, s.name, s.description,
              COALESCE(ha.highlights, ARRAY[]::types.mv_highlight[]))::types.mv_strength
             ORDER BY s.created_at
         ) AS strengths
@@ -161,12 +138,12 @@ replacements_agg AS (
     WHERE r.active = TRUE
     GROUP BY r.improvement_id
 ),
--- Aggregate improvements per message with their replacements
+-- Aggregate improvements per message with their replacements (message_id removed - implied)
 improvements_agg AS (
     SELECT
         i.message_id,
         ARRAY_AGG(
-            (i.id, i.message_id, i.name, i.description,
+            (i.id, i.name, i.description,
              COALESCE(ra.replacements, ARRAY[]::types.mv_replacement[]))::types.mv_improvement
             ORDER BY i.created_at
         ) AS improvements
@@ -175,40 +152,19 @@ improvements_agg AS (
     WHERE i.active = TRUE
     GROUP BY i.message_id
 ),
--- Aggregate hints per message (PRACTICE-specific)
+-- Aggregate hints per message (PRACTICE-specific, message_id removed - implied)
 hints_agg AS (
     SELECT
         h.message_id,
         ARRAY_AGG(
-            (h.message_id, h.hint, h.idx)::types.mv_hint
+            (h.hint, h.idx)::types.mv_hint
             ORDER BY h.idx
         ) AS hints
     FROM simulation_hints_entry h
     WHERE h.active = TRUE
     GROUP BY h.message_id
 ),
--- Get profile name for user messages (via attempt -> profile connection)
-profile_names AS (
-    SELECT DISTINCT ON (c.id)
-        c.id AS chat_id,
-        pf.name AS profile_name
-    FROM simulation_chats_entry c
-    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
-    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
-    JOIN profiles_resource pf ON pf.id = apc.profiles_id AND pf.active = TRUE
-    WHERE c.active = TRUE AND a.active = TRUE
-),
--- Get persona info for assistant messages (via chat -> persona connection)
-chat_personas AS (
-    SELECT DISTINCT ON (cpc.chat_id)
-        cpc.chat_id,
-        pr.name AS persona_name,
-        pr.color AS persona_color,
-        pr.icon AS persona_icon
-    FROM simulation_chats_personas_connection cpc
-    JOIN personas_resource pr ON pr.id = cpc.personas_id AND pr.active = TRUE
-),
--- Aggregate contents per message with raw data (business logic in Python)
+-- Aggregate contents per message (only persona_id - metadata fetched via handler)
 contents_agg AS (
     SELECT
         sce.simulation_message_id AS message_id,
@@ -217,35 +173,24 @@ contents_agg AS (
                 ce.id,
                 ce.content,
                 sce.persona_id,
-                COALESCE(cp.persona_name, pr.name),
-                COALESCE(cp.persona_color, pr.color),
-                COALESCE(cp.persona_icon, pr.icon),
-                pn.profile_name,
                 ce.created_at
             )::types.mv_content
             ORDER BY ce.created_at
         ) AS contents
     FROM simulation_contents_entry sce
     JOIN contents_entry ce ON ce.id = sce.content_id
-    JOIN simulation_messages_entry sm ON sm.id = sce.simulation_message_id
-    JOIN messages_entry m ON m.id = sm.id
-    LEFT JOIN profile_names pn ON pn.chat_id = sm.chat_id
-    LEFT JOIN chat_personas cp ON cp.chat_id = sm.chat_id
-    LEFT JOIN personas_resource pr ON pr.id = sce.persona_id AND pr.active = TRUE
     WHERE ce.active = TRUE
     GROUP BY sce.simulation_message_id
 ),
--- Compute message position within chat
-messages_with_position AS (
+-- Base message data (position derived in service layer, practice on attempt level)
+base_messages AS (
     SELECT
         sm.id AS message_id,
         sm.chat_id,
         c.attempt_id,
         m.role,
         m.completed,
-        m.created_at,
-        COALESCE(a.practice, FALSE) AS practice,
-        ROW_NUMBER() OVER (PARTITION BY sm.chat_id ORDER BY m.created_at) AS message_position
+        m.created_at
     FROM simulation_messages_entry sm
     JOIN messages_entry m ON m.id = sm.id
     JOIN simulation_chats_entry c ON c.id = sm.chat_id
@@ -258,39 +203,34 @@ messages_with_position AS (
 )
 SELECT
     -- Primary key
-    mwp.message_id,
+    bm.message_id,
 
     -- Foreign keys for parallel lookup and grouping
-    mwp.chat_id,
-    mwp.attempt_id,
+    bm.chat_id,
+    bm.attempt_id,
 
-    -- Practice flag (exposed as column for filtering)
-    mwp.practice,
+    -- Message data (position derived in service layer)
+    CASE WHEN bm.role = 'user'::message_type THEN 'query' ELSE 'response' END AS type,
+    bm.created_at,
+    bm.completed,
 
-    -- Message data (first content for backward compatibility)
-    (ca.contents[1]).content AS content,
-    CASE WHEN mwp.role = 'user'::message_type THEN 'query' ELSE 'response' END AS type,
-    mwp.created_at,
-    mwp.completed,
-    mwp.message_position::int,
-
-    -- Contents array with persona info
+    -- Contents array with persona_id (metadata fetched via handler)
     COALESCE(ca.contents, ARRAY[]::types.mv_content[]) AS contents,
 
-    -- Strengths with highlights (denormalized)
+    -- Strengths with highlights (denormalized, message_id implied)
     COALESCE(sa.strengths, ARRAY[]::types.mv_strength[]) AS strengths,
 
-    -- Improvements with replacements (denormalized)
+    -- Improvements with replacements (denormalized, message_id implied)
     COALESCE(ia.improvements, ARRAY[]::types.mv_improvement[]) AS improvements,
 
-    -- Hints (PRACTICE-specific, denormalized)
+    -- Hints (PRACTICE-specific, denormalized, message_id implied)
     COALESCE(ha.hints, ARRAY[]::types.mv_hint[]) AS hints
 
-FROM messages_with_position mwp
-LEFT JOIN contents_agg ca ON ca.message_id = mwp.message_id
-LEFT JOIN strengths_agg sa ON sa.message_id = mwp.message_id
-LEFT JOIN improvements_agg ia ON ia.message_id = mwp.message_id
-LEFT JOIN hints_agg ha ON ha.message_id = mwp.message_id
+FROM base_messages bm
+LEFT JOIN contents_agg ca ON ca.message_id = bm.message_id
+LEFT JOIN strengths_agg sa ON sa.message_id = bm.message_id
+LEFT JOIN improvements_agg ia ON ia.message_id = bm.message_id
+LEFT JOIN hints_agg ha ON ha.message_id = bm.message_id
 WITH NO DATA;
 
 -- ============================================================================
@@ -304,10 +244,6 @@ CREATE UNIQUE INDEX mv_simulation_messages_pk
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
--- Practice flag for filtering home vs practice
-CREATE INDEX mv_simulation_messages_practice_idx
-    ON mv_simulation_messages (practice);
-
 -- Chat ID for grouping
 CREATE INDEX mv_simulation_messages_chat_id_idx
     ON mv_simulation_messages (chat_id);
@@ -316,21 +252,17 @@ CREATE INDEX mv_simulation_messages_chat_id_idx
 CREATE INDEX mv_simulation_messages_attempt_id_idx
     ON mv_simulation_messages (attempt_id);
 
--- Composite: chat + position for ordering
-CREATE INDEX mv_simulation_messages_chat_position_idx
-    ON mv_simulation_messages (chat_id, message_position);
-
--- Composite: attempt + chat + position for full ordering
-CREATE INDEX mv_simulation_messages_attempt_chat_position_idx
-    ON mv_simulation_messages (attempt_id, chat_id, message_position);
+-- Composite: attempt + chat for ordering (position derived in service layer)
+CREATE INDEX mv_simulation_messages_attempt_chat_idx
+    ON mv_simulation_messages (attempt_id, chat_id);
 
 -- Message type for filtering
 CREATE INDEX mv_simulation_messages_type_idx
     ON mv_simulation_messages (type);
 
--- Composite: practice + attempt (common filter pattern)
-CREATE INDEX mv_simulation_messages_practice_attempt_idx
-    ON mv_simulation_messages (practice, attempt_id);
+-- Created at for ordering (position derived from this)
+CREATE INDEX mv_simulation_messages_created_at_idx
+    ON mv_simulation_messages (created_at);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

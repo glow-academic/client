@@ -22,56 +22,47 @@ class ReplacementItem(BaseModel):
 
 
 class StrengthItem(BaseModel):
-    """Strength feedback for a message."""
+    """Strength feedback for a message (message_id implied by parent)."""
 
     id: UUID
-    message_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     highlights: list[HighlightItem] | None = None
 
 
 class ImprovementItem(BaseModel):
-    """Improvement feedback for a message."""
+    """Improvement feedback for a message (message_id implied by parent)."""
 
     id: UUID
-    message_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     replacements: list[ReplacementItem] | None = None
 
 
 class HintItem(BaseModel):
-    """Hint for a message (practice-specific)."""
+    """Hint for a message (practice-specific, message_id implied by parent)."""
 
-    message_id: UUID | None = None
     hint: str | None = None
     idx: int | None = None
 
 
 class ContentItem(BaseModel):
-    """Content item with raw persona/profile data.
+    """Content item with persona_id only.
 
-    Business logic to compute display name/color/icon is in permissions.py.
+    Persona/profile metadata fetched via internal handlers in service layer.
     """
 
     id: UUID
     content: str | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    persona_color: str | None = None
-    persona_icon: str | None = None
-    profile_name: str | None = None
+    persona_id: UUID | None = None  # NULL for user messages, fetch metadata via handler
     created_at: datetime | None = None
-
-    # Computed display fields (populated by Python business logic)
-    name: str | None = None
-    color: str | None = None
-    icon: str | None = None
 
 
 class MessageViewItem(BaseModel):
-    """Single message from the simulation messages view."""
+    """Single message from the simulation messages view.
+
+    Position derived in service layer, practice on attempt level.
+    """
 
     # Primary key
     message_id: UUID
@@ -80,29 +71,27 @@ class MessageViewItem(BaseModel):
     chat_id: UUID | None = None
     attempt_id: UUID | None = None
 
-    # Practice flag
-    practice: bool = False
-
-    # Message data
-    content: str | None = None  # First content for backward compatibility
+    # Message data (position derived in service layer)
     type: str | None = None  # 'query' or 'response'
     created_at: datetime | None = None
     completed: bool = False
-    message_position: int | None = None
 
-    # Contents array with persona info
+    # Contents array with persona_id (metadata fetched via handler)
     contents: list[ContentItem] | None = None
 
-    # Strengths and improvements
+    # Strengths and improvements (message_id implied)
     strengths: list[StrengthItem] | None = None
     improvements: list[ImprovementItem] | None = None
 
-    # Hints (practice-specific)
+    # Hints (practice-specific, message_id implied)
     hints: list[HintItem] | None = None
 
 
 class GetMessagesRequest(BaseModel):
-    """Request for getting message data."""
+    """Request for getting message data.
+
+    Note: Practice filtering is done at attempt level, not here.
+    """
 
     attempt_id: UUID | None = Field(
         default=None, description="Filter by attempt ID"
@@ -112,10 +101,6 @@ class GetMessagesRequest(BaseModel):
     )
     message_ids: list[UUID] | None = Field(
         default=None, description="List of specific message IDs to fetch"
-    )
-    practice: bool | None = Field(
-        default=None,
-        description="Filter by practice mode. None=all, True=practice, False=home",
     )
 
 

@@ -58,44 +58,37 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_replacement AS (
     idx int
 );
 
--- Strength type
+-- Strength type (message_id removed - implied by parent message)
 CREATE TYPE types.q_get_simulation_messages_view_v4_strength AS (
     id uuid,
-    message_id uuid,
     name text,
     description text,
     highlights types.q_get_simulation_messages_view_v4_highlight[]
 );
 
--- Improvement type
+-- Improvement type (message_id removed - implied by parent message)
 CREATE TYPE types.q_get_simulation_messages_view_v4_improvement AS (
     id uuid,
-    message_id uuid,
     name text,
     description text,
     replacements types.q_get_simulation_messages_view_v4_replacement[]
 );
 
--- Hint type (practice-specific)
+-- Hint type (message_id removed - implied by parent message)
 CREATE TYPE types.q_get_simulation_messages_view_v4_hint AS (
-    message_id uuid,
     hint text,
     idx int
 );
 
--- Content type (raw data - business logic applied in Python)
+-- Content type (only persona_id - metadata fetched via handler)
 CREATE TYPE types.q_get_simulation_messages_view_v4_content AS (
     id uuid,
     content text,
-    persona_id uuid,        -- persona ID (NULL for user messages)
-    persona_name text,      -- persona name (NULL for user messages)
-    persona_color text,     -- persona color (NULL for user messages)
-    persona_icon text,      -- persona icon (NULL for user messages)
-    profile_name text,      -- actor name (populated for user messages)
+    persona_id uuid,        -- persona ID (NULL for user messages, fetch metadata via handler)
     created_at timestamptz
 );
 
--- Main message item type
+-- Main message item type (position derived in service layer, practice on attempt level)
 CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     -- Primary key
     message_id uuid,
@@ -104,24 +97,19 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     chat_id uuid,
     attempt_id uuid,
 
-    -- Practice flag
-    practice boolean,
-
-    -- Message data
-    content text,
+    -- Message data (position derived in service layer)
     type text,
     created_at timestamptz,
     completed boolean,
-    message_position int,
 
-    -- Contents array with persona info
+    -- Contents array with persona_id (metadata fetched via handler)
     contents types.q_get_simulation_messages_view_v4_content[],
 
-    -- Strengths and improvements
+    -- Strengths and improvements (message_id implied)
     strengths types.q_get_simulation_messages_view_v4_strength[],
     improvements types.q_get_simulation_messages_view_v4_improvement[],
 
-    -- Hints (practice-specific)
+    -- Hints (practice-specific, message_id implied)
     hints types.q_get_simulation_messages_view_v4_hint[]
 );
 
@@ -132,8 +120,7 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
 CREATE OR REPLACE FUNCTION api_get_simulation_messages_view_v4(
     attempt_id_filter uuid DEFAULT NULL,
     chat_id_filter uuid DEFAULT NULL,
-    message_ids uuid[] DEFAULT NULL,
-    practice_filter boolean DEFAULT NULL
+    message_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     items types.q_get_simulation_messages_view_v4_item[]
@@ -147,19 +134,17 @@ AS $$
         SELECT
             attempt_id_filter AS attempt_id_filter,
             chat_id_filter AS chat_id_filter,
-            COALESCE(message_ids, ARRAY[]::uuid[]) AS message_ids,
-            practice_filter AS practice_filter
+            COALESCE(message_ids, ARRAY[]::uuid[]) AS message_ids
     ),
-    -- Fetch from MV with filters
+    -- Fetch from MV with filters (practice filtered at attempt level)
     mv_data AS (
         SELECT mv.*
         FROM mv_simulation_messages mv, params p
         WHERE (p.attempt_id_filter IS NULL OR mv.attempt_id = p.attempt_id_filter)
           AND (p.chat_id_filter IS NULL OR mv.chat_id = p.chat_id_filter)
           AND (CARDINALITY(p.message_ids) = 0 OR mv.message_id = ANY(p.message_ids))
-          AND (p.practice_filter IS NULL OR mv.practice = p.practice_filter)
     ),
-    -- Transform contents (MV types.mv_content -> query types)
+    -- Transform contents (MV types.mv_content -> query types, only persona_id)
     contents_transformed AS (
         SELECT
             mv.message_id,
@@ -169,10 +154,6 @@ AS $$
                         (c).id,
                         (c).content,
                         (c).persona_id,
-                        (c).persona_name,
-                        (c).persona_color,
-                        (c).persona_icon,
-                        (c).profile_name,
                         (c).created_at
                     )::types.q_get_simulation_messages_view_v4_content
                     ORDER BY (c).created_at
@@ -183,7 +164,7 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.contents) AS c ON true
         GROUP BY mv.message_id
     ),
-    -- Transform strengths (MV types.mv_strength -> query types)
+    -- Transform strengths (MV types.mv_strength -> query types, message_id implied)
     strengths_transformed AS (
         SELECT
             mv.message_id,
@@ -191,7 +172,6 @@ AS $$
                 ARRAY_AGG(
                     (
                         (s).id,
-                        (s).message_id,
                         (s).name,
                         (s).description,
                         -- Transform highlights
@@ -214,7 +194,7 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.strengths) AS s ON true
         GROUP BY mv.message_id
     ),
-    -- Transform improvements (MV types.mv_improvement -> query types)
+    -- Transform improvements (MV types.mv_improvement -> query types, message_id implied)
     improvements_transformed AS (
         SELECT
             mv.message_id,
@@ -222,7 +202,6 @@ AS $$
                 ARRAY_AGG(
                     (
                         (i).id,
-                        (i).message_id,
                         (i).name,
                         (i).description,
                         -- Transform replacements
@@ -245,13 +224,13 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.improvements) AS i ON true
         GROUP BY mv.message_id
     ),
-    -- Transform hints (MV types.mv_hint -> query types) - practice-specific
+    -- Transform hints (MV types.mv_hint -> query types, message_id implied)
     hints_transformed AS (
         SELECT
             mv.message_id,
             COALESCE(
                 ARRAY_AGG(
-                    ((h).message_id, (h).hint, (h).idx)::types.q_get_simulation_messages_view_v4_hint
+                    ((h).hint, (h).idx)::types.q_get_simulation_messages_view_v4_hint
                     ORDER BY (h).idx
                 ) FILTER (WHERE (h).hint IS NOT NULL),
                 ARRAY[]::types.q_get_simulation_messages_view_v4_hint[]
@@ -260,18 +239,15 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.hints) AS h ON true
         GROUP BY mv.message_id
     ),
-    -- Combine data
+    -- Combine data (position derived in service layer, practice on attempt level)
     with_nested AS (
         SELECT
             mv.message_id,
             mv.chat_id,
             mv.attempt_id,
-            mv.practice,
-            mv.content,
             mv.type,
             mv.created_at,
             mv.completed,
-            mv.message_position,
             ct.contents,
             st.strengths,
             it.improvements,
@@ -282,7 +258,7 @@ AS $$
         LEFT JOIN improvements_transformed it ON it.message_id = mv.message_id
         LEFT JOIN hints_transformed ht ON ht.message_id = mv.message_id
     ),
-    -- Aggregate into array
+    -- Aggregate into array (ordered by chat_id, created_at - position derived in service layer)
     items_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
@@ -290,18 +266,15 @@ AS $$
                     message_id,
                     chat_id,
                     attempt_id,
-                    practice,
-                    content,
                     type,
                     created_at,
                     completed,
-                    message_position,
                     contents,
                     strengths,
                     improvements,
                     hints
                 )::types.q_get_simulation_messages_view_v4_item
-                ORDER BY chat_id, message_position
+                ORDER BY chat_id, created_at
             ),
             ARRAY[]::types.q_get_simulation_messages_view_v4_item[]
         ) AS items
