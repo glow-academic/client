@@ -315,7 +315,7 @@ export function SimulationControls({
       number,
       ContinuationPermutationOption[]
     >();
-    continuationOptions.next_sequential_options.forEach((opt: { scenario_id: string | null; scenario_name: string | null; previous_chat_id: string | null; title: string | null; score: number | null; percentage: number | null; time_taken: number | null; position: number | null }) => {
+    continuationOptions.next_sequential_options.forEach((opt) => {
       const pos = opt.position ?? 0;
       if (!optionsByPosition.has(pos)) {
         optionsByPosition.set(pos, []);

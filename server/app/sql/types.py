@@ -2314,8 +2314,6 @@ class QGetGeneralAttemptV4Simulation(BaseModel):
     practice_simulation: bool | None
     hints_enabled: bool | None
     objectives_enabled: bool | None
-    input_guardrail_active: bool | None
-    output_guardrail_active: bool | None
     image_input_active: bool | None
     copy_paste_allowed: bool | None
     time_limit: int | None
@@ -2717,8 +2715,6 @@ class QGetPracticeAttemptV4Simulation(BaseModel):
     practice_simulation: bool | None
     hints_enabled: bool | None
     objectives_enabled: bool | None
-    input_guardrail_active: bool | None
-    output_guardrail_active: bool | None
     image_input_active: bool | None
     copy_paste_allowed: bool | None
     time_limit: int | None
@@ -3211,8 +3207,6 @@ class QGetSimulationAttemptV4Simulation(BaseModel):
     practice_simulation: bool | None
     hints_enabled: bool | None
     objectives_enabled: bool | None
-    input_guardrail_active: bool | None
-    output_guardrail_active: bool | None
     image_input_active: bool | None
     copy_paste_allowed: bool | None
     time_limit: int | None

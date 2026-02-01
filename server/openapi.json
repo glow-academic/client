@@ -77716,28 +77716,6 @@
             ],
             "title": "Objectives Enabled"
           },
-          "input_guardrail_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Active"
-          },
-          "output_guardrail_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Active"
-          },
           "image_input_active": {
             "anyOf": [
               {
@@ -77819,8 +77797,6 @@
           "practice_simulation",
           "hints_enabled",
           "objectives_enabled",
-          "input_guardrail_active",
-          "output_guardrail_active",
           "image_input_active",
           "copy_paste_allowed",
           "time_limit",
@@ -84585,28 +84561,6 @@
             ],
             "title": "Objectives Enabled"
           },
-          "input_guardrail_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Active"
-          },
-          "output_guardrail_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Active"
-          },
           "image_input_active": {
             "anyOf": [
               {
@@ -84688,8 +84642,6 @@
           "practice_simulation",
           "hints_enabled",
           "objectives_enabled",
-          "input_guardrail_active",
-          "output_guardrail_active",
           "image_input_active",
           "copy_paste_allowed",
           "time_limit",
@@ -94712,28 +94664,6 @@
             ],
             "title": "Objectives Enabled"
           },
-          "input_guardrail_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Active"
-          },
-          "output_guardrail_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Active"
-          },
           "image_input_active": {
             "anyOf": [
               {
@@ -94815,8 +94745,6 @@
           "practice_simulation",
           "hints_enabled",
           "objectives_enabled",
-          "input_guardrail_active",
-          "output_guardrail_active",
           "image_input_active",
           "copy_paste_allowed",
           "time_limit",

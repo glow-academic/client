@@ -17565,10 +17565,6 @@ export interface components {
             hints_enabled: boolean | null;
             /** Objectives Enabled */
             objectives_enabled: boolean | null;
-            /** Input Guardrail Active */
-            input_guardrail_active: boolean | null;
-            /** Output Guardrail Active */
-            output_guardrail_active: boolean | null;
             /** Image Input Active */
             image_input_active: boolean | null;
             /** Copy Paste Allowed */
@@ -18800,10 +18796,6 @@ export interface components {
             hints_enabled: boolean | null;
             /** Objectives Enabled */
             objectives_enabled: boolean | null;
-            /** Input Guardrail Active */
-            input_guardrail_active: boolean | null;
-            /** Output Guardrail Active */
-            output_guardrail_active: boolean | null;
             /** Image Input Active */
             image_input_active: boolean | null;
             /** Copy Paste Allowed */
@@ -20658,10 +20650,6 @@ export interface components {
             hints_enabled: boolean | null;
             /** Objectives Enabled */
             objectives_enabled: boolean | null;
-            /** Input Guardrail Active */
-            input_guardrail_active: boolean | null;
-            /** Output Guardrail Active */
-            output_guardrail_active: boolean | null;
             /** Image Input Active */
             image_input_active: boolean | null;
             /** Copy Paste Allowed */

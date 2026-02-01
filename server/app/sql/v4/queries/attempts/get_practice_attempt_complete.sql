@@ -70,8 +70,6 @@ CREATE TYPE types.q_get_practice_attempt_v4_simulation AS (
     practice_simulation boolean,
     hints_enabled boolean,
     objectives_enabled boolean,
-    input_guardrail_active boolean,
-    output_guardrail_active boolean,
     image_input_active boolean,
     copy_paste_allowed boolean,
     time_limit int,
@@ -1026,7 +1024,7 @@ SELECT
     COALESCE(rc.access_denied, false) as access_denied,
     (ac.attempt_id, ac.attempt_created_at, ac.simulation_id, ac.infinite_mode, ac.archived, cap.profile_id)::types.q_get_practice_attempt_v4_attempt as attempt,
     (ac.simulation_id, ac.simulation_title, ac.simulation_description, ac.simulation_department_id, true, false, true,
-     ac.hints_enabled, ac.objectives_enabled, false, false, ac.image_input_active, ac.copy_paste_allowed,
+     ac.hints_enabled, ac.objectives_enabled, ac.image_input_active, ac.copy_paste_allowed,
      ac.simulation_time_limit, ac.simulation_rubric_id, ac.attempt_created_at, ac.attempt_updated_at)::types.q_get_practice_attempt_v4_simulation as simulation,
     COALESCE(apd.attempt_profiles, '{}'::types.q_get_practice_attempt_v4_attempt_profile[]) as attempt_profiles,
     COALESCE(
