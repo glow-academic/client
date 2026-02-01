@@ -9,19 +9,8 @@
 --
 -- Dependencies: Only uses _entry and _connection tables
 -- ============================================================================
--- Step 0: Drop and recreate composite types for feedbacks
+-- Step 0: Drop and recreate composite types
 -- ============================================================================
-
--- Drop existing type if it exists (use CASCADE to handle dependencies)
-DO $$
-BEGIN
-    -- Only drop if we're recreating the MV (types are shared with home views)
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'mv_feedback' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')) THEN
-        NULL;  -- Type doesn't exist, will be created below
-    END IF;
-EXCEPTION WHEN OTHERS THEN
-    NULL;
-END $$;
 
 -- Create feedback type if it doesn't exist (shared with mv_home_chats)
 DO $$
@@ -31,6 +20,20 @@ BEGIN
         standard_id uuid,
         total float,
         feedback text
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+-- Create response type for raw quiz responses
+DO $$
+BEGIN
+    CREATE TYPE types.mv_response AS (
+        response_id uuid,
+        question_id uuid,
+        option_id uuid,
+        completed boolean,
+        created_at timestamptz
     );
 EXCEPTION WHEN duplicate_object THEN
     NULL;
@@ -103,7 +106,6 @@ chats_with_position AS (
         c.created_at AS chat_created_at,
         c.completed AS chat_completed,
         csc.scenarios_id AS scenario_id,
-        cpc.personas_id AS persona_id,
         grc.rubrics_id AS rubric_id,
         COALESCE(a.practice, FALSE) AS practice,
         -- Chat-level flags (directly on simulation_chats_entry)
@@ -118,7 +120,6 @@ chats_with_position AS (
     FROM simulation_chats_entry c
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
     JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
-    LEFT JOIN simulation_chats_personas_connection cpc ON cpc.chat_id = c.id
     LEFT JOIN latest_grade lg ON lg.chat_id = c.id
     LEFT JOIN simulation_grades_rubrics_connection grc ON grc.grade_id = lg.grade_id
     WHERE c.active = TRUE
@@ -132,6 +133,85 @@ current_chat_per_attempt AS (
         chat_id AS current_chat_id
     FROM chats_with_position
     ORDER BY attempt_id, chat_completed ASC, chat_position DESC
+),
+-- Aggregate persona IDs per chat (plural array)
+personas_agg AS (
+    SELECT
+        chp.chat_id,
+        ARRAY_AGG(chp.personas_id ORDER BY chp.created_at)
+            FILTER (WHERE chp.personas_id IS NOT NULL) AS persona_ids
+    FROM simulation_chats_personas_connection chp
+    WHERE chp.active = TRUE
+    GROUP BY chp.chat_id
+),
+-- Get problem statement ID per chat (singular - first active)
+problem_statements_agg AS (
+    SELECT DISTINCT ON (chps.chat_id)
+        chps.chat_id,
+        chps.problem_statements_id AS problem_statement_id
+    FROM simulation_chats_problem_statements_connection chps
+    WHERE chps.active = TRUE
+    ORDER BY chps.chat_id, chps.created_at
+),
+-- Aggregate objective IDs per chat
+objectives_agg AS (
+    SELECT
+        cho.chat_id,
+        ARRAY_AGG(cho.objectives_id ORDER BY cho.created_at)
+            FILTER (WHERE cho.objectives_id IS NOT NULL) AS objective_ids
+    FROM simulation_chats_objectives_connection cho
+    WHERE cho.active = TRUE
+    GROUP BY cho.chat_id
+),
+-- Aggregate question IDs per chat
+questions_agg AS (
+    SELECT
+        chq.chat_id,
+        ARRAY_AGG(chq.questions_id ORDER BY chq.created_at)
+            FILTER (WHERE chq.questions_id IS NOT NULL) AS question_ids
+    FROM simulation_chats_questions_connection chq
+    WHERE chq.active = TRUE
+    GROUP BY chq.chat_id
+),
+-- Aggregate option IDs per chat
+options_agg AS (
+    SELECT
+        cho.chat_id,
+        ARRAY_AGG(cho.options_id ORDER BY cho.created_at)
+            FILTER (WHERE cho.options_id IS NOT NULL) AS option_ids
+    FROM simulation_chats_options_connection cho
+    WHERE cho.active = TRUE
+    GROUP BY cho.chat_id
+),
+-- Aggregate template IDs per chat
+templates_agg AS (
+    SELECT
+        cht.chat_id,
+        ARRAY_AGG(cht.templates_id ORDER BY cht.created_at)
+            FILTER (WHERE cht.templates_id IS NOT NULL) AS template_ids
+    FROM simulation_chats_templates_connection cht
+    WHERE cht.active = TRUE
+    GROUP BY cht.chat_id
+),
+-- Aggregate responses per chat (composite type with question and option)
+responses_agg AS (
+    SELECT
+        r.chat_id,
+        ARRAY_AGG(
+            (
+                r.id,
+                rqc.question_id,
+                roc.option_id,
+                r.completed,
+                r.created_at
+            )::types.mv_response
+            ORDER BY r.created_at
+        ) FILTER (WHERE r.id IS NOT NULL) AS responses
+    FROM responses_entry r
+    LEFT JOIN responses_questions_connection rqc ON rqc.responses_id = r.id AND rqc.active = TRUE
+    LEFT JOIN responses_options_connection roc ON roc.responses_id = r.id AND roc.active = TRUE
+    WHERE r.active = TRUE
+    GROUP BY r.chat_id
 ),
 -- Aggregate image IDs per chat (simple UUID array)
 images_agg AS (
@@ -172,7 +252,6 @@ SELECT
 
     -- Resource IDs (from connections for _resource joins at runtime)
     cwp.scenario_id,
-    cwp.persona_id,
     cwp.rubric_id,
 
     -- Practice flag (exposed as column for filtering)
@@ -205,7 +284,18 @@ SELECT
     -- Feedbacks array (denormalized for grading state display)
     COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
 
-    -- Asset IDs (simple UUID arrays - metadata fetched from resource tables)
+    -- Resource IDs - Normal/General View
+    psa.problem_statement_id,
+    COALESCE(pa.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
+    COALESCE(oa.objective_ids, ARRAY[]::uuid[]) AS objective_ids,
+
+    -- Resource IDs - Video/Quiz View
+    COALESCE(qa.question_ids, ARRAY[]::uuid[]) AS question_ids,
+    COALESCE(opta.option_ids, ARRAY[]::uuid[]) AS option_ids,
+    COALESCE(ra.responses, ARRAY[]::types.mv_response[]) AS responses,
+
+    -- Resource IDs - Both Views
+    COALESCE(ta.template_ids, ARRAY[]::uuid[]) AS template_ids,
     COALESCE(ia.image_ids, ARRAY[]::uuid[]) AS image_ids,
     COALESCE(va.video_ids, ARRAY[]::uuid[]) AS video_ids,
     COALESCE(da.document_ids, ARRAY[]::uuid[]) AS document_ids
@@ -214,6 +304,13 @@ FROM chats_with_position cwp
 LEFT JOIN current_chat_per_attempt cca ON cca.attempt_id = cwp.attempt_id
 LEFT JOIN latest_grade lg ON lg.chat_id = cwp.chat_id
 LEFT JOIN feedbacks_agg fa ON fa.grade_id = lg.grade_id
+LEFT JOIN personas_agg pa ON pa.chat_id = cwp.chat_id
+LEFT JOIN problem_statements_agg psa ON psa.chat_id = cwp.chat_id
+LEFT JOIN objectives_agg oa ON oa.chat_id = cwp.chat_id
+LEFT JOIN questions_agg qa ON qa.chat_id = cwp.chat_id
+LEFT JOIN options_agg opta ON opta.chat_id = cwp.chat_id
+LEFT JOIN templates_agg ta ON ta.chat_id = cwp.chat_id
+LEFT JOIN responses_agg ra ON ra.chat_id = cwp.chat_id
 LEFT JOIN images_agg ia ON ia.chat_id = cwp.chat_id
 LEFT JOIN videos_agg va ON va.chat_id = cwp.chat_id
 LEFT JOIN documents_agg da ON da.chat_id = cwp.chat_id
@@ -241,11 +338,6 @@ CREATE INDEX mv_simulation_chats_attempt_id_idx
 -- Scenario ID for filtering
 CREATE INDEX mv_simulation_chats_scenario_id_idx
     ON mv_simulation_chats (scenario_id);
-
--- Persona ID for filtering
-CREATE INDEX mv_simulation_chats_persona_id_idx
-    ON mv_simulation_chats (persona_id)
-    WHERE persona_id IS NOT NULL;
 
 -- Grade ID for joins
 CREATE INDEX mv_simulation_chats_grade_id_idx

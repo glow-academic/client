@@ -11,6 +11,7 @@ from app.api.v4.views.simulation.chats.types import (
     FeedbackItem,
     GetChatsRequest,
     GetChatsResponse,
+    ResponseItem,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -91,21 +92,37 @@ async def get_simulation_chats_internal(
                     for f in item.feedbacks
                 ]
 
+            # Transform responses
+            responses = None
+            if item.responses:
+                responses = [
+                    ResponseItem(
+                        response_id=r.response_id,
+                        question_id=r.question_id,
+                        option_id=r.option_id,
+                        completed=r.completed,
+                        created_at=r.created_at,
+                    )
+                    for r in item.responses
+                ]
+
             items.append(
                 ChatViewItem(
                     chat_id=item.chat_id,
                     attempt_id=item.attempt_id,
                     scenario_id=item.scenario_id,
-                    persona_id=item.persona_id,
                     rubric_id=item.rubric_id,
+                    problem_statement_id=item.problem_statement_id,
                     scenario_name=item.scenario_name,
-                    persona_name=item.persona_name,
-                    persona_color=item.persona_color,
-                    persona_icon=item.persona_icon,
                     rubric_name=item.rubric_name,
-                    objective=item.objective,
-                    problem_statement=item.problem_statement,
                     practice=item.practice or False,
+                    copy_paste_allowed=item.copy_paste_allowed,
+                    text_enabled=item.text_enabled,
+                    audio_enabled=item.audio_enabled,
+                    hints_enabled=item.hints_enabled,
+                    show_images=item.show_images,
+                    show_objectives=item.show_objectives,
+                    show_problem_statement=item.show_problem_statement,
                     chat_created_at=item.chat_created_at,
                     chat_completed=item.chat_completed or False,
                     chat_position=item.chat_position,
@@ -118,6 +135,18 @@ async def get_simulation_chats_internal(
                     rubric_total_points=item.rubric_total_points,
                     rubric_pass_points=item.rubric_pass_points,
                     feedbacks=feedbacks,
+                    # Resource IDs - Normal/General View
+                    persona_ids=list(item.persona_ids) if item.persona_ids else None,
+                    objective_ids=list(item.objective_ids) if item.objective_ids else None,
+                    # Resource IDs - Video/Quiz View
+                    question_ids=list(item.question_ids) if item.question_ids else None,
+                    option_ids=list(item.option_ids) if item.option_ids else None,
+                    responses=responses,
+                    # Resource IDs - Both Views
+                    template_ids=list(item.template_ids) if item.template_ids else None,
+                    image_ids=list(item.image_ids) if item.image_ids else None,
+                    video_ids=list(item.video_ids) if item.video_ids else None,
+                    document_ids=list(item.document_ids) if item.document_ids else None,
                 )
             )
 

@@ -18372,6 +18372,38 @@ class ObjectivesApiResponse(BaseModel):
 
 
 
+# Generated from: get_options
+
+class GetOptionsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetOptionsV4Item(BaseModel):
+
+    option_id: UUID | None
+    option_text: str | None
+    is_correct: bool | None
+    generated: bool | None
+
+class GetOptionsSqlRow(BaseModel):
+
+    items: list[QGetOptionsV4Item] | None = None
+
+class GetOptionsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetOptionsApiResponse(BaseModel):
+
+    items: list[QGetOptionsV4Item] | None = None
+
+
+
 # Generated from: options
 
 class OptionsSqlParams(BaseModel):
@@ -25448,20 +25480,26 @@ class QGetSimulationChatsViewV4Feedback(BaseModel):
     total: float | None
     feedback: str | None
 
+
+
+
+class QGetSimulationChatsViewV4Response(BaseModel):
+
+    response_id: UUID | None
+    question_id: UUID | None
+    option_id: UUID | None
+    completed: bool | None
+    created_at: datetime | None
+
 class QGetSimulationChatsViewV4Item(BaseModel):
 
     chat_id: UUID | None
     attempt_id: UUID | None
     scenario_id: UUID | None
-    persona_id: UUID | None
     rubric_id: UUID | None
+    problem_statement_id: UUID | None
     scenario_name: str | None
-    persona_name: str | None
-    persona_color: str | None
-    persona_icon: str | None
     rubric_name: str | None
-    objective: str | None
-    problem_statement: str | None
     practice: bool | None
     copy_paste_allowed: bool | None
     text_enabled: bool | None
@@ -25482,6 +25520,12 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     rubric_total_points: int | None
     rubric_pass_points: int | None
     feedbacks: list[QGetSimulationChatsViewV4Feedback] | None
+    persona_ids: list[UUID] | None
+    objective_ids: list[UUID] | None
+    question_ids: list[UUID] | None
+    option_ids: list[UUID] | None
+    responses: list[QGetSimulationChatsViewV4Response] | None
+    template_ids: list[UUID] | None
     image_ids: list[UUID] | None
     video_ids: list[UUID] | None
     document_ids: list[UUID] | None
@@ -27649,6 +27693,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ObjectivesSqlRow",
         "ObjectivesApiRequest",
         "ObjectivesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/options/get_options_complete.sql": (
+        "GetOptionsSqlParams",
+        "GetOptionsSqlRow",
+        "GetOptionsApiRequest",
+        "GetOptionsApiResponse",
     ),
     "app/sql/v4/queries/resources/options_complete.sql": (
         "OptionsSqlParams",
@@ -30083,6 +30133,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/objectives_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/options/get_options_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -53,7 +53,16 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_feedback AS (
     feedback text
 );
 
--- Main chat item type (simple UUID arrays for assets - metadata fetched separately)
+-- Response item type (matches types.mv_response from MV)
+CREATE TYPE types.q_get_simulation_chats_view_v4_response AS (
+    response_id uuid,
+    question_id uuid,
+    option_id uuid,
+    completed boolean,
+    created_at timestamptz
+);
+
+-- Main chat item type (IDs from MV - metadata fetched separately via internal handlers)
 CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     -- Primary key
     chat_id uuid,
@@ -61,19 +70,14 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     -- Foreign keys
     attempt_id uuid,
 
-    -- Resource IDs
+    -- Resource IDs (singular)
     scenario_id uuid,
-    persona_id uuid,
     rubric_id uuid,
+    problem_statement_id uuid,
 
-    -- Resource metadata (JOINed)
+    -- Resource metadata (JOINed from _resource tables)
     scenario_name text,
-    persona_name text,
-    persona_color text,
-    persona_icon text,
     rubric_name text,
-    objective text,
-    problem_statement text,
 
     -- Practice flag
     practice boolean,
@@ -102,10 +106,20 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     rubric_total_points int,
     rubric_pass_points int,
 
-    -- Feedbacks
+    -- Feedbacks (with standard name JOINed)
     feedbacks types.q_get_simulation_chats_view_v4_feedback[],
 
-    -- Asset IDs (simple UUID arrays - metadata fetched from resource tables)
+    -- Resource IDs - Normal/General View (plural arrays)
+    persona_ids uuid[],
+    objective_ids uuid[],
+
+    -- Resource IDs - Video/Quiz View (plural arrays)
+    question_ids uuid[],
+    option_ids uuid[],
+    responses types.q_get_simulation_chats_view_v4_response[],
+
+    -- Resource IDs - Both Views (plural arrays)
+    template_ids uuid[],
     image_ids uuid[],
     video_ids uuid[],
     document_ids uuid[]
@@ -164,22 +178,38 @@ AS $$
         LEFT JOIN standards_resource std ON std.id = (f).standard_id AND std.active = TRUE
         GROUP BY mv.chat_id
     ),
-    -- JOIN resource metadata
+    -- Transform responses to query type
+    responses_transformed AS (
+        SELECT
+            mv.chat_id,
+            COALESCE(
+                ARRAY_AGG(
+                    (
+                        (r).response_id,
+                        (r).question_id,
+                        (r).option_id,
+                        (r).completed,
+                        (r).created_at
+                    )::types.q_get_simulation_chats_view_v4_response
+                    ORDER BY (r).created_at
+                ) FILTER (WHERE (r).response_id IS NOT NULL),
+                ARRAY[]::types.q_get_simulation_chats_view_v4_response[]
+            ) AS responses
+        FROM mv_data mv
+        LEFT JOIN LATERAL unnest(mv.responses) AS r ON true
+        GROUP BY mv.chat_id
+    ),
+    -- JOIN resource metadata (only scenario and rubric names - others fetched via internal handlers)
     with_resources AS (
         SELECT
             mv.chat_id,
             mv.attempt_id,
             mv.scenario_id,
-            mv.persona_id,
             mv.rubric_id,
-            -- Resource names (denormalized on _resource tables)
+            mv.problem_statement_id,
+            -- Resource names (only scenario and rubric - persona/objective fetched separately)
             scen.name AS scenario_name,
-            pers.name AS persona_name,
-            pers.color AS persona_color,
-            pers.icon AS persona_icon,
             rub.name AS rubric_name,
-            obj.objective AS objective,
-            ps.problem_statement AS problem_statement,
             -- Flags
             mv.practice,
             -- Chat-level flags (directly from MV)
@@ -205,19 +235,23 @@ AS $$
             mv.rubric_pass_points,
             -- Feedbacks
             ft.feedbacks,
-            -- Asset IDs (pass through from MV - simple UUID arrays)
+            -- Resource IDs - Normal/General View
+            mv.persona_ids,
+            mv.objective_ids,
+            -- Resource IDs - Video/Quiz View
+            mv.question_ids,
+            mv.option_ids,
+            rt.responses,
+            -- Resource IDs - Both Views
+            mv.template_ids,
             mv.image_ids,
             mv.video_ids,
             mv.document_ids
         FROM mv_data mv
         LEFT JOIN scenarios_resource scen ON scen.id = mv.scenario_id AND scen.active = TRUE
-        LEFT JOIN personas_resource pers ON pers.id = mv.persona_id AND pers.active = TRUE
         LEFT JOIN rubrics_resource rub ON rub.id = mv.rubric_id AND rub.active = TRUE
-        LEFT JOIN scenario_objectives_junction soj ON soj.scenario_id = mv.scenario_id
-        LEFT JOIN objectives_resource obj ON obj.id = soj.objective_id AND obj.active = TRUE
-        LEFT JOIN scenario_problem_statements_junction spj ON spj.scenario_id = mv.scenario_id
-        LEFT JOIN problem_statements_resource ps ON ps.id = spj.problem_statement_id AND ps.active = TRUE
         LEFT JOIN feedbacks_transformed ft ON ft.chat_id = mv.chat_id
+        LEFT JOIN responses_transformed rt ON rt.chat_id = mv.chat_id
     ),
     -- Aggregate into array
     items_agg AS (
@@ -227,15 +261,10 @@ AS $$
                     chat_id,
                     attempt_id,
                     scenario_id,
-                    persona_id,
                     rubric_id,
+                    problem_statement_id,
                     scenario_name,
-                    persona_name,
-                    persona_color,
-                    persona_icon,
                     rubric_name,
-                    objective,
-                    problem_statement,
                     practice,
                     copy_paste_allowed,
                     text_enabled,
@@ -256,6 +285,12 @@ AS $$
                     rubric_total_points,
                     rubric_pass_points,
                     feedbacks,
+                    persona_ids,
+                    objective_ids,
+                    question_ids,
+                    option_ids,
+                    responses,
+                    template_ids,
                     image_ids,
                     video_ids,
                     document_ids

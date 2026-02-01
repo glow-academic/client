@@ -16,6 +16,16 @@ class FeedbackItem(BaseModel):
     feedback: str | None = None
 
 
+class ResponseItem(BaseModel):
+    """Quiz response item."""
+
+    response_id: UUID | None = None
+    question_id: UUID | None = None
+    option_id: UUID | None = None
+    completed: bool | None = None
+    created_at: datetime | None = None
+
+
 class ChatViewItem(BaseModel):
     """Single chat from the simulation chats view."""
 
@@ -25,19 +35,14 @@ class ChatViewItem(BaseModel):
     # Foreign keys
     attempt_id: UUID | None = None
 
-    # Resource IDs
+    # Resource IDs (singular)
     scenario_id: UUID | None = None
-    persona_id: UUID | None = None
     rubric_id: UUID | None = None
+    problem_statement_id: UUID | None = None
 
-    # Resource metadata (JOINed)
+    # Resource metadata (JOINed from _resource tables)
     scenario_name: str | None = None
-    persona_name: str | None = None
-    persona_color: str | None = None
-    persona_icon: str | None = None
     rubric_name: str | None = None
-    objective: str | None = None
-    problem_statement: str | None = None
 
     # Practice flag
     practice: bool = False
@@ -69,7 +74,17 @@ class ChatViewItem(BaseModel):
     # Feedbacks
     feedbacks: list[FeedbackItem] | None = None
 
-    # Asset IDs (simple UUID arrays - metadata fetched from resource tables)
+    # Resource IDs - Normal/General View (plural arrays)
+    persona_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+
+    # Resource IDs - Video/Quiz View (plural arrays)
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    responses: list[ResponseItem] | None = None
+
+    # Resource IDs - Both Views (plural arrays)
+    template_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
