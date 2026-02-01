@@ -5744,7 +5744,7 @@ export interface paths {
         put?: never;
         /**
          * Training Complete Api
-         * @description Server-to-client event: Training generation completed.
+         * @description Internal event: Training generation completed (not sent to client).
          */
         post: operations["training_complete_api_socket_v4_server_training_complete_post"];
         delete?: never;
@@ -24578,33 +24578,6 @@ export interface components {
             formatted?: string | null;
         };
         /**
-         * TrainingCompleteEvent
-         * @description Server-to-client event: training_complete.
-         *
-         *     Emitted when scenario generation completes.
-         */
-        TrainingCompleteEvent: {
-            /**
-             * Artifact Type
-             * @default training
-             */
-            artifact_type: string;
-            /** Group Id */
-            group_id: string;
-            /** Resource Type */
-            resource_type: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Type */
-            type?: string | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-        };
-        /**
          * TrainingErrorEvent
          * @description Server-to-client event: training_error.
          *
@@ -24701,7 +24674,8 @@ export interface components {
          * TrainingProgressEvent
          * @description Server-to-client event: training_progress.
          *
-         *     Emitted during scenario generation to stream progress.
+         *     Optional - only sent if generation is happening. Client may not receive
+         *     any progress events if scenario already has content.
          */
         TrainingProgressEvent: {
             /**
@@ -24796,7 +24770,11 @@ export interface components {
          * TrainingStartPayload
          * @description Request payload for training_start WebSocket event.
          *
-         *     Starts a new training session. Creates attempt + chat entries.
+         *     Starts a new training session. Server handles everything internally:
+         *     - Checks if scenario needs generation
+         *     - If generation needed, runs it and streams progress
+         *     - Creates attempt + chat entries
+         *     - Emits training_started when ready
          */
         TrainingStartPayload: {
             /**
@@ -24811,12 +24789,17 @@ export interface components {
             agent_id: string;
             /** Scenario Id */
             scenario_id?: string | null;
+            /** User Instructions */
+            user_instructions?: string[] | null;
         };
         /**
          * TrainingStartedEvent
          * @description Server-to-client event: training_started.
          *
-         *     Emitted when a new training session is created successfully.
+         *     ALWAYS sent when training session is ready. This is the only success event
+         *     the client needs to handle. May be sent:
+         *     - Immediately if no generation was needed
+         *     - After generation completes if generation was needed
          */
         TrainingStartedEvent: {
             /**
@@ -35399,7 +35382,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TrainingCompleteEvent"];
+                "application/json": {
+                    [key: string]: unknown;
+                };
             };
         };
         responses: {

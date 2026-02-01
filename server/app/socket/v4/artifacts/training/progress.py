@@ -2,6 +2,9 @@
 
 Listens to AI generation progress events and emits training-specific
 progress updates to clients. Filters by artifact_type='training'.
+
+Note: Progress events are OPTIONAL. Client may not receive any if
+scenario already has content (no generation needed).
 """
 
 from typing import Any

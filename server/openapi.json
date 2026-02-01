@@ -26373,13 +26373,15 @@
           "socket-server"
         ],
         "summary": "Training Complete Api",
-        "description": "Server-to-client event: Training generation completed.",
+        "description": "Internal event: Training generation completed (not sent to client).",
         "operationId": "training_complete_api_socket_v4_server_training_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TrainingCompleteEvent"
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request"
               }
             }
           },
@@ -113778,73 +113780,6 @@
         "title": "TimerData",
         "description": "Timer information."
       },
-      "TrainingCompleteEvent": {
-        "properties": {
-          "artifact_type": {
-            "type": "string",
-            "title": "Artifact Type",
-            "default": "training"
-          },
-          "group_id": {
-            "type": "string",
-            "title": "Group Id"
-          },
-          "resource_type": {
-            "type": "string",
-            "title": "Resource Type"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "group_id",
-          "resource_type",
-          "success",
-          "message"
-        ],
-        "title": "TrainingCompleteEvent",
-        "description": "Server-to-client event: training_complete.\n\nEmitted when scenario generation completes."
-      },
       "TrainingErrorEvent": {
         "properties": {
           "artifact_type": {
@@ -114382,7 +114317,7 @@
         },
         "type": "object",
         "title": "TrainingProgressEvent",
-        "description": "Server-to-client event: training_progress.\n\nEmitted during scenario generation to stream progress."
+        "description": "Server-to-client event: training_progress.\n\nOptional - only sent if generation is happening. Client may not receive\nany progress events if scenario already has content."
       },
       "TrainingSimulationCard": {
         "properties": {
@@ -114629,6 +114564,20 @@
               }
             ],
             "title": "Scenario Id"
+          },
+          "user_instructions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Instructions"
           }
         },
         "type": "object",
@@ -114637,7 +114586,7 @@
           "agent_id"
         ],
         "title": "TrainingStartPayload",
-        "description": "Request payload for training_start WebSocket event.\n\nStarts a new training session. Creates attempt + chat entries."
+        "description": "Request payload for training_start WebSocket event.\n\nStarts a new training session. Server handles everything internally:\n- Checks if scenario needs generation\n- If generation needed, runs it and streams progress\n- Creates attempt + chat entries\n- Emits training_started when ready"
       },
       "TrainingStartedEvent": {
         "properties": {
@@ -114689,7 +114638,7 @@
           "chat_id"
         ],
         "title": "TrainingStartedEvent",
-        "description": "Server-to-client event: training_started.\n\nEmitted when a new training session is created successfully."
+        "description": "Server-to-client event: training_started.\n\nALWAYS sent when training session is ready. This is the only success event\nthe client needs to handle. May be sent:\n- Immediately if no generation was needed\n- After generation completes if generation was needed"
       },
       "UploadsApiRequest": {
         "properties": {

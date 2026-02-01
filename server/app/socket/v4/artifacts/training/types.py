@@ -34,12 +34,17 @@ TRAINING_START_ENTRY_TYPES = ["chats"]
 class TrainingStartPayload(BaseModel):
     """Request payload for training_start WebSocket event.
 
-    Starts a new training session. Creates attempt + chat entries.
+    Starts a new training session. Server handles everything internally:
+    - Checks if scenario needs generation
+    - If generation needed, runs it and streams progress
+    - Creates attempt + chat entries
+    - Emits training_started when ready
     """
 
     simulation_id: UUID
-    agent_id: UUID  # Scenario generation agent
-    scenario_id: UUID | None = None  # Optional - use first if not specified
+    agent_id: UUID  # Content generation agent
+    scenario_id: UUID | None = None  # Optional - uses first if not specified
+    user_instructions: list[str] | None = None  # Optional generation hints
 
 
 # =============================================================================
@@ -50,7 +55,10 @@ class TrainingStartPayload(BaseModel):
 class TrainingStartedEvent(BaseModel):
     """Server-to-client event: training_started.
 
-    Emitted when a new training session is created successfully.
+    ALWAYS sent when training session is ready. This is the only success event
+    the client needs to handle. May be sent:
+    - Immediately if no generation was needed
+    - After generation completes if generation was needed
     """
 
     artifact_type: str = "training"
@@ -64,7 +72,8 @@ class TrainingStartedEvent(BaseModel):
 class TrainingProgressEvent(GenerationProgressEvent):
     """Server-to-client event: training_progress.
 
-    Emitted during scenario generation to stream progress.
+    Optional - only sent if generation is happening. Client may not receive
+    any progress events if scenario already has content.
     """
 
     artifact_type: str = "training"
@@ -72,9 +81,10 @@ class TrainingProgressEvent(GenerationProgressEvent):
 
 
 class TrainingCompleteEvent(GenerationCompleteEvent):
-    """Server-to-client event: training_complete.
+    """Internal event: generation complete.
 
-    Emitted when scenario generation completes.
+    Used internally to trigger the completion flow. Not sent to client -
+    client receives training_started instead.
     """
 
     artifact_type: str = "training"

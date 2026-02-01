@@ -1,8 +1,10 @@
 """Training simulation start handler.
 
-Handles the training_start WebSocket event to initiate a new training session.
-Creates attempt + chat entries. If scenario needs generation, emits to
-scenario_generate handler internally.
+Handles the training_start WebSocket event with full orchestration:
+- Fetches context and validates prerequisites
+- Determines if generation is needed (internal)
+- If generation needed: prepares generation, renders Jinja, emits generate_artifact
+- If no generation needed: creates attempt + chat, emits training_started
 
 Entry types: ['chats'] - Creates attempt and chat only
 """
@@ -12,6 +14,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -31,6 +34,8 @@ from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
+    PrepareTrainingGenerationSqlParams,
+    PrepareTrainingGenerationSqlRow,
     PrepareTrainingStartSqlParams,
     PrepareTrainingStartSqlRow,
 )
@@ -48,19 +53,29 @@ server_router = APIRouter()
 # SQL paths
 SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
 SQL_PATH_PREPARE_START = "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+SQL_PATH_PREPARE_GENERATION = "app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql"
+
+# Resource types for training generation
+TRAINING_RESOURCE_TYPES = ["problem_statements", "objectives", "personas"]
 
 
 async def _training_start_impl(
     sid: str, data: TrainingStartPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle training start with all business logic.
+    """Handle training start with full orchestration.
 
-    This function:
-    1. Fetches context and validates prerequisites
-    2. Checks if scenario needs generation
-    3. If needs generation -> emits scenario_generate internally
-    4. Creates attempt + chat entries
-    5. Emits training_started event with scenario data
+    Flow:
+    1. Fetch training context (simulation, scenario data)
+    2. Validate prerequisites
+    3. Determine if generation is needed (internal - not exposed)
+    4. IF generation needed:
+       a. Prepare generation (SQL creates run/group, returns context)
+       b. Render developer instructions with Jinja
+       c. Emit generate_artifact (internal) with artifact_type="training"
+       d. Return - complete.py will finish the flow
+    5. IF no generation needed:
+       a. Create attempt + chat entries
+       b. Emit training_started with full scenario data
     """
     try:
         async with get_db_connection() as conn:
@@ -140,25 +155,144 @@ async def _training_start_impl(
                 )
                 return
 
-            # Step 2: Check if scenario needs generation
+            # Step 2: Check if scenario needs generation (internal decision)
             scenario_id = data.scenario_id or context_row.scenario_id
             needs_gen = check_scenario_needs_generation(ctx)
 
             if needs_gen and scenario_id:
-                # Emit to existing scenario_generate handler
+                # =============================================
+                # GENERATION PATH - prepare and emit internally
+                # =============================================
+                logger.info(
+                    f"Training needs generation - "
+                    f"scenario_id={scenario_id}, "
+                    f"has_problem_statement={ctx.has_problem_statement}, "
+                    f"has_persona={ctx.has_persona}"
+                )
+
+                # Call prepare_training_generation SQL
+                try:
+                    gen_params = PrepareTrainingGenerationSqlParams(
+                        p_profile_id=profile_id,
+                        p_agent_id=data.agent_id,
+                        p_simulation_id=data.simulation_id,
+                        p_scenario_id=scenario_id,
+                        p_resource_types=TRAINING_RESOURCE_TYPES,
+                    )
+
+                    gen_row = cast(
+                        PrepareTrainingGenerationSqlRow,
+                        await execute_sql_typed(
+                            conn, SQL_PATH_PREPARE_GENERATION, params=gen_params
+                        ),
+                    )
+
+                    if not gen_row or not gen_row.run_id:
+                        logger.error(
+                            f"Training generation preparation failed - "
+                            f"profile_id={profile_id}, simulation_id={data.simulation_id}"
+                        )
+                        await emit_to_internal(
+                            "generate_call_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message="Failed to prepare training generation",
+                                artifact_type="training",
+                                group_id=None,
+                                resource_type="training",
+                            ),
+                            sid=sid,
+                        )
+                        return
+
+                except Exception as e:
+                    error_msg = str(e)
+                    # Check for rate limit error (fail fast)
+                    if "RATE_LIMIT_EXCEEDED" in error_msg:
+                        user_msg = (
+                            error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                            if "RATE_LIMIT_EXCEEDED: " in error_msg
+                            else "Rate limit exceeded. Please try again later."
+                        )
+                        await emit_to_internal(
+                            "generate_call_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message=user_msg,
+                                artifact_type="training",
+                                group_id=None,
+                                resource_type="training",
+                            ),
+                            sid=sid,
+                        )
+                        return
+                    raise
+
+                # Render developer instructions with Jinja
+                rendered_developer_messages = render_developer_instructions(
+                    templates=gen_row.developer_instruction_templates,
+                    jinja_context=gen_row.jinja_context,
+                )
+
+                # Build messages for LLM
+                messages: list[dict[str, str]] = []
+                if gen_row.system_prompt:
+                    messages.append({"role": "system", "content": gen_row.system_prompt})
+                for dev_msg in rendered_developer_messages:
+                    messages.append({"role": "developer", "content": dev_msg})
+                if data.user_instructions:
+                    for instruction in data.user_instructions:
+                        messages.append({"role": "user", "content": instruction})
+
+                # Emit generate_artifact with metadata for complete.py
                 await internal_sio.emit(
-                    "scenario_generate",
+                    "generate_artifact",
                     {
                         "sid": sid,
+                        "artifact_type": "training",
+                        "resource_type": TRAINING_RESOURCE_TYPES[0],
+                        "run_id": str(gen_row.run_id),
+                        "group_id": str(gen_row.group_id) if gen_row.group_id else None,
+                        "message_id": None,
+                        "messages": messages,
+                        "llm_config": {
+                            "model": gen_row.model_name,
+                            "api_key": gen_row.api_key,
+                            "base_url": gen_row.base_url,
+                            "temperature": gen_row.temperature,
+                            "reasoning": gen_row.reasoning,
+                            "provider": gen_row.provider_name,
+                            "voice": None,
+                            "quality": None,
+                            "length_seconds": None,
+                            "tool_choice": "required",  # Force tool calls
+                        },
+                        "tools": convert_tools_to_dict(gen_row.tools),
+                        "metadata": {
+                            "trace_id": gen_row.trace_id,
+                            # Pass through data needed by complete.py
+                            "profile_id": str(profile_id),
+                            "simulation_id": str(data.simulation_id),
+                            "scenario_id": str(scenario_id),
+                        },
+                        "eval_mode": False,
+                        # Training-specific field for filtering
                         "scenario_id": str(scenario_id),
-                        "agent_id": str(data.agent_id),
-                        "agent_type": "content",
-                        "resource_types": ["problem_statements", "objectives", "personas"],
                     },
                 )
+
                 logger.info(
-                    f"Triggered scenario generation - scenario_id={scenario_id}"
+                    f"Training generation started - "
+                    f"run_id={gen_row.run_id}, "
+                    f"group_id={gen_row.group_id}, "
+                    f"scenario_id={scenario_id}"
                 )
+                # Return - complete.py will handle the rest
+                return
+
+            # =============================================
+            # NO GENERATION PATH - create attempt directly
+            # =============================================
 
             # Step 3: Create attempt + chat entries
             prepare_params = PrepareTrainingStartSqlParams(
@@ -219,7 +353,7 @@ async def _training_start_impl(
             )
 
             logger.info(
-                f"Training session started - "
+                f"Training session started (no generation) - "
                 f"profile_id={profile_id}, simulation_id={data.simulation_id}, "
                 f"attempt_id={prepare_row.attempt_id}, chat_id={prepare_row.chat_id}"
             )
@@ -243,8 +377,11 @@ async def _training_start_impl(
 async def training_start(sid: str, data: dict[str, Any]) -> None:
     """Handle training_start event (client-to-server).
 
-    Starts a new training session. Creates attempt + chat entries.
-    Emits training_started on success, training_error on failure.
+    Starts a new training session. Server handles everything internally:
+    - Checks if scenario needs generation
+    - If generation needed, runs it and streams progress
+    - Creates attempt + chat entries
+    - Emits training_started when ready
     """
     try:
         payload = TrainingStartPayload(**data)

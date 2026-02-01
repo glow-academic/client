@@ -121,13 +121,14 @@ async def attempt_get(
             return GetAttemptDetailResponse.model_validate(cached["data"])
 
     try:
-        # Get profile_id from header
-        profile_id = http_request.state.profile_id
-        if not profile_id:
+        # Get profile_id from header and convert to UUID
+        profile_id_str = http_request.state.profile_id
+        if not profile_id_str:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
+        profile_id = UUID(profile_id_str)
 
         attempt_id = request.attempt_id
 
