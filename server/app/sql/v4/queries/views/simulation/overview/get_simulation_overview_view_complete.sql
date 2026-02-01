@@ -1,18 +1,19 @@
--- Get NEW home overview with simulation cards
--- REFACTORED: All JOINs done in SQL, only business logic in Python
+-- ============================================================================
+-- Query: get_simulation_overview_view
+-- Purpose: Fetch simulation-level overview with mode-aware aggregation
+-- Section: VIEWS/SIMULATION/OVERVIEW
 --
--- SQL handles:
---   - Aggregation by simulation
---   - JOINs to _resource tables for names, colors, etc.
---   - Mode determination
+-- Supports both member and instructional modes:
+-- - Member mode: Aggregates per simulation for current profile
+-- - Instructional mode: Aggregates across all profiles with passed/in_progress/not_started counts
 --
--- Python handles (business logic only):
---   - status (passed/in-progress/not-started)
---   - pass_pct / pass_rate (calculation from rubric points)
---   - completion_pct (for instructional mode)
---   - cohort_names_junction (formatting "A, B, and C")
+-- Returns: simulation cards, standard_groups, standards
+-- ============================================================================
 
--- 1) Drop function first (breaks dependency on types)
+-- ============================================================================
+-- Step 1: Drop existing function
+-- ============================================================================
+
 DO $$
 DECLARE
     r RECORD;
@@ -20,14 +21,17 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
-        WHERE proname = 'api_get_home_overview_new_v4'
+        WHERE proname = 'api_get_simulation_overview_view_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_home_overview_new_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_simulation_overview_view_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
--- 2) Drop types WITHOUT CASCADE
+-- ============================================================================
+-- Step 2: Drop existing composite types
+-- ============================================================================
+
 DO $$
 DECLARE
     r RECORD;
@@ -35,19 +39,23 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_get_home_overview_new_v4_%'
+        WHERE typname LIKE 'q_get_simulation_overview_view_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
--- 3) Recreate types
--- Simulation card with all metadata JOINed (Python only computes derived fields)
-CREATE TYPE types.q_get_home_overview_new_v4_simulation_card AS (
+-- ============================================================================
+-- Step 3: Create composite types
+-- ============================================================================
+
+-- Simulation card with all metadata (matches home overview structure)
+CREATE TYPE types.q_get_simulation_overview_view_v4_item AS (
     -- Core IDs
     simulation_id uuid,
-    -- JOINed metadata (no Python lookups needed)
+
+    -- JOINed metadata
     simulation_name text,
     simulation_description text,
     time_limit int,
@@ -56,14 +64,20 @@ CREATE TYPE types.q_get_home_overview_new_v4_simulation_card AS (
     persona_icon text,
     cohort_names text[],
     standard_group_ids uuid[],
-    -- Metrics from MV aggregation
+
+    -- Practice flag
+    practice boolean,
+
+    -- Metrics from aggregation
     attempt_count int,
     completed_count int,
     highest_score int,
     has_passed boolean,
-    -- Raw data for Python business logic
+
+    -- Rubric points (for computing pass_pct in Python)
     rubric_total_points int,
     rubric_pass_points int,
+
     -- Instructional mode counts (NULL for member mode)
     passed_count int,
     in_progress_count int,
@@ -72,7 +86,7 @@ CREATE TYPE types.q_get_home_overview_new_v4_simulation_card AS (
 );
 
 -- Standard group mapping (for sidebar/legend)
-CREATE TYPE types.q_get_home_overview_new_v4_standard_group AS (
+CREATE TYPE types.q_get_simulation_overview_view_v4_standard_group AS (
     standard_group_id uuid,
     name text,
     description text,
@@ -81,7 +95,7 @@ CREATE TYPE types.q_get_home_overview_new_v4_standard_group AS (
 );
 
 -- Standard mapping (for sidebar/legend)
-CREATE TYPE types.q_get_home_overview_new_v4_standard AS (
+CREATE TYPE types.q_get_simulation_overview_view_v4_standard AS (
     standard_id uuid,
     standard_group_id uuid,
     name text,
@@ -89,34 +103,39 @@ CREATE TYPE types.q_get_home_overview_new_v4_standard AS (
     points int
 );
 
--- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_home_overview_new_v4(
-    start_date text,
-    end_date text,
-    profile_id uuid,
-    cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[]
+-- ============================================================================
+-- Step 4: Create function
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION api_get_simulation_overview_view_v4(
+    start_date text DEFAULT NULL,
+    end_date text DEFAULT NULL,
+    profile_id_filter uuid DEFAULT NULL,
+    simulation_ids uuid[] DEFAULT NULL,
+    cohort_ids uuid[] DEFAULT NULL,
+    department_ids uuid[] DEFAULT NULL,
+    practice_filter boolean DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
-    mode text,
+    user_role text,
     has_data boolean,
-    -- Simulation cards with metadata already JOINed
-    simulation_cards types.q_get_home_overview_new_v4_simulation_card[],
-    -- Standard mappings (for sidebar/legend, not per-simulation)
-    standard_groups types.q_get_home_overview_new_v4_standard_group[],
-    standards types.q_get_home_overview_new_v4_standard[]
+    items types.q_get_simulation_overview_view_v4_item[],
+    standard_groups types.q_get_simulation_overview_view_v4_standard_group[],
+    standards types.q_get_simulation_overview_view_v4_standard[]
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
     SELECT
-        start_date::timestamptz AS start_date,
-        end_date::timestamptz AS end_date,
-        profile_id AS profile_id,
+        COALESCE(start_date::timestamptz, NOW() - INTERVAL '1 year') AS start_date,
+        COALESCE(end_date::timestamptz, NOW() + INTERVAL '1 day') AS end_date,
+        profile_id_filter AS profile_id,
+        COALESCE(simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        practice_filter AS practice_filter
 ),
 
 -- Get profile info from profiles_resource
@@ -127,8 +146,8 @@ profile_info AS (
         pr.role,
         pr.cohort_ids AS user_cohort_ids,
         pr.department_ids AS user_department_ids
-    FROM profiles_resource pr
-    WHERE pr.id = (SELECT profile_id FROM params)
+    FROM profiles_resource pr, params p
+    WHERE pr.id = p.profile_id
       AND pr.active = true
 ),
 
@@ -143,7 +162,7 @@ mode_info AS (
     FROM profile_info pi
 ),
 
--- Get cohorts the profile has access to (for instructional mode)
+-- Get cohorts the profile has access to
 accessible_cohorts AS (
     SELECT DISTINCT cr.id AS cohort_id, cr.name
     FROM profile_info pi
@@ -167,61 +186,61 @@ cohort_simulations AS (
 -- MEMBER MODE: Get simulation status for current profile
 member_sim_status AS (
     SELECT
-        mah.simulation_id,
-        COUNT(DISTINCT mah.attempt_id)::int AS attempt_count,
-        COUNT(DISTINCT mah.attempt_id) FILTER (WHERE mah.num_chats_completed > 0)::int AS completed_count,
-        MAX(mah.score_percent)::int AS highest_score,
-        BOOL_OR(mah.has_passed) AS has_passed,
-        MAX(mah.rubric_total_points) AS rubric_total_points,
-        MAX(mah.rubric_pass_points) AS rubric_pass_points,
+        mh.simulation_id,
+        COUNT(DISTINCT mh.attempt_id)::int AS attempt_count,
+        COUNT(DISTINCT mh.attempt_id) FILTER (WHERE mh.num_chats_completed > 0)::int AS completed_count,
+        MAX(mh.score_percent)::int AS highest_score,
+        BOOL_OR(mh.has_passed) AS has_passed,
+        MAX(mh.rubric_total_points) AS rubric_total_points,
+        MAX(mh.rubric_pass_points) AS rubric_pass_points,
         ARRAY_AGG(DISTINCT pid) FILTER (WHERE pid IS NOT NULL) AS persona_ids,
-        ARRAY_AGG(DISTINCT mah.cohort_id) FILTER (WHERE mah.cohort_id IS NOT NULL) AS cohort_ids,
+        ARRAY_AGG(DISTINCT mh.cohort_id) FILTER (WHERE mh.cohort_id IS NOT NULL) AS cohort_ids,
         NULL::int AS passed_count,
         NULL::int AS in_progress_count,
         NULL::int AS not_started_count,
         NULL::int AS total_members
     FROM params p
     CROSS JOIN mode_info mi
-    CROSS JOIN mv_simulation_history mah
-    CROSS JOIN LATERAL unnest(mah.persona_ids) AS pid
-    WHERE mah.practice = FALSE  -- Home uses non-practice attempts
-      AND mi.is_member_mode
-      AND mah.profile_id = p.profile_id
-      AND mah.attempt_created_at >= p.start_date
-      AND mah.attempt_created_at < p.end_date
-      AND mah.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
-      AND (cardinality(p.cohort_ids) = 0 OR mah.cohort_id = ANY(p.cohort_ids))
-      AND (cardinality(p.department_ids) = 0 OR mah.department_id = ANY(p.department_ids))
-    GROUP BY mah.simulation_id
+    CROSS JOIN mv_simulation_history mh
+    CROSS JOIN LATERAL unnest(mh.persona_ids) AS pid
+    WHERE mi.is_member_mode
+      AND (p.practice_filter IS NULL OR mh.practice = p.practice_filter)
+      AND mh.profile_id = p.profile_id
+      AND mh.attempt_created_at >= p.start_date
+      AND mh.attempt_created_at < p.end_date
+      AND mh.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
+      AND (cardinality(p.cohort_ids) = 0 OR mh.cohort_id = ANY(p.cohort_ids))
+      AND (cardinality(p.department_ids) = 0 OR mh.department_id = ANY(p.department_ids))
+    GROUP BY mh.simulation_id
 ),
 
 -- INSTRUCTIONAL MODE: First get per-profile status, then aggregate
 inst_profile_status AS (
     SELECT
-        mah.simulation_id,
-        mah.profile_id,
-        BOOL_OR(mah.has_passed) AS profile_has_passed,
-        SUM(mah.num_chats_completed) > 0 AS profile_has_completed,
-        MAX(mah.score_percent) AS profile_highest_score,
-        MAX(mah.rubric_total_points) AS rubric_total_points,
-        MAX(mah.rubric_pass_points) AS rubric_pass_points,
+        mh.simulation_id,
+        mh.profile_id,
+        BOOL_OR(mh.has_passed) AS profile_has_passed,
+        SUM(mh.num_chats_completed) > 0 AS profile_has_completed,
+        MAX(mh.score_percent) AS profile_highest_score,
+        MAX(mh.rubric_total_points) AS rubric_total_points,
+        MAX(mh.rubric_pass_points) AS rubric_pass_points,
         ARRAY_AGG(DISTINCT pid) FILTER (WHERE pid IS NOT NULL) AS persona_ids,
-        ARRAY_AGG(DISTINCT mah.cohort_id) FILTER (WHERE mah.cohort_id IS NOT NULL) AS cohort_ids
+        ARRAY_AGG(DISTINCT mh.cohort_id) FILTER (WHERE mh.cohort_id IS NOT NULL) AS cohort_ids
     FROM params p
     CROSS JOIN mode_info mi
-    CROSS JOIN mv_simulation_history mah
-    LEFT JOIN LATERAL unnest(mah.persona_ids) AS pid ON true
-    WHERE mah.practice = FALSE  -- Home uses non-practice attempts
-      AND NOT mi.is_member_mode
-      AND mah.attempt_created_at >= p.start_date
-      AND mah.attempt_created_at < p.end_date
-      AND mah.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
-      AND (cardinality(p.cohort_ids) = 0 OR mah.cohort_id = ANY(p.cohort_ids))
-      AND (cardinality(p.department_ids) = 0 OR mah.department_id = ANY(p.department_ids))
-    GROUP BY mah.simulation_id, mah.profile_id
+    CROSS JOIN mv_simulation_history mh
+    LEFT JOIN LATERAL unnest(mh.persona_ids) AS pid ON true
+    WHERE NOT mi.is_member_mode
+      AND (p.practice_filter IS NULL OR mh.practice = p.practice_filter)
+      AND mh.attempt_created_at >= p.start_date
+      AND mh.attempt_created_at < p.end_date
+      AND mh.simulation_id IN (SELECT simulation_id FROM cohort_simulations)
+      AND (cardinality(p.cohort_ids) = 0 OR mh.cohort_id = ANY(p.cohort_ids))
+      AND (cardinality(p.department_ids) = 0 OR mh.department_id = ANY(p.department_ids))
+    GROUP BY mh.simulation_id, mh.profile_id
 ),
 
--- Aggregate persona_ids per simulation
+-- Aggregate persona_ids per simulation (instructional)
 inst_persona_ids AS (
     SELECT
         simulation_id,
@@ -231,7 +250,7 @@ inst_persona_ids AS (
     GROUP BY simulation_id
 ),
 
--- Aggregate cohort_ids per simulation
+-- Aggregate cohort_ids per simulation (instructional)
 inst_cohort_ids AS (
     SELECT
         simulation_id,
@@ -241,7 +260,7 @@ inst_cohort_ids AS (
     GROUP BY simulation_id
 ),
 
--- Aggregate profile statuses per simulation
+-- Aggregate profile statuses per simulation (instructional)
 inst_sim_status AS (
     SELECT
         ips.simulation_id,
@@ -286,12 +305,12 @@ all_sim_status AS (
 -- Get scenario IDs for time limit and rubric
 sim_scenarios AS (
     SELECT DISTINCT
-        mah.simulation_id,
+        mh.simulation_id,
         sid AS scenario_id
-    FROM mv_simulation_history mah
-    CROSS JOIN LATERAL unnest(mah.scenario_ids) AS sid
-    WHERE mah.practice = FALSE  -- Home uses non-practice attempts
-      AND mah.simulation_id IN (SELECT simulation_id FROM all_sim_status)
+    FROM mv_simulation_history mh, params p
+    CROSS JOIN LATERAL unnest(mh.scenario_ids) AS sid
+    WHERE (p.practice_filter IS NULL OR mh.practice = p.practice_filter)
+      AND mh.simulation_id IN (SELECT simulation_id FROM all_sim_status)
 ),
 
 -- Get time limits per simulation
@@ -341,6 +360,8 @@ simulation_cards AS (
         COALESCE(cohort_agg.names, ARRAY[]::text[]) AS cohort_names,
         -- JOINed standard_group_ids
         COALESCE(ssg.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
+        -- Practice filter value
+        (SELECT practice_filter FROM params) AS practice,
         -- Metrics
         ass.attempt_count,
         ass.completed_count,
@@ -381,7 +402,7 @@ all_standard_group_ids AS (
 -- Standard groups mapping (for sidebar/legend)
 standard_groups_meta AS (
     SELECT
-        (sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_get_home_overview_new_v4_standard_group AS standard_group
+        (sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_get_simulation_overview_view_v4_standard_group AS standard_group
     FROM all_standard_group_ids asgi
     JOIN standard_groups_resource sg ON sg.id = asgi.standard_group_id AND sg.active = true
 ),
@@ -389,7 +410,7 @@ standard_groups_meta AS (
 -- Standards mapping (for sidebar/legend)
 standards_meta AS (
     SELECT
-        (st.id, st.standard_group_id, st.name, st.description, st.points)::types.q_get_home_overview_new_v4_standard AS standard
+        (st.id, st.standard_group_id, st.name, st.description, st.points)::types.q_get_simulation_overview_view_v4_standard AS standard
     FROM standards_resource st
     WHERE st.standard_group_id IN (SELECT standard_group_id FROM all_standard_group_ids)
       AND st.active = true
@@ -399,34 +420,34 @@ standards_meta AS (
 simulation_cards_agg AS (
     SELECT COALESCE(ARRAY_AGG(
         (simulation_id, simulation_name, simulation_description, time_limit, department_ids,
-         persona_color, persona_icon, cohort_names, standard_group_ids,
+         persona_color, persona_icon, cohort_names, standard_group_ids, practice,
          attempt_count, completed_count, highest_score, has_passed,
          rubric_total_points, rubric_pass_points,
          passed_count, in_progress_count, not_started_count, total_members
-        )::types.q_get_home_overview_new_v4_simulation_card
-    ), ARRAY[]::types.q_get_home_overview_new_v4_simulation_card[]) AS cards
+        )::types.q_get_simulation_overview_view_v4_item
+        ORDER BY simulation_name
+    ), ARRAY[]::types.q_get_simulation_overview_view_v4_item[]) AS cards
     FROM simulation_cards
 ),
 
 -- Aggregate standard groups
 standard_groups_agg AS (
-    SELECT COALESCE(ARRAY_AGG(standard_group), ARRAY[]::types.q_get_home_overview_new_v4_standard_group[]) AS standard_groups
+    SELECT COALESCE(ARRAY_AGG(standard_group), ARRAY[]::types.q_get_simulation_overview_view_v4_standard_group[]) AS standard_groups
     FROM standard_groups_meta
 ),
 
 -- Aggregate standards
 standards_agg AS (
-    SELECT COALESCE(ARRAY_AGG(standard), ARRAY[]::types.q_get_home_overview_new_v4_standard[]) AS standards
+    SELECT COALESCE(ARRAY_AGG(standard), ARRAY[]::types.q_get_simulation_overview_view_v4_standard[]) AS standards
     FROM standards_meta
 )
 
 SELECT
     COALESCE(pi.name, 'System')::text AS actor_name,
-    COALESCE(mi.mode, 'instructional')::text AS mode,
+    COALESCE(pi.role, 'member')::text AS user_role,
     (SELECT COUNT(*) > 0 FROM all_sim_status)::boolean AS has_data,
-    (SELECT cards FROM simulation_cards_agg) AS simulation_cards,
+    (SELECT cards FROM simulation_cards_agg) AS items,
     (SELECT standard_groups FROM standard_groups_agg) AS standard_groups,
     (SELECT standards FROM standards_agg) AS standards
-FROM profile_info pi
-CROSS JOIN mode_info mi
+FROM profile_info pi;
 $$;

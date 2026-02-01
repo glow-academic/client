@@ -888,85 +888,6 @@ class ValidateAgentResourceProgressApiResponse(BaseModel):
 
 
 
-# Generated from: get_home_attempt_detail
-
-class GetHomeAttemptDetailSqlParams(BaseModel):
-
-    attempt_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id,
-            self.profile_id,
-        )
-
-class GetHomeAttemptDetailSqlRow(BaseModel):
-
-    attempt_exists: bool | None = None
-    access_denied: bool | None = None
-    actor_name: str | None = None
-    out_attempt_id: UUID | None = None
-    attempt_created_at: str | None = None
-    infinite_mode: bool | None = None
-    total_chats: int | None = None
-    completed_chats: int | None = None
-    total_score: float | None = None
-    all_passed: bool | None = None
-    elapsed_seconds: int | None = None
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
-    scenario_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_id: UUID | None = None
-    profile_id_out: UUID | None = None
-    cohort_id: UUID | None = None
-    department_id: UUID | None = None
-    simulation_name: str | None = None
-    simulation_description: str | None = None
-    time_limit: int | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_active: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_name: str | None = None
-
-class GetHomeAttemptDetailApiRequest(BaseModel):
-
-    attempt_id: UUID
-
-class GetHomeAttemptDetailApiResponse(BaseModel):
-
-    attempt_exists: bool | None = None
-    access_denied: bool | None = None
-    actor_name: str | None = None
-    out_attempt_id: UUID | None = None
-    attempt_created_at: str | None = None
-    infinite_mode: bool | None = None
-    total_chats: int | None = None
-    completed_chats: int | None = None
-    total_score: float | None = None
-    all_passed: bool | None = None
-    elapsed_seconds: int | None = None
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
-    scenario_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_id: UUID | None = None
-    profile_id_out: UUID | None = None
-    cohort_id: UUID | None = None
-    department_id: UUID | None = None
-    simulation_name: str | None = None
-    simulation_description: str | None = None
-    time_limit: int | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_active: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_name: str | None = None
-
-
-
 # Generated from: get_home_context
 
 class GetHomeContextSqlParams(BaseModel):
@@ -1226,85 +1147,6 @@ class RefreshHomeMvsNewApiResponse(BaseModel):
 
 
 
-# Generated from: get_practice_attempt_detail
-
-class GetPracticeAttemptDetailSqlParams(BaseModel):
-
-    attempt_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id,
-            self.profile_id,
-        )
-
-class GetPracticeAttemptDetailSqlRow(BaseModel):
-
-    attempt_exists: bool | None = None
-    access_denied: bool | None = None
-    actor_name: str | None = None
-    out_attempt_id: UUID | None = None
-    attempt_created_at: str | None = None
-    infinite_mode: bool | None = None
-    is_archived: bool | None = None
-    total_chats: int | None = None
-    completed_chats: int | None = None
-    total_score: float | None = None
-    all_passed: bool | None = None
-    elapsed_seconds: int | None = None
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
-    scenario_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_id: UUID | None = None
-    profile_id_out: UUID | None = None
-    department_id: UUID | None = None
-    simulation_name: str | None = None
-    simulation_description: str | None = None
-    time_limit: int | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_active: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_name: str | None = None
-
-class GetPracticeAttemptDetailApiRequest(BaseModel):
-
-    attempt_id: UUID
-
-class GetPracticeAttemptDetailApiResponse(BaseModel):
-
-    attempt_exists: bool | None = None
-    access_denied: bool | None = None
-    actor_name: str | None = None
-    out_attempt_id: UUID | None = None
-    attempt_created_at: str | None = None
-    infinite_mode: bool | None = None
-    is_archived: bool | None = None
-    total_chats: int | None = None
-    completed_chats: int | None = None
-    total_score: float | None = None
-    all_passed: bool | None = None
-    elapsed_seconds: int | None = None
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
-    scenario_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_id: UUID | None = None
-    profile_id_out: UUID | None = None
-    department_id: UUID | None = None
-    simulation_name: str | None = None
-    simulation_description: str | None = None
-    time_limit: int | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_active: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_name: str | None = None
-
-
-
 # Generated from: get_practice_context
 
 class GetPracticeContextSqlParams(BaseModel):
@@ -1335,196 +1177,6 @@ class GetPracticeContextApiResponse(BaseModel):
     user_cohort_ids: list[UUID] | None = None
     accessible_cohort_ids: list[UUID] | None = None
     pass_threshold: float | None = None
-
-
-
-# Generated from: get_practice_history_new
-
-class GetPracticeHistoryNewSqlParams(BaseModel):
-
-    start_date: str
-    end_date: str
-    profile_id: UUID
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    infinite_mode: bool | None = None
-    show_archived: bool | None = False
-    search: str | None = None
-    sort_by: str | None = None
-    sort_order: str | None = None
-    page: int | None = 0
-    page_size: int | None = 20
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.start_date,
-            self.end_date,
-            self.profile_id,
-            self.cohort_ids,
-            self.department_ids,
-            self.simulation_ids,
-            self.scenario_ids,
-            self.profile_ids,
-            self.infinite_mode,
-            self.show_archived,
-            self.search,
-            self.sort_by,
-            self.sort_order,
-            self.page,
-            self.page_size,
-        )
-
-class QGetPracticeHistoryNewV4Attempt(BaseModel):
-
-    attempt_id: UUID | None
-    attempt_created_at: datetime | None
-    profile_id: UUID | None
-    simulation_id: UUID | None
-    profile_name: str | None
-    simulation_name: str | None
-    department_ids: list[UUID] | None
-    cohort_name: str | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
-    scenario_ids: list[UUID] | None
-    scenario_titles: list[str] | None
-    time_limit_seconds: int | None
-    infinite_mode: bool | None
-    num_chats: int | None
-    num_chats_completed: int | None
-    num_scenarios: int | None
-    num_scenarios_completed: int | None
-    score_percent: float | None
-    has_passed: bool | None
-    total_time_seconds: int | None
-    rubric_total_points: int | None
-    rubric_pass_points: int | None
-    is_archived: bool | None
-    practice_simulation: bool | None
-    practice_scenario_id: UUID | None
-
-
-
-
-class QGetPracticeHistoryNewV4FilterOption(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetPracticeHistoryNewSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    total_count: int | None = None
-    attempts: list[QGetPracticeHistoryNewV4Attempt] | None = None
-    simulation_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
-    scenario_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
-    profile_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
-
-class GetPracticeHistoryNewApiRequest(BaseModel):
-
-    start_date: str
-    end_date: str
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    infinite_mode: bool | None = None
-    show_archived: bool | None = False
-    search: str | None = None
-    sort_by: str | None = None
-    sort_order: str | None = None
-    page: int | None = 0
-    page_size: int | None = 20
-
-class GetPracticeHistoryNewApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    total_count: int | None = None
-    attempts: list[QGetPracticeHistoryNewV4Attempt] | None = None
-    simulation_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
-    scenario_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
-    profile_options: list[QGetPracticeHistoryNewV4FilterOption] | None = None
-
-
-
-# Generated from: get_practice_overview_new
-
-class GetPracticeOverviewNewSqlParams(BaseModel):
-
-    profile_id: UUID
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_ids,
-        )
-
-class QGetPracticeOverviewNewV4SimulationCard(BaseModel):
-
-    simulation_id: UUID | None
-    simulation_name: str | None
-    simulation_description: str | None
-    time_limit: int | None
-    persona_color: str | None
-    persona_icon: str | None
-    cohort_names: list[str] | None
-    standard_group_ids: list[UUID] | None
-    attempt_count: int | None
-    completed_count: int | None
-    highest_score: int | None
-    has_passed: bool | None
-    rubric_total_points: int | None
-    rubric_pass_points: int | None
-    practice_simulation: bool | None
-    practice_scenario_id: UUID | None
-
-
-
-
-class QGetPracticeOverviewNewV4Standard(BaseModel):
-
-    standard_id: UUID | None
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-
-
-
-
-class QGetPracticeOverviewNewV4StandardGroup(BaseModel):
-
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-
-class GetPracticeOverviewNewSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    has_data: bool | None = None
-    simulation_cards: list[QGetPracticeOverviewNewV4SimulationCard] | None = None
-    standard_groups: list[QGetPracticeOverviewNewV4StandardGroup] | None = None
-    standards: list[QGetPracticeOverviewNewV4Standard] | None = None
-
-class GetPracticeOverviewNewApiRequest(BaseModel):
-
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetPracticeOverviewNewApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    has_data: bool | None = None
-    simulation_cards: list[QGetPracticeOverviewNewV4SimulationCard] | None = None
-    standard_groups: list[QGetPracticeOverviewNewV4StandardGroup] | None = None
-    standards: list[QGetPracticeOverviewNewV4Standard] | None = None
 
 
 
@@ -25181,6 +24833,427 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_simulation_attempts_view
+
+class GetSimulationAttemptsViewSqlParams(BaseModel):
+
+    attempt_ids: list[UUID]
+    practice_filter: bool | None = None
+    profile_id_filter: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_ids,
+            self.practice_filter,
+            self.profile_id_filter,
+        )
+
+class QGetSimulationAttemptsViewV4Item(BaseModel):
+
+    attempt_id: UUID | None
+    simulation_id: UUID | None
+    profile_id: UUID | None
+    cohort_id: UUID | None
+    department_id: UUID | None
+    simulation_name: str | None
+    profile_name: str | None
+    cohort_name: str | None
+    department_name: str | None
+    practice: bool | None
+    attempt_created_at: datetime | None
+    infinite_mode: bool | None
+    total_chats: int | None
+    completed_chats: int | None
+    total_score: float | None
+    all_passed: bool | None
+    elapsed_seconds: int | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    scenario_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+
+class GetSimulationAttemptsViewSqlRow(BaseModel):
+
+    items: list[QGetSimulationAttemptsViewV4Item] | None = None
+
+class GetSimulationAttemptsViewApiRequest(BaseModel):
+
+    attempt_ids: list[UUID]
+    practice_filter: bool | None = None
+    profile_id_filter: UUID | None = None
+
+class GetSimulationAttemptsViewApiResponse(BaseModel):
+
+    items: list[QGetSimulationAttemptsViewV4Item] | None = None
+
+
+
+# Generated from: get_simulation_chats_view
+
+class GetSimulationChatsViewSqlParams(BaseModel):
+
+    attempt_id_filter: UUID | None = None
+    chat_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id_filter,
+            self.chat_ids,
+            self.practice_filter,
+        )
+
+class QGetSimulationChatsViewV4Feedback(BaseModel):
+
+    id: UUID | None
+    standard_id: UUID | None
+    standard_name: str | None
+    total: float | None
+    feedback: str | None
+
+class QGetSimulationChatsViewV4Item(BaseModel):
+
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    scenario_id: UUID | None
+    persona_id: UUID | None
+    rubric_id: UUID | None
+    scenario_name: str | None
+    persona_name: str | None
+    persona_color: str | None
+    persona_icon: str | None
+    rubric_name: str | None
+    objective: str | None
+    problem_statement: str | None
+    practice: bool | None
+    chat_created_at: datetime | None
+    chat_completed: bool | None
+    chat_position: int | None
+    is_current_chat: bool | None
+    grade_id: UUID | None
+    grade_score: float | None
+    grade_passed: bool | None
+    grade_description: str | None
+    grade_time_taken: int | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    feedbacks: list[QGetSimulationChatsViewV4Feedback] | None
+
+class GetSimulationChatsViewSqlRow(BaseModel):
+
+    items: list[QGetSimulationChatsViewV4Item] | None = None
+
+class GetSimulationChatsViewApiRequest(BaseModel):
+
+    attempt_id_filter: UUID | None = None
+    chat_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+
+class GetSimulationChatsViewApiResponse(BaseModel):
+
+    items: list[QGetSimulationChatsViewV4Item] | None = None
+
+
+
+# Generated from: get_simulation_history_view
+
+class GetSimulationHistoryViewSqlParams(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    simulation_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+    date_from: str
+    date_to: str
+    scenario_ids: list[UUID] | None = None
+    infinite_mode: bool | None = None
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+    profile_ids: list[UUID] | None = None
+    show_archived: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_filter,
+            self.simulation_ids,
+            self.cohort_ids,
+            self.department_ids,
+            self.practice_filter,
+            self.date_from,
+            self.date_to,
+            self.scenario_ids,
+            self.infinite_mode,
+            self.search,
+            self.sort_by,
+            self.sort_order,
+            self.page_limit,
+            self.page_offset,
+            self.profile_ids,
+            self.show_archived,
+        )
+
+class QGetSimulationHistoryViewV4FilterOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QGetSimulationHistoryViewV4Item(BaseModel):
+
+    attempt_id: UUID | None
+    profile_id: UUID | None
+    simulation_id: UUID | None
+    cohort_id: UUID | None
+    department_id: UUID | None
+    simulation_name: str | None
+    profile_name: str | None
+    cohort_name: str | None
+    department_name: str | None
+    persona_color: str | None
+    persona_icon: str | None
+    time_limit: int | None
+    attempt_created_at: datetime | None
+    practice: bool | None
+    infinite_mode: bool | None
+    is_archived: bool | None
+    num_chats: int | None
+    num_chats_completed: int | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    score_percent: float | None
+    has_passed: bool | None
+    total_time_seconds: int | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    scenario_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+    scenario_names: list[str] | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    department_ids: list[UUID] | None
+
+class GetSimulationHistoryViewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    total_count: int | None = None
+    items: list[QGetSimulationHistoryViewV4Item] | None = None
+    simulation_options: list[QGetSimulationHistoryViewV4FilterOption] | None = None
+    scenario_options: list[QGetSimulationHistoryViewV4FilterOption] | None = None
+    profile_options: list[QGetSimulationHistoryViewV4FilterOption] | None = None
+
+class GetSimulationHistoryViewApiRequest(BaseModel):
+
+    profile_id_filter: UUID | None = None
+    simulation_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+    date_from: str
+    date_to: str
+    scenario_ids: list[UUID] | None = None
+    infinite_mode: bool | None = None
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+    profile_ids: list[UUID] | None = None
+    show_archived: bool | None = False
+
+class GetSimulationHistoryViewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    total_count: int | None = None
+    items: list[QGetSimulationHistoryViewV4Item] | None = None
+    simulation_options: list[QGetSimulationHistoryViewV4FilterOption] | None = None
+    scenario_options: list[QGetSimulationHistoryViewV4FilterOption] | None = None
+    profile_options: list[QGetSimulationHistoryViewV4FilterOption] | None = None
+
+
+
+# Generated from: get_simulation_messages_view
+
+class GetSimulationMessagesViewSqlParams(BaseModel):
+
+    attempt_id_filter: UUID | None = None
+    chat_id_filter: UUID | None = None
+    message_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id_filter,
+            self.chat_id_filter,
+            self.message_ids,
+            self.practice_filter,
+        )
+
+class QGetSimulationMessagesViewV4Replacement(BaseModel):
+
+    section: str | None
+    replace_text: str | None
+    idx: int | None
+
+class QGetSimulationMessagesViewV4Improvement(BaseModel):
+
+    id: UUID | None
+    message_id: UUID | None
+    name: str | None
+    description: str | None
+    replacements: list[QGetSimulationMessagesViewV4Replacement] | None
+
+
+
+
+class QGetSimulationMessagesViewV4Highlight(BaseModel):
+
+    section: str | None
+    idx: int | None
+
+class QGetSimulationMessagesViewV4Strength(BaseModel):
+
+    id: UUID | None
+    message_id: UUID | None
+    name: str | None
+    description: str | None
+    highlights: list[QGetSimulationMessagesViewV4Highlight] | None
+
+class QGetSimulationMessagesViewV4Item(BaseModel):
+
+    message_id: UUID | None
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    practice: bool | None
+    content: str | None
+    type: str | None
+    created_at: datetime | None
+    completed: bool | None
+    message_position: int | None
+    strengths: list[QGetSimulationMessagesViewV4Strength] | None
+    improvements: list[QGetSimulationMessagesViewV4Improvement] | None
+
+class GetSimulationMessagesViewSqlRow(BaseModel):
+
+    items: list[QGetSimulationMessagesViewV4Item] | None = None
+
+class GetSimulationMessagesViewApiRequest(BaseModel):
+
+    attempt_id_filter: UUID | None = None
+    chat_id_filter: UUID | None = None
+    message_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+
+class GetSimulationMessagesViewApiResponse(BaseModel):
+
+    items: list[QGetSimulationMessagesViewV4Item] | None = None
+
+
+
+# Generated from: get_simulation_overview_view
+
+class GetSimulationOverviewViewSqlParams(BaseModel):
+
+    start_date: str | None = None
+    end_date: str | None = None
+    profile_id_filter: UUID | None = None
+    simulation_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id_filter,
+            self.simulation_ids,
+            self.cohort_ids,
+            self.department_ids,
+            self.practice_filter,
+        )
+
+class QGetSimulationOverviewViewV4Item(BaseModel):
+
+    simulation_id: UUID | None
+    simulation_name: str | None
+    simulation_description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+    persona_color: str | None
+    persona_icon: str | None
+    cohort_names: list[str] | None
+    standard_group_ids: list[UUID] | None
+    practice: bool | None
+    attempt_count: int | None
+    completed_count: int | None
+    highest_score: int | None
+    has_passed: bool | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    passed_count: int | None
+    in_progress_count: int | None
+    not_started_count: int | None
+    total_members: int | None
+
+
+
+
+class QGetSimulationOverviewViewV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetSimulationOverviewViewV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetSimulationOverviewViewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    has_data: bool | None = None
+    items: list[QGetSimulationOverviewViewV4Item] | None = None
+    standard_groups: list[QGetSimulationOverviewViewV4StandardGroup] | None = None
+    standards: list[QGetSimulationOverviewViewV4Standard] | None = None
+
+class GetSimulationOverviewViewApiRequest(BaseModel):
+
+    start_date: str | None = None
+    end_date: str | None = None
+    profile_id_filter: UUID | None = None
+    simulation_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    practice_filter: bool | None = None
+
+class GetSimulationOverviewViewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    has_data: bool | None = None
+    items: list[QGetSimulationOverviewViewV4Item] | None = None
+    standard_groups: list[QGetSimulationOverviewViewV4StandardGroup] | None = None
+    standards: list[QGetSimulationOverviewViewV4Standard] | None = None
+
+
+
 
 # ============================================================================
 # REGISTRY
@@ -25265,12 +25338,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateAgentResourceProgressApiRequest",
         "ValidateAgentResourceProgressApiResponse",
     ),
-    "app/sql/v4/queries/analytics/NEW/home/get_home_attempt_detail_complete.sql": (
-        "GetHomeAttemptDetailSqlParams",
-        "GetHomeAttemptDetailSqlRow",
-        "GetHomeAttemptDetailApiRequest",
-        "GetHomeAttemptDetailApiResponse",
-    ),
     "app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql": (
         "GetHomeContextSqlParams",
         "GetHomeContextSqlRow",
@@ -25295,29 +25362,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshHomeMvsNewApiRequest",
         "RefreshHomeMvsNewApiResponse",
     ),
-    "app/sql/v4/queries/analytics/NEW/practice/get_practice_attempt_detail_complete.sql": (
-        "GetPracticeAttemptDetailSqlParams",
-        "GetPracticeAttemptDetailSqlRow",
-        "GetPracticeAttemptDetailApiRequest",
-        "GetPracticeAttemptDetailApiResponse",
-    ),
     "app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql": (
         "GetPracticeContextSqlParams",
         "GetPracticeContextSqlRow",
         "GetPracticeContextApiRequest",
         "GetPracticeContextApiResponse",
-    ),
-    "app/sql/v4/queries/analytics/NEW/practice/get_practice_history_new_complete.sql": (
-        "GetPracticeHistoryNewSqlParams",
-        "GetPracticeHistoryNewSqlRow",
-        "GetPracticeHistoryNewApiRequest",
-        "GetPracticeHistoryNewApiResponse",
-    ),
-    "app/sql/v4/queries/analytics/NEW/practice/get_practice_overview_new_complete.sql": (
-        "GetPracticeOverviewNewSqlParams",
-        "GetPracticeOverviewNewSqlRow",
-        "GetPracticeOverviewNewApiRequest",
-        "GetPracticeOverviewNewApiResponse",
     ),
     "app/sql/v4/queries/analytics/refresh_mv_all_complete.sql": (
         "RefreshMvAllSqlParams",
@@ -27809,6 +27858,36 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideoRunContextAndCreateRunApiRequest",
         "GetVideoRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/views/simulation/attempts/get_simulation_attempts_view_complete.sql": (
+        "GetSimulationAttemptsViewSqlParams",
+        "GetSimulationAttemptsViewSqlRow",
+        "GetSimulationAttemptsViewApiRequest",
+        "GetSimulationAttemptsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/simulation/chats/get_simulation_chats_view_complete.sql": (
+        "GetSimulationChatsViewSqlParams",
+        "GetSimulationChatsViewSqlRow",
+        "GetSimulationChatsViewApiRequest",
+        "GetSimulationChatsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/simulation/history/get_simulation_history_view_complete.sql": (
+        "GetSimulationHistoryViewSqlParams",
+        "GetSimulationHistoryViewSqlRow",
+        "GetSimulationHistoryViewApiRequest",
+        "GetSimulationHistoryViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql": (
+        "GetSimulationMessagesViewSqlParams",
+        "GetSimulationMessagesViewSqlRow",
+        "GetSimulationMessagesViewApiRequest",
+        "GetSimulationMessagesViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/simulation/overview/get_simulation_overview_view_complete.sql": (
+        "GetSimulationOverviewViewSqlParams",
+        "GetSimulationOverviewViewSqlRow",
+        "GetSimulationOverviewViewApiRequest",
+        "GetSimulationOverviewViewApiResponse",
+    ),
 }
 
 
@@ -27938,11 +28017,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_attempt_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -27963,22 +28037,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_attempt_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_history_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/analytics/NEW/practice/get_practice_overview_new_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30054,6 +30113,31 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/simulation/attempts/get_simulation_attempts_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/simulation/chats/get_simulation_chats_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/simulation/history/get_simulation_history_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/simulation/overview/get_simulation_overview_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

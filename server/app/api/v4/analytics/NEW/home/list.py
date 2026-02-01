@@ -1,21 +1,16 @@
 """Home history endpoint - POST /home/list.
 
-Uses two-pass pattern:
-1. Query 1 (Context): Fetch user context and pass_threshold
-2. Query 2 (Data): Fetch filtered, sorted, paginated data with all JOINs in SQL
-3. Python Business Logic: Compute derived fields (score_status, show_view, show_continue, pass_pct)
-
-SQL handles: filtering, sorting, pagination, all JOINs for metadata
-Python handles: only business logic computations
+Uses simulation history view internal handler for data fetching.
+Python handles business logic: score_status, show_view, show_continue, pass_pct.
 """
 
+from datetime import datetime
 from typing import Annotated, Any, cast
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.analytics.NEW.home.permissions import (
-    compute_mode,
     compute_pass_pct,
     compute_score_status,
     compute_show_continue,
@@ -27,15 +22,14 @@ from app.api.v4.analytics.NEW.home.types import (
     GetHomeHistoryNewResponse,
     HistoryAttempt,
 )
+from app.api.v4.views.simulation.history.get import get_simulation_history_internal
+from app.api.v4.views.simulation.history.types import HistoryViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     GetHomeContextSqlParams,
     GetHomeContextSqlRow,
-    GetHomeHistoryNewSqlParams,
-    GetHomeHistoryNewSqlRow,
-    QGetHomeHistoryNewV4Attempt,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -43,22 +37,20 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 CONTEXT_SQL_PATH = "app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql"
-DATA_SQL_PATH = "app/sql/v4/queries/analytics/NEW/home/get_home_history_new_complete.sql"
 
 router = APIRouter()
 
 
 def _transform_attempt(
-    attempt: QGetHomeHistoryNewV4Attempt,
+    attempt: HistoryViewItem,
     pass_threshold: float | None,
 ) -> HistoryAttempt:
-    """Transform SQL attempt to API response.
+    """Transform history view item to API response.
 
-    SQL has already JOINed all metadata (names, colors, titles).
     Python only computes derived business logic fields.
 
     Args:
-        attempt: Attempt data from SQL with metadata already JOINed.
+        attempt: History view item with metadata already JOINed.
         pass_threshold: Pass threshold from context for score classification.
 
     Returns:
@@ -87,7 +79,7 @@ def _transform_attempt(
         infinite_mode=attempt.infinite_mode,
         num_scenarios=attempt.num_scenarios,
         num_scenarios_completed=attempt.num_scenarios_completed,
-        time_limit_seconds=attempt.time_limit_seconds,
+        time_limit_seconds=attempt.time_limit,
         elapsed_seconds=attempt.total_time_seconds,
         num_incomplete_chats=num_incomplete_chats,
     )
@@ -100,10 +92,6 @@ def _transform_attempt(
     # Convert cohort_name to list for cohort_names_junction
     cohort_names = [attempt.cohort_name] if attempt.cohort_name else None
 
-    # attempt_id should never be None, but handle it gracefully
-    if not attempt.attempt_id:
-        raise ValueError("attempt_id is required")
-
     return HistoryAttempt(
         attempt_id=attempt.attempt_id,
         date=attempt.attempt_created_at.isoformat() if attempt.attempt_created_at else None,
@@ -114,11 +102,11 @@ def _transform_attempt(
         num_scenarios=attempt.num_scenarios,
         num_scenarios_completed=attempt.num_scenarios_completed,
         infinite_mode=attempt.infinite_mode,
-        time_limit=attempt.time_limit_seconds,
+        time_limit=attempt.time_limit,
         persona_names_junction=attempt.persona_names,
         persona_colors_junction=attempt.persona_colors,
         scenario_ids=attempt.scenario_ids,
-        scenario_titles=attempt.scenario_titles,
+        scenario_titles=attempt.scenario_names,  # scenario_names maps to scenario_titles
         department_ids=department_ids,
         cohort_names_junction=cohort_names,
         score=score,
@@ -144,8 +132,8 @@ async def home_list(
 ) -> GetHomeHistoryNewResponse:
     """Get paginated home history with attempts.
 
-    SQL handles: filtering, sorting, pagination, all metadata JOINs
-    Python handles: only business logic (score_status, show_view, show_continue, pass_pct)
+    Uses simulation history view internal handler for data.
+    Python handles only business logic (score_status, show_view, show_continue, pass_pct).
     """
     tags = ["home", "new", "history"]
 
@@ -198,68 +186,68 @@ async def home_list(
             await execute_sql_typed(conn, CONTEXT_SQL_PATH, params=context_params),
         )
 
-        # === QUERY 2: Data (filtered, sorted, paginated, JOINed in SQL) ===
-        request_dict = request.model_dump(mode="json")
-        data_params = GetHomeHistoryNewSqlParams(
-            start_date=request_dict["start_date"],
-            end_date=request_dict["end_date"],
-            profile_id=resource_id,
-            cohort_ids=request_dict.get("cohort_ids"),
-            department_ids=request_dict.get("department_ids"),
-            simulation_ids=request_dict.get("simulation_ids"),
-            scenario_ids=request_dict.get("scenario_ids"),
-            infinite_mode=request_dict.get("infinite_mode"),
-            search=request_dict.get("search"),
-            sort_by=request_dict.get("sort_by"),
-            sort_order=request_dict.get("sort_order"),
-            page=request_dict.get("page", 0),
-            page_size=request_dict.get("page_size", 20),
-        )
-        sql_params = data_params.to_tuple()
-
-        data = cast(
-            GetHomeHistoryNewSqlRow,
-            await execute_sql_typed(conn, DATA_SQL_PATH, params=data_params),
-        )
-
         # Set audit context
         if context.actor_name:
             audit_set(
                 http_request, actor={"name": context.actor_name, "id": profile_id}
             )
 
+        # Parse dates
+        date_from = datetime.fromisoformat(request.start_date) if request.start_date else None
+        date_to = datetime.fromisoformat(request.end_date) if request.end_date else None
+
+        # Compute page offset from page number
+        page = request.page or 0
+        page_size = request.page_size or 20
+        page_offset = page * page_size
+
+        # === FETCH DATA FROM VIEW INTERNAL HANDLER ===
+        history_result = await get_simulation_history_internal(
+            conn=conn,
+            profile_id=resource_id,
+            simulation_ids=request.simulation_ids,
+            cohort_ids=request.cohort_ids,
+            department_ids=request.department_ids,
+            practice=False,  # Home mode = non-practice
+            date_from=date_from,
+            date_to=date_to,
+            scenario_ids=request.scenario_ids,
+            infinite_mode=request.infinite_mode,
+            search=request.search,
+            sort_by=request.sort_by,
+            sort_order=request.sort_order,
+            page_limit=page_size,
+            page_offset=page_offset,
+            bypass_cache=bypass_cache,
+        )
+
         # === TRANSFORM: Only compute business logic fields ===
         attempts: list[HistoryAttempt] = []
-        if data.attempts:
-            for attempt in data.attempts:
-                attempts.append(_transform_attempt(attempt, context.pass_threshold))
+        for attempt in history_result.items:
+            attempts.append(_transform_attempt(attempt, context.pass_threshold))
 
         # === CONVERT FILTER OPTIONS ===
         simulation_options = None
-        if data.simulation_options:
+        if history_result.simulation_options:
             simulation_options = [
-                FilterOption(value=opt.value or "", label=opt.label, count=opt.count)
-                for opt in data.simulation_options
-                if opt.value
+                FilterOption(value=opt.value, label=opt.label, count=opt.count)
+                for opt in history_result.simulation_options
             ]
 
         scenario_options = None
-        if data.scenario_options:
+        if history_result.scenario_options:
             scenario_options = [
-                FilterOption(value=opt.value or "", label=opt.label, count=opt.count)
-                for opt in data.scenario_options
-                if opt.value
+                FilterOption(value=opt.value, label=opt.label, count=opt.count)
+                for opt in history_result.scenario_options
             ]
 
         # === COMPUTE PAGINATION INFO ===
-        total_count = data.total_count or 0
-        page = request.page or 0
-        page_size = request.page_size or 20
+        total_count = history_result.total_count
         total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
         # === BUILD RESPONSE ===
         api_response = GetHomeHistoryNewResponse(
-            actor_name=context.actor_name,
+            actor_name=history_result.actor_name or context.actor_name,
             data=attempts,
             total_count=total_count,
             page=page,

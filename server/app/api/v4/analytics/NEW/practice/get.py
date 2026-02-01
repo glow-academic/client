@@ -1,12 +1,7 @@
 """Practice overview endpoint - POST /practice/get.
 
-Uses two-pass pattern:
-1. Query 1 (Context): Fetch user context for mode computation
-2. Query 2 (Data): Fetch simulation cards with all JOINs in SQL
-3. Python Business Logic: Compute derived fields (status, pass_pct, cohort_names_junction)
-
-SQL handles: aggregation, all JOINs for metadata
-Python handles: only business logic computations
+Uses simulation overview view internal handler for data fetching.
+Python handles business logic: status, pass_pct, cohort formatting.
 """
 
 from typing import Annotated, Any, cast
@@ -27,15 +22,14 @@ from app.api.v4.analytics.NEW.practice.types import (
     StandardGroupMapping,
     StandardMapping,
 )
+from app.api.v4.views.simulation.overview.get import get_simulation_overview_internal
+from app.api.v4.views.simulation.overview.types import OverviewViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     GetPracticeContextSqlParams,
     GetPracticeContextSqlRow,
-    GetPracticeOverviewNewSqlParams,
-    GetPracticeOverviewNewSqlRow,
-    QGetPracticeOverviewNewV4SimulationCard,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -45,23 +39,19 @@ from app.utils.sql_helper import execute_sql_typed
 CONTEXT_SQL_PATH = (
     "app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql"
 )
-DATA_SQL_PATH = (
-    "app/sql/v4/queries/analytics/NEW/practice/get_practice_overview_new_complete.sql"
-)
 
 router = APIRouter()
 
 
 def _transform_simulation_card(
-    card: QGetPracticeOverviewNewV4SimulationCard,
+    card: OverviewViewItem,
 ) -> PracticeSimulationCard:
-    """Transform SQL simulation card to API response.
+    """Transform overview view item to API response.
 
-    SQL has already JOINed all metadata (names, colors, etc.).
     Python only computes derived business logic fields.
 
     Args:
-        card: Simulation card from SQL with metadata already JOINed.
+        card: Overview view item with metadata already JOINed.
 
     Returns:
         PracticeSimulationCard ready for API response.
@@ -84,10 +74,6 @@ def _transform_simulation_card(
         else None
     )
 
-    # simulation_id should never be None, but handle it gracefully
-    if not card.simulation_id:
-        raise ValueError("simulation_id is required")
-
     return PracticeSimulationCard(
         view_mode=compute_mode(),  # Always 'practice'
         simulation_id=card.simulation_id,
@@ -103,8 +89,8 @@ def _transform_simulation_card(
         status=status,
         pass_pct=pass_pct,
         cohort_names_junction=cohort_names_junction,
-        practice_simulation=card.practice_simulation or True,
-        practice_scenario_id=card.practice_scenario_id,
+        practice_simulation=True,  # Always True for practice
+        practice_scenario_id=None,  # Not needed at overview level
     )
 
 
@@ -125,8 +111,8 @@ async def practice_get(
 ) -> GetPracticeOverviewNewResponse:
     """Get practice overview with simulation cards.
 
-    SQL handles: aggregation, all metadata JOINs
-    Python handles: only business logic (status, pass_pct, cohort formatting)
+    Uses simulation overview view internal handler for data.
+    Python handles only business logic (status, pass_pct, cohort formatting).
     """
     tags = ["practice", "new"]
 
@@ -172,23 +158,11 @@ async def practice_get(
                 detail="Profile not found. Please sign in again.",
             )
 
-        # === QUERY 1: Context (for mode computation) ===
+        # === QUERY: Context (for actor_name) ===
         context_params = GetPracticeContextSqlParams(profile_id=resource_id)
         context = cast(
             GetPracticeContextSqlRow,
             await execute_sql_typed(conn, CONTEXT_SQL_PATH, params=context_params),
-        )
-
-        # === QUERY 2: Data (simulation cards with all JOINs in SQL) ===
-        request_dict = request.model_dump(mode="json")
-        data_params = GetPracticeOverviewNewSqlParams(
-            **request_dict, profile_id=resource_id
-        )
-        sql_params = data_params.to_tuple()
-
-        data = cast(
-            GetPracticeOverviewNewSqlRow,
-            await execute_sql_typed(conn, DATA_SQL_PATH, params=data_params),
         )
 
         # Set audit context
@@ -197,15 +171,27 @@ async def practice_get(
                 http_request, actor={"name": context.actor_name, "id": profile_id}
             )
 
+        # === FETCH DATA FROM VIEW INTERNAL HANDLER ===
+        overview_result = await get_simulation_overview_internal(
+            conn=conn,
+            profile_id=resource_id,
+            simulation_ids=None,
+            cohort_ids=None,
+            department_ids=request.department_ids,
+            practice=True,  # Practice mode
+            start_date=None,
+            end_date=None,
+            bypass_cache=bypass_cache,
+        )
+
         # === TRANSFORM: Only compute business logic fields ===
         items: list[PracticeSimulationCard] = []
-        if data.simulation_cards:
-            for card in data.simulation_cards:
-                items.append(_transform_simulation_card(card))
+        for card in overview_result.items:
+            items.append(_transform_simulation_card(card))
 
         # === CONVERT STANDARD GROUPS/STANDARDS ===
         standard_groups = None
-        if data.standard_groups:
+        if overview_result.standard_groups:
             standard_groups = [
                 StandardGroupMapping(
                     standard_group_id=sg.standard_group_id,
@@ -214,12 +200,11 @@ async def practice_get(
                     points=sg.points,
                     pass_points=sg.pass_points,
                 )
-                for sg in data.standard_groups
-                if sg.standard_group_id
+                for sg in overview_result.standard_groups
             ]
 
         standards = None
-        if data.standards:
+        if overview_result.standards:
             standards = [
                 StandardMapping(
                     standard_id=st.standard_id,
@@ -228,15 +213,14 @@ async def practice_get(
                     description=st.description,
                     points=st.points,
                 )
-                for st in data.standards
-                if st.standard_id
+                for st in overview_result.standards
             ]
 
         # === BUILD RESPONSE ===
         api_response = GetPracticeOverviewNewResponse(
             actor_name=context.actor_name,
             mode=compute_mode(),  # Always 'practice'
-            has_data=data.has_data,
+            has_data=overview_result.has_data,
             items=items,
             standard_groups=standard_groups,
             standards=standards,

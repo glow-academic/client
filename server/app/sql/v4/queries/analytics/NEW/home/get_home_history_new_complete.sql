@@ -163,9 +163,10 @@ base_attempts AS (
         sr.name AS simulation_name,
         sr.department_ids AS sim_department_ids
     FROM params p
-    CROSS JOIN mv_home_attempt_history mah
+    CROSS JOIN mv_simulation_history mah
     JOIN simulations_resource sr ON sr.id = mah.simulation_id AND sr.active = true
-    WHERE mah.profile_id = p.profile_id
+    WHERE mah.practice = FALSE  -- Home uses non-practice attempts
+      AND mah.profile_id = p.profile_id
       AND mah.attempt_created_at >= p.start_date
       AND mah.attempt_created_at < p.end_date
       -- Cohort filter

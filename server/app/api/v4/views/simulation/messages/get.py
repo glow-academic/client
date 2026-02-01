@@ -1,0 +1,209 @@
+"""Get endpoint for simulation messages view."""
+
+from typing import Annotated, Any
+from uuid import UUID
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.views.simulation.messages.types import (
+    GetMessagesRequest,
+    GetMessagesResponse,
+    HighlightItem,
+    ImprovementItem,
+    MessageViewItem,
+    ReplacementItem,
+    StrengthItem,
+)
+from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
+
+router = APIRouter()
+
+
+async def get_simulation_messages_internal(
+    conn: asyncpg.Connection,
+    attempt_id: UUID | None = None,
+    chat_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
+    practice: bool | None = None,
+    bypass_cache: bool = False,
+) -> list[MessageViewItem]:
+    """Internal function for fetching message data.
+
+    This can be reused by analytics routes that need message data.
+
+    Args:
+        conn: Database connection
+        attempt_id: Filter by attempt ID
+        chat_id: Filter by chat ID
+        message_ids: List of specific message IDs to fetch
+        practice: Filter by practice mode
+        bypass_cache: Skip cache lookup
+
+    Returns:
+        List of MessageViewItem objects
+    """
+    from app.sql.types import (
+        GetSimulationMessagesViewSqlParams,
+    )
+
+    cache_key_val = cache_key(
+        "views/simulation/messages/get",
+        {
+            "attempt_id": str(attempt_id) if attempt_id else None,
+            "chat_id": str(chat_id) if chat_id else None,
+            "message_ids": [str(m) for m in message_ids] if message_ids else None,
+            "practice": practice,
+        },
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [MessageViewItem.model_validate(item) for item in cached["items"]]
+
+    # Execute SQL query
+    params = GetSimulationMessagesViewSqlParams(
+        attempt_id_filter=attempt_id,
+        chat_id_filter=chat_id,
+        message_ids=message_ids,
+        practice_filter=practice,
+    )
+
+    result = await execute_sql_typed(conn, SQL_PATH, params=params)
+
+    # Transform to response items
+    items: list[MessageViewItem] = []
+    if result and result.items:
+        for item in result.items:
+            # Transform strengths
+            strengths = None
+            if item.strengths:
+                strengths = [
+                    StrengthItem(
+                        id=s.id,
+                        message_id=s.message_id,
+                        name=s.name,
+                        description=s.description,
+                        highlights=[
+                            HighlightItem(section=h.section, idx=h.idx)
+                            for h in (s.highlights or [])
+                        ]
+                        if s.highlights
+                        else None,
+                    )
+                    for s in item.strengths
+                ]
+
+            # Transform improvements
+            improvements = None
+            if item.improvements:
+                improvements = [
+                    ImprovementItem(
+                        id=i.id,
+                        message_id=i.message_id,
+                        name=i.name,
+                        description=i.description,
+                        replacements=[
+                            ReplacementItem(
+                                section=r.section,
+                                replace_text=r.replace_text,
+                                idx=r.idx,
+                            )
+                            for r in (i.replacements or [])
+                        ]
+                        if i.replacements
+                        else None,
+                    )
+                    for i in item.improvements
+                ]
+
+            items.append(
+                MessageViewItem(
+                    message_id=item.message_id,
+                    chat_id=item.chat_id,
+                    attempt_id=item.attempt_id,
+                    practice=item.practice or False,
+                    content=item.content,
+                    type=item.type,
+                    created_at=item.created_at,
+                    completed=item.completed or False,
+                    message_position=item.message_position,
+                    strengths=strengths,
+                    improvements=improvements,
+                )
+            )
+
+    # Cache the result
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=["views", "simulation", "messages"],
+    )
+
+    return items
+
+
+@router.post(
+    "/get",
+    response_model=GetMessagesResponse,
+    dependencies=[
+        audit_activity(
+            "views.simulation.messages.get",
+            "{{ actor.name }} fetched simulation message data",
+        )
+    ],
+)
+async def get_messages(
+    request: GetMessagesRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetMessagesResponse:
+    """Get simulation message data from the materialized view.
+
+    This endpoint fetches message-level data with strengths/improvements.
+    """
+    tags = ["views", "simulation", "messages"]
+
+    # Check for cache bypass header
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        items = await get_simulation_messages_internal(
+            conn=conn,
+            attempt_id=request.attempt_id,
+            chat_id=request.chat_id,
+            message_ids=request.message_ids,
+            practice=request.practice,
+            bypass_cache=bypass_cache,
+        )
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return GetMessagesResponse(items=items)
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="views_simulation_messages_get",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
