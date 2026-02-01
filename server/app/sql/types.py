@@ -18972,6 +18972,36 @@ class ProblemStatementsApiResponse(BaseModel):
 
 
 
+# Generated from: get_profiles
+
+class GetProfilesSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetProfilesV4Item(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+
+class GetProfilesSqlRow(BaseModel):
+
+    items: list[QGetProfilesV4Item] | None = None
+
+class GetProfilesApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetProfilesApiResponse(BaseModel):
+
+    items: list[QGetProfilesV4Item] | None = None
+
+
+
 # Generated from: prompts
 
 class PromptsSqlParams(BaseModel):
@@ -19277,6 +19307,39 @@ class GetRolesApiRequest(BaseModel):
 class GetRolesApiResponse(BaseModel):
 
     items: list[QGetRolesV4Item] | None = None
+
+
+
+# Generated from: get_rubrics_batch
+
+class GetRubricsBatchSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetRubricsBatchV4Item(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    total_points: float | None
+    pass_points: float | None
+
+class GetRubricsBatchSqlRow(BaseModel):
+
+    items: list[QGetRubricsBatchV4Item] | None = None
+
+class GetRubricsBatchApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetRubricsBatchApiResponse(BaseModel):
+
+    items: list[QGetRubricsBatchV4Item] | None = None
 
 
 
@@ -20207,6 +20270,39 @@ class SlugsApiResponse(BaseModel):
 
 
 
+# Generated from: get_standard_groups
+
+class GetStandardGroupsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetStandardGroupsV4Item(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+    pass_points: float | None
+
+class GetStandardGroupsSqlRow(BaseModel):
+
+    items: list[QGetStandardGroupsV4Item] | None = None
+
+class GetStandardGroupsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetStandardGroupsApiResponse(BaseModel):
+
+    items: list[QGetStandardGroupsV4Item] | None = None
+
+
+
 # Generated from: standard_groups
 
 class StandardGroupsSqlParams(BaseModel):
@@ -20250,6 +20346,39 @@ class StandardGroupsApiRequest(BaseModel):
 class StandardGroupsApiResponse(BaseModel):
 
     standard_group_id: UUID | None = None
+
+
+
+# Generated from: get_standards
+
+class GetStandardsSqlParams(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_ids,
+        )
+
+class QGetStandardsV4Item(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: float | None
+
+class GetStandardsSqlRow(BaseModel):
+
+    items: list[QGetStandardsV4Item] | None = None
+
+class GetStandardsApiRequest(BaseModel):
+
+    p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetStandardsApiResponse(BaseModel):
+
+    items: list[QGetStandardsV4Item] | None = None
 
 
 
@@ -25409,7 +25538,9 @@ class GetSimulationAttemptsViewSqlParams(BaseModel):
     attempt_ids: list[UUID]
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (self.attempt_ids,)
+        return (
+            self.attempt_ids,
+        )
 
 class QGetSimulationAttemptsViewV4Item(BaseModel):
 
@@ -25429,8 +25560,6 @@ class GetSimulationAttemptsViewSqlRow(BaseModel):
 class GetSimulationAttemptsViewApiRequest(BaseModel):
 
     attempt_ids: list[UUID]
-    practice_filter: bool | None = None
-    profile_id_filter: UUID | None = None
 
 class GetSimulationAttemptsViewApiResponse(BaseModel):
 
@@ -25445,7 +25574,9 @@ class GetSimulationChatsViewSqlParams(BaseModel):
     attempt_id_filter: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (self.attempt_id_filter,)
+        return (
+            self.attempt_id_filter,
+        )
 
 class QGetSimulationChatsViewV4Feedback(BaseModel):
 
@@ -25458,19 +25589,22 @@ class QGetSimulationChatsViewV4Feedback(BaseModel):
 
 
 
-class QGetSimulationChatsViewV4Response(BaseModel):
-
-    question_id: UUID | None
-    option_id: UUID | None
-    completed: bool | None
-    created_at: datetime | None
-
 class QGetSimulationChatsViewV4Grade(BaseModel):
 
     score: float | None
     passed: bool | None
     description: str | None
     time_taken: int | None
+
+
+
+
+class QGetSimulationChatsViewV4Response(BaseModel):
+
+    question_id: UUID | None
+    option_id: UUID | None
+    completed: bool | None
+    created_at: datetime | None
 
 class QGetSimulationChatsViewV4Item(BaseModel):
 
@@ -25508,9 +25642,7 @@ class GetSimulationChatsViewSqlRow(BaseModel):
 
 class GetSimulationChatsViewApiRequest(BaseModel):
 
-    attempt_id_filter: UUID | None = None
-    chat_ids: list[UUID] | None = None
-    practice_filter: bool | None = None
+    attempt_id_filter: UUID
 
 class GetSimulationChatsViewApiResponse(BaseModel):
 
@@ -25648,7 +25780,9 @@ class GetSimulationMessagesViewSqlParams(BaseModel):
     attempt_id_filter: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (self.attempt_id_filter,)
+        return (
+            self.attempt_id_filter,
+        )
 
 class QGetSimulationMessagesViewV4Content(BaseModel):
 
@@ -27744,6 +27878,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProblemStatementsApiRequest",
         "ProblemStatementsApiResponse",
     ),
+    "app/sql/v4/queries/resources/profiles/get_profiles_complete.sql": (
+        "GetProfilesSqlParams",
+        "GetProfilesSqlRow",
+        "GetProfilesApiRequest",
+        "GetProfilesApiResponse",
+    ),
     "app/sql/v4/queries/resources/prompts_complete.sql": (
         "PromptsSqlParams",
         "PromptsSqlRow",
@@ -27797,6 +27937,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRolesSqlRow",
         "GetRolesApiRequest",
         "GetRolesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/rubrics/get_rubrics_batch_complete.sql": (
+        "GetRubricsBatchSqlParams",
+        "GetRubricsBatchSqlRow",
+        "GetRubricsBatchApiRequest",
+        "GetRubricsBatchApiResponse",
     ),
     "app/sql/v4/queries/resources/rubrics/get_rubrics_complete.sql": (
         "GetRubricsSqlParams",
@@ -27948,11 +28094,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SlugsApiRequest",
         "SlugsApiResponse",
     ),
+    "app/sql/v4/queries/resources/standard_groups/get_standard_groups_complete.sql": (
+        "GetStandardGroupsSqlParams",
+        "GetStandardGroupsSqlRow",
+        "GetStandardGroupsApiRequest",
+        "GetStandardGroupsApiResponse",
+    ),
     "app/sql/v4/queries/resources/standard_groups_complete.sql": (
         "StandardGroupsSqlParams",
         "StandardGroupsSqlRow",
         "StandardGroupsApiRequest",
         "StandardGroupsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/standards/get_standards_complete.sql": (
+        "GetStandardsSqlParams",
+        "GetStandardsSqlRow",
+        "GetStandardsApiRequest",
+        "GetStandardsApiResponse",
     ),
     "app/sql/v4/queries/resources/templates/get_template_complete.sql": (
         "GetTemplateSqlParams",
@@ -30170,6 +30328,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/profiles/get_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/prompts_complete.sql"]
     ) -> SqlString: ...
 
@@ -30211,6 +30374,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/roles/get_roles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/rubrics/get_rubrics_batch_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30340,7 +30508,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/standard_groups/get_standard_groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/standard_groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/standards/get_standards_complete.sql"]
     ) -> SqlString: ...
 
     @overload
