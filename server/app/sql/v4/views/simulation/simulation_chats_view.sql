@@ -36,6 +36,39 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
+-- Create image_ref type (image_id + upload_id)
+DO $$
+BEGIN
+    CREATE TYPE types.mv_image_ref AS (
+        image_id uuid,
+        upload_id uuid
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+-- Create video_ref type (video_id + upload_id)
+DO $$
+BEGIN
+    CREATE TYPE types.mv_video_ref AS (
+        video_id uuid,
+        upload_id uuid
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+-- Create document_ref type (document_id + upload_id)
+DO $$
+BEGIN
+    CREATE TYPE types.mv_document_ref AS (
+        document_id uuid,
+        upload_id uuid
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_simulation_chats materialized view (if it exists)
 -- ============================================================================
@@ -132,6 +165,51 @@ current_chat_per_attempt AS (
         chat_id AS current_chat_id
     FROM chats_with_position
     ORDER BY attempt_id, chat_completed ASC, chat_position DESC
+),
+-- Aggregate images per chat (image_id + upload_id as uploads_resource.id)
+-- Path: simulation_chats_images_connection → images_uploads_connection → uploads_uploads_connection
+images_agg AS (
+    SELECT
+        chi.chat_id,
+        ARRAY_AGG(
+            (chi.images_id, uuc.uploads_id)::types.mv_image_ref
+            ORDER BY chi.created_at
+        ) FILTER (WHERE chi.images_id IS NOT NULL) AS images
+    FROM simulation_chats_images_connection chi
+    LEFT JOIN images_uploads_connection iuc ON iuc.images_id = chi.images_id AND iuc.active = TRUE
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = iuc.upload_id AND uuc.active = TRUE
+    WHERE chi.active = TRUE
+    GROUP BY chi.chat_id
+),
+-- Aggregate videos per chat (video_id + upload_id as uploads_resource.id)
+-- Path: simulation_chats_videos_connection → videos_uploads_connection → uploads_uploads_connection
+videos_agg AS (
+    SELECT
+        chv.chat_id,
+        ARRAY_AGG(
+            (chv.videos_id, uuc.uploads_id)::types.mv_video_ref
+            ORDER BY chv.created_at
+        ) FILTER (WHERE chv.videos_id IS NOT NULL) AS videos
+    FROM simulation_chats_videos_connection chv
+    LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = chv.videos_id AND vuc.active = TRUE
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = vuc.upload_id AND uuc.active = TRUE
+    WHERE chv.active = TRUE
+    GROUP BY chv.chat_id
+),
+-- Aggregate documents per chat (document_id + upload_id as uploads_resource.id)
+-- Path: simulation_chats_documents_connection → documents_uploads_connection → uploads_uploads_connection
+documents_agg AS (
+    SELECT
+        chd.chat_id,
+        ARRAY_AGG(
+            (chd.documents_id, uuc.uploads_id)::types.mv_document_ref
+            ORDER BY chd.created_at
+        ) FILTER (WHERE chd.documents_id IS NOT NULL) AS documents
+    FROM simulation_chats_documents_connection chd
+    LEFT JOIN documents_uploads_connection duc ON duc.documents_id = chd.documents_id AND duc.active = TRUE
+    LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = duc.upload_id AND uuc.active = TRUE
+    WHERE chd.active = TRUE
+    GROUP BY chd.chat_id
 )
 SELECT
     -- Primary key
@@ -173,12 +251,20 @@ SELECT
     lg.rubric_pass_points,
 
     -- Feedbacks array (denormalized for grading state display)
-    COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks
+    COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
+
+    -- Asset references (resource_id + upload_id from _connection tables)
+    COALESCE(ia.images, ARRAY[]::types.mv_image_ref[]) AS images,
+    COALESCE(va.videos, ARRAY[]::types.mv_video_ref[]) AS videos,
+    COALESCE(da.documents, ARRAY[]::types.mv_document_ref[]) AS documents
 
 FROM chats_with_position cwp
 LEFT JOIN current_chat_per_attempt cca ON cca.attempt_id = cwp.attempt_id
 LEFT JOIN latest_grade lg ON lg.chat_id = cwp.chat_id
 LEFT JOIN feedbacks_agg fa ON fa.grade_id = lg.grade_id
+LEFT JOIN images_agg ia ON ia.chat_id = cwp.chat_id
+LEFT JOIN videos_agg va ON va.chat_id = cwp.chat_id
+LEFT JOIN documents_agg da ON da.chat_id = cwp.chat_id
 WITH NO DATA;
 
 -- ============================================================================
