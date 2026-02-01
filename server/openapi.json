@@ -36166,20 +36166,6 @@
               }
             ]
           },
-          "scenario_documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioDocumentEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Documents"
-          },
           "rubric_structure": {
             "anyOf": [
               {
@@ -59835,18 +59821,6 @@
       },
       "HintEntry": {
         "properties": {
-          "message_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message Id"
-          },
           "hint": {
             "anyOf": [
               {
@@ -59872,7 +59846,7 @@
         },
         "type": "object",
         "title": "HintEntry",
-        "description": "Hint entry (practice mode only)."
+        "description": "Hint entry (practice mode only, message_id implied by parent)."
       },
       "HintItem": {
         "properties": {
@@ -60585,18 +60559,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "message_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message Id"
-          },
           "name": {
             "anyOf": [
               {
@@ -60639,7 +60601,7 @@
           "id"
         ],
         "title": "ImprovementEntry",
-        "description": "Improvement feedback with replacements."
+        "description": "Improvement feedback with replacements (message_id implied by parent)."
       },
       "ImprovementItem": {
         "properties": {
@@ -110342,179 +110304,6 @@
         "title": "ScenarioDocument",
         "description": "Document for scenario."
       },
-      "ScenarioDocumentEntry": {
-        "properties": {
-          "document_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "extension": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Extension"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "can_edit": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Delete"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Path"
-          },
-          "mime_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mime Type"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          }
-        },
-        "type": "object",
-        "title": "ScenarioDocumentEntry",
-        "description": "Scenario document entry."
-      },
       "ScenarioEntry": {
         "properties": {
           "scenario_id": {
@@ -115087,18 +114876,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "message_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message Id"
-          },
           "name": {
             "anyOf": [
               {
@@ -115141,7 +114918,7 @@
           "id"
         ],
         "title": "StrengthEntry",
-        "description": "Strength feedback with highlights."
+        "description": "Strength feedback with highlights (message_id implied by parent)."
       },
       "StrengthItem": {
         "properties": {

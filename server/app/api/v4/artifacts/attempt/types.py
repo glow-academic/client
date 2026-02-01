@@ -245,30 +245,6 @@ class RubricStructureData(BaseModel):
 
 
 # -----------------------------------------------------------------------------
-# Scenario document types
-# -----------------------------------------------------------------------------
-
-
-class ScenarioDocumentEntry(BaseModel):
-    """Scenario document entry."""
-
-    document_id: UUID | None = None
-    name: str | None = None
-    type: str | None = None
-    updated_at: datetime | None = None
-    extension: str | None = None
-    scenario_ids: list[str] | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    active: bool | None = None
-    department_ids: list[str] | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    upload_id: UUID | None = None
-    field_ids: list[str] | None = None
-
-
-# -----------------------------------------------------------------------------
 # Persona types
 # -----------------------------------------------------------------------------
 
@@ -364,9 +340,8 @@ class ReplacementEntry(BaseModel):
 
 
 class HintEntry(BaseModel):
-    """Hint entry (practice mode only)."""
+    """Hint entry (practice mode only, message_id implied by parent)."""
 
-    message_id: UUID | None = None
     hint: str | None = None
     idx: int | None = None
 
@@ -387,20 +362,18 @@ class ContentEntry(BaseModel):
 
 
 class StrengthEntry(BaseModel):
-    """Strength feedback with highlights."""
+    """Strength feedback with highlights (message_id implied by parent)."""
 
-    id: UUID
-    message_id: UUID | None = None
+    id: UUID  # Use message_id for client compatibility
     name: str | None = None
     description: str | None = None
     highlights: list[HighlightEntry] | None = None
 
 
 class ImprovementEntry(BaseModel):
-    """Improvement feedback with replacements."""
+    """Improvement feedback with replacements (message_id implied by parent)."""
 
-    id: UUID
-    message_id: UUID | None = None
+    id: UUID  # Use message_id for client compatibility
     name: str | None = None
     description: str | None = None
     replacements: list[ReplacementEntry] | None = None
@@ -603,6 +576,5 @@ class GetAttemptDetailResponse(BaseModel):
     should_show_controls: bool | None = None
     # Continuation options for infinite mode
     available_continuation_options: AvailableContinuationOptions | None = None
-    # Extended data
-    scenario_documents: list[ScenarioDocumentEntry] | None = None
+    # Extended data (scenario_documents removed - use chat.documents)
     rubric_structure: RubricStructureData | None = None

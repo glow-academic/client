@@ -8790,8 +8790,6 @@ export interface components {
             /** Should Show Controls */
             should_show_controls?: boolean | null;
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
-            /** Scenario Documents */
-            scenario_documents?: components["schemas"]["ScenarioDocumentEntry"][] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
         };
         /**
@@ -13530,11 +13528,9 @@ export interface components {
         };
         /**
          * HintEntry
-         * @description Hint entry (practice mode only).
+         * @description Hint entry (practice mode only, message_id implied by parent).
          */
         HintEntry: {
-            /** Message Id */
-            message_id?: string | null;
             /** Hint */
             hint?: string | null;
             /** Idx */
@@ -13741,7 +13737,7 @@ export interface components {
         };
         /**
          * ImprovementEntry
-         * @description Improvement feedback with replacements.
+         * @description Improvement feedback with replacements (message_id implied by parent).
          */
         ImprovementEntry: {
             /**
@@ -13749,8 +13745,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Message Id */
-            message_id?: string | null;
             /** Name */
             name?: string | null;
             /** Description */
@@ -23526,40 +23520,6 @@ export interface components {
             non_video_document?: boolean | null;
         };
         /**
-         * ScenarioDocumentEntry
-         * @description Scenario document entry.
-         */
-        ScenarioDocumentEntry: {
-            /** Document Id */
-            document_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Extension */
-            extension?: string | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Active */
-            active?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-        };
-        /**
          * ScenarioEntry
          * @description Scenario entry with resource metadata.
          */
@@ -24861,7 +24821,7 @@ export interface components {
         };
         /**
          * StrengthEntry
-         * @description Strength feedback with highlights.
+         * @description Strength feedback with highlights (message_id implied by parent).
          */
         StrengthEntry: {
             /**
@@ -24869,8 +24829,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Message Id */
-            message_id?: string | null;
             /** Name */
             name?: string | null;
             /** Description */

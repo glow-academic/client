@@ -24,7 +24,6 @@ from app.api.v4.artifacts.attempt.permissions import (
     check_attempt_access,
     compute_attempt_aggregates,
     compute_chat_position_and_current,
-    compute_content_display,
     compute_current_chat_index,
     compute_percentage,
     compute_total_possible_points,
@@ -55,7 +54,6 @@ from app.api.v4.artifacts.attempt.types import (
     ReplacementEntry,
     RubricEntry,
     RubricStructureData,
-    ScenarioDocumentEntry,
     ScenarioEntry,
     SimulationData,
     StandardAchievement,
@@ -222,49 +220,19 @@ async def attempt_get(
 
         async def fetch_messages(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Use view internal handler with practice flag
-                # This includes hints when practice=True
+                # Hints are always included in MV, filtered in Python based on practice flag
                 return await get_simulation_messages_internal(
                     conn=c,
                     attempt_id=aid,
-                    practice=practice,
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_simulation_config(sim_id: UUID) -> dict[str, Any]:
-            """Fetch simulation flags and config from the flags tables."""
+        async def fetch_simulation_time_limit(sim_id: UUID) -> int:
+            """Fetch simulation time limit (sum of scenario time limits).
+
+            Other config (flags, rubric_id) available from chats MV.
+            """
             async with pool.acquire() as c:
-                # Get simulation flags
-                flags_rows = await c.fetch(
-                    """
-                    SELECT f.name, sf.value
-                    FROM simulation_flags_junction sf
-                    JOIN flags_resource f ON sf.flag_id = f.id
-                    WHERE sf.simulation_id = $1
-                    """,
-                    sim_id,
-                )
-                flags = {row["name"]: row["value"] for row in flags_rows}
-
-                # Get rubric_id (from first chat's rubric connection via attempt)
-                rubric_id = await c.fetchval(
-                    """
-                    SELECT scr.rubrics_id
-                    FROM simulation_attempts_simulations_connection sas
-                    JOIN simulation_chats_entry ch ON ch.attempt_id = (
-                        SELECT sa.id FROM simulation_attempts_entry sa
-                        JOIN simulation_attempts_simulations_connection sas2 ON sas2.attempt_id = sa.id
-                        WHERE sas2.simulations_id = $1 AND sas2.active = true
-                        LIMIT 1
-                    )
-                    JOIN simulation_chats_rubrics_connection scr ON scr.chat_id = ch.id AND scr.active = true
-                    WHERE sas.simulations_id = $1 AND sas.active = true
-                    LIMIT 1
-                    """,
-                    sim_id,
-                )
-
-                # Get time_limit (sum of scenario time limits)
                 time_limit = await c.fetchval(
                     """
                     SELECT COALESCE(
@@ -279,111 +247,7 @@ async def attempt_get(
                     """,
                     sim_id,
                 )
-
-                return {
-                    "practice_simulation": flags.get("practice", False),
-                    "hints_enabled": flags.get("hints", False),
-                    "objectives_enabled": flags.get("objectives", True),
-                    "image_input_active": flags.get("image_input", False),
-                    "copy_paste_allowed": flags.get("copy_paste", False),
-                    "rubric_id": rubric_id,
-                    "time_limit": time_limit,
-                }
-
-        async def fetch_scenario_documents(sim_id: UUID) -> list[dict[str, Any]]:
-            """Fetch scenario documents for the simulation."""
-            async with pool.acquire() as c:
-                rows = await c.fetch(
-                    """
-                    SELECT DISTINCT
-                        d.id as document_id,
-                        COALESCE(d.name, '') as name,
-                        COALESCE(d.description, '') as description,
-                        d.created_at as updated_at,
-                        dur.uploads_id as upload_id
-                    FROM simulation_scenarios_junction ss
-                    JOIN scenario_documents_junction sd ON sd.scenario_id = ss.scenario_id AND sd.active = true
-                    JOIN documents_resource d ON d.id = sd.document_id AND d.active = true
-                    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
-                    WHERE ss.simulation_id = $1
-                      AND ss.active = true
-                    ORDER BY d.created_at DESC
-                    """,
-                    sim_id,
-                )
-                return [dict(row) for row in rows]
-
-        async def fetch_rubric_structure(rubric_id: UUID | None) -> dict[str, Any] | None:
-            """Fetch rubric structure for the simulation."""
-            if not rubric_id:
-                return None
-            async with pool.acquire() as c:
-                # Get standard groups with their standard IDs
-                # Standards belong to groups via standard_group_id on standards_resource
-                sg_rows = await c.fetch(
-                    """
-                    SELECT
-                        sg.id as standard_group_id,
-                        sg.name,
-                        sg.description,
-                        sg.points,
-                        sg.pass_points,
-                        ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as standard_ids
-                    FROM rubric_standard_groups_junction rsg
-                    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.active = true
-                    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id AND s.active = true
-                    WHERE rsg.rubrics_id = $1
-                      AND rsg.active = true
-                    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points
-                    """,
-                    rubric_id,
-                )
-
-                # Get standards mapping
-                std_rows = await c.fetch(
-                    """
-                    SELECT DISTINCT
-                        s.id as standard_id,
-                        s.name,
-                        s.description,
-                        s.points
-                    FROM rubric_standard_groups_junction rsg
-                    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.active = true
-                    JOIN standards_resource s ON s.standard_group_id = sg.id AND s.active = true
-                    WHERE rsg.rubrics_id = $1
-                      AND rsg.active = true
-                    """,
-                    rubric_id,
-                )
-
-                return {
-                    "standard_groups": [
-                        {
-                            "standard_group_id": row["standard_group_id"],
-                            "standard_ids": row["standard_ids"] or [],
-                        }
-                        for row in sg_rows
-                    ],
-                    "standard_groups_mapping": [
-                        {
-                            "standard_group_id": row["standard_group_id"],
-                            "name": row["name"],
-                            "description": row["description"],
-                            "points": row["points"],
-                            "pass_points": row["pass_points"],
-                        }
-                        for row in sg_rows
-                    ],
-                    "standards_mapping": [
-                        {
-                            "standard_id": row["standard_id"],
-                            "name": row["name"],
-                            "description": row["description"],
-                            "points": row["points"],
-                        }
-                        for row in std_rows
-                    ],
-                }
+                return time_limit or 0
 
         async def fetch_resource_metadata(
             image_ids: list[UUID],
@@ -562,22 +426,23 @@ async def attempt_get(
 
             return result
 
-        async def fetch_chat_extended_data(chat_ids: list[UUID]) -> dict[UUID, dict[str, Any]]:
-            """Fetch extended data for chats: grading_state and hints.
+        async def fetch_chat_grading_state(chat_ids: list[UUID]) -> dict[UUID, dict[str, Any]]:
+            """Fetch grading state for chats: achieved_standards, passed_standards.
 
-            Note: Personas are now fetched via get_personas_internal using persona_ids from MV.
+            Note: grade_description and feedback_by_standard_id are in chats MV.
+            Hints are in messages MV.
+            This fetch is kept for achieved/passed which are derivable - judgment call.
             """
             if not chat_ids:
                 return {}
             async with pool.acquire() as c:
                 result: dict[UUID, dict[str, Any]] = {cid: {} for cid in chat_ids}
 
-                # Fetch grading state for completed chats
+                # Fetch achieved and passed standards (derivable but kept for now)
                 grading_rows = await c.fetch(
                     """
                     SELECT
                         g.chat_id,
-                        g.description as grade_description,
                         COALESCE(
                             (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'achieved', true))
                              FROM simulation_feedbacks_entry f
@@ -593,14 +458,7 @@ async def attempt_get(
                              LEFT JOIN standard_groups_resource sg ON sg.id = s.standard_group_id AND sg.active = true
                              WHERE f.grade_id = g.id AND f.active = true),
                             '[]'::json
-                        ) as passed_standards,
-                        COALESCE(
-                            (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'feedback', f.feedback))
-                             FROM simulation_feedbacks_entry f
-                             JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = f.id AND fsc.active = true
-                             WHERE f.grade_id = g.id AND f.active = true),
-                            '[]'::json
-                        ) as feedback_by_standard_id
+                        ) as passed_standards
                     FROM simulation_grades_entry g
                     WHERE g.chat_id = ANY($1) AND g.active = true
                     """,
@@ -611,35 +469,7 @@ async def attempt_get(
                     result[chat_id]["grading_state"] = {
                         "achieved_standards": row["achieved_standards"],
                         "passed_standards": row["passed_standards"],
-                        "grade_description": row["grade_description"],
-                        "feedback_by_standard_id": row["feedback_by_standard_id"],
                     }
-
-                # Fetch hints grouped by message
-                hints_rows = await c.fetch(
-                    """
-                    SELECT
-                        m.chat_id,
-                        m.id as message_id,
-                        json_agg(json_build_object(
-                            'hint', h.hint,
-                            'idx', h.idx
-                        ) ORDER BY h.idx) as hints
-                    FROM simulation_hints_entry h
-                    JOIN simulation_messages_entry m ON m.id = h.message_id
-                    WHERE m.chat_id = ANY($1) AND h.active = true
-                    GROUP BY m.chat_id, m.id
-                    """,
-                    chat_ids,
-                )
-                for row in hints_rows:
-                    chat_id = row["chat_id"]
-                    if "hints" not in result[chat_id]:
-                        result[chat_id]["hints"] = []
-                    result[chat_id]["hints"].append({
-                        "message_id": row["message_id"],
-                        "hints": row["hints"],
-                    })
 
                 return result
 
@@ -718,53 +548,24 @@ async def attempt_get(
         simulation_id = attempt_item.simulation_id
         chat_ids = [c.chat_id for c in (chats_result or [])]
 
-        # Helper for empty async results
-        async def empty_dict() -> dict[str, Any]:
-            return {}
+        # Fetch time_limit and grading state in parallel
+        time_limit_seconds: int = 0
+        chat_grading_state: dict[UUID, dict[str, Any]] = {}
 
-        async def empty_list() -> list[Any]:
-            return []
+        async def fetch_time_limit_or_zero(sim_id: UUID | None) -> int:
+            if not sim_id:
+                return 0
+            return await fetch_simulation_time_limit(sim_id)
 
-        sim_config: dict[str, Any] = {}
-        scenario_docs_raw: list[dict[str, Any]] = []
-        chat_extended: dict[UUID, dict[str, Any]] = {}
+        async def fetch_grading_or_empty(cids: list[UUID]) -> dict[UUID, dict[str, Any]]:
+            if not cids:
+                return {}
+            return await fetch_chat_grading_state(cids)
 
-        if simulation_id or chat_ids:
-            tasks = []
-            task_names = []
-
-            if simulation_id:
-                tasks.append(fetch_simulation_config(simulation_id))
-                task_names.append("sim_config")
-                tasks.append(fetch_scenario_documents(simulation_id))
-                task_names.append("scenario_docs")
-            else:
-                tasks.append(empty_dict())
-                task_names.append("sim_config")
-                tasks.append(empty_list())
-                task_names.append("scenario_docs")
-
-            if chat_ids:
-                tasks.append(fetch_chat_extended_data(chat_ids))
-                task_names.append("chat_extended")
-            else:
-                tasks.append(empty_dict())
-                task_names.append("chat_extended")
-
-            results = await asyncio.gather(*tasks)
-            for i, name in enumerate(task_names):
-                if name == "sim_config":
-                    sim_config = results[i] or {}
-                elif name == "scenario_docs":
-                    scenario_docs_raw = results[i] or []
-                elif name == "chat_extended":
-                    chat_extended = results[i] or {}
-
-        # Now fetch rubric structure with the rubric_id from sim_config
-        rubric_struct_raw: dict[str, Any] | None = None
-        rubric_id = sim_config.get("rubric_id") if sim_config else None
-        if rubric_id:
-            rubric_struct_raw = await fetch_rubric_structure(rubric_id)
+        time_limit_seconds, chat_grading_state = await asyncio.gather(
+            fetch_time_limit_or_zero(simulation_id),
+            fetch_grading_or_empty(chat_ids),
+        )
 
         # === GROUP MESSAGES BY CHAT_ID ===
         messages_by_chat: dict[UUID, list[Any]] = defaultdict(list)
@@ -838,9 +639,13 @@ async def attempt_get(
             chat_messages = messages_by_chat.get(chat_item.chat_id, [])
 
             # Transform messages
+            # Note: Messages MV now has simplified types - no id/message_id on nested types,
+            # contents only have persona_id (metadata fetched via internal handlers)
             messages: list[MessageData] = []
+            is_own_attempt = attempt_item.profile_id == profiles_id
+
             for msg in chat_messages:
-                # Transform strengths
+                # Transform strengths (no id/message_id in view types)
                 strengths: list[StrengthEntry] = []
                 if msg.strengths:
                     for s in msg.strengths:
@@ -852,15 +657,14 @@ async def attempt_get(
                                 )
                         strengths.append(
                             StrengthEntry(
-                                id=s.id,
-                                message_id=s.message_id,
+                                id=msg.message_id,  # Use message_id as id for client compatibility
                                 name=s.name,
                                 description=s.description,
                                 highlights=highlights,
                             )
                         )
 
-                # Transform improvements
+                # Transform improvements (no id/message_id in view types)
                 improvements: list[ImprovementEntry] = []
                 if msg.improvements:
                     for i in msg.improvements:
@@ -876,45 +680,55 @@ async def attempt_get(
                                 )
                         improvements.append(
                             ImprovementEntry(
-                                id=i.id,
-                                message_id=i.message_id,
+                                id=msg.message_id,  # Use message_id as id for client compatibility
                                 name=i.name,
                                 description=i.description,
                                 replacements=replacements,
                             )
                         )
 
-                # Transform hints (practice mode only)
+                # Transform hints (practice mode only, no message_id in view types)
                 hints: list[HintEntry] | None = None
                 if practice and msg.hints:
-                    hints = []
-                    for h in msg.hints:
-                        hints.append(
-                            HintEntry(
-                                message_id=h.message_id,
-                                hint=h.hint,
-                                idx=h.idx,
-                            )
-                        )
+                    hints = [
+                        HintEntry(hint=h.hint, idx=h.idx)
+                        for h in msg.hints
+                    ]
 
-                # Transform contents with computed display fields
-                # is_own_attempt is True if we passed the access check (profile IDs match)
-                is_own_attempt = attempt_item.profile_id == profiles_id
+                # Transform contents - look up persona metadata from resource_meta
+                # Contents only have content, persona_id, created_at
                 contents: list[ContentEntry] | None = None
+                first_content: str | None = None
                 if msg.contents:
                     contents = []
-                    for c in msg.contents:
-                        name, color, icon = compute_content_display(
-                            message_type=msg.type,
-                            profile_name=c.profile_name,
-                            persona_name=c.persona_name,
-                            persona_color=c.persona_color,
-                            persona_icon=c.persona_icon,
-                            is_own_attempt=is_own_attempt,
-                        )
+                    for idx, c in enumerate(msg.contents):
+                        # Get first content for backward compatibility
+                        if idx == 0:
+                            first_content = c.content
+
+                        # Look up persona metadata from resource_meta
+                        persona_meta = resource_meta["personas"].get(c.persona_id, {}) if c.persona_id else {}
+                        persona_name = persona_meta.get("name")
+                        persona_color = persona_meta.get("color")
+                        persona_icon = persona_meta.get("icon")
+
+                        # Compute display fields
+                        # For user messages (type='query'): use profile_name
+                        # For assistant messages (type='response'): use persona metadata
+                        if msg.type == "query":
+                            # User message - use profile name
+                            name = "You" if is_own_attempt else profile_name
+                            color = None
+                            icon = None
+                        else:
+                            # Assistant message - use persona metadata
+                            name = persona_name
+                            color = persona_color
+                            icon = persona_icon
+
                         contents.append(
                             ContentEntry(
-                                id=c.id,
+                                id=msg.message_id,  # Use message_id for client compatibility
                                 content=c.content,
                                 name=name,
                                 color=color,
@@ -928,7 +742,7 @@ async def attempt_get(
                 messages.append(
                     MessageData(
                         id=msg.message_id,
-                        content=msg.content,
+                        content=first_content,  # First content for backward compatibility
                         type=msg.type,
                         created_at=(
                             msg.created_at.isoformat() if msg.created_at else None
@@ -974,82 +788,77 @@ async def attempt_get(
                         )
                     )
 
-            # Get extended data for this chat (grading state, hints)
-            chat_ext = chat_extended.get(chat_item.chat_id, {}) if chat_extended else {}
-
-            # Build grading state
+            # Build grading state from chat_grading_state (achieved/passed) + chats MV (description/feedback)
             grading_state_data: GradingStateData | None = None
-            if chat_ext.get("grading_state"):
-                gs = chat_ext["grading_state"]
-                # Parse JSON if returned as string
-                achieved_raw = gs.get("achieved_standards") or []
-                if isinstance(achieved_raw, str):
-                    achieved_raw = json.loads(achieved_raw)
-                passed_raw = gs.get("passed_standards") or []
-                if isinstance(passed_raw, str):
-                    passed_raw = json.loads(passed_raw)
-                fb_raw = gs.get("feedback_by_standard_id") or []
-                if isinstance(fb_raw, str):
-                    fb_raw = json.loads(fb_raw)
-
+            chat_gs = chat_grading_state.get(chat_item.chat_id, {}).get("grading_state")
+            if chat_gs or chat_item.grade or chat_item.feedbacks:
+                # achieved_standards and passed_standards from grading state fetch
                 achieved = None
-                if achieved_raw:
-                    achieved = [
-                        StandardAchievement(
-                            standard_id=a.get("standard_id") if isinstance(a, dict) else None,
-                            achieved=a.get("achieved") if isinstance(a, dict) else None,
-                        )
-                        for a in achieved_raw
-                        if isinstance(a, dict)
-                    ]
                 passed = None
-                if passed_raw:
-                    passed = [
-                        StandardPass(
-                            standard_id=p.get("standard_id") if isinstance(p, dict) else None,
-                            passed=p.get("passed") if isinstance(p, dict) else None,
-                        )
-                        for p in passed_raw
-                        if isinstance(p, dict)
-                    ]
+                if chat_gs:
+                    achieved_raw = chat_gs.get("achieved_standards") or []
+                    if isinstance(achieved_raw, str):
+                        achieved_raw = json.loads(achieved_raw)
+                    passed_raw = chat_gs.get("passed_standards") or []
+                    if isinstance(passed_raw, str):
+                        passed_raw = json.loads(passed_raw)
+
+                    if achieved_raw:
+                        achieved = [
+                            StandardAchievement(
+                                standard_id=a.get("standard_id") if isinstance(a, dict) else None,
+                                achieved=a.get("achieved") if isinstance(a, dict) else None,
+                            )
+                            for a in achieved_raw
+                            if isinstance(a, dict)
+                        ]
+                    if passed_raw:
+                        passed = [
+                            StandardPass(
+                                standard_id=p.get("standard_id") if isinstance(p, dict) else None,
+                                passed=p.get("passed") if isinstance(p, dict) else None,
+                            )
+                            for p in passed_raw
+                            if isinstance(p, dict)
+                        ]
+
+                # grade_description from chats MV
+                grade_description = chat_item.grade.description if chat_item.grade else None
+
+                # feedback_by_standard_id from chats MV feedbacks
                 fb_by_std = None
-                if fb_raw:
+                if chat_item.feedbacks:
                     fb_by_std = [
                         StandardFeedback(
-                            standard_id=f.get("standard_id") if isinstance(f, dict) else None,
-                            feedback=f.get("feedback") if isinstance(f, dict) else None,
+                            standard_id=fb.standard_id,
+                            feedback=fb.feedback,
                         )
-                        for f in fb_raw
-                        if isinstance(f, dict)
+                        for fb in chat_item.feedbacks
                     ]
+
                 grading_state_data = GradingStateData(
                     achieved_standards=achieved,
                     passed_standards=passed,
-                    grade_description=gs.get("grade_description"),
+                    grade_description=grade_description,
                     feedback_by_standard_id=fb_by_std,
                 )
 
-            # Build hints by message
+            # Build hints by message from messages MV (already in msg.hints)
+            # Group hints by message_id for the hints_by_msg structure
             hints_by_msg: list[HintsByMessage] | None = None
-            if chat_ext.get("hints"):
-                hints_by_msg = []
-                for h in chat_ext["hints"]:
-                    hints_raw = h.get("hints") or []
-                    if isinstance(hints_raw, str):
-                        hints_raw = json.loads(hints_raw)
-                    hints_by_msg.append(
-                        HintsByMessage(
-                            message_id=h.get("message_id"),
-                            hints=[
-                                HintEntry(
-                                    hint=hi.get("hint") if isinstance(hi, dict) else None,
-                                    idx=hi.get("idx") if isinstance(hi, dict) else None,
-                                )
-                                for hi in hints_raw
-                                if isinstance(hi, dict)
-                            ],
-                        )
-                    )
+            if practice:
+                msg_hints: dict[UUID, list[HintEntry]] = {}
+                for msg in chat_messages:
+                    if msg.hints:
+                        msg_hints[msg.message_id] = [
+                            HintEntry(hint=h.hint, idx=h.idx)
+                            for h in msg.hints
+                        ]
+                if msg_hints:
+                    hints_by_msg = [
+                        HintsByMessage(message_id=mid, hints=hints_list)
+                        for mid, hints_list in msg_hints.items()
+                    ]
 
             # === BUILD ENRICHED RESOURCE ENTRIES ===
             # Normal/General View resources
@@ -1272,20 +1081,22 @@ async def attempt_get(
         )
 
         # === BUILD SIMULATION DATA ===
+        # Use chat-level flags from first chat (all chats in an attempt share same simulation config)
+        first_chat = chats_result[0] if chats_result else None
         simulation = SimulationData(
             id=attempt_item.simulation_id,
             name=simulation_name,
             description=None,  # Not in view
-            time_limit=sim_config.get("time_limit") if sim_config else None,
-            hints_enabled=sim_config.get("hints_enabled") if sim_config else None,
-            objectives_enabled=sim_config.get("objectives_enabled") if sim_config else None,
-            image_input_active=sim_config.get("image_input_active") if sim_config else None,
-            copy_paste_allowed=sim_config.get("copy_paste_allowed") if sim_config else None,
-            # Extended config fields
-            practice_simulation=sim_config.get("practice_simulation") if sim_config else None,
-            input_guardrail_active=sim_config.get("input_guardrail_active") if sim_config else None,
-            output_guardrail_active=sim_config.get("output_guardrail_active") if sim_config else None,
-            rubric_id=sim_config.get("rubric_id") if sim_config else None,
+            time_limit=time_limit_seconds if time_limit_seconds > 0 else None,
+            # Flags from chat-level (equivalent to simulation flags)
+            hints_enabled=first_chat.hints_enabled if first_chat else None,
+            objectives_enabled=first_chat.show_objectives if first_chat else None,
+            image_input_active=first_chat.show_images if first_chat else None,
+            copy_paste_allowed=first_chat.copy_paste_allowed if first_chat else None,
+            # Practice flag from attempt
+            practice_simulation=practice,
+            # rubric_id from first chat
+            rubric_id=first_chat.rubric_id if first_chat else None,
         )
 
         # === COMPUTE DERIVED FIELDS (centralized in permissions.py) ===
@@ -1301,10 +1112,9 @@ async def attempt_get(
         elapsed_seconds = aggregates["elapsed_seconds"]
 
         # === BUILD TIMER DATA ===
-        time_limit_seconds = sim_config.get("time_limit") if sim_config else None
         timer = _format_timer(
             elapsed=elapsed_seconds,
-            limit_seconds=time_limit_seconds,
+            limit_seconds=time_limit_seconds if time_limit_seconds > 0 else None,
             infinite_mode=attempt_item.infinite_mode or False,
         )
 
@@ -1328,53 +1138,56 @@ async def attempt_get(
         # is_active: True if timer has not exceeded
         is_active = not timer.exceeded if timer else True
 
-        # === BUILD SCENARIO DOCUMENTS ===
-        scenario_documents: list[ScenarioDocumentEntry] | None = None
-        if scenario_docs_raw:
-            scenario_documents = [
-                ScenarioDocumentEntry(
-                    document_id=doc.get("document_id"),
-                    name=doc.get("name"),
-                    type=doc.get("type"),
-                    updated_at=doc.get("updated_at"),
-                    extension=doc.get("extension"),
-                    file_path=doc.get("file_path"),
-                    mime_type=doc.get("mime_type"),
-                    upload_id=doc.get("upload_id"),
+        # === BUILD RUBRIC STRUCTURE from resource_meta ===
+        # (scenario_documents removed - use chat.documents instead)
+        rubric_structure: RubricStructureData | None = None
+        if all_standard_group_ids or all_standard_ids:
+            # Build standard_groups (which standards belong to which group)
+            # from standards metadata (each standard has standard_group_id)
+            sg_to_std_ids: dict[UUID, list[str]] = {}
+            for std_id in set(all_standard_ids):
+                std_meta = resource_meta["standards"].get(std_id, {})
+                sg_id = std_meta.get("standard_group_id")
+                if sg_id:
+                    if sg_id not in sg_to_std_ids:
+                        sg_to_std_ids[sg_id] = []
+                    sg_to_std_ids[sg_id].append(str(std_id))
+
+            standard_groups = [
+                StandardGroupStandards(
+                    standard_group_id=sg_id,
+                    standard_ids=std_ids,
                 )
-                for doc in scenario_docs_raw
+                for sg_id, std_ids in sg_to_std_ids.items()
             ]
 
-        # === BUILD RUBRIC STRUCTURE ===
-        rubric_structure: RubricStructureData | None = None
-        if rubric_struct_raw:
+            # Build standard_groups_mapping from resource_meta
+            standard_groups_mapping = [
+                StandardGroupMapping(
+                    standard_group_id=sg_id,
+                    name=resource_meta["standard_groups"].get(sg_id, {}).get("name"),
+                    description=resource_meta["standard_groups"].get(sg_id, {}).get("description"),
+                    points=resource_meta["standard_groups"].get(sg_id, {}).get("points"),
+                    pass_points=resource_meta["standard_groups"].get(sg_id, {}).get("pass_points"),
+                )
+                for sg_id in set(all_standard_group_ids)
+            ]
+
+            # Build standards_mapping from resource_meta
+            standards_mapping = [
+                StandardMapping(
+                    standard_id=std_id,
+                    name=resource_meta["standards"].get(std_id, {}).get("name"),
+                    description=resource_meta["standards"].get(std_id, {}).get("description"),
+                    points=resource_meta["standards"].get(std_id, {}).get("points"),
+                )
+                for std_id in set(all_standard_ids)
+            ]
+
             rubric_structure = RubricStructureData(
-                standard_groups=[
-                    StandardGroupStandards(
-                        standard_group_id=sg.get("standard_group_id"),
-                        standard_ids=sg.get("standard_ids"),
-                    )
-                    for sg in rubric_struct_raw.get("standard_groups", [])
-                ],
-                standard_groups_mapping=[
-                    StandardGroupMapping(
-                        standard_group_id=sg.get("standard_group_id"),
-                        name=sg.get("name"),
-                        description=sg.get("description"),
-                        points=sg.get("points"),
-                        pass_points=sg.get("pass_points"),
-                    )
-                    for sg in rubric_struct_raw.get("standard_groups_mapping", [])
-                ],
-                standards_mapping=[
-                    StandardMapping(
-                        standard_id=sm.get("standard_id"),
-                        name=sm.get("name"),
-                        description=sm.get("description"),
-                        points=sm.get("points"),
-                    )
-                    for sm in rubric_struct_raw.get("standards_mapping", [])
-                ],
+                standard_groups=standard_groups,
+                standard_groups_mapping=standard_groups_mapping,
+                standards_mapping=standards_mapping,
             )
 
         # === COMPUTE UI CONTROL FLAGS ===
@@ -1404,8 +1217,7 @@ async def attempt_get(
             should_show_controls=should_show_controls,
             # Continuation options not yet implemented - will be added when needed
             available_continuation_options=None,
-            # Extended data
-            scenario_documents=scenario_documents,
+            # Extended data (scenario_documents removed - use chat.documents)
             rubric_structure=rubric_structure,
         )
 
