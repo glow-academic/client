@@ -9,8 +9,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { GradedMessagesViewProps } from "../chatAreas/GradedMessagesView";
-import { GradedMessagesView } from "../chatAreas/GradedMessagesView";
 import type { MessagesViewProps } from "../chatAreas/MessagesView";
 import { MessagesView } from "../chatAreas/MessagesView";
 import type { RubricViewProps } from "../chatAreas/RubricView";
@@ -1505,91 +1503,54 @@ export function AttemptChatSetup({
     const currentChatData = attemptData?.chats?.[currentChatIndex];
 
     if (chatAreaViewMode === "messages") {
-      // NEW: Map personas from PersonaEntry (id may be optional) to expected format
-      const mappedPersonas = (currentChatData?.personas ?? [])
-        .filter((p) => p.id) // Filter out entries without id
-        .map((p) => ({
-          id: p.id!,
-          name: p.name || "Assistant",
-          icon: p.icon ?? null,
-          color: p.color ?? null,
-        }));
-
+      // Active messages mode - server sends contents with display info
       const props: MessagesViewProps = {
         messages: currentChatData?.messages?.map((m) => ({
           id: m.id,
-          // API returns "query" or "response" directly
           type: m.type === "query" ? "query" : "response",
-          content: m.content,
           created_at: m.created_at,
           completed: m.completed ?? null,
-          persona_id: m.persona_id ?? null,
+          contents: m.contents,  // Server sends display info (name/icon/color)
+          feedbacks: m.feedbacks,  // May be present if grading happened
+          hints: m.hints,  // Present in practice mode
         })),
         streaming_content: streamingContent,
         optimistic_messages: optimisticMessages,
-        personas: mappedPersonas,
-        scenario: scenario
-          ? {
-              persona_name: scenario.persona_name ?? null,
-              persona_icon: scenario.persona_icon ?? null,
-              persona_color: scenario.persona_color ?? null,
-            }
-          : null,
         current_chat: currentChat
-          ? {
-              id: currentChat.id,
-              completed: currentChat.completed ?? null,
-            }
+          ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
-        current_chat_hints: mergedCurrentChatHints,
         new_hint_message_ids: newHintMessageIds,
         send_message: handleSendMessage,
         is_sending_message: isSendingMessage,
-        is_active: !(attemptData?.timer?.exceeded ?? false),
-        simulation: attemptData?.simulation
-          ? {
-              time_limit: attemptData.simulation.time_limit ?? null,
-              practice_simulation:
-                attemptData.simulation.practice_simulation ?? null,
-            }
-          : null,
+        is_active: isActive,
         background_image: scenario?.background_image ?? null,
+        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
+        is_attempt_owner: isAttemptOwner,
         chat_id: currentChat?.id,
-        is_attempt_owner: true, // Would be determined from profile context
       };
       return props;
     } else if (chatAreaViewMode === "graded-messages") {
-      // NEW: Map personas from PersonaEntry to expected format
-      const mappedPersonas = (currentChatData?.personas ?? [])
-        .filter((p) => p.id)
-        .map((p) => ({
-          id: p.id!,
-          name: p.name || "Assistant",
-          icon: p.icon ?? null,
-          color: p.color ?? null,
-        }));
-
-      const props: GradedMessagesViewProps = {
+      // Graded messages use the same MessagesView with feedbacks present
+      const props: MessagesViewProps = {
         messages:
           currentChatData?.messages?.map((m) => ({
             id: m.id,
-            // API returns "query" or "response" directly
             type: m.type === "query" ? "query" : "response",
-            content: m.content,
             created_at: m.created_at,
             completed: m.completed ?? null,
-            persona_id: m.persona_id ?? null,
-            feedbacks: m.feedbacks,
+            contents: m.contents,  // Server sends display info (name/icon/color)
+            feedbacks: m.feedbacks,  // Present after grading
+            hints: m.hints,  // Present in practice mode
           })) || [],
-        personas: mappedPersonas,
-        scenario: scenario
-          ? {
-              persona_name: scenario.persona_name ?? null,
-              persona_icon: scenario.persona_icon ?? null,
-              persona_color: scenario.persona_color ?? null,
-            }
+        current_chat: currentChat
+          ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
-        grade: { id: "graded" },
+        send_message: handleSendMessage,
+        is_sending_message: isSendingMessage,
+        is_active: isActive,
+        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
+        is_attempt_owner: isAttemptOwner,
+        chat_id: currentChat?.id,
       };
       return props;
     } else if (chatAreaViewMode === "video") {
@@ -1764,7 +1725,7 @@ export function AttemptChatSetup({
       case "messages":
         return MessagesView;
       case "graded-messages":
-        return GradedMessagesView;
+        return MessagesView;  // Unified component handles both active and graded modes
       case "video":
         return VideoView;
       case "rubric":

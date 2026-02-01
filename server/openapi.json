@@ -31275,11 +31275,6 @@
       },
       "ContentEntry": {
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
           "content": {
             "anyOf": [
               {
@@ -31337,11 +31332,8 @@
           }
         },
         "type": "object",
-        "required": [
-          "id"
-        ],
         "title": "ContentEntry",
-        "description": "Content entry with computed display fields.\n\nRaw persona/profile data is transformed by Python business logic.\nOnly computed fields (name, color, icon) are exposed to client."
+        "description": "Content entry with computed display fields.\n\nEach content has its own display info (name/icon/color) computed from\npersona metadata on the server. Client renders each content with its\nown persona styling."
       },
       "ContentItem": {
         "properties": {
@@ -60563,57 +60555,6 @@
         "type": "object",
         "title": "ImagesApiResponse"
       },
-      "ImprovementEntry": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "replacements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ReplacementEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Replacements"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "title": "ImprovementEntry",
-        "description": "Improvement feedback with replacements (message_id implied by parent)."
-      },
       "ImprovementItem": {
         "properties": {
           "name": {
@@ -62654,17 +62595,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "type": {
             "anyOf": [
               {
@@ -62712,11 +62642,11 @@
             ],
             "title": "Contents"
           },
-          "strengths": {
+          "feedbacks": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/StrengthEntry"
+                  "$ref": "#/components/schemas/MessageFeedbackEntry"
                 },
                 "type": "array"
               },
@@ -62724,21 +62654,7 @@
                 "type": "null"
               }
             ],
-            "title": "Strengths"
-          },
-          "improvements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ImprovementEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Improvements"
+            "title": "Feedbacks"
           },
           "hints": {
             "anyOf": [
@@ -62760,7 +62676,83 @@
           "id"
         ],
         "title": "MessageData",
-        "description": "Message with content and feedback data.\n\nThe hints field is only populated when practice=True."
+        "description": "Message with contents, feedbacks, and hints.\n\n- contents: Array of content entries with display info (name/icon/color)\n- feedbacks: Unified strengths/improvements (only present after grading)\n- hints: Practice mode hints (only present in practice mode)"
+      },
+      "MessageFeedbackEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HighlightEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          },
+          "replaces": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReplacementEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaces"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "MessageFeedbackEntry",
+        "description": "Unified feedback entry for messages (strength or improvement).\n\nCombines strengths and improvements into a single type with a `type` field.\n- type=\"strength\": has highlights (sections to highlight as good)\n- type=\"improvement\": has replaces (sections to replace with suggestions)"
       },
       "MessageViewItem": {
         "properties": {
@@ -107221,7 +107213,7 @@
             ],
             "title": "Section"
           },
-          "replace_text": {
+          "replace": {
             "anyOf": [
               {
                 "type": "string"
@@ -107230,7 +107222,7 @@
                 "type": "null"
               }
             ],
-            "title": "Replace Text"
+            "title": "Replace"
           },
           "idx": {
             "anyOf": [
@@ -114879,57 +114871,6 @@
         "type": "object",
         "title": "StandardPass",
         "description": "Pass status for a standard."
-      },
-      "StrengthEntry": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "highlights": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/HighlightEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Highlights"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "title": "StrengthEntry",
-        "description": "Strength feedback with highlights (message_id implied by parent)."
       },
       "StrengthItem": {
         "properties": {

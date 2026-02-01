@@ -7480,15 +7480,11 @@ export interface components {
          * ContentEntry
          * @description Content entry with computed display fields.
          *
-         *     Raw persona/profile data is transformed by Python business logic.
-         *     Only computed fields (name, color, icon) are exposed to client.
+         *     Each content has its own display info (name/icon/color) computed from
+         *     persona metadata on the server. Client renders each content with its
+         *     own persona styling.
          */
         ContentEntry: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
             /** Content */
             content?: string | null;
             /** Name */
@@ -13738,23 +13734,6 @@ export interface components {
             image_id?: string | null;
         };
         /**
-         * ImprovementEntry
-         * @description Improvement feedback with replacements (message_id implied by parent).
-         */
-        ImprovementEntry: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Replacements */
-            replacements?: components["schemas"]["ReplacementEntry"][] | null;
-        };
-        /**
          * ImprovementItem
          * @description Improvement feedback for a message (id/message_id implied by parent).
          */
@@ -14251,9 +14230,11 @@ export interface components {
         };
         /**
          * MessageData
-         * @description Message with content and feedback data.
+         * @description Message with contents, feedbacks, and hints.
          *
-         *     The hints field is only populated when practice=True.
+         *     - contents: Array of content entries with display info (name/icon/color)
+         *     - feedbacks: Unified strengths/improvements (only present after grading)
+         *     - hints: Practice mode hints (only present in practice mode)
          */
         MessageData: {
             /**
@@ -14261,8 +14242,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Content */
-            content?: string | null;
             /** Type */
             type?: string | null;
             /** Created At */
@@ -14271,12 +14250,35 @@ export interface components {
             completed?: boolean | null;
             /** Contents */
             contents?: components["schemas"]["ContentEntry"][] | null;
-            /** Strengths */
-            strengths?: components["schemas"]["StrengthEntry"][] | null;
-            /** Improvements */
-            improvements?: components["schemas"]["ImprovementEntry"][] | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["MessageFeedbackEntry"][] | null;
             /** Hints */
             hints?: components["schemas"]["HintEntry"][] | null;
+        };
+        /**
+         * MessageFeedbackEntry
+         * @description Unified feedback entry for messages (strength or improvement).
+         *
+         *     Combines strengths and improvements into a single type with a `type` field.
+         *     - type="strength": has highlights (sections to highlight as good)
+         *     - type="improvement": has replaces (sections to replace with suggestions)
+         */
+        MessageFeedbackEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Highlights */
+            highlights?: components["schemas"]["HighlightEntry"][] | null;
+            /** Replaces */
+            replaces?: components["schemas"]["ReplacementEntry"][] | null;
         };
         /**
          * MessageViewItem
@@ -22707,8 +22709,8 @@ export interface components {
         ReplacementEntry: {
             /** Section */
             section?: string | null;
-            /** Replace Text */
-            replace_text?: string | null;
+            /** Replace */
+            replace?: string | null;
             /** Idx */
             idx?: number | null;
         };
@@ -24820,23 +24822,6 @@ export interface components {
             standard_id?: string | null;
             /** Passed */
             passed?: boolean | null;
-        };
-        /**
-         * StrengthEntry
-         * @description Strength feedback with highlights (message_id implied by parent).
-         */
-        StrengthEntry: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Highlights */
-            highlights?: components["schemas"]["HighlightEntry"][] | null;
         };
         /**
          * StrengthItem

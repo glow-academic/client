@@ -1,7 +1,7 @@
 /**
  * MessageContentAdapter.tsx
  * Pure component for adapting message content with replacements and highlights
- * Used in GradedMessagesView (not MessagesView)
+ * Used in MessagesView when feedbacks are present
  * Explicit, self-contained types
  */
 "use client";

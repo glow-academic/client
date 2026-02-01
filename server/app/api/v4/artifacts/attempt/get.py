@@ -44,8 +44,8 @@ from app.api.v4.artifacts.attempt.types import (
     HintEntry,
     HintsByMessage,
     ImageEntry,
-    ImprovementEntry,
     MessageData,
+    MessageFeedbackEntry,
     ObjectiveEntry,
     OptionEntry,
     PersonaEntry,
@@ -65,7 +65,6 @@ from app.api.v4.artifacts.attempt.types import (
     StandardGroupStandards,
     StandardMapping,
     StandardPass,
-    StrengthEntry,
     TemplateEntry,
     TimerData,
     VideoEntry,
@@ -561,8 +560,10 @@ async def attempt_get(
             is_own_attempt = attempt_item.profile_id == profiles_id
 
             for msg in chat_messages:
-                # Transform strengths (no id/message_id in view types)
-                strengths: list[StrengthEntry] = []
+                # Transform to unified feedbacks (strengths + improvements with type)
+                feedbacks: list[MessageFeedbackEntry] = []
+
+                # Add strengths as type="strength"
                 if msg.strengths:
                     for s in msg.strengths:
                         highlights: list[HighlightEntry] = []
@@ -571,35 +572,38 @@ async def attempt_get(
                                 highlights.append(
                                     HighlightEntry(section=h.section, idx=h.idx)
                                 )
-                        strengths.append(
-                            StrengthEntry(
-                                id=msg.message_id,  # Use message_id as id for client compatibility
+                        feedbacks.append(
+                            MessageFeedbackEntry(
+                                id=msg.message_id,
                                 name=s.name,
                                 description=s.description,
+                                type="strength",
                                 highlights=highlights,
+                                replaces=None,
                             )
                         )
 
-                # Transform improvements (no id/message_id in view types)
-                improvements: list[ImprovementEntry] = []
+                # Add improvements as type="improvement"
                 if msg.improvements:
                     for i in msg.improvements:
-                        replacements: list[ReplacementEntry] = []
+                        replaces: list[ReplacementEntry] = []
                         if i.replacements:
                             for r in i.replacements:
-                                replacements.append(
+                                replaces.append(
                                     ReplacementEntry(
                                         section=r.section,
-                                        replace_text=r.replace_text,
+                                        replace=r.replace_text,
                                         idx=r.idx,
                                     )
                                 )
-                        improvements.append(
-                            ImprovementEntry(
-                                id=msg.message_id,  # Use message_id as id for client compatibility
+                        feedbacks.append(
+                            MessageFeedbackEntry(
+                                id=msg.message_id,
                                 name=i.name,
                                 description=i.description,
-                                replacements=replacements,
+                                type="improvement",
+                                highlights=None,
+                                replaces=replaces,
                             )
                         )
 
@@ -612,16 +616,11 @@ async def attempt_get(
                     ]
 
                 # Transform contents - look up persona metadata from resource_meta
-                # Contents only have content, persona_id, created_at
+                # Contents only have content, persona_id, created_at from MV
                 contents: list[ContentEntry] | None = None
-                first_content: str | None = None
                 if msg.contents:
                     contents = []
-                    for idx, c in enumerate(msg.contents):
-                        # Get first content for backward compatibility
-                        if idx == 0:
-                            first_content = c.content
-
+                    for c in msg.contents:
                         # Look up persona metadata from resource_meta
                         persona_meta = resource_meta["personas"].get(c.persona_id, {}) if c.persona_id else {}
                         persona_name = persona_meta.get("name")
@@ -635,7 +634,7 @@ async def attempt_get(
                             # User message - use profile name
                             name = "You" if is_own_attempt else profile_name
                             color = None
-                            icon = None
+                            icon = "User"
                         else:
                             # Assistant message - use persona metadata
                             name = persona_name
@@ -644,7 +643,6 @@ async def attempt_get(
 
                         contents.append(
                             ContentEntry(
-                                id=msg.message_id,  # Use message_id for client compatibility
                                 content=c.content,
                                 name=name,
                                 color=color,
@@ -658,15 +656,13 @@ async def attempt_get(
                 messages.append(
                     MessageData(
                         id=msg.message_id,
-                        content=first_content,  # First content for backward compatibility
                         type=msg.type,
                         created_at=(
                             msg.created_at.isoformat() if msg.created_at else None
                         ),
                         completed=msg.completed,
                         contents=contents,
-                        strengths=strengths,
-                        improvements=improvements,
+                        feedbacks=feedbacks if feedbacks else None,
                         hints=hints,  # Only populated when practice=True
                     )
                 )

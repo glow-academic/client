@@ -21,7 +21,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 
 // Import component prop types (each component defines its own)
-import type { GradedMessagesViewProps } from "../chatAreas/GradedMessagesView";
 import type { MessagesViewProps } from "../chatAreas/MessagesView";
 import type { RubricViewProps } from "../chatAreas/RubricView";
 import type { VideoViewProps } from "../chatAreas/VideoView";
@@ -42,7 +41,6 @@ export interface GenericChatInterfaceProps {
   chat_header: React.ComponentType<ChatHeaderProps>;
   chat_area: React.ComponentType<
     | MessagesViewProps
-    | GradedMessagesViewProps
     | VideoViewProps
     | RubricViewProps
   >;
@@ -76,7 +74,6 @@ export interface GenericChatInterfaceProps {
   chat_header_props: ChatHeaderProps;
   chat_area_props:
     | MessagesViewProps
-    | GradedMessagesViewProps
     | VideoViewProps
     | RubricViewProps;
   document_area_props?: DocumentAreaProps;

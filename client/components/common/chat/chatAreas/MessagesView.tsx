@@ -1,8 +1,10 @@
 /**
  * MessagesView.tsx
- * Normal messages display (active mode)
- * Explicit, self-contained types (like resource components)
- * Extracted from AttemptMessages.tsx
+ * Unified messages display for both active and graded modes.
+ * Renders based on what data is present:
+ * - contents: always present, each with name/icon/color for display
+ * - feedbacks: present after grading, shows feedback cards + highlights/replaces
+ * - hints: present in practice mode, shows hint button
  */
 "use client";
 
@@ -24,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import {
   AlertCircle,
@@ -33,12 +36,11 @@ import {
   RotateCcw,
   User,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MessageContentAdapter } from "../generic/utils/MessageContentAdapter";
 
 // Content entry with computed display fields from backend
 interface ContentEntry {
-  id: string;
   content?: string | null;
   name?: string | null;    // "You" for own messages, persona name for responses
   color?: string | null;   // User color or persona color
@@ -46,51 +48,55 @@ interface ContentEntry {
   created_at?: string | null;
 }
 
-// Explicit, self-contained prop interface (like resource components)
+// Hint entry on each message
+interface HintEntry {
+  hint: string;
+  idx: number;
+}
+
+// Feedback entry (unified strengths + improvements)
+interface FeedbackEntry {
+  id: string;
+  name: string;
+  description: string;
+  type: "strength" | "improvement";
+  highlights?: Array<{ section: string }>;
+  replaces?: Array<{ section: string; replace: string }>;
+}
+
+// Explicit, self-contained prop interface
 export interface MessagesViewProps {
-  // Explicit message type - self-contained, no external dependencies
+  // Messages with contents, optional feedbacks, optional hints
+  // Server sends display fields (name/color/icon) pre-computed in contents
   messages?: Array<{
     id: string;
     type: "query" | "response";
-    content: string;
     created_at: string;
     completed?: boolean | null;
-    persona_id?: string | null;
-    // New: contents with pre-computed name/color/icon from backend
+    // Contents with pre-computed display fields from backend
     contents?: ContentEntry[] | null;
+    // Grading feedback (only present after grading)
+    feedbacks?: FeedbackEntry[] | null;
+    // Hints directly on message (practice mode only)
+    hints?: HintEntry[] | null;
   }>;
 
-  // Explicit streaming content type
+  // Streaming content (optimistic - from websocket)
   streaming_content?: Map<string, string>;
 
-  // Explicit optimistic messages type
+  // Optimistic messages (from websocket before server confirms)
   optimistic_messages?: Map<
     string,
     {
       id: string;
       type: "query" | "response";
-      content: string;
       created_at: string;
       completed: boolean;
-      persona_id?: string | null;
       contents?: ContentEntry[] | null;
+      feedbacks?: FeedbackEntry[] | null;
+      hints?: HintEntry[] | null;
     }
   >;
-
-  // Explicit persona type - self-contained
-  personas?: Array<{
-    id: string;
-    name: string;
-    icon: string | null;
-    color: string | null;
-  }>;
-
-  // Explicit scenario type - self-contained
-  scenario?: {
-    persona_name?: string | null;
-    persona_icon?: string | null;
-    persona_color?: string | null;
-  } | null;
 
   // Explicit chat type - self-contained
   current_chat?: {
@@ -98,30 +104,16 @@ export interface MessagesViewProps {
     completed?: boolean | null;
   } | null;
 
-  // Explicit hints type - self-contained
-  current_chat_hints?: Array<{
-    message_id: string;
-    hints: Array<{
-      simulation_message_id: string;
-      hint: string;
-      idx: number;
-      created_at: string;
-    }>;
-  }>;
+  // IDs of messages with newly generated hints (for highlight indicator)
   new_hint_message_ids?: Array<string>;
 
   // Callbacks
-  send_message: (message: string, isRetry?: boolean) => void;
+  send_message: (message: string) => void;
+  retry_message?: (message_id: string) => void;
   is_sending_message: boolean;
   is_active: boolean;
 
-  // Explicit simulation type - self-contained
-  simulation?: {
-    time_limit?: number | null;
-    practice_simulation?: boolean | null;
-  } | null;
-
-  // Explicit background image type
+  // Explicit background image type (pre-computed URL or upload_id)
   background_image?: string | null;
 
   // Standard props (like resource components)
@@ -148,35 +140,44 @@ const normalizeMessageContent = (content: string): string => {
   return content.trim().toLowerCase();
 };
 
+// Component to display feedback (strength or improvement)
+function FeedbackDisplay({ feedback }: { feedback: FeedbackEntry }) {
+  const isStrength = feedback.type === "strength";
+  return (
+    <div
+      className={cn(
+        "mb-2 rounded-lg border p-3",
+        isStrength
+          ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
+          : "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400"
+      )}
+    >
+      <div className="text-sm font-semibold mb-1">{feedback.name}</div>
+      <div className="text-sm">{feedback.description}</div>
+    </div>
+  );
+}
+
 export function MessagesView({
   messages: propMessages,
   streaming_content = new Map(),
   optimistic_messages = new Map(),
-  personas = [],
-  scenario,
   current_chat,
-  current_chat_hints = [],
   new_hint_message_ids,
   send_message,
+  retry_message,
   is_sending_message,
   is_active,
-  simulation,
   background_image,
   disabled = false,
   is_attempt_owner = true,
   chat_id,
 }: MessagesViewProps) {
-  const router = useRouter();
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevChatIdRef = useRef<string | null>(null);
   const targetChatId = chat_id || current_chat?.id;
-
-  // Create persona lookup map
-  const personaMap = useMemo(() => {
-    return new Map(personas.map((p) => [p.id, p]));
-  }, [personas]);
 
   // State for hints modal
   const [selectedHintMessageId, setSelectedHintMessageId] = useState<
@@ -190,6 +191,11 @@ export function MessagesView({
     if (!new_hint_message_ids) return;
     setMessagesWithNewHints(new Set(new_hint_message_ids));
   }, [new_hint_message_ids]);
+
+  // Helper to get first content text from a message
+  const getFirstContentText = (msg: { contents?: ContentEntry[] | null }): string => {
+    return msg.contents?.[0]?.content || "";
+  };
 
   // Merge messages from props with optimistic messages and streaming content
   const messages = useMemo(() => {
@@ -207,25 +213,33 @@ export function MessagesView({
       }
     });
 
-    // Apply streaming content
+    // Apply streaming content to first content entry
     const messagesWithStreaming = Array.from(messageMap.values()).map((msg) => {
       const streaming = streaming_content.get(msg.id);
+      const firstContentText = getFirstContentText(msg);
       if (
         streaming !== undefined &&
-        (!msg.completed || streaming.length > msg.content.length)
+        (!msg.completed || streaming.length > firstContentText.length)
       ) {
-        return { ...msg, content: streaming };
+        // Update first content entry with streaming content
+        const updatedContents = msg.contents ? [...msg.contents] : [{ content: "" }];
+        if (updatedContents.length > 0) {
+          updatedContents[0] = { ...updatedContents[0], content: streaming };
+        } else {
+          updatedContents.push({ content: streaming });
+        }
+        return { ...msg, contents: updatedContents };
       }
       return msg;
     });
 
-    // Deduplicate user messages by content
+    // Deduplicate user messages by first content text
     const deduplicatedMessages: typeof messagesWithStreaming = [];
     const seenContent = new Map<string, string>();
 
     for (const msg of messagesWithStreaming) {
       if (msg.type === "query") {
-        const normalizedContent = normalizeMessageContent(msg.content);
+        const normalizedContent = normalizeMessageContent(getFirstContentText(msg));
         const existingMessageId = seenContent.get(normalizedContent);
 
         if (existingMessageId) {
@@ -297,21 +311,6 @@ export function MessagesView({
     const tempId = `optimistic-user-${Date.now()}-${Math.random()}`;
     // Note: In real implementation, this would update optimistic_messages via callback
     send_message(prompt);
-  };
-
-  const handleRetry = (errorMessageIndex: number) => {
-    const sortedMessagesForRetry = messages.sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    const previousUserMessage = sortedMessagesForRetry
-      .slice(0, errorMessageIndex)
-      .reverse()
-      .find((msg) => msg.type === "query");
-
-    if (previousUserMessage) {
-      send_message(previousUserMessage.content, true);
-    }
   };
 
   const scrollToBottom = () => {
@@ -419,279 +418,301 @@ export function MessagesView({
                 </div>
               ) : (
                 sortedMessages.map((message) => {
-                  // Render user messages (query type)
-                  if (message.type === "query") {
-                    const isOptimisticVoiceMessage =
-                      message.id.startsWith("optimistic-user-voice-") &&
-                      message.content === "";
+                  // Get contents array (or empty if none)
+                  const contents = message.contents || [];
+                  const isQuery = message.type === "query";
+                  const isOptimisticVoiceMessage =
+                    message.id.startsWith("optimistic-user-voice-") &&
+                    contents.length === 0;
 
+                  // Hints directly on message (shown if present)
+                  const hints = message.hints || [];
+                  const hasHints = hints.length > 0;
+                  const hasNewHints = messagesWithNewHints.has(message.id);
+                  const isHintSelected = selectedHintMessageId === message.id;
+
+                  // Feedbacks for graded messages (collect highlights/replaces)
+                  const feedbacks = message.feedbacks || [];
+                  const hasFeedbacks = feedbacks.length > 0;
+                  const allHighlights = feedbacks.flatMap((f) => f.highlights || []);
+                  const allReplaces = feedbacks.flatMap((f) => f.replaces || []);
+
+                  // Handle empty/loading states at message level
+                  if (contents.length === 0) {
+                    if (isOptimisticVoiceMessage) {
+                      // Voice message being transcribed
+                      return (
+                        <div key={message.id} className="flex justify-end mb-3">
+                          <div className="max-w-[80%]">
+                            <div className="bg-primary text-primary-foreground rounded-lg p-3 flex items-center justify-center">
+                              <LoadingDots />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (!message.completed) {
+                      // Streaming response not yet started
+                      return (
+                        <div key={message.id} className="flex justify-start mb-3">
+                          <div className="max-w-[80%]">
+                            <div className="bg-muted rounded-lg p-3 flex items-center justify-center">
+                              <LoadingDots />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Completed but empty
                     return (
-                      <div key={message.id} className="flex justify-end mb-3">
-                        <div className="max-w-[80%] flex flex-col items-end gap-2">
-                          <div className="flex items-stretch gap-2 w-full">
-                            <div
-                              className={`bg-primary text-primary-foreground rounded-lg p-3 flex-1 ${
-                                isOptimisticVoiceMessage
-                                  ? "flex items-center justify-center"
-                                  : ""
-                              }`}
-                              data-testid={`message-${message.id}`}
-                              data-message-id={message.id}
-                              data-message-type="user"
-                            >
-                              {isOptimisticVoiceMessage ? (
-                                <LoadingDots />
-                              ) : (
-                                <Markdown>{message.content}</Markdown>
-                              )}
-                            </div>
-                            <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="default"
-                                    size="sm"
-                                    aria-label="You"
-                                    className="flex-1 p-0 rounded-md"
-                                    tabIndex={-1}
-                                  >
-                                    <User className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>You</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <div className="flex-1" />
-                            </div>
+                      <div key={message.id} className={`flex ${isQuery ? "justify-end" : "justify-start"} mb-3`}>
+                        <div className="max-w-[80%]">
+                          <div className="bg-muted rounded-lg p-3">
+                            <span className="text-gray-500 italic">No content</span>
                           </div>
                         </div>
                       </div>
                     );
                   }
 
-                  // Render assistant messages (response type)
-                  if (message.type === "response") {
-                    const hintsForMessage =
-                      current_chat_hints.find(
-                        (h) => h.message_id === message.id
-                      )?.hints || [];
-                    const shouldShowHintsButton =
-                      simulation?.practice_simulation &&
-                      hintsForMessage.length > 0;
-                    const containerHeightClass = shouldShowHintsButton
-                      ? "h-[52px] min-h-[52px] max-h-[52px]"
-                      : "h-[26px] min-h-[26px] max-h-[26px]";
-                    const hasNewHints = messagesWithNewHints.has(message.id);
-                    const isSelected = selectedHintMessageId === message.id;
+                  // Render each content entry with its own display info
+                  return (
+                    <div key={message.id} className="space-y-2 mb-3">
+                      {contents.map((contentEntry, contentIndex) => {
+                        const displayName = contentEntry.name || (isQuery ? "You" : "Assistant");
+                        const displayColor = contentEntry.color;
+                        const displayIcon = contentEntry.icon;
+                        const contentText = contentEntry.content || "";
 
-                    // Get display data: prefer contents (pre-computed by backend), fall back to personaMap
-                    const firstContent = message.contents?.[0];
-                    const messagePersona = message.persona_id
-                      ? personaMap.get(message.persona_id)
-                      : null;
+                        // Get icon component
+                        const IconComponent = displayIcon
+                          ? getPersonaIconComponent(displayIcon) || (isQuery ? User : MessageSquare)
+                          : isQuery ? User : MessageSquare;
 
-                    // Use contents if available (has name/color/icon from backend)
-                    const personaName = firstContent?.name || messagePersona?.name || "Assistant";
-                    const personaIcon = firstContent?.icon || messagePersona?.icon;
-                    const personaColor = firstContent?.color || messagePersona?.color;
+                        // Generate gradient style if color is available
+                        const buttonStyle = displayColor
+                          ? { background: generateGradientFromHex(displayColor) }
+                          : undefined;
 
-                    // Get icon component
-                    const IconComponent = personaIcon
-                      ? getPersonaIconComponent(personaIcon) || MessageSquare
-                      : MessageSquare;
+                        // Show hints button on last content entry of response messages
+                        const isLastContent = contentIndex === contents.length - 1;
+                        const showHintsButton = !isQuery && isLastContent && hasHints;
+                        const containerHeightClass = showHintsButton
+                          ? "h-[52px] min-h-[52px] max-h-[52px]"
+                          : "h-[26px] min-h-[26px] max-h-[26px]";
 
-                    // Generate gradient style if persona color is available
-                    const buttonStyle = personaColor
-                      ? {
-                          background: generateGradientFromHex(personaColor),
-                        }
-                      : undefined;
+                        // Check for error content
+                        const isError = message.completed && contentText.startsWith("Error:");
 
-                    return (
-                      <div key={message.id} className="flex justify-start mb-3">
-                        <div className="max-w-[80%] flex flex-col gap-2">
-                          <div className="flex items-stretch gap-2">
-                            {/* Left-aligned stacked controls */}
-                            <div
-                              className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}
-                            >
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    aria-label={personaName}
-                                    className="flex-1 p-0 rounded-md"
-                                    style={buttonStyle}
-                                    tabIndex={-1}
-                                  >
-                                    <IconComponent className="h-4 w-4 text-white" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{personaName}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              {shouldShowHintsButton ? (
-                                <Popover
-                                  open={isSelected}
-                                  onOpenChange={(open) => {
-                                    if (open) {
-                                      setSelectedHintMessageId(message.id);
-                                      if (hasNewHints) {
-                                        setMessagesWithNewHints((prev) => {
-                                          const newSet = new Set(prev);
-                                          newSet.delete(message.id);
-                                          return newSet;
-                                        });
-                                      }
-                                    } else {
-                                      setSelectedHintMessageId(null);
-                                    }
-                                  }}
-                                  modal={false}
-                                >
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          variant={
-                                            isSelected ? "default" : "outline"
-                                          }
-                                          size="sm"
-                                          aria-label="Show hints"
-                                          className="flex-1 p-0 rounded-md relative overflow-visible"
-                                        >
-                                          <Lightbulb className="h-4 w-4" />
-                                          {hasNewHints && (
-                                            <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-                                          )}
-                                        </Button>
-                                      </PopoverTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Show hints</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                  <PopoverContent
-                                    className="w-96 p-4"
-                                    align="start"
-                                    side="top"
-                                    sideOffset={35}
-                                  >
-                                    <HintDisplay
-                                      hints={hintsForMessage}
-                                      onClose={() =>
-                                        setSelectedHintMessageId(null)
-                                      }
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                              ) : null}
-                            </div>
-                            <div className="relative group p-2 -m-2 flex-1">
-                              {/* Show loading state for empty/incomplete messages */}
-                              {!message.completed && message.content === "" ? (
-                                <div
-                                  className="bg-muted rounded-lg p-3 flex items-center justify-center"
-                                  data-testid={`message-${message.id}`}
-                                  data-message-id={message.id}
-                                  data-message-type="assistant"
-                                >
-                                  <LoadingDots />
-                                </div>
-                              ) : message.completed &&
-                                message.content === "" ? (
-                                <div
-                                  className="bg-muted rounded-lg p-3"
-                                  data-testid={`message-${message.id}`}
-                                  data-message-id={message.id}
-                                  data-message-type="assistant"
-                                >
-                                  <span className="text-gray-500 italic">
-                                    No response
-                                  </span>
-                                </div>
-                              ) : message.completed &&
-                                message.content.startsWith("Error:") ? (
-                                <div
-                                  className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 relative"
-                                  data-testid={`message-${message.id}`}
-                                  data-message-id={message.id}
-                                  data-message-type="assistant"
-                                >
-                                  <div className="text-destructive pr-12">
-                                    <Markdown>{message.content}</Markdown>
+                        if (isQuery) {
+                          // User message - right aligned
+                          return (
+                            <div key={`${message.id}-${contentIndex}`} className="flex justify-end">
+                              <div className="max-w-[80%] flex flex-col items-end gap-2">
+                                {/* Show feedbacks above message (only on first content) */}
+                                {contentIndex === 0 && hasFeedbacks && (
+                                  <div className="w-full space-y-2">
+                                    {feedbacks.map((fb) => (
+                                      <FeedbackDisplay key={fb.id} feedback={fb} />
+                                    ))}
                                   </div>
-                                  <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <ReportProblem
-                                          createFeedback={createFeedback}
-                                          initialType="bug"
-                                          initialMessage={`Error in simulation chat: ${message.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${message.id}`}
-                                        >
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 w-8 p-0"
-                                          >
-                                            <AlertCircle className="h-4 w-4" />
-                                          </Button>
-                                        </ReportProblem>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Report this error</p>
-                                      </TooltipContent>
-                                    </Tooltip>
+                                )}
+                                <div className="flex items-stretch gap-2 w-full">
+                                  <div
+                                    className="bg-primary text-primary-foreground rounded-lg p-3 flex-1"
+                                    data-testid={`message-${message.id}-content-${contentIndex}`}
+                                    data-message-type="user"
+                                  >
+                                    {hasFeedbacks ? (
+                                      <MessageContentAdapter
+                                        content={contentText}
+                                        replaces={allReplaces}
+                                        highlights={allHighlights}
+                                      />
+                                    ) : (
+                                      <Markdown>{contentText}</Markdown>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-hidden">
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
-                                          variant="outline"
+                                          variant="default"
                                           size="sm"
-                                          onClick={() =>
-                                            handleRetry(
-                                              sortedMessages.indexOf(message)
-                                            )
-                                          }
-                                          className="h-8 w-8 p-0"
-                                          disabled={
-                                            current_chat?.completed ||
-                                            is_sending_message ||
-                                            (simulation?.time_limit
-                                              ? !is_active
-                                              : false) ||
-                                            disabled
-                                          }
+                                          aria-label={displayName}
+                                          className="flex-1 p-0 rounded-md"
+                                          style={buttonStyle}
+                                          tabIndex={-1}
                                         >
-                                          <RotateCcw className="h-4 w-4" />
+                                          <IconComponent className="h-4 w-4" />
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Retry this message</p>
+                                        <p>{displayName}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </div>
                                 </div>
-                              ) : (
-                                <div
-                                  className="bg-muted rounded-lg p-3 relative"
-                                  data-testid={`message-${message.id}`}
-                                  data-message-id={message.id}
-                                  data-message-type="assistant"
-                                >
-                                  <Markdown>{message.content}</Markdown>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Assistant message - left aligned
+                        return (
+                          <div key={`${message.id}-${contentIndex}`} className="flex justify-start">
+                            <div className="max-w-[80%] flex flex-col gap-2">
+                              {/* Show feedbacks above message (only on first content) */}
+                              {contentIndex === 0 && hasFeedbacks && (
+                                <div className="space-y-2">
+                                  {feedbacks.map((fb) => (
+                                    <FeedbackDisplay key={fb.id} feedback={fb} />
+                                  ))}
                                 </div>
                               )}
+                              <div className="flex items-stretch gap-2">
+                                {/* Left-aligned stacked controls */}
+                                <div className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        aria-label={displayName}
+                                        className="flex-1 p-0 rounded-md"
+                                        style={buttonStyle}
+                                        tabIndex={-1}
+                                      >
+                                        <IconComponent className="h-4 w-4 text-white" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{displayName}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  {showHintsButton && (
+                                    <Popover
+                                      open={isHintSelected}
+                                      onOpenChange={(open) => {
+                                        if (open) {
+                                          setSelectedHintMessageId(message.id);
+                                          if (hasNewHints) {
+                                            setMessagesWithNewHints((prev) => {
+                                              const newSet = new Set(prev);
+                                              newSet.delete(message.id);
+                                              return newSet;
+                                            });
+                                          }
+                                        } else {
+                                          setSelectedHintMessageId(null);
+                                        }
+                                      }}
+                                      modal={false}
+                                    >
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <PopoverTrigger asChild>
+                                            <Button
+                                              variant={isHintSelected ? "default" : "outline"}
+                                              size="sm"
+                                              aria-label="Show hints"
+                                              className="flex-1 p-0 rounded-md relative overflow-visible"
+                                            >
+                                              <Lightbulb className="h-4 w-4" />
+                                              {hasNewHints && (
+                                                <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                                              )}
+                                            </Button>
+                                          </PopoverTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Show hints</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <PopoverContent
+                                        className="w-96 p-4"
+                                        align="start"
+                                        side="top"
+                                        sideOffset={35}
+                                      >
+                                        <HintDisplay
+                                          hints={hints}
+                                          onClose={() => setSelectedHintMessageId(null)}
+                                        />
+                                      </PopoverContent>
+                                    </Popover>
+                                  )}
+                                </div>
+                                <div className="relative group p-2 -m-2 flex-1">
+                                  {isError ? (
+                                    <div
+                                      className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 relative"
+                                      data-testid={`message-${message.id}-content-${contentIndex}`}
+                                      data-message-type="assistant"
+                                    >
+                                      <div className="text-destructive pr-12">
+                                        <Markdown>{contentText}</Markdown>
+                                      </div>
+                                      <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                        <Tooltip>
+                                          <TooltipTrigger>
+                                            <ReportProblem
+                                              createFeedback={createFeedback}
+                                              initialType="bug"
+                                              initialMessage={`Error in simulation chat: ${contentText}\n\nChat ID: ${targetChatId}\nMessage ID: ${message.id}`}
+                                            >
+                                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                                <AlertCircle className="h-4 w-4" />
+                                              </Button>
+                                            </ReportProblem>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Report this error</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => retry_message?.(message.id)}
+                                              className="h-8 w-8 p-0"
+                                              disabled={!retry_message || current_chat?.completed || is_sending_message || disabled}
+                                            >
+                                              <RotateCcw className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Retry this message</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="bg-muted rounded-lg p-3"
+                                      data-testid={`message-${message.id}-content-${contentIndex}`}
+                                      data-message-type="assistant"
+                                    >
+                                      {hasFeedbacks ? (
+                                        <MessageContentAdapter
+                                          content={contentText}
+                                          replaces={allReplaces}
+                                          highlights={allHighlights}
+                                        />
+                                      ) : (
+                                        <Markdown>{contentText}</Markdown>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return null;
+                        );
+                      })}
+                    </div>
+                  );
                 })
               )}
               <div ref={messagesEndRef} />

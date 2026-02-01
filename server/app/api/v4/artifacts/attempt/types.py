@@ -335,7 +335,7 @@ class ReplacementEntry(BaseModel):
     """Replacement entry within an improvement."""
 
     section: str | None = None
-    replace_text: str | None = None
+    replace: str | None = None  # The replacement text
     idx: int | None = None
 
 
@@ -349,34 +349,32 @@ class HintEntry(BaseModel):
 class ContentEntry(BaseModel):
     """Content entry with computed display fields.
 
-    Raw persona/profile data is transformed by Python business logic.
-    Only computed fields (name, color, icon) are exposed to client.
+    Each content has its own display info (name/icon/color) computed from
+    persona metadata on the server. Client renders each content with its
+    own persona styling.
     """
 
-    id: UUID
     content: str | None = None
-    name: str | None = None
-    color: str | None = None
-    icon: str | None = None
+    name: str | None = None    # "You" for user messages, persona name for responses
+    color: str | None = None   # Persona color (null for user messages)
+    icon: str | None = None    # "User" for user messages, persona icon for responses
     created_at: str | None = None
 
 
-class StrengthEntry(BaseModel):
-    """Strength feedback with highlights (message_id implied by parent)."""
+class MessageFeedbackEntry(BaseModel):
+    """Unified feedback entry for messages (strength or improvement).
 
-    id: UUID  # Use message_id for client compatibility
+    Combines strengths and improvements into a single type with a `type` field.
+    - type="strength": has highlights (sections to highlight as good)
+    - type="improvement": has replaces (sections to replace with suggestions)
+    """
+
+    id: UUID
     name: str | None = None
     description: str | None = None
-    highlights: list[HighlightEntry] | None = None
-
-
-class ImprovementEntry(BaseModel):
-    """Improvement feedback with replacements (message_id implied by parent)."""
-
-    id: UUID  # Use message_id for client compatibility
-    name: str | None = None
-    description: str | None = None
-    replacements: list[ReplacementEntry] | None = None
+    type: str | None = None  # "strength" | "improvement"
+    highlights: list[HighlightEntry] | None = None  # For strengths
+    replaces: list[ReplacementEntry] | None = None  # For improvements
 
 
 class FeedbackEntry(BaseModel):
@@ -393,20 +391,21 @@ class FeedbackEntry(BaseModel):
 
 
 class MessageData(BaseModel):
-    """Message with content and feedback data.
+    """Message with contents, feedbacks, and hints.
 
-    The hints field is only populated when practice=True.
+    - contents: Array of content entries with display info (name/icon/color)
+    - feedbacks: Unified strengths/improvements (only present after grading)
+    - hints: Practice mode hints (only present in practice mode)
     """
 
     id: UUID
-    content: str | None = None  # First content for backward compatibility
     type: str | None = None  # 'query' | 'response'
     created_at: str | None = None
     completed: bool | None = None
-    # Contents array with persona info
+    # Contents array with display info (name/icon/color per content)
     contents: list[ContentEntry] | None = None
-    strengths: list[StrengthEntry] | None = None
-    improvements: list[ImprovementEntry] | None = None
+    # Unified feedbacks (strengths + improvements with type field)
+    feedbacks: list[MessageFeedbackEntry] | None = None
     # Practice mode only
     hints: list[HintEntry] | None = None
 
