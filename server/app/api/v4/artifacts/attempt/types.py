@@ -140,38 +140,24 @@ class QuizData(BaseModel):
 
 
 # -----------------------------------------------------------------------------
-# Grading state types
+# Grading state types (Record format - server sends what client needs)
 # -----------------------------------------------------------------------------
 
 
-class StandardAchievement(BaseModel):
-    """Achievement for a standard."""
-
-    standard_id: UUID | None = None
-    achieved: bool | None = None
-
-
-class StandardPass(BaseModel):
-    """Pass status for a standard."""
-
-    standard_id: UUID | None = None
-    passed: bool | None = None
-
-
-class StandardFeedback(BaseModel):
-    """Feedback for a standard."""
-
-    standard_id: UUID | None = None
-    feedback: str | None = None
-
-
 class GradingStateData(BaseModel):
-    """Grading state for a chat."""
+    """Grading state for a chat in Record format.
 
-    achieved_standards: list[StandardAchievement] | None = None
-    passed_standards: list[StandardPass] | None = None
+    All fields are Records keyed by standard_id strings.
+    This is the exact format the client needs - no transformation required.
+    """
+
+    # standard_id -> achieved (boolean)
+    achieved_standards: dict[str, bool] | None = None
+    # standard_id -> passed (boolean)
+    passed_standards: dict[str, bool] | None = None
     grade_description: str | None = None
-    feedback_by_standard_id: list[StandardFeedback] | None = None
+    # standard_id -> feedback (string)
+    feedback_by_standard_id: dict[str, str] | None = None
 
 
 # -----------------------------------------------------------------------------
@@ -206,42 +192,40 @@ class DynamicRubricData(BaseModel):
 
 
 # -----------------------------------------------------------------------------
-# Rubric structure types
+# Rubric structure types (Record format - server sends what client needs)
 # -----------------------------------------------------------------------------
 
 
-class StandardGroupStandards(BaseModel):
-    """Standard group with standard IDs."""
+class StandardGroupMeta(BaseModel):
+    """Standard group metadata for rubric display."""
 
-    standard_group_id: UUID | None = None
-    standard_ids: list[str] | None = None
-
-
-class StandardGroupMapping(BaseModel):
-    """Standard group mapping entry."""
-
-    standard_group_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     points: float | None = None
     pass_points: float | None = None
 
 
-class StandardMapping(BaseModel):
-    """Standard mapping entry."""
+class StandardMeta(BaseModel):
+    """Standard metadata for rubric display."""
 
-    standard_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     points: float | None = None
 
 
 class RubricStructureData(BaseModel):
-    """Rubric structure data."""
+    """Rubric structure data in Record format.
 
-    standard_groups: list[StandardGroupStandards] | None = None
-    standard_groups_mapping: list[StandardGroupMapping] | None = None
-    standards_mapping: list[StandardMapping] | None = None
+    All fields are Records keyed by standard_group_id or standard_id strings.
+    This is the exact format the client needs - no transformation required.
+    """
+
+    # standard_group_id -> list of standard_id strings
+    standard_groups: dict[str, list[str]] | None = None
+    # standard_group_id -> metadata
+    standard_groups_mapping: dict[str, StandardGroupMeta] | None = None
+    # standard_id -> metadata
+    standards_mapping: dict[str, StandardMeta] | None = None
 
 
 # -----------------------------------------------------------------------------

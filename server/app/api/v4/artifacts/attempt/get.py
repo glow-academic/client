@@ -57,14 +57,10 @@ from app.api.v4.artifacts.attempt.types import (
     RubricStructureData,
     ScenarioEntry,
     SimulationData,
-    StandardAchievement,
     StandardEntry,
-    StandardFeedback,
     StandardGroupEntry,
-    StandardGroupMapping,
-    StandardGroupStandards,
-    StandardMapping,
-    StandardPass,
+    StandardGroupMeta,
+    StandardMeta,
     TemplateEntry,
     TimerData,
     VideoEntry,
@@ -701,11 +697,14 @@ async def attempt_get(
                     )
 
             # Build grading state - derive achieved/passed from feedbacks + resource_meta
+            # Build grading state in Record format (what client needs)
             grading_state_data: GradingStateData | None = None
             if chat_item.grade or chat_item.feedbacks:
-                # Derive achieved_standards and passed_standards from feedbacks
-                achieved = None
-                passed = None
+                # Build Records for achieved/passed/feedback
+                achieved_dict: dict[str, bool] = {}
+                passed_dict: dict[str, bool] = {}
+                feedback_dict: dict[str, str] = {}
+
                 if chat_item.feedbacks:
                     # Build feedbacks as dicts for the compute functions
                     feedbacks_dicts = [
@@ -716,13 +715,10 @@ async def attempt_get(
                     # Compute achieved standards (any standard with feedback is achieved)
                     achieved_raw = compute_achieved_standards(feedbacks_dicts)
                     if achieved_raw:
-                        achieved = [
-                            StandardAchievement(
-                                standard_id=a.get("standard_id"),
-                                achieved=a.get("achieved"),
-                            )
-                            for a in achieved_raw
-                        ]
+                        for a in achieved_raw:
+                            std_id = a.get("standard_id")
+                            if std_id:
+                                achieved_dict[str(std_id)] = a.get("achieved", False)
 
                     # Compute passed standards (total >= standard_group pass_points)
                     passed_raw = compute_passed_standards(
@@ -731,33 +727,24 @@ async def attempt_get(
                         resource_meta["standards"],
                     )
                     if passed_raw:
-                        passed = [
-                            StandardPass(
-                                standard_id=p.get("standard_id"),
-                                passed=p.get("passed"),
-                            )
-                            for p in passed_raw
-                        ]
+                        for p in passed_raw:
+                            std_id = p.get("standard_id")
+                            if std_id:
+                                passed_dict[str(std_id)] = p.get("passed", False)
+
+                    # feedback_by_standard_id from chats MV feedbacks
+                    for fb in chat_item.feedbacks:
+                        if fb.standard_id and fb.feedback:
+                            feedback_dict[str(fb.standard_id)] = fb.feedback
 
                 # grade_description from chats MV
                 grade_description = chat_item.grade.description if chat_item.grade else None
 
-                # feedback_by_standard_id from chats MV feedbacks
-                fb_by_std = None
-                if chat_item.feedbacks:
-                    fb_by_std = [
-                        StandardFeedback(
-                            standard_id=fb.standard_id,
-                            feedback=fb.feedback,
-                        )
-                        for fb in chat_item.feedbacks
-                    ]
-
                 grading_state_data = GradingStateData(
-                    achieved_standards=achieved,
-                    passed_standards=passed,
+                    achieved_standards=achieved_dict if achieved_dict else None,
+                    passed_standards=passed_dict if passed_dict else None,
                     grade_description=grade_description,
-                    feedback_by_standard_id=fb_by_std,
+                    feedback_by_standard_id=feedback_dict if feedback_dict else None,
                 )
 
             # Build hints by message from messages MV (already in msg.hints)
@@ -1055,56 +1042,45 @@ async def attempt_get(
         # is_active: True if timer has not exceeded
         is_active = not timer.exceeded if timer else True
 
-        # === BUILD RUBRIC STRUCTURE from resource_meta ===
-        # (scenario_documents removed - use chat.documents instead)
+        # === BUILD RUBRIC STRUCTURE in Record format (what client needs) ===
         rubric_structure: RubricStructureData | None = None
         if all_standard_group_ids or all_standard_ids:
-            # Build standard_groups (which standards belong to which group)
-            # from standards metadata (each standard has standard_group_id)
-            sg_to_std_ids: dict[UUID, list[str]] = {}
+            # Build standard_groups dict: group_id -> list of standard_ids
+            standard_groups_dict: dict[str, list[str]] = {}
             for std_id in set(all_standard_ids):
                 std_meta = resource_meta["standards"].get(std_id, {})
                 sg_id = std_meta.get("standard_group_id")
                 if sg_id:
-                    if sg_id not in sg_to_std_ids:
-                        sg_to_std_ids[sg_id] = []
-                    sg_to_std_ids[sg_id].append(str(std_id))
+                    sg_id_str = str(sg_id)
+                    if sg_id_str not in standard_groups_dict:
+                        standard_groups_dict[sg_id_str] = []
+                    standard_groups_dict[sg_id_str].append(str(std_id))
 
-            standard_groups = [
-                StandardGroupStandards(
-                    standard_group_id=sg_id,
-                    standard_ids=std_ids,
+            # Build standard_groups_mapping dict: group_id -> metadata
+            standard_groups_mapping_dict: dict[str, StandardGroupMeta] = {}
+            for sg_id in set(all_standard_group_ids):
+                sg_meta = resource_meta["standard_groups"].get(sg_id, {})
+                standard_groups_mapping_dict[str(sg_id)] = StandardGroupMeta(
+                    name=sg_meta.get("name"),
+                    description=sg_meta.get("description"),
+                    points=sg_meta.get("points"),
+                    pass_points=sg_meta.get("pass_points"),
                 )
-                for sg_id, std_ids in sg_to_std_ids.items()
-            ]
 
-            # Build standard_groups_mapping from resource_meta
-            standard_groups_mapping = [
-                StandardGroupMapping(
-                    standard_group_id=sg_id,
-                    name=resource_meta["standard_groups"].get(sg_id, {}).get("name"),
-                    description=resource_meta["standard_groups"].get(sg_id, {}).get("description"),
-                    points=resource_meta["standard_groups"].get(sg_id, {}).get("points"),
-                    pass_points=resource_meta["standard_groups"].get(sg_id, {}).get("pass_points"),
+            # Build standards_mapping dict: standard_id -> metadata
+            standards_mapping_dict: dict[str, StandardMeta] = {}
+            for std_id in set(all_standard_ids):
+                std_meta = resource_meta["standards"].get(std_id, {})
+                standards_mapping_dict[str(std_id)] = StandardMeta(
+                    name=std_meta.get("name"),
+                    description=std_meta.get("description"),
+                    points=std_meta.get("points"),
                 )
-                for sg_id in set(all_standard_group_ids)
-            ]
-
-            # Build standards_mapping from resource_meta
-            standards_mapping = [
-                StandardMapping(
-                    standard_id=std_id,
-                    name=resource_meta["standards"].get(std_id, {}).get("name"),
-                    description=resource_meta["standards"].get(std_id, {}).get("description"),
-                    points=resource_meta["standards"].get(std_id, {}).get("points"),
-                )
-                for std_id in set(all_standard_ids)
-            ]
 
             rubric_structure = RubricStructureData(
-                standard_groups=standard_groups,
-                standard_groups_mapping=standard_groups_mapping,
-                standards_mapping=standards_mapping,
+                standard_groups=standard_groups_dict if standard_groups_dict else None,
+                standard_groups_mapping=standard_groups_mapping_dict if standard_groups_mapping_dict else None,
+                standards_mapping=standards_mapping_dict if standards_mapping_dict else None,
             )
 
         # === COMPUTE UI CONTROL FLAGS ===

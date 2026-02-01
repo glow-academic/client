@@ -40,20 +40,12 @@ export interface AttemptChatSetupProps {
   attempt_data: any;
 }
 
+// Grading state in Record format (matches server response)
 type OptimisticGradingState = {
-  achieved_standards: Array<{
-    standard_id: string | null;
-    achieved: boolean | null;
-  }> | null;
-  passed_standards: Array<{
-    standard_id: string | null;
-    passed: boolean | null;
-  }> | null;
+  achieved_standards: Record<string, boolean> | null;
+  passed_standards: Record<string, boolean> | null;
   grade_description: string | null;
-  feedback_by_standard_id: Array<{
-    standard_id: string | null;
-    feedback: string | null;
-  }> | null;
+  feedback_by_standard_id: Record<string, string> | null;
 };
 
 type HintsByMessage = {
@@ -292,6 +284,10 @@ export function AttemptChatSetup({
     [attemptData]
   );
   const rubricStructure = attemptData?.rubric_structure || null;
+
+  // Derived state for UI controls
+  const isActive = attemptData?.is_active ?? true;
+  const isAttemptOwner = true; // TODO: Compare attempt.profile_id with current user
 
   useEffect(() => {
     currentChatIdRef.current = currentChat?.id ?? null;
@@ -1106,31 +1102,28 @@ export function AttemptChatSetup({
         data.score !== undefined &&
         rubricStructure
       ) {
-        const standardGroupsMapping =
-          rubricStructure.standard_groups_mapping || [];
-        const standardGroupEntry = standardGroupsMapping.find(
-          (group) => group.name === data.standard_group_name
+        // rubricStructure now uses Record format
+        const standardGroupsMapping = rubricStructure.standard_groups_mapping || {};
+        const standardGroups = rubricStructure.standard_groups || {};
+        const standardsMapping = rubricStructure.standards_mapping || {};
+
+        // Find the group by name
+        const groupEntry = Object.entries(standardGroupsMapping).find(
+          ([, meta]) => meta.name === data.standard_group_name
         );
 
-        if (standardGroupEntry) {
-          const groupId = standardGroupEntry.standard_group_id;
-          const standardGroups = rubricStructure.standard_groups || [];
-          const groupEntry = standardGroups.find(
-            (g) => g.standard_group_id === groupId
-          );
-          const standardIds = groupEntry?.standard_ids || [];
+        if (groupEntry) {
+          const [groupId, groupMeta] = groupEntry;
+          const standardIds = standardGroups[groupId] || [];
 
-          const standardsMapping = rubricStructure.standards_mapping || [];
-          const matchingStandard = standardIds.find((stdId: string | null) => {
-            if (!stdId) return false;
-            const standard = standardsMapping.find(
-              (s) => s.standard_id === stdId
-            );
+          // Find the standard that matches the score
+          const matchingStandard = standardIds.find((stdId: string) => {
+            const standard = standardsMapping[stdId];
             return standard && standard.points === data.score;
           });
 
           if (matchingStandard) {
-            const passPoints = standardGroupEntry.pass_points || 0;
+            const passPoints = groupMeta.pass_points || 0;
             const isPassed = (data.score || 0) >= passPoints;
 
             setOptimisticGradingStates((prev) => {
@@ -1141,59 +1134,26 @@ export function AttemptChatSetup({
                 grade_description: null,
               };
 
-              const achievedMap = new Map<string, boolean>();
-              const passedMap = new Map<string, boolean>();
-              const feedbackMap = new Map<string, string>();
-
-              if (currentState.achieved_standards) {
-                currentState.achieved_standards.forEach((item) => {
-                  if (item.standard_id) {
-                    achievedMap.set(item.standard_id, item.achieved ?? false);
-                  }
-                });
-              }
-              if (currentState.passed_standards) {
-                currentState.passed_standards.forEach((item) => {
-                  if (item.standard_id) {
-                    passedMap.set(item.standard_id, item.passed ?? false);
-                  }
-                });
-              }
-              if (currentState.feedback_by_standard_id) {
-                currentState.feedback_by_standard_id.forEach((item) => {
-                  if (item.standard_id && item.feedback) {
-                    feedbackMap.set(item.standard_id, item.feedback);
-                  }
-                });
-              }
-
-              achievedMap.set(matchingStandard, true);
-              passedMap.set(matchingStandard, isPassed);
-              if (data.feedback_preview) {
-                feedbackMap.set(matchingStandard, data.feedback_preview);
-              }
+              // Build new Records by spreading existing + adding new entry
+              const newAchieved = {
+                ...(currentState.achieved_standards || {}),
+                [matchingStandard]: true,
+              };
+              const newPassed = {
+                ...(currentState.passed_standards || {}),
+                [matchingStandard]: isPassed,
+              };
+              const newFeedback = {
+                ...(currentState.feedback_by_standard_id || {}),
+                ...(data.feedback_preview ? { [matchingStandard]: data.feedback_preview } : {}),
+              };
 
               return {
                 ...prev,
                 [data.chat_id]: {
-                  achieved_standards: Array.from(achievedMap.entries()).map(
-                    ([standard_id, achieved]) => ({
-                      standard_id,
-                      achieved,
-                    })
-                  ),
-                  passed_standards: Array.from(passedMap.entries()).map(
-                    ([standard_id, passed]) => ({
-                      standard_id,
-                      passed,
-                    })
-                  ),
-                  feedback_by_standard_id: Array.from(
-                    feedbackMap.entries()
-                  ).map(([standard_id, feedback]) => ({
-                    standard_id,
-                    feedback,
-                  })),
+                  achieved_standards: newAchieved,
+                  passed_standards: newPassed,
+                  feedback_by_standard_id: Object.keys(newFeedback).length > 0 ? newFeedback : null,
                   grade_description: currentState.grade_description,
                 },
               };
@@ -1584,17 +1544,20 @@ export function AttemptChatSetup({
       };
       return props;
     } else {
+      // Server sends Records directly - pass through to RubricView
+      const rubricStructure = attemptData?.rubric_structure;
+      const serverGradingState = (currentChat?.id && mergedGradingStates[currentChat.id]) || currentChatData?.grading_state;
+
       const props: RubricViewProps = {
-        rubric_data: {
-          standard_groups: attemptData?.rubric_structure?.standard_groups || [],
-          standard_groups_mapping:
-            attemptData?.rubric_structure?.standard_groups_mapping || [],
-          standards_mapping:
-            attemptData?.rubric_structure?.standards_mapping || [],
-        },
-        grading_state:
-          (currentChat?.id && mergedGradingStates[currentChat.id]) ||
-          currentChatData?.grading_state,
+        standard_groups: rubricStructure?.standard_groups || {},
+        standard_groups_mapping: rubricStructure?.standard_groups_mapping || {},
+        standards_mapping: rubricStructure?.standards_mapping || {},
+        grading_state: serverGradingState ? {
+          achieved_standards: serverGradingState.achieved_standards || {},
+          passed_standards: serverGradingState.passed_standards || {},
+          grade_description: serverGradingState.grade_description ?? undefined,
+          feedback_by_standard_id: serverGradingState.feedback_by_standard_id ?? undefined,
+        } : undefined,
       };
       return props;
     }

@@ -59308,7 +59308,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__training__types__StandardGroupMapping"
+                  "$ref": "#/components/schemas/StandardGroupMapping"
                 },
                 "type": "array"
               },
@@ -59322,7 +59322,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__training__types__StandardMapping"
+                  "$ref": "#/components/schemas/StandardMapping"
                 },
                 "type": "array"
               },
@@ -59584,10 +59584,10 @@
           "achieved_standards": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/StandardAchievement"
+                "additionalProperties": {
+                  "type": "boolean"
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -59598,10 +59598,10 @@
           "passed_standards": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/StandardPass"
+                "additionalProperties": {
+                  "type": "boolean"
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -59623,10 +59623,10 @@
           "feedback_by_standard_id": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/StandardFeedback"
+                "additionalProperties": {
+                  "type": "string"
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -59637,7 +59637,7 @@
         },
         "type": "object",
         "title": "GradingStateData",
-        "description": "Grading state for a chat."
+        "description": "Grading state for a chat in Record format.\n\nAll fields are Records keyed by standard_id strings.\nThis is the exact format the client needs - no transformation required."
       },
       "GroupPositionsApiRequest": {
         "properties": {
@@ -107519,10 +107519,13 @@
           "standard_groups": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/StandardGroupStandards"
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -107533,10 +107536,10 @@
           "standard_groups_mapping": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__attempt__types__StandardGroupMapping"
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/StandardGroupMeta"
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -107547,10 +107550,10 @@
           "standards_mapping": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v4__artifacts__attempt__types__StandardMapping"
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/StandardMeta"
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -107561,7 +107564,7 @@
         },
         "type": "object",
         "title": "RubricStructureData",
-        "description": "Rubric structure data."
+        "description": "Rubric structure data in Record format.\n\nAll fields are Records keyed by standard_group_id or standard_id strings.\nThis is the exact format the client needs - no transformation required."
       },
       "RunPositionsApiRequest": {
         "properties": {
@@ -114428,36 +114431,6 @@
         "type": "object",
         "title": "SlugsApiResponse"
       },
-      "StandardAchievement": {
-        "properties": {
-          "standard_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Id"
-          },
-          "achieved": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Achieved"
-          }
-        },
-        "type": "object",
-        "title": "StandardAchievement",
-        "description": "Achievement for a standard."
-      },
       "StandardEntry": {
         "properties": {
           "standard_id": {
@@ -114521,36 +114494,6 @@
         "type": "object",
         "title": "StandardEntry",
         "description": "Standard entry with resource metadata."
-      },
-      "StandardFeedback": {
-        "properties": {
-          "standard_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Id"
-          },
-          "feedback": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedback"
-          }
-        },
-        "type": "object",
-        "title": "StandardFeedback",
-        "description": "Feedback for a standard."
       },
       "StandardGroupEntry": {
         "properties": {
@@ -114674,38 +114617,115 @@
         "title": "StandardGroupItem",
         "description": "Standard group mapping for sidebar/legend."
       },
-      "StandardGroupStandards": {
+      "StandardGroupMapping": {
         "properties": {
           "standard_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Standard Group Id"
           },
-          "standard_ids": {
+          "name": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Standard Ids"
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
           }
         },
         "type": "object",
-        "title": "StandardGroupStandards",
-        "description": "Standard group with standard IDs."
+        "required": [
+          "standard_group_id"
+        ],
+        "title": "StandardGroupMapping",
+        "description": "Standard group metadata for sidebar/legend."
+      },
+      "StandardGroupMeta": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "title": "StandardGroupMeta",
+        "description": "Standard group metadata for rubric display."
       },
       "StandardGroupsApiRequest": {
         "properties": {
@@ -114842,9 +114862,14 @@
         "title": "StandardItem",
         "description": "Standard mapping for sidebar/legend."
       },
-      "StandardPass": {
+      "StandardMapping": {
         "properties": {
           "standard_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Standard Id"
+          },
+          "standard_group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -114854,23 +114879,88 @@
                 "type": "null"
               }
             ],
-            "title": "Standard Id"
+            "title": "Standard Group Id"
           },
-          "passed": {
+          "name": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Passed"
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
           }
         },
         "type": "object",
-        "title": "StandardPass",
-        "description": "Pass status for a standard."
+        "required": [
+          "standard_id"
+        ],
+        "title": "StandardMapping",
+        "description": "Standard metadata for sidebar/legend."
+      },
+      "StandardMeta": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "title": "StandardMeta",
+        "description": "Standard metadata for rubric display."
       },
       "StrengthItem": {
         "properties": {
@@ -116327,121 +116417,6 @@
         "type": "object",
         "title": "VoicesApiResponse"
       },
-      "app__api__v4__artifacts__attempt__types__StandardGroupMapping": {
-        "properties": {
-          "standard_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points"
-          },
-          "pass_points": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points"
-          }
-        },
-        "type": "object",
-        "title": "StandardGroupMapping",
-        "description": "Standard group mapping entry."
-      },
-      "app__api__v4__artifacts__attempt__types__StandardMapping": {
-        "properties": {
-          "standard_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points"
-          }
-        },
-        "type": "object",
-        "title": "StandardMapping",
-        "description": "Standard mapping entry."
-      },
       "app__api__v4__artifacts__simulation__types__GetSimulationApiRequest": {
         "properties": {
           "simulation_id": {
@@ -117456,125 +117431,6 @@
         ],
         "title": "FilterOption",
         "description": "Filter option for history dropdowns."
-      },
-      "app__api__v4__artifacts__training__types__StandardGroupMapping": {
-        "properties": {
-          "standard_group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Standard Group Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points"
-          },
-          "pass_points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pass Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "standard_group_id"
-        ],
-        "title": "StandardGroupMapping",
-        "description": "Standard group metadata for sidebar/legend."
-      },
-      "app__api__v4__artifacts__training__types__StandardMapping": {
-        "properties": {
-          "standard_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Standard Id"
-          },
-          "standard_group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Group Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "standard_id"
-        ],
-        "title": "StandardMapping",
-        "description": "Standard metadata for sidebar/legend."
       },
       "app__api__v4__resources__simulations__get__GetSimulationApiRequest": {
         "properties": {

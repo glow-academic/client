@@ -13355,9 +13355,9 @@ export interface components {
             /** Items */
             items?: components["schemas"]["TrainingSimulationCard"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["app__api__v4__artifacts__training__types__StandardGroupMapping"][] | null;
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
-            standards?: components["schemas"]["app__api__v4__artifacts__training__types__StandardMapping"][] | null;
+            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /**
          * GetVideoApiRequest
@@ -13431,17 +13431,26 @@ export interface components {
         };
         /**
          * GradingStateData
-         * @description Grading state for a chat.
+         * @description Grading state for a chat in Record format.
+         *
+         *     All fields are Records keyed by standard_id strings.
+         *     This is the exact format the client needs - no transformation required.
          */
         GradingStateData: {
             /** Achieved Standards */
-            achieved_standards?: components["schemas"]["StandardAchievement"][] | null;
+            achieved_standards?: {
+                [key: string]: boolean;
+            } | null;
             /** Passed Standards */
-            passed_standards?: components["schemas"]["StandardPass"][] | null;
+            passed_standards?: {
+                [key: string]: boolean;
+            } | null;
             /** Grade Description */
             grade_description?: string | null;
             /** Feedback By Standard Id */
-            feedback_by_standard_id?: components["schemas"]["StandardFeedback"][] | null;
+            feedback_by_standard_id?: {
+                [key: string]: string;
+            } | null;
         };
         /** GroupPositionsApiRequest */
         GroupPositionsApiRequest: {
@@ -22816,15 +22825,24 @@ export interface components {
         };
         /**
          * RubricStructureData
-         * @description Rubric structure data.
+         * @description Rubric structure data in Record format.
+         *
+         *     All fields are Records keyed by standard_group_id or standard_id strings.
+         *     This is the exact format the client needs - no transformation required.
          */
         RubricStructureData: {
             /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupStandards"][] | null;
+            standard_groups?: {
+                [key: string]: string[];
+            } | null;
             /** Standard Groups Mapping */
-            standard_groups_mapping?: components["schemas"]["app__api__v4__artifacts__attempt__types__StandardGroupMapping"][] | null;
+            standard_groups_mapping?: {
+                [key: string]: components["schemas"]["StandardGroupMeta"];
+            } | null;
             /** Standards Mapping */
-            standards_mapping?: components["schemas"]["app__api__v4__artifacts__attempt__types__StandardMapping"][] | null;
+            standards_mapping?: {
+                [key: string]: components["schemas"]["StandardMeta"];
+            } | null;
         };
         /** RunPositionsApiRequest */
         RunPositionsApiRequest: {
@@ -24681,16 +24699,6 @@ export interface components {
             slugs_id?: string | null;
         };
         /**
-         * StandardAchievement
-         * @description Achievement for a standard.
-         */
-        StandardAchievement: {
-            /** Standard Id */
-            standard_id?: string | null;
-            /** Achieved */
-            achieved?: boolean | null;
-        };
-        /**
          * StandardEntry
          * @description Standard entry with resource metadata.
          */
@@ -24705,16 +24713,6 @@ export interface components {
             description?: string | null;
             /** Points */
             points?: number | null;
-        };
-        /**
-         * StandardFeedback
-         * @description Feedback for a standard.
-         */
-        StandardFeedback: {
-            /** Standard Id */
-            standard_id?: string | null;
-            /** Feedback */
-            feedback?: string | null;
         };
         /**
          * StandardGroupEntry
@@ -24752,14 +24750,37 @@ export interface components {
             pass_points?: number | null;
         };
         /**
-         * StandardGroupStandards
-         * @description Standard group with standard IDs.
+         * StandardGroupMapping
+         * @description Standard group metadata for sidebar/legend.
          */
-        StandardGroupStandards: {
-            /** Standard Group Id */
-            standard_group_id?: string | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
+        StandardGroupMapping: {
+            /**
+             * Standard Group Id
+             * Format: uuid
+             */
+            standard_group_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
+         * StandardGroupMeta
+         * @description Standard group metadata for rubric display.
+         */
+        StandardGroupMeta: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
         };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
@@ -24814,14 +24835,35 @@ export interface components {
             points?: number | null;
         };
         /**
-         * StandardPass
-         * @description Pass status for a standard.
+         * StandardMapping
+         * @description Standard metadata for sidebar/legend.
          */
-        StandardPass: {
-            /** Standard Id */
-            standard_id?: string | null;
-            /** Passed */
-            passed?: boolean | null;
+        StandardMapping: {
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+        };
+        /**
+         * StandardMeta
+         * @description Standard metadata for rubric display.
+         */
+        StandardMeta: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
         };
         /**
          * StrengthItem
@@ -25281,36 +25323,6 @@ export interface components {
             voices_id?: string | null;
         };
         /**
-         * StandardGroupMapping
-         * @description Standard group mapping entry.
-         */
-        app__api__v4__artifacts__attempt__types__StandardGroupMapping: {
-            /** Standard Group Id */
-            standard_group_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-        };
-        /**
-         * StandardMapping
-         * @description Standard mapping entry.
-         */
-        app__api__v4__artifacts__attempt__types__StandardMapping: {
-            /** Standard Id */
-            standard_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
-        };
-        /**
          * GetSimulationApiRequest
          * @description Request for getting a single simulation.
          */
@@ -25483,44 +25495,6 @@ export interface components {
             label?: string | null;
             /** Count */
             count?: number | null;
-        };
-        /**
-         * StandardGroupMapping
-         * @description Standard group metadata for sidebar/legend.
-         */
-        app__api__v4__artifacts__training__types__StandardGroupMapping: {
-            /**
-             * Standard Group Id
-             * Format: uuid
-             */
-            standard_group_id: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-        };
-        /**
-         * StandardMapping
-         * @description Standard metadata for sidebar/legend.
-         */
-        app__api__v4__artifacts__training__types__StandardMapping: {
-            /**
-             * Standard Id
-             * Format: uuid
-             */
-            standard_id: string;
-            /** Standard Group Id */
-            standard_group_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
         };
         /**
          * GetSimulationApiRequest
