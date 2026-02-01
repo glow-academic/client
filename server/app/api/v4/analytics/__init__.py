@@ -12,7 +12,6 @@ from app.api.v4.analytics.practice import router as practice_router
 from app.api.v4.analytics.pricing import router as pricing_router
 from app.api.v4.analytics.refresh import router as refresh_router
 from app.api.v4.analytics.reports import router as reports_router
-from app.api.v4.analytics.NEW import router as new_router
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -26,4 +25,3 @@ router.include_router(pricing_router)
 router.include_router(benchmark_router)
 router.include_router(health_router)
 router.include_router(refresh_router)
-router.include_router(new_router)

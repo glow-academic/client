@@ -9894,6 +9894,699 @@
         ]
       }
     },
+    "/api/v4/home/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ],
+        "summary": "Home Get",
+        "description": "Get home overview with simulation cards.\n\nUses simulation overview view internal handler for data.\nPython handles only business logic (status, pass_pct, completion_pct, cohort formatting).",
+        "operationId": "home_get_api_v4_home_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHomeOverviewNewApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHomeOverviewNewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/home/list": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ],
+        "summary": "Home List",
+        "description": "Get paginated home history with attempts.\n\nUses simulation history view internal handler for data.\nPython handles only business logic (score_status, show_view, show_continue, pass_pct).",
+        "operationId": "home_list_api_v4_home_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHomeHistoryNewClientRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHomeHistoryNewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/home/refresh": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ],
+        "summary": "Home Refresh",
+        "description": "Refresh all home section materialized views.\n\nUses SQL function that refreshes MVs in dependency order:\n1. mv_home_chat_facts (base fact table)\n2. mv_home_simulation_status (depends on chat_facts)\n3. mv_home_attempt_history (depends on chat_facts)\n4. mv_home_certificate_status (depends on chat_facts)",
+        "operationId": "home_refresh_api_v4_home_refresh_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshHomeMvsNewApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshHomeMvsNewApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/home/attempt": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ],
+        "summary": "Home Attempt Detail",
+        "description": "Get home attempt detail with parallel MV fetching.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
+        "operationId": "home_attempt_detail_api_v4_home_attempt_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAttemptDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAttemptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "home"
+        ]
+      }
+    },
+    "/api/v4/practice/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "practice"
+        ],
+        "summary": "Practice Get",
+        "description": "Get practice overview with simulation cards.\n\nUses simulation overview view internal handler for data.\nPython handles only business logic (status, pass_pct, cohort formatting).",
+        "operationId": "practice_get_api_v4_practice_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPracticeOverviewNewClientRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPracticeOverviewNewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "practice"
+        ]
+      }
+    },
+    "/api/v4/practice/list": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "practice"
+        ],
+        "summary": "Practice List",
+        "description": "Get paginated practice history with attempts.\n\nUses simulation history view internal handler for data.\nPython handles only business logic (score_status, show_view, show_continue, pass_pct).",
+        "operationId": "practice_list_api_v4_practice_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPracticeHistoryNewClientRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPracticeHistoryNewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "practice"
+        ]
+      }
+    },
+    "/api/v4/practice/attempt": {
+      "post": {
+        "tags": [
+          "v4",
+          "artifacts",
+          "practice"
+        ],
+        "summary": "Practice Attempt Detail",
+        "description": "Get practice attempt detail with parallel MV fetching.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with hints/strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
+        "operationId": "practice_attempt_detail_api_v4_practice_attempt_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPracticeAttemptDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPracticeAttemptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "practice"
+        ]
+      }
+    },
     "/api/v4/resources/args": {
       "post": {
         "tags": [
@@ -20537,20 +21230,20 @@
         ]
       }
     },
-    "/api/v4/analytics/NEW/home/get": {
+    "/api/v4/views/simulation/attempts/get": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "attempts"
         ],
-        "summary": "Home Get",
-        "description": "Get home overview with simulation cards.\n\nSQL handles: aggregation, all metadata JOINs\nPython handles: only business logic (status, pass_pct, completion_pct, cohort formatting)",
-        "operationId": "home_get_api_v4_analytics_NEW_home_get_post",
+        "summary": "Get Attempts",
+        "description": "Get simulation attempt data from the materialized view.\n\nThis endpoint fetches attempt-level data with resource metadata JOINed.",
+        "operationId": "get_attempts_api_v4_views_simulation_attempts_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20606,7 +21299,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetHomeOverviewNewApiRequest"
+                "$ref": "#/components/schemas/GetAttemptsRequest"
               }
             }
           }
@@ -20617,7 +21310,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetHomeOverviewNewResponse"
+                  "$ref": "#/components/schemas/GetAttemptsResponse"
                 }
               }
             }
@@ -20635,29 +21328,29 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "attempts"
         ]
       }
     },
-    "/api/v4/analytics/NEW/home/list": {
+    "/api/v4/views/simulation/attempts/refresh": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "attempts"
         ],
-        "summary": "Home List",
-        "description": "Get paginated home history with attempts.\n\nSQL handles: filtering, sorting, pagination, all metadata JOINs\nPython handles: only business logic (score_status, show_view, show_continue, pass_pct)",
-        "operationId": "home_list_api_v4_analytics_NEW_home_list_post",
+        "summary": "Refresh Attempts View",
+        "description": "Refresh the mv_simulation_attempts materialized view concurrently.\n\nThis is a fast refresh that doesn't require any schema changes.\nIt requires a unique index on the MV (mv_simulation_attempts_pk).\n\nUse this when:\n- You want to update the MV data without downtime\n- The MV schema hasn't changed\n\nUse /recreate when:\n- You've changed the MV definition (schema changes)",
+        "operationId": "refresh_attempts_view_api_v4_views_simulation_attempts_refresh_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20708,23 +21401,13 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetHomeHistoryNewClientRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetHomeHistoryNewResponse"
+                  "$ref": "#/components/schemas/RefreshResponse"
                 }
               }
             }
@@ -20742,29 +21425,29 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "attempts"
         ]
       }
     },
-    "/api/v4/analytics/NEW/home/refresh": {
+    "/api/v4/views/simulation/attempts/recreate": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "attempts"
         ],
-        "summary": "Home Refresh",
-        "description": "Refresh all home section materialized views.\n\nUses SQL function that refreshes MVs in dependency order:\n1. mv_home_chat_facts (base fact table)\n2. mv_home_simulation_status (depends on chat_facts)\n3. mv_home_attempt_history (depends on chat_facts)\n4. mv_home_certificate_status (depends on chat_facts)",
-        "operationId": "home_refresh_api_v4_analytics_NEW_home_refresh_post",
+        "summary": "Recreate Attempts View",
+        "description": "Recreate the mv_simulation_attempts materialized view.\n\nThis drops and recreates the MV from its definition file.\nThere will be brief downtime while the MV is being recreated.\n\nUse this when:\n- You've changed the MV definition (schema changes)\n- You need to rebuild from scratch\n\nUse /refresh when:\n- You just want to update the data\n- The MV schema hasn't changed",
+        "operationId": "recreate_attempts_view_api_v4_views_simulation_attempts_recreate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20815,23 +21498,13 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshHomeMvsNewApiRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RefreshHomeMvsNewApiResponse"
+                  "$ref": "#/components/schemas/RefreshResponse"
                 }
               }
             }
@@ -20849,29 +21522,29 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "attempts"
         ]
       }
     },
-    "/api/v4/analytics/NEW/home/attempt": {
+    "/api/v4/views/simulation/chats/get": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "chats"
         ],
-        "summary": "Home Attempt Detail",
-        "description": "Get home attempt detail with parallel MV fetching.\n\nUses three-MV architecture with pool-based parallel fetch:\n- MV 1: mv_home_attempts (attempt-level aggregates)\n- MV 2: mv_home_chats (chat-level data with grades/feedbacks)\n- MV 3: mv_home_messages (message-level data with strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
-        "operationId": "home_attempt_detail_api_v4_analytics_NEW_home_attempt_post",
+        "summary": "Get Chats",
+        "description": "Get simulation chat data from the materialized view.\n\nThis endpoint fetches chat-level data with resource metadata JOINed.",
+        "operationId": "get_chats_api_v4_views_simulation_chats_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20927,7 +21600,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetAttemptDetailRequest"
+                "$ref": "#/components/schemas/GetChatsRequest"
               }
             }
           }
@@ -20938,7 +21611,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetAttemptDetailResponse"
+                  "$ref": "#/components/schemas/GetChatsResponse"
                 }
               }
             }
@@ -20956,29 +21629,29 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "home"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "chats"
         ]
       }
     },
-    "/api/v4/analytics/NEW/practice/get": {
+    "/api/v4/views/simulation/chats/refresh": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "practice"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "chats"
         ],
-        "summary": "Practice Get",
-        "description": "Get practice overview with simulation cards.\n\nSQL handles: aggregation, all metadata JOINs\nPython handles: only business logic (status, pass_pct, cohort formatting)",
-        "operationId": "practice_get_api_v4_analytics_NEW_practice_get_post",
+        "summary": "Refresh Chats View",
+        "description": "Refresh the mv_simulation_chats materialized view concurrently.",
+        "operationId": "refresh_chats_view_api_v4_views_simulation_chats_refresh_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -21029,23 +21702,13 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetPracticeOverviewNewClientRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetPracticeOverviewNewResponse"
+                  "$ref": "#/components/schemas/RefreshResponse"
                 }
               }
             }
@@ -21063,29 +21726,29 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "practice"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "chats"
         ]
       }
     },
-    "/api/v4/analytics/NEW/practice/list": {
+    "/api/v4/views/simulation/chats/recreate": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "practice"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "chats"
         ],
-        "summary": "Practice List",
-        "description": "Get paginated practice history with attempts.\n\nSQL handles: filtering, sorting, pagination, all metadata JOINs\nPython handles: only business logic (score_status, show_view, show_continue, pass_pct)",
-        "operationId": "practice_list_api_v4_analytics_NEW_practice_list_post",
+        "summary": "Recreate Chats View",
+        "description": "Recreate the mv_simulation_chats materialized view.",
+        "operationId": "recreate_chats_view_api_v4_views_simulation_chats_recreate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -21136,23 +21799,13 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetPracticeHistoryNewClientRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetPracticeHistoryNewResponse"
+                  "$ref": "#/components/schemas/RefreshResponse"
                 }
               }
             }
@@ -21170,29 +21823,29 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "practice"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "chats"
         ]
       }
     },
-    "/api/v4/analytics/NEW/practice/attempt": {
+    "/api/v4/views/simulation/messages/get": {
       "post": {
         "tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "practice"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "messages"
         ],
-        "summary": "Practice Attempt Detail",
-        "description": "Get practice attempt detail with parallel MV fetching.\n\nUses three-MV architecture with pool-based parallel fetch:\n- MV 1: mv_practice_attempts (attempt-level aggregates)\n- MV 2: mv_practice_chats (chat-level data with grades/feedbacks)\n- MV 3: mv_practice_messages (message-level data with hints/strengths/improvements)\n\nEach query runs on its own connection from the pool for true parallelism.",
-        "operationId": "practice_attempt_detail_api_v4_analytics_NEW_practice_attempt_post",
+        "summary": "Get Messages",
+        "description": "Get simulation message data from the materialized view.\n\nThis endpoint fetches message-level data with strengths/improvements.",
+        "operationId": "get_messages_api_v4_views_simulation_messages_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -21248,7 +21901,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetPracticeAttemptDetailRequest"
+                "$ref": "#/components/schemas/GetMessagesRequest"
               }
             }
           }
@@ -21259,7 +21912,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetPracticeAttemptDetailResponse"
+                  "$ref": "#/components/schemas/GetMessagesResponse"
                 }
               }
             }
@@ -21277,12 +21930,808 @@
         },
         "x-cache-tags": [
           "v4",
-          "analytics",
-          "analytics",
-          "new",
-          "analytics",
-          "new",
-          "practice"
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "messages"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/messages/refresh": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "messages"
+        ],
+        "summary": "Refresh Messages View",
+        "description": "Refresh the mv_simulation_messages materialized view concurrently.",
+        "operationId": "refresh_messages_view_api_v4_views_simulation_messages_refresh_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "messages"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/messages/recreate": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "messages"
+        ],
+        "summary": "Recreate Messages View",
+        "description": "Recreate the mv_simulation_messages materialized view.",
+        "operationId": "recreate_messages_view_api_v4_views_simulation_messages_recreate_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "messages"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/overview/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "overview"
+        ],
+        "summary": "Get Overview",
+        "description": "Get simulation overview data from the materialized view.\n\nThis endpoint fetches simulation-level aggregated data with:\n- Mode-aware aggregation (member vs instructional)\n- Instructional stats: passed_count, in_progress_count, not_started_count, total_members\n- Standard groups and standards for sidebar/legend",
+        "operationId": "get_overview_api_v4_views_simulation_overview_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetOverviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOverviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "overview"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/overview/refresh": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "overview"
+        ],
+        "summary": "Refresh Overview View",
+        "description": "Refresh the mv_simulation_overview materialized view concurrently.",
+        "operationId": "refresh_overview_view_api_v4_views_simulation_overview_refresh_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "overview"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/overview/recreate": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "overview"
+        ],
+        "summary": "Recreate Overview View",
+        "description": "Recreate the mv_simulation_overview materialized view.",
+        "operationId": "recreate_overview_view_api_v4_views_simulation_overview_recreate_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "overview"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/history/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "history"
+        ],
+        "summary": "Get History",
+        "description": "Get simulation history data from the materialized view.\n\nThis endpoint fetches paginated attempt history with:\n- Filtering (date, cohort, department, simulation, scenario, search, infinite_mode, archived, profile_ids)\n- Sorting and pagination\n- Filter options (simulation_options, scenario_options, profile_options)\n- All metadata JOINed",
+        "operationId": "get_history_api_v4_views_simulation_history_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHistoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "history"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/history/refresh": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "history"
+        ],
+        "summary": "Refresh History View",
+        "description": "Refresh the mv_simulation_history materialized view concurrently.",
+        "operationId": "refresh_history_view_api_v4_views_simulation_history_refresh_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "history"
+        ]
+      }
+    },
+    "/api/v4/views/simulation/history/recreate": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "history"
+        ],
+        "summary": "Recreate History View",
+        "description": "Recreate the mv_simulation_history materialized view.",
+        "operationId": "recreate_history_view_api_v4_views_simulation_history_recreate_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "history"
         ]
       }
     },
@@ -26686,6 +28135,212 @@
         "title": "AttemptData",
         "description": "Attempt-level data."
       },
+      "AttemptViewItem": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "cohort_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Name"
+          },
+          "department_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Name"
+          },
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          },
+          "attempt_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Created At"
+          },
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
+            "default": false
+          },
+          "total_chats": {
+            "type": "integer",
+            "title": "Total Chats",
+            "default": 0
+          },
+          "completed_chats": {
+            "type": "integer",
+            "title": "Completed Chats",
+            "default": 0
+          },
+          "total_score": {
+            "type": "number",
+            "title": "Total Score",
+            "default": 0
+          },
+          "all_passed": {
+            "type": "boolean",
+            "title": "All Passed",
+            "default": false
+          },
+          "elapsed_seconds": {
+            "type": "integer",
+            "title": "Elapsed Seconds",
+            "default": 0
+          },
+          "rubric_total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Total Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "AttemptViewItem",
+        "description": "Single attempt from the simulation attempts view."
+      },
       "BaseModel": {
         "properties": {},
         "type": "object",
@@ -27741,6 +29396,276 @@
         ],
         "title": "ChatData",
         "description": "Chat with scenario, persona, grade, and messages."
+      },
+      "ChatViewItem": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "scenario_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Name"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "rubric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Name"
+          },
+          "objective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          },
+          "chat_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Created At"
+          },
+          "chat_completed": {
+            "type": "boolean",
+            "title": "Chat Completed",
+            "default": false
+          },
+          "chat_position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Position"
+          },
+          "is_current_chat": {
+            "type": "boolean",
+            "title": "Is Current Chat",
+            "default": false
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "grade_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Score"
+          },
+          "grade_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Passed"
+          },
+          "grade_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Description"
+          },
+          "grade_time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Time Taken"
+          },
+          "rubric_total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Total Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FeedbackItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "ChatViewItem",
+        "description": "Single chat from the simulation chats view."
       },
       "CohortDepartment": {
         "properties": {
@@ -31072,13 +32997,26 @@
         "title": "FeedbackEntry",
         "description": "Feedback by standard for grading state."
       },
-      "FilterOption": {
+      "FeedbackItem": {
         "properties": {
-          "value": {
+          "id": {
             "type": "string",
-            "title": "Value"
+            "format": "uuid",
+            "title": "Id"
           },
-          "label": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "standard_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -31087,26 +33025,37 @@
                 "type": "null"
               }
             ],
-            "title": "Label"
+            "title": "Standard Name"
           },
-          "count": {
+          "total": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Count"
+            "title": "Total"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
           }
         },
         "type": "object",
         "required": [
-          "value"
+          "id"
         ],
-        "title": "FilterOption",
-        "description": "Filter option for history dropdowns."
+        "title": "FeedbackItem",
+        "description": "Feedback item with standard info."
       },
       "FinalizeUploadApiResponse": {
         "properties": {
@@ -32614,6 +34563,52 @@
         "title": "GetAttemptDetailResponse",
         "description": "Client-facing API response for attempt detail."
       },
+      "GetAttemptsRequest": {
+        "properties": {
+          "attempt_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Attempt Ids",
+            "description": "List of attempt IDs to fetch"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice",
+            "description": "Filter by practice mode. None=all, True=practice, False=home"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_ids"
+        ],
+        "title": "GetAttemptsRequest",
+        "description": "Request for getting attempt data."
+      },
+      "GetAttemptsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Attempt data items"
+          }
+        },
+        "type": "object",
+        "title": "GetAttemptsResponse",
+        "description": "Response containing attempt data."
+      },
       "GetAuthApiRequest": {
         "properties": {
           "auth_id": {
@@ -33618,6 +35613,69 @@
         "properties": {},
         "type": "object",
         "title": "GetCertificateDataApiRequest"
+      },
+      "GetChatsRequest": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id",
+            "description": "Filter by attempt ID"
+          },
+          "chat_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Ids",
+            "description": "List of specific chat IDs to fetch"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice",
+            "description": "Filter by practice mode. None=all, True=practice, False=home"
+          }
+        },
+        "type": "object",
+        "title": "GetChatsRequest",
+        "description": "Request for getting chat data."
+      },
+      "GetChatsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Chat data items"
+          }
+        },
+        "type": "object",
+        "title": "GetChatsResponse",
+        "description": "Response containing chat data."
       },
       "GetCohortApiRequest": {
         "properties": {
@@ -39237,6 +41295,289 @@
         "type": "object",
         "title": "GetHealthListApiResponse"
       },
+      "GetHistoryRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id",
+            "description": "Filter by profile ID"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids",
+            "description": "Filter by simulation IDs"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids",
+            "description": "Filter by cohort IDs"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice",
+            "description": "Filter by practice mode. None=all, True=practice, False=home"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Filter by date range start"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Filter by date range end"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids",
+            "description": "Filter by scenario IDs"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode",
+            "description": "Filter by infinite mode"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search",
+            "description": "Search by simulation name"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By",
+            "description": "Sort field: date, score, simulation_name",
+            "default": "date"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order",
+            "description": "Sort order: asc, desc",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "description": "Items per page",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "description": "Pagination offset",
+            "default": 0
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids",
+            "description": "Filter by multiple profile IDs (for multi-user view)"
+          },
+          "show_archived": {
+            "type": "boolean",
+            "title": "Show Archived",
+            "description": "Include archived attempts",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "GetHistoryRequest",
+        "description": "Request for getting history data."
+      },
+      "GetHistoryResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Total count for pagination",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "History data items"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__simulation__history__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__simulation__history__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          },
+          "profile_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v4__views__simulation__history__types__FilterOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Options"
+          }
+        },
+        "type": "object",
+        "title": "GetHistoryResponse",
+        "description": "Response containing history data."
+      },
       "GetHomeHistoryApiRequest": {
         "properties": {
           "start_date": {
@@ -39760,7 +42101,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__home__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -39774,7 +42115,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__home__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -40713,6 +43054,82 @@
         },
         "type": "object",
         "title": "GetLoginDataApiResponse"
+      },
+      "GetMessagesRequest": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id",
+            "description": "Filter by attempt ID"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id",
+            "description": "Filter by chat ID"
+          },
+          "message_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Ids",
+            "description": "List of specific message IDs to fetch"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice",
+            "description": "Filter by practice mode. None=all, True=practice, False=home"
+          }
+        },
+        "type": "object",
+        "title": "GetMessagesRequest",
+        "description": "Request for getting message data."
+      },
+      "GetMessagesResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MessageViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Message data items"
+          }
+        },
+        "type": "object",
+        "title": "GetMessagesResponse",
+        "description": "Response containing message data."
       },
       "GetModelApiRequest": {
         "properties": {
@@ -42569,6 +44986,180 @@
         "type": "object",
         "title": "GetObjectiveV4Item",
         "description": "Objective item returned from get endpoint."
+      },
+      "GetOverviewRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date for filtering (ISO format)"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date for filtering (ISO format)"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id",
+            "description": "Filter by profile ID"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids",
+            "description": "Filter by simulation IDs"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids",
+            "description": "Filter by cohort IDs"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids",
+            "description": "Filter by department IDs"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice",
+            "description": "Filter by practice mode. None=all, True=practice, False=home"
+          }
+        },
+        "type": "object",
+        "title": "GetOverviewRequest",
+        "description": "Request for getting overview data."
+      },
+      "GetOverviewResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "has_data": {
+            "type": "boolean",
+            "title": "Has Data",
+            "default": false
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Simulation card items"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardGroupItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          }
+        },
+        "type": "object",
+        "title": "GetOverviewResponse",
+        "description": "Response containing overview data."
       },
       "GetParameterApiRequest": {
         "properties": {
@@ -45545,7 +48136,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__practice__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -45559,7 +48150,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__practice__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -45573,7 +48164,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__artifacts__practice__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -55936,6 +58527,35 @@
         "title": "HighlightEntry",
         "description": "Highlight entry within a strength."
       },
+      "HighlightItem": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "title": "HighlightItem",
+        "description": "Highlight within a strength."
+      },
       "HintEntry": {
         "properties": {
           "message_id": {
@@ -55976,6 +58596,47 @@
         "type": "object",
         "title": "HintEntry",
         "description": "Hint entry (PRACTICE-specific)."
+      },
+      "HintItem": {
+        "properties": {
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "title": "HintItem",
+        "description": "Hint for a message (practice-specific)."
       },
       "HistoryAttempt": {
         "properties": {
@@ -56232,6 +58893,323 @@
         ],
         "title": "HistoryAttempt",
         "description": "Attempt record for home history.\n\nSQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct."
+      },
+      "HistoryViewItem": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "cohort_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Name"
+          },
+          "department_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Name"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "attempt_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Created At"
+          },
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          },
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
+            "default": false
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "num_chats": {
+            "type": "integer",
+            "title": "Num Chats",
+            "default": 0
+          },
+          "num_chats_completed": {
+            "type": "integer",
+            "title": "Num Chats Completed",
+            "default": 0
+          },
+          "num_scenarios": {
+            "type": "integer",
+            "title": "Num Scenarios",
+            "default": 0
+          },
+          "num_scenarios_completed": {
+            "type": "integer",
+            "title": "Num Scenarios Completed",
+            "default": 0
+          },
+          "score_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Percent"
+          },
+          "has_passed": {
+            "type": "boolean",
+            "title": "Has Passed",
+            "default": false
+          },
+          "total_time_seconds": {
+            "type": "integer",
+            "title": "Total Time Seconds",
+            "default": 0
+          },
+          "rubric_total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Total Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "scenario_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Names"
+          },
+          "persona_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Names"
+          },
+          "persona_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Colors"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "HistoryViewItem",
+        "description": "Single attempt from the history view."
       },
       "IProcessCsvV4ColumnMapping": {
         "properties": {
@@ -56567,6 +59545,69 @@
         ],
         "title": "ImprovementEntry",
         "description": "Improvement feedback with replacements."
+      },
+      "ImprovementItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "replacements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReplacementItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ImprovementItem",
+        "description": "Improvement feedback for a message."
       },
       "InstructionsApiRequest": {
         "properties": {
@@ -58645,6 +61686,142 @@
         "title": "MessageData",
         "description": "Message with content and feedback data."
       },
+      "MessageViewItem": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "message_position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Position"
+          },
+          "strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrengthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strengths"
+          },
+          "improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImprovementItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvements"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HintItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id"
+        ],
+        "title": "MessageViewItem",
+        "description": "Single message from the simulation messages view."
+      },
       "NamesApiRequest": {
         "properties": {
           "agent_id": {
@@ -58830,6 +62007,222 @@
         },
         "type": "object",
         "title": "OptionsApiResponse"
+      },
+      "OverviewViewItem": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "simulation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "persona_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Color"
+          },
+          "persona_icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Icon"
+          },
+          "cohort_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Names"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count",
+            "default": 0
+          },
+          "completed_count": {
+            "type": "integer",
+            "title": "Completed Count",
+            "default": 0
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "has_passed": {
+            "type": "boolean",
+            "title": "Has Passed",
+            "default": false
+          },
+          "rubric_total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Total Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          },
+          "passed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Count"
+          },
+          "in_progress_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Progress Count"
+          },
+          "not_started_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Started Count"
+          },
+          "total_members": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id"
+        ],
+        "title": "OverviewViewItem",
+        "description": "Single simulation overview from the view."
       },
       "ParameterFieldsApiRequest": {
         "properties": {
@@ -103329,6 +106722,55 @@
         "type": "object",
         "title": "RefreshHomeMvsNewApiResponse"
       },
+      "RefreshResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether the operation succeeded"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "concurrent",
+              "recreate"
+            ],
+            "title": "Method",
+            "description": "Refresh method used"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Additional message"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms",
+            "description": "Duration of the operation in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "method"
+        ],
+        "title": "RefreshResponse",
+        "description": "Response for refresh/recreate operations."
+      },
       "RefreshViewApiRequest": {
         "properties": {
           "view_name": {
@@ -103431,6 +106873,46 @@
         "type": "object",
         "title": "ReplacementEntry",
         "description": "Replacement entry within an improvement."
+      },
+      "ReplacementItem": {
+        "properties": {
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "replace_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replace Text"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "title": "ReplacementItem",
+        "description": "Replacement within an improvement."
       },
       "RequestLimitsApiRequest": {
         "properties": {
@@ -110491,6 +113973,65 @@
         "type": "object",
         "title": "SlugsApiResponse"
       },
+      "StandardGroupItem": {
+        "properties": {
+          "standard_group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id"
+        ],
+        "title": "StandardGroupItem",
+        "description": "Standard group mapping for sidebar/legend."
+      },
       "StandardGroupMapping": {
         "properties": {
           "standard_group_id": {
@@ -110625,6 +114166,66 @@
         "type": "object",
         "title": "StandardGroupsApiResponse"
       },
+      "StandardItem": {
+        "properties": {
+          "standard_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Standard Id"
+          },
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id"
+        ],
+        "title": "StandardItem",
+        "description": "Standard mapping for sidebar/legend."
+      },
       "StandardMapping": {
         "properties": {
           "standard_id": {
@@ -110747,6 +114348,69 @@
         ],
         "title": "StrengthEntry",
         "description": "Strength feedback with highlights."
+      },
+      "StrengthItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HighlightItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "StrengthItem",
+        "description": "Strength feedback for a message."
       },
       "TemplatesApiRequest": {
         "properties": {
@@ -111205,6 +114869,78 @@
         },
         "type": "object",
         "title": "VoicesApiResponse"
+      },
+      "app__api__v4__artifacts__home__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for history dropdowns."
+      },
+      "app__api__v4__artifacts__practice__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for history dropdowns."
       },
       "app__api__v4__artifacts__simulation__types__GetSimulationApiRequest": {
         "properties": {
@@ -112216,6 +115952,36 @@
         "type": "object",
         "title": "GetSimulationApiResponse",
         "description": "Response for getting a simulation."
+      },
+      "app__api__v4__views__simulation__history__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
       }
     }
   }

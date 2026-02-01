@@ -73,7 +73,7 @@ import { toast } from "sonner";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 // Use strong server types directly (union of all history endpoint types)
-type HomeHistoryData = NonNullable<OutputOf<"/api/v4/analytics/NEW/home/list", "post">["data"]>;
+type HomeHistoryData = NonNullable<OutputOf<"/api/v4/home/list", "post">["data"]>;
 type DashboardHistoryData = NonNullable<OutputOf<"/api/v4/analytics/dashboard/list", "post">["data"]>;
 type PracticeHistoryData = NonNullable<OutputOf<"/api/v4/analytics/practice/list", "post">["data"]>;
 export type HistoryDataItem =

@@ -15,10 +15,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/analytics/NEW/practice/get", "post">;
-type PracticeOut = OutputOf<"/api/v4/analytics/NEW/practice/get", "post">;
-type PracticeHistoryIn = InputOf<"/api/v4/analytics/NEW/practice/list", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v4/analytics/NEW/practice/list", "post">;
+type PracticeIn = InputOf<"/api/v4/practice/get", "post">;
+type PracticeOut = OutputOf<"/api/v4/practice/get", "post">;
+type PracticeHistoryIn = InputOf<"/api/v4/practice/list", "post">;
+type PracticeHistoryOut = OutputOf<"/api/v4/practice/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.
@@ -28,7 +28,7 @@ type PracticeHistoryOut = OutputOf<"/api/v4/analytics/NEW/practice/list", "post"
 const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/NEW/practice/get", input, {
+  return api.post("/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -49,7 +49,7 @@ const getPracticeHistory = async (
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/NEW/practice/list", input, {
+  return api.post("/practice/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
