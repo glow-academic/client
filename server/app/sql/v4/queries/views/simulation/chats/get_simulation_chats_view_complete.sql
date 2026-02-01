@@ -121,7 +121,11 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     template_ids uuid[],
     image_ids uuid[],
     video_ids uuid[],
-    document_ids uuid[]
+    document_ids uuid[],
+
+    -- Rubric/Grade resource IDs
+    standard_group_ids uuid[],
+    standard_ids uuid[]
 );
 
 -- ============================================================================
@@ -244,7 +248,10 @@ AS $$
             mv.template_ids,
             mv.image_ids,
             mv.video_ids,
-            mv.document_ids
+            mv.document_ids,
+            -- Rubric/Grade resource IDs
+            mv.standard_group_ids,
+            mv.standard_ids
         FROM mv_data mv
         LEFT JOIN scenarios_resource scen ON scen.id = mv.scenario_id AND scen.active = TRUE
         LEFT JOIN rubrics_resource rub ON rub.id = mv.rubric_id AND rub.active = TRUE
@@ -291,7 +298,9 @@ AS $$
                     template_ids,
                     image_ids,
                     video_ids,
-                    document_ids
+                    document_ids,
+                    standard_group_ids,
+                    standard_ids
                 )::types.q_get_simulation_chats_view_v4_item
                 ORDER BY chat_position
             ),

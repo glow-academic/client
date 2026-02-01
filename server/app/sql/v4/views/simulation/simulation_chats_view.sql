@@ -12,7 +12,7 @@
 -- Step 0: Drop and recreate composite types
 -- ============================================================================
 
--- Create feedback type if it doesn't exist (shared with mv_home_chats)
+-- Create feedback type if it doesn't exist
 DO $$
 BEGIN
     CREATE TYPE types.mv_feedback AS (
@@ -240,6 +240,26 @@ documents_agg AS (
     FROM simulation_chats_documents_connection chd
     WHERE chd.active = TRUE
     GROUP BY chd.chat_id
+),
+-- Aggregate standard_group IDs per chat (from connection table)
+standard_groups_agg AS (
+    SELECT
+        scsg.chat_id,
+        ARRAY_AGG(scsg.standard_groups_id ORDER BY scsg.created_at)
+            FILTER (WHERE scsg.standard_groups_id IS NOT NULL) AS standard_group_ids
+    FROM simulation_chats_standard_groups_connection scsg
+    WHERE scsg.active = TRUE
+    GROUP BY scsg.chat_id
+),
+-- Aggregate standard IDs per chat (from connection table)
+standards_agg AS (
+    SELECT
+        scs.chat_id,
+        ARRAY_AGG(scs.standards_id ORDER BY scs.created_at)
+            FILTER (WHERE scs.standards_id IS NOT NULL) AS standard_ids
+    FROM simulation_chats_standards_connection scs
+    WHERE scs.active = TRUE
+    GROUP BY scs.chat_id
 )
 SELECT
     -- Primary key
@@ -296,7 +316,11 @@ SELECT
     COALESCE(ta.template_ids, ARRAY[]::uuid[]) AS template_ids,
     COALESCE(ia.image_ids, ARRAY[]::uuid[]) AS image_ids,
     COALESCE(va.video_ids, ARRAY[]::uuid[]) AS video_ids,
-    COALESCE(da.document_ids, ARRAY[]::uuid[]) AS document_ids
+    COALESCE(da.document_ids, ARRAY[]::uuid[]) AS document_ids,
+
+    -- Rubric/Grade resource IDs (from connection tables)
+    COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
+    COALESCE(sa.standard_ids, ARRAY[]::uuid[]) AS standard_ids
 
 FROM chats_with_position cwp
 LEFT JOIN current_chat_per_attempt cca ON cca.attempt_id = cwp.attempt_id
@@ -312,6 +336,8 @@ LEFT JOIN responses_agg ra ON ra.chat_id = cwp.chat_id
 LEFT JOIN images_agg ia ON ia.chat_id = cwp.chat_id
 LEFT JOIN videos_agg va ON va.chat_id = cwp.chat_id
 LEFT JOIN documents_agg da ON da.chat_id = cwp.chat_id
+LEFT JOIN standard_groups_agg sga ON sga.chat_id = cwp.chat_id
+LEFT JOIN standards_agg sa ON sa.chat_id = cwp.chat_id
 WITH NO DATA;
 
 -- ============================================================================

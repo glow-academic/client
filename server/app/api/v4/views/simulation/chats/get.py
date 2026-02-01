@@ -146,6 +146,9 @@ async def get_simulation_chats_internal(
                     image_ids=list(item.image_ids) if item.image_ids else None,
                     video_ids=list(item.video_ids) if item.video_ids else None,
                     document_ids=list(item.document_ids) if item.document_ids else None,
+                    # Rubric/Grade resource IDs
+                    standard_group_ids=list(item.standard_group_ids) if item.standard_group_ids else None,
+                    standard_ids=list(item.standard_ids) if item.standard_ids else None,
                 )
             )
 

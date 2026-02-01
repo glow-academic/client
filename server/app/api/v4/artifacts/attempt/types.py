@@ -283,6 +283,41 @@ class PersonaEntry(BaseModel):
 
 
 # -----------------------------------------------------------------------------
+# Rubric/Grade entry types (enriched from internal handlers)
+# -----------------------------------------------------------------------------
+
+
+class RubricEntry(BaseModel):
+    """Rubric entry with resource metadata."""
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    total_points: float | None = None
+    pass_points: float | None = None
+
+
+class StandardGroupEntry(BaseModel):
+    """Standard group entry with resource metadata."""
+
+    standard_group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+    pass_points: float | None = None
+
+
+class StandardEntry(BaseModel):
+    """Standard entry with resource metadata."""
+
+    standard_id: UUID | None = None
+    standard_group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+
+
+# -----------------------------------------------------------------------------
 # Request/Response types
 # -----------------------------------------------------------------------------
 
@@ -359,10 +394,14 @@ class ImprovementEntry(BaseModel):
 
 
 class FeedbackEntry(BaseModel):
-    """Feedback by standard for grading state."""
+    """Feedback by standard for grading state.
+
+    standard_group_id is derived from standards metadata lookup.
+    """
 
     id: UUID | None = None
     standard_id: UUID | None = None
+    standard_group_id: UUID | None = None  # From standards metadata
     total: float | None = None
     feedback: str | None = None
 
@@ -451,6 +490,11 @@ class ChatData(BaseModel):
     # --- Both Views resources ---
     documents: list[DocumentEntry] | None = None
     templates: list[TemplateEntry] | None = None
+
+    # --- Rubric/Grade resources (enriched from internal handlers) ---
+    rubric: RubricEntry | None = None
+    standard_groups: list[StandardGroupEntry] | None = None
+    standards: list[StandardEntry] | None = None
 
 
 class SimulationData(BaseModel):

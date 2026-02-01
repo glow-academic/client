@@ -88,6 +88,10 @@ class ChatViewItem(BaseModel):
     video_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
 
+    # Rubric/Grade resource IDs
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
+
 
 class GetChatsRequest(BaseModel):
     """Request for getting chat data."""

@@ -8,6 +8,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -25,14 +26,92 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/rubrics/get_rubrics_complete.sql"
+BATCH_SQL_PATH = "app/sql/v4/queries/resources/rubrics/get_rubrics_batch_complete.sql"
 
 
 router = APIRouter()
 
 
 # =============================================================================
-# Internal Function
+# Batch Types
 # =============================================================================
+
+
+class QGetRubricsBatchV4Item(BaseModel):
+    """Rubric item from batch SQL query."""
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    total_points: float | None = None
+    pass_points: float | None = None
+
+
+class GetRubricsBatchSqlParams(BaseModel):
+    """SQL parameters for batch get_rubrics."""
+
+    p_ids: list[UUID]
+
+
+class GetRubricsBatchSqlRow(BaseModel):
+    """SQL result row for batch."""
+
+    items: list[QGetRubricsBatchV4Item] | None = None
+
+
+# =============================================================================
+# Internal Functions
+# =============================================================================
+
+
+async def get_rubrics_batch_internal(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[QGetRubricsBatchV4Item]:
+    """Internal function for batch fetching rubrics by IDs.
+
+    Args:
+        conn: Database connection
+        ids: List of rubric IDs to fetch
+        bypass_cache: Whether to bypass cache
+
+    Returns:
+        List of rubric items
+    """
+    if not ids:
+        return []
+
+    tags = ["resources", "rubrics"]
+    cache_key_val = cache_key(
+        "/api/v4/resources/rubrics/get-batch",
+        {"ids": [str(id) for id in ids]},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                QGetRubricsBatchV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
+
+    params = GetRubricsBatchSqlParams(p_ids=ids)
+    result = cast(
+        GetRubricsBatchSqlRow,
+        await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
+    )
+
+    items: list[QGetRubricsBatchV4Item] = result.items if result and result.items else []
+
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items
 
 
 async def get_rubrics_internal(

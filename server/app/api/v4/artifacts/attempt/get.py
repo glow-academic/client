@@ -48,11 +48,14 @@ from app.api.v4.artifacts.attempt.types import (
     QuestionEntry,
     QuizResponse,
     ReplacementEntry,
+    RubricEntry,
     RubricStructureData,
     ScenarioDocumentEntry,
     SimulationData,
     StandardAchievement,
+    StandardEntry,
     StandardFeedback,
+    StandardGroupEntry,
     StandardGroupMapping,
     StandardGroupStandards,
     StandardMapping,
@@ -69,6 +72,9 @@ from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
 from app.api.v4.resources.questions.get import get_questions_internal
+from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
+from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
+from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.simulation.attempts.get import get_simulation_attempts_internal
@@ -385,6 +391,9 @@ async def attempt_get(
             question_ids: list[UUID],
             option_ids: list[UUID],
             problem_statement_ids: list[UUID],
+            rubric_ids: list[UUID],
+            standard_group_ids: list[UUID],
+            standard_ids: list[UUID],
         ) -> dict[str, dict[UUID, dict]]:
             """Fetch resource metadata using internal handlers (with caching).
 
@@ -401,6 +410,9 @@ async def attempt_get(
                 "questions": {},
                 "options": {},
                 "problem_statements": {},
+                "rubrics": {},
+                "standard_groups": {},
+                "standards": {},
             }
 
             async with pool.acquire() as c:
@@ -494,6 +506,42 @@ async def attempt_get(
                         if item.problem_statement_id:
                             result["problem_statements"][item.problem_statement_id] = {
                                 "problem_statement": item.problem_statement,
+                            }
+
+                # Fetch rubrics
+                if rubric_ids:
+                    items = await get_rubrics_batch_internal(c, rubric_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.rubric_id:
+                            result["rubrics"][item.rubric_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                                "total_points": item.total_points,
+                                "pass_points": item.pass_points,
+                            }
+
+                # Fetch standard_groups
+                if standard_group_ids:
+                    items = await get_standard_groups_internal(c, standard_group_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.standard_group_id:
+                            result["standard_groups"][item.standard_group_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                                "points": item.points,
+                                "pass_points": item.pass_points,
+                            }
+
+                # Fetch standards
+                if standard_ids:
+                    items = await get_standards_internal(c, standard_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.standard_id:
+                            result["standards"][item.standard_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                                "points": item.points,
+                                "standard_group_id": item.standard_group_id,
                             }
 
             return result
@@ -689,6 +737,9 @@ async def attempt_get(
         all_question_ids: list[UUID] = []
         all_option_ids: list[UUID] = []
         all_problem_statement_ids: list[UUID] = []
+        all_rubric_ids: list[UUID] = []
+        all_standard_group_ids: list[UUID] = []
+        all_standard_ids: list[UUID] = []
 
         for chat_item in chats_result or []:
             if chat_item.image_ids:
@@ -709,6 +760,12 @@ async def attempt_get(
                 all_option_ids.extend(chat_item.option_ids)
             if chat_item.problem_statement_id:
                 all_problem_statement_ids.append(chat_item.problem_statement_id)
+            if chat_item.rubric_id:
+                all_rubric_ids.append(chat_item.rubric_id)
+            if chat_item.standard_group_ids:
+                all_standard_group_ids.extend(chat_item.standard_group_ids)
+            if chat_item.standard_ids:
+                all_standard_ids.extend(chat_item.standard_ids)
 
         # Fetch metadata for all resources
         resource_meta = await fetch_resource_metadata(
@@ -721,6 +778,9 @@ async def attempt_get(
             question_ids=list(set(all_question_ids)),
             option_ids=list(set(all_option_ids)),
             problem_statement_ids=list(set(all_problem_statement_ids)),
+            rubric_ids=list(set(all_rubric_ids)),
+            standard_group_ids=list(set(all_standard_group_ids)),
+            standard_ids=list(set(all_standard_ids)),
         )
 
         # === BUILD CHATS WITH MESSAGES ===
@@ -845,14 +905,20 @@ async def attempt_get(
                     pass_points=chat_item.rubric_pass_points,
                 )
 
-            # Transform feedbacks
+            # Transform feedbacks (with standard_group_id from standards metadata)
             feedbacks: list[FeedbackEntry] = []
             if chat_item.feedbacks:
                 for fb in chat_item.feedbacks:
+                    # Look up standard_group_id from standards metadata
+                    std_group_id = None
+                    if fb.standard_id:
+                        std_meta = resource_meta["standards"].get(fb.standard_id, {})
+                        std_group_id = std_meta.get("standard_group_id")
                     feedbacks.append(
                         FeedbackEntry(
                             id=fb.id,
                             standard_id=fb.standard_id,
+                            standard_group_id=std_group_id,
                             total=fb.total,
                             feedback=fb.feedback,
                         )
@@ -1050,6 +1116,44 @@ async def attempt_get(
                     for t_id in chat_item.template_ids
                 ]
 
+            # Rubric/Grade resources (enriched from internal handlers)
+            rubric_entry: RubricEntry | None = None
+            if chat_item.rubric_id:
+                rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {})
+                rubric_entry = RubricEntry(
+                    rubric_id=chat_item.rubric_id,
+                    name=rubric_meta.get("name"),
+                    description=rubric_meta.get("description"),
+                    total_points=rubric_meta.get("total_points"),
+                    pass_points=rubric_meta.get("pass_points"),
+                )
+
+            standard_groups_entries: list[StandardGroupEntry] | None = None
+            if chat_item.standard_group_ids:
+                standard_groups_entries = [
+                    StandardGroupEntry(
+                        standard_group_id=sg_id,
+                        name=resource_meta["standard_groups"].get(sg_id, {}).get("name"),
+                        description=resource_meta["standard_groups"].get(sg_id, {}).get("description"),
+                        points=resource_meta["standard_groups"].get(sg_id, {}).get("points"),
+                        pass_points=resource_meta["standard_groups"].get(sg_id, {}).get("pass_points"),
+                    )
+                    for sg_id in chat_item.standard_group_ids
+                ]
+
+            standards_entries: list[StandardEntry] | None = None
+            if chat_item.standard_ids:
+                standards_entries = [
+                    StandardEntry(
+                        standard_id=s_id,
+                        standard_group_id=resource_meta["standards"].get(s_id, {}).get("standard_group_id"),
+                        name=resource_meta["standards"].get(s_id, {}).get("name"),
+                        description=resource_meta["standards"].get(s_id, {}).get("description"),
+                        points=resource_meta["standards"].get(s_id, {}).get("points"),
+                    )
+                    for s_id in chat_item.standard_ids
+                ]
+
             chats.append(
                 ChatData(
                     id=chat_item.chat_id,
@@ -1083,6 +1187,10 @@ async def attempt_get(
                     # Both Views resources
                     documents=enriched_documents,
                     templates=templates_entries,
+                    # Rubric/Grade resources (enriched from internal handlers)
+                    rubric=rubric_entry,
+                    standard_groups=standard_groups_entries,
+                    standards=standards_entries,
                 )
             )
 

@@ -3069,6 +3069,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/options/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Options
+         * @description Get options by IDs.
+         */
+        post: operations["get_options_api_v4_resources_options_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/parameters/get": {
         parameters: {
             query?: never;
@@ -7240,6 +7260,11 @@ export interface components {
         /**
          * ChatData
          * @description Chat with scenario, persona, grade, and messages.
+         *
+         *     Split into view categories:
+         *     - Normal/General View: problem_statement, objectives, personas, images
+         *     - Video/Quiz View: videos, questions, options, responses
+         *     - Both Views: documents, templates
          */
         ChatData: {
             /**
@@ -7251,22 +7276,6 @@ export interface components {
             scenario_id?: string | null;
             /** Scenario Name */
             scenario_name?: string | null;
-            /** Problem Statement */
-            problem_statement?: string | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Objectives */
-            objectives?: string[] | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
-            /** Persona Color */
-            persona_color?: string | null;
             /** Completed */
             completed?: boolean | null;
             /** Is Current */
@@ -7278,27 +7287,39 @@ export interface components {
             feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
             /** Messages */
             messages?: components["schemas"]["MessageData"][] | null;
-            quiz?: components["schemas"]["QuizData"] | null;
-            grading_state?: components["schemas"]["GradingStateData"] | null;
-            dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
-            /** Personas */
-            personas?: components["schemas"]["PersonaEntry"][] | null;
-            /** Hints */
-            hints?: components["schemas"]["HintsByMessage"][] | null;
-            /** Images */
-            images?: components["schemas"]["ImageEntry"][] | null;
-            /** Videos */
-            videos?: components["schemas"]["VideoEntry"][] | null;
-            /** Documents */
-            documents?: components["schemas"]["DocumentEntry"][] | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
             /** Copy Paste Allowed */
             copy_paste_allowed?: boolean | null;
             /** Text Enabled */
             text_enabled?: boolean | null;
             /** Audio Enabled */
             audio_enabled?: boolean | null;
-            /** Content Type */
-            content_type?: string | null;
+            grading_state?: components["schemas"]["GradingStateData"] | null;
+            dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
+            /** Hints */
+            hints?: components["schemas"]["HintsByMessage"][] | null;
+            problem_statement?: components["schemas"]["ProblemStatementEntry"] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["ObjectiveEntry"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["PersonaEntry"][] | null;
+            /** Images */
+            images?: components["schemas"]["ImageEntry"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["VideoEntry"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["QuestionEntry"][] | null;
+            /** Options */
+            options?: components["schemas"]["OptionEntry"][] | null;
+            /** Responses */
+            responses?: components["schemas"]["QuizResponse"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["DocumentEntry"][] | null;
+            /** Templates */
+            templates?: components["schemas"]["TemplateEntry"][] | null;
         };
         /**
          * ChatViewItem
@@ -7314,24 +7335,14 @@ export interface components {
             attempt_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
             /** Rubric Id */
             rubric_id?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
             /** Scenario Name */
             scenario_name?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Persona Color */
-            persona_color?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
             /** Rubric Name */
             rubric_name?: string | null;
-            /** Objective */
-            objective?: string | null;
-            /** Problem Statement */
-            problem_statement?: string | null;
             /**
              * Practice
              * @default false
@@ -7381,6 +7392,18 @@ export interface components {
             rubric_pass_points?: number | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["FeedbackItem"][] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
+            /** Responses */
+            responses?: components["schemas"]["ResponseItem"][] | null;
+            /** Template Ids */
+            template_ids?: string[] | null;
             /** Image Ids */
             image_ids?: string[] | null;
             /** Video Ids */
@@ -10832,6 +10855,39 @@ export interface components {
             objective?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * GetOptionV4Item
+         * @description Option item returned from get endpoint.
+         */
+        GetOptionV4Item: {
+            /** Option Id */
+            option_id?: string | null;
+            /** Option Text */
+            option_text?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * GetOptionsApiRequest
+         * @description Request for getting options by IDs.
+         */
+        GetOptionsApiRequest: {
+            /** Ids */
+            ids: string[];
+        };
+        /**
+         * GetOptionsApiResponse
+         * @description Response for getting options.
+         */
+        GetOptionsApiResponse: {
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["GetOptionV4Item"][];
         };
         /**
          * GetOverviewRequest
@@ -14388,6 +14444,16 @@ export interface components {
             /** Name Id */
             name_id?: string | null;
         };
+        /**
+         * ObjectiveEntry
+         * @description Objective entry with resource metadata.
+         */
+        ObjectiveEntry: {
+            /** Objective Id */
+            objective_id?: string | null;
+            /** Objective */
+            objective?: string | null;
+        };
         /** ObjectivesApiRequest */
         ObjectivesApiRequest: {
             /**
@@ -14412,6 +14478,18 @@ export interface components {
         ObjectivesApiResponse: {
             /** Objective Id */
             objective_id?: string | null;
+        };
+        /**
+         * OptionEntry
+         * @description Option entry with resource metadata.
+         */
+        OptionEntry: {
+            /** Option Id */
+            option_id?: string | null;
+            /** Option Text */
+            option_text?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
         };
         /** OptionsApiRequest */
         OptionsApiRequest: {
@@ -15337,6 +15415,16 @@ export interface components {
         PricingApiResponse: {
             /** Pricing Id */
             pricing_id?: string | null;
+        };
+        /**
+         * ProblemStatementEntry
+         * @description Problem statement entry with resource metadata.
+         */
+        ProblemStatementEntry: {
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
         };
         /** ProblemStatementsApiRequest */
         ProblemStatementsApiRequest: {
@@ -22608,6 +22696,18 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
+        /**
+         * QuestionEntry
+         * @description Question entry with resource metadata.
+         */
+        QuestionEntry: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Question Text */
+            question_text?: string | null;
+            /** Allow Multiple */
+            allow_multiple?: boolean | null;
+        };
         /** QuestionsApiRequest */
         QuestionsApiRequest: {
             /**
@@ -22636,18 +22736,6 @@ export interface components {
         QuestionsApiResponse: {
             /** Question Id */
             question_id?: string | null;
-        };
-        /**
-         * QuizData
-         * @description Quiz information for a chat.
-         */
-        QuizData: {
-            /** Id */
-            id?: string | null;
-            /** Completed */
-            completed?: boolean | null;
-            /** Responses */
-            responses?: components["schemas"]["QuizResponse"][] | null;
         };
         /**
          * QuizResponse
@@ -22773,6 +22861,20 @@ export interface components {
         RequestLimitsApiResponse: {
             /** Request Limits Id */
             request_limits_id?: string | null;
+        };
+        /**
+         * ResponseItem
+         * @description Quiz response item (no response_id - not a resource).
+         */
+        ResponseItem: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Option Id */
+            option_id?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /** RoleRoutesApiRequest */
         RoleRoutesApiRequest: {
@@ -24843,6 +24945,18 @@ export interface components {
             description?: string | null;
             /** Highlights */
             highlights?: components["schemas"]["HighlightItem"][] | null;
+        };
+        /**
+         * TemplateEntry
+         * @description Template entry with resource metadata.
+         */
+        TemplateEntry: {
+            /** Template Id */
+            template_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** TemplatesApiRequest */
         TemplatesApiRequest: {
@@ -30985,6 +31099,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_options_api_v4_resources_options_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetOptionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetOptionsApiResponse"];
                 };
             };
             /** @description Validation Error */

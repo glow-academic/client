@@ -255,18 +255,28 @@ export function AttemptChatSetup({
     return attemptData.chats[currentChatIndex] || attemptData.chats[0] || null;
   }, [attemptData, currentChatIndex]);
 
-  // NEW: scenario fields are now directly on the chat object (persona_name, objectives, problem_statement, etc.)
-  // We create a scenario-like object from the flat chat data for backwards compatibility
+  // NEW: Build scenario-like object from flat chat data
+  // personas is now an array of PersonaEntry, objectives is an array of ObjectiveEntry,
+  // problem_statement is a ProblemStatementEntry object
   const scenario = useMemo(() => {
     if (!currentChat) return null;
     // Get first image's upload_id for background image
     const firstImageUploadId = currentChat.images?.[0]?.upload_id ?? null;
+    // Get first persona for display (personas is now an array)
+    const firstPersona = currentChat.personas?.[0] ?? null;
+    // Get problem statement text (now an object with problem_statement_id and problem_statement)
+    const problemStatementText = currentChat.problem_statement?.problem_statement ?? null;
     return {
-      persona_name: currentChat.persona_name ?? null,
-      persona_icon: currentChat.persona_icon ?? null,
-      persona_color: currentChat.persona_color ?? null,
-      objectives: currentChat.objectives ?? [],
-      problem_statement: currentChat.problem_statement ?? null,
+      // Use first persona's info for backward compat
+      persona_name: firstPersona?.name ?? null,
+      persona_icon: firstPersona?.icon ?? null,
+      persona_color: firstPersona?.color ?? null,
+      // Objectives is now array of ObjectiveEntry - extract just the objective text
+      objectives: currentChat.objectives?.map((o) => ({
+        id: o.objective_id,
+        objective: o.objective,
+      })) ?? [],
+      problem_statement: problemStatementText,
       name: currentChat.scenario_name ?? null,
       background_image: firstImageUploadId,
       copy_paste_allowed: currentChat.copy_paste_allowed ?? null,
@@ -373,7 +383,9 @@ export function AttemptChatSetup({
   const chatAreaViewMode: ChatAreaViewMode = useMemo(() => {
     if (showGrades) return "rubric";
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    if (currentChatData?.video?.upload_id) return "video";
+    // NEW: Check videos array (first video with upload_id) instead of video.upload_id
+    const hasVideo = currentChatData?.videos?.some((v) => v.upload_id);
+    if (hasVideo) return "video";
     // Check if we have grading data
     const hasGradingData =
       currentChatData?.grading_state ||
@@ -1493,6 +1505,16 @@ export function AttemptChatSetup({
     const currentChatData = attemptData?.chats?.[currentChatIndex];
 
     if (chatAreaViewMode === "messages") {
+      // NEW: Map personas from PersonaEntry (id may be optional) to expected format
+      const mappedPersonas = (currentChatData?.personas ?? [])
+        .filter((p) => p.id) // Filter out entries without id
+        .map((p) => ({
+          id: p.id!,
+          name: p.name || "Assistant",
+          icon: p.icon ?? null,
+          color: p.color ?? null,
+        }));
+
       const props: MessagesViewProps = {
         messages: currentChatData?.messages?.map((m) => ({
           id: m.id,
@@ -1505,7 +1527,7 @@ export function AttemptChatSetup({
         })),
         streaming_content: streamingContent,
         optimistic_messages: optimisticMessages,
-        personas: currentChatData?.personas || [],
+        personas: mappedPersonas,
         scenario: scenario
           ? {
               persona_name: scenario.persona_name ?? null,
@@ -1537,6 +1559,16 @@ export function AttemptChatSetup({
       };
       return props;
     } else if (chatAreaViewMode === "graded-messages") {
+      // NEW: Map personas from PersonaEntry to expected format
+      const mappedPersonas = (currentChatData?.personas ?? [])
+        .filter((p) => p.id)
+        .map((p) => ({
+          id: p.id!,
+          name: p.name || "Assistant",
+          icon: p.icon ?? null,
+          color: p.color ?? null,
+        }));
+
       const props: GradedMessagesViewProps = {
         messages:
           currentChatData?.messages?.map((m) => ({
@@ -1549,7 +1581,7 @@ export function AttemptChatSetup({
             persona_id: m.persona_id ?? null,
             feedbacks: m.feedbacks,
           })) || [],
-        personas: currentChatData?.personas || [],
+        personas: mappedPersonas,
         scenario: scenario
           ? {
               persona_name: scenario.persona_name ?? null,
@@ -1561,12 +1593,33 @@ export function AttemptChatSetup({
       };
       return props;
     } else if (chatAreaViewMode === "video") {
+      // NEW: Use videos array (first video), questions array, and options array
+      const firstVideo = currentChatData?.videos?.[0];
+      const questions = currentChatData?.questions ?? [];
+      const options = currentChatData?.options ?? [];
+
+      // Build options lookup by question (options are flat, need to map to questions)
+      // For now, pass all options - VideoView will need to handle mapping
+      const videoQuestions = questions.map((q) => ({
+        id: q.question_id || "",
+        question_text: q.question_text || "",
+        type: "multiple_choice",
+        allow_multiple: q.allow_multiple ?? false,
+        times: null,
+        options: options.map((opt) => ({
+          id: opt.option_id || "",
+          option_text: opt.option_text || "",
+          type: null,
+          is_correct: opt.is_correct ?? null,
+        })),
+      }));
+
       const props: VideoViewProps = {
         video_data: {
-          id: currentChatData?.video?.id || "",
-          upload_id: currentChatData?.video?.upload_id ?? null,
+          id: firstVideo?.video_id || "",
+          upload_id: firstVideo?.upload_id ?? null,
         },
-        video_questions: currentChatData?.video?.questions,
+        video_questions: videoQuestions.length > 0 ? videoQuestions : undefined,
       };
       return props;
     } else {
@@ -1623,14 +1676,33 @@ export function AttemptChatSetup({
     // Determine input mode based on scenario settings
     const textEnabled = scenario?.text_enabled !== false;
     const audioEnabled = scenario?.audio_enabled === true;
+    const currentChatData = attemptData?.chats?.[currentChatIndex];
+    // NEW: Check questions array instead of video?.questions
     const hasVideoQuestions =
-      attemptData?.chats?.[currentChatIndex]?.video?.questions &&
-      attemptData.chats[currentChatIndex].video?.questions.length > 0;
+      currentChatData?.questions && currentChatData.questions.length > 0;
 
     if (hasVideoQuestions) {
+      // Build questions with options for QuestionResponsesInput
+      const questions = currentChatData?.questions ?? [];
+      const options = currentChatData?.options ?? [];
+
+      const formattedQuestions = questions.map((q) => ({
+        id: q.question_id || "",
+        question_text: q.question_text || "",
+        type: "multiple_choice",
+        allow_multiple: q.allow_multiple ?? false,
+        times: null,
+        options: options.map((opt) => ({
+          id: opt.option_id || "",
+          option_text: opt.option_text || "",
+          type: null,
+          is_correct: opt.is_correct ?? null,
+        })),
+      }));
+
       const props: QuestionResponsesInputProps = {
         enabled: !currentChat?.completed ?? true,
-        questions: attemptData.chats[currentChatIndex].video?.questions || [],
+        questions: formattedQuestions,
         selected_answers: new Map(),
         on_answer_change: () => {},
         on_submit: () => {},
@@ -1705,9 +1777,10 @@ export function AttemptChatSetup({
   const InputAreaComponent = useMemo(() => {
     const textEnabled = scenario?.text_enabled !== false;
     const audioEnabled = scenario?.audio_enabled === true;
+    const currentChatData = attemptData?.chats?.[currentChatIndex];
+    // NEW: Check questions array instead of video?.questions
     const hasVideoQuestions =
-      attemptData?.chats?.[currentChatIndex]?.video?.questions &&
-      attemptData.chats[currentChatIndex].video?.questions.length > 0;
+      currentChatData?.questions && currentChatData.questions.length > 0;
 
     if (hasVideoQuestions) {
       return QuestionResponsesInput;
