@@ -25095,6 +25095,15 @@ class GetSimulationMessagesViewSqlParams(BaseModel):
             self.practice_filter,
         )
 
+class QGetSimulationMessagesViewV4Hint(BaseModel):
+
+    message_id: UUID | None
+    hint: str | None
+    idx: int | None
+
+
+
+
 class QGetSimulationMessagesViewV4Replacement(BaseModel):
 
     section: str | None
@@ -25138,6 +25147,7 @@ class QGetSimulationMessagesViewV4Item(BaseModel):
     message_position: int | None
     strengths: list[QGetSimulationMessagesViewV4Strength] | None
     improvements: list[QGetSimulationMessagesViewV4Improvement] | None
+    hints: list[QGetSimulationMessagesViewV4Hint] | None
 
 class GetSimulationMessagesViewSqlRow(BaseModel):
 

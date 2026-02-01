@@ -41,6 +41,14 @@ class ImprovementItem(BaseModel):
     replacements: list[ReplacementItem] | None = None
 
 
+class HintItem(BaseModel):
+    """Hint for a message (practice-specific)."""
+
+    message_id: UUID | None = None
+    hint: str | None = None
+    idx: int | None = None
+
+
 class MessageViewItem(BaseModel):
     """Single message from the simulation messages view."""
 
@@ -64,6 +72,9 @@ class MessageViewItem(BaseModel):
     # Strengths and improvements
     strengths: list[StrengthItem] | None = None
     improvements: list[ImprovementItem] | None = None
+
+    # Hints (practice-specific)
+    hints: list[HintItem] | None = None
 
 
 class GetMessagesRequest(BaseModel):

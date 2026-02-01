@@ -76,6 +76,13 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_improvement AS (
     replacements types.q_get_simulation_messages_view_v4_replacement[]
 );
 
+-- Hint type (practice-specific)
+CREATE TYPE types.q_get_simulation_messages_view_v4_hint AS (
+    message_id uuid,
+    hint text,
+    idx int
+);
+
 -- Main message item type
 CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     -- Primary key
@@ -97,7 +104,10 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
 
     -- Strengths and improvements
     strengths types.q_get_simulation_messages_view_v4_strength[],
-    improvements types.q_get_simulation_messages_view_v4_improvement[]
+    improvements types.q_get_simulation_messages_view_v4_improvement[],
+
+    -- Hints (practice-specific)
+    hints types.q_get_simulation_messages_view_v4_hint[]
 );
 
 -- ============================================================================
@@ -196,6 +206,21 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.improvements) AS i ON true
         GROUP BY mv.message_id
     ),
+    -- Transform hints (MV types.mv_hint -> query types) - practice-specific
+    hints_transformed AS (
+        SELECT
+            mv.message_id,
+            COALESCE(
+                ARRAY_AGG(
+                    ((h).message_id, (h).hint, (h).idx)::types.q_get_simulation_messages_view_v4_hint
+                    ORDER BY (h).idx
+                ) FILTER (WHERE (h).hint IS NOT NULL),
+                ARRAY[]::types.q_get_simulation_messages_view_v4_hint[]
+            ) AS hints
+        FROM mv_data mv
+        LEFT JOIN LATERAL unnest(mv.hints) AS h ON true
+        GROUP BY mv.message_id
+    ),
     -- Combine data
     with_nested AS (
         SELECT
@@ -209,10 +234,12 @@ AS $$
             mv.completed,
             mv.message_position,
             st.strengths,
-            it.improvements
+            it.improvements,
+            ht.hints
         FROM mv_data mv
         LEFT JOIN strengths_transformed st ON st.message_id = mv.message_id
         LEFT JOIN improvements_transformed it ON it.message_id = mv.message_id
+        LEFT JOIN hints_transformed ht ON ht.message_id = mv.message_id
     ),
     -- Aggregate into array
     items_agg AS (
@@ -229,7 +256,8 @@ AS $$
                     completed,
                     message_position,
                     strengths,
-                    improvements
+                    improvements,
+                    hints
                 )::types.q_get_simulation_messages_view_v4_item
                 ORDER BY chat_id, message_position
             ),

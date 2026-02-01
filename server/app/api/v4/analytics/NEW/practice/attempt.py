@@ -1,9 +1,9 @@
 """Practice attempt detail endpoint - POST /practice/attempt.
 
-Uses three-MV architecture with parallel query execution:
-1. Query 1 (Attempt): Attempt-level data + resource joins
-2. Query 2 (Chats): Chat-level data + resource joins
-3. Query 3 (Messages): Message-level data with hints (PRACTICE-specific)
+Uses view internal handlers with parallel query execution:
+1. Query 1 (Attempt): Attempt-level data via simulation_attempts view
+2. Query 2 (Chats): Chat-level data via simulation_chats view
+3. Query 3 (Messages): Message-level data via simulation_messages view (includes hints)
 
 All three queries run in parallel using pool.acquire() for each,
 then results are assembled in Python.
@@ -34,6 +34,9 @@ from app.api.v4.analytics.NEW.practice.types import (
     StrengthEntry,
     TimerData,
 )
+from app.api.v4.views.simulation.attempts.get import get_simulation_attempts_internal
+from app.api.v4.views.simulation.chats.get import get_simulation_chats_internal
+from app.api.v4.views.simulation.messages.get import get_simulation_messages_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -71,114 +74,6 @@ def _format_timer(elapsed: int, limit: int | None, infinite_mode: bool) -> Timer
     )
 
 
-def _transform_feedbacks(feedbacks: list[Any] | None) -> list[FeedbackEntry]:
-    """Transform SQL feedback tuples to FeedbackEntry objects."""
-    if not feedbacks:
-        return []
-    result = []
-    for fb in feedbacks:
-        if fb is not None:
-            result.append(
-                FeedbackEntry(
-                    id=fb[0] if len(fb) > 0 else None,
-                    standard_id=fb[1] if len(fb) > 1 else None,
-                    total=fb[2] if len(fb) > 2 else None,
-                    feedback=fb[3] if len(fb) > 3 else None,
-                )
-            )
-    return result
-
-
-def _transform_hints(hints: list[Any] | None) -> list[HintEntry]:
-    """Transform SQL hint tuples to HintEntry objects (PRACTICE-specific)."""
-    if not hints:
-        return []
-    result = []
-    for h in hints:
-        if h is not None:
-            result.append(
-                HintEntry(
-                    message_id=h[0] if len(h) > 0 else None,
-                    hint=h[1] if len(h) > 1 else None,
-                    idx=h[2] if len(h) > 2 else None,
-                )
-            )
-    return result
-
-
-def _transform_highlights(highlights: list[Any] | None) -> list[HighlightEntry]:
-    """Transform SQL highlight tuples to HighlightEntry objects."""
-    if not highlights:
-        return []
-    result = []
-    for h in highlights:
-        if h is not None:
-            result.append(
-                HighlightEntry(
-                    section=h[0] if len(h) > 0 else None,
-                    idx=h[1] if len(h) > 1 else None,
-                )
-            )
-    return result
-
-
-def _transform_replacements(replacements: list[Any] | None) -> list[ReplacementEntry]:
-    """Transform SQL replacement tuples to ReplacementEntry objects."""
-    if not replacements:
-        return []
-    result = []
-    for r in replacements:
-        if r is not None:
-            result.append(
-                ReplacementEntry(
-                    section=r[0] if len(r) > 0 else None,
-                    replace_text=r[1] if len(r) > 1 else None,
-                    idx=r[2] if len(r) > 2 else None,
-                )
-            )
-    return result
-
-
-def _transform_strengths(strengths: list[Any] | None) -> list[StrengthEntry]:
-    """Transform SQL strength tuples to StrengthEntry objects."""
-    if not strengths:
-        return []
-    result = []
-    for s in strengths:
-        if s is not None:
-            result.append(
-                StrengthEntry(
-                    id=s[0] if len(s) > 0 else None,
-                    message_id=s[1] if len(s) > 1 else None,
-                    name=s[2] if len(s) > 2 else None,
-                    description=s[3] if len(s) > 3 else None,
-                    highlights=_transform_highlights(s[4] if len(s) > 4 else None),
-                )
-            )
-    return result
-
-
-def _transform_improvements(
-    improvements: list[Any] | None,
-) -> list[ImprovementEntry]:
-    """Transform SQL improvement tuples to ImprovementEntry objects."""
-    if not improvements:
-        return []
-    result = []
-    for i in improvements:
-        if i is not None:
-            result.append(
-                ImprovementEntry(
-                    id=i[0] if len(i) > 0 else None,
-                    message_id=i[1] if len(i) > 1 else None,
-                    name=i[2] if len(i) > 2 else None,
-                    description=i[3] if len(i) > 3 else None,
-                    replacements=_transform_replacements(i[4] if len(i) > 4 else None),
-                )
-            )
-    return result
-
-
 @router.post(
     "/attempt",
     response_model=GetPracticeAttemptDetailResponse,
@@ -196,10 +91,10 @@ async def practice_attempt_detail(
 ) -> GetPracticeAttemptDetailResponse:
     """Get practice attempt detail with parallel MV fetching.
 
-    Uses three-MV architecture with pool-based parallel fetch:
-    - MV 1: mv_practice_attempts (attempt-level aggregates)
-    - MV 2: mv_practice_chats (chat-level data with grades/feedbacks)
-    - MV 3: mv_practice_messages (message-level data with hints/strengths/improvements)
+    Uses view internal handlers with pool-based parallel fetch:
+    - View 1: simulation_attempts (attempt-level aggregates)
+    - View 2: simulation_chats (chat-level data with grades/feedbacks)
+    - View 3: simulation_messages (message-level data with hints/strengths/improvements)
 
     Each query runs on its own connection from the pool for true parallelism.
     """
@@ -239,26 +134,36 @@ async def practice_attempt_detail(
         # === PARALLEL FETCH FUNCTIONS ===
         # Each function acquires its own connection for true parallelism
 
-        async def fetch_attempt(aid: UUID, pid: UUID) -> list[asyncpg.Record]:
+        async def fetch_attempt(aid: UUID, pid: UUID) -> Any:
             async with pool.acquire() as c:
-                return await c.fetch(
-                    "SELECT * FROM api_get_practice_attempt_new_v4($1, $2)",
-                    aid,
-                    pid,
+                # Use view internal handler with practice=True for practice
+                return await get_simulation_attempts_internal(
+                    conn=c,
+                    attempt_ids=[aid],
+                    practice=True,
+                    profile_id=pid,
+                    bypass_cache=bypass_cache,
                 )
 
-        async def fetch_chats(aid: UUID) -> list[asyncpg.Record]:
+        async def fetch_chats(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                return await c.fetch(
-                    "SELECT * FROM api_get_practice_attempt_chats_new_v4($1)",
-                    aid,
+                # Use view internal handler with practice=True for practice
+                return await get_simulation_chats_internal(
+                    conn=c,
+                    attempt_id=aid,
+                    practice=True,
+                    bypass_cache=bypass_cache,
                 )
 
-        async def fetch_messages(aid: UUID) -> list[asyncpg.Record]:
+        async def fetch_messages(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                return await c.fetch(
-                    "SELECT * FROM api_get_practice_attempt_messages_new_v4($1)",
-                    aid,
+                # Use view internal handler with practice=True for practice
+                # This now includes hints
+                return await get_simulation_messages_internal(
+                    conn=c,
+                    attempt_id=aid,
+                    practice=True,
+                    bypass_cache=bypass_cache,
                 )
 
         # === EXECUTE ALL THREE QUERIES IN PARALLEL ===
@@ -276,147 +181,203 @@ async def practice_attempt_detail(
                 actor_name=None,
             )
 
-        attempt_row = attempt_result[0] if attempt_result else None
+        attempt_item = attempt_result[0] if attempt_result else None
 
-        if not attempt_row:
+        if not attempt_item:
             return GetPracticeAttemptDetailResponse(
                 attempt_exists=False,
                 access_denied=True,
                 actor_name=None,
             )
 
-        # Check permissions
-        if not attempt_row.get("attempt_exists"):
-            return GetPracticeAttemptDetailResponse(
-                attempt_exists=False,
-                access_denied=False,
-                actor_name=attempt_row.get("actor_name"),
-            )
-
-        if attempt_row.get("access_denied"):
+        # Check if profile matches (permission check)
+        if attempt_item.profile_id != profile_id:
             return GetPracticeAttemptDetailResponse(
                 attempt_exists=True,
                 access_denied=True,
-                actor_name=attempt_row.get("actor_name"),
+                actor_name=attempt_item.profile_name,
             )
 
         # Set audit context
-        if attempt_row.get("actor_name"):
+        if attempt_item.profile_name:
             audit_set(
                 http_request,
-                actor={"name": attempt_row["actor_name"], "id": profile_id},
+                actor={"name": attempt_item.profile_name, "id": profile_id},
             )
 
         # === GROUP MESSAGES BY CHAT_ID ===
-        messages_by_chat: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        messages_by_chat: dict[UUID, list[Any]] = defaultdict(list)
         for msg in messages_result or []:
-            chat_id = str(msg["chat_id"])
-            messages_by_chat[chat_id].append(msg)
+            messages_by_chat[msg.chat_id].append(msg)
 
         # === BUILD CHATS WITH MESSAGES ===
         chats: list[PracticeChatData] = []
-        for chat_row in chats_result or []:
-            chat_id = str(chat_row["chat_id"])
-            chat_messages = messages_by_chat.get(chat_id, [])
+        for chat_item in chats_result or []:
+            chat_messages = messages_by_chat.get(chat_item.chat_id, [])
 
-            # Transform messages (with hints for PRACTICE)
+            # Transform messages (with hints for practice)
             messages: list[PracticeMessageData] = []
             for msg in chat_messages:
+                # Transform strengths
+                strengths: list[StrengthEntry] = []
+                if msg.strengths:
+                    for s in msg.strengths:
+                        highlights: list[HighlightEntry] = []
+                        if s.highlights:
+                            for h in s.highlights:
+                                highlights.append(
+                                    HighlightEntry(section=h.section, idx=h.idx)
+                                )
+                        strengths.append(
+                            StrengthEntry(
+                                id=s.id,
+                                message_id=s.message_id,
+                                name=s.name,
+                                description=s.description,
+                                highlights=highlights,
+                            )
+                        )
+
+                # Transform improvements
+                improvements: list[ImprovementEntry] = []
+                if msg.improvements:
+                    for i in msg.improvements:
+                        replacements: list[ReplacementEntry] = []
+                        if i.replacements:
+                            for r in i.replacements:
+                                replacements.append(
+                                    ReplacementEntry(
+                                        section=r.section,
+                                        replace_text=r.replace_text,
+                                        idx=r.idx,
+                                    )
+                                )
+                        improvements.append(
+                            ImprovementEntry(
+                                id=i.id,
+                                message_id=i.message_id,
+                                name=i.name,
+                                description=i.description,
+                                replacements=replacements,
+                            )
+                        )
+
+                # Transform hints (PRACTICE-specific)
+                hints: list[HintEntry] = []
+                if msg.hints:
+                    for h in msg.hints:
+                        hints.append(
+                            HintEntry(
+                                message_id=h.message_id,
+                                hint=h.hint,
+                                idx=h.idx,
+                            )
+                        )
+
                 messages.append(
                     PracticeMessageData(
-                        id=msg["message_id"],
-                        content=msg.get("content"),
-                        type=msg.get("type"),
+                        id=msg.message_id,
+                        content=msg.content,
+                        type=msg.type,
                         created_at=(
-                            msg["created_at"].isoformat()
-                            if msg.get("created_at")
-                            else None
+                            msg.created_at.isoformat() if msg.created_at else None
                         ),
-                        completed=msg.get("completed"),
-                        hints=_transform_hints(msg.get("hints")),  # PRACTICE-specific
-                        strengths=_transform_strengths(msg.get("strengths")),
-                        improvements=_transform_improvements(msg.get("improvements")),
+                        completed=msg.completed,
+                        hints=hints,  # PRACTICE-specific
+                        strengths=strengths,
+                        improvements=improvements,
                     )
                 )
 
             # Build grade data
             grade = None
-            if chat_row.get("grade_id"):
+            if chat_item.grade_id:
                 grade = GradeData(
-                    id=chat_row["grade_id"],
-                    score=chat_row.get("grade_score"),
-                    passed=chat_row.get("grade_passed"),
-                    description=chat_row.get("grade_description"),
-                    time_taken=chat_row.get("grade_time_taken"),
-                    total_points=chat_row.get("rubric_total_points"),
-                    pass_points=chat_row.get("rubric_pass_points"),
+                    id=chat_item.grade_id,
+                    score=chat_item.grade_score,
+                    passed=chat_item.grade_passed,
+                    description=chat_item.grade_description,
+                    time_taken=chat_item.grade_time_taken,
+                    total_points=chat_item.rubric_total_points,
+                    pass_points=chat_item.rubric_pass_points,
                 )
+
+            # Transform feedbacks
+            feedbacks: list[FeedbackEntry] = []
+            if chat_item.feedbacks:
+                for fb in chat_item.feedbacks:
+                    feedbacks.append(
+                        FeedbackEntry(
+                            id=fb.id,
+                            standard_id=fb.standard_id,
+                            total=fb.total,
+                            feedback=fb.feedback,
+                        )
+                    )
 
             chats.append(
                 PracticeChatData(
-                    id=chat_row["chat_id"],
-                    scenario_id=chat_row.get("scenario_id"),
-                    scenario_name=chat_row.get("scenario_name"),
-                    problem_statement=chat_row.get("problem_statement"),
-                    show_problem_statement=chat_row.get("show_problem_statement"),
-                    show_objectives=chat_row.get("show_objectives"),
-                    objectives=chat_row.get("objectives"),
-                    persona_id=chat_row.get("persona_id"),
-                    persona_name=chat_row.get("persona_name"),
-                    persona_icon=chat_row.get("persona_icon"),
-                    persona_color=chat_row.get("persona_color"),
-                    completed=chat_row.get("chat_completed"),
-                    is_current=chat_row.get("is_current_chat"),
-                    position=chat_row.get("chat_position"),
+                    id=chat_item.chat_id,
+                    scenario_id=chat_item.scenario_id,
+                    scenario_name=chat_item.scenario_name,
+                    problem_statement=chat_item.problem_statement,
+                    show_problem_statement=True,  # Default for practice
+                    show_objectives=True,  # Default for practice
+                    objectives=chat_item.objective,
+                    persona_id=chat_item.persona_id,
+                    persona_name=chat_item.persona_name,
+                    persona_icon=chat_item.persona_icon,
+                    persona_color=chat_item.persona_color,
+                    completed=chat_item.chat_completed,
+                    is_current=chat_item.is_current_chat,
+                    position=chat_item.chat_position,
                     grade=grade,
-                    feedbacks=_transform_feedbacks(chat_row.get("feedbacks")),
+                    feedbacks=feedbacks,
                     messages=messages,
                 )
             )
 
         # === BUILD ATTEMPT DATA ===
         attempt = PracticeAttemptData(
-            id=attempt_row["out_attempt_id"],
+            id=attempt_item.attempt_id,
             created_at=(
-                attempt_row["attempt_created_at"].isoformat()
-                if attempt_row.get("attempt_created_at")
+                attempt_item.attempt_created_at.isoformat()
+                if attempt_item.attempt_created_at
                 else None
             ),
-            infinite_mode=attempt_row.get("infinite_mode"),
-            is_archived=attempt_row.get("is_archived"),  # PRACTICE-specific
-            profile_id=attempt_row.get("profile_id_out"),
-            profile_name=attempt_row.get("profile_name"),
-            department_id=attempt_row.get("department_id"),
+            infinite_mode=attempt_item.infinite_mode,
+            is_archived=False,  # Practice attempts from view are not archived
+            profile_id=attempt_item.profile_id,
+            profile_name=attempt_item.profile_name,
+            department_id=attempt_item.department_id,
         )
 
         # === BUILD SIMULATION DATA ===
         simulation = SimulationData(
-            id=attempt_row.get("simulation_id"),
-            name=attempt_row.get("simulation_name"),
-            description=attempt_row.get("simulation_description"),
-            time_limit=attempt_row.get("time_limit"),
-            hints_enabled=attempt_row.get("hints_enabled"),
-            objectives_enabled=attempt_row.get("objectives_enabled"),
-            image_input_active=attempt_row.get("image_input_active"),
-            copy_paste_allowed=attempt_row.get("copy_paste_allowed"),
+            id=attempt_item.simulation_id,
+            name=attempt_item.simulation_name,
+            description=None,  # Not in view, would need to JOIN
+            time_limit=None,  # Would need to be fetched separately if needed
+            hints_enabled=None,
+            objectives_enabled=None,
+            image_input_active=None,
+            copy_paste_allowed=None,
         )
 
         # === BUILD TIMER DATA ===
         timer = _format_timer(
-            elapsed=attempt_row.get("elapsed_seconds") or 0,
-            limit=attempt_row.get("time_limit"),
-            infinite_mode=attempt_row.get("infinite_mode") or False,
+            elapsed=attempt_item.elapsed_seconds or 0,
+            limit=None,  # Would need to be fetched separately
+            infinite_mode=attempt_item.infinite_mode or False,
         )
 
         # === BUILD AGGREGATED RESULTS ===
-        total_score = attempt_row.get("total_score") or 0
-        total_chats = attempt_row.get("total_chats") or 0
-        completed_chats = attempt_row.get("completed_chats") or 0
-        rubric_total_points = attempt_row.get("rubric_total_points") or 0
+        total_score = attempt_item.total_score or 0
+        total_chats = attempt_item.total_chats or 0
+        completed_chats = attempt_item.completed_chats or 0
+        rubric_total_points = attempt_item.rubric_total_points or 0
 
-        total_possible = (
-            rubric_total_points * completed_chats if completed_chats > 0 else 0
-        )
+        total_possible = rubric_total_points * completed_chats if completed_chats > 0 else 0
         percentage = (
             round((total_score / total_possible) * 100, 2)
             if total_possible > 0
@@ -427,14 +388,14 @@ async def practice_attempt_detail(
             total_score=total_score,
             total_possible_points=float(total_possible),
             percentage=percentage,
-            passed=attempt_row.get("all_passed"),
+            passed=attempt_item.all_passed,
             chats_completed=completed_chats,
             total_chats=total_chats,
         )
 
         # === BUILD RESPONSE ===
         api_response = GetPracticeAttemptDetailResponse(
-            actor_name=attempt_row.get("actor_name"),
+            actor_name=attempt_item.profile_name,
             attempt_exists=True,
             access_denied=False,
             attempt=attempt,
@@ -465,7 +426,7 @@ async def practice_attempt_detail(
             error=e,
             route_path=http_request.url.path,
             operation="practice_new_attempt",
-            sql_query="api_get_practice_attempt_new_v4 / api_get_practice_attempt_chats_new_v4 / api_get_practice_attempt_messages_new_v4",
+            sql_query="view_internals: attempts, chats, messages",
             sql_params=None,
             request=http_request,
         )

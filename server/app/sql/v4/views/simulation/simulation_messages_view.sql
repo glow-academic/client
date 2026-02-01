@@ -60,6 +60,17 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
+DO $$
+BEGIN
+    CREATE TYPE types.mv_hint AS (
+        message_id uuid,
+        hint text,
+        idx int
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_simulation_messages materialized view (if it exists)
 -- ============================================================================
@@ -151,6 +162,18 @@ improvements_agg AS (
     WHERE i.active = TRUE
     GROUP BY i.message_id
 ),
+-- Aggregate hints per message (PRACTICE-specific)
+hints_agg AS (
+    SELECT
+        h.message_id,
+        ARRAY_AGG(
+            (h.message_id, h.hint, h.idx)::types.mv_hint
+            ORDER BY h.idx
+        ) AS hints
+    FROM simulation_hints_entry h
+    WHERE h.active = TRUE
+    GROUP BY h.message_id
+),
 -- Compute message position within chat
 messages_with_position AS (
     SELECT
@@ -195,11 +218,15 @@ SELECT
     COALESCE(sa.strengths, ARRAY[]::types.mv_strength[]) AS strengths,
 
     -- Improvements with replacements (denormalized)
-    COALESCE(ia.improvements, ARRAY[]::types.mv_improvement[]) AS improvements
+    COALESCE(ia.improvements, ARRAY[]::types.mv_improvement[]) AS improvements,
+
+    -- Hints (PRACTICE-specific, denormalized)
+    COALESCE(ha.hints, ARRAY[]::types.mv_hint[]) AS hints
 
 FROM messages_with_position mwp
 LEFT JOIN strengths_agg sa ON sa.message_id = mwp.message_id
 LEFT JOIN improvements_agg ia ON ia.message_id = mwp.message_id
+LEFT JOIN hints_agg ha ON ha.message_id = mwp.message_id
 WITH NO DATA;
 
 -- ============================================================================

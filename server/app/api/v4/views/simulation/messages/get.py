@@ -10,6 +10,7 @@ from app.api.v4.views.simulation.messages.types import (
     GetMessagesRequest,
     GetMessagesResponse,
     HighlightItem,
+    HintItem,
     ImprovementItem,
     MessageViewItem,
     ReplacementItem,
@@ -126,6 +127,18 @@ async def get_simulation_messages_internal(
                     for i in item.improvements
                 ]
 
+            # Transform hints (practice-specific)
+            hints = None
+            if item.hints:
+                hints = [
+                    HintItem(
+                        message_id=h.message_id,
+                        hint=h.hint,
+                        idx=h.idx,
+                    )
+                    for h in item.hints
+                ]
+
             items.append(
                 MessageViewItem(
                     message_id=item.message_id,
@@ -139,6 +152,7 @@ async def get_simulation_messages_internal(
                     message_position=item.message_position,
                     strengths=strengths,
                     improvements=improvements,
+                    hints=hints,
                 )
             )
 
