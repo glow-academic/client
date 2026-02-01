@@ -84,6 +84,44 @@ class DocumentEntry(BaseModel):
     description: str | None = None
 
 
+class TemplateEntry(BaseModel):
+    """Template entry with resource metadata."""
+
+    template_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+class ObjectiveEntry(BaseModel):
+    """Objective entry with resource metadata."""
+
+    objective_id: UUID | None = None
+    objective: str | None = None
+
+
+class ProblemStatementEntry(BaseModel):
+    """Problem statement entry with resource metadata."""
+
+    problem_statement_id: UUID | None = None
+    problem_statement: str | None = None
+
+
+class QuestionEntry(BaseModel):
+    """Question entry with resource metadata."""
+
+    question_id: UUID | None = None
+    question_text: str | None = None
+    allow_multiple: bool | None = None
+
+
+class OptionEntry(BaseModel):
+    """Option entry with resource metadata."""
+
+    option_id: UUID | None = None
+    option_text: str | None = None
+    is_correct: bool | None = None
+
+
 class QuizResponse(BaseModel):
     """Quiz response entry."""
 
@@ -368,40 +406,51 @@ class HintsByMessage(BaseModel):
 
 
 class ChatData(BaseModel):
-    """Chat with scenario, persona, grade, and messages."""
+    """Chat with scenario, persona, grade, and messages.
+
+    Split into view categories:
+    - Normal/General View: problem_statement, objectives, personas, images
+    - Video/Quiz View: videos, questions, options, responses
+    - Both Views: documents, templates
+    """
 
     id: UUID
     scenario_id: UUID | None = None
     scenario_name: str | None = None
-    problem_statement: str | None = None
-    show_problem_statement: bool | None = None
-    show_objectives: bool | None = None
-    objectives: list[str] | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    persona_icon: str | None = None
-    persona_color: str | None = None
     completed: bool | None = None
     is_current: bool | None = None
     position: int | None = None
     grade: GradeData | None = None
     feedbacks: list[FeedbackEntry] | None = None
     messages: list[MessageData] | None = None
-    # Extended fields for full feature support
-    quiz: QuizData | None = None
-    grading_state: GradingStateData | None = None
-    dynamic_rubric: DynamicRubricData | None = None
-    personas: list[PersonaEntry] | None = None
-    hints: list[HintsByMessage] | None = None
-    # Unified asset entries (id, upload_id, name, description)
-    images: list[ImageEntry] | None = None
-    videos: list[VideoEntry] | None = None
-    documents: list[DocumentEntry] | None = None
-    # Scenario fields for frontend compatibility
+
+    # Chat-level flags
+    show_problem_statement: bool | None = None
+    show_objectives: bool | None = None
     copy_paste_allowed: bool | None = None
     text_enabled: bool | None = None
     audio_enabled: bool | None = None
-    content_type: str | None = None  # 'text' | 'video' | 'quiz'
+
+    # Extended fields for full feature support
+    grading_state: GradingStateData | None = None
+    dynamic_rubric: DynamicRubricData | None = None
+    hints: list[HintsByMessage] | None = None
+
+    # --- Normal/General View resources ---
+    problem_statement: ProblemStatementEntry | None = None
+    objectives: list[ObjectiveEntry] | None = None
+    personas: list[PersonaEntry] | None = None
+    images: list[ImageEntry] | None = None
+
+    # --- Video/Quiz View resources ---
+    videos: list[VideoEntry] | None = None
+    questions: list[QuestionEntry] | None = None
+    options: list[OptionEntry] | None = None
+    responses: list[QuizResponse] | None = None
+
+    # --- Both Views resources ---
+    documents: list[DocumentEntry] | None = None
+    templates: list[TemplateEntry] | None = None
 
 
 class SimulationData(BaseModel):

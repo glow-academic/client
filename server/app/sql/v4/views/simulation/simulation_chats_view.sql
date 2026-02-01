@@ -25,11 +25,10 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
--- Create response type for raw quiz responses
+-- Create response type for raw quiz responses (no response_id - not a resource)
 DO $$
 BEGIN
     CREATE TYPE types.mv_response AS (
-        response_id uuid,
         question_id uuid,
         option_id uuid,
         completed boolean,
@@ -193,13 +192,12 @@ templates_agg AS (
     WHERE cht.active = TRUE
     GROUP BY cht.chat_id
 ),
--- Aggregate responses per chat (composite type with question and option)
+-- Aggregate responses per chat (composite type with question and option - no response_id)
 responses_agg AS (
     SELECT
         r.chat_id,
         ARRAY_AGG(
             (
-                r.id,
                 rqc.question_id,
                 roc.option_id,
                 r.completed,

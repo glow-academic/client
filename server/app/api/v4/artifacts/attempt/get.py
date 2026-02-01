@@ -41,7 +41,12 @@ from app.api.v4.artifacts.attempt.types import (
     ImageEntry,
     ImprovementEntry,
     MessageData,
+    ObjectiveEntry,
+    OptionEntry,
     PersonaEntry,
+    ProblemStatementEntry,
+    QuestionEntry,
+    QuizResponse,
     ReplacementEntry,
     RubricStructureData,
     ScenarioDocumentEntry,
@@ -53,11 +58,18 @@ from app.api.v4.artifacts.attempt.types import (
     StandardMapping,
     StandardPass,
     StrengthEntry,
+    TemplateEntry,
     TimerData,
     VideoEntry,
 )
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.images.get import get_images_internal
+from app.api.v4.resources.objectives.get import get_objectives_internal
+from app.api.v4.resources.options.get import get_options_internal
+from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
+from app.api.v4.resources.questions.get import get_questions_internal
+from app.api.v4.resources.templates.get import get_templates_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.simulation.attempts.get import get_simulation_attempts_internal
 from app.api.v4.views.simulation.chats.get import get_simulation_chats_internal
@@ -363,98 +375,138 @@ async def attempt_get(
                     ],
                 }
 
-        async def fetch_asset_metadata(
+        async def fetch_resource_metadata(
             image_ids: list[UUID],
             video_ids: list[UUID],
             document_ids: list[UUID],
-        ) -> tuple[dict[UUID, dict], dict[UUID, dict], dict[UUID, dict]]:
+            template_ids: list[UUID],
+            persona_ids: list[UUID],
+            objective_ids: list[UUID],
+            question_ids: list[UUID],
+            option_ids: list[UUID],
+            problem_statement_ids: list[UUID],
+        ) -> dict[str, dict[UUID, dict]]:
             """Fetch resource metadata using internal handlers (with caching).
 
             Uses the same internal fetch functions as the resources endpoints,
             which provide caching and consistent data access patterns.
             """
-            images_meta: dict[UUID, dict] = {}
-            videos_meta: dict[UUID, dict] = {}
-            documents_meta: dict[UUID, dict] = {}
-
-            if not image_ids and not video_ids and not document_ids:
-                return images_meta, videos_meta, documents_meta
+            result: dict[str, dict[UUID, dict]] = {
+                "images": {},
+                "videos": {},
+                "documents": {},
+                "templates": {},
+                "personas": {},
+                "objectives": {},
+                "questions": {},
+                "options": {},
+                "problem_statements": {},
+            }
 
             async with pool.acquire() as c:
-                # Fetch images via internal handler (cached)
+                # Fetch images
                 if image_ids:
                     items = await get_images_internal(c, image_ids, bypass_cache=bypass_cache)
                     for item in items:
                         if item.image_id:
-                            images_meta[item.image_id] = {
+                            result["images"][item.image_id] = {
                                 "name": item.name,
                                 "description": item.description,
                                 "upload_id": item.upload_id,
                             }
 
-                # Fetch videos via internal handler (cached)
+                # Fetch videos
                 if video_ids:
                     items = await get_videos_internal(c, video_ids, bypass_cache=bypass_cache)
                     for item in items:
                         if item.video_id:
-                            videos_meta[item.video_id] = {
+                            result["videos"][item.video_id] = {
                                 "name": item.name,
                                 "description": item.description,
                                 "upload_id": item.upload_id,
                             }
 
-                # Fetch documents via internal handler (cached)
+                # Fetch documents
                 if document_ids:
                     items = await get_documents_internal(c, document_ids, bypass_cache=bypass_cache)
                     for item in items:
                         if item.document_id:
-                            documents_meta[item.document_id] = {
+                            result["documents"][item.document_id] = {
                                 "name": item.name,
                                 "description": item.description,
                                 "upload_id": item.upload_id,
                             }
 
-            return images_meta, videos_meta, documents_meta
+                # Fetch templates
+                if template_ids:
+                    items = await get_templates_internal(c, template_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.template_id:
+                            result["templates"][item.template_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                            }
+
+                # Fetch personas
+                if persona_ids:
+                    items = await get_personas_internal(c, persona_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.persona_id:
+                            result["personas"][item.persona_id] = {
+                                "name": item.name,
+                                "icon": item.icon,
+                                "color": item.color,
+                            }
+
+                # Fetch objectives
+                if objective_ids:
+                    items = await get_objectives_internal(c, objective_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.objective_id:
+                            result["objectives"][item.objective_id] = {
+                                "objective": item.objective,
+                            }
+
+                # Fetch questions
+                if question_ids:
+                    items = await get_questions_internal(c, question_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.question_id:
+                            result["questions"][item.question_id] = {
+                                "question_text": item.question_text,
+                                "allow_multiple": item.allow_multiple,
+                            }
+
+                # Fetch options
+                if option_ids:
+                    items = await get_options_internal(c, option_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.option_id:
+                            result["options"][item.option_id] = {
+                                "option_text": item.option_text,
+                                "is_correct": item.is_correct,
+                            }
+
+                # Fetch problem statements
+                if problem_statement_ids:
+                    items = await get_problem_statements_internal(c, problem_statement_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.problem_statement_id:
+                            result["problem_statements"][item.problem_statement_id] = {
+                                "problem_statement": item.problem_statement,
+                            }
+
+            return result
 
         async def fetch_chat_extended_data(chat_ids: list[UUID]) -> dict[UUID, dict[str, Any]]:
-            """Fetch extended data for chats: video, quiz, grading_state, dynamic_rubric, personas, hints."""
+            """Fetch extended data for chats: grading_state and hints.
+
+            Note: Personas are now fetched via get_personas_internal using persona_ids from MV.
+            """
             if not chat_ids:
                 return {}
             async with pool.acquire() as c:
                 result: dict[UUID, dict[str, Any]] = {cid: {} for cid in chat_ids}
-
-                # Fetch personas for all chats (via chat-persona connection)
-                persona_rows = await c.fetch(
-                    """
-                    SELECT DISTINCT
-                        ch.id as chat_id,
-                        p.id as persona_id,
-                        COALESCE(pn.name, '') as name,
-                        COALESCE(pi.value, '') as icon,
-                        COALESCE(pc.hex_code, '') as color
-                    FROM simulation_chats_entry ch
-                    JOIN simulation_chats_personas_connection chp ON chp.chat_id = ch.id AND chp.active = true
-                    JOIN persona_artifact p ON p.id = chp.personas_id
-                    LEFT JOIN persona_names_junction pnj ON pnj.persona_id = p.id
-                    LEFT JOIN names_resource pn ON pn.id = pnj.name_id
-                    LEFT JOIN persona_icons_junction pij ON pij.persona_id = p.id
-                    LEFT JOIN icons_resource pi ON pi.id = pij.icon_id
-                    LEFT JOIN persona_colors_junction pcj ON pcj.persona_id = p.id
-                    LEFT JOIN colors_resource pc ON pc.id = pcj.color_id
-                    WHERE ch.id = ANY($1)
-                    """,
-                    chat_ids,
-                )
-                for row in persona_rows:
-                    chat_id = row["chat_id"]
-                    if "personas" not in result[chat_id]:
-                        result[chat_id]["personas"] = []
-                    result[chat_id]["personas"].append({
-                        "id": row["persona_id"],
-                        "name": row["name"],
-                        "icon": row["icon"],
-                        "color": row["color"],
-                    })
 
                 # Fetch grading state for completed chats
                 grading_rows = await c.fetch(
@@ -626,11 +678,18 @@ async def attempt_get(
         for msg in messages_result or []:
             messages_by_chat[msg.chat_id].append(msg)
 
-        # === COLLECT AND ENRICH ASSET REFS ===
-        # Collect all unique asset IDs from chats
+        # === COLLECT AND ENRICH RESOURCE REFS ===
+        # Collect all unique resource IDs from chats
         all_image_ids: list[UUID] = []
         all_video_ids: list[UUID] = []
         all_document_ids: list[UUID] = []
+        all_template_ids: list[UUID] = []
+        all_persona_ids: list[UUID] = []
+        all_objective_ids: list[UUID] = []
+        all_question_ids: list[UUID] = []
+        all_option_ids: list[UUID] = []
+        all_problem_statement_ids: list[UUID] = []
+
         for chat_item in chats_result or []:
             if chat_item.image_ids:
                 all_image_ids.extend(chat_item.image_ids)
@@ -638,12 +697,30 @@ async def attempt_get(
                 all_video_ids.extend(chat_item.video_ids)
             if chat_item.document_ids:
                 all_document_ids.extend(chat_item.document_ids)
+            if chat_item.template_ids:
+                all_template_ids.extend(chat_item.template_ids)
+            if chat_item.persona_ids:
+                all_persona_ids.extend(chat_item.persona_ids)
+            if chat_item.objective_ids:
+                all_objective_ids.extend(chat_item.objective_ids)
+            if chat_item.question_ids:
+                all_question_ids.extend(chat_item.question_ids)
+            if chat_item.option_ids:
+                all_option_ids.extend(chat_item.option_ids)
+            if chat_item.problem_statement_id:
+                all_problem_statement_ids.append(chat_item.problem_statement_id)
 
-        # Fetch metadata for all assets
-        images_meta, videos_meta, documents_meta = await fetch_asset_metadata(
-            list(set(all_image_ids)),
-            list(set(all_video_ids)),
-            list(set(all_document_ids)),
+        # Fetch metadata for all resources
+        resource_meta = await fetch_resource_metadata(
+            image_ids=list(set(all_image_ids)),
+            video_ids=list(set(all_video_ids)),
+            document_ids=list(set(all_document_ids)),
+            template_ids=list(set(all_template_ids)),
+            persona_ids=list(set(all_persona_ids)),
+            objective_ids=list(set(all_objective_ids)),
+            question_ids=list(set(all_question_ids)),
+            option_ids=list(set(all_option_ids)),
+            problem_statement_ids=list(set(all_problem_statement_ids)),
         )
 
         # === BUILD CHATS WITH MESSAGES ===
@@ -781,21 +858,8 @@ async def attempt_get(
                         )
                     )
 
-            # Get extended data for this chat
+            # Get extended data for this chat (grading state, hints)
             chat_ext = chat_extended.get(chat_item.chat_id, {}) if chat_extended else {}
-
-            # Build personas list
-            personas_data: list[PersonaEntry] | None = None
-            if chat_ext.get("personas"):
-                personas_data = [
-                    PersonaEntry(
-                        id=p.get("id"),
-                        name=p.get("name"),
-                        icon=p.get("icon"),
-                        color=p.get("color"),
-                    )
-                    for p in chat_ext["personas"]
-                ]
 
             # Build grading state
             grading_state_data: GradingStateData | None = None
@@ -871,46 +935,119 @@ async def attempt_get(
                         )
                     )
 
-            # Convert objective to list (view returns single string)
-            objectives_list = (
-                [chat_item.objective] if chat_item.objective else None
-            )
+            # === BUILD ENRICHED RESOURCE ENTRIES ===
+            # Normal/General View resources
+            problem_statement_entry: ProblemStatementEntry | None = None
+            if chat_item.problem_statement_id:
+                ps_meta = resource_meta["problem_statements"].get(chat_item.problem_statement_id, {})
+                problem_statement_entry = ProblemStatementEntry(
+                    problem_statement_id=chat_item.problem_statement_id,
+                    problem_statement=ps_meta.get("problem_statement"),
+                )
 
-            # Build enriched asset entries from IDs + metadata lookup
+            objectives_entries: list[ObjectiveEntry] | None = None
+            if chat_item.objective_ids:
+                objectives_entries = [
+                    ObjectiveEntry(
+                        objective_id=obj_id,
+                        objective=resource_meta["objectives"].get(obj_id, {}).get("objective"),
+                    )
+                    for obj_id in chat_item.objective_ids
+                ]
+
+            personas_entries: list[PersonaEntry] | None = None
+            if chat_item.persona_ids:
+                personas_entries = [
+                    PersonaEntry(
+                        id=p_id,
+                        name=resource_meta["personas"].get(p_id, {}).get("name"),
+                        icon=resource_meta["personas"].get(p_id, {}).get("icon"),
+                        color=resource_meta["personas"].get(p_id, {}).get("color"),
+                    )
+                    for p_id in chat_item.persona_ids
+                ]
+
             enriched_images: list[ImageEntry] | None = None
             if chat_item.image_ids:
                 enriched_images = [
                     ImageEntry(
                         image_id=img_id,
-                        upload_id=images_meta.get(img_id, {}).get("upload_id"),
-                        name=images_meta.get(img_id, {}).get("name"),
-                        description=images_meta.get(img_id, {}).get("description"),
+                        upload_id=resource_meta["images"].get(img_id, {}).get("upload_id"),
+                        name=resource_meta["images"].get(img_id, {}).get("name"),
+                        description=resource_meta["images"].get(img_id, {}).get("description"),
                     )
                     for img_id in chat_item.image_ids
                 ]
 
+            # Video/Quiz View resources
             enriched_videos: list[VideoEntry] | None = None
             if chat_item.video_ids:
                 enriched_videos = [
                     VideoEntry(
                         video_id=vid_id,
-                        upload_id=videos_meta.get(vid_id, {}).get("upload_id"),
-                        name=videos_meta.get(vid_id, {}).get("name"),
-                        description=videos_meta.get(vid_id, {}).get("description"),
+                        upload_id=resource_meta["videos"].get(vid_id, {}).get("upload_id"),
+                        name=resource_meta["videos"].get(vid_id, {}).get("name"),
+                        description=resource_meta["videos"].get(vid_id, {}).get("description"),
                     )
                     for vid_id in chat_item.video_ids
                 ]
 
+            questions_entries: list[QuestionEntry] | None = None
+            if chat_item.question_ids:
+                questions_entries = [
+                    QuestionEntry(
+                        question_id=q_id,
+                        question_text=resource_meta["questions"].get(q_id, {}).get("question_text"),
+                        allow_multiple=resource_meta["questions"].get(q_id, {}).get("allow_multiple"),
+                    )
+                    for q_id in chat_item.question_ids
+                ]
+
+            options_entries: list[OptionEntry] | None = None
+            if chat_item.option_ids:
+                options_entries = [
+                    OptionEntry(
+                        option_id=o_id,
+                        option_text=resource_meta["options"].get(o_id, {}).get("option_text"),
+                        is_correct=resource_meta["options"].get(o_id, {}).get("is_correct"),
+                    )
+                    for o_id in chat_item.option_ids
+                ]
+
+            responses_entries: list[QuizResponse] | None = None
+            if chat_item.responses:
+                responses_entries = [
+                    QuizResponse(
+                        question_id=r.question_id,
+                        option_id=r.option_id,
+                        completed=r.completed,
+                        created_at=r.created_at,
+                    )
+                    for r in chat_item.responses
+                ]
+
+            # Both Views resources
             enriched_documents: list[DocumentEntry] | None = None
             if chat_item.document_ids:
                 enriched_documents = [
                     DocumentEntry(
                         document_id=doc_id,
-                        upload_id=documents_meta.get(doc_id, {}).get("upload_id"),
-                        name=documents_meta.get(doc_id, {}).get("name"),
-                        description=documents_meta.get(doc_id, {}).get("description"),
+                        upload_id=resource_meta["documents"].get(doc_id, {}).get("upload_id"),
+                        name=resource_meta["documents"].get(doc_id, {}).get("name"),
+                        description=resource_meta["documents"].get(doc_id, {}).get("description"),
                     )
                     for doc_id in chat_item.document_ids
+                ]
+
+            templates_entries: list[TemplateEntry] | None = None
+            if chat_item.template_ids:
+                templates_entries = [
+                    TemplateEntry(
+                        template_id=t_id,
+                        name=resource_meta["templates"].get(t_id, {}).get("name"),
+                        description=resource_meta["templates"].get(t_id, {}).get("description"),
+                    )
+                    for t_id in chat_item.template_ids
                 ]
 
             chats.append(
@@ -918,32 +1055,34 @@ async def attempt_get(
                     id=chat_item.chat_id,
                     scenario_id=chat_item.scenario_id,
                     scenario_name=chat_item.scenario_name,
-                    problem_statement=chat_item.problem_statement,
-                    show_problem_statement=chat_item.show_problem_statement,
-                    show_objectives=chat_item.show_objectives,
-                    objectives=objectives_list,
-                    persona_id=chat_item.persona_id,
-                    persona_name=chat_item.persona_name,
-                    persona_icon=chat_item.persona_icon,
-                    persona_color=chat_item.persona_color,
                     completed=chat_item.chat_completed,
                     is_current=chat_item.is_current_chat,
                     position=chat_item.chat_position,
                     grade=grade,
                     feedbacks=feedbacks,
                     messages=messages,
-                    # Extended fields
-                    personas=personas_data,
-                    grading_state=grading_state_data,
-                    hints=hints_by_msg,
-                    # Chat-level flags (now from MV via chats view)
+                    # Chat-level flags
+                    show_problem_statement=chat_item.show_problem_statement,
+                    show_objectives=chat_item.show_objectives,
                     copy_paste_allowed=chat_item.copy_paste_allowed,
                     text_enabled=chat_item.text_enabled,
                     audio_enabled=chat_item.audio_enabled,
-                    # Enriched asset entries (id, upload_id, name, description)
+                    # Extended fields
+                    grading_state=grading_state_data,
+                    hints=hints_by_msg,
+                    # Normal/General View resources
+                    problem_statement=problem_statement_entry,
+                    objectives=objectives_entries,
+                    personas=personas_entries,
                     images=enriched_images,
+                    # Video/Quiz View resources
                     videos=enriched_videos,
+                    questions=questions_entries,
+                    options=options_entries,
+                    responses=responses_entries,
+                    # Both Views resources
                     documents=enriched_documents,
+                    templates=templates_entries,
                 )
             )
 

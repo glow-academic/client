@@ -25485,7 +25485,6 @@ class QGetSimulationChatsViewV4Feedback(BaseModel):
 
 class QGetSimulationChatsViewV4Response(BaseModel):
 
-    response_id: UUID | None
     question_id: UUID | None
     option_id: UUID | None
     completed: bool | None

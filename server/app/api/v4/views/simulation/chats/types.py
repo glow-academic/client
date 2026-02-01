@@ -17,9 +17,8 @@ class FeedbackItem(BaseModel):
 
 
 class ResponseItem(BaseModel):
-    """Quiz response item."""
+    """Quiz response item (no response_id - not a resource)."""
 
-    response_id: UUID | None = None
     question_id: UUID | None = None
     option_id: UUID | None = None
     completed: bool | None = None

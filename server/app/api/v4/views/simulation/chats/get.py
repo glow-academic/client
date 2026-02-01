@@ -97,7 +97,6 @@ async def get_simulation_chats_internal(
             if item.responses:
                 responses = [
                     ResponseItem(
-                        response_id=r.response_id,
                         question_id=r.question_id,
                         option_id=r.option_id,
                         completed=r.completed,

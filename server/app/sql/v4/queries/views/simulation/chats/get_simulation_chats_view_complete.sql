@@ -53,9 +53,8 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_feedback AS (
     feedback text
 );
 
--- Response item type (matches types.mv_response from MV)
+-- Response item type (matches types.mv_response from MV - no response_id)
 CREATE TYPE types.q_get_simulation_chats_view_v4_response AS (
-    response_id uuid,
     question_id uuid,
     option_id uuid,
     completed boolean,
@@ -185,14 +184,13 @@ AS $$
             COALESCE(
                 ARRAY_AGG(
                     (
-                        (r).response_id,
                         (r).question_id,
                         (r).option_id,
                         (r).completed,
                         (r).created_at
                     )::types.q_get_simulation_chats_view_v4_response
                     ORDER BY (r).created_at
-                ) FILTER (WHERE (r).response_id IS NOT NULL),
+                ) FILTER (WHERE (r).question_id IS NOT NULL),
                 ARRAY[]::types.q_get_simulation_chats_view_v4_response[]
             ) AS responses
         FROM mv_data mv
