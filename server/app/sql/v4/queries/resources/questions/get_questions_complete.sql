@@ -53,7 +53,8 @@ CREATE TYPE types.q_get_questions_v4_item AS (
     question_id uuid,
     question_text text,
     allow_multiple boolean,
-    generated boolean
+    generated boolean,
+    time int  -- Video timestamp when to show (seconds)
 );
 
 -- Create function
@@ -72,7 +73,8 @@ SELECT COALESCE(
             q.id,
             q.question_text,
             COALESCE(q.allow_multiple, false),
-            COALESCE(q.generated, false)
+            COALESCE(q.generated, false),
+            q.time
         )::types.q_get_questions_v4_item
         ORDER BY array_position(p_ids, q.id)
     ),

@@ -106,20 +106,26 @@ class ProblemStatementEntry(BaseModel):
     problem_statement: str | None = None
 
 
-class QuestionEntry(BaseModel):
-    """Question entry with resource metadata."""
-
-    question_id: UUID | None = None
-    question_text: str | None = None
-    allow_multiple: bool | None = None
-
-
 class OptionEntry(BaseModel):
-    """Option entry with resource metadata."""
+    """Option entry nested under a question."""
 
     option_id: UUID | None = None
     option_text: str | None = None
     is_correct: bool | None = None
+
+
+class QuestionEntry(BaseModel):
+    """Question entry with nested options and times.
+
+    Options are nested directly under the question.
+    Times indicates video timestamps (seconds) when to show this question.
+    """
+
+    question_id: UUID | None = None
+    question_text: str | None = None
+    allow_multiple: bool | None = None
+    times: list[int] | None = None  # Video timestamps when to show
+    options: list[OptionEntry] | None = None  # Nested options
 
 
 class QuizResponse(BaseModel):
@@ -452,8 +458,7 @@ class ChatData(BaseModel):
 
     # --- Video/Quiz View resources ---
     videos: list[VideoEntry] | None = None
-    questions: list[QuestionEntry] | None = None
-    options: list[OptionEntry] | None = None
+    questions: list[QuestionEntry] | None = None  # Options nested inside
     responses: list[QuizResponse] | None = None
 
     # --- Both Views resources ---

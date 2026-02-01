@@ -1,115 +1,123 @@
 /**
  * VideoView.tsx
- * Separate video player view (not part of MessagesView)
- * Video playback with controls and questions overlay
- * Explicit, self-contained types (like resource components)
+ * Video player with timestamp-based questions
+ * Questions appear when video reaches their trigger time
+ * Uses QuestionResponsesInput for question display
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { QuestionResponsesInput } from "../inputAreas/QuestionResponsesInput";
 
-// Explicit, self-contained prop interface (like resource components)
+// Simplified prop interface - only what we need
 export interface VideoViewProps {
-  video_data: {
+  video: {
     id: string;
-    upload_id: string | null;
+    upload_id: string;
   };
-  video_questions?: Array<{
+
+  // Questions with timestamps (times = when to show)
+  questions: Array<{
     id: string;
     question_text: string;
-    type: string;
-    allow_multiple: boolean | null;
-    times: Array<number> | null;
+    allow_multiple: boolean;
+    times: number[]; // Seconds when to show this question
     options: Array<{
       id: string;
       option_text: string;
-      type: string | null;
-      is_correct: boolean | null;
-    }> | null;
+      is_correct: boolean;
+    }>;
   }>;
-  on_question_submit?: (answers: Map<string, string[]>) => void;
+
+  // Responses from server (passed through to QuestionResponsesInput)
+  responses: Array<{
+    question_id: string;
+    option_id: string;
+  }>;
+
+  // Callback when user submits answer
+  on_submit_response: (question_id: string, option_ids: string[]) => void;
+
   disabled?: boolean;
 }
 
 export function VideoView({
-  video_data,
-  video_questions = [],
-  on_question_submit,
+  video,
+  questions,
+  responses,
+  on_submit_response,
   disabled = false,
 }: VideoViewProps) {
-  const [selectedAnswers, setSelectedAnswers] = useState<Map<string, string[]>>(
-    new Map()
-  );
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const handleAnswerChange = (questionId: string, answerIds: string[]) => {
-    setSelectedAnswers((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(questionId, answerIds);
-      return newMap;
-    });
-  };
+  // Filter questions that should be shown at current timestamp
+  // A question is visible if current time is within 2 seconds of any of its trigger times
+  const visibleQuestions = questions.filter((q) => {
+    // If question has been answered, always show it
+    const hasResponse = responses.some((r) => r.question_id === q.id);
+    if (hasResponse) return true;
 
-  const handleSubmit = () => {
-    if (on_question_submit) {
-      on_question_submit(selectedAnswers);
+    // Otherwise, show if we're at/past any of its trigger times
+    return q.times.some((t) => currentTime >= t && currentTime < t + 30);
+  });
+
+  const handleTimeUpdate = useCallback(() => {
+    if (videoRef.current) {
+      const time = Math.floor(videoRef.current.currentTime);
+      setCurrentTime(time);
+
+      // Pause video when reaching a question timestamp (if not already answered)
+      for (const q of questions) {
+        const hasResponse = responses.some((r) => r.question_id === q.id);
+        if (!hasResponse && q.times.includes(time) && !isPaused) {
+          videoRef.current.pause();
+          setIsPaused(true);
+          break;
+        }
+      }
     }
-  };
+  }, [questions, responses, isPaused]);
+
+  const handlePlay = useCallback(() => {
+    setIsPaused(false);
+  }, []);
+
+  const handleSubmit = useCallback(
+    (questionId: string, optionIds: string[]) => {
+      on_submit_response(questionId, optionIds);
+      // Resume video after answering
+      if (videoRef.current && videoRef.current.paused) {
+        videoRef.current.play();
+      }
+    },
+    [on_submit_response]
+  );
 
   return (
     <div className="flex flex-col h-full">
-      {/* Questions at top */}
-      {video_questions.length > 0 && (
-        <div className="border-b p-4 space-y-4">
-          <h2 className="text-lg font-semibold">Questions</h2>
-          {video_questions.map((question, idx) => (
-            <div key={question.id || idx} className="space-y-2">
-              <p className="font-medium">{question.question_text || ""}</p>
-              {question.options && question.options.length > 0 && (
-                <div className="space-y-1 pl-4">
-                  {question.options.map((option) => (
-                    <div
-                      key={option.id || ""}
-                      className={`p-2 rounded border ${
-                        option.is_correct
-                          ? "bg-green-50 border-green-200"
-                          : "bg-muted/50"
-                      }`}
-                    >
-                      {option.option_text || ""}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Video player in main area */}
-      <div className="flex-1 bg-black flex items-center justify-center">
-        {video_data.upload_id ? (
-          <video
-            src={`/api/v4/videos/${video_data.id}/stream`}
-            controls
-            className="w-full h-full object-contain"
-            disabled={disabled}
-          />
-        ) : (
-          <div className="text-white">Video not available</div>
-        )}
+      {/* Video player */}
+      <div className="flex-1 bg-black flex items-center justify-center min-h-0">
+        <video
+          ref={videoRef}
+          src={`/api/v4/videos/${video.id}/stream`}
+          controls
+          className="w-full h-full object-contain"
+          onTimeUpdate={handleTimeUpdate}
+          onPlay={handlePlay}
+        />
       </div>
 
-      {/* Submit button below video */}
-      {video_questions.length > 0 && (
-        <div className="border-t p-4">
-          <Button
-            onClick={handleSubmit}
-            className="w-full"
-            disabled={disabled || selectedAnswers.size === 0}
-          >
-            Submit Answers
-          </Button>
+      {/* Questions panel - shows when there are visible questions */}
+      {visibleQuestions.length > 0 && (
+        <div className="border-t max-h-[40%] overflow-y-auto">
+          <QuestionResponsesInput
+            questions={visibleQuestions}
+            responses={responses}
+            on_submit={handleSubmit}
+            disabled={disabled}
+          />
         </div>
       )}
     </div>

@@ -38,7 +38,8 @@ CREATE TYPE types.q_get_options_v4_item AS (
     option_id uuid,
     option_text text,
     is_correct boolean,
-    generated boolean
+    generated boolean,
+    question_id uuid  -- Link to parent question
 );
 
 -- Create function
@@ -57,7 +58,8 @@ SELECT COALESCE(
             o.id,
             o.option_text,
             COALESCE(o.is_correct, false),
-            COALESCE(o.generated, false)
+            COALESCE(o.generated, false),
+            o.question_id
         )::types.q_get_options_v4_item
         ORDER BY array_position(p_ids, o.id)
     ),

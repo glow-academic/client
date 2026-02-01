@@ -36,7 +36,8 @@ SELECT COALESCE(
             q.id,
             q.question_text,
             COALESCE(q.allow_multiple, false),
-            COALESCE(q.generated, false)
+            COALESCE(q.generated, false),
+            q.time
         )::types.q_get_questions_v4_item
         ORDER BY q.question_text
     ),

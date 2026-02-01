@@ -7268,8 +7268,6 @@ export interface components {
             videos?: components["schemas"]["VideoEntry"][] | null;
             /** Questions */
             questions?: components["schemas"]["QuestionEntry"][] | null;
-            /** Options */
-            options?: components["schemas"]["OptionEntry"][] | null;
             /** Responses */
             responses?: components["schemas"]["QuizResponse"][] | null;
             /** Documents */
@@ -14379,7 +14377,7 @@ export interface components {
         };
         /**
          * OptionEntry
-         * @description Option entry with resource metadata.
+         * @description Option entry nested under a question.
          */
         OptionEntry: {
             /** Option Id */
@@ -19645,6 +19643,8 @@ export interface components {
             allow_multiple: boolean | null;
             /** Generated */
             generated: boolean | null;
+            /** Time */
+            time: number | null;
         };
         /**
          * QGetRolesV4Item
@@ -22596,7 +22596,10 @@ export interface components {
         };
         /**
          * QuestionEntry
-         * @description Question entry with resource metadata.
+         * @description Question entry with nested options and times.
+         *
+         *     Options are nested directly under the question.
+         *     Times indicates video timestamps (seconds) when to show this question.
          */
         QuestionEntry: {
             /** Question Id */
@@ -22605,6 +22608,10 @@ export interface components {
             question_text?: string | null;
             /** Allow Multiple */
             allow_multiple?: boolean | null;
+            /** Times */
+            times?: number[] | null;
+            /** Options */
+            options?: components["schemas"]["OptionEntry"][] | null;
         };
         /** QuestionsApiRequest */
         QuestionsApiRequest: {

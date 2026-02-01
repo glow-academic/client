@@ -18389,6 +18389,7 @@ class QGetOptionsV4Item(BaseModel):
     option_text: str | None
     is_correct: bool | None
     generated: bool | None
+    question_id: UUID | None
 
 class GetOptionsSqlRow(BaseModel):
 
@@ -19122,6 +19123,7 @@ class QGetQuestionsV4Item(BaseModel):
     question_text: str | None
     allow_multiple: bool | None
     generated: bool | None
+    time: int | None
 
 class GetQuestionsSqlRow(BaseModel):
 

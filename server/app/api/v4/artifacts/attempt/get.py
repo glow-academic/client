@@ -331,6 +331,7 @@ async def attempt_get(
                             result["questions"][item.question_id] = {
                                 "question_text": item.question_text,
                                 "allow_multiple": item.allow_multiple,
+                                "time": item.time,  # Video timestamp when to show
                             }
 
                 # Fetch options
@@ -341,6 +342,7 @@ async def attempt_get(
                             result["options"][item.option_id] = {
                                 "option_text": item.option_text,
                                 "is_correct": item.is_correct,
+                                "question_id": item.question_id,  # Link to parent question
                             }
 
                 # Fetch problem statements
@@ -821,27 +823,39 @@ async def attempt_get(
                     for vid_id in chat_item.video_ids
                 ]
 
+            # Build questions with nested options
+            # Group options by question_id first
+            options_by_question: dict[UUID, list[OptionEntry]] = defaultdict(list)
+            if chat_item.option_ids:
+                for o_id in chat_item.option_ids:
+                    opt_meta = resource_meta["options"].get(o_id, {})
+                    q_id = opt_meta.get("question_id")
+                    if q_id:
+                        options_by_question[q_id].append(
+                            OptionEntry(
+                                option_id=o_id,
+                                option_text=opt_meta.get("option_text"),
+                                is_correct=opt_meta.get("is_correct"),
+                            )
+                        )
+
             questions_entries: list[QuestionEntry] | None = None
             if chat_item.question_ids:
-                questions_entries = [
-                    QuestionEntry(
-                        question_id=q_id,
-                        question_text=resource_meta["questions"].get(q_id, {}).get("question_text"),
-                        allow_multiple=resource_meta["questions"].get(q_id, {}).get("allow_multiple"),
+                questions_entries = []
+                for q_id in chat_item.question_ids:
+                    q_meta = resource_meta["questions"].get(q_id, {})
+                    time_val = q_meta.get("time")
+                    # Convert single time to list for client (times array)
+                    times = [time_val] if time_val is not None else None
+                    questions_entries.append(
+                        QuestionEntry(
+                            question_id=q_id,
+                            question_text=q_meta.get("question_text"),
+                            allow_multiple=q_meta.get("allow_multiple"),
+                            times=times,
+                            options=options_by_question.get(q_id) or None,
+                        )
                     )
-                    for q_id in chat_item.question_ids
-                ]
-
-            options_entries: list[OptionEntry] | None = None
-            if chat_item.option_ids:
-                options_entries = [
-                    OptionEntry(
-                        option_id=o_id,
-                        option_text=resource_meta["options"].get(o_id, {}).get("option_text"),
-                        is_correct=resource_meta["options"].get(o_id, {}).get("is_correct"),
-                    )
-                    for o_id in chat_item.option_ids
-                ]
 
             responses_entries: list[QuizResponse] | None = None
             if chat_item.responses:
@@ -953,8 +967,7 @@ async def attempt_get(
                     images=enriched_images,
                     # Video/Quiz View resources
                     videos=enriched_videos,
-                    questions=questions_entries,
-                    options=options_entries,
+                    questions=questions_entries,  # Options nested inside questions
                     responses=responses_entries,
                     # Both Views resources
                     documents=enriched_documents,

@@ -30395,20 +30395,6 @@
             ],
             "title": "Questions"
           },
-          "options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/OptionEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Options"
-          },
           "responses": {
             "anyOf": [
               {
@@ -63072,7 +63058,7 @@
         },
         "type": "object",
         "title": "OptionEntry",
-        "description": "Option entry with resource metadata."
+        "description": "Option entry nested under a question."
       },
       "OptionsApiRequest": {
         "properties": {
@@ -90536,6 +90522,17 @@
               }
             ],
             "title": "Generated"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
           }
         },
         "type": "object",
@@ -90543,7 +90540,8 @@
           "question_id",
           "question_text",
           "allow_multiple",
-          "generated"
+          "generated",
+          "time"
         ],
         "title": "QGetQuestionsV4Item"
       },
@@ -106892,11 +106890,39 @@
               }
             ],
             "title": "Allow Multiple"
+          },
+          "times": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Times"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OptionEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
           }
         },
         "type": "object",
         "title": "QuestionEntry",
-        "description": "Question entry with resource metadata."
+        "description": "Question entry with nested options and times.\n\nOptions are nested directly under the question.\nTimes indicates video timestamps (seconds) when to show this question."
       },
       "QuestionsApiRequest": {
         "properties": {

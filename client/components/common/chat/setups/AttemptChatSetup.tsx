@@ -1514,33 +1514,48 @@ export function AttemptChatSetup({
       };
       return props;
     } else if (chatAreaViewMode === "video") {
-      // NEW: Use videos array (first video), questions array, and options array
+      // Use videos array (first video), questions with nested options
       const firstVideo = currentChatData?.videos?.[0];
       const questions = currentChatData?.questions ?? [];
-      const options = currentChatData?.options ?? [];
+      const responses = currentChatData?.responses ?? [];
 
-      // Build options lookup by question (options are flat, need to map to questions)
-      // For now, pass all options - VideoView will need to handle mapping
+      // Questions now have options nested inside (from server)
       const videoQuestions = questions.map((q) => ({
         id: q.question_id || "",
         question_text: q.question_text || "",
-        type: "multiple_choice",
         allow_multiple: q.allow_multiple ?? false,
-        times: null,
-        options: options.map((opt) => ({
+        times: q.times ?? [],  // Server sends times array
+        options: (q.options ?? []).map((opt) => ({
           id: opt.option_id || "",
           option_text: opt.option_text || "",
-          type: null,
-          is_correct: opt.is_correct ?? null,
+          is_correct: opt.is_correct ?? false,
         })),
       }));
 
+      // Map responses to the format VideoView expects
+      const videoResponses = responses.map((r) => ({
+        question_id: r.question_id || "",
+        option_id: r.option_id || "",
+      }));
+
       const props: VideoViewProps = {
-        video_data: {
+        video: {
           id: firstVideo?.video_id || "",
-          upload_id: firstVideo?.upload_id ?? null,
+          upload_id: firstVideo?.upload_id || "",
         },
-        video_questions: videoQuestions.length > 0 ? videoQuestions : undefined,
+        questions: videoQuestions,
+        responses: videoResponses,
+        on_submit_response: (questionId: string, optionIds: string[]) => {
+          // Emit quiz response via socket
+          if (socket && currentChat?.id) {
+            socket.emit("quiz_submit_response", {
+              chat_id: currentChat.id,
+              question_id: questionId,
+              option_ids: optionIds,
+            });
+          }
+        },
+        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
       };
       return props;
     } else {
@@ -1574,6 +1589,9 @@ export function AttemptChatSetup({
     newHintMessageIds,
     handleSendMessage,
     isSendingMessage,
+    socket,
+    isAttemptOwner,
+    isActive,
   ]);
 
   const documentAreaProps: DocumentAreaProps | undefined = useMemo(() => {
@@ -1606,30 +1624,41 @@ export function AttemptChatSetup({
       currentChatData?.questions && currentChatData.questions.length > 0;
 
     if (hasVideoQuestions) {
-      // Build questions with options for QuestionResponsesInput
+      // Questions now have options nested inside (from server)
       const questions = currentChatData?.questions ?? [];
-      const options = currentChatData?.options ?? [];
+      const responses = currentChatData?.responses ?? [];
 
       const formattedQuestions = questions.map((q) => ({
         id: q.question_id || "",
         question_text: q.question_text || "",
-        type: "multiple_choice",
         allow_multiple: q.allow_multiple ?? false,
-        times: null,
-        options: options.map((opt) => ({
+        options: (q.options ?? []).map((opt) => ({
           id: opt.option_id || "",
           option_text: opt.option_text || "",
-          type: null,
-          is_correct: opt.is_correct ?? null,
+          is_correct: opt.is_correct ?? false,
         })),
       }));
 
+      // Map responses to the format QuestionResponsesInput expects
+      const formattedResponses = responses.map((r) => ({
+        question_id: r.question_id || "",
+        option_id: r.option_id || "",
+      }));
+
       const props: QuestionResponsesInputProps = {
-        enabled: !currentChat?.completed ?? true,
         questions: formattedQuestions,
-        selected_answers: new Map(),
-        on_answer_change: () => {},
-        on_submit: () => {},
+        responses: formattedResponses,
+        on_submit: (questionId: string, optionIds: string[]) => {
+          // Emit quiz response via socket
+          if (socket && currentChat?.id) {
+            socket.emit("quiz_submit_response", {
+              chat_id: currentChat.id,
+              question_id: questionId,
+              option_ids: optionIds,
+            });
+          }
+        },
+        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
       };
       return props;
     } else if (audioEnabled && !textEnabled) {
@@ -1680,6 +1709,8 @@ export function AttemptChatSetup({
     handleVoiceStop,
     handlePcm16Data,
     handleMicMute,
+    socket,
+    isAttemptOwner,
   ]);
 
   // Determine which components to use
