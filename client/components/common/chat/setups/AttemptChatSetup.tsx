@@ -259,6 +259,8 @@ export function AttemptChatSetup({
   // We create a scenario-like object from the flat chat data for backwards compatibility
   const scenario = useMemo(() => {
     if (!currentChat) return null;
+    // Get first image's upload_id for background image
+    const firstImageUploadId = currentChat.images?.[0]?.upload_id ?? null;
     return {
       persona_name: currentChat.persona_name ?? null,
       persona_icon: currentChat.persona_icon ?? null,
@@ -266,7 +268,7 @@ export function AttemptChatSetup({
       objectives: currentChat.objectives ?? [],
       problem_statement: currentChat.problem_statement ?? null,
       name: currentChat.scenario_name ?? null,
-      background_image: currentChat.background_image ?? null,
+      background_image: firstImageUploadId,
       copy_paste_allowed: currentChat.copy_paste_allowed ?? null,
       text_enabled: currentChat.text_enabled ?? true,
       audio_enabled: currentChat.audio_enabled ?? false,

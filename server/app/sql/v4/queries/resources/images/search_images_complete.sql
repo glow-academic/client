@@ -17,7 +17,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function
+-- Create function (uses denormalized upload_id directly from images_resource)
 CREATE OR REPLACE FUNCTION api_search_images_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -35,9 +35,8 @@ SELECT COALESCE(
         (
             i.id,
             i.name,
-            COALESCE(u.file_path, ''),
-            COALESCE(u.mime_type, ''),
-            COALESCE(iuc.upload_id, i.id),
+            COALESCE(i.description, ''),
+            i.upload_id,
             COALESCE(i.generated, false)
         )::types.q_get_images_v4_item
         ORDER BY i.name
@@ -45,8 +44,6 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_images_v4_item[]
 ) as items
 FROM images_resource i
-LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
-LEFT JOIN view_uploads_entry u ON u.id = iuc.upload_id
 WHERE i.active = true
   AND (exclude_ids IS NULL OR NOT (i.id = ANY(exclude_ids)))
   AND (search IS NULL OR search = '' OR LOWER(i.name) LIKE '%' || LOWER(search) || '%')

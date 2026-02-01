@@ -53,7 +53,7 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_feedback AS (
     feedback text
 );
 
--- Main chat item type
+-- Main chat item type (simple UUID arrays for assets - metadata fetched separately)
 CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     -- Primary key
     chat_id uuid,
@@ -103,7 +103,12 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     rubric_pass_points int,
 
     -- Feedbacks
-    feedbacks types.q_get_simulation_chats_view_v4_feedback[]
+    feedbacks types.q_get_simulation_chats_view_v4_feedback[],
+
+    -- Asset IDs (simple UUID arrays - metadata fetched from resource tables)
+    image_ids uuid[],
+    video_ids uuid[],
+    document_ids uuid[]
 );
 
 -- ============================================================================
@@ -199,7 +204,11 @@ AS $$
             mv.rubric_total_points,
             mv.rubric_pass_points,
             -- Feedbacks
-            ft.feedbacks
+            ft.feedbacks,
+            -- Asset IDs (pass through from MV - simple UUID arrays)
+            mv.image_ids,
+            mv.video_ids,
+            mv.document_ids
         FROM mv_data mv
         LEFT JOIN scenarios_resource scen ON scen.id = mv.scenario_id AND scen.active = TRUE
         LEFT JOIN personas_resource pers ON pers.id = mv.persona_id AND pers.active = TRUE
@@ -246,7 +255,10 @@ AS $$
                     grade_time_taken,
                     rubric_total_points,
                     rubric_pass_points,
-                    feedbacks
+                    feedbacks,
+                    image_ids,
+                    video_ids,
+                    document_ids
                 )::types.q_get_simulation_chats_view_v4_item
                 ORDER BY chat_position
             ),

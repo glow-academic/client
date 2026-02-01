@@ -7278,7 +7278,6 @@ export interface components {
             feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
             /** Messages */
             messages?: components["schemas"]["MessageData"][] | null;
-            video?: components["schemas"]["VideoData"] | null;
             quiz?: components["schemas"]["QuizData"] | null;
             grading_state?: components["schemas"]["GradingStateData"] | null;
             dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
@@ -7286,10 +7285,12 @@ export interface components {
             personas?: components["schemas"]["PersonaEntry"][] | null;
             /** Hints */
             hints?: components["schemas"]["HintsByMessage"][] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Background Image */
-            background_image?: string | null;
+            /** Images */
+            images?: components["schemas"]["ImageEntry"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["VideoEntry"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["DocumentEntry"][] | null;
             /** Copy Paste Allowed */
             copy_paste_allowed?: boolean | null;
             /** Text Enabled */
@@ -7380,6 +7381,12 @@ export interface components {
             rubric_pass_points?: number | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["FeedbackItem"][] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
         };
         /**
          * CohortDepartment
@@ -8053,6 +8060,20 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
+        };
+        /**
+         * DocumentEntry
+         * @description Document entry with resource metadata.
+         */
+        DocumentEntry: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
@@ -10338,10 +10359,8 @@ export interface components {
             image_id?: string | null;
             /** Name */
             name?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
+            /** Description */
+            description?: string | null;
             /** Upload Id */
             upload_id?: string | null;
             /** Generated */
@@ -13420,14 +13439,12 @@ export interface components {
             video_id?: string | null;
             /** Name */
             name?: string | null;
+            /** Description */
+            description?: string | null;
             /** Length Seconds */
             length_seconds?: number | null;
             /** Completed */
             completed?: boolean | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
             /** Upload Id */
             upload_id?: string | null;
             /** Generated */
@@ -13719,6 +13736,20 @@ export interface components {
             department_ids: string[] | null;
             /** Cohort Ids */
             cohort_ids: string[] | null;
+        };
+        /**
+         * ImageEntry
+         * @description Image entry with resource metadata.
+         */
+        ImageEntry: {
+            /** Image Id */
+            image_id?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** ImagesApiRequest */
         ImagesApiRequest: {
@@ -17882,10 +17913,8 @@ export interface components {
             image_id: string | null;
             /** Name */
             name: string | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
+            /** Description */
+            description: string | null;
             /** Upload Id */
             upload_id: string | null;
             /** Generated */
@@ -20909,14 +20938,12 @@ export interface components {
             video_id: string | null;
             /** Name */
             name: string | null;
+            /** Description */
+            description: string | null;
             /** Length Seconds */
             length_seconds: number | null;
             /** Completed */
             completed: boolean | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
             /** Upload Id */
             upload_id: string | null;
             /** Generated */
@@ -25185,60 +25212,18 @@ export interface components {
             values_id?: string | null;
         };
         /**
-         * VideoData
-         * @description Video information for a chat.
+         * VideoEntry
+         * @description Video entry with resource metadata.
          */
-        VideoData: {
-            /** Id */
-            id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Length Seconds */
-            length_seconds?: number | null;
+        VideoEntry: {
+            /** Video Id */
+            video_id?: string | null;
             /** Upload Id */
             upload_id?: string | null;
-            /** Questions */
-            questions?: components["schemas"]["VideoQuestion"][] | null;
-            /** Show Image */
-            show_image?: boolean | null;
-        };
-        /**
-         * VideoQuestion
-         * @description Question for a video.
-         */
-        VideoQuestion: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Question Text */
-            question_text?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Allow Multiple */
-            allow_multiple?: boolean | null;
-            /** Times */
-            times?: number[] | null;
-            /** Options */
-            options?: components["schemas"]["VideoQuestionOption"][] | null;
-        };
-        /**
-         * VideoQuestionOption
-         * @description Option for a video question.
-         */
-        VideoQuestionOption: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Option Text */
-            option_text?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Is Correct */
-            is_correct?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** VideosApiRequest */
         VideosApiRequest: {

@@ -42,7 +42,7 @@ class VideoQuestion(BaseModel):
 
 
 class VideoData(BaseModel):
-    """Video information for a chat."""
+    """Video information for a chat (legacy - use VideoEntry instead)."""
 
     id: UUID | None = None
     title: str | None = None
@@ -50,6 +50,38 @@ class VideoData(BaseModel):
     upload_id: UUID | None = None
     questions: list[VideoQuestion] | None = None
     show_image: bool | None = None
+
+
+# -----------------------------------------------------------------------------
+# Unified asset entry types (id, upload_id, name, description)
+# -----------------------------------------------------------------------------
+
+
+class ImageEntry(BaseModel):
+    """Image entry with resource metadata."""
+
+    image_id: UUID | None = None
+    upload_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+class VideoEntry(BaseModel):
+    """Video entry with resource metadata."""
+
+    video_id: UUID | None = None
+    upload_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+class DocumentEntry(BaseModel):
+    """Document entry with resource metadata."""
+
+    document_id: UUID | None = None
+    upload_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
 
 
 class QuizResponse(BaseModel):
@@ -356,14 +388,15 @@ class ChatData(BaseModel):
     feedbacks: list[FeedbackEntry] | None = None
     messages: list[MessageData] | None = None
     # Extended fields for full feature support
-    video: VideoData | None = None
     quiz: QuizData | None = None
     grading_state: GradingStateData | None = None
     dynamic_rubric: DynamicRubricData | None = None
     personas: list[PersonaEntry] | None = None
     hints: list[HintsByMessage] | None = None
-    document_ids: list[UUID] | None = None
-    background_image: UUID | None = None
+    # Unified asset entries (id, upload_id, name, description)
+    images: list[ImageEntry] | None = None
+    videos: list[VideoEntry] | None = None
+    documents: list[DocumentEntry] | None = None
     # Scenario fields for frontend compatibility
     copy_paste_allowed: bool | None = None
     text_enabled: bool | None = None

@@ -140,14 +140,13 @@ SELECT
          LIMIT 1),
         false
     ) AS copy_paste_allowed,
-    -- Background image
-    (SELECT iuc.upload_id
+    -- Background image (upload_id is denormalized on images_resource)
+    (SELECT i.upload_id
      FROM scenario_images_junction si
      JOIN images_resource i ON i.id = si.image_id AND i.active = true
-     LEFT JOIN images_uploads_connection iuc ON iuc.images_id = i.id
      WHERE si.scenario_id = ssj.scenario_id
        AND si.active = true
-       AND iuc.upload_id IS NOT NULL
+       AND i.upload_id IS NOT NULL
      ORDER BY si.created_at ASC
      LIMIT 1) AS background_image_upload_id,
     -- Document IDs for scenario

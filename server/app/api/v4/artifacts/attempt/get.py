@@ -29,6 +29,7 @@ from app.api.v4.artifacts.attempt.types import (
     AttemptData,
     ChatData,
     ContentEntry,
+    DocumentEntry,
     FeedbackEntry,
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
@@ -37,6 +38,7 @@ from app.api.v4.artifacts.attempt.types import (
     HighlightEntry,
     HintEntry,
     HintsByMessage,
+    ImageEntry,
     ImprovementEntry,
     MessageData,
     PersonaEntry,
@@ -52,7 +54,11 @@ from app.api.v4.artifacts.attempt.types import (
     StandardPass,
     StrengthEntry,
     TimerData,
+    VideoEntry,
 )
+from app.api.v4.resources.documents.get import get_documents_internal
+from app.api.v4.resources.images.get import get_images_internal
+from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.views.simulation.attempts.get import get_simulation_attempts_internal
 from app.api.v4.views.simulation.chats.get import get_simulation_chats_internal
 from app.api.v4.views.simulation.messages.get import get_simulation_messages_internal
@@ -357,6 +363,59 @@ async def attempt_get(
                     ],
                 }
 
+        async def fetch_asset_metadata(
+            image_ids: list[UUID],
+            video_ids: list[UUID],
+            document_ids: list[UUID],
+        ) -> tuple[dict[UUID, dict], dict[UUID, dict], dict[UUID, dict]]:
+            """Fetch resource metadata using internal handlers (with caching).
+
+            Uses the same internal fetch functions as the resources endpoints,
+            which provide caching and consistent data access patterns.
+            """
+            images_meta: dict[UUID, dict] = {}
+            videos_meta: dict[UUID, dict] = {}
+            documents_meta: dict[UUID, dict] = {}
+
+            if not image_ids and not video_ids and not document_ids:
+                return images_meta, videos_meta, documents_meta
+
+            async with pool.acquire() as c:
+                # Fetch images via internal handler (cached)
+                if image_ids:
+                    items = await get_images_internal(c, image_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.image_id:
+                            images_meta[item.image_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                                "upload_id": item.upload_id,
+                            }
+
+                # Fetch videos via internal handler (cached)
+                if video_ids:
+                    items = await get_videos_internal(c, video_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.video_id:
+                            videos_meta[item.video_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                                "upload_id": item.upload_id,
+                            }
+
+                # Fetch documents via internal handler (cached)
+                if document_ids:
+                    items = await get_documents_internal(c, document_ids, bypass_cache=bypass_cache)
+                    for item in items:
+                        if item.document_id:
+                            documents_meta[item.document_id] = {
+                                "name": item.name,
+                                "description": item.description,
+                                "upload_id": item.upload_id,
+                            }
+
+            return images_meta, videos_meta, documents_meta
+
         async def fetch_chat_extended_data(chat_ids: list[UUID]) -> dict[UUID, dict[str, Any]]:
             """Fetch extended data for chats: video, quiz, grading_state, dynamic_rubric, personas, hints."""
             if not chat_ids:
@@ -396,23 +455,6 @@ async def attempt_get(
                         "icon": row["icon"],
                         "color": row["color"],
                     })
-
-                # Fetch background_image (still needs separate query for images connection)
-                bg_rows = await c.fetch(
-                    """
-                    SELECT
-                        ch.id as chat_id,
-                        (SELECT iuc.upload_id FROM simulation_chats_images_connection chi
-                         JOIN images_uploads_connection iuc ON iuc.images_id = chi.images_id AND iuc.active = true
-                         WHERE chi.chat_id = ch.id AND chi.active = true LIMIT 1) as background_image
-                    FROM simulation_chats_entry ch
-                    WHERE ch.id = ANY($1)
-                    """,
-                    chat_ids,
-                )
-                for row in bg_rows:
-                    chat_id = row["chat_id"]
-                    result[chat_id]["background_image"] = row["background_image"]
 
                 # Fetch grading state for completed chats
                 grading_rows = await c.fetch(
@@ -583,6 +625,26 @@ async def attempt_get(
         messages_by_chat: dict[UUID, list[Any]] = defaultdict(list)
         for msg in messages_result or []:
             messages_by_chat[msg.chat_id].append(msg)
+
+        # === COLLECT AND ENRICH ASSET REFS ===
+        # Collect all unique asset IDs from chats
+        all_image_ids: list[UUID] = []
+        all_video_ids: list[UUID] = []
+        all_document_ids: list[UUID] = []
+        for chat_item in chats_result or []:
+            if chat_item.image_ids:
+                all_image_ids.extend(chat_item.image_ids)
+            if chat_item.video_ids:
+                all_video_ids.extend(chat_item.video_ids)
+            if chat_item.document_ids:
+                all_document_ids.extend(chat_item.document_ids)
+
+        # Fetch metadata for all assets
+        images_meta, videos_meta, documents_meta = await fetch_asset_metadata(
+            list(set(all_image_ids)),
+            list(set(all_video_ids)),
+            list(set(all_document_ids)),
+        )
 
         # === BUILD CHATS WITH MESSAGES ===
         chats: list[ChatData] = []
@@ -814,6 +876,43 @@ async def attempt_get(
                 [chat_item.objective] if chat_item.objective else None
             )
 
+            # Build enriched asset entries from IDs + metadata lookup
+            enriched_images: list[ImageEntry] | None = None
+            if chat_item.image_ids:
+                enriched_images = [
+                    ImageEntry(
+                        image_id=img_id,
+                        upload_id=images_meta.get(img_id, {}).get("upload_id"),
+                        name=images_meta.get(img_id, {}).get("name"),
+                        description=images_meta.get(img_id, {}).get("description"),
+                    )
+                    for img_id in chat_item.image_ids
+                ]
+
+            enriched_videos: list[VideoEntry] | None = None
+            if chat_item.video_ids:
+                enriched_videos = [
+                    VideoEntry(
+                        video_id=vid_id,
+                        upload_id=videos_meta.get(vid_id, {}).get("upload_id"),
+                        name=videos_meta.get(vid_id, {}).get("name"),
+                        description=videos_meta.get(vid_id, {}).get("description"),
+                    )
+                    for vid_id in chat_item.video_ids
+                ]
+
+            enriched_documents: list[DocumentEntry] | None = None
+            if chat_item.document_ids:
+                enriched_documents = [
+                    DocumentEntry(
+                        document_id=doc_id,
+                        upload_id=documents_meta.get(doc_id, {}).get("upload_id"),
+                        name=documents_meta.get(doc_id, {}).get("name"),
+                        description=documents_meta.get(doc_id, {}).get("description"),
+                    )
+                    for doc_id in chat_item.document_ids
+                ]
+
             chats.append(
                 ChatData(
                     id=chat_item.chat_id,
@@ -841,7 +940,10 @@ async def attempt_get(
                     copy_paste_allowed=chat_item.copy_paste_allowed,
                     text_enabled=chat_item.text_enabled,
                     audio_enabled=chat_item.audio_enabled,
-                    background_image=chat_ext.get("background_image"),
+                    # Enriched asset entries (id, upload_id, name, description)
+                    images=enriched_images,
+                    videos=enriched_videos,
+                    documents=enriched_documents,
                 )
             )
 

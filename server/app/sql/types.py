@@ -17879,8 +17879,7 @@ class QGetImageResourceV4Item(BaseModel):
 
     image_id: UUID | None
     name: str | None
-    file_path: str | None
-    mime_type: str | None
+    description: str | None
     upload_id: UUID | None
     generated: bool | None
 
@@ -17913,8 +17912,7 @@ class QGetImagesV4Item(BaseModel):
 
     image_id: UUID | None
     name: str | None
-    file_path: str | None
-    mime_type: str | None
+    description: str | None
     upload_id: UUID | None
     generated: bool | None
 
@@ -20467,10 +20465,9 @@ class QGetVideoResourceV4Item(BaseModel):
 
     video_id: UUID | None
     name: str | None
+    description: str | None
     length_seconds: int | None
     completed: bool | None
-    file_path: str | None
-    mime_type: str | None
     upload_id: UUID | None
     generated: bool | None
 
@@ -20503,10 +20500,9 @@ class QGetVideosV4Item(BaseModel):
 
     video_id: UUID | None
     name: str | None
+    description: str | None
     length_seconds: int | None
     completed: bool | None
-    file_path: str | None
-    mime_type: str | None
     upload_id: UUID | None
     generated: bool | None
 
@@ -25486,6 +25482,9 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     rubric_total_points: int | None
     rubric_pass_points: int | None
     feedbacks: list[QGetSimulationChatsViewV4Feedback] | None
+    image_ids: list[UUID] | None
+    video_ids: list[UUID] | None
+    document_ids: list[UUID] | None
 
 class GetSimulationChatsViewSqlRow(BaseModel):
 

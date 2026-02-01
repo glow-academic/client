@@ -17,7 +17,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function
+-- Create function (uses denormalized upload_id directly from videos_resource)
 CREATE OR REPLACE FUNCTION api_search_videos_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -35,11 +35,10 @@ SELECT COALESCE(
         (
             v.id,
             v.name,
+            COALESCE(v.description, ''),
             v.length_seconds,
             COALESCE(v.completed, false),
-            COALESCE(u.file_path, ''),
-            COALESCE(u.mime_type, ''),
-            COALESCE(vuc.upload_id, v.id),
+            v.upload_id,
             COALESCE(v.generated, false)
         )::types.q_get_videos_v4_item
         ORDER BY v.name
@@ -47,8 +46,6 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_videos_v4_item[]
 ) as items
 FROM videos_resource v
-LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
-LEFT JOIN view_uploads_entry u ON u.id = vuc.upload_id
 WHERE v.active = true
   AND (exclude_ids IS NULL OR NOT (v.id = ANY(exclude_ids)))
   AND (search IS NULL OR search = '' OR LOWER(v.name) LIKE '%' || LOWER(search) || '%')

@@ -69,6 +69,11 @@ class ChatViewItem(BaseModel):
     # Feedbacks
     feedbacks: list[FeedbackItem] | None = None
 
+    # Asset IDs (simple UUID arrays - metadata fetched from resource tables)
+    image_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+
 
 class GetChatsRequest(BaseModel):
     """Request for getting chat data."""

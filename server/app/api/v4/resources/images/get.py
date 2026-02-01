@@ -39,8 +39,7 @@ class GetImageV4Item(BaseModel):
 
     image_id: UUID | None = None
     name: str | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
+    description: str | None = None
     upload_id: UUID | None = None
     generated: bool | None = None
 

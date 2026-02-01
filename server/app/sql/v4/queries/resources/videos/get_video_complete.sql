@@ -33,19 +33,18 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for video item
+-- Create composite type for video item (upload_id is denormalized on resource table)
 CREATE TYPE types.q_get_video_resource_v4_item AS (
     video_id uuid,
     name text,
+    description text,
     length_seconds bigint,
     completed boolean,
-    file_path text,
-    mime_type text,
     upload_id uuid,
     generated boolean
 );
 
--- Create function
+-- Create function (uses denormalized upload_id directly from videos_resource)
 CREATE OR REPLACE FUNCTION api_get_video_resource_v4(
     video_id uuid
 )
@@ -59,16 +58,13 @@ SELECT
     (
         v.id,
         v.name,
+        COALESCE(v.description, ''),
         v.length_seconds,
         COALESCE(v.completed, false),
-        COALESCE(u.file_path, ''),
-        COALESCE(u.mime_type, ''),
-        COALESCE(vuc.upload_id, v.id),
+        v.upload_id,
         COALESCE(v.generated, false)
     )::types.q_get_video_resource_v4_item as item
 FROM videos_resource v
-LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = v.id
-LEFT JOIN view_uploads_entry u ON u.id = vuc.upload_id
 WHERE v.id = video_id
   AND v.active = true;
 $$;

@@ -36,39 +36,6 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
--- Create image_ref type (image_id + upload_id)
-DO $$
-BEGIN
-    CREATE TYPE types.mv_image_ref AS (
-        image_id uuid,
-        upload_id uuid
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
--- Create video_ref type (video_id + upload_id)
-DO $$
-BEGIN
-    CREATE TYPE types.mv_video_ref AS (
-        video_id uuid,
-        upload_id uuid
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
--- Create document_ref type (document_id + upload_id)
-DO $$
-BEGIN
-    CREATE TYPE types.mv_document_ref AS (
-        document_id uuid,
-        upload_id uuid
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
-
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_simulation_chats materialized view (if it exists)
 -- ============================================================================
@@ -166,48 +133,33 @@ current_chat_per_attempt AS (
     FROM chats_with_position
     ORDER BY attempt_id, chat_completed ASC, chat_position DESC
 ),
--- Aggregate images per chat (image_id + upload_id as uploads_resource.id)
--- Path: simulation_chats_images_connection → images_uploads_connection → uploads_uploads_connection
+-- Aggregate image IDs per chat (simple UUID array)
 images_agg AS (
     SELECT
         chi.chat_id,
-        ARRAY_AGG(
-            (chi.images_id, uuc.uploads_id)::types.mv_image_ref
-            ORDER BY chi.created_at
-        ) FILTER (WHERE chi.images_id IS NOT NULL) AS images
+        ARRAY_AGG(chi.images_id ORDER BY chi.created_at)
+            FILTER (WHERE chi.images_id IS NOT NULL) AS image_ids
     FROM simulation_chats_images_connection chi
-    LEFT JOIN images_uploads_connection iuc ON iuc.images_id = chi.images_id AND iuc.active = TRUE
-    LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = iuc.upload_id AND uuc.active = TRUE
     WHERE chi.active = TRUE
     GROUP BY chi.chat_id
 ),
--- Aggregate videos per chat (video_id + upload_id as uploads_resource.id)
--- Path: simulation_chats_videos_connection → videos_uploads_connection → uploads_uploads_connection
+-- Aggregate video IDs per chat (simple UUID array)
 videos_agg AS (
     SELECT
         chv.chat_id,
-        ARRAY_AGG(
-            (chv.videos_id, uuc.uploads_id)::types.mv_video_ref
-            ORDER BY chv.created_at
-        ) FILTER (WHERE chv.videos_id IS NOT NULL) AS videos
+        ARRAY_AGG(chv.videos_id ORDER BY chv.created_at)
+            FILTER (WHERE chv.videos_id IS NOT NULL) AS video_ids
     FROM simulation_chats_videos_connection chv
-    LEFT JOIN videos_uploads_connection vuc ON vuc.videos_id = chv.videos_id AND vuc.active = TRUE
-    LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = vuc.upload_id AND uuc.active = TRUE
     WHERE chv.active = TRUE
     GROUP BY chv.chat_id
 ),
--- Aggregate documents per chat (document_id + upload_id as uploads_resource.id)
--- Path: simulation_chats_documents_connection → documents_uploads_connection → uploads_uploads_connection
+-- Aggregate document IDs per chat (simple UUID array)
 documents_agg AS (
     SELECT
         chd.chat_id,
-        ARRAY_AGG(
-            (chd.documents_id, uuc.uploads_id)::types.mv_document_ref
-            ORDER BY chd.created_at
-        ) FILTER (WHERE chd.documents_id IS NOT NULL) AS documents
+        ARRAY_AGG(chd.documents_id ORDER BY chd.created_at)
+            FILTER (WHERE chd.documents_id IS NOT NULL) AS document_ids
     FROM simulation_chats_documents_connection chd
-    LEFT JOIN documents_uploads_connection duc ON duc.documents_id = chd.documents_id AND duc.active = TRUE
-    LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = duc.upload_id AND uuc.active = TRUE
     WHERE chd.active = TRUE
     GROUP BY chd.chat_id
 )
@@ -253,10 +205,10 @@ SELECT
     -- Feedbacks array (denormalized for grading state display)
     COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
 
-    -- Asset references (resource_id + upload_id from _connection tables)
-    COALESCE(ia.images, ARRAY[]::types.mv_image_ref[]) AS images,
-    COALESCE(va.videos, ARRAY[]::types.mv_video_ref[]) AS videos,
-    COALESCE(da.documents, ARRAY[]::types.mv_document_ref[]) AS documents
+    -- Asset IDs (simple UUID arrays - metadata fetched from resource tables)
+    COALESCE(ia.image_ids, ARRAY[]::uuid[]) AS image_ids,
+    COALESCE(va.video_ids, ARRAY[]::uuid[]) AS video_ids,
+    COALESCE(da.document_ids, ARRAY[]::uuid[]) AS document_ids
 
 FROM chats_with_position cwp
 LEFT JOIN current_chat_per_attempt cca ON cca.attempt_id = cwp.attempt_id

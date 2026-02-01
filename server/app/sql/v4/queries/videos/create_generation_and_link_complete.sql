@@ -1,13 +1,15 @@
 -- Create generation record, link to video and run
 -- Converted to PostgreSQL function
+-- Now sets upload_id directly on videos_resource (denormalized)
+
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_create_generation_and_link_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -15,7 +17,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Recreate function
+-- Recreate function (sets upload_id directly on videos_resource)
 CREATE OR REPLACE FUNCTION api_create_generation_and_link_v4(
     video_id uuid,
     file_path text,
@@ -51,16 +53,10 @@ final_upload_id AS (
 ),
 mark_video AS (
     UPDATE videos_resource
-    SET completed = TRUE
-    WHERE id = (SELECT video_id FROM params)
-    RETURNING id
-),
-link_video_upload AS (
-    INSERT INTO videos_uploads_connection (videos_id, upload_id, active, created_at, updated_at)
-    SELECT (SELECT video_id FROM params), fi.upload_id, true, NOW(), NOW()
+    SET completed = TRUE, upload_id = fi.upload_id
     FROM final_upload_id fi
-    ON CONFLICT (videos_id, upload_id) DO UPDATE SET active = true, updated_at = NOW()
-    RETURNING videos_id
+    WHERE videos_resource.id = (SELECT video_id FROM params)
+    RETURNING videos_resource.id
 )
 SELECT fi.upload_id as generation_id
 FROM final_upload_id fi
