@@ -7466,6 +7466,52 @@ export interface components {
             /** Server Time */
             server_time: number;
         };
+        /**
+         * ContentEntry
+         * @description Content entry with persona info.
+         */
+        ContentEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Content */
+            content?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Persona Color */
+            persona_color?: string | null;
+            /** Persona Icon */
+            persona_icon?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
+         * ContentItem
+         * @description Content item within a message with persona info.
+         */
+        ContentItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Content */
+            content?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Persona Color */
+            persona_color?: string | null;
+            /** Persona Icon */
+            persona_icon?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
         /** CreateEmulationGrantApiRequest */
         CreateEmulationGrantApiRequest: {
             /**
@@ -14109,6 +14155,8 @@ export interface components {
             created_at?: string | null;
             /** Completed */
             completed?: boolean | null;
+            /** Contents */
+            contents?: components["schemas"]["ContentEntry"][] | null;
             /** Strengths */
             strengths?: components["schemas"]["StrengthEntry"][] | null;
             /** Improvements */
@@ -14148,6 +14196,8 @@ export interface components {
             completed: boolean;
             /** Message Position */
             message_position?: number | null;
+            /** Contents */
+            contents?: components["schemas"]["ContentItem"][] | null;
             /** Strengths */
             strengths?: components["schemas"]["StrengthItem"][] | null;
             /** Improvements */

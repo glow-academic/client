@@ -71,6 +71,21 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
+DO $$
+BEGIN
+    CREATE TYPE types.mv_content AS (
+        id uuid,
+        content text,
+        persona_id uuid,
+        persona_name text,
+        persona_color text,
+        persona_icon text,
+        created_at timestamptz
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_simulation_messages materialized view (if it exists)
 -- ============================================================================
@@ -174,22 +189,35 @@ hints_agg AS (
     WHERE h.active = TRUE
     GROUP BY h.message_id
 ),
+-- Aggregate contents per message with persona info
+contents_agg AS (
+    SELECT
+        sce.simulation_message_id AS message_id,
+        ARRAY_AGG(
+            (ce.id, ce.content, sce.persona_id, pr.name, pr.color, pr.icon, ce.created_at)::types.mv_content
+            ORDER BY ce.created_at
+        ) AS contents
+    FROM simulation_contents_entry sce
+    JOIN contents_entry ce ON ce.id = sce.content_id
+    LEFT JOIN personas_resource pr ON pr.id = sce.persona_id AND pr.active = TRUE
+    WHERE ce.active = TRUE
+    GROUP BY sce.simulation_message_id
+),
 -- Compute message position within chat
 messages_with_position AS (
     SELECT
-        m.id AS message_id,
-        m.chat_id,
+        sm.id AS message_id,
+        sm.chat_id,
         c.attempt_id,
-        ce.content,
-        CASE WHEN m.role = 'user'::message_type THEN 'query' ELSE 'response' END AS type,
-        m.created_at,
+        m.role,
         m.completed,
+        m.created_at,
         COALESCE(a.practice, FALSE) AS practice,
-        ROW_NUMBER() OVER (PARTITION BY m.chat_id ORDER BY m.created_at) AS message_position
-    FROM simulation_messages_entry m
-    JOIN simulation_chats_entry c ON c.id = m.chat_id
+        ROW_NUMBER() OVER (PARTITION BY sm.chat_id ORDER BY m.created_at) AS message_position
+    FROM simulation_messages_entry sm
+    JOIN messages_entry m ON m.id = sm.id
+    JOIN simulation_chats_entry c ON c.id = sm.chat_id
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
-    LEFT JOIN simulation_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     WHERE m.active = TRUE
       AND c.active = TRUE
       AND a.active = TRUE
@@ -207,12 +235,15 @@ SELECT
     -- Practice flag (exposed as column for filtering)
     mwp.practice,
 
-    -- Message data
-    mwp.content,
-    mwp.type,
+    -- Message data (first content for backward compatibility)
+    (ca.contents[1]).content AS content,
+    CASE WHEN mwp.role = 'user'::message_type THEN 'query' ELSE 'response' END AS type,
     mwp.created_at,
     mwp.completed,
     mwp.message_position::int,
+
+    -- Contents array with persona info
+    COALESCE(ca.contents, ARRAY[]::types.mv_content[]) AS contents,
 
     -- Strengths with highlights (denormalized)
     COALESCE(sa.strengths, ARRAY[]::types.mv_strength[]) AS strengths,
@@ -224,6 +255,7 @@ SELECT
     COALESCE(ha.hints, ARRAY[]::types.mv_hint[]) AS hints
 
 FROM messages_with_position mwp
+LEFT JOIN contents_agg ca ON ca.message_id = mwp.message_id
 LEFT JOIN strengths_agg sa ON sa.message_id = mwp.message_id
 LEFT JOIN improvements_agg ia ON ia.message_id = mwp.message_id
 LEFT JOIN hints_agg ha ON ha.message_id = mwp.message_id

@@ -38,13 +38,14 @@ WITH
 -- Message counts per chat
 message_counts AS (
     SELECT
-        m.chat_id,
+        sm.chat_id,
         COUNT(*)::int AS num_messages_total,
         COUNT(*) FILTER (WHERE m.role = 'user')::int AS num_query_messages,
         COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-    FROM simulation_messages_entry m
+    FROM simulation_messages_entry sm
+    JOIN messages_entry m ON m.id = sm.id
     WHERE m.active = TRUE
-    GROUP BY m.chat_id
+    GROUP BY sm.chat_id
 ),
 -- Latest grade per chat (most recent grade) with rubric points
 latest_grade AS (
@@ -65,16 +66,17 @@ latest_grade AS (
 -- Message time deltas for persona response time tracking
 message_deltas AS (
     SELECT
-        m.chat_id,
+        sm.chat_id,
         CASE
-            WHEN lag(m.role) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'assistant'
+            WHEN lag(m.role) OVER (PARTITION BY sm.chat_id ORDER BY m.created_at) = 'assistant'
              AND m.role = 'user'
             THEN GREATEST(
                    EXTRACT(epoch FROM m.created_at - lag(COALESCE(m.updated_at, m.created_at))
-                       OVER (PARTITION BY m.chat_id ORDER BY m.created_at))::int, 0)
+                       OVER (PARTITION BY sm.chat_id ORDER BY m.created_at))::int, 0)
             ELSE NULL
         END AS delta_seconds
-    FROM simulation_messages_entry m
+    FROM simulation_messages_entry sm
+    JOIN messages_entry m ON m.id = sm.id
     WHERE m.active = TRUE
 ),
 message_deltas_agg AS (

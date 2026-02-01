@@ -1,7 +1,6 @@
 -- Create or reuse assistant message for a run
+-- After migration 364: Insert into messages_entry first, then simulation_messages_entry
 -- Uses safe drop/recreate pattern: drop function first, then recreate
--- Note: Inserts into view_simulation_messages_entry by default. If you need practice messages,
--- the chat_id must be determined from context and routed appropriately.
 DROP FUNCTION IF EXISTS socket_create_assistant_message_for_run_v4(uuid, uuid);
 
 CREATE OR REPLACE FUNCTION socket_create_assistant_message_for_run_v4(
@@ -18,46 +17,34 @@ WITH params AS (
     SELECT socket_create_assistant_message_for_run_v4.run_id AS run_id,
            socket_create_assistant_message_for_run_v4.chat_id AS chat_id
 ),
--- Determine chat type from chat_id if provided
-chat_type AS (
-    SELECT
-        CASE
-            WHEN EXISTS (SELECT 1 FROM view_simulation_chats_entry WHERE id = (SELECT chat_id FROM params)) THEN 'general'
-            WHEN EXISTS (SELECT 1 FROM view_simulation_chats_entry WHERE id = (SELECT chat_id FROM params)) THEN 'practice'
-            ELSE 'general'  -- Default to general if no chat_id or not found
-        END AS type
-),
 existing_assistant_message AS (
     SELECT m.id as assistant_message_id
     FROM params p
-    JOIN view_messages_entry m ON m.run_id = p.run_id
+    JOIN messages_entry m ON m.run_id = p.run_id
     WHERE m.role = 'assistant'::message_type
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
--- INSERT INTO  if chat type is general or default
-new_general_assistant_message AS (
-    INSERT INTO simulation_messages_entry (chat_id, role, completed, audio, run_id, created_at, updated_at)
-    SELECT p.chat_id, 'assistant'::message_type, false, false, p.run_id, NOW(), NOW()
-    FROM params p, chat_type ct
+-- Create new message in base table
+new_message_base AS (
+    INSERT INTO messages_entry (run_id, role, completed, audio, created_at, updated_at)
+    SELECT p.run_id, 'assistant'::message_type, false, false, NOW(), NOW()
+    FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)
-      AND ct.type = 'general'
       AND p.chat_id IS NOT NULL
     RETURNING id as assistant_message_id
 ),
--- INSERT INTO  if chat type is practice
-new_practice_assistant_message AS (
-    INSERT INTO simulation_messages_entry (chat_id, role, completed, audio, run_id, created_at, updated_at)
-    SELECT p.chat_id, 'assistant'::message_type, false, false, p.run_id, NOW(), NOW()
-    FROM params p, chat_type ct
-    WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)
-      AND ct.type = 'practice'
-      AND p.chat_id IS NOT NULL
+-- Link to simulation chat
+new_message_sim AS (
+    INSERT INTO simulation_messages_entry (id, chat_id)
+    SELECT nmb.assistant_message_id, p.chat_id
+    FROM new_message_base nmb
+    CROSS JOIN params p
+    WHERE p.chat_id IS NOT NULL
     RETURNING id as assistant_message_id
 )
 SELECT COALESCE(
     (SELECT assistant_message_id FROM existing_assistant_message),
-    (SELECT assistant_message_id FROM new_general_assistant_message),
-    (SELECT assistant_message_id FROM new_practice_assistant_message)
+    (SELECT assistant_message_id FROM new_message_sim)
 ) as assistant_message_id
 $$;

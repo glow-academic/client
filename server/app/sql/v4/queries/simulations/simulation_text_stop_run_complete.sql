@@ -21,7 +21,7 @@ latest_message AS (
         m.id,
         COALESCE(ce.content, '') as content
     FROM all_chats c
-    JOIN view_messages_entry m ON m.chat_id = c.id
+    JOIN view_simulation_messages_entry m ON m.chat_id = c.id
     LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     WHERE c.id = (SELECT chat_id FROM params)
       AND NOT EXISTS (
@@ -32,7 +32,7 @@ latest_message AS (
     LIMIT 1
 ),
 update_message AS (
-    UPDATE simulation_messages_entry
+    UPDATE messages_entry
     SET completed = TRUE,
         updated_at = NOW()
     WHERE id = (SELECT id FROM latest_message)

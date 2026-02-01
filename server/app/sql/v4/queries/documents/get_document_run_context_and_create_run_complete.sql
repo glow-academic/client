@@ -505,18 +505,17 @@ existing_developer_message AS (
     LIMIT 1
 ),
 new_developer_message AS (
-    INSERT INTO simulation_messages_entry (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'developer'::message_type, false, false, (SELECT run_id FROM developer_message_hash LIMIT 1), NOW(), NOW()
     FROM developer_message_hash dmh
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
     RETURNING id, created_at, updated_at
 ),
 insert_developer_content AS (
-    INSERT INTO simulation_contents_entry (message_id, content, idx, created_at, updated_at)
+    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
     SELECT
         nm.id,
         (SELECT content FROM developer_message_hash LIMIT 1),
-        0,
         nm.created_at,
         nm.updated_at
     FROM new_developer_message nm
@@ -531,7 +530,7 @@ developer_message_final AS (
     FROM new_developer_message nm
 ),
 update_existing_developer_message_run AS (
-    UPDATE simulation_messages_entry m
+    UPDATE messages_entry m
     SET run_id = edm.run_id, updated_at = NOW()
     FROM existing_developer_message edm
     WHERE m.id = edm.id AND edm.run_id IS NOT NULL

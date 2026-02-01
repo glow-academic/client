@@ -216,8 +216,8 @@ runs_base AS (
     LEFT JOIN agent_runs_junction arj ON arj.run_id = mr.id
     LEFT JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     LEFT JOIN profile_runs_junction prj ON prj.run_id = mr.id
-    -- Join to simulations via view_messages_entry.chat_id -> all_chats.attempt_id -> all_attempt_simulations
-    LEFT JOIN view_messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
+    -- Join to simulations via view_simulation_messages_entry.chat_id -> all_chats.attempt_id -> all_attempt_simulations
+    LEFT JOIN view_simulation_messages_entry msg ON msg.run_id = mr.id AND msg.chat_id IS NOT NULL
     LEFT JOIN all_chats c ON c.id = msg.chat_id
     LEFT JOIN all_attempts sa ON sa.id = c.attempt_id
     LEFT JOIN all_attempt_simulations aas ON aas.attempt_id = sa.id

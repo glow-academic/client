@@ -1,13 +1,14 @@
--- Get all view_messages_entry linked to a run (includes system/developer view_messages_entry from previous view_runs_entry)
--- Returns view_messages_entry ordered by created_at
+-- Get all messages linked to a run (includes system/developer messages from previous runs)
+-- Returns messages ordered by created_at
+-- After migration 364: idx column removed, use created_at for ordering
 -- Uses safe drop/recreate pattern
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'socket_get_messages_by_run_id_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -29,21 +30,30 @@ AS $$
 WITH params AS (
     SELECT run_id AS run_id
 ),
--- Get all view_messages_entry linked to the run (includes system/developer from previous view_runs_entry)
+-- Get first content per message (ordered by created_at)
+first_content AS (
+    SELECT DISTINCT ON (ce.message_id)
+        ce.message_id,
+        ce.content
+    FROM contents_entry ce
+    WHERE ce.active = true
+    ORDER BY ce.message_id, ce.created_at ASC
+),
+-- Get all messages linked to the run (includes system/developer from previous runs)
 messages_data AS (
     SELECT
         m.id,
         m.role::text,
-        ce.content,
+        fc.content,
         m.created_at,
         m.completed,
         m.audio,
         ar.upload_id
     FROM params p
-    JOIN view_messages_entry m ON m.run_id = p.run_id
-    LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-    LEFT JOIN view_calls_entry c_audio ON c_audio.run_id = m.run_id
-    LEFT JOIN view_audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
+    JOIN messages_entry m ON m.run_id = p.run_id
+    LEFT JOIN first_content fc ON fc.message_id = m.id
+    LEFT JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
+    LEFT JOIN audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time
 )

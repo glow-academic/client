@@ -24,6 +24,7 @@ from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AttemptData,
     ChatData,
+    ContentEntry,
     FeedbackEntry,
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
@@ -281,6 +282,25 @@ async def attempt_get(
                             )
                         )
 
+                # Transform contents
+                contents: list[ContentEntry] | None = None
+                if msg.contents:
+                    contents = []
+                    for c in msg.contents:
+                        contents.append(
+                            ContentEntry(
+                                id=c.id,
+                                content=c.content,
+                                persona_id=c.persona_id,
+                                persona_name=c.persona_name,
+                                persona_color=c.persona_color,
+                                persona_icon=c.persona_icon,
+                                created_at=(
+                                    c.created_at.isoformat() if c.created_at else None
+                                ),
+                            )
+                        )
+
                 messages.append(
                     MessageData(
                         id=msg.message_id,
@@ -290,6 +310,7 @@ async def attempt_get(
                             msg.created_at.isoformat() if msg.created_at else None
                         ),
                         completed=msg.completed,
+                        contents=contents,
                         strengths=strengths,
                         improvements=improvements,
                         hints=hints,  # Only populated when practice=True

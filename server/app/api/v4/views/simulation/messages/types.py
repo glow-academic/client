@@ -49,6 +49,18 @@ class HintItem(BaseModel):
     idx: int | None = None
 
 
+class ContentItem(BaseModel):
+    """Content item within a message with persona info."""
+
+    id: UUID
+    content: str | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+    persona_color: str | None = None
+    persona_icon: str | None = None
+    created_at: datetime | None = None
+
+
 class MessageViewItem(BaseModel):
     """Single message from the simulation messages view."""
 
@@ -63,11 +75,14 @@ class MessageViewItem(BaseModel):
     practice: bool = False
 
     # Message data
-    content: str | None = None
+    content: str | None = None  # First content for backward compatibility
     type: str | None = None  # 'query' or 'response'
     created_at: datetime | None = None
     completed: bool = False
     message_position: int | None = None
+
+    # Contents array with persona info
+    contents: list[ContentItem] | None = None
 
     # Strengths and improvements
     strengths: list[StrengthItem] | None = None

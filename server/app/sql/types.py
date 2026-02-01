@@ -9493,69 +9493,6 @@ class PrepareTrainingStartApiResponse(BaseModel):
     scenario_id: UUID | None = None
 
 
-# Generated from: prepare_training_generation
-
-class PrepareTrainingGenerationSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_resource_types: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_agent_id,
-            self.p_simulation_id,
-            self.p_scenario_id,
-            self.p_resource_types,
-        )
-
-class PrepareTrainingGenerationSqlRow(BaseModel):
-
-    run_id: UUID | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    scenario_id: UUID | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    tools: list[Any] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: dict[str, Any] | None = None
-
-class PrepareTrainingGenerationApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_agent_id: UUID
-    p_simulation_id: UUID
-    p_scenario_id: UUID | None = None
-    p_resource_types: list[str] | None = None
-
-class PrepareTrainingGenerationApiResponse(BaseModel):
-
-    run_id: UUID | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    scenario_id: UUID | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    tools: list[Any] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: dict[str, Any] | None = None
-
 
 # Generated from: get_health
 
@@ -25705,6 +25642,19 @@ class GetSimulationMessagesViewSqlParams(BaseModel):
             self.practice_filter,
         )
 
+class QGetSimulationMessagesViewV4Content(BaseModel):
+
+    id: UUID | None
+    content: str | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_color: str | None
+    persona_icon: str | None
+    created_at: datetime | None
+
+
+
+
 class QGetSimulationMessagesViewV4Hint(BaseModel):
 
     message_id: UUID | None
@@ -25755,6 +25705,7 @@ class QGetSimulationMessagesViewV4Item(BaseModel):
     created_at: datetime | None
     completed: bool | None
     message_position: int | None
+    contents: list[QGetSimulationMessagesViewV4Content] | None
     strengths: list[QGetSimulationMessagesViewV4Strength] | None
     improvements: list[QGetSimulationMessagesViewV4Improvement] | None
     hints: list[QGetSimulationMessagesViewV4Hint] | None

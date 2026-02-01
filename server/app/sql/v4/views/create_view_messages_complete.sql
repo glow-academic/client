@@ -2,14 +2,15 @@
 -- Combines messages_entry + contents_entry + hints_entry + audios_entry
 -- Write to _entry tables, read from this _view.
 -- Uses ARRAY_AGG for all content chunks. Filters active = true.
+--
+-- Note: After migration 364, messages_entry is the base table.
+-- Contents are ordered by created_at (idx column was removed).
 
 CREATE OR REPLACE VIEW view_messages_complete AS
 SELECT
     m.id,
-    m.chat_id,
     m.run_id,
     m.role,
-    m.content,
     m.created_at,
     m.updated_at,
     m.completed,
@@ -17,15 +18,15 @@ SELECT
     m.generated,
     m.mcp,
     m.active,
-    -- All content chunks as array (ordered by idx)
+    -- All content chunks as array (ordered by created_at)
     COALESCE(
         (SELECT ARRAY_AGG(
             jsonb_build_object(
                 'id', c.id,
                 'content', c.content,
-                'idx', c.idx,
+                'created_at', c.created_at,
                 'call_id', c.call_id
-            ) ORDER BY c.idx
+            ) ORDER BY c.created_at
         )
         FROM contents_entry c
         WHERE c.message_id = m.id AND c.active = true),
@@ -41,7 +42,7 @@ SELECT
                 'call_id', h.call_id
             ) ORDER BY h.idx
         )
-        FROM hints_entry h
+        FROM simulation_hints_entry h
         WHERE h.message_id = m.id AND h.active = true),
         '{}'::jsonb[]
     ) AS hints,

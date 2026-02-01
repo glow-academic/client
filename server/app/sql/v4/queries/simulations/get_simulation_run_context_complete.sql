@@ -254,7 +254,7 @@ SELECT
     -- Chat data
     sc.id::text as chat_id,
     sc.title as chat_title,
-    (SELECT g.trace_id FROM view_messages_entry m_t JOIN view_runs_entry r_t ON r_t.id = m_t.run_id JOIN view_groups_entry g ON g.id = r_t.group_id WHERE m_t.chat_id = sc.id LIMIT 1) as trace_id,
+    (SELECT g.trace_id FROM view_simulation_messages_entry m_t JOIN view_runs_entry r_t ON r_t.id = m_t.run_id JOIN view_groups_entry g ON g.id = r_t.group_id WHERE m_t.chat_id = sc.id LIMIT 1) as trace_id,
     
     -- Attempt data
     sa.id::text as attempt_id,

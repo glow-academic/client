@@ -1,4 +1,5 @@
 -- Create run + user/assistant messages for practice simulation
+-- After migration 364: Insert into messages_entry first, then simulation_messages_entry
 -- 1) Drop function first
 DROP FUNCTION IF EXISTS socket_practice_member_progress_start_v4(uuid, text, boolean, uuid, uuid);
 
@@ -41,7 +42,8 @@ chat_context AS (
 existing_group AS (
     SELECT r.group_id
     FROM params p
-    JOIN view_simulation_messages_entry m ON m.chat_id = p.chat_id
+    JOIN simulation_messages_entry sm ON sm.chat_id = p.chat_id
+    JOIN messages_entry m ON m.id = sm.id
     JOIN view_runs_entry r ON r.id = m.run_id
     WHERE r.group_id IS NOT NULL
     LIMIT 1
@@ -71,11 +73,10 @@ create_run AS (
     SELECT 0, 0, (SELECT group_id FROM selected_group)
     RETURNING id as run_id
 ),
-insert_user_message AS (
-    INSERT INTO simulation_messages_entry (
-        chat_id,
+-- Insert user message into base table first
+insert_user_message_base AS (
+    INSERT INTO messages_entry (
         run_id,
-        content,
         role,
         completed,
         audio,
@@ -83,9 +84,7 @@ insert_user_message AS (
         updated_at
     )
     SELECT
-        p.chat_id,
         cr.run_id,
-        p.message_contents,
         'user'::message_type,
         true,
         p.audio,
@@ -95,11 +94,33 @@ insert_user_message AS (
     CROSS JOIN create_run cr
     RETURNING id as user_message_id, created_at
 ),
-insert_assistant_message AS (
-    INSERT INTO simulation_messages_entry (
-        chat_id,
+-- Link user message to simulation chat
+insert_user_message_sim AS (
+    INSERT INTO simulation_messages_entry (id, chat_id)
+    SELECT umb.user_message_id, p.chat_id
+    FROM insert_user_message_base umb
+    CROSS JOIN params p
+    RETURNING id as user_message_id
+),
+-- Insert user content into contents_entry
+insert_user_content AS (
+    INSERT INTO contents_entry (message_id, content)
+    SELECT umb.user_message_id, p.message_contents
+    FROM insert_user_message_base umb
+    CROSS JOIN params p
+    RETURNING id as content_id, message_id
+),
+-- Link user content to simulation
+insert_user_sim_content AS (
+    INSERT INTO simulation_contents_entry (content_id, simulation_message_id)
+    SELECT uc.content_id, uc.message_id
+    FROM insert_user_content uc
+    RETURNING content_id
+),
+-- Insert assistant message into base table
+insert_assistant_message_base AS (
+    INSERT INTO messages_entry (
         run_id,
-        content,
         role,
         completed,
         audio,
@@ -107,9 +128,7 @@ insert_assistant_message AS (
         updated_at
     )
     SELECT
-        p.chat_id,
         cr.run_id,
-        NULL,
         'assistant'::message_type,
         false,
         false,
@@ -118,14 +137,23 @@ insert_assistant_message AS (
     FROM params p
     CROSS JOIN create_run cr
     RETURNING id as assistant_message_id
+),
+-- Link assistant message to simulation chat
+insert_assistant_message_sim AS (
+    INSERT INTO simulation_messages_entry (id, chat_id)
+    SELECT amb.assistant_message_id, p.chat_id
+    FROM insert_assistant_message_base amb
+    CROSS JOIN params p
+    RETURNING id as assistant_message_id
 )
 SELECT
-    iu.user_message_id,
-    ia.assistant_message_id,
+    ums.user_message_id,
+    ams.assistant_message_id,
     cr.run_id,
     (SELECT group_id FROM selected_group),
-    iu.created_at
+    umb.created_at
 FROM create_run cr
-CROSS JOIN insert_user_message iu
-CROSS JOIN insert_assistant_message ia;
+CROSS JOIN insert_user_message_base umb
+CROSS JOIN insert_user_message_sim ums
+CROSS JOIN insert_assistant_message_sim ams;
 $$;

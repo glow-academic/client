@@ -31,7 +31,7 @@ AS $$
     )
     SELECT r.group_id
     FROM all_chats c
-    JOIN view_messages_entry m ON m.chat_id = c.id
+    JOIN view_simulation_messages_entry m ON m.chat_id = c.id
     JOIN view_runs_entry r ON r.id = m.run_id
     WHERE c.id = $1
     LIMIT 1

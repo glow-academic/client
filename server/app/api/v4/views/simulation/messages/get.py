@@ -7,6 +7,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.simulation.messages.types import (
+    ContentItem,
     GetMessagesRequest,
     GetMessagesResponse,
     HighlightItem,
@@ -139,6 +140,22 @@ async def get_simulation_messages_internal(
                     for h in item.hints
                 ]
 
+            # Transform contents
+            contents = None
+            if item.contents:
+                contents = [
+                    ContentItem(
+                        id=c.id,
+                        content=c.content,
+                        persona_id=c.persona_id,
+                        persona_name=c.persona_name,
+                        persona_color=c.persona_color,
+                        persona_icon=c.persona_icon,
+                        created_at=c.created_at,
+                    )
+                    for c in item.contents
+                ]
+
             items.append(
                 MessageViewItem(
                     message_id=item.message_id,
@@ -150,6 +167,7 @@ async def get_simulation_messages_internal(
                     created_at=item.created_at,
                     completed=item.completed or False,
                     message_position=item.message_position,
+                    contents=contents,
                     strengths=strengths,
                     improvements=improvements,
                     hints=hints,

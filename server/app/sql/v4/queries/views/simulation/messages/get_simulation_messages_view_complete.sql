@@ -83,6 +83,17 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_hint AS (
     idx int
 );
 
+-- Content type (with persona info)
+CREATE TYPE types.q_get_simulation_messages_view_v4_content AS (
+    id uuid,
+    content text,
+    persona_id uuid,
+    persona_name text,
+    persona_color text,
+    persona_icon text,
+    created_at timestamptz
+);
+
 -- Main message item type
 CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     -- Primary key
@@ -101,6 +112,9 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     created_at timestamptz,
     completed boolean,
     message_position int,
+
+    -- Contents array with persona info
+    contents types.q_get_simulation_messages_view_v4_content[],
 
     -- Strengths and improvements
     strengths types.q_get_simulation_messages_view_v4_strength[],
@@ -143,6 +157,29 @@ AS $$
           AND (p.chat_id_filter IS NULL OR mv.chat_id = p.chat_id_filter)
           AND (CARDINALITY(p.message_ids) = 0 OR mv.message_id = ANY(p.message_ids))
           AND (p.practice_filter IS NULL OR mv.practice = p.practice_filter)
+    ),
+    -- Transform contents (MV types.mv_content -> query types)
+    contents_transformed AS (
+        SELECT
+            mv.message_id,
+            COALESCE(
+                ARRAY_AGG(
+                    (
+                        (c).id,
+                        (c).content,
+                        (c).persona_id,
+                        (c).persona_name,
+                        (c).persona_color,
+                        (c).persona_icon,
+                        (c).created_at
+                    )::types.q_get_simulation_messages_view_v4_content
+                    ORDER BY (c).created_at
+                ) FILTER (WHERE (c).id IS NOT NULL),
+                ARRAY[]::types.q_get_simulation_messages_view_v4_content[]
+            ) AS contents
+        FROM mv_data mv
+        LEFT JOIN LATERAL unnest(mv.contents) AS c ON true
+        GROUP BY mv.message_id
     ),
     -- Transform strengths (MV types.mv_strength -> query types)
     strengths_transformed AS (
@@ -233,10 +270,12 @@ AS $$
             mv.created_at,
             mv.completed,
             mv.message_position,
+            ct.contents,
             st.strengths,
             it.improvements,
             ht.hints
         FROM mv_data mv
+        LEFT JOIN contents_transformed ct ON ct.message_id = mv.message_id
         LEFT JOIN strengths_transformed st ON st.message_id = mv.message_id
         LEFT JOIN improvements_transformed it ON it.message_id = mv.message_id
         LEFT JOIN hints_transformed ht ON ht.message_id = mv.message_id
@@ -255,6 +294,7 @@ AS $$
                     created_at,
                     completed,
                     message_position,
+                    contents,
                     strengths,
                     improvements,
                     hints

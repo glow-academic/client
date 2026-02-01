@@ -672,7 +672,7 @@ chats_base AS (
     JOIN all_chat_scenarios acs ON acs.chat_id = sc.id
     JOIN scenario_scenarios_junction ssj_sc ON ssj_sc.scenarios_id = acs.scenarios_id
     LEFT JOIN LATERAL (
-        SELECT r.group_id FROM view_messages_entry m_g JOIN view_runs_entry r ON r.id = m_g.run_id WHERE m_g.chat_id = sc.id LIMIT 1
+        SELECT r.group_id FROM view_simulation_messages_entry m_g JOIN view_runs_entry r ON r.id = m_g.run_id WHERE m_g.chat_id = sc.id LIMIT 1
     ) sc_group ON true
     LEFT JOIN view_groups_entry g ON g.id = sc_group.group_id
     ORDER BY sc.created_at
@@ -1099,7 +1099,7 @@ messages_with_tree AS (
             0 as depth,
             m.id as path_root_id
         FROM all_chats c
-        JOIN view_messages_entry m ON m.chat_id = c.id
+        JOIN view_simulation_messages_entry m ON m.chat_id = c.id
         JOIN view_runs_entry r ON r.id = m.run_id
         LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         CROSS JOIN chat_ids_list cil
@@ -1123,7 +1123,7 @@ messages_with_tree AS (
             NULL::uuid AS persona_id,
             mp.depth + 1 as depth,
             mp.path_root_id
-        FROM view_messages_entry m
+        FROM view_simulation_messages_entry m
         LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         JOIN view_message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
@@ -1148,7 +1148,7 @@ messages_with_tree AS (
             -1 as depth,
             m.id as path_root_id
         FROM all_chats c
-        JOIN view_messages_entry m ON m.chat_id = c.id
+        JOIN view_simulation_messages_entry m ON m.chat_id = c.id
         JOIN view_runs_entry r ON r.id = m.run_id
         LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         CROSS JOIN chat_ids_list cil
@@ -1302,7 +1302,7 @@ hints_data AS (
     FROM params x
     CROSS JOIN attempt_base ab
     JOIN all_chats c ON true
-    JOIN view_messages_entry m ON m.chat_id = c.id
+    JOIN view_simulation_messages_entry m ON m.chat_id = c.id
     JOIN view_runs_entry r ON r.id = m.run_id
     CROSS JOIN chat_ids_list cil
     WHERE c.id = ANY(cil.chat_ids)

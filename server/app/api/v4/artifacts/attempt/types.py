@@ -51,6 +51,18 @@ class HintEntry(BaseModel):
     idx: int | None = None
 
 
+class ContentEntry(BaseModel):
+    """Content entry with persona info."""
+
+    id: UUID
+    content: str | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+    persona_color: str | None = None
+    persona_icon: str | None = None
+    created_at: str | None = None
+
+
 class StrengthEntry(BaseModel):
     """Strength feedback with highlights."""
 
@@ -87,10 +99,12 @@ class MessageData(BaseModel):
     """
 
     id: UUID
-    content: str | None = None
+    content: str | None = None  # First content for backward compatibility
     type: str | None = None  # 'query' | 'response'
     created_at: str | None = None
     completed: bool | None = None
+    # Contents array with persona info
+    contents: list[ContentEntry] | None = None
     strengths: list[StrengthEntry] | None = None
     improvements: list[ImprovementEntry] | None = None
     # Practice mode only

@@ -240,7 +240,7 @@ run_chats_map AS (
         m_chat.chat_id as chat_id
     FROM run_groups_map rg
     JOIN view_runs_entry r_chat ON r_chat.group_id = rg.group_id
-    JOIN view_messages_entry m_chat ON m_chat.run_id = r_chat.id
+    JOIN view_simulation_messages_entry m_chat ON m_chat.run_id = r_chat.id
 ),
 -- Find first run (idx = 0) for each group
 first_runs_map AS (
