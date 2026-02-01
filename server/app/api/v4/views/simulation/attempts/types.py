@@ -32,10 +32,6 @@ class GetAttemptsRequest(BaseModel):
     """Request for getting attempt data."""
 
     attempt_ids: list[UUID] = Field(description="List of attempt IDs to fetch")
-    practice: bool | None = Field(
-        default=None,
-        description="Filter by practice mode. None=all, True=practice, False=home",
-    )
 
 
 class GetAttemptsResponse(BaseModel):

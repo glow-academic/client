@@ -27,8 +27,6 @@ router = APIRouter()
 async def get_simulation_attempts_internal(
     conn: asyncpg.Connection,
     attempt_ids: list[UUID],
-    practice: bool | None = None,
-    profile_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> list[AttemptViewItem]:
     """Internal function for fetching attempt data.
@@ -38,8 +36,6 @@ async def get_simulation_attempts_internal(
     Args:
         conn: Database connection
         attempt_ids: List of attempt IDs to fetch
-        practice: Filter by practice mode
-        profile_id: Filter by profile ID (artifact ID, will be resolved to resource ID)
         bypass_cache: Skip cache lookup
 
     Returns:
@@ -47,28 +43,11 @@ async def get_simulation_attempts_internal(
     """
     from app.sql.types import (
         GetSimulationAttemptsViewSqlParams,
-        GetSimulationAttemptsViewSqlRow,
     )
-
-    # Resolve profile_id (artifact) to profiles_id (resource) for MV filtering
-    profiles_id: UUID | None = None
-    if profile_id:
-        profiles_id = await conn.fetchval(
-            """
-            SELECT profiles_id FROM profile_profiles_junction
-            WHERE profile_id = $1 AND active = true
-            LIMIT 1
-            """,
-            profile_id,
-        )
 
     cache_key_val = cache_key(
         "views/simulation/attempts/get",
-        {
-            "attempt_ids": [str(a) for a in attempt_ids],
-            "practice": practice,
-            "profile_id": str(profiles_id) if profiles_id else None,
-        },
+        {"attempt_ids": [str(a) for a in attempt_ids]},
     )
 
     if not bypass_cache:
@@ -76,12 +55,8 @@ async def get_simulation_attempts_internal(
         if cached:
             return [AttemptViewItem.model_validate(item) for item in cached["items"]]
 
-    # Execute SQL query (pass profiles_id, not profile_id)
-    params = GetSimulationAttemptsViewSqlParams(
-        attempt_ids=attempt_ids,
-        practice_filter=practice,
-        profile_id_filter=profiles_id,
-    )
+    # Execute SQL query
+    params = GetSimulationAttemptsViewSqlParams(attempt_ids=attempt_ids)
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
@@ -142,14 +117,9 @@ async def get_attempts(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from request state
-        profile_id = http_request.state.profile_id
-
         items = await get_simulation_attempts_internal(
             conn=conn,
             attempt_ids=request.attempt_ids,
-            practice=request.practice,
-            profile_id=profile_id,
             bypass_cache=bypass_cache,
         )
 

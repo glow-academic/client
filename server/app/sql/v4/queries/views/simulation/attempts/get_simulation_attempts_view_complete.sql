@@ -67,9 +67,7 @@ CREATE TYPE types.q_get_simulation_attempts_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_simulation_attempts_view_v4(
-    attempt_ids uuid[],
-    practice_filter boolean DEFAULT NULL,
-    profile_id_filter uuid DEFAULT NULL
+    attempt_ids uuid[]
 )
 RETURNS TABLE (
     items types.q_get_simulation_attempts_view_v4_item[]
@@ -78,20 +76,11 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Parameter normalization
-    params AS (
-        SELECT
-            COALESCE(attempt_ids, ARRAY[]::uuid[]) AS attempt_ids,
-            practice_filter AS practice_filter,
-            profile_id_filter AS profile_id_filter
-    ),
-    -- Fetch from MV with filters
+    -- Fetch from MV by attempt IDs
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_attempts mv, params p
-        WHERE mv.attempt_id = ANY(p.attempt_ids)
-          AND (p.practice_filter IS NULL OR mv.practice = p.practice_filter)
-          AND (p.profile_id_filter IS NULL OR mv.profile_id = p.profile_id_filter)
+        FROM mv_simulation_attempts mv
+        WHERE mv.attempt_id = ANY(COALESCE(attempt_ids, ARRAY[]::uuid[]))
     ),
     -- No resource JOINs needed - all metadata fetched via internal handlers
     -- Aggregates derived in service layer from chats

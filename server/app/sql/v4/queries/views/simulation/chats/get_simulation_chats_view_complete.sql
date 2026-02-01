@@ -126,9 +126,7 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_simulation_chats_view_v4(
-    attempt_id_filter uuid DEFAULT NULL,
-    chat_ids uuid[] DEFAULT NULL,
-    practice_filter boolean DEFAULT NULL
+    attempt_id_filter uuid
 )
 RETURNS TABLE (
     items types.q_get_simulation_chats_view_v4_item[]
@@ -137,20 +135,11 @@ LANGUAGE sql
 STABLE
 AS $$
     WITH
-    -- Parameter normalization
-    params AS (
-        SELECT
-            attempt_id_filter AS attempt_id_filter,
-            COALESCE(chat_ids, ARRAY[]::uuid[]) AS chat_ids,
-            practice_filter AS practice_filter
-    ),
-    -- Fetch from MV with filters
+    -- Fetch from MV by attempt ID
     mv_data AS (
         SELECT mv.*
-        FROM mv_simulation_chats mv, params p
-        WHERE (p.attempt_id_filter IS NULL OR mv.attempt_id = p.attempt_id_filter)
-          AND (CARDINALITY(p.chat_ids) = 0 OR mv.chat_id = ANY(p.chat_ids))
-          AND (p.practice_filter IS NULL OR mv.practice = p.practice_filter)
+        FROM mv_simulation_chats mv
+        WHERE mv.attempt_id = attempt_id_filter
     ),
     -- Transform feedbacks with standard names
     feedbacks_transformed AS (

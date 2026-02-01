@@ -25407,15 +25407,9 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 class GetSimulationAttemptsViewSqlParams(BaseModel):
 
     attempt_ids: list[UUID]
-    practice_filter: bool | None = None
-    profile_id_filter: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_ids,
-            self.practice_filter,
-            self.profile_id_filter,
-        )
+        return (self.attempt_ids,)
 
 class QGetSimulationAttemptsViewV4Item(BaseModel):
 
@@ -25448,16 +25442,10 @@ class GetSimulationAttemptsViewApiResponse(BaseModel):
 
 class GetSimulationChatsViewSqlParams(BaseModel):
 
-    attempt_id_filter: UUID | None = None
-    chat_ids: list[UUID] | None = None
-    practice_filter: bool | None = None
+    attempt_id_filter: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id_filter,
-            self.chat_ids,
-            self.practice_filter,
-        )
+        return (self.attempt_id_filter,)
 
 class QGetSimulationChatsViewV4Feedback(BaseModel):
 

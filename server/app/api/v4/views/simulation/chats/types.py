@@ -90,16 +90,7 @@ class ChatViewItem(BaseModel):
 class GetChatsRequest(BaseModel):
     """Request for getting chat data."""
 
-    attempt_id: UUID | None = Field(
-        default=None, description="Filter by attempt ID"
-    )
-    chat_ids: list[UUID] | None = Field(
-        default=None, description="List of specific chat IDs to fetch"
-    )
-    practice: bool | None = Field(
-        default=None,
-        description="Filter by practice mode. None=all, True=practice, False=home",
-    )
+    attempt_id: UUID = Field(description="Attempt ID to fetch chats for")
 
 
 class GetChatsResponse(BaseModel):

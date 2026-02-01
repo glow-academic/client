@@ -76,10 +76,7 @@ latest_grade AS (
         g.score AS grade_score,
         g.passed AS grade_passed,
         g.description AS grade_description,
-        g.time_taken AS grade_time_taken,
-        g.total_points AS rubric_total_points,
-        g.pass_points AS rubric_pass_points,
-        g.created_at AS grade_created_at
+        g.time_taken AS grade_time_taken
     FROM simulation_grades_entry g
     WHERE g.active = TRUE
     ORDER BY g.chat_id, g.created_at DESC
@@ -97,8 +94,8 @@ feedbacks_agg AS (
     WHERE fe.active = TRUE
     GROUP BY fe.grade_id
 ),
--- Compute chat position and current chat status
-chats_with_position AS (
+-- Base chat data (position/is_current/practice derived from attempt in service layer)
+base_chats AS (
     SELECT
         c.id AS chat_id,
         c.attempt_id,
@@ -106,7 +103,6 @@ chats_with_position AS (
         c.completed AS chat_completed,
         csc.scenarios_id AS scenario_id,
         grc.rubrics_id AS rubric_id,
-        COALESCE(a.practice, FALSE) AS practice,
         -- Chat-level flags (directly on simulation_chats_entry)
         c.copy_paste_allowed,
         c.text_enabled,
@@ -115,7 +111,7 @@ chats_with_position AS (
         c.show_images,
         c.show_objectives,
         c.show_problem_statement,
-        ROW_NUMBER() OVER (PARTITION BY c.attempt_id ORDER BY c.created_at) AS chat_position
+        lg.grade_id
     FROM simulation_chats_entry c
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
     JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
@@ -124,14 +120,6 @@ chats_with_position AS (
     WHERE c.active = TRUE
       AND a.active = TRUE
       AND COALESCE(a.archived, FALSE) = FALSE
-),
--- Determine which chat is "current" (first incomplete or last if all complete)
-current_chat_per_attempt AS (
-    SELECT DISTINCT ON (attempt_id)
-        attempt_id,
-        chat_id AS current_chat_id
-    FROM chats_with_position
-    ORDER BY attempt_id, chat_completed ASC, chat_position DESC
 ),
 -- Aggregate persona IDs per chat (plural array)
 personas_agg AS (
@@ -263,41 +251,33 @@ standards_agg AS (
 )
 SELECT
     -- Primary key
-    cwp.chat_id,
+    bc.chat_id,
 
     -- Foreign keys for parallel lookup
-    cwp.attempt_id,
+    bc.attempt_id,
 
     -- Resource IDs (from connections for _resource joins at runtime)
-    cwp.scenario_id,
-    cwp.rubric_id,
-
-    -- Practice flag (exposed as column for filtering)
-    cwp.practice,
+    bc.scenario_id,
+    bc.rubric_id,
 
     -- Chat-level flags (directly from simulation_chats_entry)
-    cwp.copy_paste_allowed,
-    cwp.text_enabled,
-    cwp.audio_enabled,
-    cwp.hints_enabled,
-    cwp.show_images,
-    cwp.show_objectives,
-    cwp.show_problem_statement,
+    bc.copy_paste_allowed,
+    bc.text_enabled,
+    bc.audio_enabled,
+    bc.hints_enabled,
+    bc.show_images,
+    bc.show_objectives,
+    bc.show_problem_statement,
 
-    -- Chat data
-    cwp.chat_created_at,
-    cwp.chat_completed,
-    cwp.chat_position::int,
-    (cwp.chat_id = cca.current_chat_id) AS is_current_chat,
+    -- Chat data (position/is_current derived in service layer)
+    bc.chat_created_at,
+    bc.chat_completed,
 
-    -- Grade data (from latest grade)
-    lg.grade_id,
+    -- Grade data (from latest grade, rubric points fetched via internal handler)
     lg.grade_score,
     lg.grade_passed,
     lg.grade_description,
     lg.grade_time_taken,
-    lg.rubric_total_points,
-    lg.rubric_pass_points,
 
     -- Feedbacks array (denormalized for grading state display)
     COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
@@ -322,22 +302,21 @@ SELECT
     COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
     COALESCE(sa.standard_ids, ARRAY[]::uuid[]) AS standard_ids
 
-FROM chats_with_position cwp
-LEFT JOIN current_chat_per_attempt cca ON cca.attempt_id = cwp.attempt_id
-LEFT JOIN latest_grade lg ON lg.chat_id = cwp.chat_id
-LEFT JOIN feedbacks_agg fa ON fa.grade_id = lg.grade_id
-LEFT JOIN personas_agg pa ON pa.chat_id = cwp.chat_id
-LEFT JOIN problem_statements_agg psa ON psa.chat_id = cwp.chat_id
-LEFT JOIN objectives_agg oa ON oa.chat_id = cwp.chat_id
-LEFT JOIN questions_agg qa ON qa.chat_id = cwp.chat_id
-LEFT JOIN options_agg opta ON opta.chat_id = cwp.chat_id
-LEFT JOIN templates_agg ta ON ta.chat_id = cwp.chat_id
-LEFT JOIN responses_agg ra ON ra.chat_id = cwp.chat_id
-LEFT JOIN images_agg ia ON ia.chat_id = cwp.chat_id
-LEFT JOIN videos_agg va ON va.chat_id = cwp.chat_id
-LEFT JOIN documents_agg da ON da.chat_id = cwp.chat_id
-LEFT JOIN standard_groups_agg sga ON sga.chat_id = cwp.chat_id
-LEFT JOIN standards_agg sa ON sa.chat_id = cwp.chat_id
+FROM base_chats bc
+LEFT JOIN latest_grade lg ON lg.chat_id = bc.chat_id
+LEFT JOIN feedbacks_agg fa ON fa.grade_id = bc.grade_id
+LEFT JOIN personas_agg pa ON pa.chat_id = bc.chat_id
+LEFT JOIN problem_statements_agg psa ON psa.chat_id = bc.chat_id
+LEFT JOIN objectives_agg oa ON oa.chat_id = bc.chat_id
+LEFT JOIN questions_agg qa ON qa.chat_id = bc.chat_id
+LEFT JOIN options_agg opta ON opta.chat_id = bc.chat_id
+LEFT JOIN templates_agg ta ON ta.chat_id = bc.chat_id
+LEFT JOIN responses_agg ra ON ra.chat_id = bc.chat_id
+LEFT JOIN images_agg ia ON ia.chat_id = bc.chat_id
+LEFT JOIN videos_agg va ON va.chat_id = bc.chat_id
+LEFT JOIN documents_agg da ON da.chat_id = bc.chat_id
+LEFT JOIN standard_groups_agg sga ON sga.chat_id = bc.chat_id
+LEFT JOIN standards_agg sa ON sa.chat_id = bc.chat_id
 WITH NO DATA;
 
 -- ============================================================================
@@ -351,11 +330,7 @@ CREATE UNIQUE INDEX mv_simulation_chats_pk
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
--- Practice flag for filtering home vs practice
-CREATE INDEX mv_simulation_chats_practice_idx
-    ON mv_simulation_chats (practice);
-
--- Attempt ID for parallel lookup
+-- Attempt ID for parallel lookup (primary filter)
 CREATE INDEX mv_simulation_chats_attempt_id_idx
     ON mv_simulation_chats (attempt_id);
 
@@ -363,27 +338,13 @@ CREATE INDEX mv_simulation_chats_attempt_id_idx
 CREATE INDEX mv_simulation_chats_scenario_id_idx
     ON mv_simulation_chats (scenario_id);
 
--- Grade ID for joins
-CREATE INDEX mv_simulation_chats_grade_id_idx
-    ON mv_simulation_chats (grade_id)
-    WHERE grade_id IS NOT NULL;
-
--- Current chat partial index (for quick "current chat" lookups)
-CREATE INDEX mv_simulation_chats_current_chat_idx
-    ON mv_simulation_chats (attempt_id)
-    WHERE is_current_chat = TRUE;
-
 -- Completed status
 CREATE INDEX mv_simulation_chats_completed_idx
     ON mv_simulation_chats (chat_completed);
 
--- Composite: attempt + position for ordering
-CREATE INDEX mv_simulation_chats_attempt_position_idx
-    ON mv_simulation_chats (attempt_id, chat_position);
-
--- Composite: practice + attempt (common filter pattern)
-CREATE INDEX mv_simulation_chats_practice_attempt_idx
-    ON mv_simulation_chats (practice, attempt_id);
+-- Composite: attempt + created_at for ordering
+CREATE INDEX mv_simulation_chats_attempt_created_at_idx
+    ON mv_simulation_chats (attempt_id, chat_created_at);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

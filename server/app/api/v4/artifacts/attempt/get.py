@@ -204,24 +204,19 @@ async def attempt_get(
         # === PARALLEL FETCH FUNCTIONS ===
         # Each function acquires its own connection for true parallelism
 
-        async def fetch_attempt(aid: UUID, pid: UUID) -> Any:
+        async def fetch_attempt(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Use view internal handler with practice flag
                 return await get_simulation_attempts_internal(
                     conn=c,
                     attempt_ids=[aid],
-                    practice=practice,
-                    profile_id=pid,
                     bypass_cache=bypass_cache,
                 )
 
         async def fetch_chats(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Use view internal handler with practice flag
                 return await get_simulation_chats_internal(
                     conn=c,
                     attempt_id=aid,
-                    practice=practice,
                     bypass_cache=bypass_cache,
                 )
 
@@ -651,7 +646,7 @@ async def attempt_get(
         # === EXECUTE ALL QUERIES IN PARALLEL ===
         # First batch: attempt, chats, messages (needed to get simulation_id and chat_ids)
         attempt_result, chats_result, messages_result = await asyncio.gather(
-            fetch_attempt(attempt_id, profile_id),
+            fetch_attempt(attempt_id),
             fetch_chats(attempt_id),
             fetch_messages(attempt_id),
         )

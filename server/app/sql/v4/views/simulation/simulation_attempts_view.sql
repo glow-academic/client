@@ -37,35 +37,8 @@ DROP MATERIALIZED VIEW IF EXISTS mv_simulation_attempts CASCADE;
 -- ============================================================================
 
 CREATE MATERIALIZED VIEW mv_simulation_attempts AS
-WITH
--- Pre-aggregate chat-level data per attempt
-chat_aggregates AS (
-    SELECT
-        c.attempt_id,
-        COUNT(*)::int AS total_chats,
-        COUNT(*) FILTER (WHERE c.completed = TRUE)::int AS completed_chats,
-        ARRAY_AGG(DISTINCT csc.scenarios_id) FILTER (WHERE csc.scenarios_id IS NOT NULL) AS scenario_ids,
-        ARRAY_AGG(DISTINCT cpc.personas_id) FILTER (WHERE cpc.personas_id IS NOT NULL) AS persona_ids
-    FROM simulation_chats_entry c
-    JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
-    LEFT JOIN simulation_chats_personas_connection cpc ON cpc.chat_id = c.id
-    WHERE c.active = TRUE
-    GROUP BY c.attempt_id
-),
--- Pre-aggregate grade data per attempt
-grade_aggregates AS (
-    SELECT
-        c.attempt_id,
-        SUM(g.score)::float AS total_score,
-        BOOL_AND(g.passed) AS all_passed,
-        SUM(COALESCE(g.time_taken, 0))::int AS elapsed_seconds,
-        MAX(g.total_points)::int AS rubric_total_points,
-        MAX(g.pass_points)::int AS rubric_pass_points
-    FROM simulation_chats_entry c
-    JOIN simulation_grades_entry g ON g.chat_id = c.id AND g.active = TRUE
-    WHERE c.active = TRUE AND c.completed = TRUE
-    GROUP BY c.attempt_id
-)
+-- Simple attempt-level data only
+-- All aggregates (total_chats, scores, etc.) derived in service layer from chats
 SELECT
     -- Primary key
     a.id AS attempt_id,
@@ -81,20 +54,7 @@ SELECT
 
     -- Attempt timestamps and flags
     a.created_at AS attempt_created_at,
-    COALESCE(a.infinite_mode, FALSE) AS infinite_mode,
-
-    -- Pre-aggregated from chats
-    COALESCE(ca.total_chats, 0) AS total_chats,
-    COALESCE(ca.completed_chats, 0) AS completed_chats,
-    COALESCE(ga.total_score, 0) AS total_score,
-    COALESCE(ga.all_passed, FALSE) AS all_passed,
-    COALESCE(ga.elapsed_seconds, 0) AS elapsed_seconds,
-    ga.rubric_total_points,
-    ga.rubric_pass_points,
-
-    -- Array IDs for display (join to _resource at query time)
-    COALESCE(ca.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
-    COALESCE(ca.persona_ids, ARRAY[]::uuid[]) AS persona_ids
+    COALESCE(a.infinite_mode, FALSE) AS infinite_mode
 
 FROM simulation_attempts_entry a
 -- Attempt connections (required)
@@ -103,10 +63,6 @@ JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
 -- Attempt connections (optional)
 LEFT JOIN simulation_attempts_departments_connection adc ON adc.attempt_id = a.id
 LEFT JOIN simulation_attempts_cohorts_connection acc ON acc.attempt_id = a.id
--- Chat aggregates
-LEFT JOIN chat_aggregates ca ON ca.attempt_id = a.id
--- Grade aggregates
-LEFT JOIN grade_aggregates ga ON ga.attempt_id = a.id
 WHERE a.active = TRUE
   AND COALESCE(a.archived, FALSE) = FALSE  -- not archived
 WITH NO DATA;
