@@ -12,39 +12,25 @@ class AttemptViewItem(BaseModel):
     # Primary key
     attempt_id: UUID
 
-    # Resource IDs
+    # Resource IDs (metadata fetched via internal handlers)
     simulation_id: UUID | None = None
     profile_id: UUID | None = None
     cohort_id: UUID | None = None
     department_id: UUID | None = None
 
-    # Resource metadata (JOINed)
-    simulation_name: str | None = None
-    profile_name: str | None = None
-    cohort_name: str | None = None
-    department_name: str | None = None
-
-    # Practice flag
-    practice: bool = False
-
-    # Timestamps
-    attempt_created_at: datetime | None = None
-
     # Flags
+    practice: bool = False
     infinite_mode: bool = False
 
-    # Aggregates
+    # Timestamps
+    created_at: datetime | None = None
+
+    # Aggregates (attempt-level only, rubric/scenario/persona data comes from chats)
     total_chats: int = 0
     completed_chats: int = 0
     total_score: float = 0
     all_passed: bool = False
     elapsed_seconds: int = 0
-    rubric_total_points: int | None = None
-    rubric_pass_points: int | None = None
-
-    # Array IDs
-    scenario_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
 
 
 class GetAttemptsRequest(BaseModel):

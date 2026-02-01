@@ -72,9 +72,11 @@ from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.options.get import get_options_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.problem_statements.get import get_problem_statements_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.questions.get import get_questions_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.templates.get import get_templates_internal
@@ -666,20 +668,49 @@ async def attempt_get(
                 actor_name=None,
             )
 
+        # === FETCH SIMULATION AND PROFILE METADATA ===
+        # These are now fetched via internal handlers instead of SQL JOINs
+        simulation_name: str | None = None
+        profile_name: str | None = None
+
+        async def fetch_simulation_meta(sim_id: UUID | None) -> str | None:
+            if not sim_id:
+                return None
+            async with pool.acquire() as c:
+                items = await get_simulations_batch_internal(c, [sim_id], bypass_cache=bypass_cache)
+                if items and items[0].title:
+                    return items[0].title
+            return None
+
+        async def fetch_profile_meta(prof_id: UUID | None) -> str | None:
+            if not prof_id:
+                return None
+            async with pool.acquire() as c:
+                items = await get_profiles_internal(c, [prof_id], bypass_cache=bypass_cache)
+                if items and items[0].name:
+                    return items[0].name
+            return None
+
+        # Fetch simulation and profile names in parallel
+        simulation_name, profile_name = await asyncio.gather(
+            fetch_simulation_meta(attempt_item.simulation_id),
+            fetch_profile_meta(attempt_item.profile_id),
+        )
+
         # Check if profile matches (permission check)
         # Note: attempt_item.profile_id is profiles_id (resource), so compare with profiles_id
         if not check_attempt_access(attempt_item.profile_id, profiles_id):
             return GetAttemptDetailResponse(
                 attempt_exists=True,
                 access_denied=True,
-                actor_name=attempt_item.profile_name,
+                actor_name=profile_name,
             )
 
         # Set audit context
-        if attempt_item.profile_name:
+        if profile_name:
             audit_set(
                 http_request,
-                actor={"name": attempt_item.profile_name, "id": profile_id},
+                actor={"name": profile_name, "id": profile_id},
             )
 
         # === SECOND BATCH: Fetch extended data ===
@@ -1227,13 +1258,13 @@ async def attempt_get(
         attempt = AttemptData(
             id=attempt_item.attempt_id,
             created_at=(
-                attempt_item.attempt_created_at.isoformat()
-                if attempt_item.attempt_created_at
+                attempt_item.created_at.isoformat()
+                if attempt_item.created_at
                 else None
             ),
             infinite_mode=attempt_item.infinite_mode,
             profile_id=attempt_item.profile_id,
-            profile_name=attempt_item.profile_name,
+            profile_name=profile_name,
             department_id=attempt_item.department_id,
             # Home mode only
             cohort_id=attempt_item.cohort_id if not practice else None,
@@ -1244,7 +1275,7 @@ async def attempt_get(
         # === BUILD SIMULATION DATA ===
         simulation = SimulationData(
             id=attempt_item.simulation_id,
-            name=attempt_item.simulation_name,
+            name=simulation_name,
             description=None,  # Not in view
             time_limit=sim_config.get("time_limit") if sim_config else None,
             hints_enabled=sim_config.get("hints_enabled") if sim_config else None,
@@ -1270,9 +1301,13 @@ async def attempt_get(
         total_score = attempt_item.total_score or 0
         total_chats = attempt_item.total_chats or 0
         completed_chats = attempt_item.completed_chats or 0
-        rubric_total_points = attempt_item.rubric_total_points or 0
 
-        total_possible = rubric_total_points * completed_chats if completed_chats > 0 else 0
+        # Calculate total_possible from completed chats' rubric total_points
+        total_possible = 0.0
+        for chat in chats:
+            if chat.completed and chat.rubric and chat.rubric.total_points:
+                total_possible += chat.rubric.total_points
+
         percentage = (
             round((total_score / total_possible) * 100, 2)
             if total_possible > 0
@@ -1363,7 +1398,7 @@ async def attempt_get(
 
         # === BUILD RESPONSE ===
         api_response = GetAttemptDetailResponse(
-            actor_name=attempt_item.profile_name,
+            actor_name=profile_name,
             attempt_exists=True,
             access_denied=False,
             attempt=attempt,

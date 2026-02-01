@@ -82,9 +82,6 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     rubric_id uuid,
     problem_statement_id uuid,
 
-    -- Practice flag
-    practice boolean,
-
     -- Chat-level flags (directly from MV)
     copy_paste_allowed boolean,
     text_enabled boolean,
@@ -207,8 +204,6 @@ AS $$
             mv.scenario_id,
             mv.rubric_id,
             mv.problem_statement_id,
-            -- Flags
-            mv.practice,
             -- Chat-level flags (directly from MV)
             mv.copy_paste_allowed,
             mv.text_enabled,
@@ -255,7 +250,6 @@ AS $$
                     scenario_id,
                     rubric_id,
                     problem_statement_id,
-                    practice,
                     copy_paste_allowed,
                     text_enabled,
                     audio_enabled,

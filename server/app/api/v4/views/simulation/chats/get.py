@@ -123,7 +123,6 @@ async def get_simulation_chats_internal(
                     scenario_id=item.scenario_id,
                     rubric_id=item.rubric_id,
                     problem_statement_id=item.problem_statement_id,
-                    practice=item.practice or False,
                     copy_paste_allowed=item.copy_paste_allowed,
                     text_enabled=item.text_enabled,
                     audio_enabled=item.audio_enabled,

@@ -96,22 +96,14 @@ async def get_simulation_attempts_internal(
                     profile_id=item.profile_id,
                     cohort_id=item.cohort_id,
                     department_id=item.department_id,
-                    simulation_name=item.simulation_name,
-                    profile_name=item.profile_name,
-                    cohort_name=item.cohort_name,
-                    department_name=item.department_name,
                     practice=item.practice or False,
-                    attempt_created_at=item.attempt_created_at,
                     infinite_mode=item.infinite_mode or False,
+                    created_at=item.created_at,
                     total_chats=item.total_chats or 0,
                     completed_chats=item.completed_chats or 0,
                     total_score=item.total_score or 0,
                     all_passed=item.all_passed or False,
                     elapsed_seconds=item.elapsed_seconds or 0,
-                    rubric_total_points=item.rubric_total_points,
-                    rubric_pass_points=item.rubric_pass_points,
-                    scenario_ids=item.scenario_ids,
-                    persona_ids=item.persona_ids,
                 )
             )
 

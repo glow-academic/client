@@ -25424,22 +25424,14 @@ class QGetSimulationAttemptsViewV4Item(BaseModel):
     profile_id: UUID | None
     cohort_id: UUID | None
     department_id: UUID | None
-    simulation_name: str | None
-    profile_name: str | None
-    cohort_name: str | None
-    department_name: str | None
     practice: bool | None
-    attempt_created_at: datetime | None
     infinite_mode: bool | None
+    created_at: datetime | None
     total_chats: int | None
     completed_chats: int | None
     total_score: float | None
     all_passed: bool | None
     elapsed_seconds: int | None
-    rubric_total_points: int | None
-    rubric_pass_points: int | None
-    scenario_ids: list[UUID] | None
-    persona_ids: list[UUID] | None
 
 class GetSimulationAttemptsViewSqlRow(BaseModel):
 
@@ -25490,6 +25482,13 @@ class QGetSimulationChatsViewV4Response(BaseModel):
     completed: bool | None
     created_at: datetime | None
 
+class QGetSimulationChatsViewV4Grade(BaseModel):
+
+    score: float | None
+    passed: bool | None
+    description: str | None
+    time_taken: int | None
+
 class QGetSimulationChatsViewV4Item(BaseModel):
 
     chat_id: UUID | None
@@ -25497,9 +25496,6 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     scenario_id: UUID | None
     rubric_id: UUID | None
     problem_statement_id: UUID | None
-    scenario_name: str | None
-    rubric_name: str | None
-    practice: bool | None
     copy_paste_allowed: bool | None
     text_enabled: bool | None
     audio_enabled: bool | None
@@ -25507,17 +25503,11 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     show_images: bool | None
     show_objectives: bool | None
     show_problem_statement: bool | None
-    chat_created_at: datetime | None
-    chat_completed: bool | None
-    chat_position: int | None
-    is_current_chat: bool | None
-    grade_id: UUID | None
-    grade_score: float | None
-    grade_passed: bool | None
-    grade_description: str | None
-    grade_time_taken: int | None
-    rubric_total_points: int | None
-    rubric_pass_points: int | None
+    created_at: datetime | None
+    completed: bool | None
+    position: int | None
+    is_current: bool | None
+    grade: QGetSimulationChatsViewV4Grade | None
     feedbacks: list[QGetSimulationChatsViewV4Feedback] | None
     persona_ids: list[UUID] | None
     objective_ids: list[UUID] | None
@@ -25528,6 +25518,8 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     image_ids: list[UUID] | None
     video_ids: list[UUID] | None
     document_ids: list[UUID] | None
+    standard_group_ids: list[UUID] | None
+    standard_ids: list[UUID] | None
 
 class GetSimulationChatsViewSqlRow(BaseModel):
 

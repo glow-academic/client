@@ -48,9 +48,6 @@ class ChatViewItem(BaseModel):
     rubric_id: UUID | None = None
     problem_statement_id: UUID | None = None
 
-    # Practice flag
-    practice: bool = False
-
     # Chat-level flags (directly from MV)
     copy_paste_allowed: bool | None = None
     text_enabled: bool | None = None
