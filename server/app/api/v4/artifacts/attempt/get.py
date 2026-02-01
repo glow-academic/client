@@ -22,7 +22,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.attempt.permissions import (
     check_attempt_access,
+    compute_attempt_aggregates,
+    compute_chat_position_and_current,
     compute_content_display,
+    compute_current_chat_index,
+    compute_percentage,
+    compute_total_possible_points,
 )
 from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
@@ -1218,8 +1223,7 @@ async def attempt_get(
                 ChatData(
                     id=chat_item.chat_id,
                     completed=chat_item.completed,
-                    is_current=chat_item.is_current,
-                    position=chat_item.position,
+                    # is_current and position are computed after all chats are built
                     grade=grade,
                     feedbacks=feedbacks,
                     messages=messages,
@@ -1289,51 +1293,42 @@ async def attempt_get(
             rubric_id=sim_config.get("rubric_id") if sim_config else None,
         )
 
+        # === COMPUTE DERIVED FIELDS (centralized in permissions.py) ===
+        # Compute position and is_current for each chat
+        compute_chat_position_and_current(chats)
+
+        # Compute attempt aggregates from chats
+        aggregates = compute_attempt_aggregates(chats)
+        total_chats = aggregates["total_chats"]
+        completed_chats = aggregates["completed_chats"]
+        total_score = aggregates["total_score"]
+        all_passed = aggregates["all_passed"]
+        elapsed_seconds = aggregates["elapsed_seconds"]
+
         # === BUILD TIMER DATA ===
         time_limit_seconds = sim_config.get("time_limit") if sim_config else None
         timer = _format_timer(
-            elapsed=attempt_item.elapsed_seconds or 0,
+            elapsed=elapsed_seconds,
             limit_seconds=time_limit_seconds,
             infinite_mode=attempt_item.infinite_mode or False,
         )
 
         # === BUILD AGGREGATED RESULTS ===
-        total_score = attempt_item.total_score or 0
-        total_chats = attempt_item.total_chats or 0
-        completed_chats = attempt_item.completed_chats or 0
-
-        # Calculate total_possible from completed chats' rubric total_points
-        total_possible = 0.0
-        for chat in chats:
-            if chat.completed and chat.rubric and chat.rubric.total_points:
-                total_possible += chat.rubric.total_points
-
-        percentage = (
-            round((total_score / total_possible) * 100, 2)
-            if total_possible > 0
-            else 0.0
-        )
+        total_possible = compute_total_possible_points(chats)
+        percentage = compute_percentage(total_score, total_possible)
 
         aggregated_results = AggregatedResults(
             total_score=total_score,
             total_possible_points=float(total_possible),
             percentage=percentage,
-            passed=attempt_item.all_passed,
+            passed=all_passed,
             chats_completed=completed_chats,
             total_chats=total_chats,
         )
 
         # === COMPUTE NAVIGATION/UI FIELDS ===
-        # current_chat_index: index of the first incomplete chat, or last chat if all complete
-        current_chat_index = 0
-        for i, chat in enumerate(chats):
-            if not chat.completed:
-                current_chat_index = i
-                break
-            current_chat_index = i  # Will be last index if all complete
-
-        # expected_chat_count: total number of chats
-        expected_chat_count = len(chats)
+        current_chat_index = compute_current_chat_index(chats)
+        expected_chat_count = total_chats
 
         # is_active: True if timer has not exceeded
         is_active = not timer.exceeded if timer else True

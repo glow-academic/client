@@ -91,11 +91,9 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     show_objectives boolean,
     show_problem_statement boolean,
 
-    -- Chat metadata (top-level)
+    -- Chat metadata (top-level, position/is_current derived in service layer)
     created_at timestamptz,
     completed boolean,
-    position int,
-    is_current boolean,
 
     -- Grade (composite type - no id, no rubric points)
     grade types.q_get_simulation_chats_view_v4_grade,
@@ -212,11 +210,9 @@ AS $$
             mv.show_images,
             mv.show_objectives,
             mv.show_problem_statement,
-            -- Chat metadata (top-level)
+            -- Chat metadata (top-level, position/is_current derived in service layer)
             mv.chat_created_at AS created_at,
             mv.chat_completed AS completed,
-            mv.chat_position AS position,
-            mv.is_current_chat AS is_current,
             -- Grade (composite type)
             (mv.grade_score, mv.grade_passed, mv.grade_description, mv.grade_time_taken)::types.q_get_simulation_chats_view_v4_grade AS grade,
             -- Feedbacks
@@ -259,8 +255,6 @@ AS $$
                     show_problem_statement,
                     created_at,
                     completed,
-                    position,
-                    is_current,
                     grade,
                     feedbacks,
                     persona_ids,
@@ -275,7 +269,7 @@ AS $$
                     standard_group_ids,
                     standard_ids
                 )::types.q_get_simulation_chats_view_v4_item
-                ORDER BY position
+                ORDER BY created_at
             ),
             ARRAY[]::types.q_get_simulation_chats_view_v4_item[]
         ) AS items

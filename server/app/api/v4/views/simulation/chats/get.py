@@ -130,11 +130,9 @@ async def get_simulation_chats_internal(
                     show_images=item.show_images,
                     show_objectives=item.show_objectives,
                     show_problem_statement=item.show_problem_statement,
-                    # Chat metadata (top-level)
+                    # Chat metadata (top-level, position/is_current derived in service layer)
                     created_at=item.created_at,
                     completed=item.completed or False,
-                    position=item.position,
-                    is_current=item.is_current or False,
                     # Grade (composite)
                     grade=grade,
                     feedbacks=feedbacks,

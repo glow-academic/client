@@ -25,12 +25,7 @@ class AttemptViewItem(BaseModel):
     # Timestamps
     created_at: datetime | None = None
 
-    # Aggregates (attempt-level only, rubric/scenario/persona data comes from chats)
-    total_chats: int = 0
-    completed_chats: int = 0
-    total_score: float = 0
-    all_passed: bool = False
-    elapsed_seconds: int = 0
+    # Aggregates derived in service layer from chats
 
 
 class GetAttemptsRequest(BaseModel):

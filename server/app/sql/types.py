@@ -25427,11 +25427,6 @@ class QGetSimulationAttemptsViewV4Item(BaseModel):
     practice: bool | None
     infinite_mode: bool | None
     created_at: datetime | None
-    total_chats: int | None
-    completed_chats: int | None
-    total_score: float | None
-    all_passed: bool | None
-    elapsed_seconds: int | None
 
 class GetSimulationAttemptsViewSqlRow(BaseModel):
 
@@ -25505,8 +25500,6 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     show_problem_statement: bool | None
     created_at: datetime | None
     completed: bool | None
-    position: int | None
-    is_current: bool | None
     grade: QGetSimulationChatsViewV4Grade | None
     feedbacks: list[QGetSimulationChatsViewV4Feedback] | None
     persona_ids: list[UUID] | None

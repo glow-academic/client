@@ -99,11 +99,6 @@ async def get_simulation_attempts_internal(
                     practice=item.practice or False,
                     infinite_mode=item.infinite_mode or False,
                     created_at=item.created_at,
-                    total_chats=item.total_chats or 0,
-                    completed_chats=item.completed_chats or 0,
-                    total_score=item.total_score or 0,
-                    all_passed=item.all_passed or False,
-                    elapsed_seconds=item.elapsed_seconds or 0,
                 )
             )
 

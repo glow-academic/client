@@ -59,14 +59,7 @@ CREATE TYPE types.q_get_simulation_attempts_view_v4_item AS (
     infinite_mode boolean,
 
     -- Timestamps
-    created_at timestamptz,
-
-    -- Aggregates (attempt-level only, rubric/scenario/persona data comes from chats)
-    total_chats int,
-    completed_chats int,
-    total_score float,
-    all_passed boolean,
-    elapsed_seconds int
+    created_at timestamptz
 );
 
 -- ============================================================================
@@ -101,6 +94,7 @@ AS $$
           AND (p.profile_id_filter IS NULL OR mv.profile_id = p.profile_id_filter)
     ),
     -- No resource JOINs needed - all metadata fetched via internal handlers
+    -- Aggregates derived in service layer from chats
     with_resources AS (
         SELECT
             mv.attempt_id,
@@ -112,13 +106,7 @@ AS $$
             mv.practice,
             mv.infinite_mode,
             -- Timestamps
-            mv.attempt_created_at AS created_at,
-            -- Aggregates (attempt-level only)
-            mv.total_chats,
-            mv.completed_chats,
-            mv.total_score,
-            mv.all_passed,
-            mv.elapsed_seconds
+            mv.attempt_created_at AS created_at
         FROM mv_data mv
     ),
     -- Aggregate into array
@@ -133,12 +121,7 @@ AS $$
                     department_id,
                     practice,
                     infinite_mode,
-                    created_at,
-                    total_chats,
-                    completed_chats,
-                    total_score,
-                    all_passed,
-                    elapsed_seconds
+                    created_at
                 )::types.q_get_simulation_attempts_view_v4_item
                 ORDER BY created_at DESC
             ),
