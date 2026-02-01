@@ -101,7 +101,7 @@ BEGIN
                     rtr.child_resource,
                     parent.relname AS parent_table,
                     parent_col.attname AS fk_col
-                FROM resource_tree_relation rtr
+                FROM resource_resource_relation rtr
                 JOIN pg_class parent
                   ON parent.relname = rtr.parent_resource || '_resource'
                 JOIN pg_class child

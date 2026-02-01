@@ -71,20 +71,18 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
-DO $$
-BEGIN
-    CREATE TYPE types.mv_content AS (
-        id uuid,
-        content text,
-        persona_id uuid,
-        persona_name text,
-        persona_color text,
-        persona_icon text,
-        created_at timestamptz
-    );
-EXCEPTION WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- Drop and recreate mv_content type (raw data - business logic applied in Python)
+DROP TYPE IF EXISTS types.mv_content CASCADE;
+CREATE TYPE types.mv_content AS (
+    id uuid,
+    content text,
+    persona_id uuid,        -- persona ID (NULL for user messages)
+    persona_name text,      -- persona name (NULL for user messages)
+    persona_color text,     -- persona color (NULL for user messages)
+    persona_icon text,      -- persona icon (NULL for user messages)
+    profile_name text,      -- actor name (populated for user messages)
+    created_at timestamptz
+);
 
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_simulation_messages materialized view (if it exists)
@@ -189,16 +187,50 @@ hints_agg AS (
     WHERE h.active = TRUE
     GROUP BY h.message_id
 ),
--- Aggregate contents per message with persona info
+-- Get profile name for user messages (via attempt -> profile connection)
+profile_names AS (
+    SELECT DISTINCT ON (c.id)
+        c.id AS chat_id,
+        pf.name AS profile_name
+    FROM simulation_chats_entry c
+    JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    JOIN simulation_attempts_profiles_connection apc ON apc.attempt_id = a.id
+    JOIN profiles_resource pf ON pf.id = apc.profiles_id AND pf.active = TRUE
+    WHERE c.active = TRUE AND a.active = TRUE
+),
+-- Get persona info for assistant messages (via chat -> persona connection)
+chat_personas AS (
+    SELECT DISTINCT ON (cpc.chat_id)
+        cpc.chat_id,
+        pr.name AS persona_name,
+        pr.color AS persona_color,
+        pr.icon AS persona_icon
+    FROM simulation_chats_personas_connection cpc
+    JOIN personas_resource pr ON pr.id = cpc.personas_id AND pr.active = TRUE
+),
+-- Aggregate contents per message with raw data (business logic in Python)
 contents_agg AS (
     SELECT
         sce.simulation_message_id AS message_id,
         ARRAY_AGG(
-            (ce.id, ce.content, sce.persona_id, pr.name, pr.color, pr.icon, ce.created_at)::types.mv_content
+            (
+                ce.id,
+                ce.content,
+                sce.persona_id,
+                COALESCE(cp.persona_name, pr.name),
+                COALESCE(cp.persona_color, pr.color),
+                COALESCE(cp.persona_icon, pr.icon),
+                pn.profile_name,
+                ce.created_at
+            )::types.mv_content
             ORDER BY ce.created_at
         ) AS contents
     FROM simulation_contents_entry sce
     JOIN contents_entry ce ON ce.id = sce.content_id
+    JOIN simulation_messages_entry sm ON sm.id = sce.simulation_message_id
+    JOIN messages_entry m ON m.id = sm.id
+    LEFT JOIN profile_names pn ON pn.chat_id = sm.chat_id
+    LEFT JOIN chat_personas cp ON cp.chat_id = sm.chat_id
     LEFT JOIN personas_resource pr ON pr.id = sce.persona_id AND pr.active = TRUE
     WHERE ce.active = TRUE
     GROUP BY sce.simulation_message_id

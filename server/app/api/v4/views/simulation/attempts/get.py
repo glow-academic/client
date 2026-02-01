@@ -39,7 +39,7 @@ async def get_simulation_attempts_internal(
         conn: Database connection
         attempt_ids: List of attempt IDs to fetch
         practice: Filter by practice mode
-        profile_id: Filter by profile ID
+        profile_id: Filter by profile ID (artifact ID, will be resolved to resource ID)
         bypass_cache: Skip cache lookup
 
     Returns:
@@ -50,12 +50,24 @@ async def get_simulation_attempts_internal(
         GetSimulationAttemptsViewSqlRow,
     )
 
+    # Resolve profile_id (artifact) to profiles_id (resource) for MV filtering
+    profiles_id: UUID | None = None
+    if profile_id:
+        profiles_id = await conn.fetchval(
+            """
+            SELECT profiles_id FROM profile_profiles_junction
+            WHERE profile_id = $1 AND active = true
+            LIMIT 1
+            """,
+            profile_id,
+        )
+
     cache_key_val = cache_key(
         "views/simulation/attempts/get",
         {
             "attempt_ids": [str(a) for a in attempt_ids],
             "practice": practice,
-            "profile_id": str(profile_id) if profile_id else None,
+            "profile_id": str(profiles_id) if profiles_id else None,
         },
     )
 
@@ -64,11 +76,11 @@ async def get_simulation_attempts_internal(
         if cached:
             return [AttemptViewItem.model_validate(item) for item in cached["items"]]
 
-    # Execute SQL query
+    # Execute SQL query (pass profiles_id, not profile_id)
     params = GetSimulationAttemptsViewSqlParams(
         attempt_ids=attempt_ids,
         practice_filter=practice,
-        profile_id_filter=profile_id,
+        profile_id_filter=profiles_id,
     )
 
     result = await execute_sql_typed(conn, SQL_PATH, params=params)

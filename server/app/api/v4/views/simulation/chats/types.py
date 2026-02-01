@@ -42,6 +42,15 @@ class ChatViewItem(BaseModel):
     # Practice flag
     practice: bool = False
 
+    # Chat-level flags (directly from MV)
+    copy_paste_allowed: bool | None = None
+    text_enabled: bool | None = None
+    audio_enabled: bool | None = None
+    hints_enabled: bool | None = None
+    show_images: bool | None = None
+    show_objectives: bool | None = None
+    show_problem_statement: bool | None = None
+
     # Chat data
     chat_created_at: datetime | None = None
     chat_completed: bool = False

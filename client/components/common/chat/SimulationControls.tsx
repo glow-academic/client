@@ -6,7 +6,7 @@
  */
 "use client";
 
-import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
+import type { AttemptDetailOut } from "@/app/(main)/home/a/[attemptId]/page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +28,7 @@ import { toast } from "sonner";
 
 export interface SimulationControlsProps {
   attemptId: string;
-  attemptData: AttemptFullOut;
+  attemptData: AttemptDetailOut;
 }
 
 export function SimulationControls({
@@ -47,23 +47,19 @@ export function SimulationControls({
   const showResults = attemptData?.show_results ?? false;
   const isActive = attemptData?.is_active ?? true;
 
-  // Find current chat from server data
+  // Find current chat from server data (new flat structure)
   const currentChat = useMemo(() => {
     if (!attemptData?.chats || attemptData.chats.length === 0) return null;
-    const chatData = attemptData.chats[currentChatIndex];
-    return chatData?.chat || attemptData.chats[0]?.chat || null;
+    return attemptData.chats[currentChatIndex] || attemptData.chats[0] || null;
   }, [attemptData, currentChatIndex]);
 
   const currentChatId = currentChat?.id || null;
 
-  // Get current messages from server data
+  // Get current messages from server data (new flat structure)
   const currentMessages = useMemo(() => {
-    if (!attemptData?.chats || !currentChat) return [];
-    const chatData = attemptData.chats.find(
-      (c) => c.chat?.id === currentChat.id,
-    );
-    return chatData?.messages ?? [];
-  }, [attemptData, currentChat]);
+    if (!currentChat?.messages) return [];
+    return currentChat.messages;
+  }, [currentChat]);
 
   // Grading state - listen to WebSocket events
   const [isGrading, setIsGrading] = useState(false);
@@ -279,10 +275,8 @@ export function SimulationControls({
 
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
-  const currentChatData = useMemo(() => {
-    if (!attemptData?.chats) return undefined;
-    return attemptData.chats.find((c) => c.chat?.id === currentChat?.id);
-  }, [attemptData?.chats, currentChat?.id]);
+  // With new flat structure, currentChat IS the chatData
+  const currentChatData = currentChat;
 
   // Check if current content is a video
   const isVideo = useMemo(() => {

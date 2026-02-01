@@ -6900,6 +6900,14 @@ export interface components {
             /** Persona Ids */
             persona_ids?: string[] | null;
         };
+        /**
+         * AvailableContinuationOptions
+         * @description Available continuation options for an attempt.
+         */
+        AvailableContinuationOptions: {
+            /** Next Sequential Options */
+            next_sequential_options?: components["schemas"]["ContinuationOption"][] | null;
+        };
         /** BaseModel */
         BaseModel: Record<string, never>;
         /**
@@ -7270,6 +7278,26 @@ export interface components {
             feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
             /** Messages */
             messages?: components["schemas"]["MessageData"][] | null;
+            video?: components["schemas"]["VideoData"] | null;
+            quiz?: components["schemas"]["QuizData"] | null;
+            grading_state?: components["schemas"]["GradingStateData"] | null;
+            dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
+            /** Personas */
+            personas?: components["schemas"]["PersonaEntry"][] | null;
+            /** Hints */
+            hints?: components["schemas"]["HintsByMessage"][] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Background Image */
+            background_image?: string | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed?: boolean | null;
+            /** Text Enabled */
+            text_enabled?: boolean | null;
+            /** Audio Enabled */
+            audio_enabled?: boolean | null;
+            /** Content Type */
+            content_type?: string | null;
         };
         /**
          * ChatViewItem
@@ -7308,6 +7336,20 @@ export interface components {
              * @default false
              */
             practice: boolean;
+            /** Copy Paste Allowed */
+            copy_paste_allowed?: boolean | null;
+            /** Text Enabled */
+            text_enabled?: boolean | null;
+            /** Audio Enabled */
+            audio_enabled?: boolean | null;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Show Images */
+            show_images?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
             /** Chat Created At */
             chat_created_at?: string | null;
             /**
@@ -7468,7 +7510,10 @@ export interface components {
         };
         /**
          * ContentEntry
-         * @description Content entry with persona info.
+         * @description Content entry with computed display fields.
+         *
+         *     Raw persona/profile data is transformed by Python business logic.
+         *     Only computed fields (name, color, icon) are exposed to client.
          */
         ContentEntry: {
             /**
@@ -7478,20 +7523,20 @@ export interface components {
             id: string;
             /** Content */
             content?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Persona Name */
-            persona_name?: string | null;
-            /** Persona Color */
-            persona_color?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
             /** Created At */
             created_at?: string | null;
         };
         /**
          * ContentItem
-         * @description Content item within a message with persona info.
+         * @description Content item with raw persona/profile data.
+         *
+         *     Business logic to compute display name/color/icon is in permissions.py.
          */
         ContentItem: {
             /**
@@ -7509,8 +7554,38 @@ export interface components {
             persona_color?: string | null;
             /** Persona Icon */
             persona_icon?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
             /** Created At */
             created_at?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
+        };
+        /**
+         * ContinuationOption
+         * @description Continuation option for using previous chat results.
+         */
+        ContinuationOption: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Scenario Name */
+            scenario_name?: string | null;
+            /** Previous Chat Id */
+            previous_chat_id?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Percentage */
+            percentage?: number | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Position */
+            position?: number | null;
         };
         /** CreateEmulationGrantApiRequest */
         CreateEmulationGrantApiRequest: {
@@ -8280,6 +8355,26 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /**
+         * DynamicRubricData
+         * @description Dynamic rubric information for a chat.
+         */
+        DynamicRubricData: {
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Skill Scores */
+            skill_scores?: components["schemas"]["SkillScore"][] | null;
+            /** Skill Feedbacks */
+            skill_feedbacks?: components["schemas"]["SkillFeedback"][] | null;
+            /** Total Possible Points */
+            total_possible_points?: number | null;
+        };
         /** EmailsApiRequest */
         EmailsApiRequest: {
             /**
@@ -8719,6 +8814,20 @@ export interface components {
             chats?: components["schemas"]["ChatData"][] | null;
             timer?: components["schemas"]["TimerData"] | null;
             aggregated_results?: components["schemas"]["AggregatedResults"] | null;
+            /** Current Chat Index */
+            current_chat_index?: number | null;
+            /** Expected Chat Count */
+            expected_chat_count?: number | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Show Results */
+            show_results?: boolean | null;
+            /** Should Show Controls */
+            should_show_controls?: boolean | null;
+            available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
+            /** Scenario Documents */
+            scenario_documents?: components["schemas"]["ScenarioDocumentEntry"][] | null;
+            rubric_structure?: components["schemas"]["RubricStructureData"] | null;
         };
         /**
          * GetAttemptsRequest
@@ -13280,9 +13389,9 @@ export interface components {
             /** Items */
             items?: components["schemas"]["TrainingSimulationCard"][] | null;
             /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            standard_groups?: components["schemas"]["app__api__v4__artifacts__training__types__StandardGroupMapping"][] | null;
             /** Standards */
-            standards?: components["schemas"]["StandardMapping"][] | null;
+            standards?: components["schemas"]["app__api__v4__artifacts__training__types__StandardMapping"][] | null;
         };
         /**
          * GetVideoApiRequest
@@ -13343,6 +13452,20 @@ export interface components {
             total_points?: number | null;
             /** Pass Points */
             pass_points?: number | null;
+        };
+        /**
+         * GradingStateData
+         * @description Grading state for a chat.
+         */
+        GradingStateData: {
+            /** Achieved Standards */
+            achieved_standards?: components["schemas"]["StandardAchievement"][] | null;
+            /** Passed Standards */
+            passed_standards?: components["schemas"]["StandardPass"][] | null;
+            /** Grade Description */
+            grade_description?: string | null;
+            /** Feedback By Standard Id */
+            feedback_by_standard_id?: components["schemas"]["StandardFeedback"][] | null;
         };
         /** GroupPositionsApiRequest */
         GroupPositionsApiRequest: {
@@ -13448,6 +13571,16 @@ export interface components {
             hint?: string | null;
             /** Idx */
             idx?: number | null;
+        };
+        /**
+         * HintsByMessage
+         * @description Hints grouped by message.
+         */
+        HintsByMessage: {
+            /** Message Id */
+            message_id?: string | null;
+            /** Hints */
+            hints?: components["schemas"]["HintEntry"][] | null;
         };
         /**
          * HistoryViewItem
@@ -14972,6 +15105,20 @@ export interface components {
             new_version?: number | null;
             /** Draft Exists */
             draft_exists?: boolean | null;
+        };
+        /**
+         * PersonaEntry
+         * @description Persona entry for lookup.
+         */
+        PersonaEntry: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Color */
+            color?: string | null;
         };
         /**
          * PersonaFlagConfig
@@ -22475,6 +22622,32 @@ export interface components {
             /** Question Id */
             question_id?: string | null;
         };
+        /**
+         * QuizData
+         * @description Quiz information for a chat.
+         */
+        QuizData: {
+            /** Id */
+            id?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Responses */
+            responses?: components["schemas"]["QuizResponse"][] | null;
+        };
+        /**
+         * QuizResponse
+         * @description Quiz response entry.
+         */
+        QuizResponse: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Option Id */
+            option_id?: string | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
+        };
         /** RefreshHomeMvsNewApiRequest */
         RefreshHomeMvsNewApiRequest: {
             /**
@@ -22618,6 +22791,18 @@ export interface components {
         RoleRoutesApiResponse: {
             /** Role Routes Id */
             role_routes_id?: string | null;
+        };
+        /**
+         * RubricStructureData
+         * @description Rubric structure data.
+         */
+        RubricStructureData: {
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupStandards"][] | null;
+            /** Standard Groups Mapping */
+            standard_groups_mapping?: components["schemas"]["app__api__v4__artifacts__attempt__types__StandardGroupMapping"][] | null;
+            /** Standards Mapping */
+            standards_mapping?: components["schemas"]["app__api__v4__artifacts__attempt__types__StandardMapping"][] | null;
         };
         /** RunPositionsApiRequest */
         RunPositionsApiRequest: {
@@ -23315,6 +23500,40 @@ export interface components {
             video_document?: boolean | null;
             /** Non Video Document */
             non_video_document?: boolean | null;
+        };
+        /**
+         * ScenarioDocumentEntry
+         * @description Scenario document entry.
+         */
+        ScenarioDocumentEntry: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Extension */
+            extension?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Active */
+            active?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** File Path */
+            file_path?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
         };
         /**
          * ScenarioField
@@ -24189,6 +24408,10 @@ export interface components {
             image_input_active?: boolean | null;
             /** Copy Paste Allowed */
             copy_paste_allowed?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
         };
         /**
          * SimulationDepartment
@@ -24414,6 +24637,26 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /**
+         * SkillFeedback
+         * @description Skill feedback entry.
+         */
+        SkillFeedback: {
+            /** Skill Name */
+            skill_name?: string | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
+        /**
+         * SkillScore
+         * @description Skill score entry.
+         */
+        SkillScore: {
+            /** Skill Name */
+            skill_name?: string | null;
+            /** Score */
+            score?: number | null;
+        };
         /** SlugsApiRequest */
         SlugsApiRequest: {
             /**
@@ -24438,6 +24681,26 @@ export interface components {
             slugs_id?: string | null;
         };
         /**
+         * StandardAchievement
+         * @description Achievement for a standard.
+         */
+        StandardAchievement: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Achieved */
+            achieved?: boolean | null;
+        };
+        /**
+         * StandardFeedback
+         * @description Feedback for a standard.
+         */
+        StandardFeedback: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
+        /**
          * StandardGroupItem
          * @description Standard group mapping for sidebar/legend.
          */
@@ -24457,23 +24720,14 @@ export interface components {
             pass_points?: number | null;
         };
         /**
-         * StandardGroupMapping
-         * @description Standard group metadata for sidebar/legend.
+         * StandardGroupStandards
+         * @description Standard group with standard IDs.
          */
-        StandardGroupMapping: {
-            /**
-             * Standard Group Id
-             * Format: uuid
-             */
-            standard_group_id: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
+        StandardGroupStandards: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
         };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
@@ -24528,23 +24782,14 @@ export interface components {
             points?: number | null;
         };
         /**
-         * StandardMapping
-         * @description Standard metadata for sidebar/legend.
+         * StandardPass
+         * @description Pass status for a standard.
          */
-        StandardMapping: {
-            /**
-             * Standard Id
-             * Format: uuid
-             */
-            standard_id: string;
-            /** Standard Group Id */
-            standard_group_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
+        StandardPass: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Passed */
+            passed?: boolean | null;
         };
         /**
          * StrengthEntry
@@ -24951,6 +25196,62 @@ export interface components {
             /** Values Id */
             values_id?: string | null;
         };
+        /**
+         * VideoData
+         * @description Video information for a chat.
+         */
+        VideoData: {
+            /** Id */
+            id?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Length Seconds */
+            length_seconds?: number | null;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Questions */
+            questions?: components["schemas"]["VideoQuestion"][] | null;
+            /** Show Image */
+            show_image?: boolean | null;
+        };
+        /**
+         * VideoQuestion
+         * @description Question for a video.
+         */
+        VideoQuestion: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question Text */
+            question_text?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Allow Multiple */
+            allow_multiple?: boolean | null;
+            /** Times */
+            times?: number[] | null;
+            /** Options */
+            options?: components["schemas"]["VideoQuestionOption"][] | null;
+        };
+        /**
+         * VideoQuestionOption
+         * @description Option for a video question.
+         */
+        VideoQuestionOption: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Option Text */
+            option_text?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
+        };
         /** VideosApiRequest */
         VideosApiRequest: {
             /**
@@ -25002,6 +25303,36 @@ export interface components {
         VoicesApiResponse: {
             /** Voices Id */
             voices_id?: string | null;
+        };
+        /**
+         * StandardGroupMapping
+         * @description Standard group mapping entry.
+         */
+        app__api__v4__artifacts__attempt__types__StandardGroupMapping: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
+         * StandardMapping
+         * @description Standard mapping entry.
+         */
+        app__api__v4__artifacts__attempt__types__StandardMapping: {
+            /** Standard Id */
+            standard_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
         };
         /**
          * GetSimulationApiRequest
@@ -25176,6 +25507,44 @@ export interface components {
             label?: string | null;
             /** Count */
             count?: number | null;
+        };
+        /**
+         * StandardGroupMapping
+         * @description Standard group metadata for sidebar/legend.
+         */
+        app__api__v4__artifacts__training__types__StandardGroupMapping: {
+            /**
+             * Standard Group Id
+             * Format: uuid
+             */
+            standard_group_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /**
+         * StandardMapping
+         * @description Standard metadata for sidebar/legend.
+         */
+        app__api__v4__artifacts__training__types__StandardMapping: {
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Points */
+            points?: number | null;
         };
         /**
          * GetSimulationApiRequest

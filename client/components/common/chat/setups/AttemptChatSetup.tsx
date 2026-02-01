@@ -157,10 +157,10 @@ export function AttemptChatSetup({
         setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
         hasInitializedFromServerRef.current = true;
       } else if (initialAttemptData.chats) {
-        const currentChatId =
-          attemptData?.chats?.[currentChatIndex]?.chat?.id;
+        // NEW: Use flat structure - c.id instead of c.chat?.id
+        const currentChatId = attemptData?.chats?.[currentChatIndex]?.id;
         const currentChatStillExists = initialAttemptData.chats.some(
-          (c) => c.chat?.id === currentChatId
+          (c) => c.id === currentChatId
         );
         if (!currentChatStillExists && initialAttemptData.chats.length > 0) {
           setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
@@ -172,9 +172,8 @@ export function AttemptChatSetup({
       setOptimisticGradingStates((prev) => {
         const updated: Record<string, OptimisticGradingState> = {};
         Object.entries(prev).forEach(([chatId, optimisticState]) => {
-          const chatData = initialAttemptData.chats?.find(
-            (c) => c.chat?.id === chatId
-          );
+          // NEW: Use flat structure - c.id instead of c.chat?.id
+          const chatData = initialAttemptData.chats?.find((c) => c.id === chatId);
           if (!chatData?.grading_state) {
             updated[chatId] = optimisticState;
           }
@@ -185,9 +184,8 @@ export function AttemptChatSetup({
       setOptimisticHints((prev) => {
         const updated: Record<string, HintsByMessage[]> = {};
         Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
-          const chatData = initialAttemptData.chats?.find(
-            (c) => c.chat?.id === chatId
-          );
+          // NEW: Use flat structure - c.id instead of c.chat?.id
+          const chatData = initialAttemptData.chats?.find((c) => c.id === chatId);
           const serverHints = chatData?.hints || [];
 
           const serverHintsMap = new Map<string, HintsByMessage>();
@@ -235,8 +233,8 @@ export function AttemptChatSetup({
   useEffect(() => {
     if (!pendingNextChatIdRef.current || !attemptData?.chats) return;
     const nextChatId = pendingNextChatIdRef.current;
+    // NEW: chats are now flat, no need to map c.chat
     const sortedChats = [...attemptData.chats]
-      .map((c) => c.chat)
       .filter((chat): chat is NonNullable<typeof chat> => chat !== null)
       .sort(
         (a, b) =>
@@ -250,27 +248,37 @@ export function AttemptChatSetup({
     }
   }, [attemptData]);
 
-  // Current chat data
+  // Current chat data - NEW: flat structure, no nested c.chat
   const currentChat = useMemo(() => {
     if (!attemptData?.chats || attemptData.chats.length === 0) return null;
-    const chatData = attemptData.chats[currentChatIndex];
-    return chatData?.chat || attemptData.chats[0]?.chat || null;
+    // Chats are now flat objects with id, completed, etc. directly
+    return attemptData.chats[currentChatIndex] || attemptData.chats[0] || null;
   }, [attemptData, currentChatIndex]);
 
+  // NEW: scenario fields are now directly on the chat object (persona_name, objectives, problem_statement, etc.)
+  // We create a scenario-like object from the flat chat data for backwards compatibility
   const scenario = useMemo(() => {
-    if (!attemptData?.chats || !currentChat) return null;
-    const chatData = attemptData.chats.find(
-      (c) => c.chat?.id === currentChat.id
-    );
-    return chatData?.scenario ?? null;
-  }, [attemptData, currentChat]);
+    if (!currentChat) return null;
+    return {
+      persona_name: currentChat.persona_name ?? null,
+      persona_icon: currentChat.persona_icon ?? null,
+      persona_color: currentChat.persona_color ?? null,
+      objectives: currentChat.objectives ?? [],
+      problem_statement: currentChat.problem_statement ?? null,
+      name: currentChat.scenario_name ?? null,
+      background_image: currentChat.background_image ?? null,
+      copy_paste_allowed: currentChat.copy_paste_allowed ?? null,
+      text_enabled: currentChat.text_enabled ?? true,
+      audio_enabled: currentChat.audio_enabled ?? false,
+    };
+  }, [currentChat]);
 
+  // NEW: chats are now flat, no need to map c.chat
   const chats = useMemo(
     () =>
-      attemptData?.chats
-        ?.map((c) => c.chat)
-        .filter((chat): chat is NonNullable<typeof chat> => chat !== null) ||
-      [],
+      attemptData?.chats?.filter(
+        (chat): chat is NonNullable<typeof chat> => chat !== null
+      ) || [],
     [attemptData]
   );
   const rubricStructure = attemptData?.rubric_structure || null;
@@ -377,7 +385,8 @@ export function AttemptChatSetup({
   const mergedGradingStates = useMemo(() => {
     const map: Record<string, OptimisticGradingState> = {};
     attemptData?.chats?.forEach((chatData) => {
-      const chatId = chatData.chat?.id;
+      // NEW: Use flat structure - chatData.id instead of chatData.chat?.id
+      const chatId = chatData.id;
       if (chatId && chatData.grading_state) {
         map[chatId] = chatData.grading_state;
       }
@@ -412,9 +421,9 @@ export function AttemptChatSetup({
   const mergedCurrentChatHints = useMemo(() => {
     if (!currentChat?.id) return [];
     const optimisticChatHints = optimisticHints[currentChat.id] || [];
+    // NEW: Use flat structure - c.id instead of c.chat?.id
     const serverHints =
-      attemptData?.chats?.find((c) => c.chat?.id === currentChat.id)?.hints ||
-      [];
+      attemptData?.chats?.find((c) => c.id === currentChat.id)?.hints || [];
 
     const hintMap = new Map<string, HintsByMessage>();
     optimisticChatHints.forEach((hintGroup) => {
@@ -1455,10 +1464,11 @@ export function AttemptChatSetup({
       current_dynamic_rubric:
         attemptData?.chats?.[currentChatIndex]?.dynamic_rubric || null,
       expected_chat_count: attemptData?.expected_chat_count || 1,
+      // NEW: Use flat structure - c.id instead of c.chat?.id
       chats:
         attemptData?.chats?.map((c) => ({
-          id: c.chat?.id || "",
-          completed: c.chat?.completed ?? null,
+          id: c.id || "",
+          completed: c.completed ?? null,
         })) || [],
       display_chat: currentChat
         ? {

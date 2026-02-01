@@ -12,6 +12,7 @@ then results are assembled in Python.
 """
 
 import asyncio
+import json
 from collections import defaultdict
 from typing import Annotated, Any
 from uuid import UUID
@@ -19,7 +20,10 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.attempt.permissions import check_attempt_access
+from app.api.v4.artifacts.attempt.permissions import (
+    check_attempt_access,
+    compute_content_display,
+)
 from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AttemptData,
@@ -29,12 +33,23 @@ from app.api.v4.artifacts.attempt.types import (
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
     GradeData,
+    GradingStateData,
     HighlightEntry,
     HintEntry,
+    HintsByMessage,
     ImprovementEntry,
     MessageData,
+    PersonaEntry,
     ReplacementEntry,
+    RubricStructureData,
+    ScenarioDocumentEntry,
     SimulationData,
+    StandardAchievement,
+    StandardFeedback,
+    StandardGroupMapping,
+    StandardGroupStandards,
+    StandardMapping,
+    StandardPass,
     StrengthEntry,
     TimerData,
 )
@@ -51,9 +66,15 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 
-def _format_timer(elapsed: int, limit: int | None, infinite_mode: bool) -> TimerData:
-    """Format timer data."""
-    if limit is None:
+def _format_timer(elapsed: int, limit_seconds: int | None, infinite_mode: bool) -> TimerData:
+    """Format timer data.
+
+    Args:
+        elapsed: Elapsed time in seconds
+        limit_seconds: Time limit in seconds (not minutes)
+        infinite_mode: Whether the attempt is in infinite mode
+    """
+    if limit_seconds is None or limit_seconds == 0:
         return TimerData(
             elapsed=elapsed,
             limit=None,
@@ -61,7 +82,6 @@ def _format_timer(elapsed: int, limit: int | None, infinite_mode: bool) -> Timer
             formatted="",
         )
 
-    limit_seconds = limit * 60
     remaining = max(limit_seconds - elapsed, 0)
     exceeded = remaining <= 0 if infinite_mode else elapsed > limit_seconds
 
@@ -133,6 +153,16 @@ async def attempt_get(
 
         attempt_id = request.attempt_id
 
+        # Resolve profile_id (artifact) to profiles_id (resource) for MV comparison
+        profiles_id = await conn.fetchval(
+            """
+            SELECT profiles_id FROM profile_profiles_junction
+            WHERE profile_id = $1 AND active = true
+            LIMIT 1
+            """,
+            profile_id,
+        )
+
         # Get pool for parallel queries
         pool = get_pool()
         if not pool:
@@ -173,7 +203,290 @@ async def attempt_get(
                     bypass_cache=bypass_cache,
                 )
 
-        # === EXECUTE ALL THREE QUERIES IN PARALLEL ===
+        async def fetch_simulation_config(sim_id: UUID) -> dict[str, Any]:
+            """Fetch simulation flags and config from the flags tables."""
+            async with pool.acquire() as c:
+                # Get simulation flags
+                flags_rows = await c.fetch(
+                    """
+                    SELECT f.name, sf.value
+                    FROM simulation_flags_junction sf
+                    JOIN flags_resource f ON sf.flag_id = f.id
+                    WHERE sf.simulation_id = $1
+                    """,
+                    sim_id,
+                )
+                flags = {row["name"]: row["value"] for row in flags_rows}
+
+                # Get rubric_id (from first chat's rubric connection via attempt)
+                rubric_id = await c.fetchval(
+                    """
+                    SELECT scr.rubrics_id
+                    FROM simulation_attempts_simulations_connection sas
+                    JOIN simulation_chats_entry ch ON ch.attempt_id = (
+                        SELECT sa.id FROM simulation_attempts_entry sa
+                        JOIN simulation_attempts_simulations_connection sas2 ON sas2.attempt_id = sa.id
+                        WHERE sas2.simulations_id = $1 AND sas2.active = true
+                        LIMIT 1
+                    )
+                    JOIN simulation_chats_rubrics_connection scr ON scr.chat_id = ch.id AND scr.active = true
+                    WHERE sas.simulations_id = $1 AND sas.active = true
+                    LIMIT 1
+                    """,
+                    sim_id,
+                )
+
+                # Get time_limit (sum of scenario time limits)
+                time_limit = await c.fetchval(
+                    """
+                    SELECT COALESCE(
+                        SUM(stlr.time_limit_seconds),
+                        0
+                    )::int
+                    FROM simulation_scenario_time_limits_junction sstl
+                    JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+                    WHERE sstl.simulation_id = $1
+                      AND sstl.active = true
+                      AND stlr.active = true
+                    """,
+                    sim_id,
+                )
+
+                return {
+                    "practice_simulation": flags.get("practice", False),
+                    "hints_enabled": flags.get("hints", False),
+                    "objectives_enabled": flags.get("objectives", True),
+                    "image_input_active": flags.get("image_input", False),
+                    "copy_paste_allowed": flags.get("copy_paste", False),
+                    "rubric_id": rubric_id,
+                    "time_limit": time_limit,
+                }
+
+        async def fetch_scenario_documents(sim_id: UUID) -> list[dict[str, Any]]:
+            """Fetch scenario documents for the simulation."""
+            async with pool.acquire() as c:
+                rows = await c.fetch(
+                    """
+                    SELECT DISTINCT
+                        d.id as document_id,
+                        COALESCE(d.name, '') as name,
+                        COALESCE(d.description, '') as description,
+                        d.created_at as updated_at,
+                        dur.uploads_id as upload_id
+                    FROM simulation_scenarios_junction ss
+                    JOIN scenario_documents_junction sd ON sd.scenario_id = ss.scenario_id AND sd.active = true
+                    JOIN documents_resource d ON d.id = sd.document_id AND d.active = true
+                    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+                    WHERE ss.simulation_id = $1
+                      AND ss.active = true
+                    ORDER BY d.created_at DESC
+                    """,
+                    sim_id,
+                )
+                return [dict(row) for row in rows]
+
+        async def fetch_rubric_structure(rubric_id: UUID | None) -> dict[str, Any] | None:
+            """Fetch rubric structure for the simulation."""
+            if not rubric_id:
+                return None
+            async with pool.acquire() as c:
+                # Get standard groups with their standard IDs
+                # Standards belong to groups via standard_group_id on standards_resource
+                sg_rows = await c.fetch(
+                    """
+                    SELECT
+                        sg.id as standard_group_id,
+                        sg.name,
+                        sg.description,
+                        sg.points,
+                        sg.pass_points,
+                        ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as standard_ids
+                    FROM rubric_standard_groups_junction rsg
+                    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.active = true
+                    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id AND s.active = true
+                    WHERE rsg.rubrics_id = $1
+                      AND rsg.active = true
+                    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points
+                    """,
+                    rubric_id,
+                )
+
+                # Get standards mapping
+                std_rows = await c.fetch(
+                    """
+                    SELECT DISTINCT
+                        s.id as standard_id,
+                        s.name,
+                        s.description,
+                        s.points
+                    FROM rubric_standard_groups_junction rsg
+                    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.active = true
+                    JOIN standards_resource s ON s.standard_group_id = sg.id AND s.active = true
+                    WHERE rsg.rubrics_id = $1
+                      AND rsg.active = true
+                    """,
+                    rubric_id,
+                )
+
+                return {
+                    "standard_groups": [
+                        {
+                            "standard_group_id": row["standard_group_id"],
+                            "standard_ids": row["standard_ids"] or [],
+                        }
+                        for row in sg_rows
+                    ],
+                    "standard_groups_mapping": [
+                        {
+                            "standard_group_id": row["standard_group_id"],
+                            "name": row["name"],
+                            "description": row["description"],
+                            "points": row["points"],
+                            "pass_points": row["pass_points"],
+                        }
+                        for row in sg_rows
+                    ],
+                    "standards_mapping": [
+                        {
+                            "standard_id": row["standard_id"],
+                            "name": row["name"],
+                            "description": row["description"],
+                            "points": row["points"],
+                        }
+                        for row in std_rows
+                    ],
+                }
+
+        async def fetch_chat_extended_data(chat_ids: list[UUID]) -> dict[UUID, dict[str, Any]]:
+            """Fetch extended data for chats: video, quiz, grading_state, dynamic_rubric, personas, hints."""
+            if not chat_ids:
+                return {}
+            async with pool.acquire() as c:
+                result: dict[UUID, dict[str, Any]] = {cid: {} for cid in chat_ids}
+
+                # Fetch personas for all chats (via chat-persona connection)
+                persona_rows = await c.fetch(
+                    """
+                    SELECT DISTINCT
+                        ch.id as chat_id,
+                        p.id as persona_id,
+                        COALESCE(pn.name, '') as name,
+                        COALESCE(pi.value, '') as icon,
+                        COALESCE(pc.hex_code, '') as color
+                    FROM simulation_chats_entry ch
+                    JOIN simulation_chats_personas_connection chp ON chp.chat_id = ch.id AND chp.active = true
+                    JOIN persona_artifact p ON p.id = chp.personas_id
+                    LEFT JOIN persona_names_junction pnj ON pnj.persona_id = p.id
+                    LEFT JOIN names_resource pn ON pn.id = pnj.name_id
+                    LEFT JOIN persona_icons_junction pij ON pij.persona_id = p.id
+                    LEFT JOIN icons_resource pi ON pi.id = pij.icon_id
+                    LEFT JOIN persona_colors_junction pcj ON pcj.persona_id = p.id
+                    LEFT JOIN colors_resource pc ON pc.id = pcj.color_id
+                    WHERE ch.id = ANY($1)
+                    """,
+                    chat_ids,
+                )
+                for row in persona_rows:
+                    chat_id = row["chat_id"]
+                    if "personas" not in result[chat_id]:
+                        result[chat_id]["personas"] = []
+                    result[chat_id]["personas"].append({
+                        "id": row["persona_id"],
+                        "name": row["name"],
+                        "icon": row["icon"],
+                        "color": row["color"],
+                    })
+
+                # Fetch background_image (still needs separate query for images connection)
+                bg_rows = await c.fetch(
+                    """
+                    SELECT
+                        ch.id as chat_id,
+                        (SELECT iuc.upload_id FROM simulation_chats_images_connection chi
+                         JOIN images_uploads_connection iuc ON iuc.images_id = chi.images_id AND iuc.active = true
+                         WHERE chi.chat_id = ch.id AND chi.active = true LIMIT 1) as background_image
+                    FROM simulation_chats_entry ch
+                    WHERE ch.id = ANY($1)
+                    """,
+                    chat_ids,
+                )
+                for row in bg_rows:
+                    chat_id = row["chat_id"]
+                    result[chat_id]["background_image"] = row["background_image"]
+
+                # Fetch grading state for completed chats
+                grading_rows = await c.fetch(
+                    """
+                    SELECT
+                        g.chat_id,
+                        g.description as grade_description,
+                        COALESCE(
+                            (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'achieved', true))
+                             FROM simulation_feedbacks_entry f
+                             JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = f.id AND fsc.active = true
+                             WHERE f.grade_id = g.id AND f.active = true),
+                            '[]'::json
+                        ) as achieved_standards,
+                        COALESCE(
+                            (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'passed', f.total >= COALESCE(sg.pass_points, 0)))
+                             FROM simulation_feedbacks_entry f
+                             JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = f.id AND fsc.active = true
+                             LEFT JOIN standards_resource s ON s.id = fsc.standard_id AND s.active = true
+                             LEFT JOIN standard_groups_resource sg ON sg.id = s.standard_group_id AND sg.active = true
+                             WHERE f.grade_id = g.id AND f.active = true),
+                            '[]'::json
+                        ) as passed_standards,
+                        COALESCE(
+                            (SELECT json_agg(json_build_object('standard_id', fsc.standard_id, 'feedback', f.feedback))
+                             FROM simulation_feedbacks_entry f
+                             JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = f.id AND fsc.active = true
+                             WHERE f.grade_id = g.id AND f.active = true),
+                            '[]'::json
+                        ) as feedback_by_standard_id
+                    FROM simulation_grades_entry g
+                    WHERE g.chat_id = ANY($1) AND g.active = true
+                    """,
+                    chat_ids,
+                )
+                for row in grading_rows:
+                    chat_id = row["chat_id"]
+                    result[chat_id]["grading_state"] = {
+                        "achieved_standards": row["achieved_standards"],
+                        "passed_standards": row["passed_standards"],
+                        "grade_description": row["grade_description"],
+                        "feedback_by_standard_id": row["feedback_by_standard_id"],
+                    }
+
+                # Fetch hints grouped by message
+                hints_rows = await c.fetch(
+                    """
+                    SELECT
+                        m.chat_id,
+                        m.id as message_id,
+                        json_agg(json_build_object(
+                            'hint', h.hint,
+                            'idx', h.idx
+                        ) ORDER BY h.idx) as hints
+                    FROM simulation_hints_entry h
+                    JOIN simulation_messages_entry m ON m.id = h.message_id
+                    WHERE m.chat_id = ANY($1) AND h.active = true
+                    GROUP BY m.chat_id, m.id
+                    """,
+                    chat_ids,
+                )
+                for row in hints_rows:
+                    chat_id = row["chat_id"]
+                    if "hints" not in result[chat_id]:
+                        result[chat_id]["hints"] = []
+                    result[chat_id]["hints"].append({
+                        "message_id": row["message_id"],
+                        "hints": row["hints"],
+                    })
+
+                return result
+
+        # === EXECUTE ALL QUERIES IN PARALLEL ===
+        # First batch: attempt, chats, messages (needed to get simulation_id and chat_ids)
         attempt_result, chats_result, messages_result = await asyncio.gather(
             fetch_attempt(attempt_id, profile_id),
             fetch_chats(attempt_id),
@@ -198,7 +511,8 @@ async def attempt_get(
             )
 
         # Check if profile matches (permission check)
-        if not check_attempt_access(attempt_item.profile_id, profile_id):
+        # Note: attempt_item.profile_id is profiles_id (resource), so compare with profiles_id
+        if not check_attempt_access(attempt_item.profile_id, profiles_id):
             return GetAttemptDetailResponse(
                 attempt_exists=True,
                 access_denied=True,
@@ -211,6 +525,59 @@ async def attempt_get(
                 http_request,
                 actor={"name": attempt_item.profile_name, "id": profile_id},
             )
+
+        # === SECOND BATCH: Fetch extended data ===
+        # Now that we have simulation_id and chat_ids, fetch extended data
+        simulation_id = attempt_item.simulation_id
+        chat_ids = [c.chat_id for c in (chats_result or [])]
+
+        # Helper for empty async results
+        async def empty_dict() -> dict[str, Any]:
+            return {}
+
+        async def empty_list() -> list[Any]:
+            return []
+
+        sim_config: dict[str, Any] = {}
+        scenario_docs_raw: list[dict[str, Any]] = []
+        chat_extended: dict[UUID, dict[str, Any]] = {}
+
+        if simulation_id or chat_ids:
+            tasks = []
+            task_names = []
+
+            if simulation_id:
+                tasks.append(fetch_simulation_config(simulation_id))
+                task_names.append("sim_config")
+                tasks.append(fetch_scenario_documents(simulation_id))
+                task_names.append("scenario_docs")
+            else:
+                tasks.append(empty_dict())
+                task_names.append("sim_config")
+                tasks.append(empty_list())
+                task_names.append("scenario_docs")
+
+            if chat_ids:
+                tasks.append(fetch_chat_extended_data(chat_ids))
+                task_names.append("chat_extended")
+            else:
+                tasks.append(empty_dict())
+                task_names.append("chat_extended")
+
+            results = await asyncio.gather(*tasks)
+            for i, name in enumerate(task_names):
+                if name == "sim_config":
+                    sim_config = results[i] or {}
+                elif name == "scenario_docs":
+                    scenario_docs_raw = results[i] or []
+                elif name == "chat_extended":
+                    chat_extended = results[i] or {}
+
+        # Now fetch rubric structure with the rubric_id from sim_config
+        rubric_struct_raw: dict[str, Any] | None = None
+        rubric_id = sim_config.get("rubric_id") if sim_config else None
+        if rubric_id:
+            rubric_struct_raw = await fetch_rubric_structure(rubric_id)
 
         # === GROUP MESSAGES BY CHAT_ID ===
         messages_by_chat: dict[UUID, list[Any]] = defaultdict(list)
@@ -282,19 +649,28 @@ async def attempt_get(
                             )
                         )
 
-                # Transform contents
+                # Transform contents with computed display fields
+                # is_own_attempt is True if we passed the access check (profile IDs match)
+                is_own_attempt = attempt_item.profile_id == profiles_id
                 contents: list[ContentEntry] | None = None
                 if msg.contents:
                     contents = []
                     for c in msg.contents:
+                        name, color, icon = compute_content_display(
+                            message_type=msg.type,
+                            profile_name=c.profile_name,
+                            persona_name=c.persona_name,
+                            persona_color=c.persona_color,
+                            persona_icon=c.persona_icon,
+                            is_own_attempt=is_own_attempt,
+                        )
                         contents.append(
                             ContentEntry(
                                 id=c.id,
                                 content=c.content,
-                                persona_id=c.persona_id,
-                                persona_name=c.persona_name,
-                                persona_color=c.persona_color,
-                                persona_icon=c.persona_icon,
+                                name=name,
+                                color=color,
+                                icon=icon,
                                 created_at=(
                                     c.created_at.isoformat() if c.created_at else None
                                 ),
@@ -343,15 +719,110 @@ async def attempt_get(
                         )
                     )
 
+            # Get extended data for this chat
+            chat_ext = chat_extended.get(chat_item.chat_id, {}) if chat_extended else {}
+
+            # Build personas list
+            personas_data: list[PersonaEntry] | None = None
+            if chat_ext.get("personas"):
+                personas_data = [
+                    PersonaEntry(
+                        id=p.get("id"),
+                        name=p.get("name"),
+                        icon=p.get("icon"),
+                        color=p.get("color"),
+                    )
+                    for p in chat_ext["personas"]
+                ]
+
+            # Build grading state
+            grading_state_data: GradingStateData | None = None
+            if chat_ext.get("grading_state"):
+                gs = chat_ext["grading_state"]
+                # Parse JSON if returned as string
+                achieved_raw = gs.get("achieved_standards") or []
+                if isinstance(achieved_raw, str):
+                    achieved_raw = json.loads(achieved_raw)
+                passed_raw = gs.get("passed_standards") or []
+                if isinstance(passed_raw, str):
+                    passed_raw = json.loads(passed_raw)
+                fb_raw = gs.get("feedback_by_standard_id") or []
+                if isinstance(fb_raw, str):
+                    fb_raw = json.loads(fb_raw)
+
+                achieved = None
+                if achieved_raw:
+                    achieved = [
+                        StandardAchievement(
+                            standard_id=a.get("standard_id") if isinstance(a, dict) else None,
+                            achieved=a.get("achieved") if isinstance(a, dict) else None,
+                        )
+                        for a in achieved_raw
+                        if isinstance(a, dict)
+                    ]
+                passed = None
+                if passed_raw:
+                    passed = [
+                        StandardPass(
+                            standard_id=p.get("standard_id") if isinstance(p, dict) else None,
+                            passed=p.get("passed") if isinstance(p, dict) else None,
+                        )
+                        for p in passed_raw
+                        if isinstance(p, dict)
+                    ]
+                fb_by_std = None
+                if fb_raw:
+                    fb_by_std = [
+                        StandardFeedback(
+                            standard_id=f.get("standard_id") if isinstance(f, dict) else None,
+                            feedback=f.get("feedback") if isinstance(f, dict) else None,
+                        )
+                        for f in fb_raw
+                        if isinstance(f, dict)
+                    ]
+                grading_state_data = GradingStateData(
+                    achieved_standards=achieved,
+                    passed_standards=passed,
+                    grade_description=gs.get("grade_description"),
+                    feedback_by_standard_id=fb_by_std,
+                )
+
+            # Build hints by message
+            hints_by_msg: list[HintsByMessage] | None = None
+            if chat_ext.get("hints"):
+                hints_by_msg = []
+                for h in chat_ext["hints"]:
+                    hints_raw = h.get("hints") or []
+                    if isinstance(hints_raw, str):
+                        hints_raw = json.loads(hints_raw)
+                    hints_by_msg.append(
+                        HintsByMessage(
+                            message_id=h.get("message_id"),
+                            hints=[
+                                HintEntry(
+                                    hint=hi.get("hint") if isinstance(hi, dict) else None,
+                                    idx=hi.get("idx") if isinstance(hi, dict) else None,
+                                )
+                                for hi in hints_raw
+                                if isinstance(hi, dict)
+                            ],
+                        )
+                    )
+
+            # Convert objective to list (view returns single string)
+            objectives_list = (
+                [chat_item.objective] if chat_item.objective else None
+            )
+
             chats.append(
                 ChatData(
                     id=chat_item.chat_id,
                     scenario_id=chat_item.scenario_id,
                     scenario_name=chat_item.scenario_name,
                     problem_statement=chat_item.problem_statement,
-                    show_problem_statement=True,
-                    show_objectives=True,
-                    objectives=chat_item.objective,
+                    show_problem_statement=chat_item.show_problem_statement,
+                    show_objectives=chat_item.show_objectives,
+                    objectives=objectives_list,
                     persona_id=chat_item.persona_id,
                     persona_name=chat_item.persona_name,
                     persona_icon=chat_item.persona_icon,
@@ -362,6 +833,15 @@ async def attempt_get(
                     grade=grade,
                     feedbacks=feedbacks,
                     messages=messages,
+                    # Extended fields
+                    personas=personas_data,
+                    grading_state=grading_state_data,
+                    hints=hints_by_msg,
+                    # Chat-level flags (now from MV via chats view)
+                    copy_paste_allowed=chat_item.copy_paste_allowed,
+                    text_enabled=chat_item.text_enabled,
+                    audio_enabled=chat_item.audio_enabled,
+                    background_image=chat_ext.get("background_image"),
                 )
             )
 
@@ -387,18 +867,24 @@ async def attempt_get(
         simulation = SimulationData(
             id=attempt_item.simulation_id,
             name=attempt_item.simulation_name,
-            description=None,  # Not in view, would need to JOIN
-            time_limit=None,  # Would need to be fetched separately if needed
-            hints_enabled=None,
-            objectives_enabled=None,
-            image_input_active=None,
-            copy_paste_allowed=None,
+            description=None,  # Not in view
+            time_limit=sim_config.get("time_limit") if sim_config else None,
+            hints_enabled=sim_config.get("hints_enabled") if sim_config else None,
+            objectives_enabled=sim_config.get("objectives_enabled") if sim_config else None,
+            image_input_active=sim_config.get("image_input_active") if sim_config else None,
+            copy_paste_allowed=sim_config.get("copy_paste_allowed") if sim_config else None,
+            # Extended config fields
+            practice_simulation=sim_config.get("practice_simulation") if sim_config else None,
+            input_guardrail_active=sim_config.get("input_guardrail_active") if sim_config else None,
+            output_guardrail_active=sim_config.get("output_guardrail_active") if sim_config else None,
+            rubric_id=sim_config.get("rubric_id") if sim_config else None,
         )
 
         # === BUILD TIMER DATA ===
+        time_limit_seconds = sim_config.get("time_limit") if sim_config else None
         timer = _format_timer(
             elapsed=attempt_item.elapsed_seconds or 0,
-            limit=None,  # Would need to be fetched separately
+            limit_seconds=time_limit_seconds,
             infinite_mode=attempt_item.infinite_mode or False,
         )
 
@@ -424,6 +910,79 @@ async def attempt_get(
             total_chats=total_chats,
         )
 
+        # === COMPUTE NAVIGATION/UI FIELDS ===
+        # current_chat_index: index of the first incomplete chat, or last chat if all complete
+        current_chat_index = 0
+        for i, chat in enumerate(chats):
+            if not chat.completed:
+                current_chat_index = i
+                break
+            current_chat_index = i  # Will be last index if all complete
+
+        # expected_chat_count: total number of chats
+        expected_chat_count = len(chats)
+
+        # is_active: True if timer has not exceeded
+        is_active = not timer.exceeded if timer else True
+
+        # === BUILD SCENARIO DOCUMENTS ===
+        scenario_documents: list[ScenarioDocumentEntry] | None = None
+        if scenario_docs_raw:
+            scenario_documents = [
+                ScenarioDocumentEntry(
+                    document_id=doc.get("document_id"),
+                    name=doc.get("name"),
+                    type=doc.get("type"),
+                    updated_at=doc.get("updated_at"),
+                    extension=doc.get("extension"),
+                    file_path=doc.get("file_path"),
+                    mime_type=doc.get("mime_type"),
+                    upload_id=doc.get("upload_id"),
+                )
+                for doc in scenario_docs_raw
+            ]
+
+        # === BUILD RUBRIC STRUCTURE ===
+        rubric_structure: RubricStructureData | None = None
+        if rubric_struct_raw:
+            rubric_structure = RubricStructureData(
+                standard_groups=[
+                    StandardGroupStandards(
+                        standard_group_id=sg.get("standard_group_id"),
+                        standard_ids=sg.get("standard_ids"),
+                    )
+                    for sg in rubric_struct_raw.get("standard_groups", [])
+                ],
+                standard_groups_mapping=[
+                    StandardGroupMapping(
+                        standard_group_id=sg.get("standard_group_id"),
+                        name=sg.get("name"),
+                        description=sg.get("description"),
+                        points=sg.get("points"),
+                        pass_points=sg.get("pass_points"),
+                    )
+                    for sg in rubric_struct_raw.get("standard_groups_mapping", [])
+                ],
+                standards_mapping=[
+                    StandardMapping(
+                        standard_id=sm.get("standard_id"),
+                        name=sm.get("name"),
+                        description=sm.get("description"),
+                        points=sm.get("points"),
+                    )
+                    for sm in rubric_struct_raw.get("standards_mapping", [])
+                ],
+            )
+
+        # === COMPUTE UI CONTROL FLAGS ===
+        # show_results: True if all chats are completed
+        all_chats_completed = all(chat.completed for chat in chats) if chats else False
+        show_results = all_chats_completed
+
+        # should_show_controls: True if attempt is active and user can proceed
+        # (i.e., timer not exceeded and not all chats completed)
+        should_show_controls = is_active and not all_chats_completed
+
         # === BUILD RESPONSE ===
         api_response = GetAttemptDetailResponse(
             actor_name=attempt_item.profile_name,
@@ -434,6 +993,17 @@ async def attempt_get(
             chats=chats,
             timer=timer,
             aggregated_results=aggregated_results,
+            # Navigation/UI fields
+            current_chat_index=current_chat_index,
+            expected_chat_count=expected_chat_count,
+            is_active=is_active,
+            show_results=show_results,
+            should_show_controls=should_show_controls,
+            # Continuation options not yet implemented - will be added when needed
+            available_continuation_options=None,
+            # Extended data
+            scenario_documents=scenario_documents,
+            rubric_structure=rubric_structure,
         )
 
         # Cache response

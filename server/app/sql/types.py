@@ -25473,6 +25473,13 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     objective: str | None
     problem_statement: str | None
     practice: bool | None
+    copy_paste_allowed: bool | None
+    text_enabled: bool | None
+    audio_enabled: bool | None
+    hints_enabled: bool | None
+    show_images: bool | None
+    show_objectives: bool | None
+    show_problem_statement: bool | None
     chat_created_at: datetime | None
     chat_completed: bool | None
     chat_position: int | None
@@ -25650,6 +25657,7 @@ class QGetSimulationMessagesViewV4Content(BaseModel):
     persona_name: str | None
     persona_color: str | None
     persona_icon: str | None
+    profile_name: str | None
     created_at: datetime | None
 
 

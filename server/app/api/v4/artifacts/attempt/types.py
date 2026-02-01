@@ -5,6 +5,7 @@ attempt detail via a single `practice: bool` parameter. Internal parameters
 are NOT included here - they are injected by Python.
 """
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -13,6 +14,207 @@ from pydantic import BaseModel
 # =============================================================================
 # Attempt detail endpoint types (client-facing)
 # =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Video/Quiz types
+# -----------------------------------------------------------------------------
+
+
+class VideoQuestionOption(BaseModel):
+    """Option for a video question."""
+
+    id: UUID
+    option_text: str | None = None
+    type: str | None = None
+    is_correct: bool | None = None
+
+
+class VideoQuestion(BaseModel):
+    """Question for a video."""
+
+    id: UUID
+    question_text: str | None = None
+    type: str | None = None
+    allow_multiple: bool | None = None
+    times: list[int] | None = None
+    options: list[VideoQuestionOption] | None = None
+
+
+class VideoData(BaseModel):
+    """Video information for a chat."""
+
+    id: UUID | None = None
+    title: str | None = None
+    length_seconds: int | None = None
+    upload_id: UUID | None = None
+    questions: list[VideoQuestion] | None = None
+    show_image: bool | None = None
+
+
+class QuizResponse(BaseModel):
+    """Quiz response entry."""
+
+    question_id: UUID | None = None
+    option_id: UUID | None = None
+    completed: bool | None = None
+    created_at: datetime | None = None
+
+
+class QuizData(BaseModel):
+    """Quiz information for a chat."""
+
+    id: UUID | None = None
+    completed: bool | None = None
+    responses: list[QuizResponse] | None = None
+
+
+# -----------------------------------------------------------------------------
+# Grading state types
+# -----------------------------------------------------------------------------
+
+
+class StandardAchievement(BaseModel):
+    """Achievement for a standard."""
+
+    standard_id: UUID | None = None
+    achieved: bool | None = None
+
+
+class StandardPass(BaseModel):
+    """Pass status for a standard."""
+
+    standard_id: UUID | None = None
+    passed: bool | None = None
+
+
+class StandardFeedback(BaseModel):
+    """Feedback for a standard."""
+
+    standard_id: UUID | None = None
+    feedback: str | None = None
+
+
+class GradingStateData(BaseModel):
+    """Grading state for a chat."""
+
+    achieved_standards: list[StandardAchievement] | None = None
+    passed_standards: list[StandardPass] | None = None
+    grade_description: str | None = None
+    feedback_by_standard_id: list[StandardFeedback] | None = None
+
+
+# -----------------------------------------------------------------------------
+# Dynamic rubric types
+# -----------------------------------------------------------------------------
+
+
+class SkillScore(BaseModel):
+    """Skill score entry."""
+
+    skill_name: str | None = None
+    score: float | None = None
+
+
+class SkillFeedback(BaseModel):
+    """Skill feedback entry."""
+
+    skill_name: str | None = None
+    feedback: str | None = None
+
+
+class DynamicRubricData(BaseModel):
+    """Dynamic rubric information for a chat."""
+
+    chat_id: UUID | None = None
+    score: float | None = None
+    passed: bool | None = None
+    time_taken: float | None = None
+    skill_scores: list[SkillScore] | None = None
+    skill_feedbacks: list[SkillFeedback] | None = None
+    total_possible_points: float | None = None
+
+
+# -----------------------------------------------------------------------------
+# Rubric structure types
+# -----------------------------------------------------------------------------
+
+
+class StandardGroupStandards(BaseModel):
+    """Standard group with standard IDs."""
+
+    standard_group_id: UUID | None = None
+    standard_ids: list[str] | None = None
+
+
+class StandardGroupMapping(BaseModel):
+    """Standard group mapping entry."""
+
+    standard_group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+    pass_points: float | None = None
+
+
+class StandardMapping(BaseModel):
+    """Standard mapping entry."""
+
+    standard_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    points: float | None = None
+
+
+class RubricStructureData(BaseModel):
+    """Rubric structure data."""
+
+    standard_groups: list[StandardGroupStandards] | None = None
+    standard_groups_mapping: list[StandardGroupMapping] | None = None
+    standards_mapping: list[StandardMapping] | None = None
+
+
+# -----------------------------------------------------------------------------
+# Scenario document types
+# -----------------------------------------------------------------------------
+
+
+class ScenarioDocumentEntry(BaseModel):
+    """Scenario document entry."""
+
+    document_id: UUID | None = None
+    name: str | None = None
+    type: str | None = None
+    updated_at: datetime | None = None
+    extension: str | None = None
+    scenario_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    upload_id: UUID | None = None
+    field_ids: list[str] | None = None
+
+
+# -----------------------------------------------------------------------------
+# Persona types
+# -----------------------------------------------------------------------------
+
+
+class PersonaEntry(BaseModel):
+    """Persona entry for lookup."""
+
+    id: UUID | None = None
+    name: str | None = None
+    icon: str | None = None
+    color: str | None = None
+
+
+# -----------------------------------------------------------------------------
+# Request/Response types
+# -----------------------------------------------------------------------------
 
 
 class GetAttemptDetailRequest(BaseModel):
@@ -52,14 +254,17 @@ class HintEntry(BaseModel):
 
 
 class ContentEntry(BaseModel):
-    """Content entry with persona info."""
+    """Content entry with computed display fields.
+
+    Raw persona/profile data is transformed by Python business logic.
+    Only computed fields (name, color, icon) are exposed to client.
+    """
 
     id: UUID
     content: str | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    persona_color: str | None = None
-    persona_icon: str | None = None
+    name: str | None = None
+    color: str | None = None
+    icon: str | None = None
     created_at: str | None = None
 
 
@@ -123,6 +328,13 @@ class GradeData(BaseModel):
     pass_points: int | None = None
 
 
+class HintsByMessage(BaseModel):
+    """Hints grouped by message."""
+
+    message_id: UUID | None = None
+    hints: list[HintEntry] | None = None
+
+
 class ChatData(BaseModel):
     """Chat with scenario, persona, grade, and messages."""
 
@@ -143,6 +355,20 @@ class ChatData(BaseModel):
     grade: GradeData | None = None
     feedbacks: list[FeedbackEntry] | None = None
     messages: list[MessageData] | None = None
+    # Extended fields for full feature support
+    video: VideoData | None = None
+    quiz: QuizData | None = None
+    grading_state: GradingStateData | None = None
+    dynamic_rubric: DynamicRubricData | None = None
+    personas: list[PersonaEntry] | None = None
+    hints: list[HintsByMessage] | None = None
+    document_ids: list[UUID] | None = None
+    background_image: UUID | None = None
+    # Scenario fields for frontend compatibility
+    copy_paste_allowed: bool | None = None
+    text_enabled: bool | None = None
+    audio_enabled: bool | None = None
+    content_type: str | None = None  # 'text' | 'video' | 'quiz'
 
 
 class SimulationData(BaseModel):
@@ -156,6 +382,9 @@ class SimulationData(BaseModel):
     objectives_enabled: bool | None = None
     image_input_active: bool | None = None
     copy_paste_allowed: bool | None = None
+    # Extended config fields
+    practice_simulation: bool | None = None
+    rubric_id: UUID | None = None
 
 
 class AttemptData(BaseModel):
@@ -197,6 +426,25 @@ class AggregatedResults(BaseModel):
     total_chats: int | None = None
 
 
+class ContinuationOption(BaseModel):
+    """Continuation option for using previous chat results."""
+
+    scenario_id: str | None = None
+    scenario_name: str | None = None
+    previous_chat_id: str | None = None
+    title: str | None = None
+    score: float | None = None
+    percentage: float | None = None
+    time_taken: float | None = None
+    position: int | None = None
+
+
+class AvailableContinuationOptions(BaseModel):
+    """Available continuation options for an attempt."""
+
+    next_sequential_options: list[ContinuationOption] | None = None
+
+
 class GetAttemptDetailResponse(BaseModel):
     """Client-facing API response for attempt detail."""
 
@@ -208,3 +456,14 @@ class GetAttemptDetailResponse(BaseModel):
     chats: list[ChatData] | None = None
     timer: TimerData | None = None
     aggregated_results: AggregatedResults | None = None
+    # Navigation/UI control
+    current_chat_index: int | None = None
+    expected_chat_count: int | None = None
+    is_active: bool | None = None
+    show_results: bool | None = None
+    should_show_controls: bool | None = None
+    # Continuation options for infinite mode
+    available_continuation_options: AvailableContinuationOptions | None = None
+    # Extended data
+    scenario_documents: list[ScenarioDocumentEntry] | None = None
+    rubric_structure: RubricStructureData | None = None

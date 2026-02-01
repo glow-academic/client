@@ -106,6 +106,14 @@ chats_with_position AS (
         cpc.personas_id AS persona_id,
         grc.rubrics_id AS rubric_id,
         COALESCE(a.practice, FALSE) AS practice,
+        -- Chat-level flags (directly on simulation_chats_entry)
+        c.copy_paste_allowed,
+        c.text_enabled,
+        c.audio_enabled,
+        c.hints_enabled,
+        c.show_images,
+        c.show_objectives,
+        c.show_problem_statement,
         ROW_NUMBER() OVER (PARTITION BY c.attempt_id ORDER BY c.created_at) AS chat_position
     FROM simulation_chats_entry c
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
@@ -139,6 +147,15 @@ SELECT
 
     -- Practice flag (exposed as column for filtering)
     cwp.practice,
+
+    -- Chat-level flags (directly from simulation_chats_entry)
+    cwp.copy_paste_allowed,
+    cwp.text_enabled,
+    cwp.audio_enabled,
+    cwp.hints_enabled,
+    cwp.show_images,
+    cwp.show_objectives,
+    cwp.show_problem_statement,
 
     -- Chat data
     cwp.chat_created_at,

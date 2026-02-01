@@ -1,13 +1,13 @@
 /**
  * app/practice/a/[attemptId]/page.tsx
- * Attempt page for the user.
+ * Practice attempt page - uses the same endpoint as home with practice=true.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
 import type {
-  AttemptFullIn,
-  AttemptFullOut, 
+  AttemptDetailIn,
+  AttemptDetailOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
 import { AttemptChatSetup } from "@/components/common/chat/setups/AttemptChatSetup";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
@@ -16,12 +16,15 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
+ * Uses practice=true to include hints and is_archived.
  */
-const getAttemptFull = async (
-  _attemptId: string,
-  input: AttemptFullIn,
-): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation/get", input, {
+const getAttemptDetail = async (
+  attemptId: string,
+  practice: boolean = true,
+): Promise<AttemptDetailOut> => {
+  return api.post("/attempt/get", {
+    body: { attempt_id: attemptId, practice },
+  }, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -37,17 +40,15 @@ export async function generateMetadata(
   const { attemptId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const attemptData = await getAttemptFull(attemptId, {
-      body: { attempt_id: attemptId },
-    });
-      const simulationTitle = attemptData?.simulation?.["title"];
-      return {
-        title: `Practice ${simulationTitle || "Attempt"}`,
-        description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    const attemptData = await getAttemptDetail(attemptId);
+    const simulationTitle = attemptData?.simulation?.name;
+    return {
+      title: `Practice ${simulationTitle || "Attempt"}`,
+      description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.`,
+    };
+  } catch {
+    // Fall through to default metadata
+  }
 
   return {
     title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
@@ -68,24 +69,25 @@ export default async function PracticeAttemptPage({
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch attempt data server-side
   try {
-    const attemptData = await getAttemptFull(attemptId, {
-      body: { attempt_id: attemptId },
-    });
+    const attemptData = await getAttemptDetail(attemptId);
 
-    // Map API field names to what the component expects
-    // API uses: chats_entry, scenario_documents_junction
-    // Component expects: chats, scenario_documents
-    const mappedAttemptData = {
-      ...attemptData,
-      chats: attemptData.chats_entry,
-      scenario_documents: attemptData.scenario_documents_junction,
-    };
+    // Check access denied
+    if (attemptData.access_denied) {
+      return (
+        <UnifiedAccessDenied
+          reason="department"
+          resourceType="simulation"
+          redirectPath="/practice"
+        />
+      );
+    }
 
+    // New endpoint returns chats directly (no mapping needed)
     return (
       <div className="space-y-6">
         <AttemptChatSetup
           attempt_id={attemptId}
-          attempt_data={mappedAttemptData}
+          attempt_data={attemptData}
         />
       </div>
     );
@@ -112,6 +114,6 @@ export default async function PracticeAttemptPage({
 
 /** ---- Re-export types for consistency (imported from home page) ---- */
 export type {
-  AttemptFullIn,
-  AttemptFullOut,
+  AttemptDetailIn,
+  AttemptDetailOut,
 };

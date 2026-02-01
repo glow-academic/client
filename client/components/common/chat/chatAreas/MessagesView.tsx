@@ -36,6 +36,16 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+// Content entry with computed display fields from backend
+interface ContentEntry {
+  id: string;
+  content?: string | null;
+  name?: string | null;    // "You" for own messages, persona name for responses
+  color?: string | null;   // User color or persona color
+  icon?: string | null;    // "User" or persona icon
+  created_at?: string | null;
+}
+
 // Explicit, self-contained prop interface (like resource components)
 export interface MessagesViewProps {
   // Explicit message type - self-contained, no external dependencies
@@ -46,6 +56,8 @@ export interface MessagesViewProps {
     created_at: string;
     completed?: boolean | null;
     persona_id?: string | null;
+    // New: contents with pre-computed name/color/icon from backend
+    contents?: ContentEntry[] | null;
   }>;
 
   // Explicit streaming content type
@@ -61,6 +73,7 @@ export interface MessagesViewProps {
       created_at: string;
       completed: boolean;
       persona_id?: string | null;
+      contents?: ContentEntry[] | null;
     }
   >;
 
@@ -184,21 +197,13 @@ export function MessagesView({
 
     const messageMap = new Map<string, (typeof propMessages)[number]>();
     propMessages.forEach((msg) => {
-      messageMap.set(msg.id, {
-        ...msg,
-        createdAt: msg.created_at,
-        personaId: msg.persona_id ?? undefined,
-      });
+      messageMap.set(msg.id, msg);
     });
 
     // Add optimistic messages
     optimistic_messages.forEach((optMsg, id) => {
       if (!messageMap.has(id)) {
-        messageMap.set(id, {
-          ...optMsg,
-          createdAt: optMsg.created_at,
-          personaId: optMsg.persona_id ?? undefined,
-        });
+        messageMap.set(id, optMsg);
       }
     });
 
@@ -276,7 +281,7 @@ export function MessagesView({
   const sortedMessages = useMemo(() => {
     return [...messages].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
   }, [messages]);
 
@@ -297,7 +302,7 @@ export function MessagesView({
   const handleRetry = (errorMessageIndex: number) => {
     const sortedMessagesForRetry = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
     const previousUserMessage = sortedMessagesForRetry
       .slice(0, errorMessageIndex)
@@ -480,13 +485,16 @@ export function MessagesView({
                     const hasNewHints = messagesWithNewHints.has(message.id);
                     const isSelected = selectedHintMessageId === message.id;
 
-                    // Get persona data from message's personaId
-                    const messagePersona = message.personaId
-                      ? personaMap.get(message.personaId)
+                    // Get display data: prefer contents (pre-computed by backend), fall back to personaMap
+                    const firstContent = message.contents?.[0];
+                    const messagePersona = message.persona_id
+                      ? personaMap.get(message.persona_id)
                       : null;
-                    const personaName = messagePersona?.name || "Assistant";
-                    const personaIcon = messagePersona?.icon;
-                    const personaColor = messagePersona?.color;
+
+                    // Use contents if available (has name/color/icon from backend)
+                    const personaName = firstContent?.name || messagePersona?.name || "Assistant";
+                    const personaIcon = firstContent?.icon || messagePersona?.icon;
+                    const personaColor = firstContent?.color || messagePersona?.color;
 
                     // Get icon component
                     const IconComponent = personaIcon

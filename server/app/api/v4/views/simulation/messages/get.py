@@ -140,7 +140,8 @@ async def get_simulation_messages_internal(
                     for h in item.hints
                 ]
 
-            # Transform contents
+            # Transform contents - raw data only
+            # Business logic (name/color/icon) is applied by artifact layer
             contents = None
             if item.contents:
                 contents = [
@@ -151,6 +152,7 @@ async def get_simulation_messages_internal(
                         persona_name=c.persona_name,
                         persona_color=c.persona_color,
                         persona_icon=c.persona_icon,
+                        profile_name=c.profile_name,
                         created_at=c.created_at,
                     )
                     for c in item.contents

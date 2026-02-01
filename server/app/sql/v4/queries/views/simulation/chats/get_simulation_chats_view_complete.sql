@@ -78,6 +78,15 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
     -- Practice flag
     practice boolean,
 
+    -- Chat-level flags (directly from MV)
+    copy_paste_allowed boolean,
+    text_enabled boolean,
+    audio_enabled boolean,
+    hints_enabled boolean,
+    show_images boolean,
+    show_objectives boolean,
+    show_problem_statement boolean,
+
     -- Chat data
     chat_created_at timestamptz,
     chat_completed boolean,
@@ -168,6 +177,15 @@ AS $$
             ps.problem_statement AS problem_statement,
             -- Flags
             mv.practice,
+            -- Chat-level flags (directly from MV)
+            mv.copy_paste_allowed,
+            mv.text_enabled,
+            mv.audio_enabled,
+            mv.hints_enabled,
+            mv.show_images,
+            mv.show_objectives,
+            mv.show_problem_statement,
+            -- Chat data
             mv.chat_created_at,
             mv.chat_completed,
             mv.chat_position,
@@ -210,6 +228,13 @@ AS $$
                     objective,
                     problem_statement,
                     practice,
+                    copy_paste_allowed,
+                    text_enabled,
+                    audio_enabled,
+                    hints_enabled,
+                    show_images,
+                    show_objectives,
+                    show_problem_statement,
                     chat_created_at,
                     chat_completed,
                     chat_position,

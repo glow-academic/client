@@ -83,14 +83,15 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_hint AS (
     idx int
 );
 
--- Content type (with persona info)
+-- Content type (raw data - business logic applied in Python)
 CREATE TYPE types.q_get_simulation_messages_view_v4_content AS (
     id uuid,
     content text,
-    persona_id uuid,
-    persona_name text,
-    persona_color text,
-    persona_icon text,
+    persona_id uuid,        -- persona ID (NULL for user messages)
+    persona_name text,      -- persona name (NULL for user messages)
+    persona_color text,     -- persona color (NULL for user messages)
+    persona_icon text,      -- persona icon (NULL for user messages)
+    profile_name text,      -- actor name (populated for user messages)
     created_at timestamptz
 );
 
@@ -171,6 +172,7 @@ AS $$
                         (c).persona_name,
                         (c).persona_color,
                         (c).persona_icon,
+                        (c).profile_name,
                         (c).created_at
                     )::types.q_get_simulation_messages_view_v4_content
                     ORDER BY (c).created_at

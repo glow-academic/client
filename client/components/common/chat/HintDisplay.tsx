@@ -2,10 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Loader2, X } from "lucide-react";
 
 type Hint = {
-  simulationMessageId: string;
+  simulation_message_id: string;
   hint: string;
   idx: number;
-  createdAt: string;
+  created_at: string;
 };
 
 interface HintDisplayProps {

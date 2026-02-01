@@ -12,17 +12,19 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
+type AttemptDetailIn = InputOf<"/api/v4/attempt/get", "post">;
+type AttemptDetailOut = OutputOf<"/api/v4/attempt/get", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
  */
-const getAttemptFull = async (
-  _attemptId: string,
-  input: AttemptFullIn,
-): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation/get", input, {
+const getAttemptDetail = async (
+  attemptId: string,
+  practice: boolean = false,
+): Promise<AttemptDetailOut> => {
+  return api.post("/attempt/get", {
+    body: { attempt_id: attemptId, practice },
+  }, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -39,10 +41,8 @@ export async function generateMetadata(
 
   try {
     // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-    const attemptData = await getAttemptFull(attemptId, {
-      body: { attempt_id: attemptId },
-    });
-    const simulationTitle = attemptData?.simulation?.["title"];
+    const attemptData = await getAttemptDetail(attemptId);
+    const simulationTitle = attemptData?.simulation?.name;
     return {
       title: `${simulationTitle || "Attempt"}`,
       description: `${simulationTitle ? `${simulationTitle} - ` : ""}Teaching practice session for graduate teaching assistant training. Review pedagogical performance, student interaction strategies, and teaching effectiveness through simulation-based learning assessment.`,
@@ -68,27 +68,28 @@ export default async function AttemptPage({
   const { attemptId } = await params;
 
   // Access control handled server-side in layout
-    // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-    // Fetch attempt data server-side
-    try {
-      const attemptData = await getAttemptFull(attemptId, {
-        body: { attempt_id: attemptId },
-      });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // Fetch attempt data server-side
+  try {
+    const attemptData = await getAttemptDetail(attemptId);
 
-    // Map API field names to what the component expects
-    // API uses: chats_entry, scenario_documents_junction
-    // Component expects: chats, scenario_documents
-    const mappedAttemptData = {
-      ...attemptData,
-      chats: attemptData.chats_entry,
-      scenario_documents: attemptData.scenario_documents_junction,
-    };
+    // Check access denied
+    if (attemptData.access_denied) {
+      return (
+        <UnifiedAccessDenied
+          reason="department"
+          resourceType="simulation"
+          redirectPath="/home"
+        />
+      );
+    }
 
+    // New endpoint returns chats directly (no mapping needed)
     return (
       <div className="space-y-6">
         <AttemptChatSetup
           attempt_id={attemptId}
-          attempt_data={mappedAttemptData}
+          attempt_data={attemptData}
         />
       </div>
     );
@@ -115,6 +116,9 @@ export default async function AttemptPage({
 
 /** ---- Export types for client (type-only imports) ---- */
 export type {
-  AttemptFullIn,
-  AttemptFullOut,
+  AttemptDetailIn,
+  AttemptDetailOut,
+  // Backward compatibility aliases
+  AttemptDetailIn as AttemptFullIn,
+  AttemptDetailOut as AttemptFullOut,
 };

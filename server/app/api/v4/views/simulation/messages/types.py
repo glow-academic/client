@@ -50,7 +50,10 @@ class HintItem(BaseModel):
 
 
 class ContentItem(BaseModel):
-    """Content item within a message with persona info."""
+    """Content item with raw persona/profile data.
+
+    Business logic to compute display name/color/icon is in permissions.py.
+    """
 
     id: UUID
     content: str | None = None
@@ -58,7 +61,13 @@ class ContentItem(BaseModel):
     persona_name: str | None = None
     persona_color: str | None = None
     persona_icon: str | None = None
+    profile_name: str | None = None
     created_at: datetime | None = None
+
+    # Computed display fields (populated by Python business logic)
+    name: str | None = None
+    color: str | None = None
+    icon: str | None = None
 
 
 class MessageViewItem(BaseModel):
