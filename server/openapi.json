@@ -30738,6 +30738,16 @@
             ],
             "title": "Images"
           },
+          "background_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageEntry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "videos": {
             "anyOf": [
               {

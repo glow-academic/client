@@ -53,7 +53,6 @@ export interface MessagesViewProps {
   retry_message?: (message_id: string) => void;
   is_sending_message: boolean;
   is_active: boolean; // Used for future features
-  background_image?: string | null;
   disabled?: boolean;
   is_attempt_owner?: boolean;
   chat_id?: string;
@@ -120,7 +119,6 @@ export function MessagesView({
   retry_message,
   is_sending_message,
   is_active,
-  background_image,
   disabled = false,
   is_attempt_owner = true,
   chat_id,
@@ -346,24 +344,10 @@ export function MessagesView({
     prevChatIdRef.current = currentChatId;
   }, [targetChatId]);
 
-  // Determine background image style
-  const backgroundImageUrl = background_image
-    ? `/api/uploads/download/${background_image}`
-    : null;
-  const backgroundStyle = backgroundImageUrl
-    ? {
-        "--bg-image-url": `url('${backgroundImageUrl}')`,
-        backgroundSize: "cover" as const,
-        backgroundPosition: "center" as const,
-        backgroundRepeat: "no-repeat" as const,
-      }
-    : undefined;
-
   return (
     <div
-      className={`flex-1 flex flex-col p-0 min-h-0 relative ${backgroundImageUrl ? "attempt-messages-background" : ""}`}
+      className="flex-1 flex flex-col p-0 min-h-0 relative"
       data-testid="attempt-messages-container"
-      style={backgroundStyle}
     >
       <TooltipProvider>
         <>

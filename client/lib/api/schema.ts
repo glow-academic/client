@@ -8106,6 +8106,7 @@ export interface components {
             personas?: components["schemas"]["PersonaEntry"][] | null;
             /** Images */
             images?: components["schemas"]["ImageEntry"][] | null;
+            background_image?: components["schemas"]["ImageEntry"] | null;
             /** Videos */
             videos?: components["schemas"]["VideoEntry"][] | null;
             /** Questions */

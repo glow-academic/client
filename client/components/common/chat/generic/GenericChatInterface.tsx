@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 
 // Import component prop types (each component defines its own)
+import type { components } from "@/lib/api/schema";
 import type { MessagesViewProps } from "../chatAreas/MessagesView";
 import type { RubricViewProps } from "../chatAreas/RubricView";
 import type { VideoViewProps } from "../chatAreas/VideoView";
@@ -29,6 +30,8 @@ import type { DocumentAreaProps } from "../documentAreas/AttemptDocumentArea";
 import type { QuestionResponsesInputProps } from "../inputAreas/QuestionResponsesInput";
 import type { TextInputProps } from "../inputAreas/TextInput";
 import type { VoiceInputProps } from "../inputAreas/VoiceInput";
+
+type ImageEntry = components["schemas"]["ImageEntry"];
 
 export type ChatAreaViewMode =
   | "messages"
@@ -40,9 +43,7 @@ export interface GenericChatInterfaceProps {
   // Pluggable components (like resource components in Persona.tsx)
   chat_header: React.ComponentType<ChatHeaderProps>;
   chat_area: React.ComponentType<
-    | MessagesViewProps
-    | VideoViewProps
-    | RubricViewProps
+    MessagesViewProps | VideoViewProps | RubricViewProps
   >;
   document_area?: React.ComponentType<DocumentAreaProps>;
   input_area: React.ComponentType<
@@ -72,13 +73,13 @@ export interface GenericChatInterfaceProps {
   // Pagination footer (rendered at bottom, inside the layout)
   pagination_footer?: React.ReactNode;
 
+  // Background image (rendered behind the chat area)
+  background_image?: ImageEntry | null;
+
   // Data props are passed via render props - each component receives its own data
   // These are passed to child components by the setup file
   chat_header_props: ChatHeaderProps;
-  chat_area_props:
-    | MessagesViewProps
-    | VideoViewProps
-    | RubricViewProps;
+  chat_area_props: MessagesViewProps | VideoViewProps | RubricViewProps;
   document_area_props?: DocumentAreaProps;
   input_area_props:
     | TextInputProps
@@ -103,51 +104,75 @@ export function GenericChatInterface({
   input_panel_height = 70,
   disabled = false,
   pagination_footer,
+  background_image,
   chat_header_props,
   chat_area_props,
   document_area_props,
   input_area_props,
   input_area_ref,
 }: GenericChatInterfaceProps) {
+  const backgroundImageUrl = background_image?.upload_id
+    ? `/api/uploads/download/${background_image.upload_id}`
+    : null;
+
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col" data-testid="generic-chat-interface">
+    <div
+      className="h-[calc(100vh-4rem)] flex flex-col"
+      data-testid="generic-chat-interface"
+    >
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* Main Chat Area */}
         <ResizablePanel
           defaultSize={show_documents && document_area_props ? 70 : 100}
           className="md:flex-none"
         >
-          <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none">
+          <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none bg-transparent">
             <div className="h-full flex flex-col">
-              {/* Header */}
-              <ChatHeader {...chat_header_props} disabled={disabled} />
+              {/* Header - has its own background */}
+              <div className="bg-card">
+                <ChatHeader {...chat_header_props} disabled={disabled} />
+              </div>
 
               {/* Messages/Rubric/Video Area */}
-              <div className="flex-1 min-h-0 flex flex-col">
-                <ScrollArea className="flex-1 px-1 min-h-0">
+              <div className="flex-1 min-h-0 flex flex-col relative">
+                {/* Background image layer - only behind messages area */}
+                {backgroundImageUrl && (
+                  <div
+                    className="absolute inset-0 z-0 pointer-events-none"
+                    style={{
+                      backgroundImage: `url('${backgroundImageUrl}')`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                      opacity: 0.4,
+                    }}
+                  />
+                )}
+                <ScrollArea className="flex-1 px-1 min-h-0 relative z-10">
                   <ChatArea {...(chat_area_props as any)} />
                 </ScrollArea>
               </div>
 
               {/* Input Area - collapse in graded view modes */}
-              {chat_area_view_mode !== "rubric" && chat_area_view_mode !== "graded-messages" && (
-              <div
-                style={{
-                  height: `${input_panel_height}px`,
-                  minHeight: "70px",
-                  maxHeight: "160px",
-                }}
-              >
-                {input_area_ref ? (
-                  <InputArea
-                    ref={input_area_ref as any}
-                    {...(input_area_props as any)}
-                  />
-                ) : (
-                  <InputArea {...(input_area_props as any)} />
+              {chat_area_view_mode !== "rubric" &&
+                chat_area_view_mode !== "graded-messages" && (
+                  <div
+                    style={{
+                      height: `${input_panel_height}px`,
+                      minHeight: "70px",
+                      maxHeight: "160px",
+                    }}
+                  >
+                    {input_area_ref ? (
+                      <InputArea
+                        ref={input_area_ref as any}
+                        {...(input_area_props as any)}
+                      />
+                    ) : (
+                      <InputArea {...(input_area_props as any)} />
+                    )}
+                  </div>
                 )}
-              </div>
-              )}
             </div>
           </Card>
         </ResizablePanel>
@@ -157,7 +182,10 @@ export function GenericChatInterface({
           <DocumentArea
             {...document_area_props}
             disabled={disabled}
-            is_graded_view={chat_area_view_mode === "rubric" || chat_area_view_mode === "graded-messages"}
+            is_graded_view={
+              chat_area_view_mode === "rubric" ||
+              chat_area_view_mode === "graded-messages"
+            }
           />
         )}
       </ResizablePanelGroup>

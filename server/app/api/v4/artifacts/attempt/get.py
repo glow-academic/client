@@ -957,6 +957,7 @@ async def attempt_get(
                     objectives=objectives_entries,
                     personas=personas_entries,
                     images=enriched_images,
+                    background_image=enriched_images[0] if enriched_images else None,
                     # Video/Quiz View resources
                     videos=enriched_videos,
                     questions=questions_entries,  # Options nested inside questions

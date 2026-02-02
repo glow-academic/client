@@ -449,6 +449,7 @@ class ChatData(BaseModel):
     objectives: list[ObjectiveEntry] | None = None
     personas: list[PersonaEntry] | None = None
     images: list[ImageEntry] | None = None
+    background_image: ImageEntry | None = None  # First image, used as chat background
 
     # --- Video/Quiz View resources ---
     videos: list[VideoEntry] | None = None

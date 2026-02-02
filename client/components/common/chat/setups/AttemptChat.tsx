@@ -283,7 +283,6 @@ export function AttemptChat({
 
   const scenario = useMemo(() => {
     if (!currentChat) return null;
-    const firstImageUploadId = currentChat.images?.[0]?.upload_id ?? null;
     const firstPersona = currentChat.personas?.[0] ?? null;
     const problemStatementText = currentChat.problem_statement?.problem_statement ?? null;
     return {
@@ -296,7 +295,6 @@ export function AttemptChat({
       })) ?? [],
       problem_statement: problemStatementText,
       name: currentChat.scenario_name ?? null,
-      background_image: firstImageUploadId,
       copy_paste_allowed: currentChat.copy_paste_allowed ?? null,
       text_enabled: currentChat.text_enabled ?? true,
       audio_enabled: currentChat.audio_enabled ?? false,
@@ -1259,7 +1257,6 @@ export function AttemptChat({
         send_message: handleSendMessage,
         is_sending_message: isSendingMessage,
         is_active: isActive,
-        background_image: scenario?.background_image ?? null,
         disabled: !isAttemptOwner || !currentChat || currentChat.completed,
         is_attempt_owner: isAttemptOwner,
         chat_id: currentChat?.id,
@@ -1568,6 +1565,7 @@ export function AttemptChat({
       input_panel_height={inputPanelHeight}
       input_area_ref={inputAreaRef}
       pagination_footer={paginationFooter}
+      background_image={currentChat?.background_image}
       chat_header_props={chatHeaderProps}
       chat_area_props={chatAreaProps}
       document_area_props={documentAreaProps}
