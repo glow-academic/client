@@ -416,7 +416,7 @@ export function VideoView({
                         isInLockedArea
                           ? "bg-white/30 cursor-not-allowed"
                           : allAnswered
-                            ? "bg-green-400 hover:scale-150"
+                            ? "bg-blue-400 hover:scale-150"
                             : "bg-amber-400 hover:scale-150",
                         isActive && !isInLockedArea && "scale-125"
                       )}
@@ -433,7 +433,7 @@ export function VideoView({
                       ) : unansweredCount > 0 ? (
                         <span className="text-amber-300">{unansweredCount} unanswered</span>
                       ) : (
-                        <span className="text-green-300">All answered</span>
+                        <span className="text-blue-300">All answered</span>
                       )}
                     </div>
                   </TooltipContent>
