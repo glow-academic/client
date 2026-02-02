@@ -32,11 +32,11 @@ OID_TO_PYTHON_TYPE: dict[int, str] = {
     2950: "UUID",  # UUID (use uuid.UUID for strong typing)
     2951: "list[UUID]",  # UUID[] (use list[uuid.UUID] for strong typing)
     # Timestamp types
-    1114: "str",  # TIMESTAMP (ISO string)
-    1184: "str",  # TIMESTAMPTZ (ISO string)
-    1082: "str",  # DATE (ISO string)
-    1083: "str",  # TIME (ISO string)
-    1266: "str",  # TIMETZ (ISO string)
+    1114: "datetime",  # TIMESTAMP
+    1184: "datetime",  # TIMESTAMPTZ
+    1082: "date",  # DATE
+    1083: "time",  # TIME
+    1266: "time",  # TIMETZ
     # JSON types
     114: "Any",  # JSON can be dict or list
     3802: "Any",  # JSONB can be dict or list
@@ -58,12 +58,12 @@ OID_TO_PYTHON_TYPE: dict[int, str] = {
     1028: "list[int]",  # INT4[]
     1033: "list[str]",  # ACLITEM[]
     1034: "list[UUID]",  # UUID[] (use list[uuid.UUID] for strong typing)
-    1115: "list[str]",  # TIMESTAMP[]
-    1182: "list[str]",  # DATE[]
-    1183: "list[str]",  # TIME[]
-    1185: "list[str]",  # TIMESTAMPTZ[]
-    1186: "list[str]",  # INTERVAL[]
-    1187: "list[str]",  # TIMETZ[]
+    1115: "list[datetime]",  # TIMESTAMP[]
+    1182: "list[date]",  # DATE[]
+    1183: "list[time]",  # TIME[]
+    1185: "list[datetime]",  # TIMESTAMPTZ[]
+    1186: "list[timedelta]",  # INTERVAL[]
+    1187: "list[time]",  # TIMETZ[]
     199: "list[dict[str, Any]]",  # JSON[]
     3807: "list[dict[str, Any]]",  # JSONB[]
 }
@@ -1110,8 +1110,12 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
                     return "list[bool]", True
                 if base_name == "uuid":
                     return "list[UUID]", True
-                if base_name in ("timestamp", "timestamptz", "date", "time", "timetz"):
-                    return "list[str]", True
+                if base_name in ("timestamp", "timestamptz"):
+                    return "list[datetime]", True
+                if base_name == "date":
+                    return "list[date]", True
+                if base_name in ("time", "timetz"):
+                    return "list[time]", True
                 if base_name in ("json", "jsonb"):
                     return "list[dict[str, Any]]", True
                 if base_name in ("float4", "real"):
@@ -1134,8 +1138,12 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
                     return "bool", False
                 if typname == "uuid":
                     return "UUID", False
-                if typname in ("timestamp", "timestamptz", "date", "time", "timetz"):
-                    return "str", False
+                if typname in ("timestamp", "timestamptz"):
+                    return "datetime", False
+                if typname == "date":
+                    return "date", False
+                if typname in ("time", "timetz"):
+                    return "time", False
                 if typname in ("json", "jsonb"):
                     return "dict[str, Any]", False
                 if typname in ("float4", "real"):

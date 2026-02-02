@@ -1,8 +1,7 @@
 /**
  * QuestionResponsesInput.tsx
  * Question/quiz response input component
- * Shows questions with options, handles answer selection and submission
- * After submission, shows correct options in green, incorrect in red
+ * Uses OpenAPI types directly - no manual type definitions.
  */
 "use client";
 
@@ -11,33 +10,19 @@ import { CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import type { components } from "@/lib/api/schema";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useState } from "react";
 
-// Simplified prop interface - matches server response structure
+// ---- OpenAPI types (single source of truth) ----
+type QuestionEntry = components["schemas"]["QuestionEntry"];
+type QuizResponse = components["schemas"]["QuizResponse"];
+
+// Props interface using OpenAPI types
 export interface QuestionResponsesInputProps {
-  // Questions with nested options (only fields we use)
-  questions: Array<{
-    id: string;
-    question_text: string;
-    allow_multiple: boolean;
-    options: Array<{
-      id: string;
-      option_text: string;
-      is_correct: boolean;
-    }>;
-  }>;
-
-  // Responses from server (passed through directly)
-  // Each response is one selected option for a question
-  responses: Array<{
-    question_id: string;
-    option_id: string;
-  }>;
-
-  // Callback when user submits answer for a question
+  questions: QuestionEntry[];
+  responses: QuizResponse[];
   on_submit: (question_id: string, option_ids: string[]) => void;
-
   disabled?: boolean;
 }
 
@@ -50,9 +35,12 @@ export function QuestionResponsesInput({
   // Build lookup: question_id -> selected option_ids from server responses
   const responsesByQuestion = new Map<string, string[]>();
   for (const r of responses) {
-    const existing = responsesByQuestion.get(r.question_id) || [];
-    existing.push(r.option_id);
-    responsesByQuestion.set(r.question_id, existing);
+    const qId = r.question_id;
+    const oId = r.option_id;
+    if (!qId || !oId) continue;
+    const existing = responsesByQuestion.get(qId) || [];
+    existing.push(oId);
+    responsesByQuestion.set(qId, existing);
   }
 
   // Local state for unanswered questions
@@ -105,12 +93,14 @@ export function QuestionResponsesInput({
     <CardFooter className="h-full px-2 pb-1.5 pt-0 border-t flex flex-col justify-end min-h-0 overflow-y-auto">
       <div className="w-full space-y-4">
         {questions.map((question) => {
-          const serverResponse = responsesByQuestion.get(question.id);
+          const qId = question.question_id || "";
+          const serverResponse = responsesByQuestion.get(qId);
           const hasResponse = serverResponse && serverResponse.length > 0;
-          const localSelection = localAnswers.get(question.id) || [];
+          const localSelection = localAnswers.get(qId) || [];
+          const options = question.options || [];
 
           return (
-            <div key={question.id} className="space-y-2">
+            <div key={qId} className="space-y-2">
               <Label className="text-sm font-medium">
                 {question.question_text}
               </Label>
@@ -118,8 +108,9 @@ export function QuestionResponsesInput({
               {hasResponse ? (
                 // Show results with correct/incorrect styling
                 <div className="space-y-2 pl-4">
-                  {question.options.map((option) => {
-                    const wasSelected = serverResponse.includes(option.id);
+                  {options.map((option) => {
+                    const optId = option.option_id || "";
+                    const wasSelected = serverResponse.includes(optId);
                     const isCorrect = option.is_correct;
 
                     let bgClass = "bg-muted/30";
@@ -139,7 +130,7 @@ export function QuestionResponsesInput({
 
                     return (
                       <div
-                        key={option.id}
+                        key={optId}
                         className={`flex items-center gap-2 p-2 rounded border ${bgClass}`}
                       >
                         {icon}
@@ -153,18 +144,20 @@ export function QuestionResponsesInput({
                 <>
                   {question.allow_multiple ? (
                     <div className="space-y-2 pl-4">
-                      {question.options.map((option) => (
+                      {options.map((option) => {
+                        const optId = option.option_id || "";
+                        return (
                         <div
-                          key={option.id}
+                          key={optId}
                           className="flex items-center space-x-2"
                         >
                           <Checkbox
-                            id={`${question.id}-${option.id}`}
-                            checked={localSelection.includes(option.id)}
+                            id={`${qId}-${optId}`}
+                            checked={localSelection.includes(optId)}
                             onCheckedChange={(checked) =>
                               handleAnswerChange(
-                                question.id,
-                                option.id,
+                                qId,
+                                optId,
                                 checked === true,
                                 true
                               )
@@ -172,44 +165,48 @@ export function QuestionResponsesInput({
                             disabled={disabled}
                           />
                           <Label
-                            htmlFor={`${question.id}-${option.id}`}
+                            htmlFor={`${qId}-${optId}`}
                             className="text-sm font-normal cursor-pointer"
                           >
                             {option.option_text}
                           </Label>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <RadioGroup
                       value={localSelection[0] || ""}
                       onValueChange={(value) =>
-                        handleAnswerChange(question.id, value, true, false)
+                        handleAnswerChange(qId, value, true, false)
                       }
                       className="pl-4"
                     >
-                      {question.options.map((option) => (
+                      {options.map((option) => {
+                        const optId = option.option_id || "";
+                        return (
                         <div
-                          key={option.id}
+                          key={optId}
                           className="flex items-center space-x-2"
                         >
                           <RadioGroupItem
-                            value={option.id}
-                            id={`${question.id}-${option.id}`}
+                            value={optId}
+                            id={`${qId}-${optId}`}
                             disabled={disabled}
                           />
                           <Label
-                            htmlFor={`${question.id}-${option.id}`}
+                            htmlFor={`${qId}-${optId}`}
                             className="text-sm font-normal cursor-pointer"
                           >
                             {option.option_text}
                           </Label>
                         </div>
-                      ))}
+                        );
+                      })}
                     </RadioGroup>
                   )}
                   <Button
-                    onClick={() => handleSubmitQuestion(question.id)}
+                    onClick={() => handleSubmitQuestion(qId)}
                     size="sm"
                     className="mt-2"
                     disabled={disabled || localSelection.length === 0}

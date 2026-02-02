@@ -10,7 +10,10 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.attempt.types import AttemptProgressEvent
+from app.socket.v4.artifacts.attempt.types import (
+    AttemptAssistantDeltaEvent,
+    AttemptProgressEvent,
+)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -68,6 +71,29 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
         room=sid,
     )
 
+    # Also emit the unified attempt_assistant_delta event for new contract
+    chat_id = data.get("chat_id")
+    message_id = data.get("message_id")
+    accumulated_content = data.get("accumulated_content")
+
+    if chat_id and message_id and accumulated_content is not None:
+        delta_event = AttemptAssistantDeltaEvent(
+            chat_id=str(chat_id),
+            message_id=str(message_id),
+            content=str(accumulated_content),
+        )
+        await sio.emit(
+            "attempt_assistant_delta",
+            delta_event.model_dump(mode="json"),
+            room=sid,
+        )
+        # Also emit to attempt room for multi-tab sync
+        await sio.emit(
+            "attempt_assistant_delta",
+            delta_event.model_dump(mode="json"),
+            room=f"attempt_{chat_id}",
+        )
+
 
 # =============================================================================
 # FastAPI endpoints for OpenAPI documentation
@@ -77,4 +103,12 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
 @server_router.post("/attempt/progress", response_model=dict[str, bool])
 async def attempt_progress_api(request: AttemptProgressEvent) -> dict[str, bool]:
     """Server-to-client event: Attempt generation progress update."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/assistant_delta", response_model=dict[str, bool])
+async def attempt_assistant_delta_api(
+    request: AttemptAssistantDeltaEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Attempt assistant delta (streaming content)."""
     return {"success": True}

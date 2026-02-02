@@ -9,7 +9,7 @@ import type {
   AttemptDetailIn,
   AttemptDetailOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
-import { AttemptChatSetup } from "@/components/common/chat/setups/AttemptChatSetup";
+import { AttemptChat } from "@/components/common/chat/setups/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -85,7 +85,7 @@ export default async function PracticeAttemptPage({
     // New endpoint returns chats directly (no mapping needed)
     return (
       <div className="space-y-6">
-        <AttemptChatSetup
+        <AttemptChat
           attempt_id={attemptId}
           attempt_data={attemptData}
         />

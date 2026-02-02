@@ -1856,7 +1856,7 @@ class MemberProgressStartSqlRow(BaseModel):
     assistant_message_id: UUID | None = None
     run_id: UUID | None = None
     group_id: UUID | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class MemberProgressStartApiRequest(BaseModel):
 
@@ -1872,7 +1872,7 @@ class MemberProgressStartApiResponse(BaseModel):
     assistant_message_id: UUID | None = None
     run_id: UUID | None = None
     group_id: UUID | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -3292,7 +3292,7 @@ class GetSimulationAttemptApiResponse(BaseModel):
 
 class UpdateChatCreatedAtSqlParams(BaseModel):
 
-    created_at: str
+    created_at: datetime
     chat_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -3307,7 +3307,7 @@ class UpdateChatCreatedAtSqlRow(BaseModel):
 
 class UpdateChatCreatedAtApiRequest(BaseModel):
 
-    created_at: str
+    created_at: datetime
     chat_id: UUID
 
 class UpdateChatCreatedAtApiResponse(BaseModel):
@@ -3351,7 +3351,7 @@ class GetAudioRunContextAndCreateRunSqlRow(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     department_id: UUID | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
@@ -3382,7 +3382,7 @@ class GetAudioRunContextAndCreateRunApiResponse(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     department_id: UUID | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
@@ -3459,7 +3459,7 @@ class CreateEmulationGrantSqlRow(BaseModel):
     reason: str | None = None
     actor_name: str | None = None
     grant_id: UUID | None = None
-    expires_at: str | None = None
+    expires_at: datetime | None = None
     target_profile_id: UUID | None = None
     redirect_url: str | None = None
     logout_url: str | None = None
@@ -3485,7 +3485,7 @@ class CreateEmulationGrantApiResponse(BaseModel):
     reason: str | None = None
     actor_name: str | None = None
     grant_id: UUID | None = None
-    expires_at: str | None = None
+    expires_at: datetime | None = None
     target_profile_id: UUID | None = None
     redirect_url: str | None = None
     logout_url: str | None = None
@@ -3897,7 +3897,7 @@ class RecordProfileLoginSqlRow(BaseModel):
 
     login_id: UUID | None = None
     profile_id: UUID | None = None
-    last_login: str | None = None
+    last_login: datetime | None = None
     ok: bool | None = None
 
 class RecordProfileLoginApiRequest(BaseModel):
@@ -3908,7 +3908,7 @@ class RecordProfileLoginApiResponse(BaseModel):
 
     login_id: UUID | None = None
     profile_id: UUID | None = None
-    last_login: str | None = None
+    last_login: datetime | None = None
     ok: bool | None = None
 
 
@@ -7342,7 +7342,7 @@ class GetDocumentRunContextAndCreateRunSqlRow(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
@@ -7377,7 +7377,7 @@ class GetDocumentRunContextAndCreateRunApiResponse(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
@@ -8836,7 +8836,7 @@ class PrepareAttemptMessageSqlRow(BaseModel):
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
     model_name: str | None = None
     provider_name: str | None = None
     base_url: str | None = None
@@ -8873,7 +8873,7 @@ class PrepareAttemptMessageApiResponse(BaseModel):
     run_id: UUID | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
     model_name: str | None = None
     provider_name: str | None = None
     base_url: str | None = None
@@ -9207,7 +9207,7 @@ class GetTextRunContextForExistingRunSqlRow(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
@@ -9242,7 +9242,7 @@ class GetTextRunContextForExistingRunApiResponse(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
@@ -9894,7 +9894,7 @@ class GetImageGenerationContextAndCreateUploadSqlRow(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     department_id: UUID | None = None
     run_id: str | None = None
 
@@ -9919,7 +9919,7 @@ class GetImageGenerationContextAndCreateUploadApiResponse(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     department_id: UUID | None = None
     run_id: str | None = None
 
@@ -11495,7 +11495,7 @@ class GetMessageCreatedAtSqlParams(BaseModel):
 
 class GetMessageCreatedAtSqlRow(BaseModel):
 
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetMessageCreatedAtApiRequest(BaseModel):
 
@@ -11503,7 +11503,7 @@ class GetMessageCreatedAtApiRequest(BaseModel):
 
 class GetMessageCreatedAtApiResponse(BaseModel):
 
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -14728,10 +14728,10 @@ class GetProfileByEmailSqlRow(BaseModel):
     role: str | None = None
     active: bool | None = None
     req_per_day: int | None = None
-    last_login: str | None = None
-    last_active: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    last_login: datetime | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
 
@@ -14748,10 +14748,10 @@ class GetProfileByEmailApiResponse(BaseModel):
     role: str | None = None
     active: bool | None = None
     req_per_day: int | None = None
-    last_login: str | None = None
-    last_active: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    last_login: datetime | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     primary_department_id: UUID | None = None
     actor_name: str | None = None
 
@@ -15161,19 +15161,19 @@ class GetProfileContextSqlRow(BaseModel):
     role: str | None = None
     active: bool | None = None
     req_per_day: int | None = None
-    last_login: str | None = None
-    last_active: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    last_login: datetime | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     primary_department_id: UUID | None = None
     departments: list[QGetProfileContextV4Department] | None = None
     cohorts: list[QGetProfileContextV4Cohort] | None = None
     simulations: list[QGetProfileContextV4Simulation] | None = None
-    earliest_attempt_date: str | None = None
+    earliest_attempt_date: datetime | None = None
     scoped_roles: list[str] | None = None
     role_resources: list[QGetProfileContextV4RoleResource] | None = None
     settings_id: str | None = None
-    settings_created_at: str | None = None
+    settings_created_at: datetime | None = None
     settings_active: bool | None = None
     settings_name: str | None = None
     settings_description: str | None = None
@@ -15224,19 +15224,19 @@ class GetProfileContextApiResponse(BaseModel):
     role: str | None = None
     active: bool | None = None
     req_per_day: int | None = None
-    last_login: str | None = None
-    last_active: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    last_login: datetime | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     primary_department_id: UUID | None = None
     departments: list[QGetProfileContextV4Department] | None = None
     cohorts: list[QGetProfileContextV4Cohort] | None = None
     simulations: list[QGetProfileContextV4Simulation] | None = None
-    earliest_attempt_date: str | None = None
+    earliest_attempt_date: datetime | None = None
     scoped_roles: list[str] | None = None
     role_resources: list[QGetProfileContextV4RoleResource] | None = None
     settings_id: str | None = None
-    settings_created_at: str | None = None
+    settings_created_at: datetime | None = None
     settings_active: bool | None = None
     settings_name: str | None = None
     settings_description: str | None = None
@@ -15463,7 +15463,7 @@ class SearchSimulatableProfilesApiResponse(BaseModel):
 class UpdateProfileToActiveSqlParams(BaseModel):
 
     profile_id: UUID
-    last_active: str
+    last_active: datetime
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15478,7 +15478,7 @@ class UpdateProfileToActiveSqlRow(BaseModel):
 
 class UpdateProfileToActiveApiRequest(BaseModel):
 
-    last_active: str
+    last_active: datetime
 
 class UpdateProfileToActiveApiResponse(BaseModel):
 
@@ -15492,7 +15492,7 @@ class UpdateProfileToActiveApiResponse(BaseModel):
 class UpdateProfileToInactiveSqlParams(BaseModel):
 
     profile_id: UUID
-    last_active: str
+    last_active: datetime
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15507,7 +15507,7 @@ class UpdateProfileToInactiveSqlRow(BaseModel):
 
 class UpdateProfileToInactiveApiRequest(BaseModel):
 
-    last_active: str
+    last_active: datetime
 
 class UpdateProfileToInactiveApiResponse(BaseModel):
 
@@ -21523,8 +21523,8 @@ class GetScenarioByIdSqlRow(BaseModel):
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     active: bool | None = None
     profile_id: UUID | None = None
     department_id: UUID | None = None
@@ -21540,8 +21540,8 @@ class GetScenarioByIdApiResponse(BaseModel):
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     active: bool | None = None
     profile_id: UUID | None = None
     department_id: UUID | None = None
@@ -21733,7 +21733,7 @@ class InsertScenarioTreeEdgeSqlRow(BaseModel):
     parent_id: UUID | None = None
     child_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class InsertScenarioTreeEdgeApiRequest(BaseModel):
 
@@ -21746,7 +21746,7 @@ class InsertScenarioTreeEdgeApiResponse(BaseModel):
     parent_id: UUID | None = None
     child_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -21780,8 +21780,8 @@ class InsertScenarioVariantSqlRow(BaseModel):
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     profile_id: UUID | None = None
     department_id: UUID | None = None
 
@@ -21804,8 +21804,8 @@ class InsertScenarioVariantApiResponse(BaseModel):
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     profile_id: UUID | None = None
     department_id: UUID | None = None
 
@@ -22407,7 +22407,7 @@ class QGetSettingsDetailV4Provider(BaseModel):
 class GetActiveSettingsSqlRow(BaseModel):
 
     settings_id: UUID | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
     active: bool | None = None
     name: str | None = None
     description: str | None = None
@@ -22441,7 +22441,7 @@ class GetActiveSettingsApiRequest(BaseModel):
 class GetActiveSettingsApiResponse(BaseModel):
 
     settings_id: UUID | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
     active: bool | None = None
     name: str | None = None
     description: str | None = None
@@ -23794,7 +23794,7 @@ class GetSimulationRunContextSqlRow(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     documents: Any | None = None
 
 class GetSimulationRunContextApiRequest(BaseModel):
@@ -23841,7 +23841,7 @@ class GetSimulationRunContextApiResponse(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     documents: Any | None = None
 
 
@@ -24824,7 +24824,7 @@ class GetToolSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
     name_id: UUID | None = None
     name_resource: QGetToolV4NameResource | None = None
     show_name: bool | None = None
@@ -24875,7 +24875,7 @@ class GetToolApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    updated_at: str | None = None
+    updated_at: datetime | None = None
     name_id: UUID | None = None
     name_resource: QGetToolV4NameResource | None = None
     show_name: bool | None = None
@@ -25501,7 +25501,7 @@ class GetVideoRunContextAndCreateRunSqlRow(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     department_id: UUID | None = None
     run_id: str | None = None
 
@@ -25527,7 +25527,7 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
     profile_id: str | None = None
     req_per_day: int | None = None
     runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
+    earliest_run_created_at: datetime | None = None
     department_id: UUID | None = None
     run_id: str | None = None
 
@@ -25662,8 +25662,8 @@ class GetSimulationHistoryViewSqlParams(BaseModel):
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     practice_filter: bool | None = None
-    date_from: str
-    date_to: str
+    date_from: datetime
+    date_to: datetime
     scenario_ids: list[UUID] | None = None
     infinite_mode: bool | None = None
     search: str | None = None
@@ -25753,8 +25753,8 @@ class GetSimulationHistoryViewApiRequest(BaseModel):
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     practice_filter: bool | None = None
-    date_from: str
-    date_to: str
+    date_from: datetime
+    date_to: datetime
     scenario_ids: list[UUID] | None = None
     infinite_mode: bool | None = None
     search: str | None = None

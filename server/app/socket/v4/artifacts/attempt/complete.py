@@ -17,8 +17,11 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.attempt.types import (
+    AttemptAssistantCompleteEvent,
     AttemptCompleteEvent,
     AttemptGradedEvent,
+    AttemptHintProgressEvent,
+    AttemptTurnCompleteEvent,
 )
 from app.sql.types import (
     SaveAttemptMessageContentSqlParams,
@@ -139,6 +142,41 @@ async def _handle_message_complete(
                 room=f"simulation_{chat_id}",
             )
 
+        # Emit the unified attempt_assistant_complete event
+        if chat_id and message_id:
+            assistant_complete_event = AttemptAssistantCompleteEvent(
+                chat_id=str(chat_id),
+                message_id=str(message_id),
+                content=str(final_content),
+            )
+            await sio.emit(
+                "attempt_assistant_complete",
+                assistant_complete_event.model_dump(mode="json"),
+                room=sid,
+            )
+            # Also emit to attempt room for multi-tab sync
+            await sio.emit(
+                "attempt_assistant_complete",
+                assistant_complete_event.model_dump(mode="json"),
+                room=f"attempt_{chat_id}",
+            )
+
+            # Emit attempt_turn_complete to signal end of turn
+            turn_complete_event = AttemptTurnCompleteEvent(
+                chat_id=str(chat_id),
+            )
+            await sio.emit(
+                "attempt_turn_complete",
+                turn_complete_event.model_dump(mode="json"),
+                room=sid,
+            )
+            # Also emit to attempt room for multi-tab sync
+            await sio.emit(
+                "attempt_turn_complete",
+                turn_complete_event.model_dump(mode="json"),
+                room=f"attempt_{chat_id}",
+            )
+
         logger.info(
             f"Attempt message complete - message_id={message_id}, chat_id={chat_id}"
         )
@@ -207,6 +245,8 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
 
     tool_name = data.get("tool_name")
     resource_id = tool_result.get("resource_id")
+    chat_id = data.get("chat_id")
+    message_id = data.get("message_id")
 
     if not resource_id:
         # Tool execution may have failed, check success flag
@@ -223,8 +263,8 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
         run_id=data.get("run_id"),
         success=True,
         message=f"{tool_name} completed",
-        chat_id=data.get("chat_id"),
-        message_id=data.get("message_id"),
+        chat_id=chat_id,
+        message_id=message_id,
     )
 
     await sio.emit(
@@ -232,6 +272,28 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+    # If this is a hints tool, emit the attempt_hint_progress event
+    if tool_name == "hints" and chat_id and message_id:
+        hints = tool_result.get("hints", [])
+        hint_event = AttemptHintProgressEvent(
+            chat_id=str(chat_id),
+            message_id=str(message_id),
+            type="complete",
+            hints_count=len(hints) if hints else 0,
+            hints=hints,
+        )
+        await sio.emit(
+            "attempt_hint_progress",
+            hint_event.model_dump(mode="json"),
+            room=sid,
+        )
+        # Also emit to attempt room
+        await sio.emit(
+            "attempt_hint_progress",
+            hint_event.model_dump(mode="json"),
+            room=f"attempt_{chat_id}",
+        )
 
 
 # =============================================================================
@@ -242,4 +304,28 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
 @server_router.post("/attempt/complete", response_model=dict[str, bool])
 async def attempt_complete_api(request: AttemptCompleteEvent) -> dict[str, bool]:
     """Server-to-client event: Attempt generation completed."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/assistant_complete", response_model=dict[str, bool])
+async def attempt_assistant_complete_api(
+    request: AttemptAssistantCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Attempt assistant message completed."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/turn_complete", response_model=dict[str, bool])
+async def attempt_turn_complete_api(
+    request: AttemptTurnCompleteEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Attempt conversation turn completed."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/hint_progress", response_model=dict[str, bool])
+async def attempt_hint_progress_api(
+    request: AttemptHintProgressEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Attempt hint generation progress."""
     return {"success": True}

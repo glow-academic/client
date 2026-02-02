@@ -1,10 +1,7 @@
 /**
  * MessagesView.tsx
  * Unified messages display for both active and graded modes.
- * Renders based on what data is present:
- * - contents: always present, each with name/icon/color for display
- * - feedbacks: present after grading, shows feedback cards + highlights/replaces
- * - hints: present in practice mode, shows hint button
+ * Uses OpenAPI types directly - no manual type definitions.
  */
 "use client";
 
@@ -26,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import {
@@ -39,84 +37,23 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MessageContentAdapter } from "../generic/utils/MessageContentAdapter";
 
-// Content entry with computed display fields from backend
-interface ContentEntry {
-  content?: string | null;
-  name?: string | null;    // "You" for own messages, persona name for responses
-  color?: string | null;   // User color or persona color
-  icon?: string | null;    // "User" or persona icon
-  created_at?: string | null;
-}
+// ---- OpenAPI types (single source of truth) ----
+type MessageData = components["schemas"]["MessageData"];
+type ContentEntry = components["schemas"]["ContentEntry"];
+type FeedbackEntry = components["schemas"]["MessageFeedbackEntry"];
 
-// Hint entry on each message
-interface HintEntry {
-  hint: string;
-  idx: number;
-}
-
-// Feedback entry (unified strengths + improvements)
-interface FeedbackEntry {
-  id: string;
-  name: string;
-  description: string;
-  type: "strength" | "improvement";
-  highlights?: Array<{ section: string }>;
-  replaces?: Array<{ section: string; replace: string }>;
-}
-
-// Explicit, self-contained prop interface
+// Props interface using OpenAPI types
 export interface MessagesViewProps {
-  // Messages with contents, optional feedbacks, optional hints
-  // Server sends display fields (name/color/icon) pre-computed in contents
-  messages?: Array<{
-    id: string;
-    type: "query" | "response";
-    created_at: string;
-    completed?: boolean | null;
-    // Contents with pre-computed display fields from backend
-    contents?: ContentEntry[] | null;
-    // Grading feedback (only present after grading)
-    feedbacks?: FeedbackEntry[] | null;
-    // Hints directly on message (practice mode only)
-    hints?: HintEntry[] | null;
-  }>;
-
-  // Streaming content (optimistic - from websocket)
+  messages?: MessageData[];
   streaming_content?: Map<string, string>;
-
-  // Optimistic messages (from websocket before server confirms)
-  optimistic_messages?: Map<
-    string,
-    {
-      id: string;
-      type: "query" | "response";
-      created_at: string;
-      completed: boolean;
-      contents?: ContentEntry[] | null;
-      feedbacks?: FeedbackEntry[] | null;
-      hints?: HintEntry[] | null;
-    }
-  >;
-
-  // Explicit chat type - self-contained
-  current_chat?: {
-    id: string;
-    completed?: boolean | null;
-  } | null;
-
-  // IDs of messages with newly generated hints (for highlight indicator)
+  optimistic_messages?: Map<string, MessageData>;
+  current_chat?: { id: string; completed?: boolean | null } | null;
   new_hint_message_ids?: Array<string>;
-
-  // Callbacks
   send_message: (message: string) => void;
   retry_message?: (message_id: string) => void;
   is_sending_message: boolean;
-  is_active: boolean;
-
-  // Explicit background image type (pre-computed URL or upload_id)
+  is_active: boolean; // Used for future features
   background_image?: string | null;
-
-  // Standard props (like resource components)
   disabled?: boolean;
   is_attempt_owner?: boolean;
   chat_id?: string;
@@ -141,7 +78,8 @@ const normalizeMessageContent = (content: string): string => {
 };
 
 // Component to display feedback (strength or improvement)
-function FeedbackDisplay({ feedback }: { feedback: FeedbackEntry }) {
+function FeedbackDisplay({ feedback }: { feedback: FeedbackEntry | null }) {
+  if (!feedback) return null;
   const isStrength = feedback.type === "strength";
   return (
     <div
@@ -478,7 +416,7 @@ export function MessagesView({
                   // Render each content entry with its own display info
                   return (
                     <div key={message.id} className="space-y-2 mb-3">
-                      {contents.map((contentEntry, contentIndex) => {
+                      {contents.map((contentEntry: ContentEntry, contentIndex: number) => {
                         const displayName = contentEntry.name || (isQuery ? "You" : "Assistant");
                         const displayColor = contentEntry.color;
                         const displayIcon = contentEntry.icon;
@@ -512,7 +450,7 @@ export function MessagesView({
                                 {/* Show feedbacks above message (only on first content) */}
                                 {contentIndex === 0 && hasFeedbacks && (
                                   <div className="w-full space-y-2">
-                                    {feedbacks.map((fb) => (
+                                    {feedbacks.map((fb: FeedbackEntry) => (
                                       <FeedbackDisplay key={fb.id} feedback={fb} />
                                     ))}
                                   </div>
@@ -565,7 +503,7 @@ export function MessagesView({
                               {/* Show feedbacks above message (only on first content) */}
                               {contentIndex === 0 && hasFeedbacks && (
                                 <div className="space-y-2">
-                                  {feedbacks.map((fb) => (
+                                  {feedbacks.map((fb: FeedbackEntry) => (
                                     <FeedbackDisplay key={fb.id} feedback={fb} />
                                   ))}
                                 </div>

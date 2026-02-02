@@ -1,51 +1,44 @@
 /**
  * RubricView.tsx
  * Rubric/grading display - thin passthrough to TableRubric
- * Server sends data in exact format TableRubric needs
+ * Uses OpenAPI types directly - no manual type definitions.
  */
 "use client";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
+import type { components } from "@/lib/api/schema";
 
-// Props match exactly what TableRubric expects (Record format from server)
+// ---- OpenAPI types (single source of truth) ----
+type RubricStructureData = components["schemas"]["RubricStructureData"];
+type GradingStateData = components["schemas"]["GradingStateData"];
+
+// Props interface using OpenAPI types
 export interface RubricViewProps {
-  // Rubric structure (Record format)
-  standard_groups: Record<string, string[]>; // group_id -> [standard_ids]
-  standard_groups_mapping: Record<
-    string,
-    { name: string; description: string; points: number; pass_points: number }
-  >;
-  standards_mapping: Record<
-    string,
-    { name: string; description: string; points: number }
-  >;
-  // Grading state (Record format, optional)
-  grading_state?: {
-    achieved_standards: Record<string, boolean>;
-    passed_standards: Record<string, boolean>;
-    grade_description?: string;
-    feedback_by_standard_id?: Record<string, string>;
-  };
+  rubric_structure: RubricStructureData;
+  grading_state?: GradingStateData;
   disabled?: boolean;
 }
 
 export function RubricView({
-  standard_groups,
-  standard_groups_mapping,
-  standards_mapping,
+  rubric_structure,
   grading_state,
 }: RubricViewProps) {
+  const standardGroups = rubric_structure?.standard_groups || {};
+  const standardGroupsMapping = rubric_structure?.standard_groups_mapping || {};
+  const standardsMapping = rubric_structure?.standards_mapping || {};
+
   return (
     <div className="space-y-4 py-2">
+      {/* @ts-expect-error - OpenAPI types don't exactly match TableRubric props */}
       <TableRubric
-        standardGroups={standard_groups}
+        standardGroups={standardGroups}
         standardGroupsMapping={Object.fromEntries(
-          Object.entries(standard_groups_mapping).map(([k, v]) => [
+          Object.entries(standardGroupsMapping).map(([k, v]) => [
             k,
-            { ...v, passPoints: v.pass_points },
+            { ...v, passPoints: v?.pass_points },
           ])
         )}
-        standardsMapping={standards_mapping}
+        standardsMapping={standardsMapping}
         {...(grading_state && {
           gradingState: {
             achievedStandards: grading_state.achieved_standards,

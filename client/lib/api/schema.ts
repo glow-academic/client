@@ -5493,6 +5493,226 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/attempt/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Join Api
+         * @description Client-to-server event: Join a chat room for real-time updates.
+         */
+        post: operations["attempt_join_api_socket_v4_client_attempt_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Leave Api
+         * @description Client-to-server event: Leave a chat room.
+         */
+        post: operations["attempt_leave_api_socket_v4_client_attempt_leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Send Api
+         * @description Client-to-server event: Send a message during attempt simulation.
+         */
+        post: operations["attempt_send_api_socket_v4_client_attempt_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Stop Api
+         * @description Client-to-server event: Stop message generation.
+         */
+        post: operations["attempt_stop_api_socket_v4_client_attempt_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt End Api
+         * @description Client-to-server event: End current chat.
+         */
+        post: operations["attempt_end_api_socket_v4_client_attempt_end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/end_all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt End All Api
+         * @description Client-to-server event: End all chats in an attempt.
+         */
+        post: operations["attempt_end_all_api_socket_v4_client_attempt_end_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/audio_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Start Api
+         * @description Client-to-server event: Start a voice session.
+         */
+        post: operations["attempt_audio_start_api_socket_v4_client_attempt_audio_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/audio_stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Stop Api
+         * @description Client-to-server event: Stop a voice session.
+         */
+        post: operations["attempt_audio_stop_api_socket_v4_client_attempt_audio_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/audio_frame": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Frame Api
+         * @description Client-to-server event: Send audio frame data.
+         */
+        post: operations["attempt_audio_frame_api_socket_v4_client_attempt_audio_frame_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/mic_mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Mic Mute Api
+         * @description Client-to-server event: Toggle microphone mute.
+         */
+        post: operations["attempt_mic_mute_api_socket_v4_client_attempt_mic_mute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/attempt/response_submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Response Submit Api
+         * @description Client-to-server event: Submit a video question response.
+         */
+        post: operations["attempt_response_submit_api_socket_v4_client_attempt_response_submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/benchmark/enter": {
         parameters: {
             query?: never;
@@ -5853,6 +6073,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/assistant_delta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Delta Api
+         * @description Server-to-client event: Attempt assistant delta (streaming content).
+         */
+        post: operations["attempt_assistant_delta_api_socket_v4_server_attempt_assistant_delta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/attempt/complete": {
         parameters: {
             query?: never;
@@ -5873,6 +6113,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/assistant_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Complete Api
+         * @description Server-to-client event: Attempt assistant message completed.
+         */
+        post: operations["attempt_assistant_complete_api_socket_v4_server_attempt_assistant_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/turn_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Turn Complete Api
+         * @description Server-to-client event: Attempt conversation turn completed.
+         */
+        post: operations["attempt_turn_complete_api_socket_v4_server_attempt_turn_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/hint_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Hint Progress Api
+         * @description Server-to-client event: Attempt hint generation progress.
+         */
+        post: operations["attempt_hint_progress_api_socket_v4_server_attempt_hint_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/attempt/error": {
         parameters: {
             query?: never;
@@ -5887,6 +6187,186 @@ export interface paths {
          * @description Server-to-client event: Attempt generation error occurred.
          */
         post: operations["attempt_error_api_socket_v4_server_attempt_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/joined": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Joined Api
+         * @description Server-to-client event: Successfully joined a chat room.
+         */
+        post: operations["attempt_joined_api_socket_v4_server_attempt_joined_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/user_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt User Complete Api
+         * @description Server-to-client event: User message finalized.
+         */
+        post: operations["attempt_user_complete_api_socket_v4_server_attempt_user_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/assistant_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Start Api
+         * @description Server-to-client event: Assistant message generation started.
+         */
+        post: operations["attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/stopped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Stopped Api
+         * @description Server-to-client event: Message generation stopped.
+         */
+        post: operations["attempt_stopped_api_socket_v4_server_attempt_stopped_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/chat_ended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Chat Ended Api
+         * @description Server-to-client event: Chat ended.
+         */
+        post: operations["attempt_chat_ended_api_socket_v4_server_attempt_chat_ended_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/ended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Ended Api
+         * @description Server-to-client event: All chats ended.
+         */
+        post: operations["attempt_ended_api_socket_v4_server_attempt_ended_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/audio_ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Ready Api
+         * @description Server-to-client event: Voice session is ready.
+         */
+        post: operations["attempt_audio_ready_api_socket_v4_server_attempt_audio_ready_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/audio_ended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Ended Api
+         * @description Server-to-client event: Voice session ended.
+         */
+        post: operations["attempt_audio_ended_api_socket_v4_server_attempt_audio_ended_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/response_result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Response Result Api
+         * @description Server-to-client event: Response submission result.
+         */
+        post: operations["attempt_response_result_api_socket_v4_server_attempt_response_result_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6595,6 +7075,133 @@ export interface components {
             id?: string | null;
         };
         /**
+         * AttemptAssistantCompleteEvent
+         * @description Server-to-client event: attempt_assistant_complete.
+         *
+         *     Emitted when assistant message generation is complete.
+         */
+        AttemptAssistantCompleteEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Content */
+            content: string;
+        };
+        /**
+         * AttemptAssistantDeltaEvent
+         * @description Server-to-client event: attempt_assistant_delta.
+         *
+         *     Emitted during message generation with accumulated content.
+         */
+        AttemptAssistantDeltaEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Content */
+            content: string;
+        };
+        /**
+         * AttemptAssistantStartEvent
+         * @description Server-to-client event: attempt_assistant_start.
+         *
+         *     Emitted when assistant message generation starts.
+         */
+        AttemptAssistantStartEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Created At */
+            created_at: string;
+            /** Persona Id */
+            persona_id?: string | null;
+        };
+        /**
+         * AttemptAudioEndedEvent
+         * @description Server-to-client event: attempt_audio_ended.
+         *
+         *     Emitted when voice session is ended.
+         */
+        AttemptAudioEndedEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * AttemptAudioFramePayload
+         * @description Request payload for attempt_audio_frame WebSocket event.
+         *
+         *     Sends an audio frame to the server.
+         */
+        AttemptAudioFramePayload: {
+            /**
+             * Audio
+             * Format: binary
+             */
+            audio: string;
+        };
+        /**
+         * AttemptAudioReadyEvent
+         * @description Server-to-client event: attempt_audio_ready.
+         *
+         *     Emitted when voice session is ready.
+         */
+        AttemptAudioReadyEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * AttemptAudioStartPayload
+         * @description Request payload for attempt_audio_start WebSocket event.
+         *
+         *     Starts a voice session for a chat.
+         */
+        AttemptAudioStartPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * AttemptAudioStopPayload
+         * @description Request payload for attempt_audio_stop WebSocket event.
+         *
+         *     Stops the voice session for a chat.
+         */
+        AttemptAudioStopPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * AttemptChatEndedEvent
+         * @description Server-to-client event: attempt_chat_ended.
+         *
+         *     Emitted when a chat is ended.
+         */
+        AttemptChatEndedEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Next Chat Id */
+            next_chat_id?: string | null;
+            /** Is Attempt Finished */
+            is_attempt_finished?: boolean | null;
+            /** Grade Id */
+            grade_id?: string | null;
+        };
+        /**
          * AttemptCompleteEvent
          * @description Server-to-client event: attempt_complete.
          *
@@ -6657,6 +7264,46 @@ export interface components {
             cohort_id?: string | null;
             /** Is Archived */
             is_archived?: boolean | null;
+        };
+        /**
+         * AttemptEndAllPayload
+         * @description Request payload for attempt_end_all WebSocket event.
+         *
+         *     Ends all chats in an attempt.
+         */
+        AttemptEndAllPayload: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /**
+         * AttemptEndPayload
+         * @description Request payload for attempt_end WebSocket event.
+         *
+         *     Ends a chat and moves to next chat or completes attempt.
+         */
+        AttemptEndPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * AttemptEndedEvent
+         * @description Server-to-client event: attempt_ended.
+         *
+         *     Emitted when an entire attempt is ended.
+         */
+        AttemptEndedEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
         };
         /**
          * AttemptErrorEvent
@@ -6745,6 +7392,64 @@ export interface components {
             feedback?: string | null;
         };
         /**
+         * AttemptHintProgressEvent
+         * @description Server-to-client event: attempt_hint_progress.
+         *
+         *     Emitted during hint generation (auto-triggered after message).
+         */
+        AttemptHintProgressEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Type */
+            type: string;
+            /** Hints Count */
+            hints_count?: number | null;
+            /** Hints */
+            hints?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
+        /**
+         * AttemptJoinPayload
+         * @description Request payload for attempt_join WebSocket event.
+         *
+         *     Joins a chat room for real-time updates.
+         */
+        AttemptJoinPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * AttemptJoinedEvent
+         * @description Server-to-client event: attempt_joined.
+         *
+         *     Emitted when a client successfully joins a chat room.
+         */
+        AttemptJoinedEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * AttemptLeavePayload
+         * @description Request payload for attempt_leave WebSocket event.
+         *
+         *     Leaves a chat room.
+         */
+        AttemptLeavePayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
          * AttemptMessagePayload
          * @description Request payload for attempt_message WebSocket event.
          *
@@ -6802,6 +7507,16 @@ export interface components {
             group_id?: string | null;
         };
         /**
+         * AttemptMicMutePayload
+         * @description Request payload for attempt_mic_mute WebSocket event.
+         *
+         *     Toggles microphone mute state.
+         */
+        AttemptMicMutePayload: {
+            /** Muted */
+            muted: boolean;
+        };
+        /**
          * AttemptProgressEvent
          * @description Server-to-client event: attempt_progress.
          *
@@ -6847,6 +7562,119 @@ export interface components {
             delta?: string | null;
             /** Accumulated Content */
             accumulated_content?: string | null;
+        };
+        /**
+         * AttemptResponseResultEvent
+         * @description Server-to-client event: attempt_response_result.
+         *
+         *     Emitted after a video question response is submitted.
+         */
+        AttemptResponseResultEvent: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
+            /** All Correct */
+            all_correct?: boolean | null;
+        };
+        /**
+         * AttemptResponseSubmitPayload
+         * @description Request payload for attempt_response_submit WebSocket event.
+         *
+         *     Submits a response to a video question.
+         */
+        AttemptResponseSubmitPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Option Ids */
+            option_ids: string[];
+        };
+        /**
+         * AttemptSendPayload
+         * @description Request payload for attempt_send WebSocket event.
+         *
+         *     Simplified payload - server looks up simulation_id and agent_id from chat_id.
+         */
+        AttemptSendPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /** Content */
+            content: string;
+            /**
+             * Voice Mode
+             * @default false
+             */
+            voice_mode: boolean;
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /**
+         * AttemptStopPayload
+         * @description Request payload for attempt_stop WebSocket event.
+         *
+         *     Stops the current message generation.
+         */
+        AttemptStopPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * AttemptStoppedEvent
+         * @description Server-to-client event: attempt_stopped.
+         *
+         *     Emitted when message generation is stopped.
+         */
+        AttemptStoppedEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * AttemptTurnCompleteEvent
+         * @description Server-to-client event: attempt_turn_complete.
+         *
+         *     Emitted when the full conversation turn is complete.
+         */
+        AttemptTurnCompleteEvent: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /**
+         * AttemptUserCompleteEvent
+         * @description Server-to-client event: attempt_user_complete.
+         *
+         *     Emitted when user message is finalized (text or voice).
+         */
+        AttemptUserCompleteEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Content */
+            content: string;
+            /** Created At */
+            created_at: string;
+            /** Persona Id */
+            persona_id?: string | null;
         };
         /**
          * AttemptViewItem
@@ -35331,6 +36159,391 @@ export interface operations {
             };
         };
     };
+    attempt_join_api_socket_v4_client_attempt_join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptJoinPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_leave_api_socket_v4_client_attempt_leave_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptLeavePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_send_api_socket_v4_client_attempt_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptSendPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_stop_api_socket_v4_client_attempt_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_end_api_socket_v4_client_attempt_end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptEndPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_end_all_api_socket_v4_client_attempt_end_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptEndAllPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_start_api_socket_v4_client_attempt_audio_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAudioStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_stop_api_socket_v4_client_attempt_audio_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAudioStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_frame_api_socket_v4_client_attempt_audio_frame_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAudioFramePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_mic_mute_api_socket_v4_client_attempt_mic_mute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptMicMutePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_response_submit_api_socket_v4_client_attempt_response_submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptResponseSubmitPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     benchmark_enter_api_socket_v4_client_benchmark_enter_post: {
         parameters: {
             query?: never;
@@ -35963,6 +37176,41 @@ export interface operations {
             };
         };
     };
+    attempt_assistant_delta_api_socket_v4_server_attempt_assistant_delta_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantDeltaEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attempt_complete_api_socket_v4_server_attempt_complete_post: {
         parameters: {
             query?: never;
@@ -35998,6 +37246,111 @@ export interface operations {
             };
         };
     };
+    attempt_assistant_complete_api_socket_v4_server_attempt_assistant_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_turn_complete_api_socket_v4_server_attempt_turn_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptTurnCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_hint_progress_api_socket_v4_server_attempt_hint_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptHintProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attempt_error_api_socket_v4_server_attempt_error_post: {
         parameters: {
             query?: never;
@@ -36008,6 +37361,321 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_joined_api_socket_v4_server_attempt_joined_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptJoinedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_user_complete_api_socket_v4_server_attempt_user_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptUserCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_stopped_api_socket_v4_server_attempt_stopped_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStoppedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_chat_ended_api_socket_v4_server_attempt_chat_ended_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptChatEndedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_ended_api_socket_v4_server_attempt_ended_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptEndedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_ready_api_socket_v4_server_attempt_audio_ready_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAudioReadyEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_ended_api_socket_v4_server_attempt_audio_ended_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAudioEndedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_response_result_api_socket_v4_server_attempt_response_result_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptResponseResultEvent"];
             };
         };
         responses: {

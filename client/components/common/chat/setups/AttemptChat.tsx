@@ -1,11 +1,14 @@
 /**
- * AttemptChatSetup.tsx
- * Setup file that wires components together (like Persona.tsx)
- * Handles WebSocket orchestration and passes components/data to GenericChatInterface
+ * AttemptChat.tsx
+ * Full chat component with unified attempt_* event contract.
+ * Uses strongly typed socket events from OpenAPI-generated types.
  */
 "use client";
 
 import { useProfile } from "@/contexts/profile-context";
+import type { components } from "@/lib/api/schema";
+import type { OutputOf } from "@/lib/api/types";
+import type { ClientToServerEvents, ServerToClientEvents } from "@/lib/ws/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -30,17 +33,55 @@ import { TextInput } from "../inputAreas/TextInput";
 import type { VoiceInputHandle, VoiceInputProps } from "../inputAreas/VoiceInput";
 import { VoiceInput } from "../inputAreas/VoiceInput";
 
-// Explicit, self-contained types for setup props
-export interface AttemptChatSetupProps {
-  attempt_id: string;
+// ============================================================================
+// TYPES
+// ============================================================================
 
-  // Explicit attempt data type - self-contained
-  // Note: API returns chats_entry, scenario_documents_junction but pages map to chats, scenario_documents
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  attempt_data: any;
+/** Attempt data from server - strongly typed from OpenAPI */
+type AttemptData = OutputOf<"/api/v4/attempt/get", "post">;
+
+/** Message data from OpenAPI schema - used for optimistic messages */
+type MessageData = components["schemas"]["MessageData"];
+
+// Socket event payload types (auto-generated from server OpenAPI schema)
+// Client-to-Server payloads
+type AttemptJoinPayload = Parameters<ClientToServerEvents["attempt_join"]>[0];
+type AttemptLeavePayload = Parameters<ClientToServerEvents["attempt_leave"]>[0];
+type AttemptSendPayload = Parameters<ClientToServerEvents["attempt_send"]>[0];
+type AttemptStopPayload = Parameters<ClientToServerEvents["attempt_stop"]>[0];
+type AttemptAudioStartPayload = Parameters<ClientToServerEvents["attempt_audio_start"]>[0];
+type AttemptAudioStopPayload = Parameters<ClientToServerEvents["attempt_audio_stop"]>[0];
+type AttemptAudioFramePayload = Parameters<ClientToServerEvents["attempt_audio_frame"]>[0];
+type AttemptMicMutePayload = Parameters<ClientToServerEvents["attempt_mic_mute"]>[0];
+type AttemptResponseSubmitPayload = Parameters<ClientToServerEvents["attempt_response_submit"]>[0];
+
+// Server-to-Client event payloads
+type AttemptJoinedEvent = Parameters<ServerToClientEvents["attempt_joined"]>[0];
+type AttemptUserStartEvent = Parameters<ServerToClientEvents["attempt_user_start"]>[0];
+type AttemptUserDeltaEvent = Parameters<ServerToClientEvents["attempt_user_delta"]>[0];
+type AttemptUserCompleteEvent = Parameters<ServerToClientEvents["attempt_user_complete"]>[0];
+type AttemptAssistantStartEvent = Parameters<ServerToClientEvents["attempt_assistant_start"]>[0];
+type AttemptAssistantDeltaEvent = Parameters<ServerToClientEvents["attempt_assistant_delta"]>[0];
+type AttemptAssistantAudioEvent = Parameters<ServerToClientEvents["attempt_assistant_audio"]>[0];
+type AttemptAssistantCompleteEvent = Parameters<ServerToClientEvents["attempt_assistant_complete"]>[0];
+type AttemptTurnCompleteEvent = Parameters<ServerToClientEvents["attempt_turn_complete"]>[0];
+type AttemptStoppedEvent = Parameters<ServerToClientEvents["attempt_stopped"]>[0];
+type AttemptChatEndedEvent = Parameters<ServerToClientEvents["attempt_chat_ended"]>[0];
+type AttemptEndedEvent = Parameters<ServerToClientEvents["attempt_ended"]>[0];
+type AttemptAudioReadyEvent = Parameters<ServerToClientEvents["attempt_audio_ready"]>[0];
+type AttemptAudioEndedEvent = Parameters<ServerToClientEvents["attempt_audio_ended"]>[0];
+type AttemptGradingProgressEvent = Parameters<ServerToClientEvents["attempt_grading_progress"]>[0];
+type AttemptHintProgressEvent = Parameters<ServerToClientEvents["attempt_hint_progress"]>[0];
+type AttemptResponseResultEvent = Parameters<ServerToClientEvents["attempt_response_result"]>[0];
+type AttemptErrorEvent = Parameters<ServerToClientEvents["attempt_error"]>[0];
+
+/** Props for the AttemptChat component */
+export interface AttemptChatProps {
+  attempt_id: string;
+  attempt_data: AttemptData;
 }
 
-// Grading state in Record format (matches server response)
+/** Grading state in Record format (matches server response) */
 type OptimisticGradingState = {
   achieved_standards: Record<string, boolean> | null;
   passed_standards: Record<string, boolean> | null;
@@ -58,14 +99,21 @@ type HintsByMessage = {
   }>;
 };
 
-export function AttemptChatSetup({
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+export function AttemptChat({
   attempt_id,
   attempt_data: initialAttemptData,
-}: AttemptChatSetupProps) {
+}: AttemptChatProps) {
   const router = useRouter();
   const { socket, isConnected } = useProfile();
 
-  // State management
+  // ---------------------------------------------------------------------------
+  // STATE MANAGEMENT
+  // ---------------------------------------------------------------------------
+
   const [attemptData, setAttemptData] = useState(initialAttemptData);
   const [currentChatIndex, setCurrentChatIndex] = useState(
     initialAttemptData.current_chat_index ?? 0
@@ -75,9 +123,7 @@ export function AttemptChatSetup({
   const [showObjectives, setShowObjectives] = useState(false);
   const [showObjectivesModal, setShowObjectivesModal] = useState(false);
   const [showGrades, setShowGrades] = useState(false);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null
-  );
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -105,19 +151,10 @@ export function AttemptChatSetup({
     new Map()
   );
   const [optimisticMessages, setOptimisticMessages] = useState<
-    Map<
-      string,
-      {
-        id: string;
-        type: "query" | "response";
-        content: string;
-        created_at: string;
-        completed: boolean;
-        persona_id?: string | null;
-      }
-    >
+    Map<string, MessageData>
   >(new Map());
 
+  // Refs
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const prevChatIdRef = useRef<string | null>(null);
@@ -137,6 +174,10 @@ export function AttemptChatSetup({
   } | null>(null);
   const isGradingRef = useRef(false);
 
+  // ---------------------------------------------------------------------------
+  // SYNC WITH INITIAL DATA
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     if (!initialAttemptData) return;
 
@@ -147,7 +188,6 @@ export function AttemptChatSetup({
         setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
         hasInitializedFromServerRef.current = true;
       } else if (initialAttemptData.chats) {
-        // NEW: Use flat structure - c.id instead of c.chat?.id
         const currentChatId = attemptData?.chats?.[currentChatIndex]?.id;
         const currentChatStillExists = initialAttemptData.chats.some(
           (c) => c.id === currentChatId
@@ -162,7 +202,6 @@ export function AttemptChatSetup({
       setOptimisticGradingStates((prev) => {
         const updated: Record<string, OptimisticGradingState> = {};
         Object.entries(prev).forEach(([chatId, optimisticState]) => {
-          // NEW: Use flat structure - c.id instead of c.chat?.id
           const chatData = initialAttemptData.chats?.find((c) => c.id === chatId);
           if (!chatData?.grading_state) {
             updated[chatId] = optimisticState;
@@ -174,7 +213,6 @@ export function AttemptChatSetup({
       setOptimisticHints((prev) => {
         const updated: Record<string, HintsByMessage[]> = {};
         Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
-          // NEW: Use flat structure - c.id instead of c.chat?.id
           const chatData = initialAttemptData.chats?.find((c) => c.id === chatId);
           const serverHints = chatData?.hints || [];
 
@@ -196,14 +234,10 @@ export function AttemptChatSetup({
           const missingOrIncompleteHints = optimisticChatHints.filter(
             (optimisticHint) => {
               const serverHint = serverHintsMap.get(optimisticHint.message_id);
-              if (!serverHint) {
-                return true;
-              }
+              if (!serverHint) return true;
               const serverHintCount = (serverHint.hints || []).length;
               const optimisticHintCount = (optimisticHint.hints || []).length;
-              if (serverHintCount !== optimisticHintCount) {
-                return true;
-              }
+              if (serverHintCount !== optimisticHintCount) return true;
               const hasContent = (serverHint.hints || []).some(
                 (h) => h.hint && h.hint.trim().length > 0
               );
@@ -223,14 +257,9 @@ export function AttemptChatSetup({
   useEffect(() => {
     if (!pendingNextChatIdRef.current || !attemptData?.chats) return;
     const nextChatId = pendingNextChatIdRef.current;
-    // NEW: chats are now flat, no need to map c.chat
     const sortedChats = [...attemptData.chats]
       .filter((chat): chat is NonNullable<typeof chat> => chat !== null)
-      .sort(
-        (a, b) =>
-          new Date(a.created_at || "").getTime() -
-          new Date(b.created_at || "").getTime()
-      );
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     const nextIndex = sortedChats.findIndex((c) => c.id === nextChatId);
     if (nextIndex !== -1) {
       setCurrentChatIndex(nextIndex);
@@ -238,30 +267,24 @@ export function AttemptChatSetup({
     }
   }, [attemptData]);
 
-  // Current chat data - NEW: flat structure, no nested c.chat
+  // ---------------------------------------------------------------------------
+  // DERIVED STATE
+  // ---------------------------------------------------------------------------
+
   const currentChat = useMemo(() => {
     if (!attemptData?.chats || attemptData.chats.length === 0) return null;
-    // Chats are now flat objects with id, completed, etc. directly
     return attemptData.chats[currentChatIndex] || attemptData.chats[0] || null;
   }, [attemptData, currentChatIndex]);
 
-  // NEW: Build scenario-like object from flat chat data
-  // personas is now an array of PersonaEntry, objectives is an array of ObjectiveEntry,
-  // problem_statement is a ProblemStatementEntry object
   const scenario = useMemo(() => {
     if (!currentChat) return null;
-    // Get first image's upload_id for background image
     const firstImageUploadId = currentChat.images?.[0]?.upload_id ?? null;
-    // Get first persona for display (personas is now an array)
     const firstPersona = currentChat.personas?.[0] ?? null;
-    // Get problem statement text (now an object with problem_statement_id and problem_statement)
     const problemStatementText = currentChat.problem_statement?.problem_statement ?? null;
     return {
-      // Use first persona's info for backward compat
       persona_name: firstPersona?.name ?? null,
       persona_icon: firstPersona?.icon ?? null,
       persona_color: firstPersona?.color ?? null,
-      // Objectives is now array of ObjectiveEntry - extract just the objective text
       objectives: currentChat.objectives?.map((o) => ({
         id: o.objective_id,
         objective: o.objective,
@@ -275,7 +298,6 @@ export function AttemptChatSetup({
     };
   }, [currentChat]);
 
-  // NEW: chats are now flat, no need to map c.chat
   const chats = useMemo(
     () =>
       attemptData?.chats?.filter(
@@ -284,39 +306,32 @@ export function AttemptChatSetup({
     [attemptData]
   );
   const rubricStructure = attemptData?.rubric_structure || null;
-
-  // Derived state for UI controls
   const isActive = attemptData?.is_active ?? true;
-  const isAttemptOwner = true; // TODO: Compare attempt.profile_id with current user
+  const isAttemptOwner = true;
 
   useEffect(() => {
     currentChatIdRef.current = currentChat?.id ?? null;
   }, [currentChat?.id]);
+
+  // ---------------------------------------------------------------------------
+  // ROOM MANAGEMENT
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (!isConnected || !currentChat?.id || !socket) return;
     if (currentRoomRef.current === currentChat.id) return;
 
     if (currentRoomRef.current) {
-      socket.emit("simulation_leave", {
-        chat_id: currentRoomRef.current,
-        chat_type: "simulation",
-      });
+      socket.emit("attempt_leave", { chat_id: currentRoomRef.current });
     }
 
-    socket.emit("simulation_join", {
-      chat_id: currentChat.id,
-      chat_type: "simulation",
-    });
+    socket.emit("attempt_join", { chat_id: currentChat.id });
     currentRoomRef.current = currentChat.id;
     currentChatIdRef.current = currentChat.id;
 
     return () => {
       if (currentRoomRef.current && socket) {
-        socket.emit("simulation_leave", {
-          chat_id: currentRoomRef.current,
-          chat_type: "simulation",
-        });
+        socket.emit("attempt_leave", { chat_id: currentRoomRef.current });
         currentRoomRef.current = null;
         currentChatIdRef.current = null;
       }
@@ -347,7 +362,7 @@ export function AttemptChatSetup({
         propMessages.forEach((msg) => {
           if (msg.completed && newMap.has(msg.id)) {
             const streaming = newMap.get(msg.id);
-            if (streaming && msg.content.length >= streaming.length) {
+            if (streaming && msg.contents?.[0]?.content && msg.contents[0].content.length >= streaming.length) {
               newMap.delete(msg.id);
               changed = true;
             }
@@ -373,55 +388,52 @@ export function AttemptChatSetup({
     return () => clearTimeout(gracePeriodTimeout);
   }, [attemptData, currentChatIndex]);
 
-  // Determine view mode
+  // ---------------------------------------------------------------------------
+  // VIEW MODE
+  // ---------------------------------------------------------------------------
+
   const chatAreaViewMode: ChatAreaViewMode = useMemo(() => {
     if (showGrades) return "rubric";
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    // NEW: Check videos array (first video with upload_id) instead of video.upload_id
     const hasVideo = currentChatData?.videos?.some((v) => v.upload_id);
     if (hasVideo) return "video";
-    // Check if we have grading data
     const hasGradingData =
       currentChatData?.grading_state ||
-      currentChatData?.messages?.some(
-        (m) => m.feedbacks && m.feedbacks.length > 0
-      );
+      currentChatData?.messages?.some((m) => m.feedbacks && m.feedbacks.length > 0);
     if (hasGradingData && currentChat?.completed) return "graded-messages";
     return "messages";
   }, [showGrades, attemptData, currentChatIndex, currentChat]);
 
+  // ---------------------------------------------------------------------------
+  // MERGED STATES
+  // ---------------------------------------------------------------------------
+
   const mergedGradingStates = useMemo(() => {
     const map: Record<string, OptimisticGradingState> = {};
     attemptData?.chats?.forEach((chatData) => {
-      // NEW: Use flat structure - chatData.id instead of chatData.chat?.id
       const chatId = chatData.id;
       if (chatId && chatData.grading_state) {
         map[chatId] = chatData.grading_state;
       }
     });
 
-    Object.entries(optimisticGradingStates).forEach(
-      ([chatId, optimisticState]) => {
-        const existingState = map[chatId];
-        if (existingState) {
-          map[chatId] = {
-            achieved_standards:
-              optimisticState.achieved_standards ??
-              existingState.achieved_standards,
-            passed_standards:
-              optimisticState.passed_standards ?? existingState.passed_standards,
-            grade_description:
-              optimisticState.grade_description ??
-              existingState.grade_description,
-            feedback_by_standard_id:
-              optimisticState.feedback_by_standard_id ??
-              existingState.feedback_by_standard_id,
-          };
-        } else {
-          map[chatId] = optimisticState;
-        }
+    Object.entries(optimisticGradingStates).forEach(([chatId, optimisticState]) => {
+      const existingState = map[chatId];
+      if (existingState) {
+        map[chatId] = {
+          achieved_standards:
+            optimisticState.achieved_standards ?? existingState.achieved_standards,
+          passed_standards:
+            optimisticState.passed_standards ?? existingState.passed_standards,
+          grade_description:
+            optimisticState.grade_description ?? existingState.grade_description,
+          feedback_by_standard_id:
+            optimisticState.feedback_by_standard_id ?? existingState.feedback_by_standard_id,
+        };
+      } else {
+        map[chatId] = optimisticState;
       }
-    );
+    });
 
     return map;
   }, [attemptData, optimisticGradingStates]);
@@ -429,7 +441,6 @@ export function AttemptChatSetup({
   const mergedCurrentChatHints = useMemo(() => {
     if (!currentChat?.id) return [];
     const optimisticChatHints = optimisticHints[currentChat.id] || [];
-    // NEW: Use flat structure - c.id instead of c.chat?.id
     const serverHints =
       attemptData?.chats?.find((c) => c.id === currentChat.id)?.hints || [];
 
@@ -453,9 +464,7 @@ export function AttemptChatSetup({
       const optimisticHint = hintMap.get(hintGroup.message_id);
       const serverHintCount = mappedHints.hints.length;
       const optimisticHintCount = optimisticHint?.hints.length ?? 0;
-      const hasContent = mappedHints.hints.some(
-        (h) => h.hint && h.hint.trim().length > 0
-      );
+      const hasContent = mappedHints.hints.some((h) => h.hint && h.hint.trim().length > 0);
 
       if (!optimisticHint || hasContent || serverHintCount !== optimisticHintCount) {
         hintMap.set(hintGroup.message_id, mappedHints);
@@ -470,22 +479,22 @@ export function AttemptChatSetup({
     [messagesWithNewHints]
   );
 
-  const normalizeMessageContent = (content: string) =>
-    content.trim().toLowerCase();
+  const normalizeMessageContent = (content: string) => content.trim().toLowerCase();
 
-  // WebSocket handlers
+  // ---------------------------------------------------------------------------
+  // PUBLIC HANDLERS
+  // ---------------------------------------------------------------------------
+
   const handleSendMessage = useCallback(
     async (message: string, _isRetry?: boolean) => {
-      if (!message.trim() || !currentChat || isSendingMessage || !socket)
-        return;
+      if (!message.trim() || !currentChat || isSendingMessage || !socket) return;
 
       setIsSendingMessage(true);
       try {
-        socket.emit("member_progress", {
+        socket.emit("attempt_send", {
           chat_id: currentChat.id,
-          message: message,
+          content: message,
           voice_mode: false,
-          upload_id: undefined,
         });
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
@@ -499,14 +508,24 @@ export function AttemptChatSetup({
     if (!currentChat || isStoppingMessage || !socket) return;
     setIsStoppingMessage(true);
     try {
-      socket.emit("simulation_text_stop", {
-        chat_id: currentChat.id,
-      });
+      socket.emit("attempt_stop", { chat_id: currentChat.id });
     } catch (error) {
       toast.error(`Failed to stop message: ${error}`);
       setIsStoppingMessage(false);
     }
   }, [currentChat, isStoppingMessage, socket]);
+
+  const handleQuizResponse = useCallback(
+    (questionId: string, optionIds: string[]) => {
+      if (!currentChat || !socket) return;
+      socket.emit("attempt_response_submit", {
+        chat_id: currentChat.id,
+        question_id: questionId,
+        option_ids: optionIds,
+      });
+    },
+    [currentChat, socket]
+  );
 
   const handleVoiceStart = useCallback(async () => {
     if (!currentChat?.id || !socket || !isConnected) {
@@ -514,12 +533,11 @@ export function AttemptChatSetup({
       return;
     }
 
-    socket.emit("simulation_voice_start", { chat_id: currentChat.id });
+    socket.emit("attempt_audio_start", { chat_id: currentChat.id });
 
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
-        socket.off("simulation_voice_start_response", handleStartResponse);
-        socket.off("simulation_voice_start_error", handleStartError);
+        socket.off("attempt_audio_ready", handleStartResponse);
       };
 
       const timeout = setTimeout(() => {
@@ -527,7 +545,8 @@ export function AttemptChatSetup({
         reject(new Error("Timeout waiting for voice session start"));
       }, 10000);
 
-      const handleStartResponse = (data: { success: boolean; message: string }) => {
+      const handleStartResponse = (data: AttemptAudioReadyEvent) => {
+        if (data.chat_id !== currentChat.id) return;
         clearTimeout(timeout);
         cleanup();
         if (data.success) {
@@ -537,28 +556,18 @@ export function AttemptChatSetup({
         }
       };
 
-      const handleStartError = (data: { success: boolean; message: string }) => {
-        clearTimeout(timeout);
-        cleanup();
-        reject(new Error(data.message || "Failed to start voice session"));
-      };
-
-      socket.once("simulation_voice_start_response", handleStartResponse);
-      socket.once("simulation_voice_start_error", handleStartError);
+      socket.on("attempt_audio_ready", handleStartResponse);
     });
   }, [currentChat?.id, isConnected, socket]);
 
   const handleVoiceStop = useCallback(async () => {
-    if (!currentChat?.id || !socket || !isConnected) {
-      return;
-    }
+    if (!currentChat?.id || !socket || !isConnected) return;
 
-    socket.emit("simulation_voice_stop", { chat_id: currentChat.id });
+    socket.emit("attempt_audio_stop", { chat_id: currentChat.id });
 
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
-        socket.off("simulation_voice_stop_response", handleStopResponse);
-        socket.off("simulation_voice_stop_error", handleStopError);
+        socket.off("attempt_audio_ended", handleStopResponse);
       };
 
       const timeout = setTimeout(() => {
@@ -566,7 +575,8 @@ export function AttemptChatSetup({
         reject(new Error("Timeout waiting for voice session stop"));
       }, 10000);
 
-      const handleStopResponse = (data: { success: boolean; message: string }) => {
+      const handleStopResponse = (data: AttemptAudioEndedEvent) => {
+        if (data.chat_id !== currentChat.id) return;
         clearTimeout(timeout);
         cleanup();
         if (data.success) {
@@ -576,23 +586,14 @@ export function AttemptChatSetup({
         }
       };
 
-      const handleStopError = (data: { success: boolean; message: string }) => {
-        clearTimeout(timeout);
-        cleanup();
-        reject(new Error(data.message || "Failed to stop voice session"));
-      };
-
-      socket.once("simulation_voice_stop_response", handleStopResponse);
-      socket.once("simulation_voice_stop_error", handleStopError);
+      socket.on("attempt_audio_ended", handleStopResponse);
     });
   }, [currentChat?.id, isConnected, socket]);
 
   const handlePcm16Data = useCallback(
     (data: ArrayBuffer) => {
       if (!socket || !isConnected) return;
-      socket.emit("audio_frame_send", {
-        audio: data,
-      });
+      socket.emit("attempt_audio_frame", { audio: data });
     },
     [socket, isConnected]
   );
@@ -600,45 +601,37 @@ export function AttemptChatSetup({
   const handleMicMute = useCallback(
     (muted: boolean) => {
       if (!socket || !isConnected) return;
-      socket.emit("mic.set_muted", { muted });
+      socket.emit("attempt_mic_mute", { muted });
     },
     [socket, isConnected]
   );
 
+  // ---------------------------------------------------------------------------
+  // WEBSOCKET EVENT HANDLERS
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     if (!socket) return;
 
-    const handleSimulationMessageToken = (data: {
-      message_id: string;
-      chat_id: string;
-      token: string;
-      accumulated_content: string;
-    }) => {
-      if (
-        data.chat_id === currentChatIdRef.current &&
-        data.accumulated_content !== undefined
-      ) {
+    // Assistant message streaming (text delta)
+    const handleAssistantDelta = (data: AttemptAssistantDeltaEvent) => {
+      if (data.chat_id === currentChatIdRef.current && data.content !== undefined) {
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
-          newMap.set(data.message_id, data.accumulated_content);
+          newMap.set(data.message_id, data.content);
           return newMap;
         });
       }
     };
 
-    const handleSimulationMessageComplete = (data: {
-      message_id: string;
-      chat_id: string;
-      final_content: string;
-      completed?: boolean;
-      audio?: boolean;
-    }) => {
+    // Assistant message complete
+    const handleAssistantComplete = (data: AttemptAssistantCompleteEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
 
-      if (data.final_content !== undefined) {
+      if (data.content !== undefined) {
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
-          newMap.set(data.message_id, data.final_content);
+          newMap.set(data.message_id, data.content);
           return newMap;
         });
       }
@@ -662,105 +655,99 @@ export function AttemptChatSetup({
       }, 500);
     };
 
-    const handleSimulationNewMessage = (data: {
-      message_id: string;
-      chat_id: string;
-      role: string;
-      content: string;
-      completed: boolean;
-      created_at: string;
-      persona_id?: string;
-    }) => {
+    // User message complete (unified for text and voice)
+    const handleUserComplete = (data: AttemptUserCompleteEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
-
-      const type = data.role === "user" ? "query" : "response";
-
-      if (type === "response") {
-        setIsSendingMessage(true);
-      }
 
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
         let matchedOptimisticId: string | null = null;
 
-        if (type === "query") {
-          const normalizedContent = normalizeMessageContent(data.content);
+        const normalizedContent = normalizeMessageContent(data.content);
 
-          for (const [tempId, optMsg] of newMap.entries()) {
+        for (const [tempId, optMsg] of newMap.entries()) {
+          if (
+            optMsg.type === "query" &&
+            (tempId.startsWith("optimistic-user-") ||
+              tempId.startsWith("optimistic-user-voice-"))
+          ) {
+            // Get content from first contents entry
+            const optContent = optMsg.contents?.[0]?.content || "";
+            const optNormalized = normalizeMessageContent(optContent);
+            if (optNormalized === normalizedContent) {
+              matchedOptimisticId = tempId;
+              break;
+            }
             if (
-              optMsg.type === "query" &&
-              (tempId.startsWith("optimistic-user-") ||
-                tempId.startsWith("optimistic-user-voice-"))
+              optNormalized.length > 5 &&
+              normalizedContent.length > 5 &&
+              (optNormalized.includes(normalizedContent) ||
+                normalizedContent.includes(optNormalized))
             ) {
-              const optNormalized = normalizeMessageContent(optMsg.content);
-              if (optNormalized === normalizedContent) {
+              if (!matchedOptimisticId || tempId.startsWith("optimistic-user-voice-")) {
                 matchedOptimisticId = tempId;
-                break;
-              }
-              if (
-                optNormalized.length > 5 &&
-                normalizedContent.length > 5 &&
-                (optNormalized.includes(normalizedContent) ||
-                  normalizedContent.includes(optNormalized))
-              ) {
-                if (
-                  !matchedOptimisticId ||
-                  tempId.startsWith("optimistic-user-voice-")
-                ) {
-                  matchedOptimisticId = tempId;
-                }
               }
             }
           }
+        }
 
-          if (!matchedOptimisticId) {
-            for (const [tempId, optMsg] of newMap.entries()) {
-              if (
-                optMsg.type === "query" &&
-                tempId.startsWith("optimistic-user-voice-")
-              ) {
-                matchedOptimisticId = tempId;
-                break;
-              }
+        if (!matchedOptimisticId) {
+          for (const [tempId, optMsg] of newMap.entries()) {
+            if (optMsg.type === "query" && tempId.startsWith("optimistic-user-voice-")) {
+              matchedOptimisticId = tempId;
+              break;
             }
           }
+        }
 
-          if (matchedOptimisticId) {
-            newMap.delete(matchedOptimisticId);
-            let matchedItemId: string | null = null;
-            for (const [
-              itemId,
-              optId,
-            ] of itemIdToOptimisticIdRef.current.entries()) {
-              if (optId === matchedOptimisticId) {
-                matchedItemId = itemId;
-                itemIdToOptimisticIdRef.current.delete(itemId);
-                break;
-              }
+        if (matchedOptimisticId) {
+          newMap.delete(matchedOptimisticId);
+          let matchedItemId: string | null = null;
+          for (const [itemId, optId] of itemIdToOptimisticIdRef.current.entries()) {
+            if (optId === matchedOptimisticId) {
+              matchedItemId = itemId;
+              itemIdToOptimisticIdRef.current.delete(itemId);
+              break;
             }
-            if (matchedItemId) {
-              transcriptDeltasRef.current.delete(matchedItemId);
-            }
+          }
+          if (matchedItemId) {
+            transcriptDeltasRef.current.delete(matchedItemId);
           }
         }
 
         newMap.set(data.message_id, {
           id: data.message_id,
-          type,
-          content: data.content,
+          type: "query",
           created_at: data.created_at,
-          completed: data.completed,
-          persona_id: data.persona_id,
+          completed: true,
+          contents: [{ content: data.content, name: "You" }],
         });
 
         return newMap;
       });
     };
 
-    const handleVoiceSpeechStarted = (data: {
-      chat_id: string;
-      item_id: string;
-    }) => {
+    // Assistant message started
+    const handleAssistantStart = (data: AttemptAssistantStartEvent) => {
+      if (data.chat_id !== currentChatIdRef.current) return;
+
+      setIsSendingMessage(true);
+
+      setOptimisticMessages((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(data.message_id, {
+          id: data.message_id,
+          type: "response",
+          created_at: data.created_at,
+          completed: false,
+          contents: [{ content: "" }],
+        });
+        return newMap;
+      });
+    };
+
+    // User started speaking (voice)
+    const handleUserStart = (data: AttemptUserStartEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
 
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
@@ -768,15 +755,14 @@ export function AttemptChatSetup({
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
         for (const [id, msg] of newMap.entries()) {
+          // Get content from first contents entry
+          const msgContent = msg.contents?.[0]?.content || "";
           if (
             id.startsWith("optimistic-user-voice-") &&
-            (msg.content === "" || !msg.completed)
+            (msgContent === "" || !msg.completed)
           ) {
             newMap.delete(id);
-            for (const [
-              itemId,
-              optId,
-            ] of itemIdToOptimisticIdRef.current.entries()) {
+            for (const [itemId, optId] of itemIdToOptimisticIdRef.current.entries()) {
               if (optId === id) {
                 itemIdToOptimisticIdRef.current.delete(itemId);
               }
@@ -793,25 +779,20 @@ export function AttemptChatSetup({
         newMap.set(optimisticMessageId, {
           id: optimisticMessageId,
           type: "query",
-          content: "",
           created_at: new Date().toISOString(),
           completed: false,
+          contents: [{ content: "", name: "You" }],
         });
         return newMap;
       });
     };
 
-    const handleVoiceTranscriptComplete = (data: {
-      chat_id: string;
-      item_id: string;
-      transcript: string;
-    }) => {
+    // User transcript delta (voice)
+    const handleUserDelta = (data: AttemptUserDeltaEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
 
-      transcriptDeltasRef.current.delete(data.item_id);
-      const optimisticMessageId = itemIdToOptimisticIdRef.current.get(
-        data.item_id
-      );
+      transcriptDeltasRef.current.set(data.item_id, data.transcript);
+      const optimisticMessageId = itemIdToOptimisticIdRef.current.get(data.item_id);
 
       if (optimisticMessageId) {
         setOptimisticMessages((prev) => {
@@ -820,8 +801,7 @@ export function AttemptChatSetup({
           if (existingMessage) {
             newMap.set(optimisticMessageId, {
               ...existingMessage,
-              content: data.transcript,
-              completed: true,
+              contents: [{ content: data.transcript, name: "You" }],
             });
           }
           return newMap;
@@ -829,23 +809,14 @@ export function AttemptChatSetup({
       }
     };
 
-    const handleAssistantAudioDelta = (data: {
-      chat_id: string;
-      message_id?: string | null;
-      audio: ArrayBuffer | string;
-    }) => {
+    // Assistant audio chunk
+    const handleAssistantAudio = (data: AttemptAssistantAudioEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
       voiceInputRef.current?.enqueue_audio_delta(data.audio);
     };
 
-    const handleMessageSent = (_data: {
-      message_id: string;
-      chat_id: string;
-      message: string;
-      created_at: string;
-    }) => {};
-
-    const handleSimulationRunComplete = (data: { chat_id: string }) => {
+    // Turn complete
+    const handleTurnComplete = (data: AttemptTurnCompleteEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
       if (sendingMessageTimeoutRef.current) {
         clearTimeout(sendingMessageTimeoutRef.current);
@@ -854,24 +825,8 @@ export function AttemptChatSetup({
       setIsSendingMessage(false);
     };
 
-    const handleSimulationMessageCancelled = (data: {
-      message_id: string;
-      chat_id: string;
-      final_content: string;
-    }) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
-        sendingMessageTimeoutRef.current = null;
-      }
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-    };
-
-    const handleSimulationMessageError = (data: {
-      chat_id: string;
-      error: string;
-    }) => {
+    // Response stopped
+    const handleStopped = (data: AttemptStoppedEvent) => {
       if (data.chat_id === currentChatIdRef.current) {
         if (sendingMessageTimeoutRef.current) {
           clearTimeout(sendingMessageTimeoutRef.current);
@@ -879,18 +834,6 @@ export function AttemptChatSetup({
         }
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
-      }
-      toast.error(`Simulation error: ${data.error}`);
-    };
-
-    const handleSimulationStopped = (data: {
-      chat_id: string;
-      success: boolean;
-      message: string;
-    }) => {
-      if (data.chat_id === currentChatIdRef.current) {
-        setIsStoppingMessage(false);
-        setIsSendingMessage(false);
       }
 
       if (data.success && data.message) {
@@ -900,16 +843,10 @@ export function AttemptChatSetup({
       }
     };
 
-    const handleSimulationContinued = async (data: {
-      success: boolean;
-      message: string;
-      completed_chat_id: string;
-      next_chat_id: string | null;
-      is_attempt_finished: boolean | null;
-      simulation_grade_id?: string | null;
-    }) => {
-      if (data.completed_chat_id === currentChatIdRef.current) {
-        freshlyCompletedChatsRef.current.add(data.completed_chat_id);
+    // Chat ended
+    const handleChatEnded = async (data: AttemptChatEndedEvent) => {
+      if (data.chat_id === currentChatIdRef.current) {
+        freshlyCompletedChatsRef.current.add(data.chat_id);
         await router.refresh();
 
         if (data.next_chat_id && !data.is_attempt_finished) {
@@ -917,13 +854,9 @@ export function AttemptChatSetup({
           const nextChatExists = chats?.some((c) => c.id === data.next_chat_id);
           if (nextChatExists) {
             const sortedChats = [...(chats || [])].sort(
-              (a, b) =>
-                new Date(a.created_at || "").getTime() -
-                new Date(b.created_at || "").getTime()
+              (a, b) => (a.position ?? 0) - (b.position ?? 0)
             );
-            const nextIndex = sortedChats.findIndex(
-              (c) => c.id === data.next_chat_id
-            );
+            const nextIndex = sortedChats.findIndex((c) => c.id === data.next_chat_id);
             if (nextIndex !== -1) {
               setCurrentChatIndex(nextIndex);
               pendingNextChatIdRef.current = null;
@@ -933,11 +866,8 @@ export function AttemptChatSetup({
       }
     };
 
-    const handleEndAllCompleted = async (data: {
-      success: boolean;
-      message: string;
-      attempt_id: string;
-    }) => {
+    // Attempt ended
+    const handleAttemptEnded = async (data: AttemptEndedEvent) => {
       if (data.attempt_id === attempt_id) {
         router.refresh();
       }
@@ -949,64 +879,15 @@ export function AttemptChatSetup({
       }
     };
 
-    const handleMemberProgressError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
-        sendingMessageTimeoutRef.current = null;
-      }
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-      toast.error(data.message);
-    };
-
-    const handleStopSimulationError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      if (sendingMessageTimeoutRef.current) {
-        clearTimeout(sendingMessageTimeoutRef.current);
-        sendingMessageTimeoutRef.current = null;
-      }
-      setIsStoppingMessage(false);
-      setIsSendingMessage(false);
-      toast.error(data.message);
-    };
-
-    const handleContinueSimulationError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      toast.error(data.message);
-    };
-
-    const handleSimulationGradingProgress = (data: {
-      type: string;
-      chat_id: string;
-      standard_group_name?: string;
-      standard_group_short_name?: string;
-      score?: number;
-      feedback_preview?: string;
-      completed_count?: number;
-      total_count?: number;
-      message?: string;
-      grade_id?: string;
-      total_score?: number;
-      passed?: boolean;
-      standards_graded?: number;
-      time_taken?: number;
-      summary?: string;
-    }) => {
+    // Grading progress
+    const handleGrading = (data: AttemptGradingProgressEvent) => {
       const isCurrentChat = data.chat_id === currentChatIdRef.current;
 
       if (isCurrentChat) {
         if (data.type === "start") {
           isGradingRef.current = true;
           setIsGrading(true);
-          const initialTotal =
-            data.total_count ?? (data.standards_graded as number | undefined);
+          const initialTotal = data.total_count ?? (data.standards_graded as number | undefined);
           if (initialTotal !== undefined) {
             const initialProgress = {
               completed: 0,
@@ -1028,16 +909,11 @@ export function AttemptChatSetup({
           const totalCount = data.total_count;
           setGradingProgress((prev) => {
             const allToolsComplete = completedCount === totalCount;
-            const newPhase = allToolsComplete
-              ? "summary"
-              : prev?.phase || "tools";
+            const newPhase = allToolsComplete ? "summary" : prev?.phase || "tools";
 
             let displayedProgress: number;
             if (newPhase === "tools") {
-              displayedProgress = Math.min(
-                (completedCount / totalCount) * 90,
-                90
-              );
+              displayedProgress = Math.min((completedCount / totalCount) * 90, 90);
             } else {
               displayedProgress = 95;
             }
@@ -1077,10 +953,7 @@ export function AttemptChatSetup({
         } else if (data.type === "complete") {
           setGradingProgress((prev) => {
             if (!prev) return null;
-            return {
-              ...prev,
-              displayedProgress: 100,
-            };
+            return { ...prev, displayedProgress: 100 };
           });
           setTimeout(() => {
             isGradingRef.current = false;
@@ -1102,12 +975,10 @@ export function AttemptChatSetup({
         data.score !== undefined &&
         rubricStructure
       ) {
-        // rubricStructure now uses Record format
         const standardGroupsMapping = rubricStructure.standard_groups_mapping || {};
         const standardGroups = rubricStructure.standard_groups || {};
         const standardsMapping = rubricStructure.standards_mapping || {};
 
-        // Find the group by name
         const groupEntry = Object.entries(standardGroupsMapping).find(
           ([, meta]) => meta.name === data.standard_group_name
         );
@@ -1116,7 +987,6 @@ export function AttemptChatSetup({
           const [groupId, groupMeta] = groupEntry;
           const standardIds = standardGroups[groupId] || [];
 
-          // Find the standard that matches the score
           const matchingStandard = standardIds.find((stdId: string) => {
             const standard = standardsMapping[stdId];
             return standard && standard.points === data.score;
@@ -1134,7 +1004,6 @@ export function AttemptChatSetup({
                 grade_description: null,
               };
 
-              // Build new Records by spreading existing + adding new entry
               const newAchieved = {
                 ...(currentState.achieved_standards || {}),
                 [matchingStandard]: true,
@@ -1163,8 +1032,7 @@ export function AttemptChatSetup({
       }
 
       if (data.type === "summary_recorded" && "summary_preview" in data) {
-        const summaryPreview = (data as { summary_preview?: string })
-          .summary_preview;
+        const summaryPreview = (data as { summary_preview?: string }).summary_preview;
         if (summaryPreview) {
           setOptimisticGradingStates((prev) => {
             const currentState = prev[data.chat_id] || {
@@ -1205,16 +1073,8 @@ export function AttemptChatSetup({
       }
     };
 
-    const handleHintGenerationProgress = (data: {
-      type: string;
-      message: string;
-      error?: string;
-      chat_id: string;
-      message_id: string;
-      hint_ids?: string[];
-      hints_count?: number;
-      hints?: Array<{ idx: number; hint: string }>;
-    }) => {
+    // Hint generation
+    const handleHint = (data: AttemptHintProgressEvent) => {
       if (data.type === "complete" && data.message_id && data.hints_count) {
         let hints: HintsByMessage["hints"] = [];
 
@@ -1231,8 +1091,7 @@ export function AttemptChatSetup({
             .map((hintId, index) => {
               const parts = hintId.split("_");
               const lastPart = parts[parts.length - 1];
-              const idx =
-                parts.length > 1 && lastPart ? parseInt(lastPart, 10) : index;
+              const idx = parts.length > 1 && lastPart ? parseInt(lastPart, 10) : index;
               return {
                 simulation_message_id: data.message_id,
                 hint: "",
@@ -1245,9 +1104,7 @@ export function AttemptChatSetup({
 
         setOptimisticHints((prev) => {
           const chatHints = prev[data.chat_id] || [];
-          const existingIndex = chatHints.findIndex(
-            (h) => h.message_id === data.message_id
-          );
+          const existingIndex = chatHints.findIndex((h) => h.message_id === data.message_id);
 
           const newHintGroup: HintsByMessage = {
             message_id: data.message_id,
@@ -1257,15 +1114,9 @@ export function AttemptChatSetup({
           if (existingIndex >= 0) {
             const updated = [...chatHints];
             updated[existingIndex] = newHintGroup;
-            return {
-              ...prev,
-              [data.chat_id]: updated,
-            };
+            return { ...prev, [data.chat_id]: updated };
           }
-          return {
-            ...prev,
-            [data.chat_id]: [...chatHints, newHintGroup],
-          };
+          return { ...prev, [data.chat_id]: [...chatHints, newHintGroup] };
         });
 
         setMessagesWithNewHints((prev) => {
@@ -1280,125 +1131,59 @@ export function AttemptChatSetup({
       }
     };
 
-    const handleQuizCompleteResponse = (data: {
-      success: boolean;
-      message: string;
-      allCorrect: boolean;
-    }) => {
+    // Quiz result
+    const handleQuizResult = (data: AttemptResponseResultEvent) => {
       if (data.success) {
         router.refresh();
       } else {
-        toast.error(data.message || "Failed to complete quiz");
+        toast.error(data.message || "Failed to process quiz");
       }
     };
 
-    const handleQuizCompleteError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      toast.error(data.message || "Failed to complete quiz");
-    };
-
-    const handleQuizSubmitResponseResponse = (data: {
-      success: boolean;
-      message: string;
-      isCorrect: boolean;
-    }) => {
-      if (data.success) {
-        router.refresh();
-      } else {
-        toast.error(data.message || "Failed to submit quiz response");
+    // Unified error
+    const handleError = (data: AttemptErrorEvent) => {
+      if (sendingMessageTimeoutRef.current) {
+        clearTimeout(sendingMessageTimeoutRef.current);
+        sendingMessageTimeoutRef.current = null;
       }
-    };
-
-    const handleQuizSubmitResponseError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      toast.error(data.message || "Failed to submit quiz response");
-    };
-
-    socket.on("simulation_text_message_token", handleSimulationMessageToken);
-    socket.on(
-      "simulation_text_message_complete",
-      handleSimulationMessageComplete
-    );
-    socket.on("simulation_text_new_message", handleSimulationNewMessage);
-    socket.on("simulation_voice_user_start", handleVoiceSpeechStarted);
-    socket.on("simulation_voice_user_complete", handleVoiceTranscriptComplete);
-    socket.on("simulation_voice_assistant_delta", handleAssistantAudioDelta);
-    socket.on("simulation_text_message_sent", handleMessageSent);
-    socket.on("simulation_text_run_complete", handleSimulationRunComplete);
-    socket.on(
-      "simulation_text_message_cancelled",
-      handleSimulationMessageCancelled
-    );
-    socket.on("simulation_text_message_error", handleSimulationMessageError);
-    socket.on("simulation_text_stopped", handleSimulationStopped);
-    socket.on("simulation_text_ended", handleSimulationContinued);
-    socket.on("simulation_text_end_all_completed", handleEndAllCompleted);
-    socket.on("member_progress_error", handleMemberProgressError);
-    socket.on("simulation_text_stop_error", handleStopSimulationError);
-    socket.on("simulation_text_end_error", handleContinueSimulationError);
-    socket.on(
-      "simulation_text_grading_progress",
-      handleSimulationGradingProgress
-    );
-    socket.on(
-      "simulation_text_hint_generation_progress",
-      handleHintGenerationProgress
-    );
-    socket.on("quiz_complete_response", handleQuizCompleteResponse);
-    socket.on("quiz_complete_error", handleQuizCompleteError);
-    socket.on(
-      "quiz_submit_response_response",
-      handleQuizSubmitResponseResponse
-    );
-    socket.on("quiz_submit_response_error", handleQuizSubmitResponseError);
-    socket.on("simulation_error", (data: { success: boolean; message: string }) => {
-      toast.error(data.message);
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
-    });
+      toast.error(data.message);
+    };
+
+    // Subscribe to events
+    socket.on("attempt_assistant_delta", handleAssistantDelta);
+    socket.on("attempt_assistant_complete", handleAssistantComplete);
+    socket.on("attempt_assistant_start", handleAssistantStart);
+    socket.on("attempt_assistant_audio", handleAssistantAudio);
+    socket.on("attempt_user_start", handleUserStart);
+    socket.on("attempt_user_delta", handleUserDelta);
+    socket.on("attempt_user_complete", handleUserComplete);
+    socket.on("attempt_turn_complete", handleTurnComplete);
+    socket.on("attempt_stopped", handleStopped);
+    socket.on("attempt_chat_ended", handleChatEnded);
+    socket.on("attempt_ended", handleAttemptEnded);
+    socket.on("attempt_grading_progress", handleGrading);
+    socket.on("attempt_hint_progress", handleHint);
+    socket.on("attempt_response_result", handleQuizResult);
+    socket.on("attempt_error", handleError);
 
     return () => {
-      socket.off("simulation_text_message_token", handleSimulationMessageToken);
-      socket.off(
-        "simulation_text_message_complete",
-        handleSimulationMessageComplete
-      );
-      socket.off("simulation_text_new_message", handleSimulationNewMessage);
-      socket.off("simulation_voice_user_start", handleVoiceSpeechStarted);
-      socket.off("simulation_voice_user_complete", handleVoiceTranscriptComplete);
-      socket.off("simulation_voice_assistant_delta", handleAssistantAudioDelta);
-      socket.off("simulation_text_message_sent", handleMessageSent);
-      socket.off("simulation_text_run_complete", handleSimulationRunComplete);
-      socket.off(
-        "simulation_text_message_cancelled",
-        handleSimulationMessageCancelled
-      );
-      socket.off("simulation_text_message_error", handleSimulationMessageError);
-      socket.off("simulation_text_stopped", handleSimulationStopped);
-      socket.off("simulation_text_ended", handleSimulationContinued);
-      socket.off("simulation_text_end_all_completed", handleEndAllCompleted);
-      socket.off("member_progress_error", handleMemberProgressError);
-      socket.off("simulation_text_stop_error", handleStopSimulationError);
-      socket.off("simulation_text_end_error", handleContinueSimulationError);
-      socket.off(
-        "simulation_text_grading_progress",
-        handleSimulationGradingProgress
-      );
-      socket.off(
-        "simulation_text_hint_generation_progress",
-        handleHintGenerationProgress
-      );
-      socket.off("quiz_complete_response", handleQuizCompleteResponse);
-      socket.off("quiz_complete_error", handleQuizCompleteError);
-      socket.off(
-        "quiz_submit_response_response",
-        handleQuizSubmitResponseResponse
-      );
-      socket.off("quiz_submit_response_error", handleQuizSubmitResponseError);
+      socket.off("attempt_assistant_delta", handleAssistantDelta);
+      socket.off("attempt_assistant_complete", handleAssistantComplete);
+      socket.off("attempt_assistant_start", handleAssistantStart);
+      socket.off("attempt_assistant_audio", handleAssistantAudio);
+      socket.off("attempt_user_start", handleUserStart);
+      socket.off("attempt_user_delta", handleUserDelta);
+      socket.off("attempt_user_complete", handleUserComplete);
+      socket.off("attempt_turn_complete", handleTurnComplete);
+      socket.off("attempt_stopped", handleStopped);
+      socket.off("attempt_chat_ended", handleChatEnded);
+      socket.off("attempt_ended", handleAttemptEnded);
+      socket.off("attempt_grading_progress", handleGrading);
+      socket.off("attempt_hint_progress", handleHint);
+      socket.off("attempt_response_result", handleQuizResult);
+      socket.off("attempt_error", handleError);
 
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
@@ -1409,7 +1194,10 @@ export function AttemptChatSetup({
     };
   }, [socket, router, attempt_id, chats, rubricStructure, isGrading, gradingProgress]);
 
-  // Prepare props for each component
+  // ---------------------------------------------------------------------------
+  // COMPONENT PROPS
+  // ---------------------------------------------------------------------------
+
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const timer = attemptData?.timer;
     return {
@@ -1436,7 +1224,6 @@ export function AttemptChatSetup({
       current_dynamic_rubric:
         attemptData?.chats?.[currentChatIndex]?.dynamic_rubric || null,
       expected_chat_count: attemptData?.expected_chat_count || 1,
-      // NEW: Use flat structure - c.id instead of c.chat?.id
       chats:
         attemptData?.chats?.map((c) => ({
           id: c.id || "",
@@ -1463,17 +1250,9 @@ export function AttemptChatSetup({
     const currentChatData = attemptData?.chats?.[currentChatIndex];
 
     if (chatAreaViewMode === "messages") {
-      // Active messages mode - server sends contents with display info
       const props: MessagesViewProps = {
-        messages: currentChatData?.messages?.map((m) => ({
-          id: m.id,
-          type: m.type === "query" ? "query" : "response",
-          created_at: m.created_at,
-          completed: m.completed ?? null,
-          contents: m.contents,  // Server sends display info (name/icon/color)
-          feedbacks: m.feedbacks,  // May be present if grading happened
-          hints: m.hints,  // Present in practice mode
-        })),
+        // Pass server messages directly - they already match MessageData type
+        messages: currentChatData?.messages,
         streaming_content: streamingContent,
         optimistic_messages: optimisticMessages,
         current_chat: currentChat
@@ -1490,18 +1269,9 @@ export function AttemptChatSetup({
       };
       return props;
     } else if (chatAreaViewMode === "graded-messages") {
-      // Graded messages use the same MessagesView with feedbacks present
       const props: MessagesViewProps = {
-        messages:
-          currentChatData?.messages?.map((m) => ({
-            id: m.id,
-            type: m.type === "query" ? "query" : "response",
-            created_at: m.created_at,
-            completed: m.completed ?? null,
-            contents: m.contents,  // Server sends display info (name/icon/color)
-            feedbacks: m.feedbacks,  // Present after grading
-            hints: m.hints,  // Present in practice mode
-          })) || [],
+        // Pass server messages directly - they already match MessageData type
+        messages: currentChatData?.messages || [],
         current_chat: currentChat
           ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
@@ -1514,65 +1284,31 @@ export function AttemptChatSetup({
       };
       return props;
     } else if (chatAreaViewMode === "video") {
-      // Use videos array (first video), questions with nested options
       const firstVideo = currentChatData?.videos?.[0];
-      const questions = currentChatData?.questions ?? [];
-      const responses = currentChatData?.responses ?? [];
-
-      // Questions now have options nested inside (from server)
-      const videoQuestions = questions.map((q) => ({
-        id: q.question_id || "",
-        question_text: q.question_text || "",
-        allow_multiple: q.allow_multiple ?? false,
-        times: q.times ?? [],  // Server sends times array
-        options: (q.options ?? []).map((opt) => ({
-          id: opt.option_id || "",
-          option_text: opt.option_text || "",
-          is_correct: opt.is_correct ?? false,
-        })),
-      }));
-
-      // Map responses to the format VideoView expects
-      const videoResponses = responses.map((r) => ({
-        question_id: r.question_id || "",
-        option_id: r.option_id || "",
-      }));
 
       const props: VideoViewProps = {
         video: {
           id: firstVideo?.video_id || "",
           upload_id: firstVideo?.upload_id || "",
         },
-        questions: videoQuestions,
-        responses: videoResponses,
-        on_submit_response: (questionId: string, optionIds: string[]) => {
-          // Emit quiz response via socket
-          if (socket && currentChat?.id) {
-            socket.emit("quiz_submit_response", {
-              chat_id: currentChat.id,
-              question_id: questionId,
-              option_ids: optionIds,
-            });
-          }
-        },
-        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
+        // Pass questions directly - they already match QuestionEntry type
+        questions: currentChatData?.questions || [],
+        // Pass responses directly - they already match QuizResponse type
+        responses: currentChatData?.responses || [],
+        on_submit_response: handleQuizResponse,
+        disabled: currentChat?.completed ?? false,
       };
       return props;
     } else {
-      // Server sends Records directly - pass through to RubricView
-      const rubricStructure = attemptData?.rubric_structure;
-      const serverGradingState = (currentChat?.id && mergedGradingStates[currentChat.id]) || currentChatData?.grading_state;
+      // Rubric view
+      const serverGradingState =
+        (currentChat?.id && mergedGradingStates[currentChat.id]) ||
+        currentChatData?.grading_state;
 
       const props: RubricViewProps = {
-        standard_groups: rubricStructure?.standard_groups || {},
-        standard_groups_mapping: rubricStructure?.standard_groups_mapping || {},
-        standards_mapping: rubricStructure?.standards_mapping || {},
-        grading_state: serverGradingState ? {
-          achieved_standards: serverGradingState.achieved_standards || {},
-          passed_standards: serverGradingState.passed_standards || {},
-          grade_description: serverGradingState.grade_description ?? undefined,
-          feedback_by_standard_id: serverGradingState.feedback_by_standard_id ?? undefined,
-        } : undefined,
+        // Pass rubric structure directly - it already matches RubricStructureData type
+        rubric_structure: attemptData?.rubric_structure || {},
+        grading_state: serverGradingState,
       };
       return props;
     }
@@ -1584,14 +1320,13 @@ export function AttemptChatSetup({
     chatAreaViewMode,
     streamingContent,
     optimisticMessages,
-    mergedCurrentChatHints,
     mergedGradingStates,
     newHintMessageIds,
     handleSendMessage,
+    handleQuizResponse,
     isSendingMessage,
-    socket,
-    isAttemptOwner,
     isActive,
+    isAttemptOwner,
   ]);
 
   const documentAreaProps: DocumentAreaProps | undefined = useMemo(() => {
@@ -1607,58 +1342,23 @@ export function AttemptChatSetup({
           }
         : null,
     };
-  }, [
-    showDocuments,
-    attemptData?.scenario_documents,
-    selectedDocumentId,
-    currentChat,
-  ]);
+  }, [showDocuments, attemptData?.scenario_documents, selectedDocumentId, currentChat]);
 
   const inputAreaProps = useMemo(() => {
-    // Determine input mode based on scenario settings
     const textEnabled = scenario?.text_enabled !== false;
     const audioEnabled = scenario?.audio_enabled === true;
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    // NEW: Check questions array instead of video?.questions
     const hasVideoQuestions =
       currentChatData?.questions && currentChatData.questions.length > 0;
 
     if (hasVideoQuestions) {
-      // Questions now have options nested inside (from server)
-      const questions = currentChatData?.questions ?? [];
-      const responses = currentChatData?.responses ?? [];
-
-      const formattedQuestions = questions.map((q) => ({
-        id: q.question_id || "",
-        question_text: q.question_text || "",
-        allow_multiple: q.allow_multiple ?? false,
-        options: (q.options ?? []).map((opt) => ({
-          id: opt.option_id || "",
-          option_text: opt.option_text || "",
-          is_correct: opt.is_correct ?? false,
-        })),
-      }));
-
-      // Map responses to the format QuestionResponsesInput expects
-      const formattedResponses = responses.map((r) => ({
-        question_id: r.question_id || "",
-        option_id: r.option_id || "",
-      }));
-
       const props: QuestionResponsesInputProps = {
-        questions: formattedQuestions,
-        responses: formattedResponses,
-        on_submit: (questionId: string, optionIds: string[]) => {
-          // Emit quiz response via socket
-          if (socket && currentChat?.id) {
-            socket.emit("quiz_submit_response", {
-              chat_id: currentChat.id,
-              question_id: questionId,
-              option_ids: optionIds,
-            });
-          }
-        },
-        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
+        // Pass questions directly - they already match QuestionEntry type
+        questions: currentChatData?.questions || [],
+        // Pass responses directly - they already match QuizResponse type
+        responses: currentChatData?.responses || [],
+        on_submit: handleQuizResponse,
+        disabled: currentChat?.completed ?? false,
       };
       return props;
     } else if (audioEnabled && !textEnabled) {
@@ -1705,21 +1405,23 @@ export function AttemptChatSetup({
     isConnected,
     handleSendMessage,
     handleStopMessage,
+    handleQuizResponse,
     handleVoiceStart,
     handleVoiceStop,
     handlePcm16Data,
     handleMicMute,
-    socket,
-    isAttemptOwner,
   ]);
 
-  // Determine which components to use
+  // ---------------------------------------------------------------------------
+  // COMPONENT SELECTION
+  // ---------------------------------------------------------------------------
+
   const ChatAreaComponent = useMemo(() => {
     switch (chatAreaViewMode) {
       case "messages":
         return MessagesView;
       case "graded-messages":
-        return MessagesView;  // Unified component handles both active and graded modes
+        return MessagesView;
       case "video":
         return VideoView;
       case "rubric":
@@ -1733,7 +1435,6 @@ export function AttemptChatSetup({
     const textEnabled = scenario?.text_enabled !== false;
     const audioEnabled = scenario?.audio_enabled === true;
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    // NEW: Check questions array instead of video?.questions
     const hasVideoQuestions =
       currentChatData?.questions && currentChatData.questions.length > 0;
 
@@ -1752,6 +1453,10 @@ export function AttemptChatSetup({
     }
     return undefined;
   }, [InputAreaComponent]);
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
 
   return (
     <GenericChatInterface

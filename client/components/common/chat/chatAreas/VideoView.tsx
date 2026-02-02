@@ -1,43 +1,24 @@
 /**
  * VideoView.tsx
  * Video player with timestamp-based questions
- * Questions appear when video reaches their trigger time
- * Uses QuestionResponsesInput for question display
+ * Uses OpenAPI types directly - no manual type definitions.
  */
 "use client";
 
+import type { components } from "@/lib/api/schema";
 import { useCallback, useRef, useState } from "react";
 import { QuestionResponsesInput } from "../inputAreas/QuestionResponsesInput";
 
-// Simplified prop interface - only what we need
+// ---- OpenAPI types (single source of truth) ----
+type QuestionEntry = components["schemas"]["QuestionEntry"];
+type QuizResponse = components["schemas"]["QuizResponse"];
+
+// Props interface using OpenAPI types
 export interface VideoViewProps {
-  video: {
-    id: string;
-    upload_id: string;
-  };
-
-  // Questions with timestamps (times = when to show)
-  questions: Array<{
-    id: string;
-    question_text: string;
-    allow_multiple: boolean;
-    times: number[]; // Seconds when to show this question
-    options: Array<{
-      id: string;
-      option_text: string;
-      is_correct: boolean;
-    }>;
-  }>;
-
-  // Responses from server (passed through to QuestionResponsesInput)
-  responses: Array<{
-    question_id: string;
-    option_id: string;
-  }>;
-
-  // Callback when user submits answer
+  video: { id: string; upload_id: string };
+  questions: QuestionEntry[];
+  responses: QuizResponse[];
   on_submit_response: (question_id: string, option_ids: string[]) => void;
-
   disabled?: boolean;
 }
 
@@ -55,12 +36,14 @@ export function VideoView({
   // Filter questions that should be shown at current timestamp
   // A question is visible if current time is within 2 seconds of any of its trigger times
   const visibleQuestions = questions.filter((q) => {
+    const qId = q.question_id;
+    const times = q.times || [];
     // If question has been answered, always show it
-    const hasResponse = responses.some((r) => r.question_id === q.id);
+    const hasResponse = responses.some((r) => r.question_id === qId);
     if (hasResponse) return true;
 
     // Otherwise, show if we're at/past any of its trigger times
-    return q.times.some((t) => currentTime >= t && currentTime < t + 30);
+    return times.some((t) => currentTime >= t && currentTime < t + 30);
   });
 
   const handleTimeUpdate = useCallback(() => {
@@ -70,8 +53,10 @@ export function VideoView({
 
       // Pause video when reaching a question timestamp (if not already answered)
       for (const q of questions) {
-        const hasResponse = responses.some((r) => r.question_id === q.id);
-        if (!hasResponse && q.times.includes(time) && !isPaused) {
+        const qId = q.question_id;
+        const times = q.times || [];
+        const hasResponse = responses.some((r) => r.question_id === qId);
+        if (!hasResponse && times.includes(time) && !isPaused) {
           videoRef.current.pause();
           setIsPaused(true);
           break;

@@ -43,7 +43,7 @@ class CreateAgentDepartmentLinkSqlRow(BaseModel):
     agent_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateAgentDepartmentLinkApiRequest(BaseModel):
 
@@ -55,7 +55,7 @@ class CreateAgentDepartmentLinkApiResponse(BaseModel):
     agent_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -77,7 +77,7 @@ class CreateAgentPromptLinkInactiveSqlRow(BaseModel):
     agent_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateAgentPromptLinkInactiveApiRequest(BaseModel):
 
@@ -89,7 +89,7 @@ class CreateAgentPromptLinkInactiveApiResponse(BaseModel):
     agent_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -111,7 +111,7 @@ class CreateAgentPromptLinkSqlRow(BaseModel):
     agent_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateAgentPromptLinkApiRequest(BaseModel):
 
@@ -123,7 +123,7 @@ class CreateAgentPromptLinkApiResponse(BaseModel):
     agent_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -154,7 +154,7 @@ class CreateTestAgentSqlRow(BaseModel):
     model_id: UUID | None = None
     active: bool | None = None
     role: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestAgentApiRequest(BaseModel):
 
@@ -172,7 +172,7 @@ class CreateTestAgentApiResponse(BaseModel):
     model_id: UUID | None = None
     active: bool | None = None
     role: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -200,7 +200,7 @@ class CreateTestProfileSqlRow(BaseModel):
     last_name: str | None = None
     role: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestProfileApiRequest(BaseModel):
 
@@ -216,7 +216,7 @@ class CreateTestProfileApiResponse(BaseModel):
     last_name: str | None = None
     role: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -235,7 +235,7 @@ class CreateTestPromptSqlRow(BaseModel):
 
     prompt_id: UUID | None = None
     system_prompt: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestPromptApiRequest(BaseModel):
 
@@ -245,7 +245,7 @@ class CreateTestPromptApiResponse(BaseModel):
 
     prompt_id: UUID | None = None
     system_prompt: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -288,7 +288,7 @@ class GetAgentByIdSqlRow(BaseModel):
     model_id: UUID | None = None
     active: bool | None = None
     role: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetAgentByIdApiRequest(BaseModel):
 
@@ -302,7 +302,7 @@ class GetAgentByIdApiResponse(BaseModel):
     model_id: UUID | None = None
     active: bool | None = None
     role: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -488,7 +488,7 @@ class CreateCohortDepartmentLinkSqlRow(BaseModel):
     cohort_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateCohortDepartmentLinkApiRequest(BaseModel):
 
@@ -500,7 +500,7 @@ class CreateCohortDepartmentLinkApiResponse(BaseModel):
     cohort_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -522,7 +522,7 @@ class CreateCohortProfileLinkSqlRow(BaseModel):
     cohort_id: UUID | None = None
     profile_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateCohortProfileLinkApiRequest(BaseModel):
 
@@ -534,7 +534,7 @@ class CreateCohortProfileLinkApiResponse(BaseModel):
     cohort_id: UUID | None = None
     profile_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -556,7 +556,7 @@ class CreateProfileDepartmentLinkSqlRow(BaseModel):
     profile_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateProfileDepartmentLinkApiRequest(BaseModel):
 
@@ -567,7 +567,7 @@ class CreateProfileDepartmentLinkApiResponse(BaseModel):
     profile_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -592,7 +592,7 @@ class CreateTestCohortSqlRow(BaseModel):
     title: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestCohortApiRequest(BaseModel):
 
@@ -606,7 +606,7 @@ class CreateTestCohortApiResponse(BaseModel):
     title: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -627,7 +627,7 @@ class GetCohortByIdSqlRow(BaseModel):
     title: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetCohortByIdApiRequest(BaseModel):
 
@@ -639,7 +639,7 @@ class GetCohortByIdApiResponse(BaseModel):
     title: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -661,7 +661,7 @@ class CreateTestDepartmentSqlRow(BaseModel):
     department_id: UUID | None = None
     title: str | None = None
     description: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestDepartmentApiRequest(BaseModel):
 
@@ -673,7 +673,7 @@ class CreateTestDepartmentApiResponse(BaseModel):
     department_id: UUID | None = None
     title: str | None = None
     description: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -693,7 +693,7 @@ class GetDepartmentByIdSqlRow(BaseModel):
     department_id: UUID | None = None
     title: str | None = None
     description: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetDepartmentByIdApiRequest(BaseModel):
 
@@ -704,7 +704,7 @@ class GetDepartmentByIdApiResponse(BaseModel):
     department_id: UUID | None = None
     title: str | None = None
     description: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -753,7 +753,7 @@ class GetProfileDepartmentLinkSqlRow(BaseModel):
     department_id: UUID | None = None
     profile_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetProfileDepartmentLinkApiRequest(BaseModel):
 
@@ -765,7 +765,7 @@ class GetProfileDepartmentLinkApiResponse(BaseModel):
     department_id: UUID | None = None
     profile_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -787,7 +787,7 @@ class CreateDocumentDepartmentLinkSqlRow(BaseModel):
     document_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateDocumentDepartmentLinkApiRequest(BaseModel):
 
@@ -799,7 +799,7 @@ class CreateDocumentDepartmentLinkApiResponse(BaseModel):
     document_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -821,7 +821,7 @@ class CreateDocumentParameterItemLinkSqlRow(BaseModel):
     document_id: UUID | None = None
     parameter_item_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateDocumentParameterItemLinkApiRequest(BaseModel):
 
@@ -833,7 +833,7 @@ class CreateDocumentParameterItemLinkApiResponse(BaseModel):
     document_id: UUID | None = None
     parameter_item_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -858,7 +858,7 @@ class CreateTestDocumentSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestDocumentApiRequest(BaseModel):
 
@@ -872,7 +872,7 @@ class CreateTestDocumentApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -893,7 +893,7 @@ class GetDocumentByIdSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetDocumentByIdApiRequest(BaseModel):
 
@@ -905,7 +905,7 @@ class GetDocumentByIdApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1028,7 +1028,7 @@ class CreateKeyDepartmentLinkSqlRow(BaseModel):
     key_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateKeyDepartmentLinkApiRequest(BaseModel):
 
@@ -1040,7 +1040,7 @@ class CreateKeyDepartmentLinkApiResponse(BaseModel):
     key_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1068,7 +1068,7 @@ class CreateTestKeySqlRow(BaseModel):
     key: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestKeyApiRequest(BaseModel):
 
@@ -1084,7 +1084,7 @@ class CreateTestKeyApiResponse(BaseModel):
     key: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1106,7 +1106,7 @@ class GetKeyByIdSqlRow(BaseModel):
     key: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetKeyByIdApiRequest(BaseModel):
 
@@ -1119,7 +1119,7 @@ class GetKeyByIdApiResponse(BaseModel):
     key: str | None = None
     description: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1139,7 +1139,7 @@ class GetKeyDepartmentLinksSqlRow(BaseModel):
     key_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetKeyDepartmentLinksApiRequest(BaseModel):
 
@@ -1150,7 +1150,7 @@ class GetKeyDepartmentLinksApiResponse(BaseModel):
     key_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1172,7 +1172,7 @@ class CreateParameterItemDepartmentLinkSqlRow(BaseModel):
     parameter_item_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateParameterItemDepartmentLinkApiRequest(BaseModel):
 
@@ -1184,7 +1184,7 @@ class CreateParameterItemDepartmentLinkApiResponse(BaseModel):
     parameter_item_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1212,7 +1212,7 @@ class CreateTestParameterItemSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     value: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestParameterItemApiRequest(BaseModel):
 
@@ -1228,7 +1228,7 @@ class CreateTestParameterItemApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     value: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1259,7 +1259,7 @@ class CreateTestParameterSqlRow(BaseModel):
     active: bool | None = None
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestParameterApiRequest(BaseModel):
 
@@ -1277,7 +1277,7 @@ class CreateTestParameterApiResponse(BaseModel):
     active: bool | None = None
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1299,7 +1299,7 @@ class CreateTestScenarioWithParameterItemSqlRow(BaseModel):
     active: bool | None = None
     parameter_item_id: UUID | None = None
     link_active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestScenarioWithParameterItemApiRequest(BaseModel):
 
@@ -1312,7 +1312,7 @@ class CreateTestScenarioWithParameterItemApiResponse(BaseModel):
     active: bool | None = None
     parameter_item_id: UUID | None = None
     link_active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1335,7 +1335,7 @@ class GetParameterByIdSqlRow(BaseModel):
     active: bool | None = None
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetParameterByIdApiRequest(BaseModel):
 
@@ -1349,7 +1349,7 @@ class GetParameterByIdApiResponse(BaseModel):
     active: bool | None = None
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1369,7 +1369,7 @@ class GetParameterItemDepartmentLinksSqlRow(BaseModel):
     parameter_item_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetParameterItemDepartmentLinksApiRequest(BaseModel):
 
@@ -1380,7 +1380,7 @@ class GetParameterItemDepartmentLinksApiResponse(BaseModel):
     parameter_item_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1402,7 +1402,7 @@ class GetParameterItemsSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     value: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetParameterItemsApiRequest(BaseModel):
 
@@ -1415,7 +1415,7 @@ class GetParameterItemsApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     value: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1437,7 +1437,7 @@ class CreatePersonaDepartmentLinkSqlRow(BaseModel):
     persona_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreatePersonaDepartmentLinkApiRequest(BaseModel):
 
@@ -1449,7 +1449,7 @@ class CreatePersonaDepartmentLinkApiResponse(BaseModel):
     persona_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1474,7 +1474,7 @@ class CreatePersonaDepartmentPromptLinkSqlRow(BaseModel):
     department_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreatePersonaDepartmentPromptLinkApiRequest(BaseModel):
 
@@ -1488,7 +1488,7 @@ class CreatePersonaDepartmentPromptLinkApiResponse(BaseModel):
     department_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1510,7 +1510,7 @@ class CreatePersonaPromptLinkSqlRow(BaseModel):
     persona_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreatePersonaPromptLinkApiRequest(BaseModel):
 
@@ -1522,7 +1522,7 @@ class CreatePersonaPromptLinkApiResponse(BaseModel):
     persona_id: UUID | None = None
     prompt_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1556,7 +1556,7 @@ class CreateTestPersonaSqlRow(BaseModel):
     icon: str | None = None
     active: bool | None = None
     instructions: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestPersonaApiRequest(BaseModel):
 
@@ -1576,7 +1576,7 @@ class CreateTestPersonaApiResponse(BaseModel):
     icon: str | None = None
     active: bool | None = None
     instructions: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1600,7 +1600,7 @@ class GetPersonaByIdSqlRow(BaseModel):
     icon: str | None = None
     active: bool | None = None
     instructions: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetPersonaByIdApiRequest(BaseModel):
 
@@ -1615,7 +1615,7 @@ class GetPersonaByIdApiResponse(BaseModel):
     icon: str | None = None
     active: bool | None = None
     instructions: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1701,7 +1701,7 @@ class CreateProfileEmailSqlRow(BaseModel):
     email: str | None = None
     is_primary: bool | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateProfileEmailApiRequest(BaseModel):
 
@@ -1716,7 +1716,7 @@ class CreateProfileEmailApiResponse(BaseModel):
     email: str | None = None
     is_primary: bool | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1737,8 +1737,8 @@ class GetProfileActivityLatestSqlParams(BaseModel):
 class GetProfileActivityLatestSqlRow(BaseModel):
 
     profile_id: UUID | None = None
-    last_active: str | None = None
-    created_at: str | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
 
 class GetProfileActivityLatestApiRequest(BaseModel):
 
@@ -1747,8 +1747,8 @@ class GetProfileActivityLatestApiRequest(BaseModel):
 class GetProfileActivityLatestApiResponse(BaseModel):
 
     profile_id: UUID | None = None
-    last_active: str | None = None
-    created_at: str | None = None
+    last_active: datetime | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1795,7 +1795,7 @@ class CreateRubricDepartmentLinkSqlRow(BaseModel):
     rubric_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateRubricDepartmentLinkApiRequest(BaseModel):
 
@@ -1807,7 +1807,7 @@ class CreateRubricDepartmentLinkApiResponse(BaseModel):
     rubric_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1876,7 +1876,7 @@ class CreateTestSimulationWithRubricSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     rubric_id: UUID | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestSimulationWithRubricApiRequest(BaseModel):
 
@@ -1894,7 +1894,7 @@ class CreateTestSimulationWithRubricApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     rubric_id: UUID | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1928,7 +1928,7 @@ class CreateTestStandardGroupSqlRow(BaseModel):
     description: str | None = None
     points: int | None = None
     pass_points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestStandardGroupApiRequest(BaseModel):
 
@@ -1948,7 +1948,7 @@ class CreateTestStandardGroupApiResponse(BaseModel):
     description: str | None = None
     points: int | None = None
     pass_points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -1976,7 +1976,7 @@ class CreateTestStandardSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestStandardApiRequest(BaseModel):
 
@@ -1992,7 +1992,7 @@ class CreateTestStandardApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2015,7 +2015,7 @@ class GetRubricByIdSqlRow(BaseModel):
     points: int | None = None
     pass_points: int | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetRubricByIdApiRequest(BaseModel):
 
@@ -2029,7 +2029,7 @@ class GetRubricByIdApiResponse(BaseModel):
     points: int | None = None
     pass_points: int | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2051,7 +2051,7 @@ class GetRubricDepartmentLinkSqlRow(BaseModel):
     rubric_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetRubricDepartmentLinkApiRequest(BaseModel):
 
@@ -2063,7 +2063,7 @@ class GetRubricDepartmentLinkApiResponse(BaseModel):
     rubric_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2083,7 +2083,7 @@ class GetRubricDepartmentLinksSqlRow(BaseModel):
     rubric_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetRubricDepartmentLinksApiRequest(BaseModel):
 
@@ -2094,7 +2094,7 @@ class GetRubricDepartmentLinksApiResponse(BaseModel):
     rubric_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2143,7 +2143,7 @@ class GetRubricStandardGroupsSqlRow(BaseModel):
     description: str | None = None
     points: int | None = None
     pass_points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetRubricStandardGroupsApiRequest(BaseModel):
 
@@ -2158,7 +2158,7 @@ class GetRubricStandardGroupsApiResponse(BaseModel):
     description: str | None = None
     points: int | None = None
     pass_points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2180,7 +2180,7 @@ class GetRubricStandardsSqlRow(BaseModel):
     name: str | None = None
     description: str | None = None
     points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetRubricStandardsApiRequest(BaseModel):
 
@@ -2193,7 +2193,7 @@ class GetRubricStandardsApiResponse(BaseModel):
     name: str | None = None
     description: str | None = None
     points: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2215,7 +2215,7 @@ class CreateScenarioDepartmentLinkSqlRow(BaseModel):
     scenario_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateScenarioDepartmentLinkApiRequest(BaseModel):
 
@@ -2227,7 +2227,7 @@ class CreateScenarioDepartmentLinkApiResponse(BaseModel):
     scenario_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2249,7 +2249,7 @@ class CreateScenarioPersonaLinkSqlRow(BaseModel):
     scenario_id: UUID | None = None
     persona_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateScenarioPersonaLinkApiRequest(BaseModel):
 
@@ -2261,7 +2261,7 @@ class CreateScenarioPersonaLinkApiResponse(BaseModel):
     scenario_id: UUID | None = None
     persona_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2283,7 +2283,7 @@ class CreateScenarioProblemStatementSqlRow(BaseModel):
     scenario_id: UUID | None = None
     problem_statement: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateScenarioProblemStatementApiRequest(BaseModel):
 
@@ -2295,7 +2295,7 @@ class CreateScenarioProblemStatementApiResponse(BaseModel):
     scenario_id: UUID | None = None
     problem_statement: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2315,7 +2315,7 @@ class CreateScenarioTreeEdgeSqlRow(BaseModel):
     parent_id: UUID | None = None
     child_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateScenarioTreeEdgeApiRequest(BaseModel):
 
@@ -2326,7 +2326,7 @@ class CreateScenarioTreeEdgeApiResponse(BaseModel):
     parent_id: UUID | None = None
     child_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2350,7 +2350,7 @@ class CreateSimulationScenarioLinkSqlRow(BaseModel):
     simulation_id: UUID | None = None
     scenario_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateSimulationScenarioLinkApiRequest(BaseModel):
 
@@ -2363,7 +2363,7 @@ class CreateSimulationScenarioLinkApiResponse(BaseModel):
     simulation_id: UUID | None = None
     scenario_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2408,7 +2408,7 @@ class GetScenarioByIdSqlRow(BaseModel):
     scenario_id: UUID | None = None
     name: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetScenarioByIdApiRequest(BaseModel):
 
@@ -2419,7 +2419,7 @@ class GetScenarioByIdApiResponse(BaseModel):
     scenario_id: UUID | None = None
     name: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2441,7 +2441,7 @@ class GetScenarioDepartmentLinkSqlRow(BaseModel):
     scenario_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetScenarioDepartmentLinkApiRequest(BaseModel):
 
@@ -2453,7 +2453,7 @@ class GetScenarioDepartmentLinkApiResponse(BaseModel):
     scenario_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2473,7 +2473,7 @@ class GetScenarioDepartmentLinksSqlRow(BaseModel):
     scenario_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetScenarioDepartmentLinksApiRequest(BaseModel):
 
@@ -2484,7 +2484,7 @@ class GetScenarioDepartmentLinksApiResponse(BaseModel):
     scenario_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2504,7 +2504,7 @@ class GetScenarioProblemStatementSqlRow(BaseModel):
     scenario_id: UUID | None = None
     problem_statement: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetScenarioProblemStatementApiRequest(BaseModel):
 
@@ -2515,7 +2515,7 @@ class GetScenarioProblemStatementApiResponse(BaseModel):
     scenario_id: UUID | None = None
     problem_statement: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2535,7 +2535,7 @@ class GetScenarioProblemStatementsSqlRow(BaseModel):
     scenario_id: UUID | None = None
     problem_statement: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetScenarioProblemStatementsApiRequest(BaseModel):
 
@@ -2546,7 +2546,7 @@ class GetScenarioProblemStatementsApiResponse(BaseModel):
     scenario_id: UUID | None = None
     problem_statement: str | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2566,7 +2566,7 @@ class GetScenarioTreeEdgeSqlRow(BaseModel):
     parent_id: UUID | None = None
     child_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetScenarioTreeEdgeApiRequest(BaseModel):
 
@@ -2577,7 +2577,7 @@ class GetScenarioTreeEdgeApiResponse(BaseModel):
     parent_id: UUID | None = None
     child_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2599,7 +2599,7 @@ class CreateSimulationDepartmentLinkSqlRow(BaseModel):
     simulation_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateSimulationDepartmentLinkApiRequest(BaseModel):
 
@@ -2611,7 +2611,7 @@ class CreateSimulationDepartmentLinkApiResponse(BaseModel):
     simulation_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2640,7 +2640,7 @@ class CreateTestSimulationSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class CreateTestSimulationApiRequest(BaseModel):
 
@@ -2655,7 +2655,7 @@ class CreateTestSimulationApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2732,7 +2732,7 @@ class GetSimulationByIdSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetSimulationByIdApiRequest(BaseModel):
 
@@ -2745,7 +2745,7 @@ class GetSimulationByIdApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2768,7 +2768,7 @@ class GetSimulationByIdWithTimeLimitSqlRow(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     time_limit: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetSimulationByIdWithTimeLimitApiRequest(BaseModel):
 
@@ -2782,7 +2782,7 @@ class GetSimulationByIdWithTimeLimitApiResponse(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     time_limit: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2804,7 +2804,7 @@ class GetSimulationDepartmentLinkSqlRow(BaseModel):
     simulation_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetSimulationDepartmentLinkApiRequest(BaseModel):
 
@@ -2816,7 +2816,7 @@ class GetSimulationDepartmentLinkApiResponse(BaseModel):
     simulation_id: UUID | None = None
     department_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -2838,7 +2838,7 @@ class GetSimulationScenarioLinkSqlRow(BaseModel):
     simulation_id: UUID | None = None
     scenario_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class GetSimulationScenarioLinkApiRequest(BaseModel):
 
@@ -2850,7 +2850,7 @@ class GetSimulationScenarioLinkApiResponse(BaseModel):
     simulation_id: UUID | None = None
     scenario_id: UUID | None = None
     active: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -3022,7 +3022,7 @@ class TestGetActivityByMessageAndEndpointV4CompleteSqlRow(BaseModel):
     endpoint: str | None = None
     profile_id: UUID | None = None
     error: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class TestGetActivityByMessageAndEndpointV4CompleteApiRequest(BaseModel):
 
@@ -3036,7 +3036,7 @@ class TestGetActivityByMessageAndEndpointV4CompleteApiResponse(BaseModel):
     endpoint: str | None = None
     profile_id: UUID | None = None
     error: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -3058,7 +3058,7 @@ class TestGetActivityByMessageV4CompleteSqlRow(BaseModel):
     endpoint: str | None = None
     profile_id: UUID | None = None
     error: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class TestGetActivityByMessageV4CompleteApiRequest(BaseModel):
 
@@ -3071,7 +3071,7 @@ class TestGetActivityByMessageV4CompleteApiResponse(BaseModel):
     endpoint: str | None = None
     profile_id: UUID | None = None
     error: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -3450,7 +3450,7 @@ class TestGetChatByIdV4CompleteSqlRow(BaseModel):
 
     id: UUID | None = None
     completed: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 class TestGetChatByIdV4CompleteApiRequest(BaseModel):
 
@@ -3460,7 +3460,7 @@ class TestGetChatByIdV4CompleteApiResponse(BaseModel):
 
     id: UUID | None = None
     completed: bool | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 
@@ -3559,7 +3559,7 @@ class TestGetProfileActivityV4CompleteSqlParams(BaseModel):
 
 class TestGetProfileActivityV4CompleteSqlRow(BaseModel):
 
-    last_active: str | None = None
+    last_active: datetime | None = None
 
 class TestGetProfileActivityV4CompleteApiRequest(BaseModel):
 
@@ -3567,7 +3567,7 @@ class TestGetProfileActivityV4CompleteApiRequest(BaseModel):
 
 class TestGetProfileActivityV4CompleteApiResponse(BaseModel):
 
-    last_active: str | None = None
+    last_active: datetime | None = None
 
 
 
