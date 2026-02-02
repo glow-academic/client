@@ -5,7 +5,15 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import type { components } from "@/lib/api/schema";
 import type { OutputOf } from "@/lib/api/types";
 import type { ClientToServerEvents, ServerToClientEvents } from "@/lib/ws/types";
@@ -123,6 +131,7 @@ export function AttemptChat({
   const [showObjectives, setShowObjectives] = useState(false);
   const [showObjectivesModal, setShowObjectivesModal] = useState(false);
   const [showGrades, setShowGrades] = useState(false);
+  const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -309,6 +318,16 @@ export function AttemptChat({
   const isActive = attemptData?.is_active ?? true;
   const isAttemptOwner = true;
 
+  // Check if this is a single chat attempt (no pagination needed)
+  const isSingleChatAttempt = chats.length <= 1;
+
+  // Get dynamic rubrics for all chats (for pass/fail badges in pagination)
+  const allDynamicRubrics = useMemo(() => {
+    return chats
+      .map((chat) => chat.dynamic_rubric)
+      .filter((rubric): rubric is NonNullable<typeof rubric> => rubric !== null);
+  }, [chats]);
+
   useEffect(() => {
     currentChatIdRef.current = currentChat?.id ?? null;
   }, [currentChat?.id]);
@@ -387,6 +406,55 @@ export function AttemptChat({
 
     return () => clearTimeout(gracePeriodTimeout);
   }, [attemptData, currentChatIndex]);
+
+  // Auto-show grades/rubric when all chats are completed
+  useEffect(() => {
+    const showResults = attemptData?.show_results ?? false;
+    const chats = attemptData?.chats ?? [];
+
+    if (showResults && chats.length > 0 && !userHasManuallyToggledGrades) {
+      const allCompleted = chats.every((chat) => chat.completed);
+      if (allCompleted) {
+        setShowGrades(true);
+      }
+    }
+  }, [attemptData?.show_results, attemptData?.chats, userHasManuallyToggledGrades]);
+
+  // Auto-select first document/template when chat changes or content becomes available
+  useEffect(() => {
+    const chatDocuments = currentChat?.documents || [];
+    const chatTemplates = currentChat?.templates || [];
+
+    // Create unified list with prefixed IDs (documents first, then templates)
+    const allItems: { id: string; type: "document" | "template" }[] = [
+      ...chatDocuments
+        .filter((doc) => doc.document_id)
+        .map((doc) => ({ id: `doc:${doc.document_id}`, type: "document" as const })),
+      ...chatTemplates
+        .filter((t) => t.template_id)
+        .map((t) => ({ id: `template:${t.template_id}`, type: "template" as const })),
+    ];
+
+    if (allItems.length > 0) {
+      // Check if current selection is valid (support both prefixed and non-prefixed IDs)
+      const currentSelectionValid = selectedDocumentId && allItems.some((item) => {
+        if (item.id === selectedDocumentId) return true;
+        // Check non-prefixed for backwards compatibility
+        if (item.type === "document" && item.id === `doc:${selectedDocumentId}`) return true;
+        if (item.type === "template" && item.id === `template:${selectedDocumentId}`) return true;
+        return false;
+      });
+
+      if (!currentSelectionValid) {
+        const firstItem = allItems[0];
+        if (firstItem) {
+          setSelectedDocumentId(firstItem.id);
+        }
+      }
+    } else {
+      setSelectedDocumentId(null);
+    }
+  }, [currentChat?.documents, currentChat?.templates, currentChat?.id, selectedDocumentId]);
 
   // ---------------------------------------------------------------------------
   // VIEW MODE
@@ -484,6 +552,12 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
   // PUBLIC HANDLERS
   // ---------------------------------------------------------------------------
+
+  // Wrapped setter to track manual rubric toggles
+  const handleToggleGrades = useCallback((show: boolean) => {
+    setShowGrades(show);
+    setUserHasManuallyToggledGrades(true);
+  }, []);
 
   const handleSendMessage = useCallback(
     async (message: string, _isRetry?: boolean) => {
@@ -1200,6 +1274,9 @@ export function AttemptChat({
 
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const timer = attemptData?.timer;
+    const chatDocuments = currentChat?.documents || [];
+    const chatTemplates = currentChat?.templates || [];
+    const hasContent = chatDocuments.length > 0 || chatTemplates.length > 0;
     return {
       timer: timer
         ? {
@@ -1214,9 +1291,10 @@ export function AttemptChat({
       show_documents: showDocuments,
       show_objectives: showObjectives,
       show_rubric: showGrades,
+      has_documents: hasContent,
       on_toggle_documents: setShowDocuments,
       on_toggle_objectives: setShowObjectives,
-      on_toggle_rubric: setShowGrades,
+      on_toggle_rubric: handleToggleGrades,
       objectives: scenario?.objectives || [],
       scenario_title: scenario?.problem_statement || scenario?.name || null,
       attempt: attemptData?.attempt || null,
@@ -1333,16 +1411,12 @@ export function AttemptChat({
     if (!showDocuments) return undefined;
     return {
       visible: showDocuments,
-      documents: attemptData?.scenario_documents || [],
+      documents: currentChat?.documents || [],
+      templates: currentChat?.templates || [],
       selected_document_id: selectedDocumentId,
       on_select_document: setSelectedDocumentId,
-      current_chat: currentChat
-        ? {
-            document_ids: currentChat.document_ids ?? null,
-          }
-        : null,
     };
-  }, [showDocuments, attemptData?.scenario_documents, selectedDocumentId, currentChat]);
+  }, [showDocuments, currentChat, selectedDocumentId]);
 
   const inputAreaProps = useMemo(() => {
     const textEnabled = scenario?.text_enabled !== false;
@@ -1459,23 +1533,127 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   return (
-    <GenericChatInterface
-      chat_header={AttemptChatHeader}
-      chat_area={ChatAreaComponent}
-      document_area={AttemptDocumentArea}
-      input_area={InputAreaComponent}
-      chat_area_view_mode={chatAreaViewMode}
-      on_send_message={handleSendMessage}
-      on_stop_message={handleStopMessage}
-      show_documents={showDocuments}
-      show_document_modal={showDocumentModal}
-      show_objectives_modal={showObjectivesModal}
-      input_panel_height={inputPanelHeight}
-      input_area_ref={inputAreaRef}
-      chat_header_props={chatHeaderProps}
-      chat_area_props={chatAreaProps}
-      document_area_props={documentAreaProps}
-      input_area_props={inputAreaProps}
-    />
+    <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0">
+        <GenericChatInterface
+          chat_header={AttemptChatHeader}
+          chat_area={ChatAreaComponent}
+          document_area={AttemptDocumentArea}
+          input_area={InputAreaComponent}
+          chat_area_view_mode={chatAreaViewMode}
+          on_send_message={handleSendMessage}
+          on_stop_message={handleStopMessage}
+          show_documents={showDocuments}
+          show_document_modal={showDocumentModal}
+          show_objectives_modal={showObjectivesModal}
+          input_panel_height={inputPanelHeight}
+          input_area_ref={inputAreaRef}
+          chat_header_props={chatHeaderProps}
+          chat_area_props={chatAreaProps}
+          document_area_props={documentAreaProps}
+          input_area_props={inputAreaProps}
+        />
+      </div>
+
+      {/* Pagination Footer - Chat Navigation */}
+      {!isSingleChatAttempt && chats.length > 0 && (
+        <div className="border-t px-4 py-3 flex items-center bg-background relative">
+          {/* Left Side - First and Previous Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(0)}
+              disabled={currentChatIndex === 0}
+            >
+              <span className="sr-only">Go to first chat</span>
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(currentChatIndex - 1)}
+              disabled={currentChatIndex === 0}
+            >
+              <span className="sr-only">Go to previous chat</span>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Center - Current Chat Info - Badge + Name + Count */}
+          <div className="flex items-center gap-2 px-4 absolute left-1/2 -translate-x-1/2">
+            {(() => {
+              const chat = chats[currentChatIndex];
+              if (!chat) return null;
+
+              const rubricResult = allDynamicRubrics.find(
+                (rubric) => rubric.chat_id === chat.id
+              );
+
+              return (
+                <>
+                  {chat.completed && !rubricResult ? (
+                    <Badge variant="secondary" className="text-xs">
+                      Incomplete
+                    </Badge>
+                  ) : rubricResult ? (
+                    <Badge
+                      variant={rubricResult.passed ? "default" : "destructive"}
+                      className={`text-xs ${
+                        rubricResult.passed
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                      }`}
+                    >
+                      {rubricResult.passed ? "Pass" : "Fail"}
+                    </Badge>
+                  ) : null}
+                  <span className="text-sm font-medium">
+                    {chat.problem_statement?.problem_statement || `Chat ${currentChatIndex + 1}`}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    ({currentChatIndex + 1} of {chats.length})
+                  </span>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Right Side - Next and Last Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(currentChatIndex + 1)}
+              disabled={currentChatIndex >= chats.length - 1}
+            >
+              <span className="sr-only">Go to next chat</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(chats.length - 1)}
+              disabled={currentChatIndex >= chats.length - 1}
+            >
+              <span className="sr-only">Go to last chat</span>
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

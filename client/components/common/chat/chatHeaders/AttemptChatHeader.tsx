@@ -24,6 +24,7 @@ import {
   FileText,
   Infinity as InfinityIcon,
   ListChecks,
+  Table,
 } from "lucide-react";
 
 // Explicit, self-contained prop interface (like resource components)
@@ -39,6 +40,9 @@ export interface ChatHeaderProps {
   show_documents: boolean;
   show_objectives: boolean;
   show_rubric: boolean;
+
+  // Whether documents exist (controls if toggle button is shown)
+  has_documents?: boolean;
 
   // Callbacks
   on_toggle_documents: (show: boolean) => void;
@@ -94,6 +98,7 @@ export function AttemptChatHeader({
   show_documents,
   show_objectives,
   show_rubric,
+  has_documents = false,
   on_toggle_documents,
   on_toggle_objectives,
   on_toggle_rubric,
@@ -113,7 +118,7 @@ export function AttemptChatHeader({
 
   const shouldShowObjectives =
     simulation?.objectives_enabled && objectives.length > 0;
-  const hasDocuments = show_documents; // This will be determined by parent based on document availability
+  const hasDocuments = has_documents; // Show toggle button if documents exist
 
   return (
     <Collapsible
@@ -163,6 +168,25 @@ export function AttemptChatHeader({
                     <p>
                       {show_objectives ? "Hide Objectives" : "Show Objectives"}
                     </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {display_chat?.completed && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={show_rubric ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => on_toggle_rubric(!show_rubric)}
+                      className={`p-2 ${show_rubric ? "bg-primary text-primary-foreground" : ""}`}
+                      disabled={disabled}
+                    >
+                      <Table className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{show_rubric ? "Hide Rubric" : "Show Rubric"}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
