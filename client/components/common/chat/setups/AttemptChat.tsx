@@ -34,8 +34,10 @@ import {
   GenericChatInterface,
   type ChatAreaViewMode,
 } from "../generic/GenericChatInterface";
-import type { QuestionResponsesInputProps } from "../inputAreas/QuestionResponsesInput";
-import { QuestionResponsesInput } from "../inputAreas/QuestionResponsesInput";
+import type { QuestionReviewViewProps } from "../chatAreas/QuestionReviewView";
+import { QuestionReviewView } from "../chatAreas/QuestionReviewView";
+import type { QuestionTakingInputProps } from "../inputAreas/QuestionTakingInput";
+import { QuestionTakingInput } from "../inputAreas/QuestionTakingInput";
 import type { TextInputProps } from "../inputAreas/TextInput";
 import { TextInput } from "../inputAreas/TextInput";
 import type { VoiceInputHandle, VoiceInputProps } from "../inputAreas/VoiceInput";
@@ -128,6 +130,7 @@ export function AttemptChat({
   const [showObjectives, setShowObjectives] = useState(false);
   const [showObjectivesModal, setShowObjectivesModal] = useState(false);
   const [showGrades, setShowGrades] = useState(false);
+  const [showResponses, setShowResponses] = useState(false);
   const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
@@ -410,7 +413,7 @@ export function AttemptChat({
     return () => clearTimeout(gracePeriodTimeout);
   }, [attemptData, currentChatIndex]);
 
-  // Auto-show grades/rubric when all chats are completed
+  // Auto-show grades/rubric or responses when all chats are completed
   useEffect(() => {
     const showResults = attemptData?.show_results ?? false;
     const chats = attemptData?.chats ?? [];
@@ -418,10 +421,17 @@ export function AttemptChat({
     if (showResults && chats.length > 0 && !userHasManuallyToggledGrades) {
       const allCompleted = chats.every((chat) => chat.completed);
       if (allCompleted) {
-        setShowGrades(true);
+        // Check if current chat has video questions - if so, show responses instead of rubric
+        const currentChatData = attemptData?.chats?.[currentChatIndex];
+        const hasVideoQuestions = (currentChatData?.questions?.length ?? 0) > 0;
+        if (hasVideoQuestions) {
+          setShowResponses(true);
+        } else {
+          setShowGrades(true);
+        }
       }
     }
-  }, [attemptData?.show_results, attemptData?.chats, userHasManuallyToggledGrades]);
+  }, [attemptData?.show_results, attemptData?.chats, userHasManuallyToggledGrades, attemptData, currentChatIndex]);
 
   // Auto-select first document/template when chat changes or content becomes available
   useEffect(() => {
@@ -467,13 +477,18 @@ export function AttemptChat({
     if (showGrades) return "rubric";
     const currentChatData = attemptData?.chats?.[currentChatIndex];
     const hasVideo = currentChatData?.videos?.some((v) => v.upload_id);
+    const hasVideoQuestions = currentChatData?.questions && currentChatData.questions.length > 0;
+
+    // graded-video mode when viewing responses for completed video with questions
+    if (hasVideo && hasVideoQuestions && showResponses) return "graded-video";
     if (hasVideo) return "video";
+
     const hasGradingData =
       currentChatData?.grading_state ||
       currentChatData?.messages?.some((m) => m.feedbacks && m.feedbacks.length > 0);
     if (hasGradingData && currentChat?.completed) return "graded-messages";
     return "messages";
-  }, [showGrades, attemptData, currentChatIndex, currentChat]);
+  }, [showGrades, showResponses, attemptData, currentChatIndex, currentChat]);
 
   // ---------------------------------------------------------------------------
   // MERGED STATES
@@ -1185,6 +1200,8 @@ export function AttemptChat({
     const chatDocuments = currentChat?.documents || [];
     const chatTemplates = currentChat?.templates || [];
     const hasContent = chatDocuments.length > 0 || chatTemplates.length > 0;
+    const currentChatData = attemptData?.chats?.[currentChatIndex];
+    const hasVideoQuestions = (currentChatData?.questions?.length ?? 0) > 0;
     return {
       timer: timer
         ? {
@@ -1199,10 +1216,13 @@ export function AttemptChat({
       show_documents: showDocuments,
       show_objectives: showObjectives,
       show_rubric: showGrades,
+      show_responses: showResponses,
       has_documents: hasContent,
+      has_video_questions: hasVideoQuestions,
       on_toggle_documents: setShowDocuments,
       on_toggle_objectives: setShowObjectives,
       on_toggle_rubric: handleToggleGrades,
+      on_toggle_responses: setShowResponses,
       objectives: (currentChat?.objectives || []).map((o) => o.objective).filter(Boolean) as string[],
       scenario_title: scenario?.problem_statement || scenario?.name || null,
       attempt: attemptData?.attempt || null,
@@ -1239,6 +1259,7 @@ export function AttemptChat({
     showDocuments,
     showObjectives,
     showGrades,
+    showResponses,
   ]);
 
   const chatAreaProps = useMemo(() => {
@@ -1278,6 +1299,7 @@ export function AttemptChat({
       };
       return props;
     } else if (chatAreaViewMode === "video") {
+      // Simplified VideoView - questions are handled in QuestionTakingInput (input area)
       const firstVideo = currentChatData?.videos?.[0];
 
       const props: VideoViewProps = {
@@ -1285,12 +1307,13 @@ export function AttemptChat({
           id: firstVideo?.video_id || "",
           upload_id: firstVideo?.upload_id || "",
         },
-        // Pass questions directly - they already match QuestionEntry type
+      };
+      return props;
+    } else if (chatAreaViewMode === "graded-video") {
+      // QuestionReviewView - shows all questions with full feedback
+      const props: QuestionReviewViewProps = {
         questions: currentChatData?.questions || [],
-        // Pass responses directly - they already match QuizResponse type
         responses: currentChatData?.responses || [],
-        on_submit_response: handleQuizResponse,
-        disabled: currentChat?.completed ?? false,
       };
       return props;
     } else {
@@ -1342,11 +1365,12 @@ export function AttemptChat({
     const hasVideoQuestions =
       currentChatData?.questions && currentChatData.questions.length > 0;
 
-    if (hasVideoQuestions) {
-      const props: QuestionResponsesInputProps = {
+    // Use QuestionTakingInput for video questions (only in taking mode, not graded-video)
+    if (hasVideoQuestions && chatAreaViewMode !== "graded-video") {
+      const props: QuestionTakingInputProps = {
         // Pass questions directly - they already match QuestionEntry type
         questions: currentChatData?.questions || [],
-        // Pass responses directly - they already match QuizResponse type
+        // Pass responses directly - they already match QuizResponse type (for "Your answer" display)
         responses: currentChatData?.responses || [],
         on_submit: handleQuizResponse,
         disabled: currentChat?.completed ?? false,
@@ -1391,6 +1415,7 @@ export function AttemptChat({
     attemptData,
     currentChatIndex,
     currentChat,
+    chatAreaViewMode,
     isSendingMessage,
     isStoppingMessage,
     isConnected,
@@ -1415,6 +1440,8 @@ export function AttemptChat({
         return MessagesView;
       case "video":
         return VideoView;
+      case "graded-video":
+        return QuestionReviewView;
       case "rubric":
         return RubricView;
       default:
@@ -1429,14 +1456,15 @@ export function AttemptChat({
     const hasVideoQuestions =
       currentChatData?.questions && currentChatData.questions.length > 0;
 
-    if (hasVideoQuestions) {
-      return QuestionResponsesInput;
+    // Use QuestionTakingInput for video questions (only when not in graded-video mode)
+    if (hasVideoQuestions && chatAreaViewMode !== "graded-video") {
+      return QuestionTakingInput;
     } else if (audioEnabled && !textEnabled) {
       return VoiceInput;
     } else {
       return TextInput;
     }
-  }, [scenario, attemptData, currentChatIndex]);
+  }, [scenario, attemptData, currentChatIndex, chatAreaViewMode]);
 
   const inputAreaRef = useMemo(() => {
     if (InputAreaComponent === VoiceInput) {
@@ -1450,7 +1478,7 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   // Build pagination footer - only show in graded view modes
-  const isGradedViewMode = chatAreaViewMode === "rubric" || chatAreaViewMode === "graded-messages";
+  const isGradedViewMode = chatAreaViewMode === "rubric" || chatAreaViewMode === "graded-messages" || chatAreaViewMode === "graded-video";
   const paginationFooter = isGradedViewMode && chats.length > 0 ? (
     <div className="border-t px-4 py-3 flex items-center bg-background relative">
       {/* Left Side - First and Previous Buttons */}

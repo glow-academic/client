@@ -20,6 +20,7 @@ import {
 import { formatTime } from "@/utils/time";
 import {
   CheckCircle2,
+  ClipboardCheck,
   Clock,
   FileText,
   Infinity as InfinityIcon,
@@ -40,14 +41,19 @@ export interface ChatHeaderProps {
   show_documents: boolean;
   show_objectives: boolean;
   show_rubric: boolean;
+  show_responses?: boolean; // NEW - current toggle state for video responses
 
   // Whether documents exist (controls if toggle button is shown)
   has_documents?: boolean;
+
+  // Whether video has questions (controls if "View Responses" button is shown)
+  has_video_questions?: boolean;
 
   // Callbacks
   on_toggle_documents: (show: boolean) => void;
   on_toggle_objectives: (show: boolean) => void;
   on_toggle_rubric: (show: boolean) => void;
+  on_toggle_responses?: (show: boolean) => void; // NEW - callback for video responses
 
   // Explicit objectives type - self-contained
   objectives?: Array<string>;
@@ -98,10 +104,13 @@ export function AttemptChatHeader({
   show_documents,
   show_objectives,
   show_rubric,
+  show_responses = false,
   has_documents = false,
+  has_video_questions = false,
   on_toggle_documents,
   on_toggle_objectives,
   on_toggle_rubric,
+  on_toggle_responses,
   objectives = [],
   scenario_title,
   attempt,
@@ -173,7 +182,26 @@ export function AttemptChatHeader({
                 </Tooltip>
               )}
 
-              {display_chat?.completed && (
+              {display_chat?.completed && has_video_questions && on_toggle_responses && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={show_responses ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => on_toggle_responses(!show_responses)}
+                      className={`p-2 ${show_responses ? "bg-primary text-primary-foreground" : ""}`}
+                      disabled={disabled}
+                    >
+                      <ClipboardCheck className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{show_responses ? "Hide Responses" : "View Responses"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {display_chat?.completed && !has_video_questions && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

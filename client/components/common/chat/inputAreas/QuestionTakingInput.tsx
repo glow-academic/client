@@ -1,6 +1,6 @@
 /**
- * QuestionResponsesInput.tsx
- * Question/quiz response input component
+ * QuestionTakingInput.tsx
+ * Question input component for taking mode - shows what user picked but NO correct/incorrect feedback.
  * Uses OpenAPI types directly - no manual type definitions.
  */
 "use client";
@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { components } from "@/lib/api/schema";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 // ---- OpenAPI types (single source of truth) ----
@@ -19,19 +19,19 @@ type QuestionEntry = components["schemas"]["QuestionEntry"];
 type QuizResponse = components["schemas"]["QuizResponse"];
 
 // Props interface using OpenAPI types
-export interface QuestionResponsesInputProps {
+export interface QuestionTakingInputProps {
   questions: QuestionEntry[];
-  responses: QuizResponse[];
+  responses: QuizResponse[]; // Shows "you picked this" on resume - no feedback
   on_submit: (question_id: string, option_ids: string[]) => void;
   disabled?: boolean;
 }
 
-export function QuestionResponsesInput({
+export function QuestionTakingInput({
   questions,
   responses,
   on_submit,
   disabled = false,
-}: QuestionResponsesInputProps) {
+}: QuestionTakingInputProps) {
   // Build lookup: question_id -> selected option_ids from server responses
   const responsesByQuestion = new Map<string, string[]>();
   for (const r of responses) {
@@ -106,27 +106,19 @@ export function QuestionResponsesInput({
               </Label>
 
               {hasResponse ? (
-                // Show results with correct/incorrect styling
+                // Show neutral "Your answer" styling - no green/red feedback
                 <div className="space-y-2 pl-4">
                   {options.map((option) => {
                     const optId = option.option_id || "";
                     const wasSelected = serverResponse.includes(optId);
-                    const isCorrect = option.is_correct;
 
-                    let bgClass = "bg-muted/30";
-                    let icon = null;
-
-                    if (wasSelected && isCorrect) {
-                      bgClass = "bg-green-100 dark:bg-green-900/30 border-green-300";
-                      icon = <CheckCircle2 className="h-4 w-4 text-green-600" />;
-                    } else if (wasSelected && !isCorrect) {
-                      bgClass = "bg-red-100 dark:bg-red-900/30 border-red-300";
-                      icon = <XCircle className="h-4 w-4 text-red-600" />;
-                    } else if (!wasSelected && isCorrect) {
-                      // Show correct answer they missed
-                      bgClass = "bg-green-50 dark:bg-green-900/20 border-green-200";
-                      icon = <CheckCircle2 className="h-4 w-4 text-green-400" />;
-                    }
+                    // Neutral styling - no is_correct check
+                    const bgClass = wasSelected
+                      ? "bg-muted border-primary/50"
+                      : "bg-muted/30";
+                    const icon = wasSelected ? (
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                    ) : null;
 
                     return (
                       <div
@@ -135,6 +127,11 @@ export function QuestionResponsesInput({
                       >
                         {icon}
                         <span className="text-sm">{option.option_text}</span>
+                        {wasSelected && (
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            Your answer
+                          </span>
+                        )}
                       </div>
                     );
                   })}
@@ -147,30 +144,30 @@ export function QuestionResponsesInput({
                       {options.map((option) => {
                         const optId = option.option_id || "";
                         return (
-                        <div
-                          key={optId}
-                          className="flex items-center space-x-2"
-                        >
-                          <Checkbox
-                            id={`${qId}-${optId}`}
-                            checked={localSelection.includes(optId)}
-                            onCheckedChange={(checked) =>
-                              handleAnswerChange(
-                                qId,
-                                optId,
-                                checked === true,
-                                true
-                              )
-                            }
-                            disabled={disabled}
-                          />
-                          <Label
-                            htmlFor={`${qId}-${optId}`}
-                            className="text-sm font-normal cursor-pointer"
+                          <div
+                            key={optId}
+                            className="flex items-center space-x-2"
                           >
-                            {option.option_text}
-                          </Label>
-                        </div>
+                            <Checkbox
+                              id={`${qId}-${optId}`}
+                              checked={localSelection.includes(optId)}
+                              onCheckedChange={(checked) =>
+                                handleAnswerChange(
+                                  qId,
+                                  optId,
+                                  checked === true,
+                                  true
+                                )
+                              }
+                              disabled={disabled}
+                            />
+                            <Label
+                              htmlFor={`${qId}-${optId}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {option.option_text}
+                            </Label>
+                          </div>
                         );
                       })}
                     </div>
@@ -185,22 +182,22 @@ export function QuestionResponsesInput({
                       {options.map((option) => {
                         const optId = option.option_id || "";
                         return (
-                        <div
-                          key={optId}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem
-                            value={optId}
-                            id={`${qId}-${optId}`}
-                            disabled={disabled}
-                          />
-                          <Label
-                            htmlFor={`${qId}-${optId}`}
-                            className="text-sm font-normal cursor-pointer"
+                          <div
+                            key={optId}
+                            className="flex items-center space-x-2"
                           >
-                            {option.option_text}
-                          </Label>
-                        </div>
+                            <RadioGroupItem
+                              value={optId}
+                              id={`${qId}-${optId}`}
+                              disabled={disabled}
+                            />
+                            <Label
+                              htmlFor={`${qId}-${optId}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {option.option_text}
+                            </Label>
+                          </div>
                         );
                       })}
                     </RadioGroup>

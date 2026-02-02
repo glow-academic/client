@@ -27,7 +27,8 @@ import type { RubricViewProps } from "../chatAreas/RubricView";
 import type { VideoViewProps } from "../chatAreas/VideoView";
 import type { ChatHeaderProps } from "../chatHeaders/AttemptChatHeader";
 import type { DocumentAreaProps } from "../documentAreas/AttemptDocumentArea";
-import type { QuestionResponsesInputProps } from "../inputAreas/QuestionResponsesInput";
+import type { QuestionReviewViewProps } from "../chatAreas/QuestionReviewView";
+import type { QuestionTakingInputProps } from "../inputAreas/QuestionTakingInput";
 import type { TextInputProps } from "../inputAreas/TextInput";
 import type { VoiceInputProps } from "../inputAreas/VoiceInput";
 
@@ -37,17 +38,18 @@ export type ChatAreaViewMode =
   | "messages"
   | "graded-messages"
   | "video"
+  | "graded-video"
   | "rubric";
 
 export interface GenericChatInterfaceProps {
   // Pluggable components (like resource components in Persona.tsx)
   chat_header: React.ComponentType<ChatHeaderProps>;
   chat_area: React.ComponentType<
-    MessagesViewProps | VideoViewProps | RubricViewProps
+    MessagesViewProps | VideoViewProps | RubricViewProps | QuestionReviewViewProps
   >;
   document_area?: React.ComponentType<DocumentAreaProps>;
   input_area: React.ComponentType<
-    TextInputProps | VoiceInputProps | QuestionResponsesInputProps
+    TextInputProps | VoiceInputProps | QuestionTakingInputProps
   >;
   input_area_ref?: React.Ref<unknown>;
 
@@ -79,12 +81,12 @@ export interface GenericChatInterfaceProps {
   // Data props are passed via render props - each component receives its own data
   // These are passed to child components by the setup file
   chat_header_props: ChatHeaderProps;
-  chat_area_props: MessagesViewProps | VideoViewProps | RubricViewProps;
+  chat_area_props: MessagesViewProps | VideoViewProps | RubricViewProps | QuestionReviewViewProps;
   document_area_props?: DocumentAreaProps;
   input_area_props:
     | TextInputProps
     | VoiceInputProps
-    | QuestionResponsesInputProps;
+    | QuestionTakingInputProps;
 }
 
 export function GenericChatInterface({
@@ -155,7 +157,8 @@ export function GenericChatInterface({
 
               {/* Input Area - collapse in graded view modes */}
               {chat_area_view_mode !== "rubric" &&
-                chat_area_view_mode !== "graded-messages" && (
+                chat_area_view_mode !== "graded-messages" &&
+                chat_area_view_mode !== "graded-video" && (
                   <div
                     style={{
                       height: `${input_panel_height}px`,
@@ -184,7 +187,8 @@ export function GenericChatInterface({
             disabled={disabled}
             is_graded_view={
               chat_area_view_mode === "rubric" ||
-              chat_area_view_mode === "graded-messages"
+              chat_area_view_mode === "graded-messages" ||
+              chat_area_view_mode === "graded-video"
             }
           />
         )}
