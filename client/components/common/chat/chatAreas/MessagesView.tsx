@@ -445,22 +445,21 @@ export function MessagesView({
                         if (isQuery) {
                           // User message - right aligned
                           return (
-                            <div key={`${message.id}-${contentIndex}`} className="flex justify-end">
-                              <div className="max-w-[80%] flex flex-col items-end gap-2">
-                                {/* Show feedbacks above message (only on first content) */}
-                                {contentIndex === 0 && hasFeedbacks && (
-                                  <div className="w-full space-y-2">
-                                    {feedbacks.map((fb: FeedbackEntry) => (
-                                      <FeedbackDisplay key={fb.id} feedback={fb} />
-                                    ))}
-                                  </div>
-                                )}
-                                <div className="flex items-stretch gap-2 w-full">
-                                  <div
-                                    className="bg-primary text-primary-foreground rounded-lg p-3 flex-1"
-                                    data-testid={`message-${message.id}-content-${contentIndex}`}
-                                    data-message-type="user"
-                                  >
+                            <div key={`${message.id}-${contentIndex}`} className="flex flex-col items-end gap-2">
+                              {/* Show feedbacks above message (only on first content) */}
+                              {contentIndex === 0 && hasFeedbacks && (
+                                <div className="max-w-[90%] space-y-2">
+                                  {feedbacks.map((fb: FeedbackEntry) => (
+                                    <FeedbackDisplay key={fb.id} feedback={fb} />
+                                  ))}
+                                </div>
+                              )}
+                              <div className="flex items-stretch gap-2 max-w-[80%]">
+                                <div
+                                  className="bg-primary text-primary-foreground rounded-lg p-3"
+                                  data-testid={`message-${message.id}-content-${contentIndex}`}
+                                  data-message-type="user"
+                                >
                                     {hasFeedbacks ? (
                                       <MessageContentAdapter
                                         content={contentText}
@@ -470,26 +469,25 @@ export function MessagesView({
                                     ) : (
                                       <Markdown>{contentText}</Markdown>
                                     )}
-                                  </div>
-                                  <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-hidden">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          aria-label={displayName}
-                                          className="flex-1 p-0 rounded-md"
-                                          style={buttonStyle}
-                                          tabIndex={-1}
-                                        >
-                                          <IconComponent className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>{displayName}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-hidden">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        aria-label={displayName}
+                                        className="flex-1 p-0 rounded-md"
+                                        style={buttonStyle}
+                                        tabIndex={-1}
+                                      >
+                                        <IconComponent className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{displayName}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 </div>
                               </div>
                             </div>
@@ -498,17 +496,16 @@ export function MessagesView({
 
                         // Assistant message - left aligned
                         return (
-                          <div key={`${message.id}-${contentIndex}`} className="flex justify-start">
-                            <div className="max-w-[80%] flex flex-col gap-2">
-                              {/* Show feedbacks above message (only on first content) */}
-                              {contentIndex === 0 && hasFeedbacks && (
-                                <div className="space-y-2">
-                                  {feedbacks.map((fb: FeedbackEntry) => (
-                                    <FeedbackDisplay key={fb.id} feedback={fb} />
-                                  ))}
-                                </div>
-                              )}
-                              <div className="flex items-stretch gap-2">
+                          <div key={`${message.id}-${contentIndex}`} className="flex flex-col items-start gap-2">
+                            {/* Show feedbacks above message (only on first content) - wider */}
+                            {contentIndex === 0 && hasFeedbacks && (
+                              <div className="max-w-[90%] space-y-2">
+                                {feedbacks.map((fb: FeedbackEntry) => (
+                                  <FeedbackDisplay key={fb.id} feedback={fb} />
+                                ))}
+                              </div>
+                            )}
+                            <div className="max-w-[80%] flex items-stretch gap-2">
                                 {/* Left-aligned stacked controls */}
                                 <div className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}>
                                   <Tooltip>
@@ -646,9 +643,8 @@ export function MessagesView({
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   );
                 })

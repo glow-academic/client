@@ -87,7 +87,7 @@ export function MessageContentAdapter({
       const after = adaptedContent.substring(range.end);
       adaptedContent =
         before +
-        `<span class="bg-yellow-200 dark:bg-yellow-900 px-1 rounded">${range.text}</span>` +
+        `<span class="underline decoration-2 decoration-green-500 dark:decoration-green-400 underline-offset-2">${range.text}</span>` +
         after;
     }
   }

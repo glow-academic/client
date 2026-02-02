@@ -321,10 +321,19 @@ export function AttemptChat({
   // Check if this is a single chat attempt (no pagination needed)
   const isSingleChatAttempt = chats.length <= 1;
 
-  // Get dynamic rubrics for all chats (for pass/fail badges in pagination)
+  // Get grade data for all chats (for pass/fail badges in pagination)
   const allDynamicRubrics = useMemo(() => {
     return chats
-      .map((chat) => chat.dynamic_rubric)
+      .map((chat) => {
+        const grade = chat.grade;
+        if (!grade || !chat.id) return null;
+        return {
+          chat_id: chat.id,
+          score: grade.score ?? 0,
+          total_possible_points: grade.total_points ?? 0,
+          passed: grade.passed ?? false,
+        };
+      })
       .filter((rubric): rubric is NonNullable<typeof rubric> => rubric !== null);
   }, [chats]);
 
@@ -1295,12 +1304,21 @@ export function AttemptChat({
       on_toggle_documents: setShowDocuments,
       on_toggle_objectives: setShowObjectives,
       on_toggle_rubric: handleToggleGrades,
-      objectives: scenario?.objectives || [],
+      objectives: (currentChat?.objectives || []).map((o) => o.objective).filter(Boolean) as string[],
       scenario_title: scenario?.problem_statement || scenario?.name || null,
       attempt: attemptData?.attempt || null,
       simulation: attemptData?.simulation || null,
-      current_dynamic_rubric:
-        attemptData?.chats?.[currentChatIndex]?.dynamic_rubric || null,
+      current_dynamic_rubric: (() => {
+        const chatData = attemptData?.chats?.[currentChatIndex];
+        const grade = chatData?.grade;
+        if (!grade || !chatData?.id) return null;
+        return {
+          chat_id: chatData.id,
+          score: grade.score ?? 0,
+          total_possible_points: grade.total_points ?? 0,
+          passed: grade.passed ?? false,
+        };
+      })(),
       expected_chat_count: attemptData?.expected_chat_count || 1,
       chats:
         attemptData?.chats?.map((c) => ({

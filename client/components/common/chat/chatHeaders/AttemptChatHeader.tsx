@@ -137,6 +137,7 @@ export function AttemptChatHeader({
             <div className="flex items-center gap-4">
               {!attempt?.infinite_mode &&
                 display_chat?.completed &&
+                !current_dynamic_rubric &&
                 expected_chat_count ===
                   chats.filter((chat) => chat?.completed).length && (
                   <Badge variant="default">Completed</Badge>
