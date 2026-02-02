@@ -136,7 +136,7 @@ export function GenericChatInterface({
               {/* Messages/Rubric/Video Area */}
               <div className="flex-1 min-h-0 flex flex-col relative">
                 {/* Background image layer - only behind messages area */}
-                {backgroundImageUrl && (
+                {backgroundImageUrl && chat_area_view_mode !== "rubric" && (
                   <div
                     className="absolute inset-0 z-0 pointer-events-none"
                     style={{
