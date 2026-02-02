@@ -1,96 +1,122 @@
 /**
  * MessageContentAdapter.tsx
- * Pure component for adapting message content with replacements and highlights
- * Used in MessagesView when feedbacks are present
- * Explicit, self-contained types
+ * Pure component for adapting message content with hover-based annotations
+ * Shows highlights/replacements only for the currently hovered feedback
  */
 "use client";
 
 import Markdown from "@/components/common/chat/markdown/Markdown";
 
+// Feedback entry type (matches API schema)
+export interface FeedbackEntryForAdapter {
+  id: string;
+  type: string | null; // "strength" | "improvement"
+  highlights?: Array<{ section: string | null }> | null;
+  replaces?: Array<{ section: string | null; replace: string | null }> | null;
+}
+
 export interface MessageContentAdapterProps {
   content: string;
-  replaces: Array<{ section: string; replace: string }>;
-  highlights: Array<{ section: string }>;
+  feedbacks: FeedbackEntryForAdapter[];
+  hoveredFeedbackId: string | null;
 }
 
 export function MessageContentAdapter({
   content,
-  replaces,
-  highlights,
+  feedbacks,
+  hoveredFeedbackId,
 }: MessageContentAdapterProps) {
-  if (replaces.length === 0 && highlights.length === 0) {
+  // If nothing hovered, show clean text
+  if (!hoveredFeedbackId) {
     return <Markdown>{content}</Markdown>;
   }
 
-  // Process replacements first (strikethrough + replacement)
-  let adaptedContent = content;
-  const replacementRanges: Array<{
+  // Find the hovered feedback
+  const hoveredFeedback = feedbacks.find((f) => f.id === hoveredFeedbackId);
+  if (!hoveredFeedback) {
+    return <Markdown>{content}</Markdown>;
+  }
+
+  // Get annotations for this specific feedback
+  const highlights = hoveredFeedback.highlights || [];
+  const replaces = hoveredFeedback.replaces || [];
+
+  if (highlights.length === 0 && replaces.length === 0) {
+    return <Markdown>{content}</Markdown>;
+  }
+
+  // Single-pass annotation: collect all ranges first
+  type AnnotationRange = {
     start: number;
     end: number;
+    type: "highlight" | "replacement";
     original: string;
-    replacement: string;
-  }> = [];
+    replacement?: string;
+  };
 
-  for (const replaceItem of replaces) {
-    const section = replaceItem.section;
-    const index = adaptedContent.indexOf(section);
+  const ranges: AnnotationRange[] = [];
+
+  // Collect highlight ranges
+  for (const h of highlights) {
+    if (!h.section) continue;
+    const index = content.indexOf(h.section);
     if (index !== -1) {
-      replacementRanges.push({
+      ranges.push({
         start: index,
-        end: index + section.length,
-        original: section,
-        replacement: replaceItem.replace,
+        end: index + h.section.length,
+        type: "highlight",
+        original: h.section,
       });
     }
   }
 
-  // Sort by start position (reverse order to avoid index shifting)
-  replacementRanges.sort((a, b) => b.start - a.start);
-
-  // Apply replacements
-  for (const range of replacementRanges) {
-    const before = adaptedContent.substring(0, range.start);
-    const after = adaptedContent.substring(range.end);
-    adaptedContent =
-      before +
-      `<span class="line-through text-muted-foreground">${range.original}</span> <span class="text-green-600 dark:text-green-400">${range.replacement}</span>` +
-      after;
-  }
-
-  // Process highlights
-  const highlightRanges: Array<{ start: number; end: number; text: string }> =
-    [];
-  for (const highlightItem of highlights) {
-    const section = highlightItem.section;
-    const index = adaptedContent.indexOf(section);
+  // Collect replacement ranges
+  for (const r of replaces) {
+    if (!r.section || !r.replace) continue;
+    const index = content.indexOf(r.section);
     if (index !== -1) {
-      highlightRanges.push({
+      ranges.push({
         start: index,
-        end: index + section.length,
-        text: section,
+        end: index + r.section.length,
+        type: "replacement",
+        original: r.section,
+        replacement: r.replace,
       });
     }
   }
 
-  // Sort by start position (reverse order)
-  highlightRanges.sort((a, b) => b.start - a.start);
-
-  // Apply highlights (only if not already replaced)
-  for (const range of highlightRanges) {
-    // Check if this range overlaps with any replacement
-    const overlapsReplacement = replacementRanges.some(
-      (r) => !(range.end <= r.start || range.start >= r.end)
-    );
-    if (!overlapsReplacement) {
-      const before = adaptedContent.substring(0, range.start);
-      const after = adaptedContent.substring(range.end);
-      adaptedContent =
-        before +
-        `<span class="underline decoration-2 decoration-green-500 dark:decoration-green-400 underline-offset-2">${range.text}</span>` +
-        after;
-    }
+  if (ranges.length === 0) {
+    return <Markdown>{content}</Markdown>;
   }
 
-  return <Markdown>{adaptedContent}</Markdown>;
+  // Sort by start position (ascending for building output)
+  ranges.sort((a, b) => a.start - b.start);
+
+  // Build annotated content
+  let result = "";
+  let lastEnd = 0;
+
+  for (const range of ranges) {
+    // Skip overlapping ranges (keep first one)
+    if (range.start < lastEnd) continue;
+
+    // Add text before this range
+    result += content.substring(lastEnd, range.start);
+
+    // Add annotated text
+    if (range.type === "highlight") {
+      // Strength: green underline on the good text
+      result += `<span class="underline decoration-2 decoration-green-500 dark:decoration-green-400 underline-offset-2">${range.original}</span>`;
+    } else {
+      // Improvement: amber strikethrough on original (keep text color), then underlined replacement
+      result += `<span class="line-through decoration-amber-500 decoration-2">${range.original}</span> <span class="underline decoration-2 decoration-green-500 dark:decoration-green-400 underline-offset-2">${range.replacement}</span>`;
+    }
+
+    lastEnd = range.end;
+  }
+
+  // Add remaining text
+  result += content.substring(lastEnd);
+
+  return <Markdown>{result}</Markdown>;
 }

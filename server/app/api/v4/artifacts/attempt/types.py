@@ -359,7 +359,7 @@ class MessageFeedbackEntry(BaseModel):
     - type="improvement": has replaces (sections to replace with suggestions)
     """
 
-    id: UUID
+    id: str  # Unique ID: {message_id}-{type}-{index}
     name: str | None = None
     description: str | None = None
     type: str | None = None  # "strength" | "improvement"

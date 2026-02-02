@@ -32,6 +32,8 @@ class GradeItem(BaseModel):
     passed: bool | None = None
     description: str | None = None
     time_taken: int | None = None
+    total_points: int | None = None
+    pass_points: int | None = None
 
 
 class ChatViewItem(BaseModel):

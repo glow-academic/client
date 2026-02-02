@@ -14254,6 +14254,10 @@ export interface components {
             description?: string | null;
             /** Time Taken */
             time_taken?: number | null;
+            /** Total Points */
+            total_points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
         };
         /**
          * GradingStateData
@@ -15099,10 +15103,7 @@ export interface components {
          *     - type="improvement": has replaces (sections to replace with suggestions)
          */
         MessageFeedbackEntry: {
-            /**
-             * Id
-             * Format: uuid
-             */
+            /** Id */
             id: string;
             /** Name */
             name?: string | null;
@@ -21234,6 +21235,10 @@ export interface components {
             score: number | null;
             /** Time Taken */
             time_taken: number | null;
+            /** Total Points */
+            total_points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
         };
         /** QGetSimulationAttemptV4GradingState */
         QGetSimulationAttemptV4GradingState: {

@@ -77,17 +77,31 @@ const normalizeMessageContent = (content: string): string => {
   return content.trim().toLowerCase();
 };
 
-// Component to display feedback (strength or improvement)
-function FeedbackDisplay({ feedback }: { feedback: FeedbackEntry | null }) {
+// Component to display feedback (strength or improvement) with hover support
+function FeedbackDisplay({
+  feedback,
+  isHovered,
+  onHoverStart,
+  onHoverEnd,
+}: {
+  feedback: FeedbackEntry | null;
+  isHovered?: boolean;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
+}) {
   if (!feedback) return null;
   const isStrength = feedback.type === "strength";
   return (
     <div
+      onMouseEnter={onHoverStart}
+      onMouseLeave={onHoverEnd}
       className={cn(
-        "mb-2 rounded-lg border p-3",
+        "rounded-lg border-2 p-3 transition-colors duration-200 cursor-pointer",
         isStrength
-          ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
-          : "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400"
+          ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+          : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+        isHovered && isStrength && "border-green-500 bg-green-500/20",
+        isHovered && !isStrength && "border-amber-500 bg-amber-500/20"
       )}
     >
       <div className="text-sm font-semibold mb-1">{feedback.name}</div>
@@ -124,6 +138,9 @@ export function MessagesView({
   const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
     new Set()
   );
+
+  // State for feedback hover - shows annotations in message when hovering feedback card
+  const [hoveredFeedbackId, setHoveredFeedbackId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!new_hint_message_ids) return;
@@ -369,11 +386,9 @@ export function MessagesView({
                   const hasNewHints = messagesWithNewHints.has(message.id);
                   const isHintSelected = selectedHintMessageId === message.id;
 
-                  // Feedbacks for graded messages (collect highlights/replaces)
+                  // Feedbacks for graded messages
                   const feedbacks = message.feedbacks || [];
                   const hasFeedbacks = feedbacks.length > 0;
-                  const allHighlights = feedbacks.flatMap((f) => f.highlights || []);
-                  const allReplaces = feedbacks.flatMap((f) => f.replaces || []);
 
                   // Handle empty/loading states at message level
                   if (contents.length === 0) {
@@ -450,7 +465,13 @@ export function MessagesView({
                               {contentIndex === 0 && hasFeedbacks && (
                                 <div className="max-w-[90%] space-y-2">
                                   {feedbacks.map((fb: FeedbackEntry) => (
-                                    <FeedbackDisplay key={fb.id} feedback={fb} />
+                                    <FeedbackDisplay
+                                      key={fb.id}
+                                      feedback={fb}
+                                      isHovered={hoveredFeedbackId === fb.id}
+                                      onHoverStart={() => setHoveredFeedbackId(fb.id)}
+                                      onHoverEnd={() => setHoveredFeedbackId(null)}
+                                    />
                                   ))}
                                 </div>
                               )}
@@ -463,8 +484,8 @@ export function MessagesView({
                                     {hasFeedbacks ? (
                                       <MessageContentAdapter
                                         content={contentText}
-                                        replaces={allReplaces}
-                                        highlights={allHighlights}
+                                        feedbacks={feedbacks}
+                                        hoveredFeedbackId={hoveredFeedbackId}
                                       />
                                     ) : (
                                       <Markdown>{contentText}</Markdown>
@@ -501,7 +522,13 @@ export function MessagesView({
                             {contentIndex === 0 && hasFeedbacks && (
                               <div className="max-w-[90%] space-y-2">
                                 {feedbacks.map((fb: FeedbackEntry) => (
-                                  <FeedbackDisplay key={fb.id} feedback={fb} />
+                                  <FeedbackDisplay
+                                    key={fb.id}
+                                    feedback={fb}
+                                    isHovered={hoveredFeedbackId === fb.id}
+                                    onHoverStart={() => setHoveredFeedbackId(fb.id)}
+                                    onHoverEnd={() => setHoveredFeedbackId(null)}
+                                  />
                                 ))}
                               </div>
                             )}
@@ -632,8 +659,8 @@ export function MessagesView({
                                       {hasFeedbacks ? (
                                         <MessageContentAdapter
                                           content={contentText}
-                                          replaces={allReplaces}
-                                          highlights={allHighlights}
+                                          feedbacks={feedbacks}
+                                          hoveredFeedbackId={hoveredFeedbackId}
                                         />
                                       ) : (
                                         <Markdown>{contentText}</Markdown>

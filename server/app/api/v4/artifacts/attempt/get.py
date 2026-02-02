@@ -563,16 +563,18 @@ async def attempt_get(
 
                 # Add strengths as type="strength"
                 if msg.strengths:
-                    for s in msg.strengths:
+                    for idx, s in enumerate(msg.strengths):
                         highlights: list[HighlightEntry] = []
                         if s.highlights:
                             for h in s.highlights:
                                 highlights.append(
                                     HighlightEntry(section=h.section, idx=h.idx)
                                 )
+                        # Generate unique ID: message_id + type + index
+                        feedback_id = f"{msg.message_id}-strength-{idx}"
                         feedbacks.append(
                             MessageFeedbackEntry(
-                                id=msg.message_id,
+                                id=feedback_id,
                                 name=s.name,
                                 description=s.description,
                                 type="strength",
@@ -583,7 +585,7 @@ async def attempt_get(
 
                 # Add improvements as type="improvement"
                 if msg.improvements:
-                    for i in msg.improvements:
+                    for idx, i in enumerate(msg.improvements):
                         replaces: list[ReplacementEntry] = []
                         if i.replacements:
                             for r in i.replacements:
@@ -594,9 +596,11 @@ async def attempt_get(
                                         idx=r.idx,
                                     )
                                 )
+                        # Generate unique ID: message_id + type + index
+                        feedback_id = f"{msg.message_id}-improvement-{idx}"
                         feedbacks.append(
                             MessageFeedbackEntry(
-                                id=msg.message_id,
+                                id=feedback_id,
                                 name=i.name,
                                 description=i.description,
                                 type="improvement",
@@ -667,16 +671,15 @@ async def attempt_get(
 
             # Build grade data
             grade = None
-            # Build grade from chat grade composite + rubric metadata for points
+            # Build grade from chat grade composite (total_points/pass_points now come directly from grade)
             if chat_item.grade:
-                rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {}) if chat_item.rubric_id else {}
                 grade = GradeData(
                     score=chat_item.grade.score,
                     passed=chat_item.grade.passed,
                     description=chat_item.grade.description,
                     time_taken=chat_item.grade.time_taken,
-                    total_points=rubric_meta.get("total_points"),
-                    pass_points=rubric_meta.get("pass_points"),
+                    total_points=chat_item.grade.total_points,
+                    pass_points=chat_item.grade.pass_points,
                 )
 
             # Transform feedbacks (with standard_group_id from standards metadata)

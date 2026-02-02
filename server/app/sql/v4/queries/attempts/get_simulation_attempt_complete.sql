@@ -158,7 +158,9 @@ CREATE TYPE types.q_get_simulation_attempt_v4_grade AS (
     description text,
     passed boolean,
     score int,
-    time_taken int
+    time_taken int,
+    total_points int,
+    pass_points int
 );
 
 -- Grading state types (convert dicts to arrays)
@@ -1178,7 +1180,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(scg.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
+        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(scg.time_taken, 0), scg.total_points, scg.pass_points)::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     CROSS JOIN chat_ids_list cil
     JOIN all_chats c ON c.id = ANY(cil.chat_ids)

@@ -2946,6 +2946,8 @@ class QGetSimulationAttemptV4Grade(BaseModel):
     passed: bool | None
     score: int | None
     time_taken: int | None
+    total_points: int | None
+    pass_points: int | None
 
 
 

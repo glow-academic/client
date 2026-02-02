@@ -61416,6 +61416,28 @@
               }
             ],
             "title": "Time Taken"
+          },
+          "total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
           }
         },
         "type": "object",
@@ -64525,7 +64547,6 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid",
             "title": "Id"
           },
           "name": {
@@ -96498,6 +96519,28 @@
               }
             ],
             "title": "Time Taken"
+          },
+          "total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
           }
         },
         "type": "object",
@@ -96509,7 +96552,9 @@
           "description",
           "passed",
           "score",
-          "time_taken"
+          "time_taken",
+          "total_points",
+          "pass_points"
         ],
         "title": "QGetSimulationAttemptV4Grade"
       },
