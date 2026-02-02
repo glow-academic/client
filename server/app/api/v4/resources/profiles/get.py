@@ -7,38 +7,18 @@ from typing import cast
 from uuid import UUID
 
 import asyncpg
-from pydantic import BaseModel
 
+from app.sql.types import (
+    GetProfilesSqlParams,
+    GetProfilesSqlRow,
+    QGetProfilesV4Item,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/profiles/get_profiles_complete.sql"
-
-
-# =============================================================================
-# Batch Types
-# =============================================================================
-
-
-class QGetProfilesV4Item(BaseModel):
-    """Profile item from batch SQL query."""
-
-    profile_id: UUID | None = None
-    name: str | None = None
-
-
-class GetProfilesSqlParams(BaseModel):
-    """SQL parameters for batch get_profiles."""
-
-    p_ids: list[UUID]
-
-
-class GetProfilesSqlRow(BaseModel):
-    """SQL result row for batch."""
-
-    items: list[QGetProfilesV4Item] | None = None
 
 
 # =============================================================================

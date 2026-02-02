@@ -12,6 +12,11 @@ from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetStandardGroupsSqlParams,
+    GetStandardGroupsSqlRow,
+    QGetStandardGroupsV4Item,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -25,28 +30,6 @@ router = APIRouter()
 # =============================================================================
 # Types
 # =============================================================================
-
-
-class QGetStandardGroupsV4Item(BaseModel):
-    """Standard group item from SQL query."""
-
-    standard_group_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    points: float | None = None
-    pass_points: float | None = None
-
-
-class GetStandardGroupsSqlParams(BaseModel):
-    """SQL parameters for get_standard_groups."""
-
-    p_ids: list[UUID]
-
-
-class GetStandardGroupsSqlRow(BaseModel):
-    """SQL result row."""
-
-    items: list[QGetStandardGroupsV4Item] | None = None
 
 
 class GetStandardGroupsApiRequest(BaseModel):

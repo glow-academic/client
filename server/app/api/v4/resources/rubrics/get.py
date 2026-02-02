@@ -8,15 +8,17 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
     GetRubricsApiRequest,
     GetRubricsApiResponse,
+    GetRubricsBatchSqlParams,
+    GetRubricsBatchSqlRow,
     GetRubricsSqlParams,
     GetRubricsSqlRow,
+    QGetRubricsBatchV4Item,
     QGetRubricsV4Item,
     load_sql_query,
 )
@@ -30,33 +32,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/rubrics/get_rubrics_batch_complet
 
 
 router = APIRouter()
-
-
-# =============================================================================
-# Batch Types
-# =============================================================================
-
-
-class QGetRubricsBatchV4Item(BaseModel):
-    """Rubric item from batch SQL query."""
-
-    rubric_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    total_points: float | None = None
-    pass_points: float | None = None
-
-
-class GetRubricsBatchSqlParams(BaseModel):
-    """SQL parameters for batch get_rubrics."""
-
-    p_ids: list[UUID]
-
-
-class GetRubricsBatchSqlRow(BaseModel):
-    """SQL result row for batch."""
-
-    items: list[QGetRubricsBatchV4Item] | None = None
 
 
 # =============================================================================
