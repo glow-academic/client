@@ -1,8 +1,7 @@
 """Custom types for unified attempt detail endpoint.
 
-These types define the client-facing API contract for both home and practice
-attempt detail via a single `practice: bool` parameter. Internal parameters
-are NOT included here - they are injected by Python.
+These types define the client-facing API contract for attempt detail.
+The practice flag is determined server-side from the attempt data itself.
 """
 
 from datetime import datetime
@@ -311,12 +310,9 @@ class GetAttemptDetailRequest(BaseModel):
 
     Args:
         attempt_id: The attempt ID to fetch details for.
-        practice: If True, includes hints in messages and is_archived in attempt.
-            If False, includes cohort_id in attempt.
     """
 
     attempt_id: UUID
-    practice: bool = False
 
 
 class HighlightEntry(BaseModel):

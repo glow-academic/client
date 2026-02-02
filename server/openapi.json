@@ -10199,7 +10199,7 @@
           "attempt"
         ],
         "summary": "Attempt Get",
-        "description": "Get attempt detail with parallel MV fetching.\n\nUnified endpoint for home and practice attempt detail, differentiated by\n`practice: bool` parameter.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with strengths/improvements/hints)\n\nEach query runs on its own connection from the pool for true parallelism.",
+        "description": "Get attempt detail with parallel MV fetching.\n\nUses view internal handlers with pool-based parallel fetch:\n- View 1: simulation_attempts (attempt-level aggregates)\n- View 2: simulation_chats (chat-level data with grades/feedbacks)\n- View 3: simulation_messages (message-level data with strengths/improvements/hints)\n\nEach query runs on its own connection from the pool for true parallelism.\nThe practice flag is determined from the attempt data itself.",
         "operationId": "attempt_get_api_v4_attempt_get_post",
         "parameters": [
           {
@@ -29523,6 +29523,24 @@
         "title": "AnalysisEntry",
         "description": "Analysis entry for chat-level analysis content."
       },
+      "AnalysisItem": {
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "title": "AnalysisItem",
+        "description": "Analysis item with content."
+      },
       "ArgsApiRequest": {
         "properties": {
           "agent_id": {
@@ -32543,6 +32561,20 @@
               }
             ],
             "title": "Feedbacks"
+          },
+          "analyses": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnalysisItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyses"
           },
           "persona_ids": {
             "anyOf": [
@@ -37865,11 +37897,6 @@
             "type": "string",
             "format": "uuid",
             "title": "Attempt Id"
-          },
-          "practice": {
-            "type": "boolean",
-            "title": "Practice",
-            "default": false
           }
         },
         "type": "object",
@@ -37877,7 +37904,7 @@
           "attempt_id"
         ],
         "title": "GetAttemptDetailRequest",
-        "description": "Client API request for attempt detail.\n\nArgs:\n    attempt_id: The attempt ID to fetch details for.\n    practice: If True, includes hints in messages and is_archived in attempt.\n        If False, includes cohort_id in attempt."
+        "description": "Client API request for attempt detail.\n\nArgs:\n    attempt_id: The attempt ID to fetch details for."
       },
       "GetAttemptDetailResponse": {
         "properties": {
@@ -61426,17 +61453,6 @@
               }
             ],
             "title": "Passed"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
           },
           "time_taken": {
             "anyOf": [

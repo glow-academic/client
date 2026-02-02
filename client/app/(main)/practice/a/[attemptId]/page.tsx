@@ -1,6 +1,6 @@
 /**
  * app/practice/a/[attemptId]/page.tsx
- * Practice attempt page - uses the same endpoint as home with practice=true.
+ * Practice attempt page - uses the same endpoint as home.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -16,14 +16,13 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
- * Uses practice=true to include hints and is_archived.
+ * Practice mode is determined server-side from the attempt data.
  */
 const getAttemptDetail = async (
   attemptId: string,
-  practice: boolean = true,
 ): Promise<AttemptDetailOut> => {
   return api.post("/attempt/get", {
-    body: { attempt_id: attemptId, practice },
+    body: { attempt_id: attemptId },
   }, {
     cache: "no-store",
     headers: {

@@ -30,10 +30,15 @@ class GradeItem(BaseModel):
 
     score: float | None = None
     passed: bool | None = None
-    description: str | None = None
     time_taken: int | None = None
     total_points: int | None = None
     pass_points: int | None = None
+
+
+class AnalysisItem(BaseModel):
+    """Analysis item with content."""
+
+    content: str | None = None
 
 
 class ChatViewItem(BaseModel):
@@ -71,6 +76,9 @@ class ChatViewItem(BaseModel):
 
     # Feedbacks
     feedbacks: list[FeedbackItem] | None = None
+
+    # Analyses
+    analyses: list[AnalysisItem] | None = None
 
     # Resource IDs - Normal/General View (plural arrays)
     persona_ids: list[UUID] | None = None

@@ -17,13 +17,13 @@ type AttemptDetailOut = OutputOf<"/api/v4/attempt/get", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
+ * Practice mode is determined server-side from the attempt data.
  */
 const getAttemptDetail = async (
   attemptId: string,
-  practice: boolean = false,
 ): Promise<AttemptDetailOut> => {
   return api.post("/attempt/get", {
-    body: { attempt_id: attemptId, practice },
+    body: { attempt_id: attemptId },
   }, {
     cache: "no-store",
     headers: {

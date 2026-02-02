@@ -1,8 +1,8 @@
 """Attempt detail endpoint - POST /attempt/get.
 
-Unified endpoint for both home and practice attempt detail, differentiated by
-`practice: bool` parameter. Uses view internal handlers with parallel query
-execution:
+Unified endpoint for attempt detail. The practice flag is determined from
+the attempt data itself (not from client request). Uses view internal handlers
+with parallel query execution:
 1. Query 1 (Attempt): Attempt-level data via simulation_attempts view
 2. Query 2 (Chats): Chat-level data via simulation_chats view
 3. Query 3 (Messages): Message-level data via simulation_messages view
@@ -141,18 +141,15 @@ async def attempt_get(
 ) -> GetAttemptDetailResponse:
     """Get attempt detail with parallel MV fetching.
 
-    Unified endpoint for home and practice attempt detail, differentiated by
-    `practice: bool` parameter.
-
     Uses view internal handlers with pool-based parallel fetch:
     - View 1: simulation_attempts (attempt-level aggregates)
     - View 2: simulation_chats (chat-level data with grades/feedbacks)
     - View 3: simulation_messages (message-level data with strengths/improvements/hints)
 
     Each query runs on its own connection from the pool for true parallelism.
+    The practice flag is determined from the attempt data itself.
     """
-    practice = request.practice
-    tags = ["attempt", "practice" if practice else "home"]
+    tags = ["attempt"]
 
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -217,7 +214,7 @@ async def attempt_get(
 
         async def fetch_messages(aid: UUID) -> Any:
             async with pool.acquire() as c:
-                # Hints are always included in MV, filtered in Python based on practice flag
+                # Hints are always included from MV
                 return await get_simulation_messages_internal(
                     conn=c,
                     attempt_id=aid,
@@ -428,6 +425,9 @@ async def attempt_get(
                 actor_name=None,
             )
 
+        # Determine practice mode from attempt data (not from client request)
+        practice = attempt_item.practice or False
+
         # === FETCH SIMULATION AND PROFILE METADATA ===
         # These are now fetched via internal handlers instead of SQL JOINs
         simulation_name: str | None = None
@@ -610,9 +610,9 @@ async def attempt_get(
                             )
                         )
 
-                # Transform hints (practice mode only, no message_id in view types)
+                # Transform hints (always included, no message_id in view types)
                 hints: list[HintEntry] | None = None
-                if practice and msg.hints:
+                if msg.hints:
                     hints = [
                         HintEntry(hint=h.hint, idx=h.idx)
                         for h in msg.hints
@@ -666,7 +666,7 @@ async def attempt_get(
                         completed=msg.completed,
                         contents=contents,
                         feedbacks=feedbacks if feedbacks else None,
-                        hints=hints,  # Only populated when practice=True
+                        hints=hints,
                     )
                 )
 
@@ -680,7 +680,6 @@ async def attempt_get(
                 grade = GradeData(
                     score=chat_item.grade.score,
                     passed=chat_item.grade.passed,
-                    description=chat_item.grade.description,
                     time_taken=chat_item.grade.time_taken,
                     total_points=rubric_meta.get("total_points"),
                     pass_points=rubric_meta.get("pass_points"),
@@ -763,14 +762,13 @@ async def attempt_get(
             # Build hints by message from messages MV (already in msg.hints)
             # Group hints by message_id for the hints_by_msg structure
             hints_by_msg: list[HintsByMessage] | None = None
-            if practice:
-                msg_hints: dict[UUID, list[HintEntry]] = {}
-                for msg in chat_messages:
-                    if msg.hints:
-                        msg_hints[msg.message_id] = [
-                            HintEntry(hint=h.hint, idx=h.idx)
-                            for h in msg.hints
-                        ]
+            msg_hints: dict[UUID, list[HintEntry]] = {}
+            for msg in chat_messages:
+                if msg.hints:
+                    msg_hints[msg.message_id] = [
+                        HintEntry(hint=h.hint, idx=h.idx)
+                        for h in msg.hints
+                    ]
                 if msg_hints:
                     hints_by_msg = [
                         HintsByMessage(message_id=mid, hints=hints_list)

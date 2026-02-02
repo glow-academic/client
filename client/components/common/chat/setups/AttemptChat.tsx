@@ -1532,7 +1532,7 @@ export function AttemptChat({
       </div>
 
       {/* Pagination Footer - Chat Navigation */}
-      {!isSingleChatAttempt && chats.length > 0 && (
+      {chats.length > 0 && (
         <div className="border-t px-4 py-3 flex items-center bg-background relative">
           {/* Left Side - First and Previous Buttons */}
           <div className="flex items-center gap-2">
@@ -1591,7 +1591,7 @@ export function AttemptChat({
                     </Badge>
                   ) : null}
                   <span className="text-sm font-medium">
-                    {chat.problem_statement?.problem_statement || `Chat ${currentChatIndex + 1}`}
+                    {chat.scenario?.name || `Chat ${currentChatIndex + 1}`}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     ({currentChatIndex + 1} of {chats.length})

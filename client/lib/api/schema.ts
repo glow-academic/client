@@ -2232,15 +2232,13 @@ export interface paths {
          * Attempt Get
          * @description Get attempt detail with parallel MV fetching.
          *
-         *     Unified endpoint for home and practice attempt detail, differentiated by
-         *     `practice: bool` parameter.
-         *
          *     Uses view internal handlers with pool-based parallel fetch:
          *     - View 1: simulation_attempts (attempt-level aggregates)
          *     - View 2: simulation_chats (chat-level data with grades/feedbacks)
          *     - View 3: simulation_messages (message-level data with strengths/improvements/hints)
          *
          *     Each query runs on its own connection from the pool for true parallelism.
+         *     The practice flag is determined from the attempt data itself.
          */
         post: operations["attempt_get_api_v4_attempt_get_post"];
         delete?: never;
@@ -7009,6 +7007,14 @@ export interface components {
             /** Content */
             content?: string | null;
         };
+        /**
+         * AnalysisItem
+         * @description Analysis item with content.
+         */
+        AnalysisItem: {
+            /** Content */
+            content?: string | null;
+        };
         /** ArgsApiRequest */
         ArgsApiRequest: {
             /**
@@ -8162,6 +8168,8 @@ export interface components {
             grade?: components["schemas"]["GradeItem"] | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["FeedbackItem"][] | null;
+            /** Analyses */
+            analyses?: components["schemas"]["AnalysisItem"][] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
             /** Objective Ids */
@@ -9581,8 +9589,6 @@ export interface components {
          *
          *     Args:
          *         attempt_id: The attempt ID to fetch details for.
-         *         practice: If True, includes hints in messages and is_archived in attempt.
-         *             If False, includes cohort_id in attempt.
          */
         GetAttemptDetailRequest: {
             /**
@@ -9590,11 +9596,6 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
         };
         /**
          * GetAttemptDetailResponse
@@ -14260,8 +14261,6 @@ export interface components {
             score?: number | null;
             /** Passed */
             passed?: boolean | null;
-            /** Description */
-            description?: string | null;
             /** Time Taken */
             time_taken?: number | null;
             /** Total Points */

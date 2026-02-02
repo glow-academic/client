@@ -7,6 +7,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.views.simulation.chats.types import (
+    AnalysisItem,
     ChatViewItem,
     FeedbackItem,
     GetChatsRequest,
@@ -100,9 +101,16 @@ async def get_simulation_chats_internal(
                 grade = GradeItem(
                     score=item.grade.score,
                     passed=item.grade.passed,
-                    description=item.grade.description,
                     time_taken=item.grade.time_taken,
                 )
+
+            # Transform analyses
+            analyses = None
+            if item.analyses:
+                analyses = [
+                    AnalysisItem(content=a.content)
+                    for a in item.analyses
+                ]
 
             items.append(
                 ChatViewItem(
@@ -126,6 +134,7 @@ async def get_simulation_chats_internal(
                     # Grade (composite)
                     grade=grade,
                     feedbacks=feedbacks,
+                    analyses=analyses,
                     # Resource IDs - Normal/General View
                     persona_ids=list(item.persona_ids) if item.persona_ids else None,
                     objective_ids=list(item.objective_ids) if item.objective_ids else None,
