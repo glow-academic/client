@@ -122,6 +122,17 @@ export function VideoView({
     return Math.min(time, maxAllowedTime);
   }, [maxAllowedTime]);
 
+  // Find the first unanswered question index at maxAllowedTime
+  const firstUnansweredQuestionIndex = useMemo(() => {
+    const sortedMarkers = [...markers].sort((a, b) => a.time - b.time);
+    for (const marker of sortedMarkers) {
+      if (!marker.isAnswered) {
+        return marker.questionIndex;
+      }
+    }
+    return null;
+  }, [markers]);
+
   // Update current time as video plays (with clamping)
   const handleTimeUpdate = useCallback(() => {
     if (videoRef.current && !isDragging) {
@@ -132,11 +143,15 @@ export function VideoView({
         video.currentTime = maxAllowedTime;
         setCurrentTime(maxAllowedTime);
         setIsPlaying(false);
+        // Auto-navigate to the first unanswered question
+        if (firstUnansweredQuestionIndex !== null) {
+          onNavigateToQuestion?.(firstUnansweredQuestionIndex);
+        }
       } else {
         setCurrentTime(video.currentTime);
       }
     }
-  }, [isDragging, maxAllowedTime]);
+  }, [isDragging, maxAllowedTime, firstUnansweredQuestionIndex, onNavigateToQuestion]);
 
   // Get duration when video loads
   const handleLoadedMetadata = useCallback(() => {
