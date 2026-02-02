@@ -453,6 +453,7 @@ class ChatData(BaseModel):
 
     # --- Video/Quiz View resources ---
     videos: list[VideoEntry] | None = None
+    video: VideoEntry | None = None  # First video, used for video player
     questions: list[QuestionEntry] | None = None  # Options nested inside
     responses: list[QuizResponse] | None = None
 

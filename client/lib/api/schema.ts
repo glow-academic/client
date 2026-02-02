@@ -8109,6 +8109,7 @@ export interface components {
             background_image?: components["schemas"]["ImageEntry"] | null;
             /** Videos */
             videos?: components["schemas"]["VideoEntry"][] | null;
+            video?: components["schemas"]["VideoEntry"] | null;
             /** Questions */
             questions?: components["schemas"]["QuestionEntry"][] | null;
             /** Responses */

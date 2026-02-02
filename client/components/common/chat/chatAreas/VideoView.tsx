@@ -5,21 +5,33 @@
  */
 "use client";
 
-// Props interface - simplified to only handle video
+import type { components } from "@/lib/api/schema";
+
+type VideoEntry = components["schemas"]["VideoEntry"];
+
+// Props interface - uses OpenAPI VideoEntry type
 export interface VideoViewProps {
-  video: { id: string; upload_id: string };
+  video?: VideoEntry | null;
 }
 
 export function VideoView({ video }: VideoViewProps) {
+  const videoUrl = video?.upload_id
+    ? `/api/uploads/download/${video.upload_id}`
+    : null;
+
   return (
     <div className="flex flex-col h-full">
       {/* Video player */}
       <div className="flex-1 bg-black flex items-center justify-center min-h-0">
-        <video
-          src={`/api/v4/videos/${video.id}/stream`}
-          controls
-          className="w-full h-full object-contain"
-        />
+        {videoUrl ? (
+          <video
+            src={videoUrl}
+            controls
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <div className="text-white text-sm">No video available</div>
+        )}
       </div>
     </div>
   );

@@ -32272,6 +32272,16 @@
             ],
             "title": "Videos"
           },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoEntry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "questions": {
             "anyOf": [
               {

@@ -476,7 +476,7 @@ export function AttemptChat({
   const chatAreaViewMode: ChatAreaViewMode = useMemo(() => {
     if (showGrades) return "rubric";
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    const hasVideo = currentChatData?.videos?.some((v) => v.upload_id);
+    const hasVideo = !!currentChat?.video?.upload_id;
     const hasVideoQuestions = currentChatData?.questions && currentChatData.questions.length > 0;
 
     // graded-video mode when viewing responses for completed video with questions
@@ -1300,13 +1300,8 @@ export function AttemptChat({
       return props;
     } else if (chatAreaViewMode === "video") {
       // Simplified VideoView - questions are handled in QuestionTakingInput (input area)
-      const firstVideo = currentChatData?.videos?.[0];
-
       const props: VideoViewProps = {
-        video: {
-          id: firstVideo?.video_id || "",
-          upload_id: firstVideo?.upload_id || "",
-        },
+        video: currentChat?.video ?? null,
       };
       return props;
     } else if (chatAreaViewMode === "graded-video") {

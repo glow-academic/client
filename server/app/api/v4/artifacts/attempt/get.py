@@ -960,6 +960,7 @@ async def attempt_get(
                     background_image=enriched_images[0] if enriched_images else None,
                     # Video/Quiz View resources
                     videos=enriched_videos,
+                    video=enriched_videos[0] if enriched_videos else None,
                     questions=questions_entries,  # Options nested inside questions
                     responses=responses_entries,
                     # Both Views resources
