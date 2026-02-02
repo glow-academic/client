@@ -109,8 +109,8 @@ export function VideoView({
     const sortedMarkers = [...markers].sort((a, b) => a.time - b.time);
     for (const marker of sortedMarkers) {
       if (!marker.isAnswered) {
-        // Allow watching up to this timestamp (plus a small buffer for the question to show)
-        return marker.time + 0.5;
+        // Lock at exactly this question's timestamp
+        return marker.time;
       }
     }
     // All questions answered - allow full video
@@ -375,16 +375,6 @@ export function VideoView({
               className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md opacity-0 group-hover/progress:opacity-100 transition-opacity pointer-events-none"
               style={{ left: `calc(12px + (100% - 24px) * ${progress / 100})` }}
             />
-
-            {/* Lock indicator at boundary */}
-            {isLocked && (
-              <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-none"
-                style={{ left: `calc(12px + (100% - 24px) * ${allowedProgress / 100})` }}
-              >
-                <Lock className="h-3 w-3 text-white/60" />
-              </div>
-            )}
 
             {/* Question markers - grouped by timestamp */}
             {Array.from(groupedMarkers.entries()).map(([time, markersAtTime]) => {

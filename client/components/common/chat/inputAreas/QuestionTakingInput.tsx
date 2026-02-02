@@ -177,16 +177,16 @@ export function QuestionTakingInput({
   const isLastQuestion = currentIndex === questions.length - 1;
 
   return (
-    <CardFooter className="px-3 pb-2 pt-3 border-t flex flex-col">
+    <CardFooter className="px-3 pb-2 pt-3 flex flex-col">
       {/* Question content area */}
-      <div className="w-full space-y-3">
+      <div className="w-full space-y-2">
         {/* Question text */}
-        <Label className="text-sm font-medium block">
+        <Label className="text-base font-medium block">
           {currentQuestion?.question_text}
         </Label>
 
         {/* Options */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {currentQuestion?.allow_multiple ? (
             // Checkbox for multiple selection
             options.map((option) => {
@@ -208,7 +208,7 @@ export function QuestionTakingInput({
                   />
                   <Label
                     htmlFor={`${qId}-${optId}`}
-                    className="text-sm font-normal cursor-pointer flex-1"
+                    className="text-base font-normal cursor-pointer flex-1"
                   >
                     {option.option_text}
                   </Label>
@@ -242,7 +242,7 @@ export function QuestionTakingInput({
                     />
                     <Label
                       htmlFor={`${qId}-${optId}`}
-                      className="text-sm font-normal cursor-pointer flex-1"
+                      className="text-base font-normal cursor-pointer flex-1"
                     >
                       {option.option_text}
                     </Label>
