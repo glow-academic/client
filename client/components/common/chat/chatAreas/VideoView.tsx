@@ -2,10 +2,15 @@
  * VideoView.tsx
  * Video player component with custom shadcn-themed controls and timeline markers.
  * Questions are handled separately in QuestionTakingInput (input area).
+ *
+ * Features:
+ * - Locks video progress until questions are answered
+ * - Shows locked portions as grey/disabled
+ * - Supports multiple questions at same timestamp
+ * - Navigates to first unanswered question when marker clicked
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -13,23 +18,18 @@ import {
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
-import {
-  Maximize,
-  Minimize,
-  Pause,
-  Play,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
-import { useRef, useState, useCallback, useEffect } from "react";
+import { Lock, Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 
 type VideoEntry = components["schemas"]["VideoEntry"];
 type QuestionEntry = components["schemas"]["QuestionEntry"];
+type QuizResponse = components["schemas"]["QuizResponse"];
 
 // Props interface
 export interface VideoViewProps {
   video?: VideoEntry | null;
   questions?: QuestionEntry[];
+  responses?: QuizResponse[];
   onNavigateToQuestion?: (questionIndex: number) => void;
 }
 
@@ -41,7 +41,12 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-export function VideoView({ video, questions = [], onNavigateToQuestion }: VideoViewProps) {
+export function VideoView({
+  video,
+  questions = [],
+  responses = [],
+  onNavigateToQuestion
+}: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -61,22 +66,77 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
   // Use video.length_seconds as fallback for duration
   const videoDuration = duration || video?.length_seconds || 0;
 
-  // Build markers from questions
-  const markers = questions.flatMap((question, questionIndex) => {
-    const times = question.times || [];
-    return times.map((time) => ({
-      time,
-      questionIndex,
-      questionId: question.question_id,
-    }));
-  });
+  // Build set of answered question IDs
+  const answeredQuestionIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const r of responses) {
+      if (r.question_id) {
+        ids.add(String(r.question_id));
+      }
+    }
+    return ids;
+  }, [responses]);
 
-  // Update current time as video plays
+  // Build markers from questions with answered status
+  const markers = useMemo(() => {
+    return questions.flatMap((question, questionIndex) => {
+      const times = question.times || [];
+      const isAnswered = answeredQuestionIds.has(String(question.question_id));
+      return times.map((time) => ({
+        time,
+        questionIndex,
+        questionId: question.question_id,
+        isAnswered,
+      }));
+    });
+  }, [questions, answeredQuestionIds]);
+
+  // Group markers by timestamp for display
+  const groupedMarkers = useMemo(() => {
+    const groups = new Map<number, typeof markers>();
+    for (const marker of markers) {
+      const existing = groups.get(marker.time) || [];
+      existing.push(marker);
+      groups.set(marker.time, existing);
+    }
+    return groups;
+  }, [markers]);
+
+  // Calculate max allowed time - first unanswered question's timestamp
+  // If all answered, allow full video
+  const maxAllowedTime = useMemo(() => {
+    // Sort markers by time to find first unanswered
+    const sortedMarkers = [...markers].sort((a, b) => a.time - b.time);
+    for (const marker of sortedMarkers) {
+      if (!marker.isAnswered) {
+        // Allow watching up to this timestamp (plus a small buffer for the question to show)
+        return marker.time + 0.5;
+      }
+    }
+    // All questions answered - allow full video
+    return videoDuration;
+  }, [markers, videoDuration]);
+
+  // Clamp time to max allowed
+  const clampTime = useCallback((time: number) => {
+    return Math.min(time, maxAllowedTime);
+  }, [maxAllowedTime]);
+
+  // Update current time as video plays (with clamping)
   const handleTimeUpdate = useCallback(() => {
     if (videoRef.current && !isDragging) {
-      setCurrentTime(videoRef.current.currentTime);
+      const video = videoRef.current;
+      // If video exceeds max allowed time, pause and seek back
+      if (video.currentTime > maxAllowedTime) {
+        video.pause();
+        video.currentTime = maxAllowedTime;
+        setCurrentTime(maxAllowedTime);
+        setIsPlaying(false);
+      } else {
+        setCurrentTime(video.currentTime);
+      }
     }
-  }, [isDragging]);
+  }, [isDragging, maxAllowedTime]);
 
   // Get duration when video loads
   const handleLoadedMetadata = useCallback(() => {
@@ -91,13 +151,17 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
     if (!video) return;
 
     if (video.paused) {
+      // Don't allow play if already at max allowed time
+      if (video.currentTime >= maxAllowedTime) {
+        return;
+      }
       video.play();
       setIsPlaying(true);
     } else {
       video.pause();
       setIsPlaying(false);
     }
-  }, []);
+  }, [maxAllowedTime]);
 
   // Mute toggle
   const toggleMute = useCallback(() => {
@@ -148,7 +212,7 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
     };
   }, []);
 
-  // Calculate position from mouse/touch event
+  // Calculate position from mouse/touch event (with clamping)
   const getPositionFromEvent = useCallback((e: React.MouseEvent | MouseEvent | React.TouchEvent | TouchEvent) => {
     const progress = progressRef.current;
     if (!progress || videoDuration <= 0) return 0;
@@ -156,8 +220,9 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
     const rect = progress.getBoundingClientRect();
     const clientX = "touches" in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    return (x / rect.width) * videoDuration;
-  }, [videoDuration]);
+    const time = (x / rect.width) * videoDuration;
+    return clampTime(time);
+  }, [videoDuration, clampTime]);
 
   // Handle progress bar click/drag
   const handleProgressMouseDown = useCallback((e: React.MouseEvent) => {
@@ -185,16 +250,25 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
     document.addEventListener("mouseup", handleMouseUp);
   }, [getPositionFromEvent]);
 
-  // Handle marker click
-  const handleMarkerClick = useCallback((e: React.MouseEvent, marker: { time: number; questionIndex: number }) => {
+  // Handle marker click - navigate to first unanswered question at that timestamp
+  const handleMarkerClick = useCallback((e: React.MouseEvent, markersAtTime: typeof markers) => {
     e.stopPropagation();
+
+    // Find first unanswered question at this timestamp, or first if all answered
+    const firstUnanswered = markersAtTime.find(m => !m.isAnswered);
+    const targetMarker = firstUnanswered || markersAtTime[0];
+
+    if (!targetMarker) return;
+
     const video = videoRef.current;
+    // Only seek if within allowed range
+    const seekTime = clampTime(targetMarker.time);
     if (video) {
-      video.currentTime = marker.time;
-      setCurrentTime(marker.time);
+      video.currentTime = seekTime;
+      setCurrentTime(seekTime);
     }
-    onNavigateToQuestion?.(marker.questionIndex);
-  }, [onNavigateToQuestion]);
+    onNavigateToQuestion?.(targetMarker.questionIndex);
+  }, [onNavigateToQuestion, clampTime]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -228,6 +302,8 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
   }, [isPlaying]);
 
   const progress = videoDuration > 0 ? (currentTime / videoDuration) * 100 : 0;
+  const allowedProgress = videoDuration > 0 ? (maxAllowedTime / videoDuration) * 100 : 100;
+  const isLocked = maxAllowedTime < videoDuration;
 
   return (
     <div
@@ -273,9 +349,21 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
             className="relative h-6 px-3 cursor-pointer group/progress"
             onMouseDown={handleProgressMouseDown}
           >
-            {/* Track background */}
-            <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-1 bg-white/30 rounded-full">
-              {/* Progress fill */}
+            {/* Track background - full track */}
+            <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-1 bg-white/20 rounded-full overflow-hidden">
+              {/* Allowed portion background */}
+              <div
+                className="absolute left-0 top-0 h-full bg-white/30"
+                style={{ width: `${allowedProgress}%` }}
+              />
+              {/* Locked portion - darker/disabled */}
+              {isLocked && (
+                <div
+                  className="absolute top-0 h-full bg-white/10"
+                  style={{ left: `${allowedProgress}%`, right: 0 }}
+                />
+              )}
+              {/* Progress fill - only in allowed area */}
               <div
                 className="absolute left-0 top-0 h-full bg-white rounded-full transition-all"
                 style={{ width: `${progress}%` }}
@@ -288,25 +376,61 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
               style={{ left: `calc(12px + (100% - 24px) * ${progress / 100})` }}
             />
 
-            {/* Question markers */}
-            {markers.map((marker, idx) => {
-              const markerProgress = videoDuration > 0 ? (marker.time / videoDuration) * 100 : 0;
-              const isActive = Math.abs(currentTime - marker.time) < 2;
+            {/* Lock indicator at boundary */}
+            {isLocked && (
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                style={{ left: `calc(12px + (100% - 24px) * ${allowedProgress / 100})` }}
+              >
+                <Lock className="h-3 w-3 text-white/60" />
+              </div>
+            )}
+
+            {/* Question markers - grouped by timestamp */}
+            {Array.from(groupedMarkers.entries()).map(([time, markersAtTime]) => {
+              const markerProgress = videoDuration > 0 ? (time / videoDuration) * 100 : 0;
+              const isActive = Math.abs(currentTime - time) < 2;
+              const allAnswered = markersAtTime.every(m => m.isAnswered);
+              const isInLockedArea = time > maxAllowedTime;
+
+              // Build tooltip text
+              const questionLabels = markersAtTime
+                .map(m => `Q${m.questionIndex + 1}`)
+                .join(", ");
+              const unansweredCount = markersAtTime.filter(m => !m.isAnswered).length;
 
               return (
-                <Tooltip key={`${marker.questionId}-${marker.time}-${idx}`}>
+                <Tooltip key={`marker-${time}`}>
                   <TooltipTrigger asChild>
                     <button
                       className={cn(
-                        "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-amber-400 transition-transform hover:scale-150 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 focus:ring-offset-black/50 z-10",
-                        isActive && "scale-125"
+                        "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full transition-transform focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 focus:ring-offset-black/50 z-10",
+                        // Size based on number of questions
+                        markersAtTime.length > 1 ? "w-3.5 h-3.5" : "w-2.5 h-2.5",
+                        // Color based on answered status and locked area
+                        isInLockedArea
+                          ? "bg-white/30 cursor-not-allowed"
+                          : allAnswered
+                            ? "bg-green-400 hover:scale-150"
+                            : "bg-amber-400 hover:scale-150",
+                        isActive && !isInLockedArea && "scale-125"
                       )}
                       style={{ left: `calc(12px + (100% - 24px) * ${markerProgress / 100})` }}
-                      onClick={(e) => handleMarkerClick(e, marker)}
+                      onClick={(e) => !isInLockedArea && handleMarkerClick(e, markersAtTime)}
+                      disabled={isInLockedArea}
                     />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs bg-black/90 text-white border-none">
-                    Q{marker.questionIndex + 1} at {formatTime(marker.time)}
+                    <div className="flex flex-col gap-0.5">
+                      <span>{questionLabels} at {formatTime(time)}</span>
+                      {isInLockedArea ? (
+                        <span className="text-white/60">Answer previous questions to unlock</span>
+                      ) : unansweredCount > 0 ? (
+                        <span className="text-amber-300">{unansweredCount} unanswered</span>
+                      ) : (
+                        <span className="text-green-300">All answered</span>
+                      )}
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -317,8 +441,14 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
           <div className="flex items-center gap-2 px-3 pb-2">
             {/* Play/Pause */}
             <button
-              className="h-8 w-8 flex items-center justify-center text-white hover:text-white/80 transition-colors"
+              className={cn(
+                "h-8 w-8 flex items-center justify-center transition-colors",
+                currentTime >= maxAllowedTime
+                  ? "text-white/40 cursor-not-allowed"
+                  : "text-white hover:text-white/80"
+              )}
               onClick={togglePlay}
+              disabled={currentTime >= maxAllowedTime}
             >
               {isPlaying ? (
                 <Pause className="h-5 w-5" />
@@ -343,6 +473,14 @@ export function VideoView({ video, questions = [], onNavigateToQuestion }: Video
             <span className="text-white text-xs font-mono ml-1">
               {formatTime(currentTime)} / {formatTime(videoDuration)}
             </span>
+
+            {/* Lock indicator */}
+            {isLocked && (
+              <span className="text-white/60 text-xs flex items-center gap-1 ml-2">
+                <Lock className="h-3 w-3" />
+                Answer question to continue
+              </span>
+            )}
 
             {/* Spacer */}
             <div className="flex-1" />

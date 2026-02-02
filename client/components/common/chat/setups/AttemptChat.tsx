@@ -1309,6 +1309,7 @@ export function AttemptChat({
       const props: VideoViewProps = {
         video: currentChat?.video ?? null,
         questions: currentChatData?.questions || [],
+        responses: currentChatData?.responses || [],
         onNavigateToQuestion: setQuestionIndex,
       };
       return props;
