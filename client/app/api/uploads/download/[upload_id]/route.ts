@@ -19,15 +19,23 @@ export async function GET(
       url.searchParams.set("preview", "true");
     }
 
+    // Build headers - forward Range header for video seeking support
+    const headers: HeadersInit = {
+      Cookie: request.headers.get("cookie") || "",
+    };
+
+    // Forward Range header if present (enables video seeking)
+    const rangeHeader = request.headers.get("range");
+    if (rangeHeader) {
+      headers["Range"] = rangeHeader;
+    }
+
     const response = await fetch(url.toString(), {
       method: "GET",
-      headers: {
-        // Forward any auth headers if needed
-        Cookie: request.headers.get("cookie") || "",
-      },
+      headers,
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 206) {
       const errorText = await response.text();
       return NextResponse.json(
         { error: errorText || "Failed to download upload" },
@@ -35,23 +43,44 @@ export async function GET(
       );
     }
 
-    // Get content type and disposition from backend
+    // Get headers from backend
     const contentType =
       response.headers.get("content-type") || "application/octet-stream";
     const contentDisposition = response.headers.get("content-disposition");
+    const acceptRanges = response.headers.get("accept-ranges");
+    const contentRange = response.headers.get("content-range");
+    const contentLength = response.headers.get("content-length");
 
-    // Stream the file back to the client
-    const fileBuffer = await response.arrayBuffer();
-
-    const headers = new Headers();
-    headers.set("Content-Type", contentType);
+    // Build response headers
+    const responseHeaders = new Headers();
+    responseHeaders.set("Content-Type", contentType);
     if (contentDisposition) {
-      headers.set("Content-Disposition", contentDisposition);
+      responseHeaders.set("Content-Disposition", contentDisposition);
+    }
+    if (acceptRanges) {
+      responseHeaders.set("Accept-Ranges", acceptRanges);
+    }
+    if (contentRange) {
+      responseHeaders.set("Content-Range", contentRange);
+    }
+    if (contentLength) {
+      responseHeaders.set("Content-Length", contentLength);
     }
 
+    // Stream the response body directly without buffering
+    // This enables seeking for large video files
+    if (response.body) {
+      return new NextResponse(response.body, {
+        status: response.status,
+        headers: responseHeaders,
+      });
+    }
+
+    // Fallback for responses without body stream
+    const fileBuffer = await response.arrayBuffer();
     return new NextResponse(fileBuffer, {
-      status: 200,
-      headers,
+      status: response.status,
+      headers: responseHeaders,
     });
   } catch {
     return NextResponse.json(

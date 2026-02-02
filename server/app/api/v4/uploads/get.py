@@ -7,7 +7,7 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -29,6 +29,80 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/uploads/get_upload_file_info_complete.sql"
 
 router = APIRouter()
+
+
+def create_range_streaming_response(
+    file_path: str,
+    content_type: str,
+    range_header: str | None,
+    content_disposition: str,
+) -> Response:
+    """Create a streaming response with HTTP Range support for video seeking.
+
+    Args:
+        file_path: Path to the file on disk
+        content_type: MIME type of the file
+        range_header: HTTP Range header value (e.g., "bytes=0-1023")
+        content_disposition: Content-Disposition header value
+
+    Returns:
+        StreamingResponse with 206 Partial Content for range requests,
+        or regular response for full file requests.
+    """
+    file_size = os.path.getsize(file_path)
+
+    # Parse Range header if present
+    start = 0
+    end = file_size - 1
+
+    if range_header:
+        # Parse "bytes=start-end" format
+        range_spec = range_header.replace("bytes=", "")
+        if "-" in range_spec:
+            parts = range_spec.split("-")
+            if parts[0]:
+                start = int(parts[0])
+            if parts[1]:
+                end = int(parts[1])
+
+    # Ensure valid range
+    if start >= file_size:
+        start = 0
+    if end >= file_size:
+        end = file_size - 1
+
+    content_length = end - start + 1
+    chunk_size = 1024 * 1024  # 1MB chunks
+
+    def iter_file():
+        with open(file_path, "rb") as f:
+            f.seek(start)
+            remaining = content_length
+            while remaining > 0:
+                read_size = min(chunk_size, remaining)
+                data = f.read(read_size)
+                if not data:
+                    break
+                remaining -= len(data)
+                yield data
+
+    headers = {
+        "Content-Disposition": content_disposition,
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(content_length),
+        "Content-Range": f"bytes {start}-{end}/{file_size}",
+        "Cache-Control": "private, max-age=0, must-revalidate",
+    }
+
+    # Return 206 Partial Content for range requests, 200 for full file
+    status_code = 206 if range_header else 200
+
+    return StreamingResponse(
+        iter_file(),
+        status_code=status_code,
+        media_type=content_type,
+        headers=headers,
+    )
 
 
 @router.get(
@@ -278,6 +352,16 @@ async def get_upload(
         # Properly encode filename for HTTP headers
         encoded_filename = urllib.parse.quote(filename, safe="")
         content_disposition = f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
+
+        # Use streaming with Range support for video files (enables seeking)
+        if content_type.startswith("video/"):
+            range_header = http_request.headers.get("range")
+            return create_range_streaming_response(
+                file_path=file_path,
+                content_type=content_type,
+                range_header=range_header,
+                content_disposition=content_disposition,
+            )
 
         return FileResponse(
             path=file_path,
