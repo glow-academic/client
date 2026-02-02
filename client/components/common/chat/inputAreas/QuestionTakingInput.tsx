@@ -177,9 +177,9 @@ export function QuestionTakingInput({
   const isLastQuestion = currentIndex === questions.length - 1;
 
   return (
-    <CardFooter className="px-3 pb-2 pt-3 flex flex-col">
-      {/* Question content area */}
-      <div className="w-full space-y-2">
+    <CardFooter className="px-3 pb-2 pt-3 flex flex-col h-full">
+      {/* Question content area - scrollable */}
+      <div className="w-full space-y-2 flex-1 overflow-auto min-h-0">
         {/* Question text */}
         <Label className="text-base font-medium block">
           {currentQuestion?.question_text}

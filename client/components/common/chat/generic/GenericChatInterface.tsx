@@ -18,16 +18,17 @@ import {
 } from "@/components/ui/dialog";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import React from "react";
 
 // Import component prop types (each component defines its own)
 import type { components } from "@/lib/api/schema";
 import type { MessagesViewProps } from "../chatAreas/MessagesView";
+import type { QuestionReviewViewProps } from "../chatAreas/QuestionReviewView";
 import type { RubricViewProps } from "../chatAreas/RubricView";
 import type { VideoViewProps } from "../chatAreas/VideoView";
 import type { ChatHeaderProps } from "../chatHeaders/AttemptChatHeader";
 import type { DocumentAreaProps } from "../documentAreas/AttemptDocumentArea";
-import type { QuestionReviewViewProps } from "../chatAreas/QuestionReviewView";
 import type { QuestionTakingInputProps } from "../inputAreas/QuestionTakingInput";
 import type { TextInputProps } from "../inputAreas/TextInput";
 import type { VoiceInputProps } from "../inputAreas/VoiceInput";
@@ -45,7 +46,10 @@ export interface GenericChatInterfaceProps {
   // Pluggable components (like resource components in Persona.tsx)
   chat_header: React.ComponentType<ChatHeaderProps>;
   chat_area: React.ComponentType<
-    MessagesViewProps | VideoViewProps | RubricViewProps | QuestionReviewViewProps
+    | MessagesViewProps
+    | VideoViewProps
+    | RubricViewProps
+    | QuestionReviewViewProps
   >;
   document_area?: React.ComponentType<DocumentAreaProps>;
   input_area: React.ComponentType<
@@ -81,12 +85,13 @@ export interface GenericChatInterfaceProps {
   // Data props are passed via render props - each component receives its own data
   // These are passed to child components by the setup file
   chat_header_props: ChatHeaderProps;
-  chat_area_props: MessagesViewProps | VideoViewProps | RubricViewProps | QuestionReviewViewProps;
+  chat_area_props:
+    | MessagesViewProps
+    | VideoViewProps
+    | RubricViewProps
+    | QuestionReviewViewProps;
   document_area_props?: DocumentAreaProps;
-  input_area_props:
-    | TextInputProps
-    | VoiceInputProps
-    | QuestionTakingInputProps;
+  input_area_props: TextInputProps | VoiceInputProps | QuestionTakingInputProps;
 }
 
 export function GenericChatInterface({
@@ -136,7 +141,12 @@ export function GenericChatInterface({
               </div>
 
               {/* Messages/Rubric/Video Area */}
-              <div className="flex-1 min-h-0 flex flex-col relative">
+              <div
+                className={cn(
+                  "min-h-0 flex flex-col relative",
+                  chat_area_view_mode !== "video" && "flex-1"
+                )}
+              >
                 {/* Background image layer - only behind messages area */}
                 {backgroundImageUrl && chat_area_view_mode !== "rubric" && (
                   <div
@@ -150,9 +160,15 @@ export function GenericChatInterface({
                     }}
                   />
                 )}
-                <ScrollArea className="flex-1 px-1 min-h-0 relative z-10">
-                  <ChatArea {...(chat_area_props as any)} />
-                </ScrollArea>
+                {chat_area_view_mode === "video" ? (
+                  <div className="px-1 relative z-10">
+                    <ChatArea {...(chat_area_props as any)} />
+                  </div>
+                ) : (
+                  <ScrollArea className="flex-1 px-1 min-h-0 relative z-10">
+                    <ChatArea {...(chat_area_props as any)} />
+                  </ScrollArea>
+                )}
               </div>
 
               {/* Input Area - collapse in graded view modes */}
@@ -160,11 +176,19 @@ export function GenericChatInterface({
                 chat_area_view_mode !== "graded-messages" &&
                 chat_area_view_mode !== "graded-video" && (
                   <div
-                    style={{
-                      height: chat_area_view_mode === "video" ? "auto" : `${input_panel_height}px`,
-                      minHeight: chat_area_view_mode === "video" ? "120px" : "70px",
-                      maxHeight: chat_area_view_mode === "video" ? "50vh" : "160px",
-                    }}
+                    className={cn(
+                      chat_area_view_mode === "video" &&
+                        "flex-1 min-h-0 overflow-auto"
+                    )}
+                    style={
+                      chat_area_view_mode !== "video"
+                        ? {
+                            height: `${input_panel_height}px`,
+                            minHeight: "70px",
+                            maxHeight: "160px",
+                          }
+                        : undefined
+                    }
                   >
                     {input_area_ref ? (
                       <InputArea
