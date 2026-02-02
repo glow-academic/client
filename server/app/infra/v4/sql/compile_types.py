@@ -230,6 +230,8 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
             "mv_benchmark_analytics_complete.sql",
             "mv_model_pricing_ppm_complete.sql",
             "mv_call_facts_complete.sql",
+            # Analytics base MV (depends only on entry/connection tables)
+            "mv_chat_facts_complete.sql",
         ]
         if filename in base_mvs:
             return (0, sql_path)
@@ -238,10 +240,15 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         # mv_dashboard_facts depends on mv_simulation_analytics
         # mv_run_pricing_facts depends on mv_model_pricing_ppm
         # mv_call_metrics_daily depends on mv_call_facts
+        # mv_attempt_facts, mv_daily_metrics, mv_profile_metrics depend on mv_chat_facts
         level1_mvs = [
             "mv_dashboard_facts_complete.sql",
             "mv_run_pricing_facts_complete.sql",
             "mv_call_metrics_daily_complete.sql",
+            # Analytics MVs that depend on mv_chat_facts
+            "mv_attempt_facts_complete.sql",
+            "mv_daily_metrics_complete.sql",
+            "mv_profile_metrics_complete.sql",
         ]
         if filename in level1_mvs:
             return (1, sql_path)
@@ -616,19 +623,38 @@ def write_consolidated_types_file(
     )
     all_imports.add("from pydantic import BaseModel")
 
-    # Scan type definitions for imports
+    # Scan type definitions for imports and type usage
+    needs_date_import = False
+    needs_time_import = False
+    needs_timedelta_import = False
     for _, _, types_content, _, _, _, _ in type_definitions:
+        # Check for date/time type usage in the content
+        if ": date" in types_content or "list[date]" in types_content:
+            needs_date_import = True
+        if ": time" in types_content or "list[time]" in types_content:
+            needs_time_import = True
+        if ": timedelta" in types_content or "list[timedelta]" in types_content:
+            needs_timedelta_import = True
         for line in types_content.split("\n"):
             if line.startswith("from typing import"):
                 all_imports.add(line)
             elif line.startswith("from uuid import"):
                 all_imports.add(line)
-            elif line.startswith("from datetime import"):
-                all_imports.add(line)
+            # Skip datetime imports from content - we'll build a consolidated one
             elif line.startswith("from pydantic import"):
                 # Merge pydantic imports
                 if "Field" in line:
                     all_imports.add("from pydantic import Field")
+
+    # Build consolidated datetime import with all needed types
+    datetime_types = ["datetime"]
+    if needs_date_import:
+        datetime_types.append("date")
+    if needs_time_import:
+        datetime_types.append("time")
+    if needs_timedelta_import:
+        datetime_types.append("timedelta")
+    all_imports.add(f"from datetime import {', '.join(sorted(datetime_types))}")
 
     # Sort imports
     datetime_imports = sorted(
