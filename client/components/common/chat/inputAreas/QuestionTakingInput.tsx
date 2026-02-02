@@ -150,24 +150,12 @@ export function QuestionTakingInput({
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      // Clear any local changes when navigating
-      setLocalAnswers((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(qId);
-        return newMap;
-      });
     }
   };
 
   const handleBack = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      // Clear any local changes when navigating
-      setLocalAnswers((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(qId);
-        return newMap;
-      });
     }
   };
 
