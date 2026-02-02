@@ -161,9 +161,9 @@ export function GenericChatInterface({
                 chat_area_view_mode !== "graded-video" && (
                   <div
                     style={{
-                      height: `${input_panel_height}px`,
-                      minHeight: "70px",
-                      maxHeight: "160px",
+                      height: chat_area_view_mode === "video" ? "auto" : `${input_panel_height}px`,
+                      minHeight: chat_area_view_mode === "video" ? "120px" : "70px",
+                      maxHeight: chat_area_view_mode === "video" ? "50vh" : "160px",
                     }}
                   >
                     {input_area_ref ? (

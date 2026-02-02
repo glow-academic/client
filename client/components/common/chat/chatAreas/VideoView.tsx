@@ -20,17 +20,17 @@ export function VideoView({ video }: VideoViewProps) {
     : null;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Video player */}
-      <div className="flex-1 bg-black flex items-center justify-center min-h-0">
+    <div className="flex flex-col">
+      {/* Video player - natural aspect ratio, not forced full height */}
+      <div className="bg-black flex items-center justify-center">
         {videoUrl ? (
           <video
             src={videoUrl}
             controls
-            className="w-full h-full object-contain"
+            className="w-full max-h-[50vh] object-contain"
           />
         ) : (
-          <div className="text-white text-sm">No video available</div>
+          <div className="text-white text-sm p-8">No video available</div>
         )}
       </div>
     </div>
