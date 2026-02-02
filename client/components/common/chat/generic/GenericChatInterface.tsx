@@ -69,6 +69,9 @@ export interface GenericChatInterfaceProps {
   // Standard props
   disabled?: boolean;
 
+  // Pagination footer (rendered at bottom, inside the layout)
+  pagination_footer?: React.ReactNode;
+
   // Data props are passed via render props - each component receives its own data
   // These are passed to child components by the setup file
   chat_header_props: ChatHeaderProps;
@@ -99,6 +102,7 @@ export function GenericChatInterface({
   show_objectives_modal = false,
   input_panel_height = 70,
   disabled = false,
+  pagination_footer,
   chat_header_props,
   chat_area_props,
   document_area_props,
@@ -106,8 +110,8 @@ export function GenericChatInterface({
   input_area_ref,
 }: GenericChatInterfaceProps) {
   return (
-    <div className="h-[calc(100vh-4rem)]" data-testid="generic-chat-interface">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
+    <div className="h-[calc(100vh-4rem)] flex flex-col" data-testid="generic-chat-interface">
+      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* Main Chat Area */}
         <ResizablePanel
           defaultSize={show_documents && document_area_props ? 70 : 100}
@@ -125,7 +129,8 @@ export function GenericChatInterface({
                 </ScrollArea>
               </div>
 
-              {/* Input Area */}
+              {/* Input Area - collapse in graded view modes */}
+              {chat_area_view_mode !== "rubric" && chat_area_view_mode !== "graded-messages" && (
               <div
                 style={{
                   height: `${input_panel_height}px`,
@@ -142,15 +147,23 @@ export function GenericChatInterface({
                   <InputArea {...(input_area_props as any)} />
                 )}
               </div>
+              )}
             </div>
           </Card>
         </ResizablePanel>
 
         {/* Document Area */}
         {show_documents && DocumentArea && document_area_props && (
-          <DocumentArea {...document_area_props} disabled={disabled} />
+          <DocumentArea
+            {...document_area_props}
+            disabled={disabled}
+            is_graded_view={chat_area_view_mode === "rubric" || chat_area_view_mode === "graded-messages"}
+          />
         )}
       </ResizablePanelGroup>
+
+      {/* Pagination Footer */}
+      {pagination_footer}
 
       {/* Document Modal - Mobile Only */}
       {show_document_modal && document_area_props && (

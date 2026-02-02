@@ -51,6 +51,9 @@ export interface DocumentAreaProps {
   document_viewer?: React.ComponentType<any>;
   template_viewer?: React.ComponentType<any>;
   disabled?: boolean;
+
+  // Whether we're in graded/rubric view mode (affects height calculation)
+  is_graded_view?: boolean;
 }
 
 // Unified item type for the selector
@@ -67,6 +70,7 @@ export function AttemptDocumentArea({
   document_viewer: DocumentViewerComponent = DocumentViewer,
   template_viewer: TemplateViewerComponent = TemplateViewer,
   disabled = false,
+  is_graded_view = false,
 }: DocumentAreaProps) {
   if (!visible) return null;
 

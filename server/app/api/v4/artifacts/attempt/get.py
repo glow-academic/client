@@ -43,7 +43,6 @@ from app.api.v4.artifacts.attempt.types import (
     GradingStateData,
     HighlightEntry,
     HintEntry,
-    HintsByMessage,
     ImageEntry,
     MessageData,
     MessageFeedbackEntry,
@@ -759,22 +758,6 @@ async def attempt_get(
                     feedback_by_standard_id=feedback_dict if feedback_dict else None,
                 )
 
-            # Build hints by message from messages MV (already in msg.hints)
-            # Group hints by message_id for the hints_by_msg structure
-            hints_by_msg: list[HintsByMessage] | None = None
-            msg_hints: dict[UUID, list[HintEntry]] = {}
-            for msg in chat_messages:
-                if msg.hints:
-                    msg_hints[msg.message_id] = [
-                        HintEntry(hint=h.hint, idx=h.idx)
-                        for h in msg.hints
-                    ]
-                if msg_hints:
-                    hints_by_msg = [
-                        HintsByMessage(message_id=mid, hints=hints_list)
-                        for mid, hints_list in msg_hints.items()
-                    ]
-
             # === BUILD ENRICHED RESOURCE ENTRIES ===
             # Normal/General View resources
             problem_statement_entry: ProblemStatementEntry | None = None
@@ -967,7 +950,6 @@ async def attempt_get(
                     audio_enabled=chat_item.audio_enabled,
                     # Extended fields
                     grading_state=grading_state_data,
-                    hints=hints_by_msg,
                     # Scenario resource (enriched from internal handler)
                     scenario=scenario_entry,
                     # Normal/General View resources

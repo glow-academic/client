@@ -99,10 +99,8 @@ type OptimisticGradingState = {
 type HintsByMessage = {
   message_id: string;
   hints: Array<{
-    simulation_message_id: string;
     hint: string;
     idx: number;
-    created_at: string;
   }>;
 };
 
@@ -222,18 +220,17 @@ export function AttemptChat({
         const updated: Record<string, HintsByMessage[]> = {};
         Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
           const chatData = initialAttemptData.chats?.find((c) => c.id === chatId);
-          const serverHints = chatData?.hints || [];
+          const messages = chatData?.messages || [];
 
+          // Build map of message_id -> hints from message-level hints
           const serverHintsMap = new Map<string, HintsByMessage>();
-          serverHints.forEach((h) => {
-            if (h.message_id) {
-              serverHintsMap.set(h.message_id, {
-                message_id: h.message_id,
-                hints: (h.hints || []).map((hint) => ({
-                  simulation_message_id: hint.simulation_message_id || "",
+          messages.forEach((msg) => {
+            if (msg.id && msg.hints && msg.hints.length > 0) {
+              serverHintsMap.set(msg.id, {
+                message_id: msg.id,
+                hints: msg.hints.map((hint) => ({
                   hint: hint.hint || "",
                   idx: hint.idx ?? 0,
-                  created_at: hint.created_at || "",
                 })),
               });
             }
@@ -511,42 +508,6 @@ export function AttemptChat({
 
     return map;
   }, [attemptData, optimisticGradingStates]);
-
-  const mergedCurrentChatHints = useMemo(() => {
-    if (!currentChat?.id) return [];
-    const optimisticChatHints = optimisticHints[currentChat.id] || [];
-    const serverHints =
-      attemptData?.chats?.find((c) => c.id === currentChat.id)?.hints || [];
-
-    const hintMap = new Map<string, HintsByMessage>();
-    optimisticChatHints.forEach((hintGroup) => {
-      hintMap.set(hintGroup.message_id, hintGroup);
-    });
-
-    serverHints.forEach((hintGroup) => {
-      if (!hintGroup.message_id) return;
-      const mappedHints: HintsByMessage = {
-        message_id: hintGroup.message_id,
-        hints: (hintGroup.hints || []).map((hint) => ({
-          simulation_message_id: hint.simulation_message_id || "",
-          hint: hint.hint || "",
-          idx: hint.idx ?? 0,
-          created_at: hint.created_at || "",
-        })),
-      };
-
-      const optimisticHint = hintMap.get(hintGroup.message_id);
-      const serverHintCount = mappedHints.hints.length;
-      const optimisticHintCount = optimisticHint?.hints.length ?? 0;
-      const hasContent = mappedHints.hints.some((h) => h.hint && h.hint.trim().length > 0);
-
-      if (!optimisticHint || hasContent || serverHintCount !== optimisticHintCount) {
-        hintMap.set(hintGroup.message_id, mappedHints);
-      }
-    });
-
-    return Array.from(hintMap.values());
-  }, [attemptData, currentChat, optimisticHints]);
 
   const newHintMessageIds = useMemo(
     () => Array.from(messagesWithNewHints),
@@ -1119,27 +1080,10 @@ export function AttemptChat({
         let hints: HintsByMessage["hints"] = [];
 
         if (data.hints && data.hints.length > 0) {
-          hints = data.hints.map((h) => ({
-            simulation_message_id: data.message_id,
-            hint: h.hint,
-            idx: h.idx,
-            created_at: new Date().toISOString(),
+          hints = data.hints.map((h, index) => ({
+            hint: typeof h["hint"] === "string" ? h["hint"] : "",
+            idx: typeof h["idx"] === "number" ? h["idx"] : index,
           }));
-        } else {
-          const hintIds = data.hint_ids || [];
-          hints = hintIds
-            .map((hintId, index) => {
-              const parts = hintId.split("_");
-              const lastPart = parts[parts.length - 1];
-              const idx = parts.length > 1 && lastPart ? parseInt(lastPart, 10) : index;
-              return {
-                simulation_message_id: data.message_id,
-                hint: "",
-                idx: isNaN(idx) ? index : idx,
-                created_at: new Date().toISOString(),
-              };
-            })
-            .filter((h) => !isNaN(h.idx));
         }
 
         setOptimisticHints((prev) => {
@@ -1508,128 +1452,126 @@ export function AttemptChat({
   // RENDER
   // ---------------------------------------------------------------------------
 
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 min-h-0">
-        <GenericChatInterface
-          chat_header={AttemptChatHeader}
-          chat_area={ChatAreaComponent}
-          document_area={AttemptDocumentArea}
-          input_area={InputAreaComponent}
-          chat_area_view_mode={chatAreaViewMode}
-          on_send_message={handleSendMessage}
-          on_stop_message={handleStopMessage}
-          show_documents={showDocuments}
-          show_document_modal={showDocumentModal}
-          show_objectives_modal={showObjectivesModal}
-          input_panel_height={inputPanelHeight}
-          input_area_ref={inputAreaRef}
-          chat_header_props={chatHeaderProps}
-          chat_area_props={chatAreaProps}
-          document_area_props={documentAreaProps}
-          input_area_props={inputAreaProps}
-        />
+  // Build pagination footer - only show in graded view modes
+  const isGradedViewMode = chatAreaViewMode === "rubric" || chatAreaViewMode === "graded-messages";
+  const paginationFooter = isGradedViewMode && chats.length > 0 ? (
+    <div className="border-t px-4 py-3 flex items-center bg-background relative">
+      {/* Left Side - First and Previous Buttons */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          onClick={() => setCurrentChatIndex(0)}
+          disabled={currentChatIndex === 0}
+        >
+          <span className="sr-only">Go to first chat</span>
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          onClick={() => setCurrentChatIndex(currentChatIndex - 1)}
+          disabled={currentChatIndex === 0}
+        >
+          <span className="sr-only">Go to previous chat</span>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Pagination Footer - Chat Navigation */}
-      {chats.length > 0 && (
-        <div className="border-t px-4 py-3 flex items-center bg-background relative">
-          {/* Left Side - First and Previous Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => setCurrentChatIndex(0)}
-              disabled={currentChatIndex === 0}
-            >
-              <span className="sr-only">Go to first chat</span>
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
+      {/* Spacer */}
+      <div className="flex-1" />
 
-            <Button
-              type="button"
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => setCurrentChatIndex(currentChatIndex - 1)}
-              disabled={currentChatIndex === 0}
-            >
-              <span className="sr-only">Go to previous chat</span>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Center - Current Chat Info - Badge + Name + Count */}
+      <div className="flex items-center gap-2 px-4 absolute left-1/2 -translate-x-1/2">
+        {(() => {
+          const chat = chats[currentChatIndex];
+          if (!chat) return null;
 
-          {/* Spacer */}
-          <div className="flex-1" />
+          const rubricResult = allDynamicRubrics.find(
+            (rubric) => rubric.chat_id === chat.id
+          );
 
-          {/* Center - Current Chat Info - Badge + Name + Count */}
-          <div className="flex items-center gap-2 px-4 absolute left-1/2 -translate-x-1/2">
-            {(() => {
-              const chat = chats[currentChatIndex];
-              if (!chat) return null;
+          return (
+            <>
+              {chat.completed && !rubricResult ? (
+                <Badge variant="secondary" className="text-xs">
+                  Incomplete
+                </Badge>
+              ) : rubricResult ? (
+                <Badge
+                  variant={rubricResult.passed ? "default" : "destructive"}
+                  className={`text-xs ${
+                    rubricResult.passed
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                  }`}
+                >
+                  {rubricResult.passed ? "Pass" : "Fail"}
+                </Badge>
+              ) : null}
+              <span className="text-sm font-medium">
+                {chat.scenario?.name || `Chat ${currentChatIndex + 1}`}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ({currentChatIndex + 1} of {chats.length})
+              </span>
+            </>
+          );
+        })()}
+      </div>
 
-              const rubricResult = allDynamicRubrics.find(
-                (rubric) => rubric.chat_id === chat.id
-              );
+      {/* Spacer */}
+      <div className="flex-1" />
 
-              return (
-                <>
-                  {chat.completed && !rubricResult ? (
-                    <Badge variant="secondary" className="text-xs">
-                      Incomplete
-                    </Badge>
-                  ) : rubricResult ? (
-                    <Badge
-                      variant={rubricResult.passed ? "default" : "destructive"}
-                      className={`text-xs ${
-                        rubricResult.passed
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                      }`}
-                    >
-                      {rubricResult.passed ? "Pass" : "Fail"}
-                    </Badge>
-                  ) : null}
-                  <span className="text-sm font-medium">
-                    {chat.scenario?.name || `Chat ${currentChatIndex + 1}`}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    ({currentChatIndex + 1} of {chats.length})
-                  </span>
-                </>
-              );
-            })()}
-          </div>
+      {/* Right Side - Next and Last Buttons */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          onClick={() => setCurrentChatIndex(currentChatIndex + 1)}
+          disabled={currentChatIndex >= chats.length - 1}
+        >
+          <span className="sr-only">Go to next chat</span>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Right Side - Next and Last Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => setCurrentChatIndex(currentChatIndex + 1)}
-              disabled={currentChatIndex >= chats.length - 1}
-            >
-              <span className="sr-only">Go to next chat</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => setCurrentChatIndex(chats.length - 1)}
-              disabled={currentChatIndex >= chats.length - 1}
-            >
-              <span className="sr-only">Go to last chat</span>
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          onClick={() => setCurrentChatIndex(chats.length - 1)}
+          disabled={currentChatIndex >= chats.length - 1}
+        >
+          <span className="sr-only">Go to last chat</span>
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
+  ) : null;
+
+  return (
+    <GenericChatInterface
+      chat_header={AttemptChatHeader}
+      chat_area={ChatAreaComponent}
+      document_area={AttemptDocumentArea}
+      input_area={InputAreaComponent}
+      chat_area_view_mode={chatAreaViewMode}
+      on_send_message={handleSendMessage}
+      on_stop_message={handleStopMessage}
+      show_documents={showDocuments}
+      show_document_modal={showDocumentModal}
+      show_objectives_modal={showObjectivesModal}
+      input_panel_height={inputPanelHeight}
+      input_area_ref={inputAreaRef}
+      pagination_footer={paginationFooter}
+      chat_header_props={chatHeaderProps}
+      chat_area_props={chatAreaProps}
+      document_area_props={documentAreaProps}
+      input_area_props={inputAreaProps}
+    />
   );
 }

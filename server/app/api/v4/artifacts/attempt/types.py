@@ -412,13 +412,6 @@ class GradeData(BaseModel):
     pass_points: float | None = None
 
 
-class HintsByMessage(BaseModel):
-    """Hints grouped by message."""
-
-    message_id: UUID | None = None
-    hints: list[HintEntry] | None = None
-
-
 class ChatData(BaseModel):
     """Chat with scenario, persona, grade, and messages.
 
@@ -447,7 +440,6 @@ class ChatData(BaseModel):
     # Extended fields for full feature support
     grading_state: GradingStateData | None = None
     dynamic_rubric: DynamicRubricData | None = None
-    hints: list[HintsByMessage] | None = None
 
     # --- Scenario resource (enriched from internal handler) ---
     scenario: ScenarioEntry | None = None

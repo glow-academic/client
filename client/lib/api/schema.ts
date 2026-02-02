@@ -8098,8 +8098,6 @@ export interface components {
             audio_enabled?: boolean | null;
             grading_state?: components["schemas"]["GradingStateData"] | null;
             dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
-            /** Hints */
-            hints?: components["schemas"]["HintsByMessage"][] | null;
             scenario?: components["schemas"]["ScenarioEntry"] | null;
             problem_statement?: components["schemas"]["ProblemStatementEntry"] | null;
             /** Objectives */
@@ -14389,16 +14387,6 @@ export interface components {
             hint?: string | null;
             /** Idx */
             idx?: number | null;
-        };
-        /**
-         * HintsByMessage
-         * @description Hints grouped by message.
-         */
-        HintsByMessage: {
-            /** Message Id */
-            message_id?: string | null;
-            /** Hints */
-            hints?: components["schemas"]["HintEntry"][] | null;
         };
         /**
          * HistoryViewItem
