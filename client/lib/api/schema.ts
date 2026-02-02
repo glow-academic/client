@@ -26094,6 +26094,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Length Seconds */
+            length_seconds?: number | null;
         };
         /** VideosApiRequest */
         VideosApiRequest: {

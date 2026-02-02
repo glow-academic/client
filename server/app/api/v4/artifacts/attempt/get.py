@@ -277,6 +277,7 @@ async def attempt_get(
                                 "name": item.name,
                                 "description": item.description,
                                 "upload_id": item.upload_id,
+                                "length_seconds": item.length_seconds,
                             }
 
                 # Fetch documents
@@ -811,6 +812,7 @@ async def attempt_get(
                         upload_id=resource_meta["videos"].get(vid_id, {}).get("upload_id"),
                         name=resource_meta["videos"].get(vid_id, {}).get("name"),
                         description=resource_meta["videos"].get(vid_id, {}).get("description"),
+                        length_seconds=resource_meta["videos"].get(vid_id, {}).get("length_seconds"),
                     )
                     for vid_id in chat_item.video_ids
                 ]

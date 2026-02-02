@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { components } from "@/lib/api/schema";
 import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 // ---- OpenAPI types (single source of truth) ----
 type QuestionEntry = components["schemas"]["QuestionEntry"];
@@ -24,6 +24,9 @@ export interface QuestionTakingInputProps {
   responses: QuizResponse[]; // Shows "you picked this" on resume - no feedback
   on_submit: (question_id: string, option_ids: string[]) => void;
   disabled?: boolean;
+  // Controlled navigation props (optional)
+  questionIndex?: number;
+  onQuestionIndexChange?: (index: number) => void;
 }
 
 export function QuestionTakingInput({
@@ -31,6 +34,8 @@ export function QuestionTakingInput({
   responses,
   on_submit,
   disabled = false,
+  questionIndex,
+  onQuestionIndexChange,
 }: QuestionTakingInputProps) {
   // Build lookup: question_id -> selected option_ids from server responses
   const responsesByQuestion = useMemo(() => {
@@ -46,14 +51,34 @@ export function QuestionTakingInput({
     return map;
   }, [responses]);
 
-  // Current question index
-  const [currentIndex, setCurrentIndex] = useState(() => {
+  // Internal state for uncontrolled mode
+  const [internalIndex, setInternalIndex] = useState(() => {
     // Start at first unanswered question, or 0 if all answered
     const firstUnanswered = questions.findIndex(
       (q) => !responsesByQuestion.has(q.question_id || "")
     );
     return firstUnanswered >= 0 ? firstUnanswered : 0;
   });
+
+  // Use controlled index if provided, otherwise internal
+  const isControlled = questionIndex !== undefined;
+  const currentIndex = isControlled ? questionIndex : internalIndex;
+
+  // Unified setter that works for both controlled and uncontrolled modes
+  const setCurrentIndex = (newIndex: number) => {
+    if (isControlled) {
+      onQuestionIndexChange?.(newIndex);
+    } else {
+      setInternalIndex(newIndex);
+    }
+  };
+
+  // Sync internal index when controlled index changes from parent (e.g., marker click)
+  useEffect(() => {
+    if (isControlled && questionIndex !== internalIndex) {
+      setInternalIndex(questionIndex);
+    }
+  }, [isControlled, questionIndex, internalIndex]);
 
   // Local state for current question's answer
   const [localAnswers, setLocalAnswers] = useState<Map<string, string[]>>(
@@ -204,7 +229,6 @@ export function QuestionTakingInput({
             >
               {options.map((option) => {
                 const optId = option.option_id || "";
-                const isSelected = displaySelection.includes(optId);
 
                 return (
                   <div

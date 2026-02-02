@@ -132,6 +132,7 @@ export function AttemptChat({
   const [showGrades, setShowGrades] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
   const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] = useState(false);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -432,6 +433,11 @@ export function AttemptChat({
       }
     }
   }, [attemptData?.show_results, attemptData?.chats, userHasManuallyToggledGrades, attemptData, currentChatIndex]);
+
+  // Reset question index when chat changes
+  useEffect(() => {
+    setQuestionIndex(0);
+  }, [currentChatIndex]);
 
   // Auto-select first document/template when chat changes or content becomes available
   useEffect(() => {
@@ -1299,9 +1305,11 @@ export function AttemptChat({
       };
       return props;
     } else if (chatAreaViewMode === "video") {
-      // Simplified VideoView - questions are handled in QuestionTakingInput (input area)
+      // VideoView with timeline markers - questions input is in QuestionTakingInput
       const props: VideoViewProps = {
         video: currentChat?.video ?? null,
+        questions: currentChatData?.questions || [],
+        onNavigateToQuestion: setQuestionIndex,
       };
       return props;
     } else if (chatAreaViewMode === "graded-video") {
@@ -1340,6 +1348,7 @@ export function AttemptChat({
     isSendingMessage,
     isActive,
     isAttemptOwner,
+    setQuestionIndex,
   ]);
 
   const documentAreaProps: DocumentAreaProps | undefined = useMemo(() => {
@@ -1369,6 +1378,9 @@ export function AttemptChat({
         responses: currentChatData?.responses || [],
         on_submit: handleQuizResponse,
         disabled: currentChat?.completed ?? false,
+        // Controlled navigation (synced with VideoView markers)
+        questionIndex,
+        onQuestionIndexChange: setQuestionIndex,
       };
       return props;
     } else if (audioEnabled && !textEnabled) {
@@ -1411,6 +1423,7 @@ export function AttemptChat({
     currentChatIndex,
     currentChat,
     chatAreaViewMode,
+    questionIndex,
     isSendingMessage,
     isStoppingMessage,
     isConnected,

@@ -72,6 +72,7 @@ class VideoEntry(BaseModel):
     upload_id: UUID | None = None
     name: str | None = None
     description: str | None = None
+    length_seconds: int | None = None
 
 
 class DocumentEntry(BaseModel):
