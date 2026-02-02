@@ -11,17 +11,20 @@ import type { components } from "@/lib/api/schema";
 // ---- OpenAPI types (single source of truth) ----
 type RubricStructureData = components["schemas"]["RubricStructureData"];
 type GradingStateData = components["schemas"]["GradingStateData"];
+type AnalysisEntry = components["schemas"]["AnalysisEntry"];
 
 // Props interface using OpenAPI types
 export interface RubricViewProps {
   rubric_structure: RubricStructureData;
   grading_state?: GradingStateData;
+  analyses?: AnalysisEntry[] | null;
   disabled?: boolean;
 }
 
 export function RubricView({
   rubric_structure,
   grading_state,
+  analyses,
 }: RubricViewProps) {
   const standardGroups = rubric_structure?.standard_groups || {};
   const standardGroupsMapping = rubric_structure?.standard_groups_mapping || {};
@@ -29,7 +32,7 @@ export function RubricView({
 
   return (
     <div className="space-y-4 py-2">
-      {/* @ts-expect-error - OpenAPI types don't exactly match TableRubric props */}
+      {/* @ts-ignore - OpenAPI types don't exactly match TableRubric props */}
       <TableRubric
         standardGroups={standardGroups}
         standardGroupsMapping={Object.fromEntries(
@@ -43,10 +46,10 @@ export function RubricView({
           gradingState: {
             achievedStandards: grading_state.achieved_standards,
             passedStandards: grading_state.passed_standards,
-            gradeDescription: grading_state.grade_description,
             feedbackByStandardId: grading_state.feedback_by_standard_id,
           },
         })}
+        analyses={analyses}
       />
     </div>
   );

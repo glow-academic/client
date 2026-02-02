@@ -155,7 +155,6 @@ CREATE TYPE types.q_get_simulation_attempt_v4_grade AS (
     created_at timestamptz,
     simulation_chat_id uuid,
     rubric_id uuid,
-    description text,
     passed boolean,
     score int,
     time_taken int,
@@ -182,7 +181,6 @@ CREATE TYPE types.q_get_simulation_attempt_v4_standard_feedback AS (
 CREATE TYPE types.q_get_simulation_attempt_v4_grading_state AS (
     achieved_standards types.q_get_simulation_attempt_v4_standard_achievement[],
     passed_standards types.q_get_simulation_attempt_v4_standard_pass[],
-    grade_description text,
     feedback_by_standard_id types.q_get_simulation_attempt_v4_standard_feedback[]
 );
 
@@ -1180,7 +1178,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(scg.time_taken, 0), scg.total_points, scg.pass_points)::types.q_get_simulation_attempt_v4_grade as grade
+        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.passed, scg.score, COALESCE(scg.time_taken, 0), scg.total_points, scg.pass_points)::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     CROSS JOIN chat_ids_list cil
     JOIN all_chats c ON c.id = ANY(cil.chat_ids)
@@ -1513,13 +1511,12 @@ grading_state_per_chat AS (
                     FROM feedbacks_grouped fg3
                     CROSS JOIN LATERAL unnest(COALESCE(fg3.feedbacks, '{}'::types.q_get_simulation_attempt_v4_feedback[])) fb
                     JOIN standards_resource s ON s.id = fb.standard_id
-                    LEFT JOIN max_scores_per_group_chat mspgc 
-                        ON mspgc.chat_id = gd.chat_id 
+                    LEFT JOIN max_scores_per_group_chat mspgc
+                        ON mspgc.chat_id = gd.chat_id
                         AND mspgc.standard_group_id = s.standard_group_id
                     WHERE fg3.grade_id = (gd.grade).id),
                     '{}'::types.q_get_simulation_attempt_v4_standard_pass[]
                 ),
-                COALESCE((gd.grade).description, ''),
                 COALESCE(
                     (SELECT ARRAY_AGG(
                         (fb.standard_id, fb.feedback)::types.q_get_simulation_attempt_v4_standard_feedback

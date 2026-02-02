@@ -7001,6 +7001,14 @@ export interface components {
             /** Total Chats */
             total_chats?: number | null;
         };
+        /**
+         * AnalysisEntry
+         * @description Analysis entry for chat-level analysis content.
+         */
+        AnalysisEntry: {
+            /** Content */
+            content?: string | null;
+        };
         /** ArgsApiRequest */
         ArgsApiRequest: {
             /**
@@ -8068,6 +8076,8 @@ export interface components {
             grade?: components["schemas"]["GradeData"] | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
+            /** Analyses */
+            analyses?: components["schemas"]["AnalysisEntry"][] | null;
             /** Messages */
             messages?: components["schemas"]["MessageData"][] | null;
             /** Show Problem Statement */
@@ -14275,8 +14285,6 @@ export interface components {
             passed_standards?: {
                 [key: string]: boolean;
             } | null;
-            /** Grade Description */
-            grade_description?: string | null;
             /** Feedback By Standard Id */
             feedback_by_standard_id?: {
                 [key: string]: string;
@@ -18206,8 +18214,6 @@ export interface components {
             simulation_chat_id: string | null;
             /** Rubric Id */
             rubric_id: string | null;
-            /** Description */
-            description: string | null;
             /** Passed */
             passed: boolean | null;
             /** Score */
@@ -18221,8 +18227,6 @@ export interface components {
             achieved_standards: components["schemas"]["QGetGeneralAttemptV4StandardAchievement"][] | null;
             /** Passed Standards */
             passed_standards: components["schemas"]["QGetGeneralAttemptV4StandardPass"][] | null;
-            /** Grade Description */
-            grade_description: string | null;
             /** Feedback By Standard Id */
             feedback_by_standard_id: components["schemas"]["QGetGeneralAttemptV4StandardFeedback"][] | null;
         };
@@ -19438,8 +19442,6 @@ export interface components {
             simulation_chat_id: string | null;
             /** Rubric Id */
             rubric_id: string | null;
-            /** Description */
-            description: string | null;
             /** Passed */
             passed: boolean | null;
             /** Score */
@@ -19453,8 +19455,6 @@ export interface components {
             achieved_standards: components["schemas"]["QGetPracticeAttemptV4StandardAchievement"][] | null;
             /** Passed Standards */
             passed_standards: components["schemas"]["QGetPracticeAttemptV4StandardPass"][] | null;
-            /** Grade Description */
-            grade_description: string | null;
             /** Feedback By Standard Id */
             feedback_by_standard_id: components["schemas"]["QGetPracticeAttemptV4StandardFeedback"][] | null;
         };
@@ -21227,8 +21227,6 @@ export interface components {
             simulation_chat_id: string | null;
             /** Rubric Id */
             rubric_id: string | null;
-            /** Description */
-            description: string | null;
             /** Passed */
             passed: boolean | null;
             /** Score */
@@ -21246,8 +21244,6 @@ export interface components {
             achieved_standards: components["schemas"]["QGetSimulationAttemptV4StandardAchievement"][] | null;
             /** Passed Standards */
             passed_standards: components["schemas"]["QGetSimulationAttemptV4StandardPass"][] | null;
-            /** Grade Description */
-            grade_description: string | null;
             /** Feedback By Standard Id */
             feedback_by_standard_id: components["schemas"]["QGetSimulationAttemptV4StandardFeedback"][] | null;
         };

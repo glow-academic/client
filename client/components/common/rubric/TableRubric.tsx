@@ -33,9 +33,12 @@ type StandardMappingItem = {
 type GradingState = {
   achievedStandards: Record<string, boolean>;
   passedStandards: Record<string, boolean>;
-  gradeDescription?: string | undefined;
   feedbackByStandardId?: Record<string, string> | undefined;
 } | null;
+
+type AnalysisEntry = {
+  content?: string | null;
+};
 
 export interface TableRubricProps {
   // Core rubric structure (from V2 API)
@@ -45,6 +48,9 @@ export interface TableRubricProps {
 
   // Optional: grading state for visualization (from v2 server-side)
   gradingState?: GradingState;
+
+  // Optional: analyses entries (chat-level analysis content)
+  analyses?: AnalysisEntry[] | null;
 
   // Optional: show full standards table on mobile (with horizontal scroll)
   // When false (default), shows simplified 2-column view on mobile
@@ -56,6 +62,7 @@ export default function TableRubric({
   standardGroupsMapping,
   standardsMapping,
   gradingState,
+  analyses,
   showFullStandardsOnMobile = false,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
@@ -197,10 +204,14 @@ export default function TableRubric({
             </Table>
           </div>
 
-          {/* Rubric summary (description from grading state) - mobile view */}
-          {gradingState?.gradeDescription && (
-            <div className="text-sm whitespace-pre-wrap pt-0">
-              {gradingState.gradeDescription}
+          {/* Rubric summary (analyses) - mobile view */}
+          {analyses && analyses.length > 0 && (
+            <div className="space-y-2 pt-0">
+              {analyses.map((entry, idx) => (
+                <div key={idx} className="text-sm whitespace-pre-wrap">
+                  {entry.content}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -407,10 +418,14 @@ export default function TableRubric({
             </div>
           </div>
 
-          {/* Rubric summary (description from grading state) - inside scrollable area */}
-          {gradingState?.gradeDescription && (
-            <div className="text-sm whitespace-pre-wrap pt-0 px-2">
-              {gradingState.gradeDescription}
+          {/* Rubric summary (analyses) - inside scrollable area */}
+          {analyses && analyses.length > 0 && (
+            <div className="space-y-2 pt-0 px-2">
+              {analyses.map((entry, idx) => (
+                <div key={idx} className="text-sm whitespace-pre-wrap">
+                  {entry.content}
+                </div>
+              ))}
             </div>
           )}
         </div>

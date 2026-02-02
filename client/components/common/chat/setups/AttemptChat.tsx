@@ -91,10 +91,9 @@ export interface AttemptChatProps {
 
 /** Grading state in Record format (matches server response) */
 type OptimisticGradingState = {
-  achieved_standards: Record<string, boolean> | null;
-  passed_standards: Record<string, boolean> | null;
-  grade_description: string | null;
-  feedback_by_standard_id: Record<string, string> | null;
+  achieved_standards?: Record<string, boolean> | null;
+  passed_standards?: Record<string, boolean> | null;
+  feedback_by_standard_id?: Record<string, string> | null;
 };
 
 type HintsByMessage = {
@@ -502,8 +501,6 @@ export function AttemptChat({
             optimisticState.achieved_standards ?? existingState.achieved_standards,
           passed_standards:
             optimisticState.passed_standards ?? existingState.passed_standards,
-          grade_description:
-            optimisticState.grade_description ?? existingState.grade_description,
           feedback_by_standard_id:
             optimisticState.feedback_by_standard_id ?? existingState.feedback_by_standard_id,
         };
@@ -1084,7 +1081,6 @@ export function AttemptChat({
                 achieved_standards: null,
                 passed_standards: null,
                 feedback_by_standard_id: null,
-                grade_description: null,
               };
 
               const newAchieved = {
@@ -1106,7 +1102,6 @@ export function AttemptChat({
                   achieved_standards: newAchieved,
                   passed_standards: newPassed,
                   feedback_by_standard_id: Object.keys(newFeedback).length > 0 ? newFeedback : null,
-                  grade_description: currentState.grade_description,
                 },
               };
             });
@@ -1114,46 +1109,8 @@ export function AttemptChat({
         }
       }
 
-      if (data.type === "summary_recorded" && "summary_preview" in data) {
-        const summaryPreview = (data as { summary_preview?: string }).summary_preview;
-        if (summaryPreview) {
-          setOptimisticGradingStates((prev) => {
-            const currentState = prev[data.chat_id] || {
-              achieved_standards: null,
-              passed_standards: null,
-              feedback_by_standard_id: null,
-              grade_description: null,
-            };
-
-            return {
-              ...prev,
-              [data.chat_id]: {
-                ...currentState,
-                grade_description: summaryPreview ?? null,
-              },
-            };
-          });
-        }
-      }
-
-      if (data.type === "complete" && data.summary) {
-        setOptimisticGradingStates((prev) => {
-          const currentState = prev[data.chat_id] || {
-            achieved_standards: null,
-            passed_standards: null,
-            feedback_by_standard_id: null,
-            grade_description: null,
-          };
-
-          return {
-            ...prev,
-            [data.chat_id]: {
-              ...currentState,
-              grade_description: data.summary ?? null,
-            },
-          };
-        });
-      }
+      // Note: summary_recorded and complete events previously set grade_description
+      // which has been moved to analyses. The summary will be available after attempt refresh.
     };
 
     // Hint generation
@@ -1405,6 +1362,7 @@ export function AttemptChat({
         // Pass rubric structure directly - it already matches RubricStructureData type
         rubric_structure: attemptData?.rubric_structure || {},
         grading_state: serverGradingState,
+        analyses: currentChatData?.analyses,
       };
       return props;
     }

@@ -296,7 +296,6 @@ async def practice_attempt_detail(
                     id=chat_item.grade_id,
                     score=chat_item.grade_score,
                     passed=chat_item.grade_passed,
-                    description=chat_item.grade_description,
                     time_taken=chat_item.grade_time_taken,
                     total_points=chat_item.rubric_total_points,
                     pass_points=chat_item.rubric_pass_points,

@@ -31,6 +31,7 @@ from app.api.v4.artifacts.attempt.permissions import (
 )
 from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
+    AnalysisEntry,
     AttemptData,
     ChatData,
     ContentEntry,
@@ -671,15 +672,18 @@ async def attempt_get(
 
             # Build grade data
             grade = None
-            # Build grade from chat grade composite (total_points/pass_points now come directly from grade)
+            # Build grade from chat grade composite
+            # total_points/pass_points come from rubric metadata (not stored in grade entry)
             if chat_item.grade:
+                # Get rubric points from resource metadata
+                rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {}) if chat_item.rubric_id else {}
                 grade = GradeData(
                     score=chat_item.grade.score,
                     passed=chat_item.grade.passed,
                     description=chat_item.grade.description,
                     time_taken=chat_item.grade.time_taken,
-                    total_points=chat_item.grade.total_points,
-                    pass_points=chat_item.grade.pass_points,
+                    total_points=rubric_meta.get("total_points"),
+                    pass_points=rubric_meta.get("pass_points"),
                 )
 
             # Transform feedbacks (with standard_group_id from standards metadata)
@@ -700,6 +704,14 @@ async def attempt_get(
                             feedback=fb.feedback,
                         )
                     )
+
+            # Transform analyses (chat-level analysis content)
+            analyses_entries: list[AnalysisEntry] | None = None
+            if chat_item.analyses:
+                analyses_entries = [
+                    AnalysisEntry(content=a.content)
+                    for a in chat_item.analyses
+                ]
 
             # Build grading state - derive achieved/passed from feedbacks + resource_meta
             # Build grading state in Record format (what client needs)
@@ -742,13 +754,9 @@ async def attempt_get(
                         if fb.standard_id and fb.feedback:
                             feedback_dict[str(fb.standard_id)] = fb.feedback
 
-                # grade_description from chats MV
-                grade_description = chat_item.grade.description if chat_item.grade else None
-
                 grading_state_data = GradingStateData(
                     achieved_standards=achieved_dict if achieved_dict else None,
                     passed_standards=passed_dict if passed_dict else None,
-                    grade_description=grade_description,
                     feedback_by_standard_id=feedback_dict if feedback_dict else None,
                 )
 
@@ -951,6 +959,7 @@ async def attempt_get(
                     # is_current and position are computed after all chats are built
                     grade=grade,
                     feedbacks=feedbacks,
+                    analyses=analyses_entries,
                     messages=messages,
                     # Chat-level flags
                     show_problem_statement=chat_item.show_problem_statement,

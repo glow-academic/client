@@ -38,6 +38,16 @@ EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
 
+-- Create analysis type for chat-level analysis content
+DO $$
+BEGIN
+    CREATE TYPE types.mv_analysis AS (
+        content text
+    );
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_simulation_chats materialized view (if it exists)
 -- ============================================================================
@@ -75,7 +85,6 @@ latest_grade AS (
         g.chat_id,
         g.score AS grade_score,
         g.passed AS grade_passed,
-        g.description AS grade_description,
         g.time_taken AS grade_time_taken
     FROM simulation_grades_entry g
     WHERE g.active = TRUE
@@ -93,6 +102,17 @@ feedbacks_agg AS (
     LEFT JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
     WHERE fe.active = TRUE
     GROUP BY fe.grade_id
+),
+-- Analyses aggregated per grade (chat-level analysis content)
+analyses_agg AS (
+    SELECT
+        ae.grade_id,
+        ARRAY_AGG(
+            ROW(ae.content)::types.mv_analysis
+            ORDER BY ae.created_at
+        ) AS analyses
+    FROM simulation_analyses_entry ae
+    GROUP BY ae.grade_id
 ),
 -- Base chat data (position/is_current/practice derived from attempt in service layer)
 base_chats AS (
@@ -281,11 +301,13 @@ SELECT
     -- Grade data (from latest grade, rubric points fetched via internal handler)
     lg.grade_score,
     lg.grade_passed,
-    lg.grade_description,
     lg.grade_time_taken,
 
     -- Feedbacks array (denormalized for grading state display)
     COALESCE(fa.feedbacks, ARRAY[]::types.mv_feedback[]) AS feedbacks,
+
+    -- Analyses array (chat-level analysis content)
+    COALESCE(aa.analyses, ARRAY[]::types.mv_analysis[]) AS analyses,
 
     -- Resource IDs - Normal/General View
     psa.problem_statement_id,
@@ -310,6 +332,7 @@ SELECT
 FROM base_chats bc
 LEFT JOIN latest_grade lg ON lg.chat_id = bc.chat_id
 LEFT JOIN feedbacks_agg fa ON fa.grade_id = bc.grade_id
+LEFT JOIN analyses_agg aa ON aa.grade_id = bc.grade_id
 LEFT JOIN personas_agg pa ON pa.chat_id = bc.chat_id
 LEFT JOIN problem_statements_agg psa ON psa.chat_id = bc.chat_id
 LEFT JOIN objectives_agg oa ON oa.chat_id = bc.chat_id

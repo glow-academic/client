@@ -84,6 +84,12 @@ class DocumentEntry(BaseModel):
     description: str | None = None
 
 
+class AnalysisEntry(BaseModel):
+    """Analysis entry for chat-level analysis content."""
+
+    content: str | None = None
+
+
 class TemplateEntry(BaseModel):
     """Template entry with resource metadata."""
 
@@ -161,7 +167,6 @@ class GradingStateData(BaseModel):
     achieved_standards: dict[str, bool] | None = None
     # standard_id -> passed (boolean)
     passed_standards: dict[str, bool] | None = None
-    grade_description: str | None = None
     # standard_id -> feedback (string)
     feedback_by_standard_id: dict[str, str] | None = None
 
@@ -433,6 +438,7 @@ class ChatData(BaseModel):
     position: int | None = None
     grade: GradeData | None = None
     feedbacks: list[FeedbackEntry] | None = None
+    analyses: list[AnalysisEntry] | None = None  # Chat-level analysis content
     messages: list[MessageData] | None = None
 
     # Chat-level flags

@@ -2125,7 +2125,6 @@ class QGetGeneralAttemptV4Grade(BaseModel):
     created_at: datetime | None
     simulation_chat_id: UUID | None
     rubric_id: UUID | None
-    description: str | None
     passed: bool | None
     score: int | None
     time_taken: int | None
@@ -2158,7 +2157,6 @@ class QGetGeneralAttemptV4GradingState(BaseModel):
 
     achieved_standards: list[QGetGeneralAttemptV4StandardAchievement] | None
     passed_standards: list[QGetGeneralAttemptV4StandardPass] | None
-    grade_description: str | None
     feedback_by_standard_id: list[QGetGeneralAttemptV4StandardFeedback] | None
 
 
@@ -2511,7 +2509,6 @@ class QGetPracticeAttemptV4Grade(BaseModel):
     created_at: datetime | None
     simulation_chat_id: UUID | None
     rubric_id: UUID | None
-    description: str | None
     passed: bool | None
     score: int | None
     time_taken: int | None
@@ -2544,7 +2541,6 @@ class QGetPracticeAttemptV4GradingState(BaseModel):
 
     achieved_standards: list[QGetPracticeAttemptV4StandardAchievement] | None
     passed_standards: list[QGetPracticeAttemptV4StandardPass] | None
-    grade_description: str | None
     feedback_by_standard_id: list[QGetPracticeAttemptV4StandardFeedback] | None
 
 
@@ -2942,7 +2938,6 @@ class QGetSimulationAttemptV4Grade(BaseModel):
     created_at: datetime | None
     simulation_chat_id: UUID | None
     rubric_id: UUID | None
-    description: str | None
     passed: bool | None
     score: int | None
     time_taken: int | None
@@ -2977,7 +2972,6 @@ class QGetSimulationAttemptV4GradingState(BaseModel):
 
     achieved_standards: list[QGetSimulationAttemptV4StandardAchievement] | None
     passed_standards: list[QGetSimulationAttemptV4StandardPass] | None
-    grade_description: str | None
     feedback_by_standard_id: list[QGetSimulationAttemptV4StandardFeedback] | None
 
 
@@ -26053,6 +26047,13 @@ class GetSimulationChatsViewSqlParams(BaseModel):
             self.attempt_id_filter,
         )
 
+class QGetSimulationChatsViewV4Analysis(BaseModel):
+
+    content: str | None
+
+
+
+
 class QGetSimulationChatsViewV4Feedback(BaseModel):
 
     id: UUID | None
@@ -26068,7 +26069,6 @@ class QGetSimulationChatsViewV4Grade(BaseModel):
 
     score: float | None
     passed: bool | None
-    description: str | None
     time_taken: int | None
 
 
@@ -26100,6 +26100,7 @@ class QGetSimulationChatsViewV4Item(BaseModel):
     completed: bool | None
     grade: QGetSimulationChatsViewV4Grade | None
     feedbacks: list[QGetSimulationChatsViewV4Feedback] | None
+    analyses: list[QGetSimulationChatsViewV4Analysis] | None
     persona_ids: list[UUID] | None
     objective_ids: list[UUID] | None
     question_ids: list[UUID] | None

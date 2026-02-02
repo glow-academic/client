@@ -29505,6 +29505,24 @@
         "title": "AggregatedResults",
         "description": "Aggregated results for the attempt."
       },
+      "AnalysisEntry": {
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "title": "AnalysisEntry",
+        "description": "Analysis entry for chat-level analysis content."
+      },
       "ArgsApiRequest": {
         "properties": {
           "agent_id": {
@@ -32046,6 +32064,20 @@
               }
             ],
             "title": "Feedbacks"
+          },
+          "analyses": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnalysisEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyses"
           },
           "messages": {
             "anyOf": [
@@ -61474,17 +61506,6 @@
             ],
             "title": "Passed Standards"
           },
-          "grade_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Description"
-          },
           "feedback_by_standard_id": {
             "anyOf": [
               {
@@ -79873,17 +79894,6 @@
             ],
             "title": "Rubric Id"
           },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
           "passed": {
             "anyOf": [
               {
@@ -79924,7 +79934,6 @@
           "created_at",
           "simulation_chat_id",
           "rubric_id",
-          "description",
           "passed",
           "score",
           "time_taken"
@@ -79961,17 +79970,6 @@
             ],
             "title": "Passed Standards"
           },
-          "grade_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Description"
-          },
           "feedback_by_standard_id": {
             "anyOf": [
               {
@@ -79991,7 +79989,6 @@
         "required": [
           "achieved_standards",
           "passed_standards",
-          "grade_description",
           "feedback_by_standard_id"
         ],
         "title": "QGetGeneralAttemptV4GradingState"
@@ -86731,17 +86728,6 @@
             ],
             "title": "Rubric Id"
           },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
           "passed": {
             "anyOf": [
               {
@@ -86782,7 +86768,6 @@
           "created_at",
           "simulation_chat_id",
           "rubric_id",
-          "description",
           "passed",
           "score",
           "time_taken"
@@ -86819,17 +86804,6 @@
             ],
             "title": "Passed Standards"
           },
-          "grade_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Description"
-          },
           "feedback_by_standard_id": {
             "anyOf": [
               {
@@ -86849,7 +86823,6 @@
         "required": [
           "achieved_standards",
           "passed_standards",
-          "grade_description",
           "feedback_by_standard_id"
         ],
         "title": "QGetPracticeAttemptV4GradingState"
@@ -96476,17 +96449,6 @@
             ],
             "title": "Rubric Id"
           },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
           "passed": {
             "anyOf": [
               {
@@ -96549,7 +96511,6 @@
           "created_at",
           "simulation_chat_id",
           "rubric_id",
-          "description",
           "passed",
           "score",
           "time_taken",
@@ -96588,17 +96549,6 @@
             ],
             "title": "Passed Standards"
           },
-          "grade_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Description"
-          },
           "feedback_by_standard_id": {
             "anyOf": [
               {
@@ -96618,7 +96568,6 @@
         "required": [
           "achieved_standards",
           "passed_standards",
-          "grade_description",
           "feedback_by_standard_id"
         ],
         "title": "QGetSimulationAttemptV4GradingState"

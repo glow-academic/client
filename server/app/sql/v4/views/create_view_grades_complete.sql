@@ -8,7 +8,6 @@ SELECT
     id,
     created_at,
     updated_at,
-    description,
     passed,
     score,
     run_id,

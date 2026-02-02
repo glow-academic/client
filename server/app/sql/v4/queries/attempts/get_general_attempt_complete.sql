@@ -136,7 +136,6 @@ CREATE TYPE types.q_get_general_attempt_v4_grade AS (
     created_at timestamptz,
     simulation_chat_id uuid,
     rubric_id uuid,
-    description text,
     passed boolean,
     score int,
     time_taken int
@@ -161,7 +160,6 @@ CREATE TYPE types.q_get_general_attempt_v4_standard_feedback AS (
 CREATE TYPE types.q_get_general_attempt_v4_grading_state AS (
     achieved_standards types.q_get_general_attempt_v4_standard_achievement[],
     passed_standards types.q_get_general_attempt_v4_standard_pass[],
-    grade_description text,
     feedback_by_standard_id types.q_get_general_attempt_v4_standard_feedback[]
 );
 
@@ -704,7 +702,7 @@ grades_data AS (
         cwc.chat_id,
         (gg.id, gg.created_at, cwc.chat_id,
          COALESCE(grc.rubrics_id, ac.simulation_rubric_id),
-         gg.description, gg.passed, gg.score, COALESCE(gg.time_taken, 0)
+         gg.passed, gg.score, COALESCE(gg.time_taken, 0)
         )::types.q_get_general_attempt_v4_grade as grade
     FROM chats_with_context cwc
     CROSS JOIN attempt_context ac
@@ -846,7 +844,6 @@ grading_state_per_chat AS (
                          WHERE fg3.grade_id = (gd.grade).id),
                         '{}'::types.q_get_general_attempt_v4_standard_pass[]
                     ),
-                    COALESCE((gd.grade).description, ''),
                     COALESCE(
                         (SELECT ARRAY_AGG((fb.standard_id, fb.feedback)::types.q_get_general_attempt_v4_standard_feedback)
                          FROM feedbacks_grouped fg4

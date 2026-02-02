@@ -226,7 +226,6 @@ class GradeData(BaseModel):
     id: UUID | None = None
     score: int | None = None
     passed: bool | None = None
-    description: str | None = None
     time_taken: int | None = None
     total_points: int | None = None
     pass_points: int | None = None

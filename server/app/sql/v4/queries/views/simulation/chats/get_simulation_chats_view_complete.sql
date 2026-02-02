@@ -65,8 +65,12 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_response AS (
 CREATE TYPE types.q_get_simulation_chats_view_v4_grade AS (
     score float,
     passed boolean,
-    description text,
     time_taken int
+);
+
+-- Analysis item type
+CREATE TYPE types.q_get_simulation_chats_view_v4_analysis AS (
+    content text
 );
 
 -- Main chat item type (IDs from MV - metadata fetched separately via internal handlers)
@@ -103,6 +107,9 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
 
     -- Feedbacks (with standard name JOINed)
     feedbacks types.q_get_simulation_chats_view_v4_feedback[],
+
+    -- Analyses (chat-level analysis content)
+    analyses types.q_get_simulation_chats_view_v4_analysis[],
 
     -- Resource IDs - Normal/General View (plural arrays)
     persona_ids uuid[],
@@ -186,6 +193,20 @@ AS $$
         LEFT JOIN LATERAL unnest(mv.responses) AS r ON true
         GROUP BY mv.chat_id
     ),
+    -- Transform analyses to query type
+    analyses_transformed AS (
+        SELECT
+            mv.chat_id,
+            COALESCE(
+                ARRAY_AGG(
+                    ROW((a).content)::types.q_get_simulation_chats_view_v4_analysis
+                ) FILTER (WHERE (a).content IS NOT NULL),
+                ARRAY[]::types.q_get_simulation_chats_view_v4_analysis[]
+            ) AS analyses
+        FROM mv_data mv
+        LEFT JOIN LATERAL unnest(mv.analyses) AS a ON true
+        GROUP BY mv.chat_id
+    ),
     -- No resource JOINs needed - all metadata fetched via internal handlers
     with_resources AS (
         SELECT
@@ -208,9 +229,11 @@ AS $$
             mv.chat_created_at AS created_at,
             mv.chat_completed AS completed,
             -- Grade (composite type)
-            (mv.grade_score, mv.grade_passed, mv.grade_description, mv.grade_time_taken)::types.q_get_simulation_chats_view_v4_grade AS grade,
+            (mv.grade_score, mv.grade_passed, mv.grade_time_taken)::types.q_get_simulation_chats_view_v4_grade AS grade,
             -- Feedbacks
             ft.feedbacks,
+            -- Analyses
+            at.analyses,
             -- Resource IDs - Normal/General View
             mv.persona_ids,
             mv.objective_ids,
@@ -229,6 +252,7 @@ AS $$
         FROM mv_data mv
         LEFT JOIN feedbacks_transformed ft ON ft.chat_id = mv.chat_id
         LEFT JOIN responses_transformed rt ON rt.chat_id = mv.chat_id
+        LEFT JOIN analyses_transformed at ON at.chat_id = mv.chat_id
     ),
     -- Aggregate into array
     items_agg AS (
@@ -252,6 +276,7 @@ AS $$
                     completed,
                     grade,
                     feedbacks,
+                    analyses,
                     persona_ids,
                     objective_ids,
                     question_ids,
