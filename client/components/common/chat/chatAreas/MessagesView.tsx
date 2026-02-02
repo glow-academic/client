@@ -141,11 +141,40 @@ export function MessagesView({
 
   // State for feedback hover - shows annotations in message when hovering feedback card
   const [hoveredFeedbackId, setHoveredFeedbackId] = useState<string | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced hover handlers for smoother transitions
+  const handleFeedbackHoverStart = (feedbackId: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredFeedbackId(feedbackId);
+    }, 50); // Small delay to prevent flickering
+  };
+
+  const handleFeedbackHoverEnd = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredFeedbackId(null);
+    }, 100); // Slightly longer delay when leaving
+  };
 
   useEffect(() => {
     if (!new_hint_message_ids) return;
     setMessagesWithNewHints(new Set(new_hint_message_ids));
   }, [new_hint_message_ids]);
+
+  // Cleanup hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Helper to get first content text from a message
   const getFirstContentText = (msg: { contents?: ContentEntry[] | null }): string => {
@@ -469,8 +498,8 @@ export function MessagesView({
                                       key={fb.id}
                                       feedback={fb}
                                       isHovered={hoveredFeedbackId === fb.id}
-                                      onHoverStart={() => setHoveredFeedbackId(fb.id)}
-                                      onHoverEnd={() => setHoveredFeedbackId(null)}
+                                      onHoverStart={() => handleFeedbackHoverStart(fb.id)}
+                                      onHoverEnd={handleFeedbackHoverEnd}
                                     />
                                   ))}
                                 </div>
@@ -526,8 +555,8 @@ export function MessagesView({
                                     key={fb.id}
                                     feedback={fb}
                                     isHovered={hoveredFeedbackId === fb.id}
-                                    onHoverStart={() => setHoveredFeedbackId(fb.id)}
-                                    onHoverEnd={() => setHoveredFeedbackId(null)}
+                                    onHoverStart={() => handleFeedbackHoverStart(fb.id)}
+                                    onHoverEnd={handleFeedbackHoverEnd}
                                   />
                                 ))}
                               </div>

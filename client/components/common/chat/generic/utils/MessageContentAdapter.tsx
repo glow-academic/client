@@ -118,5 +118,9 @@ export function MessageContentAdapter({
   // Add remaining text
   result += content.substring(lastEnd);
 
-  return <Markdown>{result}</Markdown>;
+  return (
+    <div className="transition-all duration-200 ease-in-out">
+      <Markdown>{result}</Markdown>
+    </div>
+  );
 }
