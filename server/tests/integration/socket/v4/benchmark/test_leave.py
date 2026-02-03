@@ -1,18 +1,19 @@
-"""Integration tests for benchmark_leave WebSocket event."""
+"""Integration tests for test_leave WebSocket event."""
 
 import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockSocketIO
 
-from app.socket.v4.attempts.benchmark.leave import benchmark_leave
+from app.socket.v4.artifacts.test.room import test_leave
+from app.infra.v4.websocket.set_socket_owner import set_socket_owner
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_benchmark_leave_success(
+async def test_test_leave_success(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
-    """Test successful benchmark_leave event."""
+    """Test successful test_leave event."""
     # Create attempt
     from tests.integration.socket.v4.helpers import (
         create_test_benchmark_attempt,
@@ -27,6 +28,7 @@ async def test_benchmark_leave_success(
 
     # Join room first
     sid = "test_sid_123"
+    await set_socket_owner("965bd24f-dfae-4063-b370-e1373df46322", sid)
     room_name = f"benchmark_{attempt_id}"
     await mock_sio.enter_room(sid, room_name)
 
@@ -35,7 +37,7 @@ async def test_benchmark_leave_success(
     }
 
     # Act
-    await benchmark_leave(sid, data)
+    await test_leave(sid, data)
 
     # Assert - verify socket left room
     assert sid not in mock_sio.rooms.get(room_name, set())

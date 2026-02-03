@@ -4,7 +4,8 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockSocketIO
 
-from app.socket.v4.attempts.benchmark.start import benchmark_start
+from app.socket.v4.artifacts.benchmark.start import benchmark_start
+from app.infra.v4.websocket.set_socket_owner import set_socket_owner
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,6 +22,7 @@ async def test_benchmark_start_success(
         pytest.skip("No active evals found in test database")
 
     sid = "test_sid_123"
+    await set_socket_owner("965bd24f-dfae-4063-b370-e1373df46322", sid)
     data = {
         "eval_id": eval_id,
         "infinite_mode": False,
@@ -40,6 +42,7 @@ async def test_benchmark_start_missing_eval_id(
 ) -> None:
     """Test benchmark_start with missing eval_id."""
     sid = "test_sid_123"
+    await set_socket_owner("965bd24f-dfae-4063-b370-e1373df46322", sid)
     data = {
         "infinite_mode": False,
     }
@@ -47,5 +50,5 @@ async def test_benchmark_start_missing_eval_id(
     await benchmark_start(sid, data)
 
     # Verify error was emitted
-    error_events = mock_sio.get_events("benchmarks_start_error")
+    error_events = mock_sio.get_events("benchmarks_error")
     assert len(error_events) >= 1

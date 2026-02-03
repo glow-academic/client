@@ -27,9 +27,6 @@ from .artifacts import (
     rubric,
     scenario,
 )
-from .attempts import (
-    benchmark,
-)
 
 # Create main router
 router = APIRouter(prefix="/socket/v4", tags=["socket"])
@@ -69,10 +66,6 @@ server_router.include_router(cohort.server_router)
 
 client_router.include_router(profile.client_router)
 server_router.include_router(profile.server_router)
-
-# Include attempts routers (benchmark)
-client_router.include_router(benchmark.client_router)
-server_router.include_router(benchmark.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)
