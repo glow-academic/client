@@ -79,7 +79,7 @@ DECLARE
     v_chat_id uuid;
 BEGIN
     -- Get simulation_id and first chat from attempt
-    SELECT sas.simulation_id, COALESCE(p_chat_id, c.id) INTO v_simulation_id, v_chat_id
+    SELECT sas.simulations_id, COALESCE(p_chat_id, c.id) INTO v_simulation_id, v_chat_id
     FROM simulation_attempts_simulations_connection sas
     JOIN simulation_chats_entry c ON c.attempt_id = p_attempt_id
     WHERE sas.attempt_id = p_attempt_id AND sas.active = true

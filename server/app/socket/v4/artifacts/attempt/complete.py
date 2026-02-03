@@ -20,6 +20,7 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptAssistantCompleteEvent,
     AttemptCompleteEvent,
     AttemptGradedEvent,
+    AttemptGradingProgressEvent,
     AttemptHintProgressEvent,
     AttemptTurnCompleteEvent,
 )
@@ -321,4 +322,12 @@ async def attempt_hint_progress_api(
     request: AttemptHintProgressEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Attempt hint generation progress."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/grading_progress", response_model=dict[str, bool])
+async def attempt_grading_progress_api(
+    request: AttemptGradingProgressEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Attempt grading progress update."""
     return {"success": True}

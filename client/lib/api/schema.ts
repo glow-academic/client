@@ -5560,26 +5560,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/attempt/send": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Send Api
-         * @description Client-to-server event: Send a message during attempt simulation.
-         */
-        post: operations["attempt_send_api_socket_v4_client_attempt_send_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/client/attempt/stop": {
         parameters: {
             query?: never;
@@ -5940,7 +5920,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/attempt/message_sent": {
+    "/socket/v4/server/attempt/user_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5950,10 +5930,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Message Sent Api
-         * @description Server-to-client event: Message received and assistant placeholder created.
+         * Attempt User Complete Api
+         * @description Server-to-client event: User message finalized.
          */
-        post: operations["attempt_message_sent_api_socket_v4_server_attempt_message_sent_post"];
+        post: operations["attempt_user_complete_api_socket_v4_server_attempt_user_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/assistant_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Start Api
+         * @description Server-to-client event: Assistant message generation started.
+         */
+        post: operations["attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6100,6 +6100,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/grading_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Grading Progress Api
+         * @description Server-to-client event: Attempt grading progress update.
+         */
+        post: operations["attempt_grading_progress_api_socket_v4_server_attempt_grading_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/attempt/error": {
         parameters: {
             query?: never;
@@ -6134,46 +6154,6 @@ export interface paths {
          * @description Server-to-client event: Successfully joined a chat room.
          */
         post: operations["attempt_joined_api_socket_v4_server_attempt_joined_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/attempt/user_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt User Complete Api
-         * @description Server-to-client event: User message finalized.
-         */
-        post: operations["attempt_user_complete_api_socket_v4_server_attempt_user_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/attempt/assistant_start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Assistant Start Api
-         * @description Server-to-client event: Assistant message generation started.
-         */
-        post: operations["attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6274,6 +6254,66 @@ export interface paths {
          * @description Server-to-client event: Voice session ended.
          */
         post: operations["attempt_audio_ended_api_socket_v4_server_attempt_audio_ended_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/user_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt User Start Api
+         * @description Server-to-client event: User speech detected in voice mode.
+         */
+        post: operations["attempt_user_start_api_socket_v4_server_attempt_user_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/user_delta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt User Delta Api
+         * @description Server-to-client event: Voice transcription delta.
+         */
+        post: operations["attempt_user_delta_api_socket_v4_server_attempt_user_delta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/attempt/assistant_audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Assistant Audio Api
+         * @description Server-to-client event: Audio chunk from assistant in voice mode.
+         */
+        post: operations["attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6898,6 +6938,23 @@ export interface components {
             id?: string | null;
         };
         /**
+         * AttemptAssistantAudioEvent
+         * @description Server-to-client event: attempt_assistant_audio.
+         *
+         *     Emitted with audio chunks during voice mode.
+         */
+        AttemptAssistantAudioEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id?: string | null;
+            /**
+             * Audio
+             * Format: binary
+             */
+            audio: string;
+        };
+        /**
          * AttemptAssistantCompleteEvent
          * @description Server-to-client event: attempt_assistant_complete.
          *
@@ -7288,6 +7345,30 @@ export interface components {
             feedback?: string | null;
         };
         /**
+         * AttemptGradingProgressEvent
+         * @description Server-to-client event: attempt_grading_progress.
+         *
+         *     Emitted during grading with progress updates.
+         */
+        AttemptGradingProgressEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Type */
+            type: string;
+            /** Standard Group Name */
+            standard_group_name?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Completed Count */
+            completed_count?: number | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Feedback Preview */
+            feedback_preview?: string | null;
+            /** Summary */
+            summary?: string | null;
+        };
+        /**
          * AttemptHintProgressEvent
          * @description Server-to-client event: attempt_hint_progress.
          *
@@ -7373,29 +7454,6 @@ export interface components {
             voice_mode: boolean;
             /** Upload Id */
             upload_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * AttemptMessageSentEvent
-         * @description Server-to-client event: attempt_message_sent.
-         *
-         *     Emitted when a user message is received and assistant placeholder created.
-         */
-        AttemptMessageSentEvent: {
-            /**
-             * Artifact Type
-             * @default attempt
-             */
-            artifact_type: string;
-            /** Chat Id */
-            chat_id: string;
-            /** User Message Id */
-            user_message_id: string;
-            /** Assistant Message Id */
-            assistant_message_id: string;
-            /** Run Id */
-            run_id?: string | null;
             /** Group Id */
             group_id?: string | null;
         };
@@ -7493,30 +7551,6 @@ export interface components {
             option_ids: string[];
         };
         /**
-         * AttemptSendPayload
-         * @description Request payload for attempt_send WebSocket event.
-         *
-         *     Simplified payload - agent_ids passed from frontend (from artifact_agent_ids).
-         */
-        AttemptSendPayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Content */
-            content: string;
-            /** Agent Ids */
-            agent_ids: string[];
-            /**
-             * Voice Mode
-             * @default false
-             */
-            voice_mode: boolean;
-            /** Upload Id */
-            upload_id?: string | null;
-        };
-        /**
          * AttemptStopPayload
          * @description Request payload for attempt_stop WebSocket event.
          *
@@ -7570,6 +7604,32 @@ export interface components {
             created_at: string;
             /** Persona Id */
             persona_id?: string | null;
+        };
+        /**
+         * AttemptUserDeltaEvent
+         * @description Server-to-client event: attempt_user_delta.
+         *
+         *     Emitted during voice transcription with incremental updates.
+         */
+        AttemptUserDeltaEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Item Id */
+            item_id: string;
+            /** Transcript */
+            transcript: string;
+        };
+        /**
+         * AttemptUserStartEvent
+         * @description Server-to-client event: attempt_user_start.
+         *
+         *     Emitted when user speech is detected in voice mode.
+         */
+        AttemptUserStartEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Item Id */
+            item_id: string;
         };
         /**
          * AttemptViewItem
@@ -36302,41 +36362,6 @@ export interface operations {
             };
         };
     };
-    attempt_send_api_socket_v4_client_attempt_send_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptSendPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     attempt_stop_api_socket_v4_client_attempt_stop_post: {
         parameters: {
             query?: never;
@@ -36969,7 +36994,7 @@ export interface operations {
             };
         };
     };
-    attempt_message_sent_api_socket_v4_server_attempt_message_sent_post: {
+    attempt_user_complete_api_socket_v4_server_attempt_user_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36978,7 +37003,42 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptMessageSentEvent"];
+                "application/json": components["schemas"]["AttemptUserCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantStartEvent"];
             };
         };
         responses: {
@@ -37249,6 +37309,41 @@ export interface operations {
             };
         };
     };
+    attempt_grading_progress_api_socket_v4_server_attempt_grading_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptGradingProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attempt_error_api_socket_v4_server_attempt_error_post: {
         parameters: {
             query?: never;
@@ -37294,76 +37389,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptJoinedEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_user_complete_api_socket_v4_server_attempt_user_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptUserCompleteEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptAssistantStartEvent"];
             };
         };
         responses: {
@@ -37539,6 +37564,111 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptAudioEndedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_user_start_api_socket_v4_server_attempt_user_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptUserStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_user_delta_api_socket_v4_server_attempt_user_delta_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptUserDeltaEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptAssistantAudioEvent"];
             };
         };
         responses: {

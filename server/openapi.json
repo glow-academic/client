@@ -25985,57 +25985,6 @@
         ]
       }
     },
-    "/socket/v4/client/attempt/send": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client"
-        ],
-        "summary": "Attempt Send Api",
-        "description": "Client-to-server event: Send a message during attempt simulation.",
-        "operationId": "attempt_send_api_socket_v4_client_attempt_send_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AttemptSendPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Attempt Send Api Socket V4 Client Attempt Send Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
-      }
-    },
     "/socket/v4/client/attempt/stop": {
       "post": {
         "tags": [
@@ -26956,20 +26905,20 @@
         ]
       }
     },
-    "/socket/v4/server/attempt/message_sent": {
+    "/socket/v4/server/attempt/user_complete": {
       "post": {
         "tags": [
           "socket",
           "socket-server"
         ],
-        "summary": "Attempt Message Sent Api",
-        "description": "Server-to-client event: Message received and assistant placeholder created.",
-        "operationId": "attempt_message_sent_api_socket_v4_server_attempt_message_sent_post",
+        "summary": "Attempt User Complete Api",
+        "description": "Server-to-client event: User message finalized.",
+        "operationId": "attempt_user_complete_api_socket_v4_server_attempt_user_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AttemptMessageSentEvent"
+                "$ref": "#/components/schemas/AttemptUserCompleteEvent"
               }
             }
           },
@@ -26985,7 +26934,58 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Attempt Message Sent Api Socket V4 Server Attempt Message Sent Post"
+                  "title": "Response Attempt User Complete Api Socket V4 Server Attempt User Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/assistant_start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Assistant Start Api",
+        "description": "Server-to-client event: Assistant message generation started.",
+        "operationId": "attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptAssistantStartEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Assistant Start Api Socket V4 Server Attempt Assistant Start Post"
                 }
               }
             }
@@ -27364,6 +27364,57 @@
         ]
       }
     },
+    "/socket/v4/server/attempt/grading_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Grading Progress Api",
+        "description": "Server-to-client event: Attempt grading progress update.",
+        "operationId": "attempt_grading_progress_api_socket_v4_server_attempt_grading_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptGradingProgressEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Grading Progress Api Socket V4 Server Attempt Grading Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v4/server/attempt/error": {
       "post": {
         "tags": [
@@ -27445,108 +27496,6 @@
                   },
                   "type": "object",
                   "title": "Response Attempt Joined Api Socket V4 Server Attempt Joined Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/attempt/user_complete": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server"
-        ],
-        "summary": "Attempt User Complete Api",
-        "description": "Server-to-client event: User message finalized.",
-        "operationId": "attempt_user_complete_api_socket_v4_server_attempt_user_complete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AttemptUserCompleteEvent"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Attempt User Complete Api Socket V4 Server Attempt User Complete Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/attempt/assistant_start": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server"
-        ],
-        "summary": "Attempt Assistant Start Api",
-        "description": "Server-to-client event: Assistant message generation started.",
-        "operationId": "attempt_assistant_start_api_socket_v4_server_attempt_assistant_start_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AttemptAssistantStartEvent"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Attempt Assistant Start Api Socket V4 Server Attempt Assistant Start Post"
                 }
               }
             }
@@ -27802,6 +27751,159 @@
                   },
                   "type": "object",
                   "title": "Response Attempt Audio Ended Api Socket V4 Server Attempt Audio Ended Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/user_start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt User Start Api",
+        "description": "Server-to-client event: User speech detected in voice mode.",
+        "operationId": "attempt_user_start_api_socket_v4_server_attempt_user_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptUserStartEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt User Start Api Socket V4 Server Attempt User Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/user_delta": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt User Delta Api",
+        "description": "Server-to-client event: Voice transcription delta.",
+        "operationId": "attempt_user_delta_api_socket_v4_server_attempt_user_delta_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptUserDeltaEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt User Delta Api Socket V4 Server Attempt User Delta Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/attempt/assistant_audio": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Assistant Audio Api",
+        "description": "Server-to-client event: Audio chunk from assistant in voice mode.",
+        "operationId": "attempt_assistant_audio_api_socket_v4_server_attempt_assistant_audio_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptAssistantAudioEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Assistant Audio Api Socket V4 Server Attempt Assistant Audio Post"
                 }
               }
             }
@@ -29217,6 +29319,37 @@
         "type": "object",
         "title": "ArgsOutputsApiResponse"
       },
+      "AttemptAssistantAudioEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "audio": {
+            "type": "string",
+            "format": "binary",
+            "title": "Audio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "audio"
+        ],
+        "title": "AttemptAssistantAudioEvent",
+        "description": "Server-to-client event: attempt_assistant_audio.\n\nEmitted with audio chunks during voice mode."
+      },
       "AttemptAssistantCompleteEvent": {
         "properties": {
           "chat_id": {
@@ -30115,6 +30248,91 @@
         "title": "AttemptGradedEvent",
         "description": "Server-to-client event: attempt_graded.\n\nEmitted when simulation grading completes."
       },
+      "AttemptGradingProgressEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "standard_group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "completed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Count"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "feedback_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Preview"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "type"
+        ],
+        "title": "AttemptGradingProgressEvent",
+        "description": "Server-to-client event: attempt_grading_progress.\n\nEmitted during grading with progress updates."
+      },
       "AttemptHintProgressEvent": {
         "properties": {
           "chat_id": {
@@ -30277,57 +30495,6 @@
         ],
         "title": "AttemptMessagePayload",
         "description": "Request payload for attempt_message WebSocket event.\n\nSends a user message during an active simulation chat."
-      },
-      "AttemptMessageSentEvent": {
-        "properties": {
-          "artifact_type": {
-            "type": "string",
-            "title": "Artifact Type",
-            "default": "attempt"
-          },
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "user_message_id": {
-            "type": "string",
-            "title": "User Message Id"
-          },
-          "assistant_message_id": {
-            "type": "string",
-            "title": "Assistant Message Id"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "user_message_id",
-          "assistant_message_id"
-        ],
-        "title": "AttemptMessageSentEvent",
-        "description": "Server-to-client event: attempt_message_sent.\n\nEmitted when a user message is received and assistant placeholder created."
       },
       "AttemptMicMutePayload": {
         "properties": {
@@ -30609,52 +30776,6 @@
         "title": "AttemptResponseSubmitPayload",
         "description": "Request payload for attempt_response_submit WebSocket event.\n\nSubmits a response to a video question."
       },
-      "AttemptSendPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Id"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "agent_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Agent Ids"
-          },
-          "voice_mode": {
-            "type": "boolean",
-            "title": "Voice Mode",
-            "default": false
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "content",
-          "agent_ids"
-        ],
-        "title": "AttemptSendPayload",
-        "description": "Request payload for attempt_send WebSocket event.\n\nSimplified payload - agent_ids passed from frontend (from artifact_agent_ids)."
-      },
       "AttemptStopPayload": {
         "properties": {
           "chat_id": {
@@ -30753,6 +30874,49 @@
         ],
         "title": "AttemptUserCompleteEvent",
         "description": "Server-to-client event: attempt_user_complete.\n\nEmitted when user message is finalized (text or voice)."
+      },
+      "AttemptUserDeltaEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "transcript": {
+            "type": "string",
+            "title": "Transcript"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "item_id",
+          "transcript"
+        ],
+        "title": "AttemptUserDeltaEvent",
+        "description": "Server-to-client event: attempt_user_delta.\n\nEmitted during voice transcription with incremental updates."
+      },
+      "AttemptUserStartEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "item_id"
+        ],
+        "title": "AttemptUserStartEvent",
+        "description": "Server-to-client event: attempt_user_start.\n\nEmitted when user speech is detected in voice mode."
       },
       "AttemptViewItem": {
         "properties": {

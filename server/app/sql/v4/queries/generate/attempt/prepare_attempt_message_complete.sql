@@ -63,7 +63,7 @@ RETURNS TABLE (
     provider_name text,
     base_url text,
     api_key text,
-    temperature float,
+    temperature real,
     reasoning text,
     system_prompt text,
 
@@ -72,7 +72,7 @@ RETURNS TABLE (
     voice_provider text,
     voice_base_url text,
     voice_api_key text,
-    voice_temperature float,
+    voice_temperature real,
     voice_reasoning text,
 
     -- Tools and context
@@ -96,7 +96,7 @@ DECLARE
     v_simulation_id uuid;
 BEGIN
     -- Get attempt_id and simulation from chat
-    SELECT c.attempt_id, sas.simulation_id INTO v_attempt_id, v_simulation_id
+    SELECT c.attempt_id, sas.simulations_id INTO v_attempt_id, v_simulation_id
     FROM simulation_chats_entry c
     JOIN simulation_attempts_simulations_connection sas ON sas.attempt_id = c.attempt_id AND sas.active = true
     WHERE c.id = p_chat_id
@@ -104,9 +104,9 @@ BEGIN
 
     -- Get or create group
     IF p_group_id IS NOT NULL THEN
-        SELECT id, trace_id INTO v_group_id, v_trace_id
+        SELECT groups_entry.id, groups_entry.trace_id INTO v_group_id, v_trace_id
         FROM groups_entry
-        WHERE id = p_group_id;
+        WHERE groups_entry.id = p_group_id;
     END IF;
 
     IF v_group_id IS NULL THEN
@@ -114,12 +114,12 @@ BEGIN
         SELECT id INTO v_session_id
         FROM sessions_entry
         WHERE profile_id = p_profile_id AND active = true
-        ORDER BY created_at DESC
+        ORDER BY sessions_entry.created_at DESC
         LIMIT 1;
 
         INSERT INTO groups_entry (created_at, updated_at, session_id)
         VALUES (NOW(), NOW(), v_session_id)
-        RETURNING id, trace_id INTO v_group_id, v_trace_id;
+        RETURNING groups_entry.id, groups_entry.trace_id INTO v_group_id, v_trace_id;
     END IF;
 
     -- Create run
@@ -137,15 +137,32 @@ BEGIN
 
     v_created_at := NOW();
 
-    -- Create user message (role is message_type enum: 'user' or 'assistant')
-    INSERT INTO simulation_messages_entry (chat_id, created_at, updated_at, content, role, completed, audio)
-    VALUES (p_chat_id, v_created_at, v_created_at, p_message, 'user'::message_type, true, p_voice_mode)
-    RETURNING id INTO v_user_message_id;
+    -- Create user message in base table first
+    INSERT INTO messages_entry (run_id, role, completed, audio, created_at, updated_at)
+    VALUES (v_run_id, 'user'::message_type, true, p_voice_mode, v_created_at, v_created_at)
+    RETURNING messages_entry.id INTO v_user_message_id;
 
-    -- Create assistant message placeholder
-    INSERT INTO simulation_messages_entry (chat_id, run_id, created_at, updated_at, content, role, completed, audio)
-    VALUES (p_chat_id, v_run_id, v_created_at, v_created_at, '', 'assistant'::message_type, false, p_voice_mode)
-    RETURNING id INTO v_assistant_message_id;
+    -- Link user message to simulation chat
+    INSERT INTO simulation_messages_entry (id, chat_id)
+    VALUES (v_user_message_id, p_chat_id);
+
+    -- Insert user content
+    WITH user_content AS (
+        INSERT INTO contents_entry (message_id, content)
+        VALUES (v_user_message_id, p_message)
+        RETURNING contents_entry.id as content_id
+    )
+    INSERT INTO simulation_contents_entry (content_id, simulation_message_id)
+    SELECT content_id, v_user_message_id FROM user_content;
+
+    -- Create assistant message placeholder in base table
+    INSERT INTO messages_entry (run_id, role, completed, audio, created_at, updated_at)
+    VALUES (v_run_id, 'assistant'::message_type, false, p_voice_mode, v_created_at, v_created_at)
+    RETURNING messages_entry.id INTO v_assistant_message_id;
+
+    -- Link assistant message to simulation chat
+    INSERT INTO simulation_messages_entry (id, chat_id)
+    VALUES (v_assistant_message_id, p_chat_id);
 
     -- Return all data
     RETURN QUERY
@@ -212,15 +229,17 @@ BEGIN
     chat_messages AS (
         SELECT jsonb_agg(
             jsonb_build_object(
-                'role', m.role::text,
-                'content', m.content
-            ) ORDER BY m.created_at
+                'role', me.role::text,
+                'content', COALESCE(ce.content, '')
+            ) ORDER BY me.created_at
         ) as history
-        FROM simulation_messages_entry m
-        WHERE m.chat_id = p_chat_id
-          AND m.completed = true
-          AND m.id != v_user_message_id
-          AND m.id != v_assistant_message_id
+        FROM simulation_messages_entry sm
+        JOIN messages_entry me ON me.id = sm.id
+        LEFT JOIN contents_entry ce ON ce.message_id = sm.id
+        WHERE sm.chat_id = p_chat_id
+          AND me.completed = true
+          AND sm.id != v_user_message_id
+          AND sm.id != v_assistant_message_id
     ),
     jinja_ctx AS (
         SELECT jsonb_build_object(
@@ -255,7 +274,7 @@ BEGIN
         NULL::text,  -- voice_provider
         NULL::text,  -- voice_base_url
         NULL::text,  -- voice_api_key
-        NULL::float, -- voice_temperature
+        NULL::real, -- voice_temperature
         NULL::text,  -- voice_reasoning
         td.tools,
         di.templates,

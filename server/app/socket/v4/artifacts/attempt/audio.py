@@ -22,6 +22,7 @@ from app.main import (
     sio,
 )
 from app.socket.v4.artifacts.attempt.types import (
+    AttemptAssistantAudioEvent,
     AttemptAudioEndedEvent,
     AttemptAudioFramePayload,
     AttemptAudioReadyEvent,
@@ -29,6 +30,8 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptAudioStopPayload,
     AttemptMicMutePayload,
     AttemptUnifiedErrorEvent,
+    AttemptUserDeltaEvent,
+    AttemptUserStartEvent,
 )
 from app.socket.v4.artifacts.session_store import (
     get_session_by_run_id,
@@ -275,4 +278,22 @@ async def attempt_audio_ready_api(request: AttemptAudioReadyEvent) -> dict[str, 
 @server_router.post("/attempt/audio_ended", response_model=dict[str, bool])
 async def attempt_audio_ended_api(request: AttemptAudioEndedEvent) -> dict[str, bool]:
     """Server-to-client event: Voice session ended."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/user_start", response_model=dict[str, bool])
+async def attempt_user_start_api(request: AttemptUserStartEvent) -> dict[str, bool]:
+    """Server-to-client event: User speech detected in voice mode."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/user_delta", response_model=dict[str, bool])
+async def attempt_user_delta_api(request: AttemptUserDeltaEvent) -> dict[str, bool]:
+    """Server-to-client event: Voice transcription delta."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/assistant_audio", response_model=dict[str, bool])
+async def attempt_assistant_audio_api(request: AttemptAssistantAudioEvent) -> dict[str, bool]:
+    """Server-to-client event: Audio chunk from assistant in voice mode."""
     return {"success": True}

@@ -171,22 +171,25 @@ runs_today_data AS (
     WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Simulation data
+-- p_simulation_id is a simulations_resource.id, need to join to simulation_artifact via simulation_simulations_junction
 simulation_data AS (
     SELECT
-        s.id as simulation_id,
+        sa.id as simulation_id,
         TRUE as simulation_exists,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_name,
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = sa.id LIMIT 1) as simulation_name,
         EXISTS (
             SELECT 1 FROM simulation_flags_junction sf
             JOIN flags_resource f ON sf.flag_id = f.id
-            WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = true
+            WHERE sf.simulation_id = sa.id AND f.name = 'simulation_active' AND sf.value = true
         ) as simulation_is_active
-    FROM simulation_artifact s
-    CROSS JOIN params p
-    WHERE s.id = p.simulation_id
+    FROM params p
+    JOIN simulations_resource sr ON sr.id = p.simulation_id
+    JOIN simulation_simulations_junction ssj ON ssj.simulations_id = sr.id
+    JOIN simulation_artifact sa ON sa.id = ssj.simulation_id
     LIMIT 1
 ),
 -- Access check
+-- cohort_simulations_junction.simulation_id references simulations_resource.id
 access_data AS (
     SELECT EXISTS (
         SELECT 1

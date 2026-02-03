@@ -57,7 +57,6 @@ type MessageData = components["schemas"]["MessageData"];
 // Client-to-Server payloads
 type AttemptJoinPayload = Parameters<ClientToServerEvents["attempt_join"]>[0];
 type AttemptLeavePayload = Parameters<ClientToServerEvents["attempt_leave"]>[0];
-type AttemptSendPayload = Parameters<ClientToServerEvents["attempt_send"]>[0];
 type AttemptStopPayload = Parameters<ClientToServerEvents["attempt_stop"]>[0];
 type AttemptAudioStartPayload = Parameters<ClientToServerEvents["attempt_audio_start"]>[0];
 type AttemptAudioStopPayload = Parameters<ClientToServerEvents["attempt_audio_stop"]>[0];
@@ -550,14 +549,16 @@ export function AttemptChat({
 
   const handleSendMessage = useCallback(
     async (message: string, _isRetry?: boolean) => {
-      if (!message.trim() || !currentChat || isSendingMessage || !socket || attemptAgentIds.length === 0) return;
+      const simulationId = attemptData?.simulation?.id;
+      if (!message.trim() || !currentChat || isSendingMessage || !socket || attemptAgentIds.length === 0 || !simulationId) return;
 
       setIsSendingMessage(true);
       try {
-        socket.emit("attempt_send", {
-          chat_id: currentChat.id,
-          content: message,
+        socket.emit("attempt_message", {
+          simulation_id: simulationId,
           agent_ids: attemptAgentIds,
+          chat_id: currentChat.id,
+          message: message,
           voice_mode: false,
         });
       } catch (err) {
@@ -565,7 +566,7 @@ export function AttemptChat({
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, socket, attemptAgentIds]
+    [currentChat, isSendingMessage, socket, attemptAgentIds, attemptData?.simulation?.id]
   );
 
   const handleStopMessage = useCallback(async () => {

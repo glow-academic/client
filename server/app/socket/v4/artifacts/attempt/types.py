@@ -27,7 +27,7 @@ from app.socket.v4.artifacts.types import (
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 
-ATTEMPT_MESSAGE_ENTRY_TYPES = ["messages", "contents", "hints"]
+ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
 ATTEMPT_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 
 
@@ -161,19 +161,6 @@ class AttemptLeavePayload(BaseModel):
     """
 
     chat_id: UUID
-
-
-class AttemptSendPayload(BaseModel):
-    """Request payload for attempt_send WebSocket event.
-
-    Simplified payload - agent_ids passed from frontend (from artifact_agent_ids).
-    """
-
-    chat_id: UUID
-    content: str
-    agent_ids: list[UUID]  # List of agents - resolved to one based on entry types
-    voice_mode: bool = False
-    upload_id: UUID | None = None
 
 
 class AttemptStopPayload(BaseModel):

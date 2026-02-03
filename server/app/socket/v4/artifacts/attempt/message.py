@@ -25,8 +25,9 @@ from app.socket.v4.artifacts.attempt.permissions import (
 from app.socket.v4.artifacts.attempt.resolve_agent import resolve_agent_for_entry_types
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_MESSAGE_ENTRY_TYPES,
+    AttemptAssistantStartEvent,
     AttemptMessagePayload,
-    AttemptMessageSentEvent,
+    AttemptUserCompleteEvent,
 )
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
@@ -281,31 +282,36 @@ async def _attempt_message_impl(
             # Add current user message
             messages.append({"role": "user", "content": message_str})
 
-            # Step 6: Emit attempt_message_sent event
-            sent_event = AttemptMessageSentEvent(
+            # Step 6: Emit attempt_user_complete for the user message
+            created_at_str = prepare_row.created_at.isoformat() if prepare_row.created_at else ""
+            user_complete_event = AttemptUserCompleteEvent(
                 chat_id=str(data.chat_id),
-                user_message_id=user_message_id,
-                assistant_message_id=assistant_message_id,
-                run_id=run_id,
-                group_id=group_id,
+                message_id=user_message_id,
+                content=message_str,
+                created_at=created_at_str,
             )
-
             await sio.emit(
-                "attempt_message_sent",
-                sent_event.model_dump(mode="json"),
+                "attempt_user_complete",
+                user_complete_event.model_dump(mode="json"),
                 room=sid,
             )
-
-            # Also emit to simulation room for multi-tab sync
+            # Also emit to attempt room for multi-tab sync
             await sio.emit(
-                "simulation_text_message_sent",
-                {
-                    "message_id": user_message_id,
-                    "chat_id": str(data.chat_id),
-                    "message": message_str,
-                    "created_at": prepare_row.created_at.isoformat() if prepare_row.created_at else "",
-                },
-                room=f"simulation_{data.chat_id}",
+                "attempt_user_complete",
+                user_complete_event.model_dump(mode="json"),
+                room=f"attempt_{data.chat_id}",
+            )
+
+            # Emit attempt_assistant_start for the assistant placeholder
+            assistant_start_event = AttemptAssistantStartEvent(
+                chat_id=str(data.chat_id),
+                message_id=assistant_message_id,
+                created_at=created_at_str,
+            )
+            await sio.emit(
+                "attempt_assistant_start",
+                assistant_start_event.model_dump(mode="json"),
+                room=sid,
             )
 
             # Step 7: Emit to generate_artifact handler
@@ -456,7 +462,13 @@ async def attempt_message_api(request: AttemptMessagePayload) -> dict[str, bool]
     return {"success": True}
 
 
-@server_router.post("/attempt/message_sent", response_model=dict[str, bool])
-async def attempt_message_sent_api(request: AttemptMessageSentEvent) -> dict[str, bool]:
-    """Server-to-client event: Message received and assistant placeholder created."""
+@server_router.post("/attempt/user_complete", response_model=dict[str, bool])
+async def attempt_user_complete_api(request: AttemptUserCompleteEvent) -> dict[str, bool]:
+    """Server-to-client event: User message finalized."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/assistant_start", response_model=dict[str, bool])
+async def attempt_assistant_start_api(request: AttemptAssistantStartEvent) -> dict[str, bool]:
+    """Server-to-client event: Assistant message generation started."""
     return {"success": True}

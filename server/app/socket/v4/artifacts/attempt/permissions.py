@@ -79,7 +79,8 @@ def validate_attempt_access(ctx: AttemptGenerationContext) -> tuple[bool, list[s
         failures.append(f"Simulation '{ctx.simulation_name}' is not active")
 
     # Step 4: Profile has access
-    if not ctx.profile_has_access:
+    # Skip cohort access check if user already has an active attempt (implies access was granted)
+    if not ctx.profile_has_access and not ctx.attempt_exists:
         failures.append(f"You do not have access to simulation '{ctx.simulation_name}'")
 
     # Step 5: Validate entry types (if provided)
