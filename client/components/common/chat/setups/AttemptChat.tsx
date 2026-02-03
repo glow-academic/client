@@ -117,8 +117,8 @@ export function AttemptChat({
   const router = useRouter();
   const { socket, isConnected, artifactAgentIds } = useProfile();
 
-  // Get the chat agent ID for attempt (first agent from the array)
-  const attemptAgentId = artifactAgentIds?.["attempt"]?.[0] ?? null;
+  // Get the agent IDs for attempt (full array for server-side resolution)
+  const attemptAgentIds = artifactAgentIds?.["attempt"] ?? [];
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -550,14 +550,14 @@ export function AttemptChat({
 
   const handleSendMessage = useCallback(
     async (message: string, _isRetry?: boolean) => {
-      if (!message.trim() || !currentChat || isSendingMessage || !socket || !attemptAgentId) return;
+      if (!message.trim() || !currentChat || isSendingMessage || !socket || attemptAgentIds.length === 0) return;
 
       setIsSendingMessage(true);
       try {
         socket.emit("attempt_send", {
           chat_id: currentChat.id,
           content: message,
-          agent_id: attemptAgentId,
+          agent_ids: attemptAgentIds,
           voice_mode: false,
         });
       } catch (err) {
@@ -565,7 +565,7 @@ export function AttemptChat({
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, socket, attemptAgentId]
+    [currentChat, isSendingMessage, socket, attemptAgentIds]
   );
 
   const handleStopMessage = useCallback(async () => {

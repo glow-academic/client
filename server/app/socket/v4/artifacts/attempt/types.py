@@ -43,7 +43,7 @@ class AttemptMessagePayload(BaseModel):
     """
 
     simulation_id: UUID
-    chat_agent_id: UUID  # Agent for conversation (explicit)
+    agent_ids: list[UUID]  # List of agents - resolved to one based on entry types
     chat_id: UUID
     message: str
     voice_mode: bool = False
@@ -58,7 +58,7 @@ class AttemptGradePayload(BaseModel):
     """
 
     simulation_id: UUID
-    grade_agent_id: UUID  # Agent for grading (explicit)
+    agent_ids: list[UUID]  # List of agents - resolved to one based on entry types
     attempt_id: UUID
     chat_id: UUID | None = None  # Optional - grade specific chat or all
 
@@ -166,12 +166,12 @@ class AttemptLeavePayload(BaseModel):
 class AttemptSendPayload(BaseModel):
     """Request payload for attempt_send WebSocket event.
 
-    Simplified payload - agent_id passed from frontend (from artifact_agent_ids).
+    Simplified payload - agent_ids passed from frontend (from artifact_agent_ids).
     """
 
     chat_id: UUID
     content: str
-    agent_id: UUID  # Chat agent for conversation (from artifact_agent_ids['attempt'])
+    agent_ids: list[UUID]  # List of agents - resolved to one based on entry types
     voice_mode: bool = False
     upload_id: UUID | None = None
 

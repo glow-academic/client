@@ -8865,6 +8865,38 @@ class PrepareAttemptMessageApiResponse(BaseModel):
 
 
 
+# Generated from: resolve_agent_by_entry_types
+
+class ResolveAgentByEntryTypesSqlParams(BaseModel):
+
+    p_agent_ids: list[UUID]
+    p_entry_types: list[str]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_agent_ids,
+            self.p_entry_types,
+        )
+
+class ResolveAgentByEntryTypesSqlRow(BaseModel):
+
+    resolved_agent_id: UUID | None = None
+    matching_count: int | None = None
+    error_code: str | None = None
+
+class ResolveAgentByEntryTypesApiRequest(BaseModel):
+
+    p_agent_ids: list[UUID]
+    p_entry_types: list[str]
+
+class ResolveAgentByEntryTypesApiResponse(BaseModel):
+
+    resolved_agent_id: UUID | None = None
+    matching_count: int | None = None
+    error_code: str | None = None
+
+
+
 # Generated from: save_attempt_message_content
 
 class SaveAttemptMessageContentSqlParams(BaseModel):
@@ -27228,6 +27260,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareAttemptMessageApiRequest",
         "PrepareAttemptMessageApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql": (
+        "ResolveAgentByEntryTypesSqlParams",
+        "ResolveAgentByEntryTypesSqlRow",
+        "ResolveAgentByEntryTypesApiRequest",
+        "ResolveAgentByEntryTypesApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/save_attempt_message_content_complete.sql": (
         "SaveAttemptMessageContentSqlParams",
         "SaveAttemptMessageContentSqlRow",
@@ -29892,6 +29930,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/prepare_attempt_message_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"]
     ) -> SqlString: ...
 
     @overload

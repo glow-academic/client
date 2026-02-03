@@ -15,7 +15,9 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.attempt.resolve_agent import resolve_agent_for_entry_types
 from app.socket.v4.artifacts.attempt.types import (
+    ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptAssistantStartEvent,
     AttemptSendPayload,
     AttemptUnifiedErrorEvent,
@@ -67,6 +69,23 @@ async def _attempt_send_impl(
         chat_id_uuid = data.chat_id
 
         async with get_db_connection() as conn:
+            # Step 0: Resolve agent_id from agent_ids list
+            resolution = await resolve_agent_for_entry_types(
+                conn, data.agent_ids, ATTEMPT_MESSAGE_ENTRY_TYPES
+            )
+            if not resolution.success:
+                await sio.emit(
+                    "attempt_error",
+                    AttemptUnifiedErrorEvent(
+                        chat_id=str(data.chat_id),
+                        type="send",
+                        message=resolution.error_message or "Failed to resolve agent",
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+                return
+            resolved_agent_id = resolution.agent_id
+
             # Determine chat type (general vs practice)
             is_general_sql = load_sql(
                 "app/sql/v4/queries/attempts/general/is_general_chat_complete.sql"
@@ -155,7 +174,7 @@ async def _attempt_send_impl(
             # Get simulation context for model config + prompts
             context_params = GetSimulationRunContextSqlParams(
                 chat_id=chat_id_uuid,
-                p_agent_id=data.agent_id,
+                p_agent_id=resolved_agent_id,
             )
             context_result = cast(
                 GetSimulationRunContextSqlRow,

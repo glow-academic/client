@@ -30001,10 +30001,13 @@
             "format": "uuid",
             "title": "Simulation Id"
           },
-          "grade_agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Grade Agent Id"
+          "agent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Agent Ids"
           },
           "attempt_id": {
             "type": "string",
@@ -30027,7 +30030,7 @@
         "type": "object",
         "required": [
           "simulation_id",
-          "grade_agent_id",
+          "agent_ids",
           "attempt_id"
         ],
         "title": "AttemptGradePayload",
@@ -30218,10 +30221,13 @@
             "format": "uuid",
             "title": "Simulation Id"
           },
-          "chat_agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Agent Id"
+          "agent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Agent Ids"
           },
           "chat_id": {
             "type": "string",
@@ -30265,7 +30271,7 @@
         "type": "object",
         "required": [
           "simulation_id",
-          "chat_agent_id",
+          "agent_ids",
           "chat_id",
           "message"
         ],
@@ -30614,10 +30620,13 @@
             "type": "string",
             "title": "Content"
           },
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
+          "agent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Agent Ids"
           },
           "voice_mode": {
             "type": "boolean",
@@ -30641,10 +30650,10 @@
         "required": [
           "chat_id",
           "content",
-          "agent_id"
+          "agent_ids"
         ],
         "title": "AttemptSendPayload",
-        "description": "Request payload for attempt_send WebSocket event.\n\nSimplified payload - agent_id passed from frontend (from artifact_agent_ids)."
+        "description": "Request payload for attempt_send WebSocket event.\n\nSimplified payload - agent_ids passed from frontend (from artifact_agent_ids)."
       },
       "AttemptStopPayload": {
         "properties": {

@@ -10,7 +10,7 @@ authors = [
     {name = "GLOW Team", email = "team@glow.ai"}
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "fastapi==0.116.0",
     "uvicorn[standard]==0.35.0",

@@ -22,6 +22,7 @@ from app.socket.v4.artifacts.attempt.permissions import (
     format_generation_error,
     validate_attempt_message_access,
 )
+from app.socket.v4.artifacts.attempt.resolve_agent import resolve_agent_for_entry_types
 from app.socket.v4.artifacts.attempt.types import (
     ATTEMPT_MESSAGE_ENTRY_TYPES,
     AttemptMessagePayload,
@@ -82,10 +83,29 @@ async def _attempt_message_impl(
             return
 
         async with get_db_connection() as conn:
+            # Step 0: Resolve agent_id from agent_ids list
+            resolution = await resolve_agent_for_entry_types(
+                conn, data.agent_ids, ATTEMPT_MESSAGE_ENTRY_TYPES
+            )
+            if not resolution.success:
+                await emit_to_internal(
+                    "generate_call_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=resolution.error_message or "Failed to resolve agent",
+                        artifact_type="attempt",
+                        group_id=None,
+                        resource_type="attempt",
+                    ),
+                    sid=sid,
+                )
+                return
+            resolved_agent_id = resolution.agent_id
+
             # Step 1: Fetch context and validate prerequisites
             context_params = GetAttemptMessageContextSqlParams(
                 p_profile_id=profile_id,
-                p_agent_id=data.chat_agent_id,
+                p_agent_id=resolved_agent_id,
                 p_simulation_id=data.simulation_id,
                 p_chat_id=data.chat_id,
                 p_entry_types=ATTEMPT_MESSAGE_ENTRY_TYPES,
@@ -165,7 +185,7 @@ async def _attempt_message_impl(
             # Step 2: Create user message + assistant placeholder + run
             prepare_params = PrepareAttemptMessageSqlParams(
                 p_profile_id=profile_id,
-                p_agent_id=data.chat_agent_id,
+                p_agent_id=resolved_agent_id,
                 p_chat_id=data.chat_id,
                 p_message=message_str,
                 p_voice_mode=data.voice_mode,

@@ -7250,11 +7250,8 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
-            /**
-             * Grade Agent Id
-             * Format: uuid
-             */
-            grade_agent_id: string;
+            /** Agent Ids */
+            agent_ids: string[];
             /**
              * Attempt Id
              * Format: uuid
@@ -7360,11 +7357,8 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
-            /**
-             * Chat Agent Id
-             * Format: uuid
-             */
-            chat_agent_id: string;
+            /** Agent Ids */
+            agent_ids: string[];
             /**
              * Chat Id
              * Format: uuid
@@ -7502,7 +7496,7 @@ export interface components {
          * AttemptSendPayload
          * @description Request payload for attempt_send WebSocket event.
          *
-         *     Simplified payload - agent_id passed from frontend (from artifact_agent_ids).
+         *     Simplified payload - agent_ids passed from frontend (from artifact_agent_ids).
          */
         AttemptSendPayload: {
             /**
@@ -7512,11 +7506,8 @@ export interface components {
             chat_id: string;
             /** Content */
             content: string;
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Ids */
+            agent_ids: string[];
             /**
              * Voice Mode
              * @default false
