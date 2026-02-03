@@ -98,6 +98,55 @@ async def get_resource_table_columns(
     ]
 
 
+async def get_entry_table_columns(
+    conn: asyncpg.Connection, entry_type: str
+) -> list[dict[str, Any]]:
+    """Discover table columns for an entry type.
+
+    Queries information_schema.columns to get all columns for the entry table.
+    Filters out system columns (id, created_at, updated_at) as these are handled
+    automatically by the database.
+
+    Args:
+        conn: Database connection
+        entry_type: Entry type name (e.g., "contents", "hints")
+
+    Returns:
+        List of column metadata dictionaries with keys:
+        - name: Column name
+        - data_type: PostgreSQL data type
+        - is_nullable: Whether column allows NULL
+        - column_default: Default value if any
+    """
+    # Query information_schema directly for entry tables
+    table_name = f"{entry_type}_entry"
+    query = """
+        SELECT
+            column_name::text as name,
+            data_type::text as data_type,
+            (is_nullable = 'YES') as is_nullable,
+            column_default::text as column_default
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = $1
+          AND column_name NOT IN ('id', 'created_at', 'updated_at')
+        ORDER BY ordinal_position;
+    """
+    rows = await conn.fetch(query, table_name)
+
+    return [
+        {
+            "name": str(row["name"]),
+            "data_type": str(row["data_type"]),
+            "is_nullable": bool(row["is_nullable"]),
+            "column_default": str(row["column_default"])
+            if row["column_default"]
+            else None,
+        }
+        for row in rows
+    ]
+
+
 async def get_resource_schema_fields(
     conn: asyncpg.Connection, resource_type: str
 ) -> list[dict[str, Any]]:
@@ -219,6 +268,7 @@ async def map_template_values_to_table_columns(
     resource_type: str,
     template_values: dict[str, Any],
     tool_id: str | None = None,
+    is_entry: bool = False,
 ) -> dict[str, Any]:
     """Map template values (using schema field names) to table column names.
 
@@ -230,15 +280,19 @@ async def map_template_values_to_table_columns(
 
     Args:
         conn: Database connection
-        resource_type: Resource type name
+        resource_type: Resource type name (or entry_type if is_entry=True)
         template_values: Dictionary of template values keyed by schema field name
         tool_id: Optional tool ID to get output schema fields
+        is_entry: If True, look up {type}_entry table instead of {type}_resource
 
     Returns:
         Dictionary mapped to table column names ready for INSERT
     """
-    # Get table columns
-    table_columns = await get_resource_table_columns(conn, resource_type)
+    # Get table columns (handle both resource and entry tables)
+    if is_entry:
+        table_columns = await get_entry_table_columns(conn, resource_type)
+    else:
+        table_columns = await get_resource_table_columns(conn, resource_type)
     column_names = {col["name"] for col in table_columns}
 
     # Get output schema fields (either from tool_id or resource_schemas)

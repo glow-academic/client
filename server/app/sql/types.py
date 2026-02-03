@@ -7691,6 +7691,42 @@ class SaveDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: create_entry_record
+
+class CreateEntryRecordSqlParams(BaseModel):
+
+    entry_type: str
+    call_id: UUID
+    mcp: bool
+    entry_data: Any
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.entry_type,
+            self.call_id,
+            self.mcp,
+            self.entry_data,
+        )
+
+class CreateEntryRecordSqlRow(BaseModel):
+
+    id: UUID | None = None
+    already_exists: bool | None = None
+
+class CreateEntryRecordApiRequest(BaseModel):
+
+    entry_type: str
+    call_id: UUID
+    mcp: bool
+    entry_data: Any
+
+class CreateEntryRecordApiResponse(BaseModel):
+
+    id: UUID | None = None
+    already_exists: bool | None = None
+
+
+
 # Generated from: duplicate_eval
 
 class DuplicateEvalSqlParams(BaseModel):
@@ -10899,6 +10935,31 @@ class InfraToolsCreateCallForToolApiRequest(BaseModel):
 class InfraToolsCreateCallForToolApiResponse(BaseModel):
 
     call_id: UUID | None = None
+
+
+
+# Generated from: infra_tools_get_entry_type_by_tool_id
+
+class InfraToolsGetEntryTypeByToolIdSqlParams(BaseModel):
+
+    tool_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.tool_id,
+        )
+
+class InfraToolsGetEntryTypeByToolIdSqlRow(BaseModel):
+
+    entry_type: str | None = None
+
+class InfraToolsGetEntryTypeByToolIdApiRequest(BaseModel):
+
+    tool_id: UUID
+
+class InfraToolsGetEntryTypeByToolIdApiResponse(BaseModel):
+
+    entry_type: str | None = None
 
 
 
@@ -27172,6 +27233,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveDocumentApiRequest",
         "SaveDocumentApiResponse",
     ),
+    "app/sql/v4/queries/entries/create_entry_record_complete.sql": (
+        "CreateEntryRecordSqlParams",
+        "CreateEntryRecordSqlRow",
+        "CreateEntryRecordApiRequest",
+        "CreateEntryRecordApiResponse",
+    ),
     "app/sql/v4/queries/evals/duplicate_eval_complete.sql": (
         "DuplicateEvalSqlParams",
         "DuplicateEvalSqlRow",
@@ -27549,6 +27616,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraToolsCreateCallForToolSqlRow",
         "InfraToolsCreateCallForToolApiRequest",
         "InfraToolsCreateCallForToolApiResponse",
+    ),
+    "app/sql/v4/queries/infrastructure/tools/get_entry_type_by_tool_id_complete.sql": (
+        "InfraToolsGetEntryTypeByToolIdSqlParams",
+        "InfraToolsGetEntryTypeByToolIdSqlRow",
+        "InfraToolsGetEntryTypeByToolIdApiRequest",
+        "InfraToolsGetEntryTypeByToolIdApiResponse",
     ),
     "app/sql/v4/queries/infrastructure/tools/get_resource_type_by_tool_id_complete.sql": (
         "InfraToolsGetResourceTypeByToolIdSqlParams",
@@ -29860,6 +29933,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/create_entry_record_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/evals/duplicate_eval_complete.sql"]
     ) -> SqlString: ...
 
@@ -30171,6 +30249,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_entry_type_by_tool_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
