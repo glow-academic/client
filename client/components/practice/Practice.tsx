@@ -6,11 +6,10 @@
  */
 "use client";
 import type { PracticeOut } from "@/app/(main)/practice/page";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useTrainingStart } from "@/hooks/useTrainingStart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistorySkeleton } from "../common/history/SimulationHistory";
 import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
@@ -25,14 +24,6 @@ export default function Practice({
   isGuest = false,
 }: PracticeProps) {
   const { profile } = useProfile();
-
-  // Use the unified training start hook for WebSocket-based simulation starts
-  const { startTraining, startingSimulationId } = useTrainingStart({
-    practice: true,
-  });
-
-  // Use WebSocket's specific simulation ID for precise loading state
-  const loadingSimulation = startingSimulationId;
 
   // Extract data from practiceData
   const bundle = practiceData;
@@ -88,27 +79,11 @@ export default function Practice({
     return mapping;
   }, [practiceOverview?.standards]);
 
-  // Handle starting a simulation via the unified training hook
-  const handleStartSimulation = useCallback(
-    (simulationId: string) => {
-      startTraining({ simulationId });
-    },
-    [startTraining]
-  );
-
-  // Handle starting infinite mode via the unified training hook
-  const handleStartInfiniteMode = useCallback(
-    (simulationId: string) => {
-      startTraining({ simulationId, infinite: true });
-    },
-    [startTraining]
-  );
-
   if (!profile) {
     return null;
   }
 
-  // 4. RENDER NEW COMPONENT STRUCTURE
+  // RENDER COMPONENT STRUCTURE
   return (
     <TooltipProvider>
       <div className="space-y-12">
@@ -141,9 +116,7 @@ export default function Practice({
               | "admin"
               | "guest",
           }}
-          onStartSimulation={handleStartSimulation}
-          {...(!isGuest && { onStartInfiniteMode: handleStartInfiniteMode })}
-          loadingSimulation={loadingSimulation}
+          showInfiniteMode={!isGuest}
         />
       </div>
     </TooltipProvider>

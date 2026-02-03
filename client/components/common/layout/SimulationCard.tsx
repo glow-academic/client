@@ -4,6 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
+"use client";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
+import type { ServerToClientEvents } from "@/lib/ws/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
 
@@ -80,11 +86,11 @@ export interface SimulationCardProps {
   icon?: string;
   hasPassed?: boolean;
   passRate?: number;
+  /** "default" = practice mode, "cohort" = home mode */
   type: "default" | "cohort";
-  onStartSimulation: (id: string) => void;
-  onStartInfiniteMode?: (id: string) => void;
-  loadingSimulation: string | null;
   profile: ProfileItem;
+  /** Whether to show infinite mode button (practice only) */
+  showInfiniteMode?: boolean;
 }
 
 export default function SimulationCard({
@@ -102,11 +108,155 @@ export default function SimulationCard({
   hasPassed,
   passRate,
   type,
-  onStartSimulation,
-  onStartInfiniteMode,
-  loadingSimulation,
   profile,
+  showInfiniteMode = false,
 }: SimulationCardProps) {
+  const router = useRouter();
+  const { socket, isConnected, artifactAgentIds } = useProfile();
+
+  // Determine if this is practice mode based on type
+  const practice = type === "default";
+
+  // Loading state for this card
+  const [isStarting, setIsStarting] = useState(false);
+  const [loadingToastId, setLoadingToastId] = useState<string | number | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Get the training agent ID from profile context
+  const trainingAgentId = artifactAgentIds?.["training"] ?? null;
+
+  // Cleanup function for timeout and toast
+  const cleanup = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (loadingToastId) {
+      toast.dismiss(loadingToastId);
+      setLoadingToastId(null);
+    }
+  }, [loadingToastId]);
+
+  // Handle training_started and training_error events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTrainingStarted = (
+      data: Parameters<ServerToClientEvents["training_started"]>[0]
+    ) => {
+      // Only handle if this card initiated the start
+      if (!isStarting) return;
+
+      cleanup();
+      setIsStarting(false);
+
+      // Receiving this event means success - navigate to the attempt
+      if (data.attempt_id) {
+        toast.success("Training started successfully");
+
+        // Refresh current page data so it's updated when user returns
+        router.refresh();
+
+        // Navigate to the attempt page
+        const basePath = practice ? "/practice" : "/home";
+        router.push(`${basePath}/a/${data.attempt_id}`);
+
+        // Dispatch custom event for other components
+        window.dispatchEvent(
+          new CustomEvent("trainingStarted", {
+            detail: { attemptId: data.attempt_id },
+          })
+        );
+      }
+    };
+
+    const handleTrainingError = (
+      data: Parameters<ServerToClientEvents["training_error"]>[0]
+    ) => {
+      // Only handle if this card initiated the start
+      if (!isStarting) return;
+
+      cleanup();
+      setIsStarting(false);
+
+      const errorMessage = data.message || "Training error occurred";
+      toast.error(errorMessage);
+
+      // Dispatch custom event for other components
+      window.dispatchEvent(new CustomEvent("trainingError"));
+    };
+
+    // Subscribe to events
+    socket.on("training_started", handleTrainingStarted);
+    socket.on("training_error", handleTrainingError);
+
+    // Cleanup
+    return () => {
+      socket.off("training_started", handleTrainingStarted);
+      socket.off("training_error", handleTrainingError);
+    };
+  }, [socket, isStarting, practice, router, cleanup]);
+
+  // Start training function
+  const handleStartTraining = useCallback(
+    (infinite: boolean = false) => {
+      // Validate socket connection
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      // Validate training agent
+      if (!trainingAgentId) {
+        toast.error(
+          "Training agent not available. Please contact your administrator."
+        );
+        return;
+      }
+
+      // Set loading state
+      setIsStarting(true);
+
+      // Show loading toast
+      const toastId = toast.loading(
+        infinite ? "Starting infinite mode..." : "Starting simulation...",
+        { dismissible: true }
+      );
+      setLoadingToastId(toastId);
+
+      // Build payload
+      const payload: Record<string, unknown> = {
+        simulation_id: id,
+        agent_id: trainingAgentId,
+      };
+
+      // Add infinite mode flag
+      if (infinite) {
+        payload["infinite"] = true;
+      }
+
+      // Emit the training_start event
+      socket.emit("training_start", payload);
+
+      // Dispatch event for analytics
+      window.dispatchEvent(
+        new CustomEvent("simulationButtonPressed", {
+          detail: { simulationId: id },
+        })
+      );
+
+      // Set up timeout (30 seconds)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        cleanup();
+        setIsStarting(false);
+        toast.error("Training start timed out. Please try again.");
+      }, 30000);
+    },
+    [socket, isConnected, trainingAgentId, id, cleanup]
+  );
 
   // Get persona configuration and icon based on persona data
   const IconComponent =
@@ -341,23 +491,16 @@ export default function SimulationCard({
 
         <CardFooter className="pt-0 relative z-10">
           {type === "default" &&
-            onStartInfiniteMode &&
+            showInfiniteMode &&
             profile?.role !== "guest" ? (
             <div className="flex gap-2 w-full">
               <Button
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent("simulationButtonPressed", {
-                      detail: { simulationId: id },
-                    }),
-                  );
-                  onStartSimulation(id);
-                }}
-                disabled={loadingSimulation !== null}
+                onClick={() => handleStartTraining(false)}
+                disabled={isStarting}
                 data-testid={`start-simulation-${id}`}
                 variant={gradientClass ? undefined : "default"}
                 className={`flex-1 hover:shadow-lg transition-all duration-300 ${
-                  loadingSimulation === id ? "animate-pulse" : "hover:scale-105"
+                  isStarting ? "animate-pulse" : "hover:scale-105"
                 } ${
                   typeof gradientClass === "string" &&
                   gradientClass !== null &&
@@ -377,17 +520,13 @@ export default function SimulationCard({
                     }),
                 }}
               >
-                {loadingSimulation === id ? "Starting..." : "Start Simulation"}
+                {isStarting ? "Starting..." : "Start Simulation"}
               </Button>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => {
-                      if (onStartInfiniteMode) {
-                        onStartInfiniteMode(id);
-                      }
-                    }}
-                    disabled={loadingSimulation !== null}
+                    onClick={() => handleStartTraining(true)}
+                    disabled={isStarting}
                     variant="default"
                     size="icon"
                     className="flex-shrink-0 hover:scale-105 transition-all duration-300"
@@ -412,19 +551,12 @@ export default function SimulationCard({
             </div>
           ) : (
             <Button
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent("simulationButtonPressed", {
-                    detail: { simulationId: id },
-                  }),
-                );
-                onStartSimulation(id);
-              }}
-              disabled={loadingSimulation !== null}
+              onClick={() => handleStartTraining(false)}
+              disabled={isStarting}
               data-testid={`start-simulation-${id}`}
               variant={gradientClass ? undefined : "default"}
               className={`w-full hover:shadow-lg transition-all duration-300 ${
-                loadingSimulation === id ? "animate-pulse" : "hover:scale-105"
+                isStarting ? "animate-pulse" : "hover:scale-105"
               } ${
                 typeof gradientClass === "string" &&
                 gradientClass !== null &&
@@ -444,7 +576,7 @@ export default function SimulationCard({
                   }),
               }}
             >
-              {loadingSimulation === id
+              {isStarting
                 ? "Starting..."
                 : type === "default"
                   ? "Start Simulation"

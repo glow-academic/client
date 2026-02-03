@@ -7,11 +7,10 @@ import { useCallback, useState } from "react";
 
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
-import type { OutputOf } from "@/lib/api/types";
+import type { PracticeOut } from "@/app/(main)/practice/page";
 
-// Extract types from API response (single source of truth)
-type PracticeOverviewOut = OutputOf<"/api/v4/practice/get", "post">;
-type PracticeSimulationItem = NonNullable<PracticeOverviewOut["items"]>[number];
+// Extract item type from the merged PracticeOut type
+type PracticeSimulationItem = NonNullable<PracticeOut["items"]>[number];
 // API now returns arrays, but components expect dicts - define mapping types locally
 type StandardGroupsMapping = Record<
   string,
@@ -33,9 +32,8 @@ interface PracticeZoneProps {
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
   profile: ProfileItem | null;
-  onStartSimulation: (simulationId: string) => void;
-  onStartInfiniteMode?: (simulationId: string) => void;
-  loadingSimulation: string | null;
+  /** Whether to show infinite mode button on cards */
+  showInfiniteMode?: boolean;
 }
 
 export default function PracticeZone({
@@ -44,9 +42,7 @@ export default function PracticeZone({
   standardGroupsMapping,
   standardsMapping,
   profile,
-  onStartSimulation,
-  onStartInfiniteMode,
-  loadingSimulation,
+  showInfiniteMode = false,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -151,12 +147,9 @@ export default function PracticeZone({
                 {...(typeof simulation.has_passed === "boolean" && {
                   hasPassed: simulation.has_passed,
                 })}
-                // Removed passRate for practice cards to prevent fallback to rubric threshold
                 type="default"
-                onStartSimulation={onStartSimulation}
-                {...(onStartInfiniteMode && { onStartInfiniteMode })}
-                loadingSimulation={loadingSimulation}
                 profile={profile}
+                showInfiniteMode={showInfiniteMode}
               />
             );
           },

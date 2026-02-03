@@ -8,7 +8,6 @@
 import type { HomeOut } from "@/app/(main)/home/page";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useTrainingStart } from "@/hooks/useTrainingStart";
 
 import SimulationCard, {
   SimulationCardSkeleton,
@@ -27,11 +26,6 @@ export interface HomeProps {
 
 export default function Home({ homeData }: HomeProps) {
   const { profile } = useProfile();
-
-  // Use the unified training start hook for WebSocket-based simulation starts
-  const { startTraining, startingSimulationId } = useTrainingStart({
-    practice: false,
-  });
 
   // Use data directly from props (fetched server-side)
   const homeOverview = homeData;
@@ -92,16 +86,6 @@ export default function Home({ homeData }: HomeProps) {
   );
 
   const [carouselIndex, setCarouselIndex] = useState(0);
-  // Use WebSocket's specific simulation ID for precise loading state
-  const loadingSimulation = startingSimulationId;
-
-  // Handle starting a simulation via the unified training hook
-  const handleStartSimulation = useCallback(
-    (simulationId: string) => {
-      startTraining({ simulationId });
-    },
-    [startTraining]
-  );
 
   // Use data directly from the hook
   const simulationItems = useMemo(() => {
@@ -359,8 +343,6 @@ export default function Home({ homeData }: HomeProps) {
                         passRate: item.pass_pct,
                       })}
                       type="cohort"
-                      onStartSimulation={handleStartSimulation}
-                      loadingSimulation={loadingSimulation}
                       profile={{
                         ...profile,
                         role: profile.role as
