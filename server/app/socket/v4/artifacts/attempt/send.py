@@ -74,18 +74,18 @@ async def _attempt_send_impl(
             is_general_row = await conn.fetchrow(is_general_sql, chat_id_uuid)
             is_general = bool(is_general_row["is_general"]) if is_general_row else False
 
+            # Call the appropriate function (functions created by make sql-compile)
             if is_general:
-                sql_path = "app/sql/v4/queries/attempts/general/member_progress_start_complete.sql"
+                func_name = "socket_general_member_progress_start_v4"
             else:
-                sql_path = "app/sql/v4/queries/attempts/practice/member_progress_start_complete.sql"
+                func_name = "socket_practice_member_progress_start_v4"
 
-            sql = load_sql(sql_path)
             row = await conn.fetchrow(
-                sql,
+                f"SELECT * FROM {func_name}($1, $2, $3, $4, $5)",
                 chat_id_uuid,
-                None,  # group_id
                 message_str,
                 data.voice_mode,
+                None,  # group_id
                 data.upload_id,
             )
 

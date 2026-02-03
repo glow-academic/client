@@ -135,9 +135,9 @@ any_active_dept AS (
 resolved_dept AS (
     -- Resolve department_id with fallback: scenario -> profile -> any active
     SELECT COALESCE(
-        (SELECT department_id FROM scenario_dept),
-        (SELECT department_id FROM profile_dept),
-        (SELECT department_id FROM any_active_dept)
+        (SELECT department_id FROM scenario_dept LIMIT 1),
+        (SELECT department_id FROM profile_dept LIMIT 1),
+        (SELECT department_id FROM any_active_dept LIMIT 1)
     ) as department_id
 ),
 profile_rate_limit AS (
@@ -262,7 +262,7 @@ SELECT
     
     -- Scenario data
     s.id::text as scenario_id,
-    (SELECT department_id::text FROM resolved_dept) as department_id,
+    (SELECT department_id::text FROM resolved_dept LIMIT 1) as department_id,
     ps.problem_statement,
     
     -- Persona data (via scenario_personas_junction junction - first persona for orchestrator)
@@ -300,7 +300,7 @@ SELECT
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), false) as image_input_enabled,
     COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
         AND sfr.scenario_id = ss.scenario_id
-        AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
+        AND f.name = 'copy_paste_allowed' LIMIT 1), false) as copy_paste_allowed,
 
     -- Profile data (via view_attempts_entry)
     aap_main.profiles_id::text as profile_id,
@@ -427,7 +427,7 @@ GROUP BY sc.id, sc.title,
          EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), 
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
              AND sfr.scenario_id = ss.scenario_id
-             AND f.name = 'copy_paste_allowed'), false),
+             AND f.name = 'copy_paste_allowed' LIMIT 1), false),
          aap_main.profiles_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 $$;

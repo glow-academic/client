@@ -1806,31 +1806,6 @@ class CompleteAssistantMessageApiResponse(BaseModel):
 
 
 
-# Generated from: is_general_chat
-
-class IsGeneralChatSqlParams(BaseModel):
-
-    chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-        )
-
-class IsGeneralChatSqlRow(BaseModel):
-
-    is_general: bool | None = None
-
-class IsGeneralChatApiRequest(BaseModel):
-
-    chat_id: UUID
-
-class IsGeneralChatApiResponse(BaseModel):
-
-    is_general: bool | None = None
-
-
-
 # Generated from: member_progress_start
 
 class MemberProgressStartSqlParams(BaseModel):
@@ -26710,12 +26685,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CompleteAssistantMessageApiRequest",
         "CompleteAssistantMessageApiResponse",
     ),
-    "app/sql/v4/queries/attempts/general/is_general_chat_complete.sql": (
-        "IsGeneralChatSqlParams",
-        "IsGeneralChatSqlRow",
-        "IsGeneralChatApiRequest",
-        "IsGeneralChatApiResponse",
-    ),
     "app/sql/v4/queries/attempts/general/member_progress_start_complete.sql": (
         "MemberProgressStartSqlParams",
         "MemberProgressStartSqlRow",
@@ -29470,11 +29439,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/attempts/general/complete_assistant_message_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/attempts/general/is_general_chat_complete.sql"]
     ) -> SqlString: ...
 
     @overload
