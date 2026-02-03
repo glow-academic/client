@@ -49272,28 +49272,6 @@
             ],
             "title": "Group Id"
           },
-          "name_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Id"
-          },
-          "name_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetNamesV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "show_name": {
             "anyOf": [
               {
@@ -49342,42 +49320,6 @@
               }
             ],
             "title": "Name Suggestions"
-          },
-          "names": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetNamesV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Names"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "description_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "show_description": {
             "anyOf": [
@@ -49428,42 +49370,6 @@
             ],
             "title": "Description Suggestions"
           },
-          "descriptions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Descriptions"
-          },
-          "color_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color Id"
-          },
-          "color_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetColorsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "show_color": {
             "anyOf": [
               {
@@ -49512,42 +49418,6 @@
               }
             ],
             "title": "Color Suggestions"
-          },
-          "colors": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetColorsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Colors"
-          },
-          "icon_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon Id"
-          },
-          "icon_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetIconsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "show_icon": {
             "anyOf": [
@@ -49598,42 +49468,6 @@
             ],
             "title": "Icon Suggestions"
           },
-          "icons": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetIconsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icons"
-          },
-          "instructions_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Id"
-          },
-          "instructions_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetInstructionsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "show_instructions": {
             "anyOf": [
               {
@@ -49683,42 +49517,6 @@
             ],
             "title": "Instructions Suggestions"
           },
-          "instructions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetInstructionsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetFlagsV4Item"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "show_flag": {
             "anyOf": [
               {
@@ -49752,49 +49550,6 @@
               }
             ],
             "title": "Flag Required"
-          },
-          "flags": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PersonaFlagConfig"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flags"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "department_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Resources"
           },
           "show_departments": {
             "anyOf": [
@@ -49845,49 +49600,6 @@
             ],
             "title": "Department Suggestions"
           },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "parameter_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Ids"
-          },
-          "parameter_field_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Field Resources"
-          },
           "show_parameter_fields": {
             "anyOf": [
               {
@@ -49936,49 +49648,6 @@
               }
             ],
             "title": "Parameter Field Suggestions"
-          },
-          "parameter_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Fields"
-          },
-          "example_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example Ids"
-          },
-          "example_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetExamplesV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example Resources"
           },
           "show_examples": {
             "anyOf": [
@@ -50029,49 +49698,6 @@
             ],
             "title": "Example Suggestions"
           },
-          "examples": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetExamplesV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Examples"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParametersV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Resources"
-          },
           "show_parameters": {
             "anyOf": [
               {
@@ -50121,20 +49747,6 @@
             ],
             "title": "Parameter Suggestions"
           },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetParametersV4Item"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
           "basic_agent_id": {
             "anyOf": [
               {
@@ -50170,6 +49782,16 @@
               }
             ],
             "title": "Parameters Step Agent Id"
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonaResources"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -68675,6 +68297,180 @@
         "type": "object",
         "title": "PersonaGenerationProgressEvent",
         "description": "Server-to-client event: persona_generation_progress.\n\nEmitted during persona resource generation to show progress."
+      },
+      "PersonaResourceBucket": {
+        "properties": {
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetNamesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Names"
+          },
+          "descriptions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDescriptionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descriptions"
+          },
+          "colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetColorsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Colors"
+          },
+          "icons": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetIconsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icons"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetInstructionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PersonaFlagConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flags"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "parameter_fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterFieldsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Fields"
+          },
+          "examples": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetExamplesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParametersV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          }
+        },
+        "type": "object",
+        "title": "PersonaResourceBucket",
+        "description": "Generic resources bucket with full objects (always plural lists)."
+      },
+      "PersonaResources": {
+        "properties": {
+          "resources": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonaResourceBucket"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonaResourceBucket"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "PersonaResources",
+        "description": "Full resources + current selections."
       },
       "PointsApiRequest": {
         "properties": {

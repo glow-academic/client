@@ -1,5 +1,7 @@
 """Handcrafted types for persona GET endpoint."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
@@ -64,98 +66,93 @@ class GetPersonaApiResponse(BaseModel):
     group_id: UUID | None = None
 
     # Single-select resources: name
-    name_id: UUID | None = None
-    name_resource: QGetNamesV4Item | None = None
     show_name: bool | None = None
     name_agent_id: UUID | None = None
     name_required: bool | None = None
     name_suggestions: list[UUID] | None = None
-    names: list[QGetNamesV4Item] | None = None
 
     # Single-select resources: description
-    description_id: UUID | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
     show_description: bool | None = None
     description_agent_id: UUID | None = None
     description_required: bool | None = None
     description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
 
     # Single-select resources: color
-    color_id: UUID | None = None
-    color_resource: QGetColorsV4Item | None = None
     show_color: bool | None = None
     color_agent_id: UUID | None = None
     color_required: bool | None = None
     color_suggestions: list[UUID] | None = None
-    colors: list[QGetColorsV4Item] | None = None
 
     # Single-select resources: icon
-    icon_id: UUID | None = None
-    icon_resource: QGetIconsV4Item | None = None
     show_icon: bool | None = None
     icon_agent_id: UUID | None = None
     icon_required: bool | None = None
     icon_suggestions: list[UUID] | None = None
-    icons: list[QGetIconsV4Item] | None = None
 
     # Single-select resources: instructions
-    instructions_id: UUID | None = None
-    instructions_resource: QGetInstructionsV4Item | None = None
     show_instructions: bool | None = None
     instructions_agent_id: UUID | None = None
     instructions_required: bool | None = None
     instructions_suggestions: list[UUID] | None = None
-    instructions: list[QGetInstructionsV4Item] | None = None
 
     # Single-select resources: flag
-    active_flag_id: UUID | None = None
-    flag_resource: QGetFlagsV4Item | None = None
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
-    flags: list[PersonaFlagConfig] | None = None
 
     # Multi-select resources: departments
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetDepartmentsV4Item] | None = None
     show_departments: bool | None = None
     departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
 
     # Multi-select resources: parameter_fields
-    parameter_field_ids: list[UUID] | None = None
-    parameter_field_resources: list[QGetParameterFieldsV4Item] | None = None
     show_parameter_fields: bool | None = None
     parameter_fields_agent_id: UUID | None = None
     parameter_fields_required: bool | None = None
     parameter_field_suggestions: list[UUID] | None = None
-    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
 
     # Multi-select resources: examples
-    example_ids: list[UUID] | None = None
-    example_resources: list[QGetExamplesV4Item] | None = None
     show_examples: bool | None = None
     examples_agent_id: UUID | None = None
     examples_required: bool | None = None
     example_suggestions: list[UUID] | None = None
-    examples: list[QGetExamplesV4Item] | None = None
 
     # Multi-select resources: parameters
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[QGetParametersV4Item] | None = None
     show_parameters: bool | None = None
     parameters_agent_id: UUID | None = None
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
-    parameters: list[QGetParametersV4Item] | None = None
 
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     parameters_step_agent_id: UUID | None = None
+
+    # Generic resources payload (full objects + current selections)
+    resources: PersonaResources | None = None
+
+
+class PersonaResourceBucket(BaseModel):
+    """Generic resources bucket with full objects (always plural lists)."""
+
+    names: list[QGetNamesV4Item] | None = None
+    descriptions: list[QGetDescriptionsV4Item] | None = None
+    colors: list[QGetColorsV4Item] | None = None
+    icons: list[QGetIconsV4Item] | None = None
+    instructions: list[QGetInstructionsV4Item] | None = None
+    flags: list[PersonaFlagConfig] | None = None
+    departments: list[QGetDepartmentsV4Item] | None = None
+    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
+    examples: list[QGetExamplesV4Item] | None = None
+    parameters: list[QGetParametersV4Item] | None = None
+
+
+class PersonaResources(BaseModel):
+    """Full resources + current selections."""
+
+    resources: PersonaResourceBucket | None = None
+    current: PersonaResourceBucket | None = None
 
 
 # ========== List Endpoint Types ==========

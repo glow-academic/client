@@ -261,64 +261,66 @@ function PersonaComponent({
   // when only object reference changes (but content is same)
   const stablePersonaDataFields = React.useMemo(() => {
     if (!personaData) return null;
+    const resources = personaData.resources?.resources;
+    const current = personaData.resources?.current;
     return {
       group_id: personaData.group_id,
-      name_resource: personaData.name_resource,
+      name_resource: current?.names?.[0] ?? null,
       show_name: personaData.show_name,
       name_suggestions: personaData.name_suggestions,
-      names: personaData.names,
+      names: resources?.names ?? [],
       name_required: personaData.name_required,
       name_agent_id: personaData.name_agent_id,
-      description_resource: personaData.description_resource,
+      description_resource: current?.descriptions?.[0] ?? null,
       show_description: personaData.show_description,
       description_suggestions: personaData.description_suggestions,
       description_required: personaData.description_required,
       description_agent_id: personaData.description_agent_id,
-      descriptions: personaData.descriptions,
-      department_resources: personaData.department_resources,
+      descriptions: resources?.descriptions ?? [],
+      department_resources: current?.departments ?? [],
       show_departments: personaData.show_departments,
       department_suggestions: personaData.department_suggestions,
       departments_required: personaData.departments_required,
       departments_agent_id: personaData.departments_agent_id,
-      departments: personaData.departments,
-      flags: personaData.flags,
+      departments: resources?.departments ?? [],
+      flags: resources?.flags ?? [],
       show_flag: personaData.show_flag,
-      parameter_field_resources: personaData.parameter_field_resources,
+      parameter_field_resources: current?.parameter_fields ?? [],
       show_parameter_fields: personaData.show_parameter_fields,
       parameter_field_suggestions: personaData.parameter_field_suggestions,
       parameter_fields_required: personaData.parameter_fields_required,
       parameter_fields_agent_id: personaData.parameter_fields_agent_id,
-      parameter_fields: personaData.parameter_fields,
-      color_resource: personaData.color_resource,
+      parameter_fields: resources?.parameter_fields ?? [],
+      color_resource: current?.colors?.[0] ?? null,
       show_color: personaData.show_color,
       color_suggestions: personaData.color_suggestions,
       color_required: personaData.color_required,
       color_agent_id: personaData.color_agent_id,
-      colors: personaData.colors,
-      icon_resource: personaData.icon_resource,
+      colors: resources?.colors ?? [],
+      icon_resource: current?.icons?.[0] ?? null,
       show_icon: personaData.show_icon,
       icon_suggestions: personaData.icon_suggestions,
       icon_required: personaData.icon_required,
       icon_agent_id: personaData.icon_agent_id,
-      icons: personaData.icons,
-      instructions_resource: personaData.instructions_resource,
+      icons: resources?.icons ?? [],
+      instructions_resource: current?.instructions?.[0] ?? null,
       show_instructions: personaData.show_instructions,
       instructions_suggestions: personaData.instructions_suggestions,
       instructions_required: personaData.instructions_required,
       instructions_agent_id: personaData.instructions_agent_id,
-      instructions: personaData.instructions,
-      example_resources: personaData.example_resources,
+      instructions: resources?.instructions ?? [],
+      example_resources: current?.examples ?? [],
       show_examples: personaData.show_examples,
       example_suggestions: personaData.example_suggestions,
       examples_required: personaData.examples_required,
       examples_agent_id: personaData.examples_agent_id,
-      examples: personaData.examples,
-      parameter_resources: personaData.parameter_resources,
+      examples: resources?.examples ?? [],
+      parameter_resources: current?.parameters ?? [],
       show_parameters: personaData.show_parameters,
       parameter_suggestions: personaData.parameter_suggestions,
       parameters_required: personaData.parameters_required,
       parameters_agent_id: personaData.parameters_agent_id,
-      parameters: personaData.parameters,
+      parameters: resources?.parameters ?? [],
       basic_agent_id: personaData.basic_agent_id,
       content_agent_id: personaData.content_agent_id,
       parameters_step_agent_id: personaData.parameters_step_agent_id,
@@ -328,62 +330,44 @@ function PersonaComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     personaData?.group_id,
-    personaData?.name_resource,
+    personaData?.resources,
     personaData?.show_name,
     personaData?.name_suggestions,
-    personaData?.names,
     personaData?.name_required,
     personaData?.name_agent_id,
-    personaData?.description_resource,
     personaData?.show_description,
     personaData?.description_suggestions,
     personaData?.description_required,
     personaData?.description_agent_id,
-    personaData?.descriptions,
-    personaData?.department_resources,
     personaData?.show_departments,
     personaData?.department_suggestions,
     personaData?.departments_required,
     personaData?.departments_agent_id,
-    personaData?.departments,
-    personaData?.flags,
     personaData?.show_flag,
-    personaData?.parameter_field_resources,
     personaData?.show_parameter_fields,
     personaData?.parameter_field_suggestions,
     personaData?.parameter_fields_required,
     personaData?.parameter_fields_agent_id,
-    personaData?.parameter_fields,
-    personaData?.color_resource,
     personaData?.show_color,
     personaData?.color_suggestions,
     personaData?.color_required,
     personaData?.color_agent_id,
-    personaData?.colors,
-    personaData?.icon_resource,
     personaData?.show_icon,
     personaData?.icon_suggestions,
     personaData?.icon_required,
     personaData?.icon_agent_id,
-    personaData?.icons,
-    personaData?.instructions_resource,
     personaData?.show_instructions,
     personaData?.instructions_suggestions,
     personaData?.instructions_required,
     personaData?.instructions_agent_id,
-    personaData?.instructions,
-    personaData?.example_resources,
     personaData?.show_examples,
     personaData?.example_suggestions,
     personaData?.examples_required,
     personaData?.examples_agent_id,
-    personaData?.examples,
-    personaData?.parameter_resources,
     personaData?.show_parameters,
     personaData?.parameter_suggestions,
     personaData?.parameters_required,
     personaData?.parameters_agent_id,
-    personaData?.parameters,
     personaData?.basic_agent_id,
     personaData?.content_agent_id,
     personaData?.parameters_step_agent_id,
@@ -453,18 +437,24 @@ function PersonaComponent({
       };
     }
 
+    const resources = data.resources?.resources;
+    const current = data.resources?.current;
+
     // Derive parameter_ids from parameter_field_resources
     // This ensures conditional parameters show up on load, even when parameter_ids
     // is already populated (it may only contain base parameters, not conditional ones)
-    const paramIdsSet = new Set<string>(data.parameter_ids ?? []);
-    const availableFields = data.parameter_fields ?? [];
+    const currentParameterIds = (current?.parameters ?? [])
+      .map((p) => p.parameter_id)
+      .filter(Boolean) as string[];
+    const paramIdsSet = new Set<string>(currentParameterIds);
+    const availableFields = resources?.parameter_fields ?? [];
 
     if (
-      data.parameter_field_resources &&
-      data.parameter_field_resources.length > 0
+      current?.parameter_fields &&
+      current.parameter_fields.length > 0
     ) {
       // For each selected field resource, add its parent parameter and any conditional parameters
-      data.parameter_field_resources.forEach((fieldResource) => {
+      current.parameter_fields.forEach((fieldResource) => {
         // Add the parent parameter (the parameter this field belongs to)
         if (fieldResource.parameter_id) {
           paramIdsSet.add(fieldResource.parameter_id);
@@ -485,15 +475,21 @@ function PersonaComponent({
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      color_id: data.color_id ?? null,
-      icon_id: data.icon_id ?? null,
-      instructions_id: data.instructions_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
-      department_ids: data.department_ids ?? [],
-      parameter_field_ids: data.parameter_field_ids ?? [],
-      example_ids: data.example_ids ?? [],
+      name_id: current?.names?.[0]?.id ?? null,
+      description_id: current?.descriptions?.[0]?.id ?? null,
+      color_id: current?.colors?.[0]?.id ?? null,
+      icon_id: current?.icons?.[0]?.id ?? null,
+      instructions_id: current?.instructions?.[0]?.id ?? null,
+      active_flag_id: current?.flags?.[0]?.flag_option_id ?? null,
+      department_ids: (current?.departments ?? [])
+        .map((d) => d.department_id)
+        .filter(Boolean) as string[],
+      parameter_field_ids: (current?.parameter_fields ?? [])
+        .map((f) => f.field_id)
+        .filter(Boolean) as string[],
+      example_ids: (current?.examples ?? [])
+        .map((e) => e.id)
+        .filter(Boolean) as string[],
       parameter_ids: derivedParameterIds,
     };
     // Remove personaData from dependencies - use ref instead to prevent callback recreation
@@ -507,22 +503,34 @@ function PersonaComponent({
   }, [formState]);
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
-  const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(personaData?.department_ids ?? []),
-    [personaData?.department_ids]
-  );
-  const parameterFieldIdsStr = React.useMemo(
-    () => JSON.stringify(personaData?.parameter_field_ids ?? []),
-    [personaData?.parameter_field_ids]
-  );
-  const exampleIdsStr = React.useMemo(
-    () => JSON.stringify(personaData?.example_ids ?? []),
-    [personaData?.example_ids]
-  );
-  const parameterIdsStr = React.useMemo(
-    () => JSON.stringify(personaData?.parameter_ids ?? []),
-    [personaData?.parameter_ids]
-  );
+  const departmentIdsStr = React.useMemo(() => {
+    const current = personaData?.resources?.current;
+    const ids = (current?.departments ?? [])
+      .map((d) => d.department_id)
+      .filter(Boolean);
+    return JSON.stringify(ids);
+  }, [personaData?.resources]);
+  const parameterFieldIdsStr = React.useMemo(() => {
+    const current = personaData?.resources?.current;
+    const ids = (current?.parameter_fields ?? [])
+      .map((f) => f.field_id)
+      .filter(Boolean);
+    return JSON.stringify(ids);
+  }, [personaData?.resources]);
+  const exampleIdsStr = React.useMemo(() => {
+    const current = personaData?.resources?.current;
+    const ids = (current?.examples ?? [])
+      .map((e) => e.id)
+      .filter(Boolean);
+    return JSON.stringify(ids);
+  }, [personaData?.resources]);
+  const parameterIdsStr = React.useMemo(() => {
+    const current = personaData?.resources?.current;
+    const ids = (current?.parameters ?? [])
+      .map((p) => p.parameter_id)
+      .filter(Boolean);
+    return JSON.stringify(ids);
+  }, [personaData?.resources]);
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
@@ -574,12 +582,7 @@ function PersonaComponent({
     // Intentionally exclude formState and getInitialFormState to prevent infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    personaData?.name_id,
-    personaData?.description_id,
-    personaData?.color_id,
-    personaData?.icon_id,
-    personaData?.instructions_id,
-    personaData?.active_flag_id,
+    personaData?.resources,
     departmentIdsStr,
     parameterFieldIdsStr,
     exampleIdsStr,
@@ -884,13 +887,15 @@ function PersonaComponent({
   }, []);
 
   // Flush all resources and patch draft (for manual save via Save toolbar)
-  const flushAllAndSave = useCallback(async () => {
+  const flushAllAndSave = useCallback(async (): Promise<string | null> => {
     const startTime = Date.now();
     const MIN_SAVING_DURATION = 1000; // Show "Saving..." for at least 1 second on manual save
 
     window.dispatchEvent(
       new CustomEvent("save-status-change", { detail: { status: "saving" } })
     );
+
+    let resolvedDraftId: string | null = draftId || null;
 
     try {
       // 1. Flush all creatable resource components and collect returned IDs
@@ -958,6 +963,7 @@ function PersonaComponent({
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
           isNewDraft = true;
         }
+        resolvedDraftId = result.draft_id || draftId || null;
       }
 
       // Ensure minimum display duration for manual save
@@ -979,11 +985,13 @@ function PersonaComponent({
 
       // Show success toast for manual save
       toast.success(isNewDraft ? "Draft created" : "Draft saved");
+      return resolvedDraftId;
     } catch {
       window.dispatchEvent(
         new CustomEvent("save-status-change", { detail: { status: "error" } })
       );
       toast.error("Failed to save draft");
+      return resolvedDraftId;
     }
   }, [draftId, draftPatchKey]);
 
@@ -1237,6 +1245,17 @@ function PersonaComponent({
         return;
       }
 
+      // Ensure a draft exists before generation
+      let draftIdToUse =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!draftIdToUse) {
+        draftIdToUse = await flushAllAndSave();
+      }
+      if (!draftIdToUse) {
+        toast.error("Please save a draft before generating with AI");
+        return;
+      }
+
       // Set all resources as generating
       setGeneratingResources((prev) => {
         const next = new Set(prev);
@@ -1246,7 +1265,7 @@ function PersonaComponent({
 
       // Read search params from formData
       const formData = formDataRef.current;
-      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      const draftId = draftIdToUse;
       const colorSearch =
         (formData["colorSearch"] as string | undefined) ?? null;
       const iconSearch = (formData["iconSearch"] as string | undefined) ?? null;
@@ -1259,16 +1278,13 @@ function PersonaComponent({
       const iconShowSelected =
         (formData["iconShowSelected"] as boolean | undefined) ?? false;
 
-      // Get current form state for "current" variable in Jinja templates
-      const currentFormState = formStateRef.current;
-
       // Emit persona_generate event with GetPersonaApiRequest fields
       socket.emit("persona_generate", {
         resource_types: resourceTypes, // Simple array of strings
         agent_id: agentId, // Direct agent ID from frontend
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetPersonaApiRequest fields from formData
-        draft_id: draftId || null,
+        draft_id: draftId,
         color_search: colorSearch || null,
         icon_search: iconSearch || null,
         descriptions_search: descriptionSearch || null,
@@ -1277,32 +1293,10 @@ function PersonaComponent({
         icon_show_selected: iconShowSelected || false,
         mcp: false,
         persona_id: personaId || null,
-        // Form state fields for "current" variable in Jinja templates
-        name_id: currentFormState.name_id || null,
-        description_id: currentFormState.description_id || null,
-        color_id: currentFormState.color_id || null,
-        icon_id: currentFormState.icon_id || null,
-        instructions_id: currentFormState.instructions_id || null,
-        active_flag_id: currentFormState.active_flag_id || null,
-        department_ids:
-          currentFormState.department_ids.length > 0
-            ? currentFormState.department_ids
-            : null,
-        parameter_field_ids:
-          currentFormState.parameter_field_ids.length > 0
-            ? currentFormState.parameter_field_ids
-            : null,
-        example_ids:
-          currentFormState.example_ids.length > 0
-            ? currentFormState.example_ids
-            : null,
-        parameter_ids:
-          currentFormState.parameter_ids.length > 0
-            ? currentFormState.parameter_ids
-            : null,
+        // Current selections are derived server-side from draft-backed API response
       });
     },
-    [socket, isConnected, personaId]
+    [socket, isConnected, personaId, flushAllAndSave]
   );
 
   // Individual generation handlers - generate directly without modals
@@ -1395,7 +1389,8 @@ function PersonaComponent({
           const toRemove = new Set<string>([conditionalParameterId]);
 
           // Get all available fields from personaData to find chain dependencies
-          const allFields = personaDataRef.current?.parameter_fields ?? [];
+          const allFields =
+            personaDataRef.current?.resources?.resources?.parameter_fields ?? [];
 
           // Recursively find conditional params that should also be removed
           // (parameters whose trigger fields belong to parameters being removed)
@@ -1455,7 +1450,8 @@ function PersonaComponent({
 
   // Set breadcrumb context when persona data is loaded
   // Extract the specific field to use as dependency (not the whole object)
-  const personaNameForBreadcrumb = personaData?.name_resource?.name;
+  const personaNameForBreadcrumb =
+    stablePersonaDataFields?.name_resource?.name;
   useEffect(() => {
     if (personaNameForBreadcrumb && personaId && isEditMode) {
       setEntityMetadata({
@@ -2780,27 +2776,41 @@ function PersonaComponent({
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(PersonaComponent, (prevProps, nextProps) => {
   // Compare personaData by resource IDs, not object reference
+  const prevCurrent = prevProps.personaData?.resources?.current;
+  const nextCurrent = nextProps.personaData?.resources?.current;
   const prevIds = {
-    name_id: prevProps.personaData?.name_id,
-    description_id: prevProps.personaData?.description_id,
-    color_id: prevProps.personaData?.color_id,
-    icon_id: prevProps.personaData?.icon_id,
-    instructions_id: prevProps.personaData?.instructions_id,
-    active_flag_id: prevProps.personaData?.active_flag_id,
-    department_ids: prevProps.personaData?.department_ids,
-    parameter_field_ids: prevProps.personaData?.parameter_field_ids,
-    example_ids: prevProps.personaData?.example_ids,
+    name_id: prevCurrent?.names?.[0]?.id ?? null,
+    description_id: prevCurrent?.descriptions?.[0]?.id ?? null,
+    color_id: prevCurrent?.colors?.[0]?.id ?? null,
+    icon_id: prevCurrent?.icons?.[0]?.id ?? null,
+    instructions_id: prevCurrent?.instructions?.[0]?.id ?? null,
+    active_flag_id: prevCurrent?.flags?.[0]?.flag_option_id ?? null,
+    department_ids: (prevCurrent?.departments ?? [])
+      .map((d) => d.department_id)
+      .filter(Boolean),
+    parameter_field_ids: (prevCurrent?.parameter_fields ?? [])
+      .map((f) => f.field_id)
+      .filter(Boolean),
+    example_ids: (prevCurrent?.examples ?? [])
+      .map((e) => e.id)
+      .filter(Boolean),
   };
   const nextIds = {
-    name_id: nextProps.personaData?.name_id,
-    description_id: nextProps.personaData?.description_id,
-    color_id: nextProps.personaData?.color_id,
-    icon_id: nextProps.personaData?.icon_id,
-    instructions_id: nextProps.personaData?.instructions_id,
-    active_flag_id: nextProps.personaData?.active_flag_id,
-    department_ids: nextProps.personaData?.department_ids,
-    parameter_field_ids: nextProps.personaData?.parameter_field_ids,
-    example_ids: nextProps.personaData?.example_ids,
+    name_id: nextCurrent?.names?.[0]?.id ?? null,
+    description_id: nextCurrent?.descriptions?.[0]?.id ?? null,
+    color_id: nextCurrent?.colors?.[0]?.id ?? null,
+    icon_id: nextCurrent?.icons?.[0]?.id ?? null,
+    instructions_id: nextCurrent?.instructions?.[0]?.id ?? null,
+    active_flag_id: nextCurrent?.flags?.[0]?.flag_option_id ?? null,
+    department_ids: (nextCurrent?.departments ?? [])
+      .map((d) => d.department_id)
+      .filter(Boolean),
+    parameter_field_ids: (nextCurrent?.parameter_fields ?? [])
+      .map((f) => f.field_id)
+      .filter(Boolean),
+    example_ids: (nextCurrent?.examples ?? [])
+      .map((e) => e.id)
+      .filter(Boolean),
   };
 
   // Compare primitive props

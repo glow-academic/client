@@ -44,18 +44,7 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     resource_types: list[str]  # Required: which resource types to generate
     user_instructions: list[str] | None = None  # Optional: user instructions
 
-    # Form state fields for "current" variable in Jinja templates
-    # These represent the currently selected resources in the form
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    # Note: current selections are derived from draft-backed API response.
 
 
 # =============================================================================

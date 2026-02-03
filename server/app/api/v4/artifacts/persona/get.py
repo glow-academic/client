@@ -50,6 +50,8 @@ from app.api.v4.artifacts.persona.types import (
     GetPersonaApiRequest,
     GetPersonaApiResponse,
     PersonaFlagConfig,
+    PersonaResourceBucket,
+    PersonaResources,
 )
 from app.api.v4.resources.colors.get import get_colors_internal
 from app.api.v4.resources.colors.search import search_colors_internal
@@ -585,6 +587,33 @@ async def get_persona_internal(
         )
 
     # === Construct Response ===
+    resources_payload = PersonaResources(
+        resources=PersonaResourceBucket(
+            names=names,
+            descriptions=descriptions,
+            colors=colors,
+            icons=icons,
+            instructions=instructions_list,
+            flags=persona_flags,
+            departments=departments,
+            parameter_fields=parameter_fields,
+            examples=examples,
+            parameters=parameters,
+        ),
+        current=PersonaResourceBucket(
+            names=[name_resource] if name_resource else [],
+            descriptions=[description_resource] if description_resource else [],
+            colors=[color_resource] if color_resource else [],
+            icons=[icon_resource] if icon_resource else [],
+            instructions=[instructions_resource] if instructions_resource else [],
+            flags=[flag_resource] if flag_resource else [],
+            departments=department_resources or [],
+            parameter_fields=parameter_field_resources or [],
+            examples=example_resources or [],
+            parameters=parameter_resources or [],
+        ),
+    )
+
     return GetPersonaApiResponse(
         # Required fields
         actor_name=access_result.actor_name,
@@ -594,88 +623,59 @@ async def get_persona_internal(
         draft_version=access_result.draft_version,
         group_id=access_result.group_id,
         # Name
-        name_id=ids_result.name_id,
-        name_resource=name_resource,
         show_name=show_name,
         name_agent_id=name_agent_id,  # Python-computed
         name_required=compute_name_required(),
         name_suggestions=name_suggestions,
-        names=names,
         # Description
-        description_id=ids_result.description_id,
-        description_resource=description_resource,
         show_description=show_description_flag,
         description_agent_id=description_agent_id,  # Python-computed
         description_required=compute_description_required(),
         description_suggestions=description_suggestions,
-        descriptions=descriptions,
         # Color
-        color_id=ids_result.color_id,
-        color_resource=color_resource,
         show_color=show_color,
         color_agent_id=color_agent_id,  # Python-computed
         color_required=compute_color_required(),
         color_suggestions=color_suggestions,
-        colors=colors,
         # Icon
-        icon_id=ids_result.icon_id,
-        icon_resource=icon_resource,
         show_icon=show_icon,
         icon_agent_id=icon_agent_id,  # Python-computed
         icon_required=compute_icon_required(),
         icon_suggestions=icon_suggestions,
-        icons=icons,
         # Instructions
-        instructions_id=ids_result.instructions_id,
-        instructions_resource=instructions_resource,
         show_instructions=show_instructions_flag,
         instructions_agent_id=instructions_agent_id,  # Python-computed
         instructions_required=compute_instructions_required(),
         instructions_suggestions=instructions_suggestions_ids,
-        instructions=instructions_list,
         # Flag
-        active_flag_id=ids_result.active_flag_id,
-        flag_resource=flag_resource,
         show_flag=show_flag,
         flag_agent_id=flag_agent_id,  # Python-computed
         flag_required=compute_flag_required(),
-        flags=persona_flags,
         # Departments
-        department_ids=ids_result.department_ids,
-        department_resources=department_resources,
         show_departments=show_departments_flag,
         departments_agent_id=departments_agent_id,  # Python-computed
         departments_required=compute_departments_required(),
         department_suggestions=department_suggestions,
-        departments=departments,
         # Parameter Fields
-        parameter_field_ids=ids_result.parameter_field_ids,
-        parameter_field_resources=parameter_field_resources,
         show_parameter_fields=show_parameter_fields_flag,
         parameter_fields_agent_id=parameter_fields_agent_id,  # Python-computed
         parameter_fields_required=compute_parameter_fields_required(),
         parameter_field_suggestions=parameter_field_suggestions,
-        parameter_fields=parameter_fields,
         # Examples
-        example_ids=ids_result.example_ids,
-        example_resources=example_resources,
         show_examples=show_examples_flag,
         examples_agent_id=examples_agent_id,  # Python-computed
         examples_required=compute_examples_required(),
         example_suggestions=example_suggestions,
-        examples=examples,
         # Parameters
-        parameter_ids=ids_result.parameter_ids,
-        parameter_resources=parameter_resources,
         show_parameters=show_parameters_flag,
         parameters_agent_id=parameters_agent_id,  # Python-computed
         parameters_required=compute_parameters_required(),
         parameter_suggestions=parameter_suggestions,
-        parameters=parameters,
         # Multi-resource agent IDs (Python-computed)
         basic_agent_id=basic_agent_id,
         content_agent_id=content_agent_id,
         parameters_step_agent_id=parameters_step_agent_id,
+        resources=resources_payload,
     )
 
 

@@ -11810,9 +11810,6 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            name_resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Show Name */
             show_name?: boolean | null;
             /** Name Agent Id */
@@ -11821,11 +11818,6 @@ export interface components {
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
-            /** Names */
-            names?: components["schemas"]["QGetNamesV4Item"][] | null;
-            /** Description Id */
-            description_id?: string | null;
-            description_resource?: components["schemas"]["QGetDescriptionsV4Item"] | null;
             /** Show Description */
             show_description?: boolean | null;
             /** Description Agent Id */
@@ -11834,11 +11826,6 @@ export interface components {
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
-            /** Descriptions */
-            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
-            /** Color Id */
-            color_id?: string | null;
-            color_resource?: components["schemas"]["QGetColorsV4Item"] | null;
             /** Show Color */
             show_color?: boolean | null;
             /** Color Agent Id */
@@ -11847,11 +11834,6 @@ export interface components {
             color_required?: boolean | null;
             /** Color Suggestions */
             color_suggestions?: string[] | null;
-            /** Colors */
-            colors?: components["schemas"]["QGetColorsV4Item"][] | null;
-            /** Icon Id */
-            icon_id?: string | null;
-            icon_resource?: components["schemas"]["QGetIconsV4Item"] | null;
             /** Show Icon */
             show_icon?: boolean | null;
             /** Icon Agent Id */
@@ -11860,11 +11842,6 @@ export interface components {
             icon_required?: boolean | null;
             /** Icon Suggestions */
             icon_suggestions?: string[] | null;
-            /** Icons */
-            icons?: components["schemas"]["QGetIconsV4Item"][] | null;
-            /** Instructions Id */
-            instructions_id?: string | null;
-            instructions_resource?: components["schemas"]["QGetInstructionsV4Item"] | null;
             /** Show Instructions */
             show_instructions?: boolean | null;
             /** Instructions Agent Id */
@@ -11873,23 +11850,12 @@ export interface components {
             instructions_required?: boolean | null;
             /** Instructions Suggestions */
             instructions_suggestions?: string[] | null;
-            /** Instructions */
-            instructions?: components["schemas"]["QGetInstructionsV4Item"][] | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            flag_resource?: components["schemas"]["QGetFlagsV4Item"] | null;
             /** Show Flag */
             show_flag?: boolean | null;
             /** Flag Agent Id */
             flag_agent_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Flags */
-            flags?: components["schemas"]["PersonaFlagConfig"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Resources */
-            department_resources?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
             /** Show Departments */
             show_departments?: boolean | null;
             /** Departments Agent Id */
@@ -11898,12 +11864,6 @@ export interface components {
             departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Parameter Field Resources */
-            parameter_field_resources?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
             /** Show Parameter Fields */
             show_parameter_fields?: boolean | null;
             /** Parameter Fields Agent Id */
@@ -11912,12 +11872,6 @@ export interface components {
             parameter_fields_required?: boolean | null;
             /** Parameter Field Suggestions */
             parameter_field_suggestions?: string[] | null;
-            /** Parameter Fields */
-            parameter_fields?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
-            /** Example Ids */
-            example_ids?: string[] | null;
-            /** Example Resources */
-            example_resources?: components["schemas"]["QGetExamplesV4Item"][] | null;
             /** Show Examples */
             show_examples?: boolean | null;
             /** Examples Agent Id */
@@ -11926,12 +11880,6 @@ export interface components {
             examples_required?: boolean | null;
             /** Example Suggestions */
             example_suggestions?: string[] | null;
-            /** Examples */
-            examples?: components["schemas"]["QGetExamplesV4Item"][] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Resources */
-            parameter_resources?: components["schemas"]["QGetParametersV4Item"][] | null;
             /** Show Parameters */
             show_parameters?: boolean | null;
             /** Parameters Agent Id */
@@ -11940,14 +11888,13 @@ export interface components {
             parameters_required?: boolean | null;
             /** Parameter Suggestions */
             parameter_suggestions?: string[] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** Content Agent Id */
             content_agent_id?: string | null;
             /** Parameters Step Agent Id */
             parameters_step_agent_id?: string | null;
+            resources?: components["schemas"]["PersonaResources"] | null;
         };
         /** GetPersonaResourceApiRequest */
         GetPersonaResourceApiRequest: {
@@ -16016,6 +15963,40 @@ export interface components {
             arguments_delta?: string | null;
             /** Trace Id */
             trace_id?: string | null;
+        };
+        /**
+         * PersonaResourceBucket
+         * @description Generic resources bucket with full objects (always plural lists).
+         */
+        PersonaResourceBucket: {
+            /** Names */
+            names?: components["schemas"]["QGetNamesV4Item"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDescriptionsV4Item"][] | null;
+            /** Colors */
+            colors?: components["schemas"]["QGetColorsV4Item"][] | null;
+            /** Icons */
+            icons?: components["schemas"]["QGetIconsV4Item"][] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["QGetInstructionsV4Item"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["PersonaFlagConfig"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentsV4Item"][] | null;
+            /** Parameter Fields */
+            parameter_fields?: components["schemas"]["QGetParameterFieldsV4Item"][] | null;
+            /** Examples */
+            examples?: components["schemas"]["QGetExamplesV4Item"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetParametersV4Item"][] | null;
+        };
+        /**
+         * PersonaResources
+         * @description Full resources + current selections.
+         */
+        PersonaResources: {
+            resources?: components["schemas"]["PersonaResourceBucket"] | null;
+            current?: components["schemas"]["PersonaResourceBucket"] | null;
         };
         /** PointsApiRequest */
         PointsApiRequest: {

@@ -18,6 +18,10 @@ from fastapi import APIRouter
 from app.api.v4.artifacts.persona.get import get_persona_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.socket.v4.artifacts.persona.types import GeneratePersonaPayload
+from app.api.v4.artifacts.persona.types import (
+    GetPersonaApiResponse,
+    PersonaResourceBucket,
+)
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -74,7 +78,109 @@ PERSONA_RESOURCE_TYPES = [
     "examples",
     "parameter_fields",
     "departments",
+    "parameters",
 ]
+
+
+def _serialize_resource_item(item: Any) -> Any:
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump()
+    if hasattr(item, "_asdict"):
+        return dict(item._asdict())
+    if hasattr(item, "dict"):
+        return item.dict()
+    if isinstance(item, dict):
+        return item
+    return item
+
+
+def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
+    if not items:
+        return []
+    return [serialized for item in items if (serialized := _serialize_resource_item(item)) is not None]
+
+
+def _build_persona_jinja_context(
+    response: GetPersonaApiResponse, resource_types: list[str]
+) -> dict[str, Any]:
+    """Build Jinja context from cached persona GET response."""
+
+    if response.resources and response.resources.resources:
+        resources = response.resources.resources.model_dump()
+        current = (
+            response.resources.current.model_dump()
+            if response.resources.current
+            else PersonaResourceBucket().model_dump()
+        )
+        resources["current"] = current
+        return resources
+    return {"current": PersonaResourceBucket().model_dump()}
+
+    def has_resource(key: str) -> bool:
+        return key in resource_types
+
+    resources: dict[str, Any] = {}
+    current: dict[str, Any] = {}
+
+    if has_resource("names"):
+        resources["names"] = _serialize_resource_list(response.names)
+        current["names"] = _serialize_resource_list(
+            [response.name_resource] if response.name_resource else []
+        )
+
+    if has_resource("descriptions"):
+        resources["descriptions"] = _serialize_resource_list(response.descriptions)
+        current["descriptions"] = _serialize_resource_list(
+            [response.description_resource] if response.description_resource else []
+        )
+
+    if has_resource("colors"):
+        resources["colors"] = _serialize_resource_list(response.colors)
+        current["colors"] = _serialize_resource_list(
+            [response.color_resource] if response.color_resource else []
+        )
+
+    if has_resource("icons"):
+        resources["icons"] = _serialize_resource_list(response.icons)
+        current["icons"] = _serialize_resource_list(
+            [response.icon_resource] if response.icon_resource else []
+        )
+
+    if has_resource("instructions"):
+        resources["instructions"] = _serialize_resource_list(response.instructions)
+        current["instructions"] = _serialize_resource_list(
+            [response.instructions_resource] if response.instructions_resource else []
+        )
+
+    if has_resource("flags"):
+        resources["flags"] = _serialize_resource_list(response.flags)
+        current["flags"] = _serialize_resource_list(
+            [response.flag_resource] if response.flag_resource else []
+        )
+
+    if has_resource("departments"):
+        resources["departments"] = _serialize_resource_list(response.departments)
+        current["departments"] = _serialize_resource_list(response.department_resources)
+
+    if has_resource("parameter_fields"):
+        resources["fields"] = _serialize_resource_list(response.parameter_fields)
+        current["parameter_fields"] = _serialize_resource_list(
+            response.parameter_field_resources
+        )
+
+    if has_resource("examples"):
+        resources["examples"] = _serialize_resource_list(response.examples)
+        current["examples"] = _serialize_resource_list(response.example_resources)
+
+    if has_resource("parameters"):
+        resources["parameters"] = _serialize_resource_list(response.parameters)
+        current["parameters"] = _serialize_resource_list(response.parameter_resources)
+
+    resources["current"] = current
+
+    return resources
 
 
 async def _persona_generate_impl(
@@ -125,6 +231,20 @@ async def _persona_generate_impl(
             )
             return
 
+        if not data.draft_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Draft ID is required for persona generation",
+                    artifact_type="persona",
+                    group_id=None,
+                    resource_type="persona",
+                ),
+                sid=sid,
+            )
+            return
+
         # Use agent_id directly from payload (frontend provides it)
         agent_id = data.agent_id
 
@@ -134,6 +254,7 @@ async def _persona_generate_impl(
             persona_id=data.persona_id,
             draft_id=data.draft_id,
         )
+        persona_jinja_context = _build_persona_jinja_context(result, resource_types)
 
         # Step 2: Seed resource nodes from the persona GET result (ONLY requested types)
         seed_nodes: list[QGetPersonaResourceTreeV4Node] = []
@@ -376,7 +497,7 @@ async def _persona_generate_impl(
             quality = prepare_row.quality
             tools = prepare_row.tools
             developer_instruction_templates = prepare_row.developer_instruction_templates
-            jinja_context = prepare_row.jinja_context
+            jinja_context = persona_jinja_context
 
             # Step 5: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
