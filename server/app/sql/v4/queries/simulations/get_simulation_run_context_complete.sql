@@ -346,7 +346,7 @@ LEFT JOIN (
     FROM scenario_personas_junction sp
         WHERE sp.active = true AND EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = sp.persona_id AND f.name = 'persona_active' AND pf.value = true)
     ORDER BY sp.scenario_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1)
-) first_persona ON first_persona.scenario_id = s.id
+) first_persona ON first_persona.scenario_id = ssj.scenario_id
 
 -- Text agent joins (use p_agent_id parameter passed from frontend)
 -- p_agent_id is an agent_artifact.id, resolve to agents_resource via agent_agents_junction

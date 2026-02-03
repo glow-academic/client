@@ -23,12 +23,7 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptHintProgressEvent,
     AttemptTurnCompleteEvent,
 )
-from app.sql.types import (
-    SaveAttemptMessageContentSqlParams,
-    SaveAttemptMessageContentSqlRow,
-)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -37,8 +32,6 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-# SQL paths
-SQL_PATH_SAVE_MESSAGE = "app/sql/v4/queries/generate/attempt/save_attempt_message_content_complete.sql"
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
@@ -98,15 +91,15 @@ async def _handle_message_complete(
     try:
         # Save message content to database
         async with get_db_connection() as conn:
-            save_params = SaveAttemptMessageContentSqlParams(
-                p_message_id=uuid.UUID(message_id),
-                p_content=final_content,
-                p_run_id=uuid.UUID(run_id) if run_id else None,
-                p_input_tokens=input_tokens,
-                p_output_tokens=output_tokens,
+            # Call the function directly (function created by make sql-compile)
+            await conn.fetchrow(
+                "SELECT * FROM socket_save_attempt_message_content_v4($1, $2, $3, $4, $5)",
+                uuid.UUID(message_id),
+                final_content,
+                uuid.UUID(run_id) if run_id else None,
+                input_tokens,
+                output_tokens,
             )
-
-            await execute_sql_typed(conn, SQL_PATH_SAVE_MESSAGE, params=save_params)
 
         # Emit attempt_complete event
         event = AttemptCompleteEvent(

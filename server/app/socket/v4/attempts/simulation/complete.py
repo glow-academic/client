@@ -22,12 +22,6 @@ server_router = APIRouter()
 
 # SQL paths
 SQL_PATH_IS_GENERAL = "app/sql/v4/queries/attempts/general/is_general_chat_complete.sql"
-SQL_PATH_PRACTICE_COMPLETE = (
-    "app/sql/v4/queries/attempts/practice/complete_assistant_message_complete.sql"
-)
-SQL_PATH_GENERAL_COMPLETE = (
-    "app/sql/v4/queries/attempts/general/complete_assistant_message_complete.sql"
-)
 
 
 # =============================================================================
@@ -83,14 +77,14 @@ async def handle_attempt_complete(data: dict[str, Any]) -> None:
             else:
                 is_general = False
 
-            sql_path = (
-                SQL_PATH_GENERAL_COMPLETE if is_general else SQL_PATH_PRACTICE_COMPLETE
+            # Save assistant message to database using the appropriate function
+            func_name = (
+                "socket_general_complete_assistant_message_v4"
+                if is_general
+                else "socket_practice_complete_assistant_message_v4"
             )
-
-            # Save assistant message to database
-            sql = load_sql(sql_path)
             await conn.fetchrow(
-                sql,
+                f"SELECT * FROM {func_name}($1, $2, $3, $4)",
                 uuid.UUID(message_id),
                 assistant_output,
                 input_tokens,
