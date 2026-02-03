@@ -8,15 +8,14 @@
 import type { HomeOut } from "@/app/(main)/home/page";
 
 import { useProfile } from "@/contexts/profile-context";
+import { useTrainingStart } from "@/hooks/useTrainingStart";
 
 import SimulationCard, {
   SimulationCardSkeleton,
 } from "@/components/common/layout/SimulationCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useMemo, useState } from "react";
 import SimulationProgress, {
   SimulationProgressSkeleton,
   ViewMode,
@@ -27,12 +26,12 @@ export interface HomeProps {
 }
 
 export default function Home({ homeData }: HomeProps) {
-  const {
-    profile,
-    isConnected,
-    emitStartSimulation,
-    startingSimulationId,
-  } = useProfile();
+  const { profile } = useProfile();
+
+  // Use the unified training start hook for WebSocket-based simulation starts
+  const { startTraining, startingSimulationId } = useTrainingStart({
+    practice: false,
+  });
 
   // Use data directly from props (fetched server-side)
   const homeOverview = homeData;
@@ -95,107 +94,13 @@ export default function Home({ homeData }: HomeProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
-  const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
-  );
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const router = useRouter();
 
-  // Set up simulation-specific event listeners using global WebSocket
-  useEffect(() => {
-    // Listen for successful simulation starts to handle navigation
-    const handleSimulationStarted = async (event: CustomEvent) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (loadingToastId) {
-        toast.dismiss(loadingToastId);
-        setLoadingToastId(null);
-      }
-      const { attemptId } = event.detail;
-      // Server-side Redis cache is already invalidated by the WebSocket handler
-      router.refresh(); // Refresh current page data so it's updated when user returns
-      router.push(`/home/a/${attemptId}`);
-    };
-
-    // Listen for simulation errors to reset loading state
-    const handleSimulationError = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (loadingToastId) {
-        toast.dismiss(loadingToastId);
-        setLoadingToastId(null);
-      }
-      toast.error("Failed to start simulation. Please try again.");
-    };
-
-    window.addEventListener(
-      "simulationStarted",
-      handleSimulationStarted as unknown as EventListener
-    );
-    window.addEventListener("simulationError", handleSimulationError);
-
-    return () => {
-      window.removeEventListener(
-        "simulationStarted",
-        handleSimulationStarted as unknown as EventListener
-      );
-      window.removeEventListener("simulationError", handleSimulationError);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [router, loadingToastId]);
-
+  // Handle starting a simulation via the unified training hook
   const handleStartSimulation = useCallback(
-    async (simulationId: string) => {
-      try {
-        // Only enforce profile for non-guests
-        if (profile?.role !== "guest" && !profile?.id) {
-          toast.error("Profile not loaded. Please refresh the page.");
-          return;
-        }
-
-        if (!isConnected) {
-          toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
-          );
-          return;
-        }
-
-        const toastId = toast.loading("Starting simulation...", {
-          dismissible: true,
-        });
-        setLoadingToastId(toastId);
-
-        const profileIdForEmit =
-          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
-
-        emitStartSimulation({
-          simulation_id: simulationId,
-          profile_id: profileIdForEmit,
-        });
-
-        // timeout...
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-          toast.dismiss(toastId);
-          toast.error("Simulation start timed out. Please try again.");
-          setLoadingToastId(null);
-        }, 30000);
-      } catch {
-        if (loadingToastId) toast.dismiss(loadingToastId);
-        toast.error("Failed to start simulation. Please try again.");
-        setLoadingToastId(null);
-      }
+    (simulationId: string) => {
+      startTraining({ simulationId });
     },
-    [
-      profile,
-      isConnected,
-      emitStartSimulation,
-      loadingToastId,
-    ]
+    [startTraining]
   );
 
   // Use data directly from the hook

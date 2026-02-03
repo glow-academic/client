@@ -2152,13 +2152,13 @@ export interface paths {
         put?: never;
         /**
          * Training Get
-         * @description Get training overview with simulation cards.
+         * @description Get simulations available for training (operational).
          *
-         *     Unified endpoint for home and practice overview, differentiated by
-         *     `practice: bool` parameter.
+         *     OPERATIONAL endpoint: Returns simulations user can take, scoped by
+         *     their cohorts based on practice mode.
          *
-         *     Uses simulation overview view internal handler for data.
-         *     Python handles only business logic (status, pass_pct, completion_pct, cohort formatting).
+         *     Used by frontend to display available simulations and get data
+         *     needed to start a training session (scenario_ids, etc).
          */
         post: operations["training_get_api_v4_training_get_post"];
         delete?: never;
@@ -2178,14 +2178,13 @@ export interface paths {
         put?: never;
         /**
          * Training List
-         * @description Get paginated training history with attempts.
+         * @description Get training list with simulation cards and attempt history.
          *
-         *     Unified endpoint for home and practice history, differentiated by
+         *     ANALYTICAL endpoint: Returns both simulation overview cards AND
+         *     paginated attempt history in a single response.
+         *
+         *     Unified endpoint for home and practice modes, differentiated by
          *     `practice: bool` parameter.
-         *
-         *     Uses mv_attempt_facts via get_attempt_facts_internal().
-         *     Batch fetches resource metadata (simulations, personas, scenarios, profiles).
-         *     Python handles business logic (score_status, show_view, show_continue, pass_pct).
          */
         post: operations["training_list_api_v4_training_list_post"];
         delete?: never;
@@ -14287,11 +14286,45 @@ export interface components {
             tools?: components["schemas"]["QGetToolsListV4Tool"][] | null;
         };
         /**
-         * GetTrainingHistoryRequest
-         * @description Client API request for training history.
+         * GetTrainingGetRequest
+         * @description Client API request for training get (operational).
+         *
+         *     Returns simulations user can take with scenario_ids for starting.
          *
          *     Args:
-         *         practice: If True, returns practice history. If False, returns home history.
+         *         practice: If True, returns practice simulations. If False, returns home simulations.
+         */
+        GetTrainingGetRequest: {
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+        };
+        /**
+         * GetTrainingGetResponse
+         * @description Client-facing API response for training get (operational).
+         *
+         *     Returns simulations user can take, scoped by their cohorts.
+         */
+        GetTrainingGetResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Items */
+            items?: components["schemas"]["TrainingSimulationOperational"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardMapping"][] | null;
+        };
+        /**
+         * GetTrainingListRequest
+         * @description Client API request for training list (analytical).
+         *
+         *     Returns simulation cards with stats AND paginated attempt history.
+         *
+         *     Args:
+         *         practice: If True, returns practice data. If False, returns home data.
          *         start_date: Start date filter (required).
          *         end_date: End date filter (required).
          *         cohort_ids: Filter by cohorts.
@@ -14304,10 +14337,10 @@ export interface components {
          *         sort_order: Sort order ('asc' | 'desc').
          *         page: Page number (0-indexed).
          *         page_size: Page size.
-         *         profile_ids: Filter by profiles (practice mode only, ignored when practice=False).
-         *         show_archived: Show archived attempts (practice mode only, ignored when practice=False).
+         *         profile_ids: Filter by profiles (practice mode only).
+         *         show_archived: Show archived attempts (practice mode only).
          */
-        GetTrainingHistoryRequest: {
+        GetTrainingListRequest: {
             /**
              * Practice
              * @default false
@@ -14352,12 +14385,24 @@ export interface components {
             show_archived: boolean | null;
         };
         /**
-         * GetTrainingHistoryResponse
-         * @description Client-facing API response for training history.
+         * GetTrainingListResponse
+         * @description Client-facing API response for training list (analytical).
+         *
+         *     Combines simulation cards AND paginated attempt history in one response.
          */
-        GetTrainingHistoryResponse: {
+        GetTrainingListResponse: {
             /** Actor Name */
             actor_name?: string | null;
+            /** Mode */
+            mode?: string | null;
+            /** Has Data */
+            has_data?: boolean | null;
+            /** Items */
+            items?: components["schemas"]["TrainingSimulationCard"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["StandardMapping"][] | null;
             /** Data */
             data?: components["schemas"]["TrainingHistoryAttempt"][] | null;
             /** Total Count */
@@ -14374,53 +14419,6 @@ export interface components {
             scenario_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
             /** Profile Options */
             profile_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
-        };
-        /**
-         * GetTrainingOverviewRequest
-         * @description Client API request for training overview.
-         *
-         *     Args:
-         *         practice: If True, returns practice simulations. If False, returns home simulations.
-         *         department_ids: Filter by departments (applies to both modes).
-         *         simulation_ids: Filter by simulations (ignored when practice=True).
-         *         cohort_ids: Filter by cohorts (ignored when practice=True).
-         *         start_date: Filter by start date (ignored when practice=True).
-         *         end_date: Filter by end date (ignored when practice=True).
-         */
-        GetTrainingOverviewRequest: {
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-        };
-        /**
-         * GetTrainingOverviewResponse
-         * @description Client-facing API response for training overview.
-         */
-        GetTrainingOverviewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Mode */
-            mode?: string | null;
-            /** Has Data */
-            has_data?: boolean | null;
-            /** Items */
-            items?: components["schemas"]["TrainingSimulationCard"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardMapping"][] | null;
         };
         /**
          * GetVideoApiRequest
@@ -26122,12 +26120,12 @@ export interface components {
         };
         /**
          * TrainingSimulationCard
-         * @description Simulation card for training overview.
+         * @description Simulation card with analytical stats.
          *
          *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
          *     Some fields are only populated based on mode:
          *     - completion_pct, passed_count, in_progress_count, not_started_count: instructional mode only
-         *     - practice_simulation, practice_scenario_id: practice mode only
+         *     - practice_simulation: practice mode only
          */
         TrainingSimulationCard: {
             /** View Mode */
@@ -26171,8 +26169,33 @@ export interface components {
             not_started_count?: number | null;
             /** Practice Simulation */
             practice_simulation?: boolean | null;
-            /** Practice Scenario Id */
-            practice_scenario_id?: string | null;
+        };
+        /**
+         * TrainingSimulationOperational
+         * @description Simulation data for starting a training session.
+         *
+         *     Contains only the data needed to start a simulation, not analytics.
+         */
+        TrainingSimulationOperational: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Simulation Description */
+            simulation_description?: string | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
         };
         /**
          * TrainingStartPayload
@@ -26199,6 +26222,8 @@ export interface components {
             scenario_id?: string | null;
             /** User Instructions */
             user_instructions?: string[] | null;
+            /** Infinite */
+            infinite?: boolean | null;
         };
         /**
          * TrainingStartedEvent
@@ -26541,7 +26566,7 @@ export interface components {
         };
         /**
          * FilterOption
-         * @description Filter option for history dropdowns.
+         * @description Filter option for dropdowns.
          */
         app__api__v4__artifacts__training__types__FilterOption: {
             /** Value */
@@ -30393,7 +30418,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetTrainingOverviewRequest"];
+                "application/json": components["schemas"]["GetTrainingGetRequest"];
             };
         };
         responses: {
@@ -30403,7 +30428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetTrainingOverviewResponse"];
+                    "application/json": components["schemas"]["GetTrainingGetResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30430,7 +30455,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetTrainingHistoryRequest"];
+                "application/json": components["schemas"]["GetTrainingListRequest"];
             };
         };
         responses: {
@@ -30440,7 +30465,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetTrainingHistoryResponse"];
+                    "application/json": components["schemas"]["GetTrainingListResponse"];
                 };
             };
             /** @description Validation Error */

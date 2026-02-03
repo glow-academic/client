@@ -9902,7 +9902,7 @@
           "training"
         ],
         "summary": "Training Get",
-        "description": "Get training overview with simulation cards.\n\nUnified endpoint for home and practice overview, differentiated by\n`practice: bool` parameter.\n\nUses simulation overview view internal handler for data.\nPython handles only business logic (status, pass_pct, completion_pct, cohort formatting).",
+        "description": "Get simulations available for training (operational).\n\nOPERATIONAL endpoint: Returns simulations user can take, scoped by\ntheir cohorts based on practice mode.\n\nUsed by frontend to display available simulations and get data\nneeded to start a training session (scenario_ids, etc).",
         "operationId": "training_get_api_v4_training_get_post",
         "parameters": [
           {
@@ -9959,7 +9959,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetTrainingOverviewRequest"
+                "$ref": "#/components/schemas/GetTrainingGetRequest"
               }
             }
           }
@@ -9970,7 +9970,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetTrainingOverviewResponse"
+                  "$ref": "#/components/schemas/GetTrainingGetResponse"
                 }
               }
             }
@@ -10001,7 +10001,7 @@
           "training"
         ],
         "summary": "Training List",
-        "description": "Get paginated training history with attempts.\n\nUnified endpoint for home and practice history, differentiated by\n`practice: bool` parameter.\n\nUses mv_attempt_facts via get_attempt_facts_internal().\nBatch fetches resource metadata (simulations, personas, scenarios, profiles).\nPython handles business logic (score_status, show_view, show_continue, pass_pct).",
+        "description": "Get training list with simulation cards and attempt history.\n\nANALYTICAL endpoint: Returns both simulation overview cards AND\npaginated attempt history in a single response.\n\nUnified endpoint for home and practice modes, differentiated by\n`practice: bool` parameter.",
         "operationId": "training_list_api_v4_training_list_post",
         "parameters": [
           {
@@ -10058,7 +10058,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetTrainingHistoryRequest"
+                "$ref": "#/components/schemas/GetTrainingListRequest"
               }
             }
           }
@@ -10069,7 +10069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetTrainingHistoryResponse"
+                  "$ref": "#/components/schemas/GetTrainingListResponse"
                 }
               }
             }
@@ -61335,7 +61335,79 @@
         "type": "object",
         "title": "GetToolsListApiResponse"
       },
-      "GetTrainingHistoryRequest": {
+      "GetTrainingGetRequest": {
+        "properties": {
+          "practice": {
+            "type": "boolean",
+            "title": "Practice",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingGetRequest",
+        "description": "Client API request for training get (operational).\n\nReturns simulations user can take with scenario_ids for starting.\n\nArgs:\n    practice: If True, returns practice simulations. If False, returns home simulations."
+      },
+      "GetTrainingGetResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSimulationOperational"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardGroupMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          }
+        },
+        "type": "object",
+        "title": "GetTrainingGetResponse",
+        "description": "Client-facing API response for training get (operational).\n\nReturns simulations user can take, scoped by their cohorts."
+      },
+      "GetTrainingListRequest": {
         "properties": {
           "practice": {
             "type": "boolean",
@@ -61511,10 +61583,10 @@
           "start_date",
           "end_date"
         ],
-        "title": "GetTrainingHistoryRequest",
-        "description": "Client API request for training history.\n\nArgs:\n    practice: If True, returns practice history. If False, returns home history.\n    start_date: Start date filter (required).\n    end_date: End date filter (required).\n    cohort_ids: Filter by cohorts.\n    department_ids: Filter by departments.\n    simulation_ids: Filter by simulations.\n    scenario_ids: Filter by scenarios.\n    infinite_mode: Filter by infinite mode.\n    search: Search string.\n    sort_by: Sort field ('date' | 'score' | 'simulation_name').\n    sort_order: Sort order ('asc' | 'desc').\n    page: Page number (0-indexed).\n    page_size: Page size.\n    profile_ids: Filter by profiles (practice mode only, ignored when practice=False).\n    show_archived: Show archived attempts (practice mode only, ignored when practice=False)."
+        "title": "GetTrainingListRequest",
+        "description": "Client API request for training list (analytical).\n\nReturns simulation cards with stats AND paginated attempt history.\n\nArgs:\n    practice: If True, returns practice data. If False, returns home data.\n    start_date: Start date filter (required).\n    end_date: End date filter (required).\n    cohort_ids: Filter by cohorts.\n    department_ids: Filter by departments.\n    simulation_ids: Filter by simulations.\n    scenario_ids: Filter by scenarios.\n    infinite_mode: Filter by infinite mode.\n    search: Search string.\n    sort_by: Sort field ('date' | 'score' | 'simulation_name').\n    sort_order: Sort order ('asc' | 'desc').\n    page: Page number (0-indexed).\n    page_size: Page size.\n    profile_ids: Filter by profiles (practice mode only).\n    show_archived: Show archived attempts (practice mode only)."
       },
-      "GetTrainingHistoryResponse": {
+      "GetTrainingListResponse": {
         "properties": {
           "actor_name": {
             "anyOf": [
@@ -61526,6 +61598,70 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSimulationCard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardGroupMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
           },
           "data": {
             "anyOf": [
@@ -61629,169 +61765,8 @@
           }
         },
         "type": "object",
-        "title": "GetTrainingHistoryResponse",
-        "description": "Client-facing API response for training history."
-      },
-      "GetTrainingOverviewRequest": {
-        "properties": {
-          "practice": {
-            "type": "boolean",
-            "title": "Practice",
-            "default": false
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "start_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Date"
-          },
-          "end_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "End Date"
-          }
-        },
-        "type": "object",
-        "title": "GetTrainingOverviewRequest",
-        "description": "Client API request for training overview.\n\nArgs:\n    practice: If True, returns practice simulations. If False, returns home simulations.\n    department_ids: Filter by departments (applies to both modes).\n    simulation_ids: Filter by simulations (ignored when practice=True).\n    cohort_ids: Filter by cohorts (ignored when practice=True).\n    start_date: Filter by start date (ignored when practice=True).\n    end_date: Filter by end date (ignored when practice=True)."
-      },
-      "GetTrainingOverviewResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "mode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mode"
-          },
-          "has_data": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Has Data"
-          },
-          "items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/TrainingSimulationCard"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Items"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardGroupMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
-          },
-          "standards": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardMapping"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards"
-          }
-        },
-        "type": "object",
-        "title": "GetTrainingOverviewResponse",
-        "description": "Client-facing API response for training overview."
+        "title": "GetTrainingListResponse",
+        "description": "Client-facing API response for training list (analytical).\n\nCombines simulation cards AND paginated attempt history in one response."
       },
       "GetVideoApiRequest": {
         "properties": {
@@ -118338,18 +118313,6 @@
               }
             ],
             "title": "Practice Simulation"
-          },
-          "practice_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Scenario Id"
           }
         },
         "type": "object",
@@ -118358,7 +118321,107 @@
           "simulation_id"
         ],
         "title": "TrainingSimulationCard",
-        "description": "Simulation card for training overview.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.\nSome fields are only populated based on mode:\n- completion_pct, passed_count, in_progress_count, not_started_count: instructional mode only\n- practice_simulation, practice_scenario_id: practice mode only"
+        "description": "Simulation card with analytical stats.\n\nSQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.\nSome fields are only populated based on mode:\n- completion_pct, passed_count, in_progress_count, not_started_count: instructional mode only\n- practice_simulation: practice mode only"
+      },
+      "TrainingSimulationOperational": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "simulation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id"
+        ],
+        "title": "TrainingSimulationOperational",
+        "description": "Simulation data for starting a training session.\n\nContains only the data needed to start a simulation, not analytics."
       },
       "TrainingStartPayload": {
         "properties": {
@@ -118397,6 +118460,17 @@
               }
             ],
             "title": "User Instructions"
+          },
+          "infinite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite"
           }
         },
         "type": "object",
@@ -119866,7 +119940,7 @@
           "value"
         ],
         "title": "FilterOption",
-        "description": "Filter option for history dropdowns."
+        "description": "Filter option for dropdowns."
       },
       "app__api__v4__resources__simulations__get__GetSimulationApiRequest": {
         "properties": {

@@ -45,6 +45,7 @@ class TrainingStartPayload(BaseModel):
     agent_id: UUID  # Content generation agent
     scenario_id: UUID | None = None  # Optional - uses first if not specified
     user_instructions: list[str] | None = None  # Optional generation hints
+    infinite: bool | None = None  # Infinite mode - no time limit
 
 
 # =============================================================================

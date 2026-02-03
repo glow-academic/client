@@ -16,17 +16,26 @@ import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using unified training endpoints with practice: true for practice mode
-type PracticeIn = InputOf<"/api/v4/training/get", "post">;
-type PracticeOut = OutputOf<"/api/v4/training/get", "post">;
-type PracticeHistoryIn = InputOf<"/api/v4/training/list", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v4/training/list", "post">;
+// GET endpoint: operational data (scenario_ids for starting simulations)
+type PracticeOperationalIn = InputOf<"/api/v4/training/get", "post">;
+type PracticeOperationalOut = OutputOf<"/api/v4/training/get", "post">;
+// LIST endpoint: analytical data (stats, scores, history)
+type PracticeAnalyticalIn = InputOf<"/api/v4/training/list", "post">;
+type PracticeAnalyticalOut = OutputOf<"/api/v4/training/list", "post">;
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Practice overview responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
+// Merged type for Practice component - combines operational + analytical data
+type PracticeOut = Omit<PracticeAnalyticalOut, "items"> & {
+  items: Array<
+    NonNullable<PracticeAnalyticalOut["items"]>[number] & {
+      scenario_ids?: string[] | null;
+    }
+  > | null;
+};
+
+/** ---- Direct fetch for operational data (scenario_ids) ---- */
+const getPracticeOperational = async (
+  input: PracticeOperationalIn
+): Promise<PracticeOperationalOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/training/get", input, {
@@ -39,15 +48,10 @@ const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   });
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Practice history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
- */
-const getPracticeHistory = async (
-  input: PracticeHistoryIn
-): Promise<PracticeHistoryOut> => {
+/** ---- Direct fetch for analytical data (stats, history) ---- */
+const getPracticeAnalytical = async (
+  input: PracticeAnalyticalIn
+): Promise<PracticeAnalyticalOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/training/list", input, {
@@ -59,6 +63,38 @@ const getPracticeHistory = async (
     }),
   });
 };
+
+/** ---- Merge operational + analytical data by simulation_id ---- */
+function mergePracticeData(
+  operational: PracticeOperationalOut,
+  analytical: PracticeAnalyticalOut
+): PracticeOut {
+  // Build lookup map for scenario_ids by simulation_id
+  const scenarioIdsMap = new Map<string, string[]>();
+  if (operational.items) {
+    for (const item of operational.items) {
+      if (item.simulation_id && item.scenario_ids) {
+        scenarioIdsMap.set(
+          String(item.simulation_id),
+          item.scenario_ids.map(String)
+        );
+      }
+    }
+  }
+
+  // Merge scenario_ids into analytical items
+  const mergedItems = analytical.items?.map((item) => ({
+    ...item,
+    scenario_ids: item.simulation_id
+      ? scenarioIdsMap.get(String(item.simulation_id)) || null
+      : null,
+  })) || null;
+
+  return {
+    ...analytical,
+    items: mergedItems,
+  };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -117,17 +153,31 @@ export default async function PracticePage({
     throw error;
   }
 
-  // Build practice filters (only department_ids) - convert to snake_case
+  // Build practice filters - convert to snake_case
   // profile_id removed - comes from X-Profile-Id header automatically
   // Always pass department_ids (never empty array) - use all IDs from profile context
   // practice: true for practice mode (uses unified training endpoint)
-  const practiceFiltersBody: PracticeIn["body"] = {
-    practice: true,
-    department_ids: profileContext.department_ids || [], // Always pass (non-empty from profile context)
+
+  // Operational endpoint (for scenario_ids)
+  const operationalFilters: PracticeOperationalIn = {
+    body: {
+      practice: true,
+    },
   };
 
-  const practiceFilters: PracticeIn = {
-    body: practiceFiltersBody,
+  // Analytical endpoint (for stats - fetching cards only, not history which is separate)
+  const now = new Date();
+  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+  const analyticalFilters: PracticeAnalyticalIn = {
+    body: {
+      practice: true,
+      start_date: oneYearAgo.toISOString(),
+      end_date: now.toISOString(),
+      department_ids: profileContext.department_ids || [],
+      page: 0,
+      page_size: 1, // We only need the items (cards), not history data
+      show_archived: false,
+    },
   };
 
   // Extract pagination and filter params from search params
@@ -156,12 +206,19 @@ export default async function PracticePage({
   const historySortBy = searchParamsObj.get("historySortBy") || "date";
   const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
 
-  // Fetch practice data server-side (without history - history will be fetched separately)
-  const practiceData = await getPractice(practiceFilters);
+  // Fetch both operational + analytical data in parallel, then merge
+  const [operationalData, analyticalData] = await Promise.all([
+    getPracticeOperational(operationalFilters),
+    getPracticeAnalytical(analyticalFilters),
+  ]);
 
-  // Remove history from response for server-driven pagination (history is now separate endpoint)
+  // Merge operational (scenario_ids) + analytical (stats) data
+  const practiceData = mergePracticeData(operationalData, analyticalData);
+
+  // Remove history from response for server-driven pagination (history is fetched separately)
   const practiceDataWithoutHistory = {
     ...practiceData,
+    data: [], // history is in 'data' field from list endpoint
   };
 
   // Get profileId from profile context
@@ -279,7 +336,7 @@ async function PracticeHistorySection({
   // practice: true for practice mode
   const now = new Date();
   const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-  const historyFilters: PracticeHistoryIn = {
+  const historyFilters: PracticeAnalyticalIn = {
     body: {
       practice: true,
       start_date: oneYearAgo.toISOString(),
@@ -309,7 +366,7 @@ async function PracticeHistorySection({
     },
   };
 
-  const historyData = await getPracticeHistory(historyFilters);
+  const historyData = await getPracticeAnalytical(historyFilters);
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const dataArray = historyData.data || [];
@@ -365,4 +422,4 @@ async function PracticeHistorySection({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { PracticeHistoryIn, PracticeHistoryOut, PracticeIn, PracticeOut };
+export type { PracticeAnalyticalIn as PracticeHistoryIn, PracticeAnalyticalOut as PracticeHistoryOut, PracticeOut };

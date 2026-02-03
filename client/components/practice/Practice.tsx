@@ -6,14 +6,11 @@
  */
 "use client";
 import type { PracticeOut } from "@/app/(main)/practice/page";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useMemo } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-// Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
-// This functionality needs to be re-implemented or removed
+import { useTrainingStart } from "@/hooks/useTrainingStart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistorySkeleton } from "../common/history/SimulationHistory";
 import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
@@ -27,17 +24,15 @@ export default function Practice({
   practiceData,
   isGuest = false,
 }: PracticeProps) {
-  const router = useRouter();
+  const { profile } = useProfile();
 
-  const { profile, isConnected, emitStartSimulation, startingSimulationId } =
-    useProfile();
+  // Use the unified training start hook for WebSocket-based simulation starts
+  const { startTraining, startingSimulationId } = useTrainingStart({
+    practice: true,
+  });
 
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
-  const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
-  );
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Extract data from practiceData
   const bundle = practiceData;
@@ -93,142 +88,20 @@ export default function Practice({
     return mapping;
   }, [practiceOverview?.standards]);
 
-  // Set up simulation-specific event listeners using global WebSocket
-  useEffect(() => {
-    // Listen for successful simulation starts to handle navigation
-    const handleSimulationStarted = async (event: CustomEvent) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (loadingToastId) {
-        toast.dismiss(loadingToastId);
-        setLoadingToastId(null);
-      }
-      const { attemptId } = event.detail;
-      // Server-side Redis cache is already invalidated by the WebSocket handler
-      router.refresh(); // Refresh current page data so it's updated when user returns
-      router.push(`/practice/a/${attemptId}`);
-    };
-
-    // Listen for simulation errors to reset loading state
-    const handleSimulationError = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (loadingToastId) {
-        toast.dismiss(loadingToastId);
-        setLoadingToastId(null);
-      }
-      toast.error("Failed to start simulation. Please try again.");
-    };
-
-    window.addEventListener(
-      "simulationStarted",
-      handleSimulationStarted as unknown as EventListener
-    );
-    window.addEventListener("simulationError", handleSimulationError);
-
-    return () => {
-      window.removeEventListener(
-        "simulationStarted",
-        handleSimulationStarted as unknown as EventListener
-      );
-      window.removeEventListener("simulationError", handleSimulationError);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [router, loadingToastId]);
-
+  // Handle starting a simulation via the unified training hook
   const handleStartSimulation = useCallback(
-    async (simulationId: string) => {
-      try {
-        // Only enforce profile for non-guests
-        if (profile?.role !== "guest" && !profile?.id) {
-          toast.error("Profile not loaded. Please refresh the page.");
-          return;
-        }
-
-        if (!isConnected) {
-          toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
-          );
-          return;
-        }
-
-        const toastId = toast.loading("Starting simulation...", {
-          dismissible: true,
-        });
-        setLoadingToastId(toastId);
-
-        const profileIdForEmit =
-          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
-
-        emitStartSimulation({
-          simulation_id: simulationId,
-          profile_id: profileIdForEmit,
-        });
-
-        // timeout...
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-          toast.dismiss(toastId);
-          toast.error("Simulation start timed out. Please try again.");
-          setLoadingToastId(null);
-        }, 30000);
-      } catch {
-        if (loadingToastId) toast.dismiss(loadingToastId);
-        toast.error("Failed to start simulation. Please try again.");
-        setLoadingToastId(null);
-      }
+    (simulationId: string) => {
+      startTraining({ simulationId });
     },
-    [profile, isConnected, emitStartSimulation, loadingToastId]
+    [startTraining]
   );
 
+  // Handle starting infinite mode via the unified training hook
   const handleStartInfiniteMode = useCallback(
-    async (simulationId: string) => {
-      try {
-        // Only enforce profile for non-guests
-        if (profile?.role !== "guest" && !profile?.id) {
-          toast.error("Profile not loaded. Please refresh the page.");
-          return;
-        }
-
-        if (!isConnected) {
-          toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
-          );
-          return;
-        }
-
-        const toastId = toast.loading("Starting infinite mode...", {
-          dismissible: true,
-        });
-        setLoadingToastId(toastId);
-
-        const profileIdForEmit =
-          profile?.role === "guest" ? "" : String(profile!.id); // "" → guest
-
-        emitStartSimulation({
-          simulation_id: simulationId,
-          profile_id: profileIdForEmit,
-          infinite: true,
-        });
-
-        // timeout...
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-          toast.dismiss(toastId);
-          toast.error("Simulation start timed out. Please try again.");
-          setLoadingToastId(null);
-        }, 30000);
-      } catch {
-        if (loadingToastId) toast.dismiss(loadingToastId);
-        toast.error("Failed to start infinite mode. Please try again.");
-        setLoadingToastId(null);
-      }
+    (simulationId: string) => {
+      startTraining({ simulationId, infinite: true });
     },
-    [profile, isConnected, emitStartSimulation, loadingToastId]
+    [startTraining]
   );
 
   if (!profile) {

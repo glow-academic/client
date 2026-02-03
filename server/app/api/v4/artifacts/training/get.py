@@ -1,137 +1,69 @@
-"""Training overview endpoint - POST /training/get.
+"""Training get endpoint - POST /training/get.
 
-Unified endpoint for both home and practice overview, differentiated by
-`practice: bool` parameter. Uses simulation overview view internal handler
-for data fetching. Python handles business logic: status, pass_pct,
-completion_pct, cohort formatting.
+OPERATIONAL endpoint: Returns simulations user can take with scenario_ids.
+
+Used to get data needed to START a simulation, not for analytics/history.
+Frontend uses this to:
+- Display available simulations
+- Get scenario_ids for training_start socket event
+- Show rubric data (standard_groups, standards) for pre-start display
+
+Scoped by user's cohorts based on practice mode.
 """
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.training.permissions import (
-    compute_completion_pct,
-    compute_mode,
-    compute_pass_pct,
-    compute_status,
-    compute_status_instructional,
-    format_cohort_names,
-)
 from app.api.v4.artifacts.training.types import (
-    GetTrainingOverviewRequest,
-    GetTrainingOverviewResponse,
+    GetTrainingGetRequest,
+    GetTrainingGetResponse,
     StandardGroupMapping,
     StandardMapping,
-    TrainingSimulationCard,
+    TrainingSimulationOperational,
 )
-from app.api.v4.views.simulation.overview.get import get_simulation_overview_internal
-from app.api.v4.views.simulation.overview.types import OverviewViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetTrainingSimulationsSqlParams,
+    GetTrainingSimulationsSqlRow,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/v4/queries/generate/training/get_training_simulations_complete.sql"
 
 router = APIRouter()
 
 
-def _transform_simulation_card(
-    card: OverviewViewItem,
-    mode: str,
-    practice: bool,
-) -> TrainingSimulationCard:
-    """Transform overview view item to API response.
-
-    Python only computes derived business logic fields.
-
-    Args:
-        card: Overview view item with metadata already JOINed.
-        mode: 'member', 'instructional', or 'practice'.
-        practice: Whether this is practice mode.
-
-    Returns:
-        TrainingSimulationCard ready for API response.
-    """
-    # === PYTHON BUSINESS LOGIC: Compute derived fields ===
-
-    # Compute pass_pct from rubric points
-    pass_pct = compute_pass_pct(card.rubric_total_points, card.rubric_pass_points)
-
-    # Compute status based on mode
-    if mode == "instructional":
-        status = compute_status_instructional(
-            card.passed_count, card.in_progress_count, card.total_members
-        )
-        completion_pct = compute_completion_pct(
-            card.passed_count, card.in_progress_count, card.total_members
-        )
-    else:
-        # 'member' or 'practice' mode
-        status = compute_status(card.has_passed, card.completed_count)
-        completion_pct = None
-
-    # Format cohort names as "A, B, and C"
-    cohort_names_junction = format_cohort_names(card.cohort_names)
-
-    # Convert standard_group_ids to strings
-    standard_groups = (
-        [str(sg_id) for sg_id in card.standard_group_ids]
-        if card.standard_group_ids
-        else None
-    )
-
-    return TrainingSimulationCard(
-        view_mode=mode,
-        simulation_id=card.simulation_id,
-        simulation_name=card.simulation_name,
-        simulation_description=card.simulation_description,
-        time_limit=card.time_limit,
-        num_sessions=card.attempt_count,
-        highest_score=card.highest_score,
-        standard_groups=standard_groups,
-        color=card.persona_color,
-        icon=card.persona_icon,
-        has_passed=card.has_passed,
-        status=status,
-        pass_pct=pass_pct,
-        cohort_names_junction=cohort_names_junction,
-        # Instructional mode only
-        completion_pct=completion_pct if mode == "instructional" else None,
-        passed_count=card.passed_count if mode == "instructional" else None,
-        in_progress_count=card.in_progress_count if mode == "instructional" else None,
-        not_started_count=card.not_started_count if mode == "instructional" else None,
-        # Practice mode only
-        practice_simulation=True if practice else None,
-        practice_scenario_id=None,  # Not needed at overview level
-    )
-
-
 @router.post(
     "/get",
-    response_model=GetTrainingOverviewResponse,
+    response_model=GetTrainingGetResponse,
     dependencies=[
-        audit_activity("training.get", "{{ actor.name }} viewed training overview")
+        audit_activity("training.get", "{{ actor.name }} fetched training simulations")
     ],
 )
 async def training_get(
-    request: GetTrainingOverviewRequest,
+    request: GetTrainingGetRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetTrainingOverviewResponse:
-    """Get training overview with simulation cards.
+) -> GetTrainingGetResponse:
+    """Get simulations available for training (operational).
 
-    Unified endpoint for home and practice overview, differentiated by
-    `practice: bool` parameter.
+    OPERATIONAL endpoint: Returns simulations user can take, scoped by
+    their cohorts based on practice mode.
 
-    Uses simulation overview view internal handler for data.
-    Python handles only business logic (status, pass_pct, completion_pct, cohort formatting).
+    Used by frontend to display available simulations and get data
+    needed to start a training session (scenario_ids, etc).
     """
     practice = request.practice
-    tags = ["training", "practice" if practice else "home"]
+    tags = ["training", "get", "practice" if practice else "home"]
 
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -146,7 +78,7 @@ async def training_get(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetTrainingOverviewResponse.model_validate(cached["data"])
+            return GetTrainingGetResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -160,53 +92,44 @@ async def training_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Resolve artifact ID to resource ID via junction table
-        resource_id = await conn.fetchval(
-            """
-            SELECT profiles_id FROM profile_profiles_junction
-            WHERE profile_id = $1 AND active = true
-            LIMIT 1
-            """,
-            profile_id,
-        )
-        if not resource_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile not found. Please sign in again.",
-            )
-
-        # === FETCH DATA FROM VIEW INTERNAL HANDLER ===
-        # Pass home-only filters only when practice=False
-        overview_result = await get_simulation_overview_internal(
-            conn=conn,
-            profile_id=resource_id,
-            simulation_ids=request.simulation_ids if not practice else None,
-            cohort_ids=request.cohort_ids if not practice else None,
-            department_ids=request.department_ids,
-            practice=practice,
-            start_date=request.start_date if not practice else None,
-            end_date=request.end_date if not practice else None,
-            bypass_cache=bypass_cache,
+        # Execute SQL query
+        params = GetTrainingSimulationsSqlParams(
+            p_profile_id=profile_id,
+            p_practice=practice,
         )
 
-        # === PYTHON BUSINESS LOGIC: Compute mode ===
-        mode = compute_mode(practice, overview_result.user_role)
+        result = cast(
+            GetTrainingSimulationsSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
 
         # Set audit context
-        if overview_result.actor_name:
+        if result and result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": overview_result.actor_name, "id": profile_id},
+                actor={"name": result.actor_name, "id": profile_id},
             )
 
-        # === TRANSFORM: Only compute business logic fields ===
-        items: list[TrainingSimulationCard] = []
-        for card in overview_result.items:
-            items.append(_transform_simulation_card(card, mode, practice))
+        # Transform items
+        items: list[TrainingSimulationOperational] = []
+        if result and result.items:
+            for item in result.items:
+                items.append(
+                    TrainingSimulationOperational(
+                        simulation_id=item.simulation_id,
+                        simulation_name=item.simulation_name,
+                        simulation_description=item.simulation_description,
+                        time_limit=item.time_limit,
+                        scenario_ids=item.scenario_ids,
+                        cohort_ids=item.cohort_ids,
+                        color=item.color,
+                        icon=item.icon,
+                    )
+                )
 
-        # === CONVERT STANDARD GROUPS/STANDARDS ===
-        standard_groups = None
-        if overview_result.standard_groups:
+        # Transform standard groups
+        standard_groups: list[StandardGroupMapping] | None = None
+        if result and result.standard_groups:
             standard_groups = [
                 StandardGroupMapping(
                     standard_group_id=sg.standard_group_id,
@@ -215,11 +138,13 @@ async def training_get(
                     points=sg.points,
                     pass_points=sg.pass_points,
                 )
-                for sg in overview_result.standard_groups
+                for sg in result.standard_groups
+                if sg.standard_group_id
             ]
 
-        standards = None
-        if overview_result.standards:
+        # Transform standards
+        standards: list[StandardMapping] | None = None
+        if result and result.standards:
             standards = [
                 StandardMapping(
                     standard_id=st.standard_id,
@@ -228,25 +153,25 @@ async def training_get(
                     description=st.description,
                     points=st.points,
                 )
-                for st in overview_result.standards
+                for st in result.standards
+                if st.standard_id
             ]
 
-        # === BUILD RESPONSE ===
-        api_response = GetTrainingOverviewResponse(
-            actor_name=overview_result.actor_name,
-            mode=mode,
-            has_data=overview_result.has_data,
+        # Build response
+        api_response = GetTrainingGetResponse(
+            actor_name=result.actor_name if result else None,
             items=items,
             standard_groups=standard_groups,
             standards=standards,
         )
 
         # Cache response
+        profile_specific_tags = tags + [f"training:profile:{profile_id}"]
         await set_cached(
             cache_key_val,
             {"data": api_response.model_dump(mode="json")},
             ttl=300,
-            tags=tags,
+            tags=profile_specific_tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"

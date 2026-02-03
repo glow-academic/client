@@ -17,17 +17,26 @@ import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using unified training endpoints with practice: false for home
-type HomeIn = InputOf<"/api/v4/training/get", "post">;
-type HomeOut = OutputOf<"/api/v4/training/get", "post">;
-type HomeHistoryIn = InputOf<"/api/v4/training/list", "post">;
-type HomeHistoryOut = OutputOf<"/api/v4/training/list", "post">;
+// GET endpoint: operational data (scenario_ids for starting simulations)
+type HomeOperationalIn = InputOf<"/api/v4/training/get", "post">;
+type HomeOperationalOut = OutputOf<"/api/v4/training/get", "post">;
+// LIST endpoint: analytical data (stats, scores, history)
+type HomeAnalyticalIn = InputOf<"/api/v4/training/list", "post">;
+type HomeAnalyticalOut = OutputOf<"/api/v4/training/list", "post">;
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Home overview responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
+// Merged type for Home component - combines operational + analytical data
+type HomeOut = Omit<HomeAnalyticalOut, "items"> & {
+  items: Array<
+    NonNullable<HomeAnalyticalOut["items"]>[number] & {
+      scenario_ids?: string[] | null;
+    }
+  > | null;
+};
+
+/** ---- Direct fetch for operational data (scenario_ids) ---- */
+const getHomeOperational = async (
+  input: HomeOperationalIn
+): Promise<HomeOperationalOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/training/get", input, {
@@ -40,14 +49,10 @@ const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
   });
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Home history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getHomeHistory = async (
-  input: HomeHistoryIn
-): Promise<HomeHistoryOut> => {
+/** ---- Direct fetch for analytical data (stats, history) ---- */
+const getHomeAnalytical = async (
+  input: HomeAnalyticalIn
+): Promise<HomeAnalyticalOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/training/list", input, {
@@ -59,6 +64,38 @@ const getHomeHistory = async (
     }),
   });
 };
+
+/** ---- Merge operational + analytical data by simulation_id ---- */
+function mergeHomeData(
+  operational: HomeOperationalOut,
+  analytical: HomeAnalyticalOut
+): HomeOut {
+  // Build lookup map for scenario_ids by simulation_id
+  const scenarioIdsMap = new Map<string, string[]>();
+  if (operational.items) {
+    for (const item of operational.items) {
+      if (item.simulation_id && item.scenario_ids) {
+        scenarioIdsMap.set(
+          String(item.simulation_id),
+          item.scenario_ids.map(String)
+        );
+      }
+    }
+  }
+
+  // Merge scenario_ids into analytical items
+  const mergedItems = analytical.items?.map((item) => ({
+    ...item,
+    scenario_ids: item.simulation_id
+      ? scenarioIdsMap.get(String(item.simulation_id)) || null
+      : null,
+  })) || null;
+
+  return {
+    ...analytical,
+    items: mergedItems,
+  };
+}
 
 /** ---- Inline filters function for home page ---- */
 async function getHomeFilters(searchParams: URLSearchParams | undefined) {
@@ -169,13 +206,25 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // profileId removed - comes from X-Profile-Id header automatically
   // Convert camelCase to snake_case for API
   // practice: false for home mode (uses unified training endpoint)
-  const homeFilters: HomeIn = {
+
+  // Operational endpoint (for scenario_ids)
+  const operationalFilters: HomeOperationalIn = {
+    body: {
+      practice: false,
+    },
+  };
+
+  // Analytical endpoint (for stats - fetching cards only, not history which is separate)
+  const analyticalFilters: HomeAnalyticalIn = {
     body: {
       practice: false,
       start_date: defaultFilters.startDate,
       end_date: defaultFilters.endDate,
       cohort_ids: defaultFilters.cohortIds, // Always non-empty
       department_ids: defaultFilters.departmentIds, // Always non-empty
+      page: 0,
+      page_size: 1, // We only need the items (cards), not history data
+      show_archived: false,
     },
   };
 
@@ -203,13 +252,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const historySortBy = searchParamsObj.get("historySortBy") || "date";
   const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
 
-  // Fetch home data server-side (without history - history will be fetched separately)
-  const homeData = await getHomeOverview(homeFilters);
+  // Fetch both operational + analytical data in parallel, then merge
+  const [operationalData, analyticalData] = await Promise.all([
+    getHomeOperational(operationalFilters),
+    getHomeAnalytical(analyticalFilters),
+  ]);
 
-  // Remove history from response for server-driven pagination
+  // Merge operational (scenario_ids) + analytical (stats) data
+  const homeData = mergeHomeData(operationalData, analyticalData);
+
+  // Remove history from response for server-driven pagination (history is fetched separately)
   const homeDataWithoutHistory = {
     ...homeData,
-    history: [],
+    data: [], // history is in 'data' field from list endpoint
   };
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
@@ -315,7 +370,7 @@ async function HomeHistorySection({
   // roles and profile_ids removed - home history is single-user
   // Convert camelCase to snake_case for API
   // practice: false for home mode (uses unified training endpoint)
-  const historyFilters: HomeHistoryIn = {
+  const historyFilters: HomeAnalyticalIn = {
     body: {
       practice: false,
       start_date: defaultFilters.startDate,
@@ -324,6 +379,7 @@ async function HomeHistorySection({
       department_ids: defaultFilters.departmentIds,
       page: historyPage,
       page_size: historyPageSize,
+      show_archived: false,
       ...(historySearch && { search: historySearch }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
@@ -341,7 +397,7 @@ async function HomeHistorySection({
     },
   };
 
-  const historyData = await getHomeHistory(historyFilters);
+  const historyData = await getHomeAnalytical(historyFilters);
 
   // Home history data is never archived (MV filters out archived)
   const dataArray = historyData.data || [];
@@ -391,4 +447,4 @@ async function HomeHistorySection({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { HomeHistoryIn, HomeHistoryOut, HomeIn, HomeOut };
+export type { HomeAnalyticalIn as HomeHistoryIn, HomeAnalyticalOut as HomeHistoryOut, HomeOut };

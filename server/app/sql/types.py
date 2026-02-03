@@ -9301,6 +9301,73 @@ class TextToolProgressUpdateApiResponse(BaseModel):
 
 
 
+# Generated from: get_training_simulations
+
+class GetTrainingSimulationsSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_practice: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_practice,
+        )
+
+class QGetTrainingSimulationsV4Item(BaseModel):
+
+    simulation_id: UUID | None
+    simulation_name: str | None
+    simulation_description: str | None
+    time_limit: int | None
+    scenario_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+    color: str | None
+    icon: str | None
+
+
+
+
+class QGetTrainingSimulationsV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetTrainingSimulationsV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetTrainingSimulationsSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    items: list[QGetTrainingSimulationsV4Item] | None = None
+    standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
+    standards: list[QGetTrainingSimulationsV4Standard] | None = None
+
+class GetTrainingSimulationsApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_practice: bool | None = False
+
+class GetTrainingSimulationsApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    items: list[QGetTrainingSimulationsV4Item] | None = None
+    standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
+    standards: list[QGetTrainingSimulationsV4Standard] | None = None
+
+
+
 # Generated from: get_training_start_context
 
 class GetTrainingStartContextSqlParams(BaseModel):
@@ -27231,6 +27298,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TextToolProgressUpdateApiRequest",
         "TextToolProgressUpdateApiResponse",
     ),
+    "app/sql/v4/queries/generate/training/get_training_simulations_complete.sql": (
+        "GetTrainingSimulationsSqlParams",
+        "GetTrainingSimulationsSqlRow",
+        "GetTrainingSimulationsApiRequest",
+        "GetTrainingSimulationsApiResponse",
+    ),
     "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql": (
         "GetTrainingStartContextSqlParams",
         "GetTrainingStartContextSqlRow",
@@ -29887,6 +29960,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/training/get_training_simulations_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -1,12 +1,16 @@
-"""Training history endpoint - POST /training/list.
+"""Training list endpoint - POST /training/list.
 
-Unified endpoint for both home and practice history, differentiated by
-`practice: bool` parameter. Uses mv_attempt_facts via internal handler
-with batch resource fetching for metadata (Option B architecture).
+ANALYTICAL endpoint: Returns simulation cards with stats AND paginated attempt history.
+
+Unified endpoint for both home and practice modes, differentiated by
+`practice: bool` parameter. Combines:
+- Simulation overview cards (from simulation_overview_view)
+- Attempt history (from mv_attempt_facts)
+- Filter options
 
 Python handles:
-- Batch fetch resource metadata (simulations, personas, scenarios, profiles)
-- Business logic: score_status, show_view, show_continue, pass_pct
+- Batch fetch resource metadata
+- Business logic: score_status, show_view, show_continue, pass_pct, status
 """
 
 from datetime import datetime
@@ -17,16 +21,24 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.training.permissions import (
+    compute_completion_pct,
+    compute_mode,
     compute_pass_pct,
     compute_score_status,
     compute_show_continue,
     compute_show_view,
+    compute_status,
+    compute_status_instructional,
+    format_cohort_names,
 )
 from app.api.v4.artifacts.training.types import (
     FilterOption,
-    GetTrainingHistoryRequest,
-    GetTrainingHistoryResponse,
+    GetTrainingListRequest,
+    GetTrainingListResponse,
+    StandardGroupMapping,
+    StandardMapping,
     TrainingHistoryAttempt,
+    TrainingSimulationCard,
 )
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
@@ -34,6 +46,8 @@ from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
 from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
+from app.api.v4.views.simulation.overview.get import get_simulation_overview_internal
+from app.api.v4.views.simulation.overview.types import OverviewViewItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -56,6 +70,86 @@ PRACTICE_CONTEXT_SQL_PATH = (
 )
 
 router = APIRouter()
+
+
+# =============================================================================
+# Simulation Card Transform (from overview view)
+# =============================================================================
+
+
+def _transform_simulation_card(
+    card: OverviewViewItem,
+    mode: str,
+    practice: bool,
+) -> TrainingSimulationCard:
+    """Transform overview view item to simulation card.
+
+    Python only computes derived business logic fields.
+
+    Args:
+        card: Overview view item with metadata already JOINed.
+        mode: 'member', 'instructional', or 'practice'.
+        practice: Whether this is practice mode.
+
+    Returns:
+        TrainingSimulationCard ready for API response.
+    """
+    # === PYTHON BUSINESS LOGIC: Compute derived fields ===
+
+    # Compute pass_pct from rubric points
+    pass_pct = compute_pass_pct(card.rubric_total_points, card.rubric_pass_points)
+
+    # Compute status based on mode
+    if mode == "instructional":
+        status = compute_status_instructional(
+            card.passed_count, card.in_progress_count, card.total_members
+        )
+        completion_pct = compute_completion_pct(
+            card.passed_count, card.in_progress_count, card.total_members
+        )
+    else:
+        # 'member' or 'practice' mode
+        status = compute_status(card.has_passed, card.completed_count)
+        completion_pct = None
+
+    # Format cohort names as "A, B, and C"
+    cohort_names_junction = format_cohort_names(card.cohort_names)
+
+    # Convert standard_group_ids to strings
+    standard_groups = (
+        [str(sg_id) for sg_id in card.standard_group_ids]
+        if card.standard_group_ids
+        else None
+    )
+
+    return TrainingSimulationCard(
+        view_mode=mode,
+        simulation_id=card.simulation_id,
+        simulation_name=card.simulation_name,
+        simulation_description=card.simulation_description,
+        time_limit=card.time_limit,
+        num_sessions=card.attempt_count,
+        highest_score=card.highest_score,
+        standard_groups=standard_groups,
+        color=card.persona_color,
+        icon=card.persona_icon,
+        has_passed=card.has_passed,
+        status=status,
+        pass_pct=pass_pct,
+        cohort_names_junction=cohort_names_junction,
+        # Instructional mode only
+        completion_pct=completion_pct if mode == "instructional" else None,
+        passed_count=card.passed_count if mode == "instructional" else None,
+        in_progress_count=card.in_progress_count if mode == "instructional" else None,
+        not_started_count=card.not_started_count if mode == "instructional" else None,
+        # Practice mode only
+        practice_simulation=True if practice else None,
+    )
+
+
+# =============================================================================
+# Attempt Transform (from mv_attempt_facts)
+# =============================================================================
 
 
 def _transform_attempt(
@@ -140,7 +234,6 @@ def _transform_attempt(
     department_ids = [str(attempt.department_id)] if attempt.department_id else None
 
     # Cohort name (would need cohort resource fetch - for now use None)
-    # TODO: Add cohort resource fetch if needed
     cohort_names = None
 
     # Derive practice_scenario_id from scenario_ids (first one if available)
@@ -173,6 +266,11 @@ def _transform_attempt(
         practice_simulation=True if practice else None,
         practice_scenario_id=practice_scenario_id if practice else None,
     )
+
+
+# =============================================================================
+# Resource Metadata Fetch
+# =============================================================================
 
 
 async def _fetch_resource_metadata(
@@ -247,30 +345,34 @@ async def _fetch_resource_metadata(
     return result
 
 
+# =============================================================================
+# Main Endpoint
+# =============================================================================
+
+
 @router.post(
     "/list",
-    response_model=GetTrainingHistoryResponse,
+    response_model=GetTrainingListResponse,
     dependencies=[
-        audit_activity("training.list", "{{ actor.name }} viewed training history")
+        audit_activity("training.list", "{{ actor.name }} viewed training list")
     ],
 )
 async def training_list(
-    request: GetTrainingHistoryRequest,
+    request: GetTrainingListRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetTrainingHistoryResponse:
-    """Get paginated training history with attempts.
+) -> GetTrainingListResponse:
+    """Get training list with simulation cards and attempt history.
 
-    Unified endpoint for home and practice history, differentiated by
+    ANALYTICAL endpoint: Returns both simulation overview cards AND
+    paginated attempt history in a single response.
+
+    Unified endpoint for home and practice modes, differentiated by
     `practice: bool` parameter.
-
-    Uses mv_attempt_facts via get_attempt_facts_internal().
-    Batch fetches resource metadata (simulations, personas, scenarios, profiles).
-    Python handles business logic (score_status, show_view, show_continue, pass_pct).
     """
     practice = request.practice
-    tags = ["training", "history", "practice" if practice else "home"]
+    tags = ["training", "list", "practice" if practice else "home"]
 
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -285,7 +387,7 @@ async def training_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetTrainingHistoryResponse.model_validate(cached["data"])
+            return GetTrainingListResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -334,6 +436,56 @@ async def training_list(
                 http_request, actor={"name": context.actor_name, "id": profile_id}
             )
 
+        # === FETCH SIMULATION OVERVIEW ===
+        overview_result = await get_simulation_overview_internal(
+            conn=conn,
+            profile_id=resource_id,
+            simulation_ids=request.simulation_ids if not practice else None,
+            cohort_ids=request.cohort_ids if not practice else None,
+            department_ids=request.department_ids,
+            practice=practice,
+            start_date=request.start_date if not practice else None,
+            end_date=request.end_date if not practice else None,
+            bypass_cache=bypass_cache,
+        )
+
+        # Compute mode
+        mode = compute_mode(practice, overview_result.user_role)
+
+        # Transform simulation cards
+        items: list[TrainingSimulationCard] = []
+        for card in overview_result.items:
+            items.append(_transform_simulation_card(card, mode, practice))
+
+        # Convert standard groups
+        standard_groups = None
+        if overview_result.standard_groups:
+            standard_groups = [
+                StandardGroupMapping(
+                    standard_group_id=sg.standard_group_id,
+                    name=sg.name,
+                    description=sg.description,
+                    points=sg.points,
+                    pass_points=sg.pass_points,
+                )
+                for sg in overview_result.standard_groups
+            ]
+
+        # Convert standards
+        standards = None
+        if overview_result.standards:
+            standards = [
+                StandardMapping(
+                    standard_id=st.standard_id,
+                    standard_group_id=st.standard_group_id,
+                    name=st.name,
+                    description=st.description,
+                    points=st.points,
+                )
+                for st in overview_result.standards
+            ]
+
+        # === FETCH ATTEMPT HISTORY ===
         # Parse dates
         date_from = datetime.fromisoformat(request.start_date) if request.start_date else None
         date_to = datetime.fromisoformat(request.end_date) if request.end_date else None
@@ -343,7 +495,6 @@ async def training_list(
         page_size = request.page_size or 20
         page_offset = page * page_size
 
-        # === FETCH DATA FROM MV VIA INTERNAL HANDLER ===
         # Convert practice bool to attempt_type string
         attempt_type = "practice" if practice else "general"
 
@@ -393,19 +544,17 @@ async def training_list(
             bypass_cache=bypass_cache,
         )
 
-        # === TRANSFORM: Merge metadata + compute business logic ===
+        # === TRANSFORM ATTEMPTS ===
         attempts: list[TrainingHistoryAttempt] = []
         for attempt in facts_result.items:
             attempts.append(_transform_attempt(attempt, resource_meta, context.pass_threshold, practice))
 
         # === CONVERT FILTER OPTIONS ===
-        # Filter options from MV have IDs as labels - need to resolve names
         simulation_options = None
         if facts_result.simulation_options:
             simulation_options = []
             for opt in facts_result.simulation_options:
                 if opt.value:
-                    # Try to get name from resource_meta, fallback to ID
                     try:
                         sim_id = UUID(opt.value)
                         sim_meta = resource_meta["simulations"].get(sim_id, {})
@@ -421,7 +570,6 @@ async def training_list(
             scenario_options = []
             for opt in facts_result.scenario_options:
                 if opt.value:
-                    # Try to get name from resource_meta, fallback to ID
                     try:
                         scn_id = UUID(opt.value)
                         scn_meta = resource_meta["scenarios"].get(scn_id, {})
@@ -438,7 +586,6 @@ async def training_list(
             profile_options = []
             for opt in facts_result.profile_options:
                 if opt.value:
-                    # Try to get name from resource_meta, fallback to ID
                     try:
                         prof_id = UUID(opt.value)
                         prof_meta = resource_meta["profiles"].get(prof_id, {})
@@ -454,13 +601,21 @@ async def training_list(
         total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
         # === BUILD RESPONSE ===
-        api_response = GetTrainingHistoryResponse(
+        api_response = GetTrainingListResponse(
             actor_name=context.actor_name,
+            mode=mode,
+            has_data=overview_result.has_data,
+            # Simulation cards (overview)
+            items=items,
+            standard_groups=standard_groups,
+            standards=standards,
+            # Attempt history (paginated)
             data=attempts,
             total_count=total_count,
             page=page,
             page_size=page_size,
             total_pages=total_pages,
+            # Filter options
             simulation_options=simulation_options,
             scenario_options=scenario_options,
             profile_options=profile_options,
@@ -469,7 +624,7 @@ async def training_list(
         # Cache response
         profile_specific_tags = tags + [
             f"training:profile:{profile_id}",
-            f"history:profile:{profile_id}",
+            f"list:profile:{profile_id}",
         ]
         await set_cached(
             cache_key_val,
