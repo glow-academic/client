@@ -128,6 +128,8 @@ async def get_simulation_chats_internal(
                     show_problem_statement=item.show_problem_statement,
                     # Time limit (denormalized)
                     time_limit_seconds=item.time_limit_seconds,
+                    # Negative time flag (allows timer to go negative)
+                    negative=item.negative,
                     # Chat metadata (top-level, position/is_current derived in service layer)
                     created_at=item.created_at,
                     completed=item.completed or False,

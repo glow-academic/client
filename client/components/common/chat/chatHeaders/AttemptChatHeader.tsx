@@ -35,6 +35,7 @@ export interface ChatHeaderProps {
     elapsed: number;
     remaining: number | null;
     expired: boolean;
+    negative?: boolean; // Allows timer to go negative
   };
 
   // Explicit state props
@@ -281,7 +282,7 @@ export function AttemptChatHeader({
                     >
                       {isInfiniteMode
                         ? simulation?.time_limit
-                          ? formatTime(Math.max(timeRemaining || 0, 0))
+                          ? formatTime(timer?.negative ? (timeRemaining ?? 0) : Math.max(timeRemaining || 0, 0))
                           : formatTime(timer?.elapsed ?? 0)
                         : simulation?.time_limit && timer?.remaining !== null
                           ? formatTime(timer.remaining)

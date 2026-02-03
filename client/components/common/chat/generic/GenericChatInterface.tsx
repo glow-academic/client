@@ -75,6 +75,7 @@ export interface GenericChatInterfaceProps {
 
   // Standard props
   disabled?: boolean;
+  hide_input_area?: boolean;
 
   // Pagination footer (rendered at bottom, inside the layout)
   pagination_footer?: React.ReactNode;
@@ -110,6 +111,7 @@ export function GenericChatInterface({
   show_objectives_modal = false,
   input_panel_height = 70,
   disabled = false,
+  hide_input_area = false,
   pagination_footer,
   background_image,
   chat_header_props,
@@ -144,7 +146,8 @@ export function GenericChatInterface({
               <div
                 className={cn(
                   "min-h-0 flex flex-col relative",
-                  chat_area_view_mode !== "video" && "flex-1"
+                  // Add flex-1 for non-video modes, or video mode when input is hidden
+                  (chat_area_view_mode !== "video" || hide_input_area) && "flex-1"
                 )}
               >
                 {/* Background image layer - only behind messages area */}
@@ -161,7 +164,7 @@ export function GenericChatInterface({
                   />
                 )}
                 {chat_area_view_mode === "video" ? (
-                  <div className="px-1 relative z-10">
+                  <div className={cn("px-1 relative z-10", hide_input_area && "h-full")}>
                     <ChatArea {...(chat_area_props as any)} />
                   </div>
                 ) : (
@@ -171,8 +174,9 @@ export function GenericChatInterface({
                 )}
               </div>
 
-              {/* Input Area - collapse in graded view modes */}
-              {chat_area_view_mode !== "rubric" &&
+              {/* Input Area - collapse in graded view modes or when explicitly hidden */}
+              {!hide_input_area &&
+                chat_area_view_mode !== "rubric" &&
                 chat_area_view_mode !== "graded-messages" &&
                 chat_area_view_mode !== "graded-video" && (
                   <div

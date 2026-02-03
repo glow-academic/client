@@ -510,6 +510,7 @@ class TimerData(BaseModel):
     limit: int | None = None
     exceeded: bool | None = None
     formatted: str | None = None
+    negative: bool | None = None  # Allows timer to go negative
 
 
 class AggregatedResults(BaseModel):

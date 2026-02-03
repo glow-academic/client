@@ -133,6 +133,8 @@ base_chats AS (
         c.show_problem_statement,
         -- Time limit (denormalized from scenario_time_limits)
         c.time_limit_seconds,
+        -- Negative time flag (allows timer to go negative)
+        c.negative,
         lg.grade_id
     FROM simulation_chats_entry c
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
@@ -293,6 +295,8 @@ SELECT
 
     -- Time limit (denormalized)
     bc.time_limit_seconds,
+    -- Negative time flag (allows timer to go negative)
+    bc.negative,
 
     -- Chat data (position/is_current derived in service layer)
     bc.chat_created_at,

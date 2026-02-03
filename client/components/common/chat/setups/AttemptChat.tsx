@@ -1217,6 +1217,7 @@ export function AttemptChat({
                 ? timer.limit - timer.elapsed
                 : null,
             expired: timer.exceeded ?? false,
+            negative: timer.negative ?? false,
           }
         : undefined,
       show_documents: showDocuments,
@@ -1305,12 +1306,16 @@ export function AttemptChat({
       };
       return props;
     } else if (chatAreaViewMode === "video") {
-      // VideoView with timeline markers - questions input is in QuestionTakingInput
+      // VideoView - with markers/locking for taking mode, plain for completed
+      const isCompleted = currentChat?.completed;
       const props: VideoViewProps = {
         video: currentChat?.video ?? null,
-        questions: currentChatData?.questions || [],
-        responses: currentChatData?.responses || [],
-        onNavigateToQuestion: setQuestionIndex,
+        // Pass empty questions/responses when completed to show plain video
+        questions: isCompleted ? [] : (currentChatData?.questions || []),
+        responses: isCompleted ? [] : (currentChatData?.responses || []),
+        onNavigateToQuestion: isCompleted ? undefined : setQuestionIndex,
+        // Allow video to fill available space when completed (no questions input below)
+        allowFullHeight: isCompleted ?? false,
       };
       return props;
     } else if (chatAreaViewMode === "graded-video") {
@@ -1486,8 +1491,8 @@ export function AttemptChat({
   // RENDER
   // ---------------------------------------------------------------------------
 
-  // Build pagination footer - only show in graded view modes
-  const isGradedViewMode = chatAreaViewMode === "rubric" || chatAreaViewMode === "graded-messages" || chatAreaViewMode === "graded-video";
+  // Build pagination footer - show in graded view modes OR completed video chats
+  const isGradedViewMode = chatAreaViewMode === "rubric" || chatAreaViewMode === "graded-messages" || chatAreaViewMode === "graded-video" || (chatAreaViewMode === "video" && currentChat?.completed);
   const paginationFooter = isGradedViewMode && chats.length > 0 ? (
     <div className="border-t px-4 py-3 flex items-center bg-background relative">
       {/* Left Side - First and Previous Buttons */}
@@ -1600,6 +1605,7 @@ export function AttemptChat({
       show_document_modal={showDocumentModal}
       show_objectives_modal={showObjectivesModal}
       input_panel_height={inputPanelHeight}
+      hide_input_area={chatAreaViewMode === "video" && currentChat?.completed}
       input_area_ref={inputAreaRef}
       pagination_footer={paginationFooter}
       background_image={currentChat?.background_image}

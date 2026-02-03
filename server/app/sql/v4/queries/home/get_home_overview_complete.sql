@@ -360,15 +360,21 @@ sim_persona_meta AS (
     LEFT JOIN personas_resource p ON p.id = sm.persona_id
     GROUP BY sm.simulation_id
 ),
--- Standard view_groups_entry per simulation - uses rubrics_resource.standard_group_ids (denormalized)
+-- Standard view_groups_entry per simulation - uses rubric_standard_groups_junction (normalized)
 sim_standard_groups AS (
     SELECT
         sme.simulation_id,
-        ARRAY(SELECT sg_id::text FROM unnest(rr.standard_group_ids) AS sg_id ORDER BY sg_id) AS standard_group_ids
+        ARRAY(SELECT rsgj.standard_group_id::text FROM rubric_rubrics_junction rrj
+              JOIN rubric_standard_groups_junction rsgj ON rsgj.rubric_id = rrj.rubric_id AND rsgj.active = true
+              WHERE rrj.rubrics_id = sme.rubric_id AND rrj.active = true
+              ORDER BY rsgj.standard_group_id) AS standard_group_ids
     FROM sim_meta sme
-    JOIN rubrics_resource rr ON rr.id = sme.rubric_id AND rr.active = true
     WHERE sme.rubric_id IS NOT NULL
-      AND cardinality(rr.standard_group_ids) > 0
+      AND EXISTS (
+          SELECT 1 FROM rubric_rubrics_junction rrj
+          JOIN rubric_standard_groups_junction rsgj ON rsgj.rubric_id = rrj.rubric_id AND rsgj.active = true
+          WHERE rrj.rubrics_id = sme.rubric_id AND rrj.active = true
+      )
 ),
 -- TA VIEW: Primary cohort per simulation for the TA
 -- Uses denormalized fields: current_profile.cohort_ids, cohorts_resource.simulation_ids, cohorts_resource.department_ids
@@ -544,11 +550,12 @@ inst_rows AS (
     LEFT JOIN sim_standard_groups ssg ON ssg.simulation_id = s.simulation_id
     WHERE NOT EXISTS (SELECT 1 FROM profile_type_lookup prl WHERE prl.is_member_mode)
 ),
--- Get all standard_group_ids from rubrics used in sim_meta (using denormalized rubrics_resource.standard_group_ids)
+-- Get all standard_group_ids from rubrics used in sim_meta (using normalized junction table)
 all_standard_group_ids AS (
-    SELECT DISTINCT unnest(rr.standard_group_ids) AS standard_group_id
+    SELECT DISTINCT rsgj.standard_group_id
     FROM sim_meta sme
-    JOIN rubrics_resource rr ON rr.id = sme.rubric_id AND rr.active = true
+    JOIN rubric_rubrics_junction rrj ON rrj.rubrics_id = sme.rubric_id AND rrj.active = true
+    JOIN rubric_standard_groups_junction rsgj ON rsgj.rubric_id = rrj.rubric_id AND rsgj.active = true
     WHERE sme.rubric_id IS NOT NULL
 ),
 -- Standard view_groups_entry mapping (as array)

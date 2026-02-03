@@ -8158,6 +8158,8 @@ export interface components {
             show_problem_statement?: boolean | null;
             /** Time Limit Seconds */
             time_limit_seconds?: number | null;
+            /** Negative */
+            negative?: boolean | null;
             /** Created At */
             created_at?: string | null;
             /**
@@ -25756,6 +25758,8 @@ export interface components {
             exceeded?: boolean | null;
             /** Formatted */
             formatted?: string | null;
+            /** Negative */
+            negative?: boolean | null;
         };
         /**
          * TrainingErrorEvent

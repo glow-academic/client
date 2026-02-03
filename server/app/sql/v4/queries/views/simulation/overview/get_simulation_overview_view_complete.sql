@@ -335,13 +335,15 @@ sim_rubrics AS (
     ORDER BY ss.simulation_id, srr.created_at
 ),
 
--- Get standard_group_ids per simulation from rubrics
+-- Get standard_group_ids per simulation from rubrics (via junction table)
 sim_standard_groups AS (
     SELECT
         smr.simulation_id,
-        rr.standard_group_ids
+        ARRAY_AGG(DISTINCT rsgj.standard_group_id ORDER BY rsgj.standard_group_id) AS standard_group_ids
     FROM sim_rubrics smr
-    JOIN rubrics_resource rr ON rr.id = smr.rubric_id AND rr.active = true
+    JOIN rubric_rubrics_junction rrj ON rrj.rubrics_id = smr.rubric_id AND rrj.active = true
+    JOIN rubric_standard_groups_junction rsgj ON rsgj.rubric_id = rrj.rubric_id AND rsgj.active = true
+    GROUP BY smr.simulation_id
 ),
 
 -- JOIN all metadata to simulation status

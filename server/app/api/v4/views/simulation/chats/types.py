@@ -66,6 +66,8 @@ class ChatViewItem(BaseModel):
 
     # Time limit (denormalized, 0 = no limit)
     time_limit_seconds: int | None = None
+    # Negative time flag (allows timer to go negative)
+    negative: bool | None = None
 
     # Chat metadata (top-level, position/is_current derived in service layer)
     created_at: datetime | None = None

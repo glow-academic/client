@@ -31,6 +31,8 @@ export interface VideoViewProps {
   questions?: QuestionEntry[];
   responses?: QuizResponse[];
   onNavigateToQuestion?: (questionIndex: number) => void;
+  /** Allow video to expand to fill available space (for completed view) */
+  allowFullHeight?: boolean;
 }
 
 // Format seconds to mm:ss
@@ -45,7 +47,8 @@ export function VideoView({
   video,
   questions = [],
   responses = [],
-  onNavigateToQuestion
+  onNavigateToQuestion,
+  allowFullHeight = false,
 }: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -325,7 +328,8 @@ export function VideoView({
       ref={containerRef}
       className={cn(
         "relative flex flex-col bg-black group",
-        isFullscreen && "h-screen w-screen"
+        isFullscreen && "h-screen w-screen",
+        allowFullHeight && !isFullscreen && "h-full"
       )}
     >
       {/* Video element - no native controls */}
@@ -339,7 +343,11 @@ export function VideoView({
             src={videoUrl}
             className={cn(
               "w-full object-contain",
-              isFullscreen ? "max-h-[calc(100vh-60px)]" : "max-h-[50vh]"
+              isFullscreen
+                ? "max-h-[calc(100vh-60px)]"
+                : allowFullHeight
+                  ? "h-full"
+                  : "max-h-[50vh]"
             )}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}

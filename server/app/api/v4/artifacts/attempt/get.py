@@ -93,13 +93,14 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 
-def _format_timer(elapsed: int, limit_seconds: int | None, infinite_mode: bool) -> TimerData:
+def _format_timer(elapsed: int, limit_seconds: int | None, infinite_mode: bool, negative: bool = False) -> TimerData:
     """Format timer data.
 
     Args:
         elapsed: Elapsed time in seconds
         limit_seconds: Time limit in seconds (not minutes)
         infinite_mode: Whether the attempt is in infinite mode
+        negative: Whether the timer can go negative (continue past zero)
     """
     if limit_seconds is None or limit_seconds == 0:
         return TimerData(
@@ -107,21 +108,29 @@ def _format_timer(elapsed: int, limit_seconds: int | None, infinite_mode: bool) 
             limit=None,
             exceeded=False,
             formatted="",
+            negative=negative,
         )
 
-    remaining = max(limit_seconds - elapsed, 0)
+    remaining = limit_seconds - elapsed
+    # If negative is allowed, don't clamp remaining to 0
+    if not negative:
+        remaining = max(remaining, 0)
     exceeded = remaining <= 0 if infinite_mode else elapsed > limit_seconds
 
-    hours = remaining // 3600
-    minutes = (remaining % 3600) // 60
-    seconds = remaining % 60
-    formatted = f"{hours}h {minutes}m {seconds}s"
+    # Format time (handle negative values)
+    abs_remaining = abs(remaining)
+    hours = abs_remaining // 3600
+    minutes = (abs_remaining % 3600) // 60
+    seconds = abs_remaining % 60
+    sign = "-" if remaining < 0 else ""
+    formatted = f"{sign}{hours}h {minutes}m {seconds}s"
 
     return TimerData(
         elapsed=elapsed,
         limit=limit_seconds,
         exceeded=exceeded,
         formatted=formatted,
+        negative=negative,
     )
 
 
@@ -479,6 +488,10 @@ async def attempt_get(
         chat_ids = [c.chat_id for c in (chats_result or [])]
         time_limit_seconds = sum(
             c.time_limit_seconds or 0 for c in (chats_result or [])
+        )
+        # Check if any chat allows negative time
+        allows_negative_time = any(
+            getattr(c, 'negative', False) for c in (chats_result or [])
         )
 
         # === GROUP MESSAGES BY CHAT_ID ===
@@ -1029,6 +1042,7 @@ async def attempt_get(
             elapsed=elapsed_seconds,
             limit_seconds=time_limit_seconds if time_limit_seconds > 0 else None,
             infinite_mode=attempt_item.infinite_mode or False,
+            negative=allows_negative_time,
         )
 
         # === BUILD AGGREGATED RESULTS ===

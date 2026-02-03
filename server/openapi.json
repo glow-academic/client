@@ -32527,6 +32527,17 @@
             ],
             "title": "Time Limit Seconds"
           },
+          "negative": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative"
+          },
           "created_at": {
             "anyOf": [
               {
@@ -117034,6 +117045,17 @@
               }
             ],
             "title": "Formatted"
+          },
+          "negative": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative"
           }
         },
         "type": "object",

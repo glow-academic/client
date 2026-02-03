@@ -97,6 +97,8 @@ CREATE TYPE types.q_get_simulation_chats_view_v4_item AS (
 
     -- Time limit (denormalized, 0 = no limit)
     time_limit_seconds int,
+    -- Negative time flag (allows timer to go negative)
+    negative boolean,
 
     -- Chat metadata (top-level, position/is_current derived in service layer)
     created_at timestamptz,
@@ -225,6 +227,8 @@ AS $$
             mv.show_problem_statement,
             -- Time limit (denormalized)
             mv.time_limit_seconds,
+            -- Negative time flag (allows timer to go negative)
+            mv.negative,
             -- Chat metadata (top-level, position/is_current derived in service layer)
             mv.chat_created_at AS created_at,
             mv.chat_completed AS completed,
@@ -272,6 +276,7 @@ AS $$
                     show_objectives,
                     show_problem_statement,
                     time_limit_seconds,
+                    negative,
                     created_at,
                     completed,
                     grade,
