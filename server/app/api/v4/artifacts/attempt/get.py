@@ -33,6 +33,8 @@ from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AnalysisEntry,
     AttemptData,
+    AttemptEntries,
+    AttemptResources,
     ChatData,
     ContentEntry,
     DocumentEntry,
@@ -560,6 +562,158 @@ async def attempt_get(
             standard_ids=list(set(all_standard_ids)),
         )
 
+        # === BUILD RESOURCE MAPS (normalized) ===
+        resources_payload = AttemptResources(
+            images={
+                str(image_id): ImageEntry(
+                    image_id=image_id,
+                    upload_id=resource_meta["images"].get(image_id, {}).get("upload_id"),
+                    name=resource_meta["images"].get(image_id, {}).get("name"),
+                    description=resource_meta["images"].get(image_id, {}).get("description"),
+                )
+                for image_id in resource_meta["images"].keys()
+            }
+            if resource_meta.get("images")
+            else None,
+            videos={
+                str(video_id): VideoEntry(
+                    video_id=video_id,
+                    upload_id=resource_meta["videos"].get(video_id, {}).get("upload_id"),
+                    name=resource_meta["videos"].get(video_id, {}).get("name"),
+                    description=resource_meta["videos"].get(video_id, {}).get("description"),
+                    length_seconds=resource_meta["videos"].get(video_id, {}).get("length_seconds"),
+                )
+                for video_id in resource_meta["videos"].keys()
+            }
+            if resource_meta.get("videos")
+            else None,
+            documents={
+                str(document_id): DocumentEntry(
+                    document_id=document_id,
+                    upload_id=resource_meta["documents"].get(document_id, {}).get("upload_id"),
+                    name=resource_meta["documents"].get(document_id, {}).get("name"),
+                    description=resource_meta["documents"].get(document_id, {}).get("description"),
+                )
+                for document_id in resource_meta["documents"].keys()
+            }
+            if resource_meta.get("documents")
+            else None,
+            templates={
+                str(template_id): TemplateEntry(
+                    template_id=template_id,
+                    name=resource_meta["templates"].get(template_id, {}).get("name"),
+                    description=resource_meta["templates"].get(template_id, {}).get("description"),
+                )
+                for template_id in resource_meta["templates"].keys()
+            }
+            if resource_meta.get("templates")
+            else None,
+            personas={
+                str(persona_id): PersonaEntry(
+                    id=persona_id,
+                    name=resource_meta["personas"].get(persona_id, {}).get("name"),
+                    icon=resource_meta["personas"].get(persona_id, {}).get("icon"),
+                    color=resource_meta["personas"].get(persona_id, {}).get("color"),
+                )
+                for persona_id in resource_meta["personas"].keys()
+            }
+            if resource_meta.get("personas")
+            else None,
+            objectives={
+                str(objective_id): ObjectiveEntry(
+                    objective_id=objective_id,
+                    objective=resource_meta["objectives"].get(objective_id, {}).get("objective"),
+                )
+                for objective_id in resource_meta["objectives"].keys()
+            }
+            if resource_meta.get("objectives")
+            else None,
+            questions={
+                str(question_id): QuestionEntry(
+                    question_id=question_id,
+                    question_text=resource_meta["questions"].get(question_id, {}).get("question_text"),
+                    allow_multiple=resource_meta["questions"].get(question_id, {}).get("allow_multiple"),
+                    times=(
+                        [resource_meta["questions"].get(question_id, {}).get("time")]
+                        if resource_meta["questions"].get(question_id, {}).get("time") is not None
+                        else None
+                    ),
+                )
+                for question_id in resource_meta["questions"].keys()
+            }
+            if resource_meta.get("questions")
+            else None,
+            options={
+                str(option_id): OptionEntry(
+                    option_id=option_id,
+                    option_text=resource_meta["options"].get(option_id, {}).get("option_text"),
+                    is_correct=resource_meta["options"].get(option_id, {}).get("is_correct"),
+                )
+                for option_id in resource_meta["options"].keys()
+            }
+            if resource_meta.get("options")
+            else None,
+            problem_statements={
+                str(problem_statement_id): ProblemStatementEntry(
+                    problem_statement_id=problem_statement_id,
+                    problem_statement=resource_meta["problem_statements"]
+                    .get(problem_statement_id, {})
+                    .get("problem_statement"),
+                )
+                for problem_statement_id in resource_meta["problem_statements"].keys()
+            }
+            if resource_meta.get("problem_statements")
+            else None,
+            scenarios={
+                str(scenario_id): ScenarioEntry(
+                    scenario_id=scenario_id,
+                    name=resource_meta["scenarios"].get(scenario_id, {}).get("name"),
+                    description=resource_meta["scenarios"].get(scenario_id, {}).get("description"),
+                )
+                for scenario_id in resource_meta["scenarios"].keys()
+            }
+            if resource_meta.get("scenarios")
+            else None,
+            rubrics={
+                str(rubric_id): RubricEntry(
+                    rubric_id=rubric_id,
+                    name=resource_meta["rubrics"].get(rubric_id, {}).get("name"),
+                    description=resource_meta["rubrics"].get(rubric_id, {}).get("description"),
+                    total_points=resource_meta["rubrics"].get(rubric_id, {}).get("total_points"),
+                    pass_points=resource_meta["rubrics"].get(rubric_id, {}).get("pass_points"),
+                )
+                for rubric_id in resource_meta["rubrics"].keys()
+            }
+            if resource_meta.get("rubrics")
+            else None,
+            standard_groups={
+                str(standard_group_id): StandardGroupEntry(
+                    standard_group_id=standard_group_id,
+                    name=resource_meta["standard_groups"].get(standard_group_id, {}).get("name"),
+                    description=resource_meta["standard_groups"].get(standard_group_id, {}).get("description"),
+                    points=resource_meta["standard_groups"].get(standard_group_id, {}).get("points"),
+                    pass_points=resource_meta["standard_groups"].get(standard_group_id, {}).get("pass_points"),
+                )
+                for standard_group_id in resource_meta["standard_groups"].keys()
+            }
+            if resource_meta.get("standard_groups")
+            else None,
+            standards={
+                str(standard_id): StandardEntry(
+                    standard_id=standard_id,
+                    standard_group_id=resource_meta["standards"]
+                    .get(standard_id, {})
+                    .get("standard_group_id"),
+                    name=resource_meta["standards"].get(standard_id, {}).get("name"),
+                    description=resource_meta["standards"].get(standard_id, {}).get("description"),
+                    points=resource_meta["standards"].get(standard_id, {}).get("points"),
+                )
+                for standard_id in resource_meta["standards"].keys()
+            }
+            if resource_meta.get("standards")
+            else None,
+        )
+
         # === BUILD CHATS WITH MESSAGES ===
         chats: list[ChatData] = []
         for chat_item in chats_result or []:
@@ -967,24 +1121,37 @@ async def attempt_get(
                     grading_state=grading_state_data,
                     # Scenario resource (enriched from internal handler)
                     scenario=scenario_entry,
+                    scenario_id=chat_item.scenario_id,
                     # Normal/General View resources
                     problem_statement=problem_statement_entry,
+                    problem_statement_id=chat_item.problem_statement_id,
                     objectives=objectives_entries,
+                    objective_ids=chat_item.objective_ids,
                     personas=personas_entries,
+                    persona_ids=chat_item.persona_ids,
                     images=enriched_images,
+                    image_ids=chat_item.image_ids,
                     background_image=enriched_images[0] if enriched_images else None,
                     # Video/Quiz View resources
                     videos=enriched_videos,
+                    video_ids=chat_item.video_ids,
                     video=enriched_videos[0] if enriched_videos else None,
                     questions=questions_entries,  # Options nested inside questions
+                    question_ids=chat_item.question_ids,
+                    option_ids=chat_item.option_ids,
                     responses=responses_entries,
                     # Both Views resources
                     documents=enriched_documents,
+                    document_ids=chat_item.document_ids,
                     templates=templates_entries,
+                    template_ids=chat_item.template_ids,
                     # Rubric/Grade resources (enriched from internal handlers)
                     rubric=rubric_entry,
+                    rubric_id=chat_item.rubric_id,
                     standard_groups=standard_groups_entries,
+                    standard_group_ids=chat_item.standard_group_ids,
                     standards=standards_entries,
+                    standard_ids=chat_item.standard_ids,
                 )
             )
 
@@ -1135,6 +1302,13 @@ async def attempt_get(
             available_continuation_options=None,
             # Extended data (scenario_documents removed - use chat.documents)
             rubric_structure=rubric_structure,
+            resources=resources_payload,
+            entries=AttemptEntries(
+                messages_by_chat={
+                    str(chat_id): chat_messages
+                    for chat_id, chat_messages in messages_by_chat.items()
+                }
+            ),
         )
 
         # Cache response

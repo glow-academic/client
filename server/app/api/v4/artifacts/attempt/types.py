@@ -444,28 +444,65 @@ class ChatData(BaseModel):
 
     # --- Scenario resource (enriched from internal handler) ---
     scenario: ScenarioEntry | None = None
+    scenario_id: UUID | None = None
 
     # --- Normal/General View resources ---
     problem_statement: ProblemStatementEntry | None = None
+    problem_statement_id: UUID | None = None
     objectives: list[ObjectiveEntry] | None = None
+    objective_ids: list[UUID] | None = None
     personas: list[PersonaEntry] | None = None
+    persona_ids: list[UUID] | None = None
     images: list[ImageEntry] | None = None
+    image_ids: list[UUID] | None = None
     background_image: ImageEntry | None = None  # First image, used as chat background
 
     # --- Video/Quiz View resources ---
     videos: list[VideoEntry] | None = None
+    video_ids: list[UUID] | None = None
     video: VideoEntry | None = None  # First video, used for video player
     questions: list[QuestionEntry] | None = None  # Options nested inside
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
     responses: list[QuizResponse] | None = None
 
     # --- Both Views resources ---
     documents: list[DocumentEntry] | None = None
+    document_ids: list[UUID] | None = None
     templates: list[TemplateEntry] | None = None
+    template_ids: list[UUID] | None = None
 
     # --- Rubric/Grade resources (enriched from internal handlers) ---
     rubric: RubricEntry | None = None
+    rubric_id: UUID | None = None
     standard_groups: list[StandardGroupEntry] | None = None
+    standard_group_ids: list[UUID] | None = None
     standards: list[StandardEntry] | None = None
+    standard_ids: list[UUID] | None = None
+
+
+class AttemptResources(BaseModel):
+    """Resource maps keyed by ID string."""
+
+    scenarios: dict[str, ScenarioEntry] | None = None
+    personas: dict[str, PersonaEntry] | None = None
+    documents: dict[str, DocumentEntry] | None = None
+    images: dict[str, ImageEntry] | None = None
+    videos: dict[str, VideoEntry] | None = None
+    templates: dict[str, TemplateEntry] | None = None
+    objectives: dict[str, ObjectiveEntry] | None = None
+    questions: dict[str, QuestionEntry] | None = None
+    options: dict[str, OptionEntry] | None = None
+    problem_statements: dict[str, ProblemStatementEntry] | None = None
+    rubrics: dict[str, RubricEntry] | None = None
+    standard_groups: dict[str, StandardGroupEntry] | None = None
+    standards: dict[str, StandardEntry] | None = None
+
+
+class AttemptEntries(BaseModel):
+    """Entries grouped by chat."""
+
+    messages_by_chat: dict[str, list[MessageData]] | None = None
 
 
 class SimulationData(BaseModel):
@@ -564,3 +601,6 @@ class GetAttemptDetailResponse(BaseModel):
     available_continuation_options: AvailableContinuationOptions | None = None
     # Extended data (scenario_documents removed - use chat.documents)
     rubric_structure: RubricStructureData | None = None
+    # New normalized maps
+    resources: AttemptResources | None = None
+    entries: AttemptEntries | None = None

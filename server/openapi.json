@@ -29834,6 +29834,30 @@
         "title": "AttemptEndedEvent",
         "description": "Server-to-client event: attempt_ended.\n\nEmitted when an entire attempt is ended."
       },
+      "AttemptEntries": {
+        "properties": {
+          "messages_by_chat": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "$ref": "#/components/schemas/MessageData"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages By Chat"
+          }
+        },
+        "type": "object",
+        "title": "AttemptEntries",
+        "description": "Entries grouped by chat."
+      },
       "AttemptErrorEvent": {
         "properties": {
           "artifact_type": {
@@ -30698,6 +30722,195 @@
         "type": "object",
         "title": "AttemptProgressEvent",
         "description": "Server-to-client event: attempt_progress.\n\nEmitted during message generation to stream tokens."
+      },
+      "AttemptResources": {
+        "properties": {
+          "scenarios": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/ScenarioEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/PersonaEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/DocumentEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/ImageEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images"
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/VideoEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videos"
+          },
+          "templates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/TemplateEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templates"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/ObjectiveEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/QuestionEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/OptionEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "problem_statements": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/ProblemStatementEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statements"
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RubricEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/StandardGroupEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/StandardEntry"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          }
+        },
+        "type": "object",
+        "title": "AttemptResources",
+        "description": "Resource maps keyed by ID string."
       },
       "AttemptResponseResultEvent": {
         "properties": {
@@ -31874,6 +32087,18 @@
               }
             ]
           },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
           "problem_statement": {
             "anyOf": [
               {
@@ -31883,6 +32108,18 @@
                 "type": "null"
               }
             ]
+          },
+          "problem_statement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Id"
           },
           "objectives": {
             "anyOf": [
@@ -31898,6 +32135,21 @@
             ],
             "title": "Objectives"
           },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
           "personas": {
             "anyOf": [
               {
@@ -31912,6 +32164,21 @@
             ],
             "title": "Personas"
           },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
           "images": {
             "anyOf": [
               {
@@ -31925,6 +32192,21 @@
               }
             ],
             "title": "Images"
+          },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
           },
           "background_image": {
             "anyOf": [
@@ -31950,6 +32232,21 @@
             ],
             "title": "Videos"
           },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
           "video": {
             "anyOf": [
               {
@@ -31973,6 +32270,36 @@
               }
             ],
             "title": "Questions"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "option_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Ids"
           },
           "responses": {
             "anyOf": [
@@ -32002,6 +32329,21 @@
             ],
             "title": "Documents"
           },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
           "templates": {
             "anyOf": [
               {
@@ -32016,6 +32358,21 @@
             ],
             "title": "Templates"
           },
+          "template_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Ids"
+          },
           "rubric": {
             "anyOf": [
               {
@@ -32025,6 +32382,18 @@
                 "type": "null"
               }
             ]
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
           },
           "standard_groups": {
             "anyOf": [
@@ -32040,6 +32409,21 @@
             ],
             "title": "Standard Groups"
           },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          },
           "standards": {
             "anyOf": [
               {
@@ -32053,6 +32437,21 @@
               }
             ],
             "title": "Standards"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
           }
         },
         "type": "object",
@@ -37759,6 +38158,26 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/RubricStructureData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resources": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttemptResources"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entries": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttemptEntries"
               },
               {
                 "type": "null"

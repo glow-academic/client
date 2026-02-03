@@ -7186,6 +7186,16 @@ export interface components {
             message?: string | null;
         };
         /**
+         * AttemptEntries
+         * @description Entries grouped by chat.
+         */
+        AttemptEntries: {
+            /** Messages By Chat */
+            messages_by_chat?: {
+                [key: string]: components["schemas"]["MessageData"][];
+            } | null;
+        };
+        /**
          * AttemptErrorEvent
          * @description Server-to-client event: attempt_error.
          *
@@ -7513,6 +7523,64 @@ export interface components {
             delta?: string | null;
             /** Accumulated Content */
             accumulated_content?: string | null;
+        };
+        /**
+         * AttemptResources
+         * @description Resource maps keyed by ID string.
+         */
+        AttemptResources: {
+            /** Scenarios */
+            scenarios?: {
+                [key: string]: components["schemas"]["ScenarioEntry"];
+            } | null;
+            /** Personas */
+            personas?: {
+                [key: string]: components["schemas"]["PersonaEntry"];
+            } | null;
+            /** Documents */
+            documents?: {
+                [key: string]: components["schemas"]["DocumentEntry"];
+            } | null;
+            /** Images */
+            images?: {
+                [key: string]: components["schemas"]["ImageEntry"];
+            } | null;
+            /** Videos */
+            videos?: {
+                [key: string]: components["schemas"]["VideoEntry"];
+            } | null;
+            /** Templates */
+            templates?: {
+                [key: string]: components["schemas"]["TemplateEntry"];
+            } | null;
+            /** Objectives */
+            objectives?: {
+                [key: string]: components["schemas"]["ObjectiveEntry"];
+            } | null;
+            /** Questions */
+            questions?: {
+                [key: string]: components["schemas"]["QuestionEntry"];
+            } | null;
+            /** Options */
+            options?: {
+                [key: string]: components["schemas"]["OptionEntry"];
+            } | null;
+            /** Problem Statements */
+            problem_statements?: {
+                [key: string]: components["schemas"]["ProblemStatementEntry"];
+            } | null;
+            /** Rubrics */
+            rubrics?: {
+                [key: string]: components["schemas"]["RubricEntry"];
+            } | null;
+            /** Standard Groups */
+            standard_groups?: {
+                [key: string]: components["schemas"]["StandardGroupEntry"];
+            } | null;
+            /** Standards */
+            standards?: {
+                [key: string]: components["schemas"]["StandardEntry"];
+            } | null;
         };
         /**
          * AttemptResponseResultEvent
@@ -7907,30 +7975,56 @@ export interface components {
             grading_state?: components["schemas"]["GradingStateData"] | null;
             dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
             scenario?: components["schemas"]["ScenarioEntry"] | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
             problem_statement?: components["schemas"]["ProblemStatementEntry"] | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
             /** Objectives */
             objectives?: components["schemas"]["ObjectiveEntry"][] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
             /** Personas */
             personas?: components["schemas"]["PersonaEntry"][] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
             /** Images */
             images?: components["schemas"]["ImageEntry"][] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
             background_image?: components["schemas"]["ImageEntry"] | null;
             /** Videos */
             videos?: components["schemas"]["VideoEntry"][] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
             video?: components["schemas"]["VideoEntry"] | null;
             /** Questions */
             questions?: components["schemas"]["QuestionEntry"][] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
             /** Responses */
             responses?: components["schemas"]["QuizResponse"][] | null;
             /** Documents */
             documents?: components["schemas"]["DocumentEntry"][] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
             /** Templates */
             templates?: components["schemas"]["TemplateEntry"][] | null;
+            /** Template Ids */
+            template_ids?: string[] | null;
             rubric?: components["schemas"]["RubricEntry"] | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["StandardGroupEntry"][] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
             /** Standards */
             standards?: components["schemas"]["StandardEntry"][] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
         };
         /**
          * ChatViewItem
@@ -9436,6 +9530,8 @@ export interface components {
             should_show_controls?: boolean | null;
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
+            resources?: components["schemas"]["AttemptResources"] | null;
+            entries?: components["schemas"]["AttemptEntries"] | null;
         };
         /**
          * GetAttemptFactsRequest

@@ -47,8 +47,52 @@ import { VoiceInput } from "../inputAreas/VoiceInput";
 // TYPES
 // ============================================================================
 
+type AttemptResourceMap<T> = Record<string, T>;
+
+type AttemptResources = {
+  scenarios?: AttemptResourceMap<components["schemas"]["ScenarioEntry"]>;
+  personas?: AttemptResourceMap<components["schemas"]["PersonaEntry"]>;
+  documents?: AttemptResourceMap<components["schemas"]["DocumentEntry"]>;
+  images?: AttemptResourceMap<components["schemas"]["ImageEntry"]>;
+  videos?: AttemptResourceMap<components["schemas"]["VideoEntry"]>;
+  templates?: AttemptResourceMap<components["schemas"]["TemplateEntry"]>;
+  objectives?: AttemptResourceMap<components["schemas"]["ObjectiveEntry"]>;
+  questions?: AttemptResourceMap<components["schemas"]["QuestionEntry"]>;
+  options?: AttemptResourceMap<components["schemas"]["OptionEntry"]>;
+  problem_statements?: AttemptResourceMap<
+    components["schemas"]["ProblemStatementEntry"]
+  >;
+  rubrics?: AttemptResourceMap<components["schemas"]["RubricEntry"]>;
+  standard_groups?: AttemptResourceMap<components["schemas"]["StandardGroupEntry"]>;
+  standards?: AttemptResourceMap<components["schemas"]["StandardEntry"]>;
+};
+
+type AttemptEntries = {
+  messages_by_chat?: Record<string, MessageData[]>;
+};
+
+type ChatDataWithIds = components["schemas"]["ChatData"] & {
+  scenario_id?: string | null;
+  problem_statement_id?: string | null;
+  persona_ids?: string[] | null;
+  objective_ids?: string[] | null;
+  image_ids?: string[] | null;
+  video_ids?: string[] | null;
+  document_ids?: string[] | null;
+  template_ids?: string[] | null;
+  question_ids?: string[] | null;
+  option_ids?: string[] | null;
+  rubric_id?: string | null;
+  standard_group_ids?: string[] | null;
+  standard_ids?: string[] | null;
+};
+
 /** Attempt data from server - strongly typed from OpenAPI */
-type AttemptData = OutputOf<"/api/v4/attempt/get", "post">;
+type AttemptData = OutputOf<"/api/v4/attempt/get", "post"> & {
+  resources?: AttemptResources;
+  entries?: AttemptEntries;
+  chats?: ChatDataWithIds[] | null;
+};
 
 /** Message data from OpenAPI schema - used for optimistic messages */
 type MessageData = components["schemas"]["MessageData"];
@@ -287,25 +331,108 @@ export function AttemptChat({
     return attemptData.chats[currentChatIndex] || attemptData.chats[0] || null;
   }, [attemptData, currentChatIndex]);
 
-  const scenario = useMemo(() => {
+  const resolvedChat = useMemo(() => {
     if (!currentChat) return null;
-    const firstPersona = currentChat.personas?.[0] ?? null;
-    const problemStatementText = currentChat.problem_statement?.problem_statement ?? null;
+    const resources = attemptData?.resources;
+
+    const resolveById = <T,>(
+      id: string | null | undefined,
+      map?: AttemptResourceMap<T>
+    ): T | null => {
+      if (!id || !map) return null;
+      return map[String(id)] ?? null;
+    };
+
+    const resolveByIds = <T,>(
+      ids: string[] | null | undefined,
+      map?: AttemptResourceMap<T>
+    ): T[] | null => {
+      if (!ids || !map) return null;
+      const items = ids
+        .map((id) => map[String(id)])
+        .filter(Boolean) as T[];
+      return items.length > 0 ? items : null;
+    };
+
+    const resolvedQuestions =
+      currentChat.questions ??
+      (() => {
+        if (!resources?.questions || !currentChat.question_ids) return null;
+        const optionsMap = resources.options ?? {};
+        const questions = resolveByIds(
+          currentChat.question_ids,
+          resources.questions
+        );
+        if (!questions) return null;
+        return questions.map((q) => {
+          const qId = String((q as { question_id?: string }).question_id ?? "");
+          const options = Object.values(optionsMap).filter(
+            (opt) =>
+              String((opt as { option_id?: string }).option_id ?? "") &&
+              String((opt as { question_id?: string }).question_id ?? "") === qId
+          );
+          return {
+            ...q,
+            options: options.length > 0 ? options : (q as any).options,
+          };
+        });
+      })();
+
+    return {
+      ...currentChat,
+      scenario: currentChat.scenario ?? resolveById(currentChat.scenario_id, resources?.scenarios),
+      problem_statement:
+        currentChat.problem_statement ??
+        resolveById(currentChat.problem_statement_id, resources?.problem_statements),
+      personas:
+        currentChat.personas ??
+        resolveByIds(currentChat.persona_ids, resources?.personas),
+      objectives:
+        currentChat.objectives ??
+        resolveByIds(currentChat.objective_ids, resources?.objectives),
+      images:
+        currentChat.images ??
+        resolveByIds(currentChat.image_ids, resources?.images),
+      videos:
+        currentChat.videos ??
+        resolveByIds(currentChat.video_ids, resources?.videos),
+      documents:
+        currentChat.documents ??
+        resolveByIds(currentChat.document_ids, resources?.documents),
+      templates:
+        currentChat.templates ??
+        resolveByIds(currentChat.template_ids, resources?.templates),
+      questions: resolvedQuestions,
+      rubric: currentChat.rubric ?? resolveById(currentChat.rubric_id, resources?.rubrics),
+      standard_groups:
+        currentChat.standard_groups ??
+        resolveByIds(currentChat.standard_group_ids, resources?.standard_groups),
+      standards:
+        currentChat.standards ??
+        resolveByIds(currentChat.standard_ids, resources?.standards),
+    };
+  }, [currentChat, attemptData?.resources]);
+
+  const scenario = useMemo(() => {
+    if (!resolvedChat) return null;
+    const firstPersona = resolvedChat.personas?.[0] ?? null;
+    const problemStatementText =
+      resolvedChat.problem_statement?.problem_statement ?? null;
     return {
       persona_name: firstPersona?.name ?? null,
       persona_icon: firstPersona?.icon ?? null,
       persona_color: firstPersona?.color ?? null,
-      objectives: currentChat.objectives?.map((o) => ({
+      objectives: resolvedChat.objectives?.map((o) => ({
         id: o.objective_id,
         objective: o.objective,
       })) ?? [],
       problem_statement: problemStatementText,
-      name: currentChat.scenario_name ?? null,
-      copy_paste_allowed: currentChat.copy_paste_allowed ?? null,
-      text_enabled: currentChat.text_enabled ?? true,
-      audio_enabled: currentChat.audio_enabled ?? false,
+      name: resolvedChat.scenario?.name ?? null,
+      copy_paste_allowed: resolvedChat.copy_paste_allowed ?? null,
+      text_enabled: resolvedChat.text_enabled ?? true,
+      audio_enabled: resolvedChat.audio_enabled ?? false,
     };
-  }, [currentChat]);
+  }, [resolvedChat]);
 
   const chats = useMemo(
     () =>
@@ -425,8 +552,7 @@ export function AttemptChat({
       const allCompleted = chats.every((chat) => chat.completed);
       if (allCompleted) {
         // Check if current chat has video questions - if so, show responses instead of rubric
-        const currentChatData = attemptData?.chats?.[currentChatIndex];
-        const hasVideoQuestions = (currentChatData?.questions?.length ?? 0) > 0;
+      const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
         if (hasVideoQuestions) {
           setShowResponses(true);
         } else {
@@ -443,8 +569,8 @@ export function AttemptChat({
 
   // Auto-select first document/template when chat changes or content becomes available
   useEffect(() => {
-    const chatDocuments = currentChat?.documents || [];
-    const chatTemplates = currentChat?.templates || [];
+    const chatDocuments = resolvedChat?.documents || [];
+    const chatTemplates = resolvedChat?.templates || [];
 
     // Create unified list with prefixed IDs (documents first, then templates)
     const allItems: { id: string; type: "document" | "template" }[] = [
@@ -475,7 +601,7 @@ export function AttemptChat({
     } else {
       setSelectedDocumentId(null);
     }
-  }, [currentChat?.documents, currentChat?.templates, currentChat?.id, selectedDocumentId]);
+  }, [resolvedChat?.documents, resolvedChat?.templates, resolvedChat?.id, selectedDocumentId]);
 
   // ---------------------------------------------------------------------------
   // VIEW MODE
@@ -484,8 +610,8 @@ export function AttemptChat({
   const chatAreaViewMode: ChatAreaViewMode = useMemo(() => {
     if (showGrades) return "rubric";
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    const hasVideo = !!currentChat?.video?.upload_id;
-    const hasVideoQuestions = currentChatData?.questions && currentChatData.questions.length > 0;
+    const hasVideo = !!resolvedChat?.video?.upload_id;
+    const hasVideoQuestions = resolvedChat?.questions && resolvedChat.questions.length > 0;
 
     // graded-video mode when viewing responses for completed video with questions
     if (hasVideo && hasVideoQuestions && showResponses) return "graded-video";
@@ -496,7 +622,7 @@ export function AttemptChat({
       currentChatData?.messages?.some((m) => m.feedbacks && m.feedbacks.length > 0);
     if (hasGradingData && currentChat?.completed) return "graded-messages";
     return "messages";
-  }, [showGrades, showResponses, attemptData, currentChatIndex, currentChat]);
+  }, [showGrades, showResponses, attemptData, currentChatIndex, currentChat, resolvedChat]);
 
   // ---------------------------------------------------------------------------
   // MERGED STATES
@@ -1208,11 +1334,11 @@ export function AttemptChat({
 
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const timer = attemptData?.timer;
-    const chatDocuments = currentChat?.documents || [];
-    const chatTemplates = currentChat?.templates || [];
+    const chatDocuments = resolvedChat?.documents || [];
+    const chatTemplates = resolvedChat?.templates || [];
     const hasContent = chatDocuments.length > 0 || chatTemplates.length > 0;
     const currentChatData = attemptData?.chats?.[currentChatIndex];
-    const hasVideoQuestions = (currentChatData?.questions?.length ?? 0) > 0;
+    const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
     return {
       timer: timer
         ? {
@@ -1235,7 +1361,10 @@ export function AttemptChat({
       on_toggle_objectives: setShowObjectives,
       on_toggle_rubric: handleToggleGrades,
       on_toggle_responses: setShowResponses,
-      objectives: (currentChat?.objectives || []).map((o) => o.objective).filter(Boolean) as string[],
+      objectives:
+        (resolvedChat?.objectives || [])
+          .map((o) => o.objective)
+          .filter(Boolean) as string[],
       scenario_title: scenario?.problem_statement || scenario?.name || null,
       attempt: attemptData?.attempt || null,
       simulation: attemptData?.simulation || null,
@@ -1258,15 +1387,16 @@ export function AttemptChat({
         })) || [],
       display_chat: currentChat
         ? {
-            id: currentChat.id,
-            completed: currentChat.completed ?? null,
-          }
+          id: currentChat.id,
+          completed: currentChat.completed ?? null,
+        }
         : null,
     };
   }, [
     attemptData,
     currentChatIndex,
     currentChat,
+    resolvedChat,
     scenario,
     showDocuments,
     showObjectives,
@@ -1276,11 +1406,14 @@ export function AttemptChat({
 
   const chatAreaProps = useMemo(() => {
     const currentChatData = attemptData?.chats?.[currentChatIndex];
+    const resolvedMessages =
+      attemptData?.entries?.messages_by_chat?.[currentChat?.id || ""] ||
+      currentChatData?.messages;
 
     if (chatAreaViewMode === "messages") {
       const props: MessagesViewProps = {
         // Pass server messages directly - they already match MessageData type
-        messages: currentChatData?.messages,
+        messages: resolvedMessages,
         streaming_content: streamingContent,
         optimistic_messages: optimisticMessages,
         current_chat: currentChat
@@ -1298,7 +1431,7 @@ export function AttemptChat({
     } else if (chatAreaViewMode === "graded-messages") {
       const props: MessagesViewProps = {
         // Pass server messages directly - they already match MessageData type
-        messages: currentChatData?.messages || [],
+        messages: resolvedMessages || [],
         current_chat: currentChat
           ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
@@ -1314,9 +1447,9 @@ export function AttemptChat({
       // VideoView - with markers/locking for taking mode, plain for completed
       const isCompleted = currentChat?.completed;
       const props: VideoViewProps = {
-        video: currentChat?.video ?? null,
+        video: resolvedChat?.video ?? null,
         // Pass empty questions/responses when completed to show plain video
-        questions: isCompleted ? [] : (currentChatData?.questions || []),
+        questions: isCompleted ? [] : (resolvedChat?.questions || []),
         responses: isCompleted ? [] : (currentChatData?.responses || []),
         onNavigateToQuestion: isCompleted ? undefined : setQuestionIndex,
         // Allow video to fill available space when completed (no questions input below)
@@ -1326,7 +1459,7 @@ export function AttemptChat({
     } else if (chatAreaViewMode === "graded-video") {
       // QuestionReviewView - shows all questions with full feedback
       const props: QuestionReviewViewProps = {
-        questions: currentChatData?.questions || [],
+        questions: resolvedChat?.questions || [],
         responses: currentChatData?.responses || [],
       };
       return props;
@@ -1348,6 +1481,7 @@ export function AttemptChat({
     attemptData,
     currentChatIndex,
     currentChat,
+    resolvedChat,
     scenario,
     chatAreaViewMode,
     streamingContent,
@@ -1366,25 +1500,25 @@ export function AttemptChat({
     if (!showDocuments) return undefined;
     return {
       visible: showDocuments,
-      documents: currentChat?.documents || [],
-      templates: currentChat?.templates || [],
+      documents: resolvedChat?.documents || [],
+      templates: resolvedChat?.templates || [],
       selected_document_id: selectedDocumentId,
       on_select_document: setSelectedDocumentId,
     };
-  }, [showDocuments, currentChat, selectedDocumentId]);
+  }, [showDocuments, resolvedChat, selectedDocumentId]);
 
   const inputAreaProps = useMemo(() => {
     const textEnabled = scenario?.text_enabled !== false;
     const audioEnabled = scenario?.audio_enabled === true;
     const currentChatData = attemptData?.chats?.[currentChatIndex];
     const hasVideoQuestions =
-      currentChatData?.questions && currentChatData.questions.length > 0;
+      resolvedChat?.questions && resolvedChat.questions.length > 0;
 
     // Use QuestionTakingInput for video questions (only in taking mode, not graded-video)
     if (hasVideoQuestions && chatAreaViewMode !== "graded-video") {
       const props: QuestionTakingInputProps = {
         // Pass questions directly - they already match QuestionEntry type
-        questions: currentChatData?.questions || [],
+        questions: resolvedChat?.questions || [],
         // Pass responses directly - they already match QuizResponse type (for "Your answer" display)
         responses: currentChatData?.responses || [],
         on_submit: handleQuizResponse,
@@ -1433,6 +1567,7 @@ export function AttemptChat({
     attemptData,
     currentChatIndex,
     currentChat,
+    resolvedChat,
     chatAreaViewMode,
     questionIndex,
     isSendingMessage,
@@ -1473,7 +1608,7 @@ export function AttemptChat({
     const audioEnabled = scenario?.audio_enabled === true;
     const currentChatData = attemptData?.chats?.[currentChatIndex];
     const hasVideoQuestions =
-      currentChatData?.questions && currentChatData.questions.length > 0;
+      resolvedChat?.questions && resolvedChat.questions.length > 0;
 
     // Use QuestionTakingInput for video questions (only when not in graded-video mode)
     if (hasVideoQuestions && chatAreaViewMode !== "graded-video") {
@@ -1483,7 +1618,7 @@ export function AttemptChat({
     } else {
       return TextInput;
     }
-  }, [scenario, attemptData, currentChatIndex, chatAreaViewMode]);
+  }, [scenario, attemptData, currentChatIndex, chatAreaViewMode, resolvedChat]);
 
   const inputAreaRef = useMemo(() => {
     if (InputAreaComponent === VoiceInput) {
@@ -1557,7 +1692,9 @@ export function AttemptChat({
                 </Badge>
               ) : null}
               <span className="text-sm font-medium">
-                {chat.scenario?.name || `Chat ${currentChatIndex + 1}`}
+                {chat.scenario?.name ||
+                  attemptData?.resources?.scenarios?.[String(chat.scenario_id)]?.name ||
+                  `Chat ${currentChatIndex + 1}`}
               </span>
               <span className="text-sm text-muted-foreground">
                 ({currentChatIndex + 1} of {chats.length})
@@ -1598,7 +1735,7 @@ export function AttemptChat({
   ) : null;
 
   return (
-    <GenericChatInterface
+      <GenericChatInterface
       chat_header={AttemptChatHeader}
       chat_area={ChatAreaComponent}
       document_area={AttemptDocumentArea}
@@ -1613,7 +1750,11 @@ export function AttemptChat({
       hide_input_area={chatAreaViewMode === "video" && currentChat?.completed}
       input_area_ref={inputAreaRef}
       pagination_footer={paginationFooter}
-      background_image={currentChat?.background_image}
+      background_image={
+        resolvedChat?.background_image ||
+        resolvedChat?.images?.[0] ||
+        currentChat?.background_image
+      }
       chat_header_props={chatHeaderProps}
       chat_area_props={chatAreaProps}
       document_area_props={documentAreaProps}
