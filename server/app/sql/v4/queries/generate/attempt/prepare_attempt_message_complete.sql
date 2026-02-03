@@ -197,6 +197,66 @@ BEGIN
         JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active = true
         LIMIT 1
     ),
+    tool_schema_data AS (
+        SELECT
+            t.id as tool_id,
+            COALESCE(
+                jsonb_object_agg(
+                    ar.name,
+                    jsonb_build_object(
+                        'type', CASE ar.field_type
+                            WHEN 'string' THEN 'string'
+                            WHEN 'number' THEN 'number'
+                            WHEN 'boolean' THEN 'boolean'
+                            WHEN 'array' THEN 'array'
+                            ELSE 'string'
+                        END,
+                        'required', ar.required
+                    )
+                    ORDER BY ar.position
+                ) FILTER (WHERE ar.name IS NOT NULL),
+                '{}'::jsonb
+            ) as arguments,
+            COALESCE(
+                jsonb_object_agg(
+                    ar.name,
+                    ar.description
+                    ORDER BY ar.position
+                ) FILTER (WHERE ar.name IS NOT NULL AND ar.description != ''),
+                '{}'::jsonb
+            ) as argument_descriptions,
+            COALESCE(
+                jsonb_object_agg(
+                    ar.name,
+                    CASE
+                        WHEN ar.default_value = '' THEN NULL
+                        WHEN ar.field_type = 'number' THEN
+                            CASE
+                                WHEN ar.default_value ~ '^-?[0-9]+\\.?[0-9]*$' THEN to_jsonb(ar.default_value::numeric)
+                                ELSE NULL
+                            END
+                        WHEN ar.field_type = 'boolean' THEN
+                            CASE
+                                WHEN LOWER(ar.default_value) IN ('true', '1', 'yes') THEN 'true'::jsonb
+                                WHEN LOWER(ar.default_value) IN ('false', '0', 'no') THEN 'false'::jsonb
+                                ELSE NULL
+                            END
+                        WHEN ar.field_type = 'array' THEN
+                            CASE
+                                WHEN ar.default_value ~ '^\\[.*\\]$' THEN ar.default_value::jsonb
+                                ELSE NULL
+                            END
+                        ELSE ar.default_value::jsonb
+                    END
+                    ORDER BY ar.position
+                ) FILTER (WHERE ar.name IS NOT NULL AND ar.default_value != ''),
+                '{}'::jsonb
+            ) as argument_defaults
+        FROM tool_artifact t
+        LEFT JOIN tool_args_junction ta ON ta.tool_id = t.id
+        LEFT JOIN args_resource ar ON ar.id = ta.args_id AND ar.active = true
+        GROUP BY t.id
+    ),
     tools_data AS (
         SELECT ARRAY_AGG(
             (t.id,
@@ -204,9 +264,9 @@ BEGIN
              COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''),
              COALESCE(br.entry::text, ''),
              '',
-             '{}'::jsonb,
-             '{}'::jsonb,
-             '{}'::jsonb,
+             COALESCE(tsd.arguments, '{}'::jsonb),
+             COALESCE(tsd.argument_descriptions, '{}'::jsonb),
+             COALESCE(tsd.argument_defaults, '{}'::jsonb),
              true
             )::types.i_attempt_message_tool_v4
         ) as tools
@@ -216,6 +276,7 @@ BEGIN
         JOIN tool_artifact t ON t.id = ttj.tool_id
         LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = t.id AND tbj.active = true
         LEFT JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
+        LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
         WHERE at.agent_id = p_agent_id
           AND (p_entry_types IS NULL OR br.entry::text = ANY(p_entry_types))
           AND br.creatable = true
@@ -241,6 +302,235 @@ BEGIN
           AND sm.id != v_user_message_id
           AND sm.id != v_assistant_message_id
     ),
+    selected_views AS (
+        SELECT DISTINCT ver.view
+        FROM view_entry_relation ver
+        WHERE p_entry_types IS NOT NULL
+          AND ver.entry::text = ANY(p_entry_types)
+    ),
+    selected_resources AS (
+        SELECT DISTINCT vrr.resource
+        FROM view_resource_relation vrr
+        JOIN selected_views sv ON sv.view = vrr.view
+    ),
+    attempt_context AS (
+        SELECT COALESCE(
+            (SELECT mv.practice FROM mv_simulation_attempts mv WHERE mv.attempt_id = v_attempt_id LIMIT 1),
+            false
+        ) as practice
+    ),
+    chat_context AS (
+        SELECT
+            mv.scenario_id,
+            mv.rubric_id,
+            COALESCE(mv.persona_ids, ARRAY[]::uuid[]) as persona_ids,
+            COALESCE(mv.document_ids, ARRAY[]::uuid[]) as document_ids,
+            COALESCE(mv.image_ids, ARRAY[]::uuid[]) as image_ids,
+            COALESCE(mv.video_ids, ARRAY[]::uuid[]) as video_ids,
+            COALESCE(mv.template_ids, ARRAY[]::uuid[]) as template_ids,
+            COALESCE(mv.objective_ids, ARRAY[]::uuid[]) as objective_ids,
+            COALESCE(mv.question_ids, ARRAY[]::uuid[]) as question_ids,
+            COALESCE(mv.option_ids, ARRAY[]::uuid[]) as option_ids,
+            COALESCE(mv.standard_group_ids, ARRAY[]::uuid[]) as standard_group_ids,
+            COALESCE(mv.standard_ids, ARRAY[]::uuid[]) as standard_ids,
+            mv.problem_statement_id
+        FROM mv_simulation_chats mv
+        WHERE mv.chat_id = p_chat_id
+        UNION ALL
+        SELECT NULL::uuid, NULL::uuid, ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], ARRAY[]::uuid[], NULL::uuid
+        WHERE NOT EXISTS (SELECT 1 FROM mv_simulation_chats mv WHERE mv.chat_id = p_chat_id)
+    ),
+    scenario_context AS (
+        SELECT
+            jsonb_build_object(
+                'id', s.id::text,
+                'name', s.name,
+                'description', COALESCE(s.description, '')
+            ) as data
+        FROM chat_context cc
+        JOIN scenarios_resource s ON s.id = cc.scenario_id
+        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = s.id AND ssj.active = true
+        JOIN scenario_artifact sa ON sa.id = ssj.scenario_id
+        WHERE 'scenarios' = ANY(ARRAY(SELECT resource FROM selected_resources))
+        LIMIT 1
+    ),
+    personas_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', p.id::text,
+                'name', p.name,
+                'description', COALESCE(p.description, ''),
+                'color', COALESCE(p.color, ''),
+                'icon', COALESCE(p.icon, '')
+            ) ORDER BY p.name
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN personas_resource p ON p.id = ANY(cc.persona_ids)
+        WHERE 'personas' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    documents_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', d.id::text,
+                'name', (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = da.id LIMIT 1),
+                'description', COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = da.id LIMIT 1), ''),
+                'upload_id', u.id
+            ) ORDER BY d.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN documents_resource d ON d.id = ANY(cc.document_ids)
+        JOIN document_documents_junction ddj ON ddj.documents_id = d.id
+        JOIN document_artifact da ON da.id = ddj.document_id
+        LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+        LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+        LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+        LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id
+        WHERE 'documents' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    images_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', i.id::text,
+                'name', COALESCE(i.name, ''),
+                'description', COALESCE(i.description, ''),
+                'upload_id', i.upload_id
+            ) ORDER BY i.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN images_resource i ON i.id = ANY(cc.image_ids)
+        WHERE 'images' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    videos_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', v.id::text,
+                'name', COALESCE(v.name, ''),
+                'description', COALESCE(v.description, ''),
+                'upload_id', v.upload_id,
+                'length_seconds', v.length_seconds
+            ) ORDER BY v.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN videos_resource v ON v.id = ANY(cc.video_ids)
+        WHERE 'videos' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    templates_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', t.id::text,
+                'name', COALESCE(t.name, ''),
+                'description', COALESCE(t.description, '')
+            ) ORDER BY t.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN templates_resource t ON t.id = ANY(cc.template_ids)
+        WHERE 'templates' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    objectives_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', o.id::text,
+                'objective', COALESCE(o.objective, '')
+            ) ORDER BY o.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN objectives_resource o ON o.id = ANY(cc.objective_ids)
+        WHERE 'objectives' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    questions_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', q.id::text,
+                'question_text', COALESCE(q.question_text, ''),
+                'allow_multiple', q.allow_multiple,
+                'time', q.time
+            ) ORDER BY q.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN questions_resource q ON q.id = ANY(cc.question_ids)
+        WHERE 'questions' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    options_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', o.id::text,
+                'option_text', COALESCE(o.option_text, ''),
+                'is_correct', o.is_correct,
+                'question_id', o.question_id::text
+            ) ORDER BY o.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN options_resource o ON o.id = ANY(cc.option_ids)
+        WHERE 'options' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    problem_statements_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', ps.id::text,
+                'problem_statement', COALESCE(ps.problem_statement, '')
+            ) ORDER BY ps.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN problem_statements_resource ps ON ps.id = cc.problem_statement_id
+        WHERE 'problem_statements' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    rubrics_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', r.id::text,
+                'name', COALESCE(r.name, ''),
+                'description', COALESCE(r.description, ''),
+                'total_points', r.total_points,
+                'pass_points', r.pass_points
+            ) ORDER BY r.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN rubrics_resource r ON r.id = cc.rubric_id
+        WHERE 'rubrics' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    standard_groups_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', sg.id::text,
+                'name', COALESCE(sg.name, ''),
+                'description', COALESCE(sg.description, ''),
+                'points', sg.points,
+                'pass_points', sg.pass_points
+            ) ORDER BY sg.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN standard_groups_resource sg ON sg.id = ANY(cc.standard_group_ids)
+        WHERE 'standard_groups' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    standards_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'id', s.id::text,
+                'standard_group_id', s.standard_group_id::text,
+                'name', COALESCE(s.name, ''),
+                'description', COALESCE(s.description, ''),
+                'points', s.points
+            ) ORDER BY s.id
+        ), '[]'::jsonb) as data
+        FROM chat_context cc
+        JOIN standards_resource s ON s.id = ANY(cc.standard_ids)
+        WHERE 'standards' = ANY(ARRAY(SELECT resource FROM selected_resources))
+    ),
+    messages_context AS (
+        SELECT COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'message_id', m.message_id::text,
+                'type', m.type,
+                'created_at', m.created_at,
+                'completed', m.completed,
+                'contents', to_jsonb(m.contents),
+                'hints', to_jsonb(m.hints)
+            ) ORDER BY m.created_at
+        ), '[]'::jsonb) as data
+        FROM mv_simulation_messages m
+        WHERE m.chat_id = p_chat_id
+          AND 'simulation_messages' = ANY(ARRAY(SELECT view FROM selected_views))
+    ),
     jinja_ctx AS (
         SELECT jsonb_build_object(
             'simulation', jsonb_build_object(
@@ -249,12 +539,29 @@ BEGIN
             ),
             'attempt', jsonb_build_object(
                 'id', v_attempt_id::text,
-                'practice', false
+                'practice', COALESCE(ac.practice, false)
             ),
             'chat', jsonb_build_object(
                 'id', p_chat_id::text
-            )
+            ),
+            'resources', jsonb_build_object(
+                'scenario', COALESCE((SELECT data FROM scenario_context), '{}'::jsonb),
+                'personas', COALESCE((SELECT data FROM personas_context), '[]'::jsonb),
+                'documents', COALESCE((SELECT data FROM documents_context), '[]'::jsonb),
+                'images', COALESCE((SELECT data FROM images_context), '[]'::jsonb),
+                'videos', COALESCE((SELECT data FROM videos_context), '[]'::jsonb),
+                'templates', COALESCE((SELECT data FROM templates_context), '[]'::jsonb),
+                'objectives', COALESCE((SELECT data FROM objectives_context), '[]'::jsonb),
+                'questions', COALESCE((SELECT data FROM questions_context), '[]'::jsonb),
+                'options', COALESCE((SELECT data FROM options_context), '[]'::jsonb),
+                'problem_statements', COALESCE((SELECT data FROM problem_statements_context), '[]'::jsonb),
+                'rubrics', COALESCE((SELECT data FROM rubrics_context), '[]'::jsonb),
+                'standard_groups', COALESCE((SELECT data FROM standard_groups_context), '[]'::jsonb),
+                'standards', COALESCE((SELECT data FROM standards_context), '[]'::jsonb)
+            ),
+            'messages', COALESCE((SELECT data FROM messages_context), '[]'::jsonb)
         ) as context
+        FROM attempt_context ac
     )
     SELECT
         v_user_message_id,
