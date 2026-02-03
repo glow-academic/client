@@ -51,7 +51,7 @@ from app.utils.sql_helper import execute_sql_typed
 class GetProfileContextApiResponse(BaseGetProfileContextApiResponse):
     """Extended profile context response with artifact_agent_ids."""
 
-    artifact_agent_ids: dict[str, UUID | None] | None = None
+    artifact_agent_ids: dict[str, list[UUID]] | None = None
 
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -487,15 +487,12 @@ async def get_profile_context(
         }
         theme_tokens = derive_theme_tokens(theme_primitives)
 
-        # Build artifact_agent_ids map - take first agent_id for backward compatibility
-        artifact_agent_ids_map: dict[str, UUID | None] = {}
+        # Build artifact_agent_ids map - return all qualifying agents per artifact
+        artifact_agent_ids_map: dict[str, list[UUID]] = {}
         if access_result.artifact_agent_ids:
             for item in access_result.artifact_agent_ids:
-                if item.artifact:
-                    # Take first agent_id for backward compatibility
-                    artifact_agent_ids_map[item.artifact] = (
-                        item.agent_ids[0] if item.agent_ids else None
-                    )
+                if item.artifact and item.agent_ids:
+                    artifact_agent_ids_map[item.artifact] = list(item.agent_ids)
 
         # Set audit context
         if access_result.actor_name and profile_id:

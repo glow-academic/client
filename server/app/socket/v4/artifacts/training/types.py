@@ -4,8 +4,8 @@ Defines payload and event types for the training simulation WebSocket handlers:
 - TrainingStartPayload: Start a new training session
 - TrainingStartedEvent: Training session started successfully
 
-Entry types are predefined per handler (not in payload):
-- start.py: ['chats'] - Creates attempt + chat only
+Note: Training start creates structural entries (attempts, chats), not creatable entries.
+Creatable entry type validation is not needed for this handler.
 """
 
 from uuid import UUID
@@ -23,7 +23,9 @@ from app.socket.v4.artifacts.types import (
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 
-TRAINING_START_ENTRY_TYPES = ["chats"]
+# Training start creates structural entries (attempts, chats), not creatable entries.
+# Creatable entry validation is skipped when this is empty.
+TRAINING_START_ENTRY_TYPES: list[str] = []
 
 
 # =============================================================================

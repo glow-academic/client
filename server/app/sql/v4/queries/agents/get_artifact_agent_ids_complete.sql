@@ -1,5 +1,7 @@
 -- Get artifact agent IDs in a single pass
--- Computes general_agent_id for ALL artifact types using artifact_resources_relation
+-- Computes general_agent_id for ALL artifact types using TWO paths:
+--   1. Resources path: artifact_resources_relation (for persona, scenario, training, etc.)
+--   2. Bindings path: artifact_view_relation -> view_entry_relation -> bindings (for attempt, test)
 -- Parameters: profile_id (uuid), user_department_ids (uuid[])
 -- Returns: artifact_type -> general_agent_id mapping
 
@@ -51,12 +53,45 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH
+-- ============================================================================
+-- PATH 1: Resources path (artifact_resources_relation)
+-- For artifacts like: persona, scenario, simulation, training, etc.
+-- ============================================================================
+
 -- Get all artifact -> resource mappings
 artifact_resources AS (
     SELECT artifact, ARRAY_AGG(resource::text) as required_resources
     FROM artifact_resources_relation
     GROUP BY artifact
 ),
+
+-- ============================================================================
+-- PATH 2: Bindings path (artifact_view_relation -> view_entry_relation)
+-- For artifacts like: attempt, test
+-- ============================================================================
+
+-- Get all artifact -> entry mappings via views
+-- Only include entries that actually have tool bindings (intersection with bound entries)
+artifact_entries AS (
+    SELECT
+        avr.artifact,
+        ARRAY_AGG(DISTINCT ver.entry::text) FILTER (
+            WHERE b.creatable = true
+            AND EXISTS (
+                SELECT 1 FROM tool_bindings_junction tbj
+                WHERE tbj.binding_id = b.id AND tbj.active = true
+            )
+        ) as required_entries
+    FROM artifact_view_relation avr
+    JOIN view_entry_relation ver ON ver.view = avr.view
+    JOIN bindings_resource b ON b.entry = ver.entry
+    GROUP BY avr.artifact
+),
+
+-- ============================================================================
+-- ELIGIBLE AGENTS (shared by both paths)
+-- ============================================================================
+
 -- Get eligible agents (active, in user's departments)
 eligible_agents AS (
     SELECT DISTINCT
@@ -86,11 +121,13 @@ eligible_agents AS (
         )
     )
 ),
--- Get tool resources for each eligible agent
--- Path: agent_tools_junction.tool_id -> tools_resource.id
---       tool_tools_junction.tools_id -> tools_resource.id
---       tool_tools_junction.tool_id -> tool_artifact.id
---       resource_tools_relation.tool_id -> tool_artifact.id
+
+-- ============================================================================
+-- AGENT CAPABILITIES
+-- ============================================================================
+
+-- Get tool resources for each eligible agent (for resources path)
+-- Path: agent_tools_junction -> tool_tools_junction -> resource_tools_relation
 agent_tool_resources AS (
     SELECT
         ea.agent_id,
@@ -105,52 +142,116 @@ agent_tool_resources AS (
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = ttj.tool_id AND rt.active = true
     GROUP BY ea.agent_id, ea.updated_at
 ),
--- Score and select best agent per artifact
-scored_agents AS (
+
+-- Get tool entries for each eligible agent (for bindings path)
+-- Path: agent_tools_junction -> tools_resource -> tool_tools_junction -> tool_bindings_junction -> bindings_resource
+agent_tool_entries AS (
+    SELECT
+        ea.agent_id,
+        ea.updated_at,
+        COALESCE(
+            ARRAY_AGG(DISTINCT b.entry::text) FILTER (WHERE b.entry IS NOT NULL AND b.creatable = true),
+            ARRAY[]::text[]
+        ) as tool_entries
+    FROM eligible_agents ea
+    LEFT JOIN agent_tools_junction atj ON atj.agent_id = ea.agent_id AND atj.active = true
+    LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
+    LEFT JOIN bindings_resource b ON b.id = tbj.binding_id
+    GROUP BY ea.agent_id, ea.updated_at
+),
+
+-- ============================================================================
+-- SCORING AND RANKING
+-- ============================================================================
+
+-- Score agents for resources path artifacts
+scored_agents_resources AS (
     SELECT
         ar.artifact::text as artifact,
         atr.agent_id,
         atr.updated_at,
-        -- Agent must have ALL required resources for the artifact
         CASE
             WHEN ar.required_resources <@ atr.tool_resources THEN 1
             ELSE 0
-        END as has_all_resources,
-        -- Count of matching resources (for tiebreaking)
+        END as has_all_required,
         COALESCE(
             CARDINALITY(
                 ARRAY(SELECT unnest(ar.required_resources) INTERSECT SELECT unnest(atr.tool_resources))
             ),
             0
         ) as matching_count,
-        -- Count of resources in tool set (prefer specialized agents with fewer extra resources)
-        CARDINALITY(atr.tool_resources) as total_tool_count
+        CARDINALITY(atr.tool_resources) as total_count
     FROM artifact_resources ar
     CROSS JOIN agent_tool_resources atr
 ),
-ranked_agents AS (
+
+-- Score agents for bindings path artifacts
+-- For bindings path, we return ALL agents that cover ANY required entries
+scored_agents_bindings AS (
+    SELECT
+        ae.artifact::text as artifact,
+        ate.agent_id,
+        ate.updated_at,
+        -- For bindings path, any coverage counts as valid
+        CASE
+            WHEN CARDINALITY(ARRAY(SELECT unnest(ae.required_entries) INTERSECT SELECT unnest(ate.tool_entries))) > 0 THEN 1
+            ELSE 0
+        END as has_all_required,
+        COALESCE(
+            CARDINALITY(
+                ARRAY(SELECT unnest(ae.required_entries) INTERSECT SELECT unnest(ate.tool_entries))
+            ),
+            0
+        ) as matching_count,
+        CARDINALITY(ate.tool_entries) as total_count
+    FROM artifact_entries ae
+    CROSS JOIN agent_tool_entries ate
+    -- Only include artifacts that use bindings path (not in resources path)
+    WHERE NOT EXISTS (SELECT 1 FROM artifact_resources ar WHERE ar.artifact = ae.artifact)
+),
+
+-- Rank agents for resources path (pick ONE best agent per artifact)
+ranked_agents_resources AS (
     SELECT
         artifact,
         agent_id,
         ROW_NUMBER() OVER (
             PARTITION BY artifact
             ORDER BY
-                has_all_resources DESC,
+                has_all_required DESC,
                 matching_count DESC,
-                total_tool_count ASC,  -- Prefer more specialized agents
+                total_count ASC,  -- Prefer more specialized agents
                 updated_at DESC,
                 agent_id ASC
         ) as rank
-    FROM scored_agents
-    WHERE has_all_resources = 1
+    FROM scored_agents_resources
+    WHERE has_all_required = 1
+),
+
+-- For bindings path, include ALL agents with any matching entries
+matched_agents_bindings AS (
+    SELECT DISTINCT
+        artifact,
+        agent_id
+    FROM scored_agents_bindings
+    WHERE has_all_required = 1  -- This means matching_count > 0 for bindings path
+),
+
+-- Combine: resources path (rank=1 only) + bindings path (all matching)
+final_agents AS (
+    SELECT artifact, agent_id FROM ranked_agents_resources WHERE rank = 1
+    UNION
+    SELECT artifact, agent_id FROM matched_agents_bindings
 )
+
 SELECT COALESCE(
     ARRAY_AGG(
-        (ra.artifact, ra.agent_id)::types.q_get_artifact_agent_ids_v4_item
-        ORDER BY ra.artifact
+        (fa.artifact, fa.agent_id)::types.q_get_artifact_agent_ids_v4_item
+        ORDER BY fa.artifact, fa.agent_id
     ),
     ARRAY[]::types.q_get_artifact_agent_ids_v4_item[]
 ) as items
-FROM ranked_agents ra
-WHERE ra.rank = 1;
+FROM final_agents fa;
 $$;

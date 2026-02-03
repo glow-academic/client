@@ -153,7 +153,10 @@ async def _attempt_send_impl(
                 pass
 
             # Get simulation context for model config + prompts
-            context_params = GetSimulationRunContextSqlParams(chat_id=chat_id_uuid)
+            context_params = GetSimulationRunContextSqlParams(
+                chat_id=chat_id_uuid,
+                p_agent_id=data.agent_id,
+            )
             context_result = cast(
                 GetSimulationRunContextSqlRow,
                 await execute_sql_typed(

@@ -122,8 +122,8 @@ export default function SimulationCard({
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get the training agent ID from profile context
-  const trainingAgentId = artifactAgentIds?.["training"] ?? null;
+  // Get the training agent ID from profile context (take first from array)
+  const trainingAgentId = artifactAgentIds?.["training"]?.[0] ?? null;
 
   // Cleanup function for timeout and toast
   const cleanup = useCallback(() => {

@@ -34,8 +34,8 @@ export function FullPageGenerateButton() {
       : null;
   }, [urlPathSegment]);
 
-  // Get agentId for current artifact type
-  const agentId = artifactType ? artifactAgentIds[artifactType] : null;
+  // Get agentId for current artifact type (take first from array)
+  const agentId = artifactType ? artifactAgentIds[artifactType]?.[0] ?? null : null;
 
   const handleGenerate = useCallback(() => {
     // Dispatch custom event with agentId that page components can listen to

@@ -6,7 +6,7 @@ Handles the training_start WebSocket event with full orchestration:
 - If generation needed: prepares generation, renders Jinja, emits generate_artifact
 - If no generation needed: creates attempt + chat, emits training_started
 
-Entry types: ['chats'] - Creates attempt and chat only
+Note: Creates structural entries (attempts, chats), not creatable entries.
 """
 
 import uuid

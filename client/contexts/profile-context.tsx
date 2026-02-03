@@ -129,7 +129,7 @@ interface ProfileContextType {
   }) => void;
 
   // Artifact agent IDs for generation capability (from profile context SSR)
-  artifactAgentIds: Record<string, string | null>;
+  artifactAgentIds: Record<string, string[]>;
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);

@@ -295,11 +295,17 @@ artifact_agent_ids_data AS (
     ),
     artifact_entries AS (
         -- Path 2: Get entry types via view relations
+        -- Only include entries that have creatable bindings with tool bindings
         SELECT DISTINCT
             avr.artifact,
             ver.entry
         FROM artifact_view_relation avr
         JOIN view_entry_relation ver ON ver.view = avr.view
+        JOIN bindings_resource br ON br.entry = ver.entry AND br.creatable = true
+        WHERE EXISTS (
+            SELECT 1 FROM tool_bindings_junction tbj
+            WHERE tbj.binding_id = br.id AND tbj.active = true
+        )
     ),
     artifact_entry_array AS (
         SELECT artifact, ARRAY_AGG(DISTINCT entry::text) as required_entries
@@ -371,18 +377,18 @@ artifact_agent_ids_data AS (
             aa.artifact,
             atr.agent_id,
             atr.updated_at,
-            -- Check Path 1 (resources)
+            -- Check Path 1 (resources) - must have ALL resources
             CASE
                 WHEN ar.required_resources IS NOT NULL
                      AND ar.required_resources <@ atr.tool_resources THEN 1
                 ELSE 0
             END as has_all_resources,
-            -- Check Path 2 (bindings)
+            -- Check Path 2 (bindings) - must have ANY matching entries
             CASE
                 WHEN aea.required_entries IS NOT NULL
-                     AND aea.required_entries <@ atb.tool_entries THEN 1
+                     AND CARDINALITY(ARRAY(SELECT unnest(aea.required_entries) INTERSECT SELECT unnest(atb.tool_entries))) > 0 THEN 1
                 ELSE 0
-            END as has_all_bindings,
+            END as has_any_bindings,
             COALESCE(CARDINALITY(atr.tool_resources), 0) as total_tool_count
         FROM all_artifacts aa
         CROSS JOIN agent_tool_resources atr
@@ -391,10 +397,10 @@ artifact_agent_ids_data AS (
         LEFT JOIN agent_tool_bindings atb ON atb.agent_id = atr.agent_id
     ),
     qualified_agents AS (
-        -- Agent qualifies if it matches either path
+        -- Agent qualifies if it matches resources path (all) OR bindings path (any)
         SELECT artifact, agent_id, updated_at, total_tool_count
         FROM scored_agents
-        WHERE has_all_resources = 1 OR has_all_bindings = 1
+        WHERE has_all_resources = 1 OR has_any_bindings = 1
     ),
     ranked_agents AS (
         SELECT

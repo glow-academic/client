@@ -166,11 +166,12 @@ class AttemptLeavePayload(BaseModel):
 class AttemptSendPayload(BaseModel):
     """Request payload for attempt_send WebSocket event.
 
-    Simplified payload - server looks up simulation_id and agent_id from chat_id.
+    Simplified payload - agent_id passed from frontend (from artifact_agent_ids).
     """
 
     chat_id: UUID
     content: str
+    agent_id: UUID  # Chat agent for conversation (from artifact_agent_ids['attempt'])
     voice_mode: bool = False
     upload_id: UUID | None = None
 

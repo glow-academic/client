@@ -23786,10 +23786,12 @@ class GetSimulationResourceIdsByGroupIdApiResponse(BaseModel):
 class GetSimulationRunContextSqlParams(BaseModel):
 
     chat_id: UUID
+    p_agent_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.chat_id,
+            self.p_agent_id,
         )
 
 class GetSimulationRunContextSqlRow(BaseModel):
@@ -23838,6 +23840,7 @@ class GetSimulationRunContextSqlRow(BaseModel):
 class GetSimulationRunContextApiRequest(BaseModel):
 
     chat_id: UUID
+    p_agent_id: UUID | None = None
 
 class GetSimulationRunContextApiResponse(BaseModel):
 

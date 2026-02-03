@@ -7722,7 +7722,7 @@ export interface components {
          * AttemptSendPayload
          * @description Request payload for attempt_send WebSocket event.
          *
-         *     Simplified payload - server looks up simulation_id and agent_id from chat_id.
+         *     Simplified payload - agent_id passed from frontend (from artifact_agent_ids).
          */
         AttemptSendPayload: {
             /**
@@ -7732,6 +7732,11 @@ export interface components {
             chat_id: string;
             /** Content */
             content: string;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /**
              * Voice Mode
              * @default false
@@ -12838,7 +12843,7 @@ export interface components {
             session_id?: string | null;
             /** Artifact Agent Ids */
             artifact_agent_ids?: {
-                [key: string]: string | null;
+                [key: string]: string[];
             } | null;
         };
         /** GetProviderApiRequest */

@@ -26,7 +26,8 @@ END $$;
 
 -- Recreate function
 CREATE OR REPLACE FUNCTION api_get_simulation_run_context_v4(
-    chat_id uuid
+    chat_id uuid,
+    p_agent_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     chat_id text,
@@ -347,9 +348,9 @@ LEFT JOIN (
     ORDER BY sp.scenario_id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1)
 ) first_persona ON first_persona.scenario_id = s.id
 
--- Text agent joins (use simulation agent instead of persona agent)
+-- Text agent joins (use p_agent_id parameter passed from frontend)
 
-LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+LEFT JOIN agents_resource a ON a.id = p_agent_id AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
 LEFT JOIN agent_models_junction am ON am.agent_id = a.id
 LEFT JOIN models_resource m ON m.id = am.model_id
 LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
@@ -375,9 +376,9 @@ LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id
     AND spk.active = true
 LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
 
--- Voice agent joins (use simulation agent instead of persona agent)
+-- Voice agent joins (use p_agent_id parameter passed from frontend - same as text for now)
 
-LEFT JOIN agents_resource a_voice ON a_voice.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a_voice.id AND f.name = 'agent_active' AND af.value = TRUE)
+LEFT JOIN agents_resource a_voice ON a_voice.id = p_agent_id AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a_voice.id AND f.name = 'agent_active' AND af.value = TRUE)
 LEFT JOIN agent_models_junction am_voice ON am_voice.agent_id = a_voice.id
 LEFT JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
 LEFT JOIN agent_temperature_levels_junction atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true

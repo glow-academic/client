@@ -31225,6 +31225,11 @@
             "type": "string",
             "title": "Content"
           },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "voice_mode": {
             "type": "boolean",
             "title": "Voice Mode",
@@ -31246,10 +31251,11 @@
         "type": "object",
         "required": [
           "chat_id",
-          "content"
+          "content",
+          "agent_id"
         ],
         "title": "AttemptSendPayload",
-        "description": "Request payload for attempt_send WebSocket event.\n\nSimplified payload - server looks up simulation_id and agent_id from chat_id."
+        "description": "Request payload for attempt_send WebSocket event.\n\nSimplified payload - agent_id passed from frontend (from artifact_agent_ids)."
       },
       "AttemptStopPayload": {
         "properties": {
@@ -53826,15 +53832,11 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": "array"
                 },
                 "type": "object"
               },
