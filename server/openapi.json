@@ -26444,180 +26444,20 @@
         ]
       }
     },
-    "/socket/v4/client/benchmark/enter": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Benchmark Enter Api",
-        "description": "Client-to-server event: Update test created_at timestamp when entering a test.",
-        "operationId": "benchmark_enter_api_socket_v4_client_benchmark_enter_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkEnterPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Enter Api Socket V4 Client Benchmark Enter Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v4/client/benchmark/join": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Benchmark Join Api",
-        "description": "Client-to-server event: Join a benchmark room for real-time updates.",
-        "operationId": "benchmark_join_api_socket_v4_client_benchmark_join_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkJoinPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Join Api Socket V4 Client Benchmark Join Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v4/client/benchmark/leave": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Benchmark Leave Api",
-        "description": "Client-to-server event: Leave a benchmark room.",
-        "operationId": "benchmark_leave_api_socket_v4_client_benchmark_leave_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkLeavePayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Leave Api Socket V4 Client Benchmark Leave Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
     "/socket/v4/client/benchmark/start": {
       "post": {
         "tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ],
-        "summary": "Endpoint Handler",
-        "description": "Client-to-server event: {description}",
-        "operationId": "handle_attempts_benchmark_start_start",
+        "summary": "Benchmark Start Api",
+        "description": "Client-to-server event: Start a benchmark attempt.",
+        "operationId": "benchmark_start_api_socket_v4_client_benchmark_start_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BaseModel"
+                "$ref": "#/components/schemas/BenchmarkStartPayload"
               }
             }
           },
@@ -26633,7 +26473,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Handle Attempts Benchmark Start Start"
+                  "title": "Response Benchmark Start Api Socket V4 Client Benchmark Start Post"
                 }
               }
             }
@@ -26651,26 +26491,24 @@
         },
         "x-cache-tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ]
       }
     },
-    "/socket/v4/client/benchmark/advance": {
+    "/socket/v4/client/test/join": {
       "post": {
         "tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ],
-        "summary": "Benchmark Advance Api",
-        "description": "Internal event: Update client with test/run status.",
-        "operationId": "benchmark_advance_api_socket_v4_client_benchmark_advance_post",
+        "summary": "Test Join Api",
+        "description": "Client-to-server event: Join a benchmark room for real-time updates.",
+        "operationId": "test_join_api_socket_v4_client_test_join_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BenchmarkAdvancePayload"
+                "$ref": "#/components/schemas/TestJoinPayload"
               }
             }
           },
@@ -26686,7 +26524,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Benchmark Advance Api Socket V4 Client Benchmark Advance Post"
+                  "title": "Response Test Join Api Socket V4 Client Test Join Post"
                 }
               }
             }
@@ -26704,26 +26542,24 @@
         },
         "x-cache-tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ]
       }
     },
-    "/socket/v4/client/benchmark/stop": {
+    "/socket/v4/client/test/leave": {
       "post": {
         "tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ],
-        "summary": "Benchmark Stop Api",
-        "description": "Client-to-server event: Stop a benchmark attempt.",
-        "operationId": "benchmark_stop_api_socket_v4_client_benchmark_stop_post",
+        "summary": "Test Leave Api",
+        "description": "Client-to-server event: Leave a benchmark room.",
+        "operationId": "test_leave_api_socket_v4_client_test_leave_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BenchmarkStopPayload"
+                "$ref": "#/components/schemas/TestLeavePayload"
               }
             }
           },
@@ -26739,7 +26575,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Benchmark Stop Api Socket V4 Client Benchmark Stop Post"
+                  "title": "Response Test Leave Api Socket V4 Client Test Leave Post"
                 }
               }
             }
@@ -26757,26 +26593,24 @@
         },
         "x-cache-tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ]
       }
     },
-    "/socket/v4/client/benchmark/next": {
+    "/socket/v4/client/test/stop": {
       "post": {
         "tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ],
-        "summary": "Benchmark Next Api",
-        "description": "Internal event: Process next run/group for benchmark attempt.",
-        "operationId": "benchmark_next_api_socket_v4_client_benchmark_next_post",
+        "summary": "Test Stop Api",
+        "description": "Client-to-server event: Stop current benchmark test.",
+        "operationId": "test_stop_api_socket_v4_client_test_stop_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BenchmarkNextPayload"
+                "$ref": "#/components/schemas/TestStopPayload"
               }
             }
           },
@@ -26792,7 +26626,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Benchmark Next Api Socket V4 Client Benchmark Next Post"
+                  "title": "Response Test Stop Api Socket V4 Client Test Stop Post"
                 }
               }
             }
@@ -26810,26 +26644,24 @@
         },
         "x-cache-tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ]
       }
     },
-    "/socket/v4/client/benchmark/end": {
+    "/socket/v4/client/test/send": {
       "post": {
         "tags": [
           "socket",
-          "socket-client",
           "socket-client"
         ],
-        "summary": "Benchmark End Api",
-        "description": "Internal event: End benchmark test and run grading.",
-        "operationId": "benchmark_end_api_socket_v4_client_benchmark_end_post",
+        "summary": "Test Send Api",
+        "description": "Client-to-server event: Send test input (future).",
+        "operationId": "test_send_api_socket_v4_client_test_send_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BenchmarkEndPayload"
+                "$ref": "#/components/schemas/TestSendPayload"
               }
             }
           },
@@ -26845,7 +26677,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Benchmark End Api Socket V4 Client Benchmark End Post"
+                  "title": "Response Test Send Api Socket V4 Client Test Send Post"
                 }
               }
             }
@@ -26863,113 +26695,6 @@
         },
         "x-cache-tags": [
           "socket",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v4/client/benchmark/run_start": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Endpoint Handler",
-        "description": "Client-to-server event: {description}",
-        "operationId": "handle_attempts_benchmark_run_start_run_start",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BaseModel"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Handle Attempts Benchmark Run Start Run Start"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v4/client/benchmark/runs_start_all": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Endpoint Handler",
-        "description": "Client-to-server event: {description}",
-        "operationId": "handle_attempts_benchmark_runs_start_all_runs_start_all",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BaseModel"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Handle Attempts Benchmark Runs Start All Runs Start All"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
           "socket-client"
         ]
       }
@@ -28149,6 +27874,465 @@
         ]
       }
     },
+    "/socket/v4/server/benchmark/started": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Benchmark Started Api",
+        "description": "Server-to-client event: Benchmark attempt created successfully.",
+        "operationId": "benchmark_started_api_socket_v4_server_benchmark_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkStartedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Started Api Socket V4 Server Benchmark Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/benchmark/progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Benchmark Progress Api",
+        "description": "Server-to-client event: Benchmark progress update.",
+        "operationId": "benchmark_progress_api_socket_v4_server_benchmark_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkProgressEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Progress Api Socket V4 Server Benchmark Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/benchmark/complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Benchmark Complete Api",
+        "description": "Internal event: Benchmark eval completed.",
+        "operationId": "benchmark_complete_api_socket_v4_server_benchmark_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkEvalCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Complete Api Socket V4 Server Benchmark Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/benchmark/error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Benchmark Error Api",
+        "description": "Server-to-client event: Benchmark error occurred.",
+        "operationId": "benchmark_error_api_socket_v4_server_benchmark_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkErrorEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Benchmark Error Api Socket V4 Server Benchmark Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/test/joined": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Joined Api",
+        "description": "Server-to-client event: Successfully joined a benchmark room.",
+        "operationId": "test_joined_api_socket_v4_server_test_joined_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestJoinedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Joined Api Socket V4 Server Test Joined Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/test/stopped": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Stopped Api",
+        "description": "Server-to-client event: Benchmark test stopped.",
+        "operationId": "test_stopped_api_socket_v4_server_test_stopped_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestStoppedEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Stopped Api Socket V4 Server Test Stopped Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/test/progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Progress Api",
+        "description": "Server-to-client event: Test progress update.",
+        "operationId": "test_progress_api_socket_v4_server_test_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestProgressEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Progress Api Socket V4 Server Test Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/test/complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Complete Api",
+        "description": "Server-to-client event: Test completed.",
+        "operationId": "test_complete_api_socket_v4_server_test_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestCompleteEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Complete Api Socket V4 Server Test Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/test/error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Error Api",
+        "description": "Server-to-client event: Test error occurred.",
+        "operationId": "test_error_api_socket_v4_server_test_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestErrorEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Error Api Socket V4 Server Test Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v4/server/scenario_generation_complete": {
       "post": {
         "tags": [
@@ -28349,801 +28533,6 @@
         },
         "x-cache-tags": [
           "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/enter_response": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Enter Response Api",
-        "description": "Server-to-client event: Successfully updated test created_at timestamp.",
-        "operationId": "benchmark_enter_response_api_socket_v4_server_benchmark_enter_response_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkEnterResponsePayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Enter Response Api Socket V4 Server Benchmark Enter Response Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/enter_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Enter Error Api",
-        "description": "Server-to-client event: Error occurred while updating test created_at timestamp.",
-        "operationId": "benchmark_enter_error_api_socket_v4_server_benchmark_enter_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkEnterErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Enter Error Api Socket V4 Server Benchmark Enter Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/joined": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Joined Api",
-        "description": "Server-to-client event: Successfully joined benchmark room.",
-        "operationId": "benchmark_joined_api_socket_v4_server_benchmark_joined_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkJoinedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Joined Api Socket V4 Server Benchmark Joined Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/join_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Join Error Api",
-        "description": "Server-to-client event: Error occurred while joining benchmark room.",
-        "operationId": "benchmark_join_error_api_socket_v4_server_benchmark_join_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkJoinErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Join Error Api Socket V4 Server Benchmark Join Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/leave_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Leave Error Api",
-        "description": "Server-to-client event: Error occurred while leaving benchmark room.",
-        "operationId": "benchmark_leave_error_api_socket_v4_server_benchmark_leave_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkLeaveErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Leave Error Api Socket V4 Server Benchmark Leave Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/advance_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Advance Error Api",
-        "description": "Server-to-client event: Error occurred in benchmark advance.",
-        "operationId": "benchmark_advance_error_api_socket_v4_server_benchmark_advance_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkAdvanceErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Advance Error Api Socket V4 Server Benchmark Advance Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/advanced": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Advanced Api",
-        "description": "Server-to-client event: Benchmark advanced successfully.",
-        "operationId": "benchmark_advanced_api_socket_v4_server_benchmark_advanced_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkAdvancedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Advanced Api Socket V4 Server Benchmark Advanced Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/stopped": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Stopped Api",
-        "description": "Server-to-client event: Benchmark stopped successfully.",
-        "operationId": "benchmark_stopped_api_socket_v4_server_benchmark_stopped_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkStoppedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Stopped Api Socket V4 Server Benchmark Stopped Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/stop_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Stop Error Api",
-        "description": "Server-to-client event: Error occurred while stopping benchmark.",
-        "operationId": "benchmark_stop_error_api_socket_v4_server_benchmark_stop_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkStopErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Stop Error Api Socket V4 Server Benchmark Stop Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/completed": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Completed Api",
-        "description": "Server-to-client event: Benchmark completed successfully.",
-        "operationId": "benchmark_completed_api_socket_v4_server_benchmark_completed_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkCompletedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Completed Api Socket V4 Server Benchmark Completed Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/end_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark End Error Api",
-        "description": "Server-to-client event: Error occurred in benchmark end.",
-        "operationId": "benchmark_end_error_api_socket_v4_server_benchmark_end_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkEndErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark End Error Api Socket V4 Server Benchmark End Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/run_started": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Run Started Api",
-        "description": "Server-to-client event: Run started successfully.",
-        "operationId": "benchmark_run_started_api_socket_v4_server_benchmark_run_started_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkRunStartedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Run Started Api Socket V4 Server Benchmark Run Started Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/run_start_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Run Start Error Api",
-        "description": "Server-to-client event: Error occurred while starting run.",
-        "operationId": "benchmark_run_start_error_api_socket_v4_server_benchmark_run_start_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkRunStartErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Run Start Error Api Socket V4 Server Benchmark Run Start Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/runs_start_all_started": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Runs Start All Started Api",
-        "description": "Server-to-client event: Runs started successfully.",
-        "operationId": "benchmark_runs_start_all_started_api_socket_v4_server_benchmark_runs_start_all_started_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkRunsStartAllStartedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Runs Start All Started Api Socket V4 Server Benchmark Runs Start All Started Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/benchmark/runs_start_all_error": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Benchmark Runs Start All Error Api",
-        "description": "Server-to-client event: Error occurred while starting runs.",
-        "operationId": "benchmark_runs_start_all_error_api_socket_v4_server_benchmark_runs_start_all_error_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BenchmarkRunsStartAllErrorPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Benchmark Runs Start All Error Api Socket V4 Server Benchmark Runs Start All Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
           "socket-server"
         ]
       }
@@ -31462,83 +30851,42 @@
         "title": "AvailableContinuationOptions",
         "description": "Available continuation options for an attempt."
       },
-      "BaseModel": {
-        "properties": {},
-        "type": "object",
-        "title": "BaseModel"
-      },
-      "BenchmarkAdvanceErrorPayload": {
+      "BenchmarkErrorEvent": {
         "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "benchmark"
+          },
           "success": {
             "type": "boolean",
-            "title": "Success"
+            "title": "Success",
+            "default": false
           },
           "message": {
             "type": "string",
             "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BenchmarkAdvanceErrorPayload",
-        "description": "Response indicating an error occurred in benchmark advance."
-      },
-      "BenchmarkAdvancePayload": {
-        "properties": {
-          "test_id": {
-            "type": "string",
-            "title": "Test Id"
           },
           "attempt_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Attempt Id"
           },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_id",
-          "attempt_id"
-        ],
-        "title": "BenchmarkAdvancePayload",
-        "description": "Request to update client with test/run status."
-      },
-      "BenchmarkAdvancedPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
           "test_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Test Id"
           },
           "run_id": {
@@ -31563,81 +30911,85 @@
             ],
             "title": "Group Id"
           },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "message",
-          "test_id",
-          "attempt_id"
-        ],
-        "title": "BenchmarkAdvancedPayload",
-        "description": "Response indicating benchmark advanced successfully."
-      },
-      "BenchmarkCompletedPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "test_id": {
-            "type": "string",
-            "title": "Test Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "attempt_id",
-          "test_id"
-        ],
-        "title": "BenchmarkCompletedPayload",
-        "description": "Response indicating benchmark completed successfully."
-      },
-      "BenchmarkEndErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
           "message"
         ],
-        "title": "BenchmarkEndErrorPayload",
-        "description": "Response indicating an error occurred in benchmark end."
+        "title": "BenchmarkErrorEvent",
+        "description": "Server-to-client event: benchmarks_error."
       },
-      "BenchmarkEndPayload": {
+      "BenchmarkEvalCompletePayload": {
         "properties": {
-          "test_id": {
-            "type": "string",
-            "title": "Test Id"
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
           },
           "attempt_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Attempt Id"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
           },
           "eval_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Eval Id"
           },
           "run_id": {
@@ -31662,172 +31014,73 @@
             ],
             "title": "Group Id"
           },
-          "use_groups": {
-            "type": "boolean",
-            "title": "Use Groups",
-            "default": false
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
           }
         },
         "type": "object",
-        "required": [
-          "test_id",
-          "attempt_id",
-          "eval_id"
-        ],
-        "title": "BenchmarkEndPayload",
-        "description": "Request to end benchmark test and run grading."
+        "title": "BenchmarkEvalCompletePayload",
+        "description": "Internal event payload for eval completion."
       },
-      "BenchmarkEnterErrorPayload": {
+      "BenchmarkProgressEvent": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "benchmark"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BenchmarkEnterErrorPayload",
-        "description": "Response indicating an error occurred while updating test created_at timestamp."
-      },
-      "BenchmarkEnterPayload": {
-        "properties": {
-          "test_id": {
-            "type": "string",
-            "title": "Test Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "test_id",
-          "created_at"
-        ],
-        "title": "BenchmarkEnterPayload",
-        "description": "Request to update test created_at timestamp when entering a test."
-      },
-      "BenchmarkEnterResponsePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
           },
           "test_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Test Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "test_id"
-        ],
-        "title": "BenchmarkEnterResponsePayload",
-        "description": "Response indicating successfully updated test created_at timestamp."
-      },
-      "BenchmarkJoinErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BenchmarkJoinErrorPayload",
-        "description": "Response indicating an error occurred while joining benchmark room."
-      },
-      "BenchmarkJoinPayload": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "BenchmarkJoinPayload",
-        "description": "Request to join a benchmark room for real-time updates."
-      },
-      "BenchmarkJoinedPayload": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "BenchmarkJoinedPayload",
-        "description": "Response indicating successfully joined benchmark room."
-      },
-      "BenchmarkLeaveErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BenchmarkLeaveErrorPayload",
-        "description": "Response indicating an error occurred while leaving benchmark room."
-      },
-      "BenchmarkLeavePayload": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "BenchmarkLeavePayload",
-        "description": "Request to leave a benchmark room."
-      },
-      "BenchmarkNextPayload": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
           },
           "run_id": {
             "anyOf": [
@@ -31851,49 +31104,69 @@
             ],
             "title": "Group Id"
           },
-          "use_groups": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "success": {
             "type": "boolean",
-            "title": "Use Groups",
+            "title": "Success",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkProgressEvent",
+        "description": "Server-to-client event: benchmarks_progress."
+      },
+      "BenchmarkStartPayload": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Eval Id"
+          },
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
             "default": false
           }
         },
         "type": "object",
         "required": [
-          "attempt_id",
           "eval_id"
         ],
-        "title": "BenchmarkNextPayload",
-        "description": "Request to process next run/group for benchmark attempt."
+        "title": "BenchmarkStartPayload",
+        "description": "Request payload for benchmark_start WebSocket event."
       },
-      "BenchmarkRunStartErrorPayload": {
+      "BenchmarkStartedEvent": {
         "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "benchmark"
+          },
           "success": {
             "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "run_id": {
-            "type": "string",
-            "title": "Run Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "run_id"
-        ],
-        "title": "BenchmarkRunStartErrorPayload",
-        "description": "Response indicating an error occurred while starting run."
-      },
-      "BenchmarkRunStartedPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+            "title": "Success",
+            "default": true
           },
           "message": {
             "type": "string",
@@ -31903,130 +31176,64 @@
             "type": "string",
             "title": "Attempt Id"
           },
-          "run_id": {
-            "type": "string",
-            "title": "Run Id"
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "use_groups": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Groups"
+          },
+          "pending_run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Run Ids"
+          },
+          "pending_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Group Ids"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "message",
-          "attempt_id",
-          "run_id"
-        ],
-        "title": "BenchmarkRunStartedPayload",
-        "description": "Response indicating run started successfully."
-      },
-      "BenchmarkRunsStartAllErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
           "message",
           "attempt_id"
         ],
-        "title": "BenchmarkRunsStartAllErrorPayload",
-        "description": "Response indicating an error occurred while starting runs."
-      },
-      "BenchmarkRunsStartAllStartedPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "started_count": {
-            "type": "integer",
-            "title": "Started Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "attempt_id",
-          "started_count"
-        ],
-        "title": "BenchmarkRunsStartAllStartedPayload",
-        "description": "Response indicating runs started successfully."
-      },
-      "BenchmarkStopErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BenchmarkStopErrorPayload",
-        "description": "Response indicating an error occurred while stopping benchmark."
-      },
-      "BenchmarkStopPayload": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id"
-        ],
-        "title": "BenchmarkStopPayload",
-        "description": "Request to stop a benchmark attempt."
-      },
-      "BenchmarkStoppedPayload": {
-        "properties": {
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id",
-          "success",
-          "message"
-        ],
-        "title": "BenchmarkStoppedPayload",
-        "description": "Response indicating benchmark was stopped successfully."
+        "title": "BenchmarkStartedEvent",
+        "description": "Server-to-client event: benchmarks_started."
       },
       "Body_token_default_idp_token_post": {
         "properties": {
@@ -117513,6 +116720,293 @@
         },
         "type": "object",
         "title": "TemplatesApiResponse"
+      },
+      "TestCompleteEvent": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestCompleteEvent",
+        "description": "Server-to-client event: test_complete."
+      },
+      "TestErrorEvent": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": false
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "TestErrorEvent",
+        "description": "Server-to-client event: test_error."
+      },
+      "TestJoinPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestJoinPayload",
+        "description": "Request payload for test_join WebSocket event."
+      },
+      "TestJoinedEvent": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestJoinedEvent",
+        "description": "Server-to-client event: test_joined."
+      },
+      "TestLeavePayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestLeavePayload",
+        "description": "Request payload for test_leave WebSocket event."
+      },
+      "TestProgressEvent": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestProgressEvent",
+        "description": "Server-to-client event: test_progress."
+      },
+      "TestSendPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestSendPayload",
+        "description": "Request payload for test_send WebSocket event."
+      },
+      "TestStopPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestStopPayload",
+        "description": "Request payload for test_stop WebSocket event."
+      },
+      "TestStoppedEvent": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "TestStoppedEvent",
+        "description": "Server-to-client event: test_stopped."
       },
       "TimerData": {
         "properties": {

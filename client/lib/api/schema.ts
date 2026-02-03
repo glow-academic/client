@@ -5740,66 +5740,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/benchmark/enter": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Enter Api
-         * @description Client-to-server event: Update test created_at timestamp when entering a test.
-         */
-        post: operations["benchmark_enter_api_socket_v4_client_benchmark_enter_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/benchmark/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Join Api
-         * @description Client-to-server event: Join a benchmark room for real-time updates.
-         */
-        post: operations["benchmark_join_api_socket_v4_client_benchmark_join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/benchmark/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Leave Api
-         * @description Client-to-server event: Leave a benchmark room.
-         */
-        post: operations["benchmark_leave_api_socket_v4_client_benchmark_leave_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/client/benchmark/start": {
         parameters: {
             query?: never;
@@ -5810,17 +5750,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Endpoint Handler
-         * @description Client-to-server event: {description}
+         * Benchmark Start Api
+         * @description Client-to-server event: Start a benchmark attempt.
          */
-        post: operations["handle_attempts_benchmark_start_start"];
+        post: operations["benchmark_start_api_socket_v4_client_benchmark_start_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/benchmark/advance": {
+    "/socket/v4/client/test/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -5830,17 +5770,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Advance Api
-         * @description Internal event: Update client with test/run status.
+         * Test Join Api
+         * @description Client-to-server event: Join a benchmark room for real-time updates.
          */
-        post: operations["benchmark_advance_api_socket_v4_client_benchmark_advance_post"];
+        post: operations["test_join_api_socket_v4_client_test_join_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/benchmark/stop": {
+    "/socket/v4/client/test/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -5850,17 +5790,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Stop Api
-         * @description Client-to-server event: Stop a benchmark attempt.
+         * Test Leave Api
+         * @description Client-to-server event: Leave a benchmark room.
          */
-        post: operations["benchmark_stop_api_socket_v4_client_benchmark_stop_post"];
+        post: operations["test_leave_api_socket_v4_client_test_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/benchmark/next": {
+    "/socket/v4/client/test/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -5870,17 +5810,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark Next Api
-         * @description Internal event: Process next run/group for benchmark attempt.
+         * Test Stop Api
+         * @description Client-to-server event: Stop current benchmark test.
          */
-        post: operations["benchmark_next_api_socket_v4_client_benchmark_next_post"];
+        post: operations["test_stop_api_socket_v4_client_test_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/benchmark/end": {
+    "/socket/v4/client/test/send": {
         parameters: {
             query?: never;
             header?: never;
@@ -5890,50 +5830,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Benchmark End Api
-         * @description Internal event: End benchmark test and run grading.
+         * Test Send Api
+         * @description Client-to-server event: Send test input (future).
          */
-        post: operations["benchmark_end_api_socket_v4_client_benchmark_end_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/benchmark/run_start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Client-to-server event: {description}
-         */
-        post: operations["handle_attempts_benchmark_run_start_run_start"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/client/benchmark/runs_start_all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Client-to-server event: {description}
-         */
-        post: operations["handle_attempts_benchmark_runs_start_all_runs_start_all"];
+        post: operations["test_send_api_socket_v4_client_test_send_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6400,6 +6300,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/benchmark/started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Started Api
+         * @description Server-to-client event: Benchmark attempt created successfully.
+         */
+        post: operations["benchmark_started_api_socket_v4_server_benchmark_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/benchmark/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Progress Api
+         * @description Server-to-client event: Benchmark progress update.
+         */
+        post: operations["benchmark_progress_api_socket_v4_server_benchmark_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/benchmark/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Complete Api
+         * @description Internal event: Benchmark eval completed.
+         */
+        post: operations["benchmark_complete_api_socket_v4_server_benchmark_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/benchmark/error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Error Api
+         * @description Server-to-client event: Benchmark error occurred.
+         */
+        post: operations["benchmark_error_api_socket_v4_server_benchmark_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/joined": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Joined Api
+         * @description Server-to-client event: Successfully joined a benchmark room.
+         */
+        post: operations["test_joined_api_socket_v4_server_test_joined_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/stopped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Stopped Api
+         * @description Server-to-client event: Benchmark test stopped.
+         */
+        post: operations["test_stopped_api_socket_v4_server_test_stopped_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Progress Api
+         * @description Server-to-client event: Test progress update.
+         */
+        post: operations["test_progress_api_socket_v4_server_test_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Complete Api
+         * @description Server-to-client event: Test completed.
+         */
+        post: operations["test_complete_api_socket_v4_server_test_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Error Api
+         * @description Server-to-client event: Test error occurred.
+         */
+        post: operations["test_error_api_socket_v4_server_test_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/scenario_generation_complete": {
         parameters: {
             query?: never;
@@ -6484,306 +6564,6 @@ export interface paths {
          *     Emitted when persona resource generation fails.
          */
         post: operations["persona_generation_error_api_socket_v4_server_persona_generation_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/enter_response": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Enter Response Api
-         * @description Server-to-client event: Successfully updated test created_at timestamp.
-         */
-        post: operations["benchmark_enter_response_api_socket_v4_server_benchmark_enter_response_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/enter_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Enter Error Api
-         * @description Server-to-client event: Error occurred while updating test created_at timestamp.
-         */
-        post: operations["benchmark_enter_error_api_socket_v4_server_benchmark_enter_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/joined": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Joined Api
-         * @description Server-to-client event: Successfully joined benchmark room.
-         */
-        post: operations["benchmark_joined_api_socket_v4_server_benchmark_joined_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/join_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Join Error Api
-         * @description Server-to-client event: Error occurred while joining benchmark room.
-         */
-        post: operations["benchmark_join_error_api_socket_v4_server_benchmark_join_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/leave_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Leave Error Api
-         * @description Server-to-client event: Error occurred while leaving benchmark room.
-         */
-        post: operations["benchmark_leave_error_api_socket_v4_server_benchmark_leave_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/advance_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Advance Error Api
-         * @description Server-to-client event: Error occurred in benchmark advance.
-         */
-        post: operations["benchmark_advance_error_api_socket_v4_server_benchmark_advance_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/advanced": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Advanced Api
-         * @description Server-to-client event: Benchmark advanced successfully.
-         */
-        post: operations["benchmark_advanced_api_socket_v4_server_benchmark_advanced_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/stopped": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Stopped Api
-         * @description Server-to-client event: Benchmark stopped successfully.
-         */
-        post: operations["benchmark_stopped_api_socket_v4_server_benchmark_stopped_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/stop_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Stop Error Api
-         * @description Server-to-client event: Error occurred while stopping benchmark.
-         */
-        post: operations["benchmark_stop_error_api_socket_v4_server_benchmark_stop_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/completed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Completed Api
-         * @description Server-to-client event: Benchmark completed successfully.
-         */
-        post: operations["benchmark_completed_api_socket_v4_server_benchmark_completed_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/end_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark End Error Api
-         * @description Server-to-client event: Error occurred in benchmark end.
-         */
-        post: operations["benchmark_end_error_api_socket_v4_server_benchmark_end_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/run_started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Run Started Api
-         * @description Server-to-client event: Run started successfully.
-         */
-        post: operations["benchmark_run_started_api_socket_v4_server_benchmark_run_started_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/run_start_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Run Start Error Api
-         * @description Server-to-client event: Error occurred while starting run.
-         */
-        post: operations["benchmark_run_start_error_api_socket_v4_server_benchmark_run_start_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/runs_start_all_started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Runs Start All Started Api
-         * @description Server-to-client event: Runs started successfully.
-         */
-        post: operations["benchmark_runs_start_all_started_api_socket_v4_server_benchmark_runs_start_all_started_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/benchmark/runs_start_all_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Runs Start All Error Api
-         * @description Server-to-client event: Error occurred while starting runs.
-         */
-        post: operations["benchmark_runs_start_all_error_api_socket_v4_server_benchmark_runs_start_all_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7839,271 +7619,138 @@ export interface components {
             /** Next Sequential Options */
             next_sequential_options?: components["schemas"]["ContinuationOption"][] | null;
         };
-        /** BaseModel */
-        BaseModel: Record<string, never>;
         /**
-         * BenchmarkAdvanceErrorPayload
-         * @description Response indicating an error occurred in benchmark advance.
+         * BenchmarkErrorEvent
+         * @description Server-to-client event: benchmarks_error.
          */
-        BenchmarkAdvanceErrorPayload: {
-            /** Success */
+        BenchmarkErrorEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark
+             */
+            artifact_type: string;
+            /**
+             * Success
+             * @default false
+             */
             success: boolean;
             /** Message */
             message: string;
-        };
-        /**
-         * BenchmarkAdvancePayload
-         * @description Request to update client with test/run status.
-         */
-        BenchmarkAdvancePayload: {
-            /** Test Id */
-            test_id: string;
             /** Attempt Id */
-            attempt_id: string;
+            attempt_id?: string | null;
+            /** Test Id */
+            test_id?: string | null;
             /** Run Id */
             run_id?: string | null;
             /** Group Id */
             group_id?: string | null;
+            /** Error Type */
+            error_type?: string | null;
         };
         /**
-         * BenchmarkAdvancedPayload
-         * @description Response indicating benchmark advanced successfully.
+         * BenchmarkEvalCompletePayload
+         * @description Internal event payload for eval completion.
          */
-        BenchmarkAdvancedPayload: {
-            /** Success */
+        BenchmarkEvalCompletePayload: {
+            /**
+             * Success
+             * @default true
+             */
             success: boolean;
             /** Message */
-            message: string;
+            message?: string | null;
+            /** Sid */
+            sid?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
             /** Test Id */
-            test_id: string;
+            test_id?: string | null;
+            /** Eval Id */
+            eval_id?: string | null;
             /** Run Id */
             run_id?: string | null;
             /** Group Id */
             group_id?: string | null;
-            /** Attempt Id */
-            attempt_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
-         * BenchmarkCompletedPayload
-         * @description Response indicating benchmark completed successfully.
+         * BenchmarkProgressEvent
+         * @description Server-to-client event: benchmarks_progress.
          */
-        BenchmarkCompletedPayload: {
-            /** Success */
+        BenchmarkProgressEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark
+             */
+            artifact_type: string;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Test Id */
+            test_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * BenchmarkStartPayload
+         * @description Request payload for benchmark_start WebSocket event.
+         */
+        BenchmarkStartPayload: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+        };
+        /**
+         * BenchmarkStartedEvent
+         * @description Server-to-client event: benchmarks_started.
+         */
+        BenchmarkStartedEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark
+             */
+            artifact_type: string;
+            /**
+             * Success
+             * @default true
+             */
             success: boolean;
             /** Message */
             message: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Test Id */
-            test_id: string;
-        };
-        /**
-         * BenchmarkEndErrorPayload
-         * @description Response indicating an error occurred in benchmark end.
-         */
-        BenchmarkEndErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BenchmarkEndPayload
-         * @description Request to end benchmark test and run grading.
-         */
-        BenchmarkEndPayload: {
-            /** Test Id */
-            test_id: string;
             /** Attempt Id */
             attempt_id: string;
             /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * BenchmarkEnterErrorPayload
-         * @description Response indicating an error occurred while updating test created_at timestamp.
-         */
-        BenchmarkEnterErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BenchmarkEnterPayload
-         * @description Request to update test created_at timestamp when entering a test.
-         */
-        BenchmarkEnterPayload: {
-            /** Test Id */
-            test_id: string;
-            /** Created At */
-            created_at: string;
-        };
-        /**
-         * BenchmarkEnterResponsePayload
-         * @description Response indicating successfully updated test created_at timestamp.
-         */
-        BenchmarkEnterResponsePayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Test Id */
-            test_id: string;
-        };
-        /**
-         * BenchmarkJoinErrorPayload
-         * @description Response indicating an error occurred while joining benchmark room.
-         */
-        BenchmarkJoinErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BenchmarkJoinPayload
-         * @description Request to join a benchmark room for real-time updates.
-         */
-        BenchmarkJoinPayload: {
-            /** Attempt Id */
-            attempt_id: string;
-        };
-        /**
-         * BenchmarkJoinedPayload
-         * @description Response indicating successfully joined benchmark room.
-         */
-        BenchmarkJoinedPayload: {
-            /** Attempt Id */
-            attempt_id: string;
-        };
-        /**
-         * BenchmarkLeaveErrorPayload
-         * @description Response indicating an error occurred while leaving benchmark room.
-         */
-        BenchmarkLeaveErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BenchmarkLeavePayload
-         * @description Request to leave a benchmark room.
-         */
-        BenchmarkLeavePayload: {
-            /** Attempt Id */
-            attempt_id: string;
-        };
-        /**
-         * BenchmarkNextPayload
-         * @description Request to process next run/group for benchmark attempt.
-         */
-        BenchmarkNextPayload: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-        };
-        /**
-         * BenchmarkRunStartErrorPayload
-         * @description Response indicating an error occurred while starting run.
-         */
-        BenchmarkRunStartErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Run Id */
-            run_id: string;
-        };
-        /**
-         * BenchmarkRunStartedPayload
-         * @description Response indicating run started successfully.
-         */
-        BenchmarkRunStartedPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Run Id */
-            run_id: string;
-        };
-        /**
-         * BenchmarkRunsStartAllErrorPayload
-         * @description Response indicating an error occurred while starting runs.
-         */
-        BenchmarkRunsStartAllErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Attempt Id */
-            attempt_id: string;
-        };
-        /**
-         * BenchmarkRunsStartAllStartedPayload
-         * @description Response indicating runs started successfully.
-         */
-        BenchmarkRunsStartAllStartedPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /** Started Count */
-            started_count: number;
-        };
-        /**
-         * BenchmarkStopErrorPayload
-         * @description Response indicating an error occurred while stopping benchmark.
-         */
-        BenchmarkStopErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BenchmarkStopPayload
-         * @description Request to stop a benchmark attempt.
-         */
-        BenchmarkStopPayload: {
-            /** Attempt Id */
-            attempt_id: string;
-        };
-        /**
-         * BenchmarkStoppedPayload
-         * @description Response indicating benchmark was stopped successfully.
-         */
-        BenchmarkStoppedPayload: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+            eval_id?: string | null;
+            /** Use Groups */
+            use_groups?: boolean | null;
+            /** Pending Run Ids */
+            pending_run_ids?: string[] | null;
+            /** Pending Group Ids */
+            pending_group_ids?: string[] | null;
         };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
@@ -25973,6 +25620,139 @@ export interface components {
             template_id?: string | null;
         };
         /**
+         * TestCompleteEvent
+         * @description Server-to-client event: test_complete.
+         */
+        TestCompleteEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Test Id */
+            test_id?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * TestErrorEvent
+         * @description Server-to-client event: test_error.
+         */
+        TestErrorEvent: {
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Test Id */
+            test_id?: string | null;
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Error Type */
+            error_type?: string | null;
+        };
+        /**
+         * TestJoinPayload
+         * @description Request payload for test_join WebSocket event.
+         */
+        TestJoinPayload: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /**
+         * TestJoinedEvent
+         * @description Server-to-client event: test_joined.
+         */
+        TestJoinedEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * TestLeavePayload
+         * @description Request payload for test_leave WebSocket event.
+         */
+        TestLeavePayload: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /**
+         * TestProgressEvent
+         * @description Server-to-client event: test_progress.
+         */
+        TestProgressEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Test Id */
+            test_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * TestSendPayload
+         * @description Request payload for test_send WebSocket event.
+         */
+        TestSendPayload: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Content */
+            content?: string | null;
+        };
+        /**
+         * TestStopPayload
+         * @description Request payload for test_stop WebSocket event.
+         */
+        TestStopPayload: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+        };
+        /**
+         * TestStoppedEvent
+         * @description Server-to-client event: test_stopped.
+         */
+        TestStoppedEvent: {
+            /** Attempt Id */
+            attempt_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /**
          * TimerData
          * @description Timer information.
          */
@@ -36846,7 +36626,7 @@ export interface operations {
             };
         };
     };
-    benchmark_enter_api_socket_v4_client_benchmark_enter_post: {
+    benchmark_start_api_socket_v4_client_benchmark_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36855,7 +36635,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkEnterPayload"];
+                "application/json": components["schemas"]["BenchmarkStartPayload"];
             };
         };
         responses: {
@@ -36881,7 +36661,7 @@ export interface operations {
             };
         };
     };
-    benchmark_join_api_socket_v4_client_benchmark_join_post: {
+    test_join_api_socket_v4_client_test_join_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36890,7 +36670,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkJoinPayload"];
+                "application/json": components["schemas"]["TestJoinPayload"];
             };
         };
         responses: {
@@ -36916,7 +36696,7 @@ export interface operations {
             };
         };
     };
-    benchmark_leave_api_socket_v4_client_benchmark_leave_post: {
+    test_leave_api_socket_v4_client_test_leave_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36925,7 +36705,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkLeavePayload"];
+                "application/json": components["schemas"]["TestLeavePayload"];
             };
         };
         responses: {
@@ -36951,7 +36731,7 @@ export interface operations {
             };
         };
     };
-    handle_attempts_benchmark_start_start: {
+    test_stop_api_socket_v4_client_test_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36960,7 +36740,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BaseModel"];
+                "application/json": components["schemas"]["TestStopPayload"];
             };
         };
         responses: {
@@ -36986,7 +36766,7 @@ export interface operations {
             };
         };
     };
-    benchmark_advance_api_socket_v4_client_benchmark_advance_post: {
+    test_send_api_socket_v4_client_test_send_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -36995,182 +36775,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkAdvancePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_stop_api_socket_v4_client_benchmark_stop_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkStopPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_next_api_socket_v4_client_benchmark_next_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkNextPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_end_api_socket_v4_client_benchmark_end_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkEndPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_attempts_benchmark_run_start_run_start: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_attempts_benchmark_runs_start_all_runs_start_all: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
+                "application/json": components["schemas"]["TestSendPayload"];
             };
         };
         responses: {
@@ -38003,6 +37608,321 @@ export interface operations {
             };
         };
     };
+    benchmark_started_api_socket_v4_server_benchmark_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_progress_api_socket_v4_server_benchmark_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_complete_api_socket_v4_server_benchmark_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkEvalCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_error_api_socket_v4_server_benchmark_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_joined_api_socket_v4_server_test_joined_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestJoinedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_stopped_api_socket_v4_server_test_stopped_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestStoppedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_progress_api_socket_v4_server_test_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestProgressEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_complete_api_socket_v4_server_test_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_error_api_socket_v4_server_test_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     scenario_generation_complete_api_socket_v4_server_scenario_generation_complete_post: {
         parameters: {
             query?: never;
@@ -38118,531 +38038,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PersonaGenerationErrorEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_enter_response_api_socket_v4_server_benchmark_enter_response_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkEnterResponsePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_enter_error_api_socket_v4_server_benchmark_enter_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkEnterErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_joined_api_socket_v4_server_benchmark_joined_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkJoinedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_join_error_api_socket_v4_server_benchmark_join_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkJoinErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_leave_error_api_socket_v4_server_benchmark_leave_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkLeaveErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_advance_error_api_socket_v4_server_benchmark_advance_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkAdvanceErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_advanced_api_socket_v4_server_benchmark_advanced_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkAdvancedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_stopped_api_socket_v4_server_benchmark_stopped_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkStoppedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_stop_error_api_socket_v4_server_benchmark_stop_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkStopErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_completed_api_socket_v4_server_benchmark_completed_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkCompletedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_end_error_api_socket_v4_server_benchmark_end_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkEndErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_run_started_api_socket_v4_server_benchmark_run_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkRunStartedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_run_start_error_api_socket_v4_server_benchmark_run_start_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkRunStartErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_runs_start_all_started_api_socket_v4_server_benchmark_runs_start_all_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkRunsStartAllStartedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_runs_start_all_error_api_socket_v4_server_benchmark_runs_start_all_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkRunsStartAllErrorPayload"];
             };
         };
         responses: {
