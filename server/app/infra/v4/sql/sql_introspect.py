@@ -571,6 +571,7 @@ async def fetch_function_return_columns(
         type_name_mapping = {
             "boolean": "bool",
             "double precision": "float8",
+            "real": "float4",
             "character varying": "varchar",
             "character": "char",
             "bigint": "int8",
