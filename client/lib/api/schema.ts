@@ -2183,8 +2183,9 @@ export interface paths {
          *     Unified endpoint for home and practice history, differentiated by
          *     `practice: bool` parameter.
          *
-         *     Uses simulation history view internal handler for data.
-         *     Python handles only business logic (score_status, show_view, show_continue, pass_pct).
+         *     Uses mv_attempt_facts via get_attempt_facts_internal().
+         *     Batch fetches resource metadata (simulations, personas, scenarios, profiles).
+         *     Python handles business logic (score_status, show_view, show_continue, pass_pct).
          */
         post: operations["training_list_api_v4_training_list_post"];
         delete?: never;
@@ -4798,6 +4799,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/analytics/attempts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Attempt Facts
+         * @description Get attempt facts data from mv_attempt_facts.
+         *
+         *     This endpoint fetches paginated attempt-level data with:
+         *     - Filtering (profile, attempt_type, archived, simulation, cohort, department, scenario, date, infinite_mode)
+         *     - Sorting (date, score)
+         *     - Pagination
+         *     - Filter options (simulation_options, scenario_options, profile_options)
+         *
+         *     Resource metadata (names, colors, icons) should be fetched separately
+         *     via internal resource handlers using the returned IDs.
+         */
+        post: operations["get_attempt_facts_api_v4_views_analytics_attempts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/attempts/simulation/get": {
         parameters: {
             query?: never;
@@ -7354,6 +7384,82 @@ export interface components {
             message_id?: string | null;
         };
         /**
+         * AttemptFactsItem
+         * @description Single attempt from mv_attempt_facts.
+         *
+         *     Contains all attempt-level data with resource IDs only.
+         *     Resource metadata (names, colors, etc.) fetched via internal handlers.
+         */
+        AttemptFactsItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /** Attempt Created At */
+            attempt_created_at?: string | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /**
+             * Num Chats
+             * @default 0
+             */
+            num_chats: number;
+            /**
+             * Num Chats Completed
+             * @default 0
+             */
+            num_chats_completed: number;
+            /**
+             * Num Scenarios
+             * @default 0
+             */
+            num_scenarios: number;
+            /**
+             * Num Scenarios Completed
+             * @default 0
+             */
+            num_scenarios_completed: number;
+            /** Score Percent */
+            score_percent?: number | null;
+            /**
+             * Has Passed
+             * @default false
+             */
+            has_passed: boolean;
+            /**
+             * Total Time Seconds
+             * @default 0
+             */
+            total_time_seconds: number;
+            /** Rubric Total Points */
+            rubric_total_points?: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points?: number | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+        };
+        /**
          * AttemptGradePayload
          * @description Request payload for attempt_grade WebSocket event.
          *
@@ -9628,6 +9734,124 @@ export interface components {
             should_show_controls?: boolean | null;
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
+        };
+        /**
+         * GetAttemptFactsRequest
+         * @description Request for getting attempt facts with filters and pagination.
+         */
+        GetAttemptFactsRequest: {
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Attempt Type
+             * @description Filter by attempt type: 'general' | 'practice'
+             */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation IDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort IDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Filter by department IDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario IDs (matches if any overlap)
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Infinite Mode
+             * @description Filter by infinite mode
+             */
+            infinite_mode?: boolean | null;
+            /**
+             * Date From
+             * @description Filter by date range start (inclusive)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end (exclusive)
+             */
+            date_to?: string | null;
+            /**
+             * Search
+             * @description Search term (searches simulation_id for now)
+             */
+            search?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'date' | 'score'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetAttemptFactsResponse
+         * @description Response with attempt facts and pagination info.
+         */
+        GetAttemptFactsResponse: {
+            /**
+             * Items
+             * @description Attempt facts items
+             */
+            items?: components["schemas"]["AttemptFactsItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Simulation Options
+             * @description Available simulation filter options
+             */
+            simulation_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
+            /**
+             * Scenario Options
+             * @description Available scenario filter options
+             */
+            scenario_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
+            /**
+             * Profile Options
+             * @description Available profile filter options
+             */
+            profile_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
         };
         /**
          * GetAttemptsRequest
@@ -26349,6 +26573,21 @@ export interface components {
          * FilterOption
          * @description Filter option for dropdowns.
          */
+        app__api__v4__views__analytics__attempts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
         app__api__v4__views__simulation__history__types__FilterOption: {
             /** Value */
             value: string;
@@ -34861,6 +35100,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_attempt_facts_api_v4_views_analytics_attempts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAttemptFactsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAttemptFactsResponse"];
                 };
             };
             /** @description Validation Error */

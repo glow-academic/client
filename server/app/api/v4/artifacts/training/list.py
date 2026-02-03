@@ -1,13 +1,17 @@
 """Training history endpoint - POST /training/list.
 
 Unified endpoint for both home and practice history, differentiated by
-`practice: bool` parameter. Uses simulation history view internal handler
-for data fetching. Python handles business logic: score_status, show_view,
-show_continue, pass_pct.
+`practice: bool` parameter. Uses mv_attempt_facts via internal handler
+with batch resource fetching for metadata (Option B architecture).
+
+Python handles:
+- Batch fetch resource metadata (simulations, personas, scenarios, profiles)
+- Business logic: score_status, show_view, show_continue, pass_pct
 """
 
 from datetime import datetime
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -24,8 +28,12 @@ from app.api.v4.artifacts.training.types import (
     GetTrainingHistoryResponse,
     TrainingHistoryAttempt,
 )
-from app.api.v4.views.simulation.history.get import get_simulation_history_internal
-from app.api.v4.views.simulation.history.types import HistoryViewItem
+from app.api.v4.resources.personas.get import get_personas_internal
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
+from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
+from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -51,22 +59,54 @@ router = APIRouter()
 
 
 def _transform_attempt(
-    attempt: HistoryViewItem,
+    attempt: AttemptFactsItem,
+    resource_meta: dict[str, dict[UUID, dict]],
     pass_threshold: float | None,
     practice: bool,
 ) -> TrainingHistoryAttempt:
-    """Transform history view item to API response.
+    """Transform attempt facts item to API response.
 
-    Python only computes derived business logic fields.
+    Merges resource metadata and computes business logic fields.
 
     Args:
-        attempt: History view item with metadata already JOINed.
+        attempt: Attempt facts item with IDs only.
+        resource_meta: Batch-fetched resource metadata.
         pass_threshold: Pass threshold from context for score classification.
         practice: Whether this is practice mode.
 
     Returns:
         TrainingHistoryAttempt ready for API response.
     """
+    # === MERGE RESOURCE METADATA ===
+
+    # Simulation metadata
+    sim_meta = resource_meta["simulations"].get(attempt.simulation_id, {}) if attempt.simulation_id else {}
+    simulation_name = sim_meta.get("name")
+    time_limit = sim_meta.get("time_limit")
+
+    # Profile metadata
+    profile_meta = resource_meta["profiles"].get(attempt.profile_id, {}) if attempt.profile_id else {}
+    profile_name = profile_meta.get("name")
+
+    # Persona metadata (multiple personas per attempt)
+    persona_names: list[str] = []
+    persona_colors: list[str] = []
+    if attempt.persona_ids:
+        for pid in attempt.persona_ids:
+            p_meta = resource_meta["personas"].get(pid, {})
+            if p_meta.get("name"):
+                persona_names.append(p_meta["name"])
+            if p_meta.get("color"):
+                persona_colors.append(p_meta["color"])
+
+    # Scenario metadata (multiple scenarios per attempt)
+    scenario_titles: list[str] = []
+    if attempt.scenario_ids:
+        for sid in attempt.scenario_ids:
+            s_meta = resource_meta["scenarios"].get(sid, {})
+            if s_meta.get("name"):
+                scenario_titles.append(s_meta["name"])
+
     # === PYTHON BUSINESS LOGIC: Compute derived fields ===
 
     # Compute pass_pct from rubric points
@@ -91,18 +131,17 @@ def _transform_attempt(
         infinite_mode=attempt.infinite_mode,
         num_scenarios=attempt.num_scenarios,
         num_scenarios_completed=attempt.num_scenarios_completed,
-        time_limit_seconds=attempt.time_limit,
+        time_limit_seconds=time_limit,
         elapsed_seconds=attempt.total_time_seconds,
         num_incomplete_chats=num_incomplete_chats,
     )
 
-    # Convert department_ids to strings
-    department_ids = (
-        [str(d) for d in attempt.department_ids] if attempt.department_ids else None
-    )
+    # Convert department_id to list of strings (for backwards compatibility)
+    department_ids = [str(attempt.department_id)] if attempt.department_id else None
 
-    # Convert cohort_name to list for cohort_names_junction
-    cohort_names = [attempt.cohort_name] if attempt.cohort_name else None
+    # Cohort name (would need cohort resource fetch - for now use None)
+    # TODO: Add cohort resource fetch if needed
+    cohort_names = None
 
     # Derive practice_scenario_id from scenario_ids (first one if available)
     practice_scenario_id = attempt.scenario_ids[0] if attempt.scenario_ids else None
@@ -111,17 +150,17 @@ def _transform_attempt(
         attempt_id=attempt.attempt_id,
         date=attempt.attempt_created_at.isoformat() if attempt.attempt_created_at else None,
         profile_id=attempt.profile_id,
-        profile_name=attempt.profile_name,
+        profile_name=profile_name,
         simulation_id=attempt.simulation_id,
-        simulation_name=attempt.simulation_name,
+        simulation_name=simulation_name,
         num_scenarios=attempt.num_scenarios,
         num_scenarios_completed=attempt.num_scenarios_completed,
         infinite_mode=attempt.infinite_mode,
-        time_limit=attempt.time_limit,
-        persona_names_junction=attempt.persona_names,
-        persona_colors_junction=attempt.persona_colors,
+        time_limit=time_limit,
+        persona_names_junction=persona_names if persona_names else None,
+        persona_colors_junction=persona_colors if persona_colors else None,
         scenario_ids=attempt.scenario_ids,
-        scenario_titles=attempt.scenario_names,  # scenario_names maps to scenario_titles
+        scenario_titles=scenario_titles if scenario_titles else None,
         department_ids=department_ids,
         cohort_names_junction=cohort_names,
         score=score,
@@ -134,6 +173,78 @@ def _transform_attempt(
         practice_simulation=True if practice else None,
         practice_scenario_id=practice_scenario_id if practice else None,
     )
+
+
+async def _fetch_resource_metadata(
+    conn: asyncpg.Connection,
+    simulation_ids: list[UUID],
+    profile_ids: list[UUID],
+    persona_ids: list[UUID],
+    scenario_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> dict[str, dict[UUID, dict]]:
+    """Batch fetch resource metadata using internal handlers.
+
+    Args:
+        conn: Database connection
+        simulation_ids: Unique simulation IDs to fetch
+        profile_ids: Unique profile IDs to fetch
+        persona_ids: Unique persona IDs to fetch
+        scenario_ids: Unique scenario IDs to fetch
+        bypass_cache: Skip cache lookup
+
+    Returns:
+        Dict with resource type -> id -> metadata mapping
+    """
+    result: dict[str, dict[UUID, dict]] = {
+        "simulations": {},
+        "profiles": {},
+        "personas": {},
+        "scenarios": {},
+    }
+
+    # Fetch simulations via internal handler (queries simulations_resource)
+    if simulation_ids:
+        items = await get_simulations_batch_internal(conn, simulation_ids, bypass_cache=bypass_cache)
+        for item in items:
+            if item.simulation_id:
+                result["simulations"][item.simulation_id] = {
+                    "name": item.title,
+                    "description": item.description,
+                    "time_limit": item.time_limit,
+                }
+
+    # Fetch profiles
+    if profile_ids:
+        items = await get_profiles_internal(conn, profile_ids, bypass_cache=bypass_cache)
+        for item in items:
+            if item.profile_id:
+                result["profiles"][item.profile_id] = {
+                    "name": item.name,
+                }
+
+    # Fetch personas
+    if persona_ids:
+        items = await get_personas_internal(conn, persona_ids, bypass_cache=bypass_cache)
+        for item in items:
+            if item.persona_id:
+                result["personas"][item.persona_id] = {
+                    "name": item.name,
+                    "icon": item.icon,
+                    "color": item.color,
+                }
+
+    # Fetch scenarios
+    if scenario_ids:
+        items = await get_scenarios_internal(conn, scenario_ids, bypass_cache=bypass_cache)
+        for item in items:
+            if item.scenario_id:
+                result["scenarios"][item.scenario_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                }
+
+    return result
 
 
 @router.post(
@@ -154,8 +265,9 @@ async def training_list(
     Unified endpoint for home and practice history, differentiated by
     `practice: bool` parameter.
 
-    Uses simulation history view internal handler for data.
-    Python handles only business logic (score_status, show_view, show_continue, pass_pct).
+    Uses mv_attempt_facts via get_attempt_facts_internal().
+    Batch fetches resource metadata (simulations, personas, scenarios, profiles).
+    Python handles business logic (score_status, show_view, show_continue, pass_pct).
     """
     practice = request.practice
     tags = ["training", "history", "practice" if practice else "home"]
@@ -231,65 +343,119 @@ async def training_list(
         page_size = request.page_size or 20
         page_offset = page * page_size
 
-        # === FETCH DATA FROM VIEW INTERNAL HANDLER ===
-        # Pass practice-only filters only when practice=True
-        history_result = await get_simulation_history_internal(
+        # === FETCH DATA FROM MV VIA INTERNAL HANDLER ===
+        # Convert practice bool to attempt_type string
+        attempt_type = "practice" if practice else "general"
+
+        facts_result = await get_attempt_facts_internal(
             conn=conn,
             profile_id=resource_id,
+            attempt_type=attempt_type,
+            is_archived=request.show_archived or False if practice else False,
             simulation_ids=request.simulation_ids,
             cohort_ids=request.cohort_ids,
             department_ids=request.department_ids,
-            practice=practice,
-            date_from=date_from,
-            date_to=date_to,
             scenario_ids=request.scenario_ids,
             infinite_mode=request.infinite_mode,
+            date_from=date_from,
+            date_to=date_to,
             search=request.search,
-            sort_by=request.sort_by,
-            sort_order=request.sort_order,
+            sort_by=request.sort_by or "date",
+            sort_order=request.sort_order or "desc",
             page_limit=page_size,
             page_offset=page_offset,
-            # Practice-only filters
-            profile_ids=request.profile_ids if practice else None,
-            show_archived=request.show_archived or False if practice else False,
             bypass_cache=bypass_cache,
         )
 
-        # === TRANSFORM: Only compute business logic fields ===
+        # === COLLECT UNIQUE RESOURCE IDs ===
+        all_simulation_ids: set[UUID] = set()
+        all_profile_ids: set[UUID] = set()
+        all_persona_ids: set[UUID] = set()
+        all_scenario_ids: set[UUID] = set()
+
+        for item in facts_result.items:
+            if item.simulation_id:
+                all_simulation_ids.add(item.simulation_id)
+            if item.profile_id:
+                all_profile_ids.add(item.profile_id)
+            if item.persona_ids:
+                all_persona_ids.update(item.persona_ids)
+            if item.scenario_ids:
+                all_scenario_ids.update(item.scenario_ids)
+
+        # === BATCH FETCH RESOURCE METADATA ===
+        resource_meta = await _fetch_resource_metadata(
+            conn=conn,
+            simulation_ids=list(all_simulation_ids),
+            profile_ids=list(all_profile_ids),
+            persona_ids=list(all_persona_ids),
+            scenario_ids=list(all_scenario_ids),
+            bypass_cache=bypass_cache,
+        )
+
+        # === TRANSFORM: Merge metadata + compute business logic ===
         attempts: list[TrainingHistoryAttempt] = []
-        for attempt in history_result.items:
-            attempts.append(_transform_attempt(attempt, context.pass_threshold, practice))
+        for attempt in facts_result.items:
+            attempts.append(_transform_attempt(attempt, resource_meta, context.pass_threshold, practice))
 
         # === CONVERT FILTER OPTIONS ===
+        # Filter options from MV have IDs as labels - need to resolve names
         simulation_options = None
-        if history_result.simulation_options:
-            simulation_options = [
-                FilterOption(value=opt.value, label=opt.label, count=opt.count)
-                for opt in history_result.simulation_options
-            ]
+        if facts_result.simulation_options:
+            simulation_options = []
+            for opt in facts_result.simulation_options:
+                if opt.value:
+                    # Try to get name from resource_meta, fallback to ID
+                    try:
+                        sim_id = UUID(opt.value)
+                        sim_meta = resource_meta["simulations"].get(sim_id, {})
+                        label = sim_meta.get("name") or opt.value
+                    except ValueError:
+                        label = opt.value
+                    simulation_options.append(
+                        FilterOption(value=opt.value, label=label, count=opt.count or 0)
+                    )
 
         scenario_options = None
-        if history_result.scenario_options:
-            scenario_options = [
-                FilterOption(value=opt.value, label=opt.label, count=opt.count)
-                for opt in history_result.scenario_options
-            ]
+        if facts_result.scenario_options:
+            scenario_options = []
+            for opt in facts_result.scenario_options:
+                if opt.value:
+                    # Try to get name from resource_meta, fallback to ID
+                    try:
+                        scn_id = UUID(opt.value)
+                        scn_meta = resource_meta["scenarios"].get(scn_id, {})
+                        label = scn_meta.get("name") or opt.value
+                    except ValueError:
+                        label = opt.value
+                    scenario_options.append(
+                        FilterOption(value=opt.value, label=label, count=opt.count or 0)
+                    )
 
         # Practice-only: profile filter options
         profile_options = None
-        if practice and history_result.profile_options:
-            profile_options = [
-                FilterOption(value=opt.value, label=opt.label, count=opt.count)
-                for opt in history_result.profile_options
-            ]
+        if practice and facts_result.profile_options:
+            profile_options = []
+            for opt in facts_result.profile_options:
+                if opt.value:
+                    # Try to get name from resource_meta, fallback to ID
+                    try:
+                        prof_id = UUID(opt.value)
+                        prof_meta = resource_meta["profiles"].get(prof_id, {})
+                        label = prof_meta.get("name") or opt.value
+                    except ValueError:
+                        label = opt.value
+                    profile_options.append(
+                        FilterOption(value=opt.value, label=label, count=opt.count or 0)
+                    )
 
         # === COMPUTE PAGINATION INFO ===
-        total_count = history_result.total_count
+        total_count = facts_result.total_count
         total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
         # === BUILD RESPONSE ===
         api_response = GetTrainingHistoryResponse(
-            actor_name=history_result.actor_name or context.actor_name,
+            actor_name=context.actor_name,
             data=attempts,
             total_count=total_count,
             page=page,

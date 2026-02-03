@@ -25529,19 +25529,18 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
-# Generated from: get_attempt_facts_v4
+# Generated from: get_attempt_facts
 
-class GetAttemptFactsV4SqlParams(BaseModel):
+class GetAttemptFactsSqlParams(BaseModel):
 
-    profile_id_param: UUID | None = None
-    profile_ids: list[UUID] | None = None
+    profile_id_filter: UUID | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
     simulation_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
-    attempt_type_param: str | None = None
-    show_archived: bool | None = False
-    infinite_mode_param: bool | None = None
+    infinite_mode: bool | None = None
     date_from: datetime
     date_to: datetime
     search: str | None = None
@@ -25552,15 +25551,14 @@ class GetAttemptFactsV4SqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.profile_id_param,
-            self.profile_ids,
+            self.profile_id_filter,
+            self.attempt_type_filter,
+            self.is_archived_filter,
             self.simulation_ids,
             self.cohort_ids,
             self.department_ids,
             self.scenario_ids,
-            self.attempt_type_param,
-            self.show_archived,
-            self.infinite_mode_param,
+            self.infinite_mode,
             self.date_from,
             self.date_to,
             self.search,
@@ -25570,15 +25568,6 @@ class GetAttemptFactsV4SqlParams(BaseModel):
             self.page_offset,
         )
 
-class QGetAttemptFactsV4FilterOption(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    count: int | None
-
-
-
-
 class QGetAttemptFactsV4Item(BaseModel):
 
     attempt_id: UUID | None
@@ -25586,10 +25575,6 @@ class QGetAttemptFactsV4Item(BaseModel):
     simulation_id: UUID | None
     cohort_id: UUID | None
     department_id: UUID | None
-    simulation_name: str | None
-    profile_name: str | None
-    cohort_name: str | None
-    department_name: str | None
     attempt_created_at: datetime | None
     attempt_type: str | None
     is_archived: bool | None
@@ -25605,28 +25590,34 @@ class QGetAttemptFactsV4Item(BaseModel):
     rubric_pass_points: int | None
     scenario_ids: list[UUID] | None
     persona_ids: list[UUID] | None
-    scenario_names: list[str] | None
-    persona_names: list[str] | None
 
-class GetAttemptFactsV4SqlRow(BaseModel):
 
-    total_count: int | None = None
+
+
+class QGetAttemptFactsV4Option(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetAttemptFactsSqlRow(BaseModel):
+
     items: list[QGetAttemptFactsV4Item] | None = None
-    simulation_options: list[QGetAttemptFactsV4FilterOption] | None = None
-    scenario_options: list[QGetAttemptFactsV4FilterOption] | None = None
-    profile_options: list[QGetAttemptFactsV4FilterOption] | None = None
+    total_count: int | None = None
+    simulation_options: list[QGetAttemptFactsV4Option] | None = None
+    scenario_options: list[QGetAttemptFactsV4Option] | None = None
+    profile_options: list[QGetAttemptFactsV4Option] | None = None
 
-class GetAttemptFactsV4ApiRequest(BaseModel):
+class GetAttemptFactsApiRequest(BaseModel):
 
-    profile_id_param: UUID | None = None
-    profile_ids: list[UUID] | None = None
+    profile_id_filter: UUID | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
     simulation_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
-    attempt_type_param: str | None = None
-    show_archived: bool | None = False
-    infinite_mode_param: bool | None = None
+    infinite_mode: bool | None = None
     date_from: datetime
     date_to: datetime
     search: str | None = None
@@ -25635,13 +25626,13 @@ class GetAttemptFactsV4ApiRequest(BaseModel):
     page_limit: int | None = 50
     page_offset: int | None = 0
 
-class GetAttemptFactsV4ApiResponse(BaseModel):
+class GetAttemptFactsApiResponse(BaseModel):
 
-    total_count: int | None = None
     items: list[QGetAttemptFactsV4Item] | None = None
-    simulation_options: list[QGetAttemptFactsV4FilterOption] | None = None
-    scenario_options: list[QGetAttemptFactsV4FilterOption] | None = None
-    profile_options: list[QGetAttemptFactsV4FilterOption] | None = None
+    total_count: int | None = None
+    simulation_options: list[QGetAttemptFactsV4Option] | None = None
+    scenario_options: list[QGetAttemptFactsV4Option] | None = None
+    profile_options: list[QGetAttemptFactsV4Option] | None = None
 
 
 
@@ -29112,11 +29103,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideoRunContextAndCreateRunApiRequest",
         "GetVideoRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v4/queries/views/analytics/get_attempt_facts_v4_complete.sql": (
-        "GetAttemptFactsV4SqlParams",
-        "GetAttemptFactsV4SqlRow",
-        "GetAttemptFactsV4ApiRequest",
-        "GetAttemptFactsV4ApiResponse",
+    "app/sql/v4/queries/views/analytics/get_attempt_facts_complete.sql": (
+        "GetAttemptFactsSqlParams",
+        "GetAttemptFactsSqlRow",
+        "GetAttemptFactsApiRequest",
+        "GetAttemptFactsApiResponse",
     ),
     "app/sql/v4/queries/views/analytics/get_chat_facts_v4_complete.sql": (
         "GetChatFactsV4SqlParams",
@@ -31460,7 +31451,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/analytics/get_attempt_facts_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/views/analytics/get_attempt_facts_complete.sql"]
     ) -> SqlString: ...
 
     @overload
