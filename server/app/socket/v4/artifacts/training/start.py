@@ -346,6 +346,11 @@ async def _training_start_impl(
                 scenario_data=scenario_data,
             )
 
+            # Step 6: Refresh MVs so attempt is immediately visible
+            await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_attempts")
+            await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_chats")
+
+            # Step 7: Emit training_started event (after MVs refreshed)
             await sio.emit(
                 "training_started",
                 started_event.model_dump(mode="json"),
