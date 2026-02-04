@@ -272,8 +272,8 @@ class AttemptUserCompleteEvent(BaseModel):
     Emitted when user message is finalized (text or voice).
     """
 
-    chat_id: str
-    message_id: str
+    group_id: str
+    message_id: str  # User message ID (not a generation run_id)
     content: str
     created_at: str
     persona_id: str | None = None
