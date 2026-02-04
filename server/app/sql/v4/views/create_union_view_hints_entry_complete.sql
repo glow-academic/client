@@ -11,7 +11,7 @@ SELECT
     h.id,
     h.message_id,
     h.hint,
-    h.idx,
+    (ROW_NUMBER() OVER (PARTITION BY h.message_id ORDER BY h.created_at) - 1)::int AS idx,
     h.created_at,
     h.updated_at,
     h.generated,

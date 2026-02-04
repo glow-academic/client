@@ -32,7 +32,7 @@ SELECT
         WHERE c.message_id = m.id AND c.active = true),
         '{}'::jsonb[]
     ) AS contents,
-    -- All hints as array (ordered by idx)
+    -- All hints as array (ordered by created_at)
     COALESCE(
         (SELECT ARRAY_AGG(
             jsonb_build_object(
@@ -42,8 +42,18 @@ SELECT
                 'call_id', h.call_id
             ) ORDER BY h.idx
         )
-        FROM simulation_hints_entry h
-        WHERE h.message_id = m.id AND h.active = true),
+        FROM (
+            SELECT
+                h.id,
+                h.message_id,
+                h.hint,
+                h.call_id,
+                h.created_at,
+                (ROW_NUMBER() OVER (PARTITION BY h.message_id ORDER BY h.created_at) - 1) AS idx
+            FROM simulation_hints_entry h
+            WHERE h.active = true
+        ) h
+        WHERE h.message_id = m.id),
         '{}'::jsonb[]
     ) AS hints,
     -- Audio if present

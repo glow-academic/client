@@ -157,8 +157,14 @@ hints_agg AS (
             (h.hint, h.idx)::types.mv_hint
             ORDER BY h.idx
         ) AS hints
-    FROM simulation_hints_entry h
-    WHERE h.active = TRUE
+    FROM (
+        SELECT
+            h.message_id,
+            h.hint,
+            (ROW_NUMBER() OVER (PARTITION BY h.message_id ORDER BY h.created_at) - 1)::int AS idx
+        FROM simulation_hints_entry h
+        WHERE h.active = TRUE
+    ) h
     GROUP BY h.message_id
 ),
 -- Aggregate contents per message (id removed, only persona_id - metadata fetched via handler)
