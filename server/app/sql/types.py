@@ -21501,6 +21501,75 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_analytics_daily_metrics_view
+
+class GetAnalyticsDailyMetricsViewSqlParams(BaseModel):
+
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: date | None = None
+    date_to: date | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 365
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.cohort_ids,
+            self.simulation_ids,
+            self.attempt_type_filter,
+            self.is_archived_filter,
+            self.date_from,
+            self.date_to,
+            self.sort_by,
+            self.sort_order,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetAnalyticsDailyMetricsViewV4Item(BaseModel):
+
+    date_key: str | None
+    cohort_id: UUID | None
+    simulation_id: UUID | None
+    attempt_type: str | None
+    is_archived: bool | None
+    attempt_count: int | None
+    unique_profiles: int | None
+    completed_count: int | None
+    passed_count: int | None
+    avg_score: float | None
+    total_time_seconds: int | None
+    avg_messages: float | None
+
+class GetAnalyticsDailyMetricsViewSqlRow(BaseModel):
+
+    total_count: int | None = None
+    items: list[QGetAnalyticsDailyMetricsViewV4Item] | None = None
+
+class GetAnalyticsDailyMetricsViewApiRequest(BaseModel):
+
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: date | None = None
+    date_to: date | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 365
+    page_offset: int | None = 0
+
+class GetAnalyticsDailyMetricsViewApiResponse(BaseModel):
+
+    total_count: int | None = None
+    items: list[QGetAnalyticsDailyMetricsViewV4Item] | None = None
+
+
+
 # Generated from: get_attempt_facts
 
 class GetAttemptFactsSqlParams(BaseModel):
@@ -24885,6 +24954,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideoRunContextAndCreateRunApiRequest",
         "GetVideoRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/views/analytics/daily_metrics/get_analytics_daily_metrics_view_complete.sql": (
+        "GetAnalyticsDailyMetricsViewSqlParams",
+        "GetAnalyticsDailyMetricsViewSqlRow",
+        "GetAnalyticsDailyMetricsViewApiRequest",
+        "GetAnalyticsDailyMetricsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/get_attempt_facts_complete.sql": (
         "GetAttemptFactsSqlParams",
         "GetAttemptFactsSqlRow",
@@ -27025,6 +27100,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/analytics/daily_metrics/get_analytics_daily_metrics_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

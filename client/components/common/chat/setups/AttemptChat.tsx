@@ -38,10 +38,8 @@ import type { QuestionReviewViewProps } from "../chatAreas/QuestionReviewView";
 import { QuestionReviewView } from "../chatAreas/QuestionReviewView";
 import type { QuestionTakingInputProps } from "../inputAreas/QuestionTakingInput";
 import { QuestionTakingInput } from "../inputAreas/QuestionTakingInput";
-import type { TextInputProps } from "../inputAreas/TextInput";
-import { TextInput } from "../inputAreas/TextInput";
-import type { VoiceInputHandle, VoiceInputProps } from "../inputAreas/VoiceInput";
-import { VoiceInput } from "../inputAreas/VoiceInput";
+import type { HybridInputProps, HybridInputHandle } from "../inputAreas/HybridInput";
+import { HybridInput } from "../inputAreas/HybridInput";
 
 // ============================================================================
 // TYPES
@@ -227,7 +225,7 @@ export function AttemptChat({
   const sendingMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptDeltasRef = useRef<Map<string, string>>(new Map());
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
-  const voiceInputRef = useRef<VoiceInputHandle | null>(null);
+  const voiceInputRef = useRef<HybridInputHandle | null>(null);
   const dataFetchedAtRef = useRef<number>(Date.now());
   const gradingProgressRef = useRef<{
     completed: number;
@@ -1650,20 +1648,22 @@ export function AttemptChat({
         onQuestionIndexChange: setQuestionIndex,
       };
       return props;
-    } else if (audioEnabled && !textEnabled) {
-      const props: VoiceInputProps = {
-        enabled: !currentChat?.completed ?? true,
-        on_voice_start: handleVoiceStart,
-        on_voice_stop: handleVoiceStop,
-        on_pcm16_data: handlePcm16Data,
-        on_mic_mute: handleMicMute,
-        current_chat: currentChat ? { id: currentChat.id } : null,
-        is_connected: isConnected,
-      };
-      return props;
     } else {
-      const props: TextInputProps = {
+      // Use HybridInput for all text/audio scenarios
+      const props: HybridInputProps = {
+        text_enabled: textEnabled,
+        audio_enabled: audioEnabled,
         enabled: !currentChat?.completed ?? true,
+        is_connected: isConnected,
+        disabled: false,
+        is_attempt_owner: true,
+        current_chat: currentChat
+          ? {
+              id: currentChat.id,
+              completed: currentChat.completed ?? null,
+            }
+          : null,
+        // Text input props
         copy_paste_allowed:
           scenario?.copy_paste_allowed ??
           attemptData?.simulation?.copy_paste_allowed ??
@@ -1672,15 +1672,12 @@ export function AttemptChat({
         on_stop_message: handleStopMessage,
         is_sending_message: isSendingMessage,
         is_stopping_message: isStoppingMessage,
-        is_connected: isConnected,
-        current_chat: currentChat
-          ? {
-              id: currentChat.id,
-              completed: currentChat.completed ?? null,
-            }
-          : null,
-        is_attempt_owner: true,
         on_height_change: setInputPanelHeight,
+        // Voice input props
+        on_voice_start: handleVoiceStart,
+        on_voice_stop: handleVoiceStop,
+        on_pcm16_data: handlePcm16Data,
+        on_mic_mute: handleMicMute,
       };
       return props;
     }
@@ -1726,23 +1723,21 @@ export function AttemptChat({
   }, [chatAreaViewMode]);
 
   const InputAreaComponent = useMemo(() => {
-    const textEnabled = scenario?.text_enabled !== false;
-    const audioEnabled = scenario?.audio_enabled === true;
     const hasVideoQuestions =
       resolvedChat?.questions && resolvedChat.questions.length > 0;
 
     // Use QuestionTakingInput for video questions (only when not in graded-video mode)
     if (hasVideoQuestions && chatAreaViewMode !== "graded-video") {
       return QuestionTakingInput;
-    } else if (audioEnabled && !textEnabled) {
-      return VoiceInput;
     } else {
-      return TextInput;
+      // Use HybridInput for all text/audio scenarios
+      return HybridInput;
     }
-  }, [scenario, attemptData, currentChatIndex, chatAreaViewMode, resolvedChat]);
+  }, [chatAreaViewMode, resolvedChat]);
 
   const inputAreaRef = useMemo(() => {
-    if (InputAreaComponent === VoiceInput) {
+    // HybridInput always needs the ref for audio playback
+    if (InputAreaComponent === HybridInput) {
       return voiceInputRef;
     }
     return undefined;

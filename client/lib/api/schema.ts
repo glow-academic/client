@@ -4448,6 +4448,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/analytics/chat-facts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Chat Facts
+         * @description Get chat facts data from mv_chat_facts with filter/search only (no joins).
+         */
+        post: operations["get_chat_facts_api_v4_views_analytics_chat_facts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/analytics/daily-metrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Daily Metrics
+         * @description Get daily metrics data from mv_daily_metrics with filter/search only (no joins).
+         */
+        post: operations["get_daily_metrics_api_v4_views_analytics_daily_metrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/analytics/profile-metrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile Metrics
+         * @description Get profile metrics data from mv_profile_metrics with filter/search only (no joins).
+         */
+        post: operations["get_profile_metrics_api_v4_views_analytics_profile_metrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/pricing/run-facts/get": {
         parameters: {
             query?: never;
@@ -8026,6 +8086,97 @@ export interface components {
             standard_ids?: string[] | null;
         };
         /**
+         * ChatFactsItem
+         * @description Single chat row from mv_chat_facts.
+         */
+        ChatFactsItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Grade Id */
+            grade_id?: string | null;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /** Role Id */
+            role_id?: string | null;
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /**
+             * Attempt Created At
+             * Format: date-time
+             */
+            attempt_created_at: string;
+            /**
+             * Chat Created At
+             * Format: date-time
+             */
+            chat_created_at: string;
+            /** Grade Created At */
+            grade_created_at?: string | null;
+            /** Attempt Type */
+            attempt_type: string;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Grade Percent */
+            grade_percent?: number | null;
+            /** Rubric Total Points */
+            rubric_total_points?: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points?: number | null;
+            /**
+             * Num Messages Total
+             * @default 0
+             */
+            num_messages_total: number;
+            /** Message Time Taken Seconds */
+            message_time_taken_seconds?: number[];
+        };
+        /**
          * ChatViewItem
          * @description Single chat from the simulation chats view.
          */
@@ -8387,6 +8538,60 @@ export interface components {
             actor_name?: string | null;
             /** Session Id */
             session_id?: string | null;
+        };
+        /**
+         * DailyMetricsItem
+         * @description Single row from mv_daily_metrics.
+         */
+        DailyMetricsItem: {
+            /**
+             * Date Key
+             * Format: date
+             */
+            date_key: string;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Attempt Type */
+            attempt_type: string;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Attempt Count
+             * @default 0
+             */
+            attempt_count: number;
+            /**
+             * Unique Profiles
+             * @default 0
+             */
+            unique_profiles: number;
+            /**
+             * Completed Count
+             * @default 0
+             */
+            completed_count: number;
+            /**
+             * Passed Count
+             * @default 0
+             */
+            passed_count: number;
+            /** Avg Score */
+            avg_score?: number | null;
+            /**
+             * Total Time Seconds
+             * @default 0
+             */
+            total_time_seconds: number;
+            /** Avg Messages */
+            avg_messages?: number | null;
         };
         /**
          * DashboardRequest
@@ -10022,6 +10227,78 @@ export interface components {
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
         /**
+         * GetChatFactsRequest
+         * @description Request for filtering mv_chat_facts.
+         */
+        GetChatFactsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Completed */
+            completed?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'score'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetChatFactsResponse
+         * @description Response for chat facts query.
+         */
+        GetChatFactsResponse: {
+            /** Items */
+            items?: components["schemas"]["ChatFactsItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetChatsRequest
          * @description Request for getting chat data.
          */
@@ -10209,6 +10486,62 @@ export interface components {
         GetColorsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetColorsV4Item"][] | null;
+        };
+        /**
+         * GetDailyMetricsRequest
+         * @description Request for filtering mv_daily_metrics.
+         */
+        GetDailyMetricsRequest: {
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'avg_score'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description 'asc' | 'desc'
+             * @default asc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 365
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetDailyMetricsResponse
+         * @description Response for daily metrics query.
+         */
+        GetDailyMetricsResponse: {
+            /** Items */
+            items?: components["schemas"]["DailyMetricsItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /** GetDepartmentApiRequest */
         GetDepartmentApiRequest: {
@@ -12189,6 +12522,66 @@ export interface components {
             artifact_agent_ids?: {
                 [key: string]: string[];
             } | null;
+        };
+        /**
+         * GetProfileMetricsRequest
+         * @description Request for filtering mv_profile_metrics.
+         */
+        GetProfileMetricsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Attempt Type */
+            attempt_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Min Attempts */
+            min_attempts?: number | null;
+            /**
+             * Sort By
+             * @description 'avg_score' | 'highest_score' | 'total_attempts' | 'improvement' | 'last_attempt_at'
+             * @default avg_score
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description 'asc' | 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetProfileMetricsResponse
+         * @description Response for profile metrics query.
+         */
+        GetProfileMetricsResponse: {
+            /** Items */
+            items?: components["schemas"]["ProfileMetricsItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /** GetProviderApiRequest */
         GetProviderApiRequest: {
@@ -16035,6 +16428,64 @@ export interface components {
             rows?: components["schemas"]["QProcessDocumentCsvV4ProcessedRow"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /**
+         * ProfileMetricsItem
+         * @description Single row from mv_profile_metrics.
+         */
+        ProfileMetricsItem: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Attempt Type */
+            attempt_type: string;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Total Attempts
+             * @default 0
+             */
+            total_attempts: number;
+            /** Avg Score */
+            avg_score?: number | null;
+            /** Highest Score */
+            highest_score?: number | null;
+            /** Completion Pct */
+            completion_pct?: number | null;
+            /** First Attempt Pass Rate */
+            first_attempt_pass_rate?: number | null;
+            /** Avg Messages Per Session */
+            avg_messages_per_session?: number | null;
+            /** Avg Persona Response Sec */
+            avg_persona_response_sec?: number | null;
+            /** Session Efficiency */
+            session_efficiency?: number | null;
+            /** Total Time Minutes */
+            total_time_minutes?: number | null;
+            /** Improvement Rate */
+            improvement_rate?: number | null;
+            /**
+             * Perfect Score Count
+             * @default 0
+             */
+            perfect_score_count: number;
+            /** Quickest Pass Minutes */
+            quickest_pass_minutes?: number | null;
+            /** First Attempt At */
+            first_attempt_at?: string | null;
+            /** Last Attempt At */
+            last_attempt_at?: string | null;
+            /** Simulation Ids */
+            simulation_ids?: string[];
+            /** Scenario Ids */
+            scenario_ids?: string[];
+            /** Cohort Ids */
+            cohort_ids?: string[];
         };
         /** PromptsApiRequest */
         PromptsApiRequest: {
@@ -30070,6 +30521,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAttemptFactsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chat_facts_api_v4_views_analytics_chat_facts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetChatFactsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetChatFactsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_daily_metrics_api_v4_views_analytics_daily_metrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDailyMetricsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDailyMetricsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_metrics_api_v4_views_analytics_profile_metrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileMetricsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProfileMetricsResponse"];
                 };
             };
             /** @description Validation Error */

@@ -20780,6 +20780,315 @@
         ]
       }
     },
+    "/api/v4/views/analytics/chat-facts/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "chat_facts"
+        ],
+        "summary": "Get Chat Facts",
+        "description": "Get chat facts data from mv_chat_facts with filter/search only (no joins).",
+        "operationId": "get_chat_facts_api_v4_views_analytics_chat_facts_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetChatFactsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetChatFactsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "chat_facts"
+        ]
+      }
+    },
+    "/api/v4/views/analytics/daily-metrics/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "daily_metrics"
+        ],
+        "summary": "Get Daily Metrics",
+        "description": "Get daily metrics data from mv_daily_metrics with filter/search only (no joins).",
+        "operationId": "get_daily_metrics_api_v4_views_analytics_daily_metrics_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetDailyMetricsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDailyMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "daily_metrics"
+        ]
+      }
+    },
+    "/api/v4/views/analytics/profile-metrics/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "profile_metrics"
+        ],
+        "summary": "Get Profile Metrics",
+        "description": "Get profile metrics data from mv_profile_metrics with filter/search only (no joins).",
+        "operationId": "get_profile_metrics_api_v4_views_analytics_profile_metrics_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetProfileMetricsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProfileMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "profile_metrics"
+        ]
+      }
+    },
     "/api/v4/views/pricing/run-facts/get": {
       "post": {
         "tags": [
@@ -31477,6 +31786,239 @@
         "title": "ChatData",
         "description": "Chat view data with IDs for related resources.\n\nSplit into view categories:\n- Normal/General View: problem_statement, objectives, personas, images\n- Video/Quiz View: videos, questions, options, responses\n- Both Views: documents, templates"
       },
+      "ChatFactsItem": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "role_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Id"
+          },
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "attempt_created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Attempt Created At"
+          },
+          "chat_created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Chat Created At"
+          },
+          "grade_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Created At"
+          },
+          "attempt_type": {
+            "type": "string",
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
+            "default": false
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "grade_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Percent"
+          },
+          "rubric_total_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Total Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
+          },
+          "num_messages_total": {
+            "type": "integer",
+            "title": "Num Messages Total",
+            "default": 0
+          },
+          "message_time_taken_seconds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Message Time Taken Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id",
+          "simulation_id",
+          "profile_id",
+          "scenario_id",
+          "attempt_created_at",
+          "chat_created_at",
+          "attempt_type"
+        ],
+        "title": "ChatFactsItem",
+        "description": "Single chat row from mv_chat_facts."
+      },
       "ChatViewItem": {
         "properties": {
           "chat_id": {
@@ -32901,6 +33443,96 @@
         },
         "type": "object",
         "title": "CreateOrUpdateProfileApiResponse"
+      },
+      "DailyMetricsItem": {
+        "properties": {
+          "date_key": {
+            "type": "string",
+            "format": "date",
+            "title": "Date Key"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "attempt_type": {
+            "type": "string",
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count",
+            "default": 0
+          },
+          "unique_profiles": {
+            "type": "integer",
+            "title": "Unique Profiles",
+            "default": 0
+          },
+          "completed_count": {
+            "type": "integer",
+            "title": "Completed Count",
+            "default": 0
+          },
+          "passed_count": {
+            "type": "integer",
+            "title": "Passed Count",
+            "default": 0
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "total_time_seconds": {
+            "type": "integer",
+            "title": "Total Time Seconds",
+            "default": 0
+          },
+          "avg_messages": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_key",
+          "simulation_id",
+          "attempt_type"
+        ],
+        "title": "DailyMetricsItem",
+        "description": "Single row from mv_daily_metrics."
       },
       "DashboardRequest": {
         "properties": {
@@ -38414,6 +39046,232 @@
         "type": "object",
         "title": "GetCertificateDataApiRequest"
       },
+      "GetChatFactsRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "'date' | 'score'",
+            "default": "date"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "'asc' | 'desc'",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetChatFactsRequest",
+        "description": "Request for filtering mv_chat_facts."
+      },
+      "GetChatFactsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatFactsItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetChatFactsResponse",
+        "description": "Response for chat facts query."
+      },
       "GetChatsRequest": {
         "properties": {
           "attempt_id": {
@@ -39296,6 +40154,127 @@
         },
         "type": "object",
         "title": "GetColorsApiResponse"
+      },
+      "GetDailyMetricsRequest": {
+        "properties": {
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "'date' | 'avg_score'",
+            "default": "date"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "'asc' | 'desc'",
+            "default": "asc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 365
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetDailyMetricsRequest",
+        "description": "Request for filtering mv_daily_metrics."
+      },
+      "GetDailyMetricsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DailyMetricsItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetDailyMetricsResponse",
+        "description": "Response for daily metrics query."
       },
       "GetDepartmentApiRequest": {
         "properties": {
@@ -49090,6 +50069,156 @@
         "type": "object",
         "title": "GetProfileContextApiResponse",
         "description": "Extended profile context response with artifact_agent_ids."
+      },
+      "GetProfileMetricsRequest": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "attempt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "min_attempts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Attempts"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "description": "'avg_score' | 'highest_score' | 'total_attempts' | 'improvement' | 'last_attempt_at'",
+            "default": "avg_score"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "description": "'asc' | 'desc'",
+            "default": "desc"
+          },
+          "page_limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Limit",
+            "default": 50
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetProfileMetricsRequest",
+        "description": "Request for filtering mv_profile_metrics."
+      },
+      "GetProfileMetricsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileMetricsItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetProfileMetricsResponse",
+        "description": "Response for profile metrics query."
       },
       "GetProviderApiRequest": {
         "properties": {
@@ -64631,6 +65760,199 @@
         },
         "type": "object",
         "title": "ProcessDocumentCsvApiResponse"
+      },
+      "ProfileMetricsItem": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "attempt_type": {
+            "type": "string",
+            "title": "Attempt Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "total_attempts": {
+            "type": "integer",
+            "title": "Total Attempts",
+            "default": 0
+          },
+          "avg_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Score"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "completion_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Pct"
+          },
+          "first_attempt_pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Attempt Pass Rate"
+          },
+          "avg_messages_per_session": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Messages Per Session"
+          },
+          "avg_persona_response_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Persona Response Sec"
+          },
+          "session_efficiency": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Efficiency"
+          },
+          "total_time_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Time Minutes"
+          },
+          "improvement_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvement Rate"
+          },
+          "perfect_score_count": {
+            "type": "integer",
+            "title": "Perfect Score Count",
+            "default": 0
+          },
+          "quickest_pass_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quickest Pass Minutes"
+          },
+          "first_attempt_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Attempt At"
+          },
+          "last_attempt_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attempt At"
+          },
+          "simulation_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "attempt_type"
+        ],
+        "title": "ProfileMetricsItem",
+        "description": "Single row from mv_profile_metrics."
       },
       "PromptsApiRequest": {
         "properties": {
