@@ -10,8 +10,8 @@ SELECT * FROM audios_entry;
 CREATE OR REPLACE VIEW view_audits_entry AS
 SELECT * FROM audits_entry;
 
-CREATE OR REPLACE VIEW view_benchmark_attempts_entry AS
-SELECT * FROM benchmark_attempts_entry;
+CREATE OR REPLACE VIEW view_benchmark_tests_entry AS
+SELECT * FROM benchmark_tests_entry;
 
 CREATE OR REPLACE VIEW view_calls_entry AS
 SELECT * FROM calls_entry;

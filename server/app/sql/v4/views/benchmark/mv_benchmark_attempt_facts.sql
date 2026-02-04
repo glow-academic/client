@@ -6,7 +6,7 @@
 --
 -- This MV is INDEPENDENT - it does not depend on any other MVs.
 -- Section: BENCHMARK
--- Source: view_benchmark_attempts_entry, benchmark_attempts_evals_connection, eval_runs_junction, view_tests_entry
+-- Source: view_benchmark_tests_entry, benchmark_tests_evals_connection, eval_runs_junction, view_tests_entry
 --
 -- ============================================================================
 -- Step 1: Drop all indexes on mv_benchmark_attempt_facts materialized view (if it exists)
@@ -107,8 +107,8 @@ SELECT
         ELSE 'pending'
     END AS status
 
-FROM view_benchmark_attempts_entry ba
-JOIN benchmark_attempts_evals_connection bae ON bae.attempt_id = ba.id
+FROM view_benchmark_tests_entry ba
+JOIN benchmark_tests_evals_connection bae ON bae.attempt_id = ba.id
 LEFT JOIN eval_rubrics er ON er.eval_id = bae.evals_id
 LEFT JOIN eval_departments ed ON ed.eval_id = bae.evals_id
 LEFT JOIN eval_run_counts erc ON erc.eval_id = bae.evals_id
