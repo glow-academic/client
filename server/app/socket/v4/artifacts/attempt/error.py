@@ -53,9 +53,6 @@ async def handle_attempt_error(data: dict[str, Any]) -> None:
         success=False,
         message=error_message,
         trace_id=data.get("trace_id"),
-        # Attempt-specific fields
-        chat_id=data.get("chat_id"),
-        message_id=data.get("message_id"),
     )
 
     await sio.emit(
@@ -66,8 +63,7 @@ async def handle_attempt_error(data: dict[str, Any]) -> None:
 
     logger.error(
         f"Attempt generation error - "
-        f"chat_id={data.get('chat_id')}, message_id={data.get('message_id')}, "
-        f"error: {error_message}"
+        f"run_id={data.get('run_id')}, error: {error_message}"
     )
 
 

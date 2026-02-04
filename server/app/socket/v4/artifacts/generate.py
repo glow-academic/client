@@ -72,8 +72,6 @@ class GenerateArtifactPayload(BaseModel):
     sid: str | None = None
     run_id: str
     group_id: str | None = None
-    chat_id: str | None = None
-    message_id: str | None = None
     modality: str = "text"
     artifact_type: str | None = None
     resource_type: str | None = None
@@ -380,8 +378,6 @@ async def _generate_artifact_impl(
                 "resource_id": data.resource_id,
                 "run_id": data.run_id,
                 "group_id": data.group_id,
-                "chat_id": data.chat_id,
-                "message_id": data.message_id,
                 "type": "start",
                 "message": "Starting generation",
                 "eval_mode": data.eval_mode,
@@ -417,8 +413,6 @@ async def _generate_artifact_impl(
                     "resource_id": data.resource_id,
                     "run_id": data.run_id,
                     "group_id": data.group_id,
-                    "chat_id": data.chat_id,
-                    "message_id": data.message_id,
                     "file_path": data.file_path,
                     "mime_type": data.mime_type,
                     "file_size": data.file_size,
@@ -532,8 +526,6 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
-                            "chat_id": data.chat_id,
-                            "message_id": data.message_id,
                             "type": "start",
                             "event_type": "text_start",
                             "eval_mode": data.eval_mode,
@@ -554,8 +546,6 @@ async def _generate_artifact_impl(
                                 "resource_type": resource_type,
                                 "run_id": data.run_id,
                                 "group_id": data.group_id,
-                                "chat_id": data.chat_id,
-                                "message_id": data.message_id,
                                 "type": "progress",
                                 "event_type": "text_delta",
                                 "delta": delta,
@@ -576,8 +566,6 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
-                            "chat_id": data.chat_id,
-                            "message_id": data.message_id,
                             "type": "complete",
                             "event_type": "text_complete",
                             "text": assistant_output,
@@ -609,8 +597,6 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
-                            "chat_id": data.chat_id,
-                            "message_id": data.message_id,
                             "type": "start",
                             "event_type": "tool_call_start",
                             "tool_call_id": tool_call_id,
@@ -645,8 +631,6 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
-                            "chat_id": data.chat_id,
-                            "message_id": data.message_id,
                             "type": "progress",
                             "event_type": "tool_call_delta",
                             "tool_call_id": tool_call_id,
@@ -683,8 +667,6 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
-                            "chat_id": data.chat_id,
-                            "message_id": data.message_id,
                             "type": "complete",
                             "event_type": "tool_call_complete",
                             "tool_call_id": tool_call_id,
@@ -733,8 +715,6 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
-                            "chat_id": data.chat_id,
-                            "message_id": data.message_id,
                             "type": "complete",
                             "event_type": "tool_result",
                             "tool_call_id": tool_call_id,
@@ -845,8 +825,6 @@ async def _generate_artifact_impl(
                 "resource_type": resource_type,
                 "run_id": data.run_id,
                 "group_id": data.group_id,
-                "chat_id": data.chat_id,
-                "message_id": data.message_id,
                 "input_text_tokens": total_input_tokens,
                 "output_text_tokens": total_output_tokens,
                 "assistant_output": final_assistant_output,

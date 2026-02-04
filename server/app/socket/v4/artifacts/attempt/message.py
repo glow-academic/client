@@ -232,7 +232,6 @@ async def _attempt_message_impl(
                 return
 
             user_message_id = str(prepare_row.user_message_id)
-            assistant_message_id = str(prepare_row.assistant_message_id)
             run_id = str(prepare_row.run_id)
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
             trace_id = prepare_row.trace_id
@@ -340,8 +339,6 @@ async def _attempt_message_impl(
 
             # Emit attempt_assistant_start for the assistant placeholder
             assistant_start_event = AttemptAssistantStartEvent(
-                chat_id=str(data.chat_id),
-                message_id=assistant_message_id,
                 created_at=created_at_str,
             )
             await sio.emit(
@@ -360,8 +357,6 @@ async def _attempt_message_impl(
                     "modality": "text",
                     "run_id": run_id,
                     "group_id": group_id,
-                    "chat_id": str(data.chat_id),
-                    "message_id": assistant_message_id,
                     "messages": messages,
                     "llm_config": model_config,
                     "tools": convert_tools_to_dict(prepare_row.tools),
@@ -373,7 +368,7 @@ async def _attempt_message_impl(
             logger.info(
                 f"Attempt message sent - "
                 f"profile_id={profile_id}, chat_id={data.chat_id}, "
-                f"run_id={run_id}, message_id={assistant_message_id}"
+                f"run_id={run_id}"
             )
 
     except ValueError as e:

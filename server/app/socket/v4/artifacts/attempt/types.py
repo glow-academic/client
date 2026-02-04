@@ -77,7 +77,6 @@ class AttemptMessageSentEvent(BaseModel):
     artifact_type: str = "attempt"
     chat_id: str
     user_message_id: str
-    assistant_message_id: str
     run_id: str | None = None
     group_id: str | None = None
 
@@ -105,8 +104,6 @@ class AttemptProgressEvent(GenerationProgressEvent):
     """
 
     artifact_type: str = "attempt"
-    chat_id: str | None = None
-    message_id: str | None = None
     delta: str | None = None
     accumulated_content: str | None = None
 
@@ -118,10 +115,6 @@ class AttemptCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "attempt"
-
-
-    chat_id: str | None = None
-    message_id: str | None = None
     final_content: str | None = None
     completed: bool = True
 
@@ -133,8 +126,6 @@ class AttemptErrorEvent(GenerationErrorEvent):
     """
 
     artifact_type: str = "attempt"
-    chat_id: str | None = None
-    message_id: str | None = None
 
 
 # =============================================================================
@@ -294,8 +285,6 @@ class AttemptAssistantStartEvent(BaseModel):
     Emitted when assistant message generation starts.
     """
 
-    chat_id: str
-    message_id: str
     created_at: str
     persona_id: str | None = None
 
@@ -306,8 +295,6 @@ class AttemptAssistantDeltaEvent(BaseModel):
     Emitted during message generation with accumulated content.
     """
 
-    chat_id: str
-    message_id: str
     content: str  # accumulated content
 
 
@@ -317,8 +304,6 @@ class AttemptAssistantAudioEvent(BaseModel):
     Emitted with audio chunks during voice mode.
     """
 
-    chat_id: str
-    message_id: str | None = None
     audio: bytes
 
 
@@ -328,8 +313,6 @@ class AttemptAssistantCompleteEvent(BaseModel):
     Emitted when assistant message generation is complete.
     """
 
-    chat_id: str
-    message_id: str
     content: str
     persona_id: str | None = None
 
@@ -421,8 +404,6 @@ class AttemptHintProgressEvent(BaseModel):
     Emitted during hint generation (auto-triggered after message).
     """
 
-    chat_id: str
-    message_id: str
     type: str  # "start", "progress", "complete"
     hints_count: int | None = None
     hints: list[dict[str, Any]] | None = None
