@@ -2341,66 +2341,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/test/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Test Artifact
-         * @description Get benchmark test artifact details with tests/chats/messages in parallel.
-         */
-        post: operations["get_test_artifact_api_v4_test_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/test/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Test Artifacts
-         * @description List benchmark tests with minimal filter metadata.
-         */
-        post: operations["list_test_artifacts_api_v4_test_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/test/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Archive Test Artifacts
-         * @description Archive or unarchive benchmark tests by IDs.
-         */
-        post: operations["archive_test_artifacts_api_v4_test_archive_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/artifacts/dashboard/get": {
         parameters: {
             query?: never;
@@ -2543,6 +2483,66 @@ export interface paths {
          * @description Get benchmark artifact data.
          */
         post: operations["get_benchmark_api_v4_artifacts_benchmark_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/test/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Test Artifact
+         * @description Get benchmark test artifact details with tests/chats/messages in parallel.
+         */
+        post: operations["get_test_artifact_api_v4_artifacts_test_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/test/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Test Artifacts
+         * @description List benchmark tests with minimal filter metadata.
+         */
+        post: operations["list_test_artifacts_api_v4_artifacts_test_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/test/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Test Artifacts
+         * @description Archive or unarchive benchmark tests by IDs.
+         */
+        post: operations["archive_test_artifacts_api_v4_artifacts_test_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4748,6 +4748,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/activity/logins/logins/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity Logins
+         * @description Get activity logins data from mv_activity_logins.
+         */
+        post: operations["get_activity_logins_api_v4_views_activity_logins_logins_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/activity/audits/audits/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity Audits
+         * @description Get activity audits data from mv_activity_audits.
+         */
+        post: operations["get_activity_audits_api_v4_views_activity_audits_audits_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/activity/feedbacks/feedbacks/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity Feedbacks
+         * @description Get activity feedbacks data from mv_activity_feedbacks.
+         */
+        post: operations["get_activity_feedbacks_api_v4_views_activity_feedbacks_feedbacks_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/activity/summary/get": {
         parameters: {
             query?: never;
@@ -4828,6 +4888,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/benchmark/tests/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Benchmark Tests
+         * @description Refresh mv_benchmark_tests concurrently.
+         */
+        post: operations["refresh_benchmark_tests_api_v4_views_benchmark_tests_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/benchmark/chats/get": {
         parameters: {
             query?: never;
@@ -4848,6 +4928,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/benchmark/chats/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Benchmark Chats
+         * @description Refresh mv_benchmark_chats concurrently.
+         */
+        post: operations["refresh_benchmark_chats_api_v4_views_benchmark_chats_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/benchmark/messages/get": {
         parameters: {
             query?: never;
@@ -4862,6 +4962,26 @@ export interface paths {
          * @description Get benchmark message rows from mv_benchmark_messages.
          */
         post: operations["get_benchmark_messages_api_v4_views_benchmark_messages_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/benchmark/messages/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Benchmark Messages
+         * @description Refresh mv_benchmark_messages concurrently.
+         */
+        post: operations["refresh_benchmark_messages_api_v4_views_benchmark_messages_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6798,6 +6918,32 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ActivityAuditItem
+         * @description Single audit row from mv_activity_audits.
+         */
+        ActivityAuditItem: {
+            /**
+             * Audit Id
+             * Format: uuid
+             */
+            audit_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
+            /** Session Id */
+            session_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
          * ActivityDailyItem
          * @description Single day from mv_activity_daily.
          */
@@ -6849,6 +6995,70 @@ export interface components {
              * @default 0
              */
             updated_count: number;
+        };
+        /**
+         * ActivityFeedbackItem
+         * @description Single feedback row from mv_activity_feedbacks.
+         */
+        ActivityFeedbackItem: {
+            /**
+             * Feedback Id
+             * Format: uuid
+             */
+            feedback_id: string;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Feedback Type */
+            feedback_type?: string | null;
+            /** Total */
+            total?: number | null;
+            /** Total Points */
+            total_points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Call Id */
+            call_id?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /** Simulation Attempt Id */
+            simulation_attempt_id?: string | null;
+            /** Benchmark Test Id */
+            benchmark_test_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * ActivityLoginItem
+         * @description Single login from mv_activity_logins.
+         */
+        ActivityLoginItem: {
+            /**
+             * Login Id
+             * Format: uuid
+             */
+            login_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /** Call Id */
+            call_id?: string | null;
         };
         /**
          * ActivityRequest
@@ -7021,6 +7231,12 @@ export interface components {
             /** Daily */
             daily?: components["schemas"]["ActivityDailyItem"][];
             summary?: components["schemas"]["ActivitySummaryItem"] | null;
+            /** Logins */
+            logins?: components["schemas"]["ActivityLoginItem"][];
+            /** Audits */
+            audits?: components["schemas"]["ActivityAuditItem"][];
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["ActivityFeedbackItem"][];
         };
         /**
          * AggregatedResults
@@ -10471,6 +10687,52 @@ export interface components {
             completed_attempts?: number | null;
         };
         /**
+         * GetActivityAuditsRequest
+         * @description Request for activity audits view.
+         */
+        GetActivityAuditsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Error */
+            error?: boolean | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetActivityAuditsResponse
+         * @description Response for activity audits view.
+         */
+        GetActivityAuditsResponse: {
+            /** Items */
+            items?: components["schemas"]["ActivityAuditItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetActivityDailyRequest
          * @description Request for getting activity daily data.
          */
@@ -10499,6 +10761,96 @@ export interface components {
         GetActivityDailyResponse: {
             /** Items */
             items?: components["schemas"]["ActivityDailyItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GetActivityFeedbacksRequest
+         * @description Request for activity feedbacks view.
+         */
+        GetActivityFeedbacksRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Feedback Type */
+            feedback_type?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetActivityFeedbacksResponse
+         * @description Response for activity feedbacks view.
+         */
+        GetActivityFeedbacksResponse: {
+            /** Items */
+            items?: components["schemas"]["ActivityFeedbackItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GetActivityLoginsRequest
+         * @description Request for activity logins view.
+         */
+        GetActivityLoginsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /**
+             * Sort By
+             * @description 'last_login' | 'created'
+             * @default last_login
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetActivityLoginsResponse
+         * @description Response for activity logins view.
+         */
+        GetActivityLoginsResponse: {
+            /** Items */
+            items?: components["schemas"]["ActivityLoginItem"][];
             /**
              * Total Count
              * @default 0
@@ -29136,117 +29488,6 @@ export interface operations {
             };
         };
     };
-    get_test_artifact_api_v4_test_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTestArtifactRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTestArtifactResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_test_artifacts_api_v4_test_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTestListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTestListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    archive_test_artifacts_api_v4_test_archive_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArchiveTestsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArchiveTestsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_dashboard_api_v4_artifacts_dashboard_get_post: {
         parameters: {
             query?: never;
@@ -29493,6 +29734,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BenchmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_test_artifact_api_v4_artifacts_test_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTestArtifactRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTestArtifactResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_test_artifacts_api_v4_artifacts_test_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTestListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTestListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_test_artifacts_api_v4_artifacts_test_archive_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchiveTestsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveTestsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33478,6 +33830,117 @@ export interface operations {
             };
         };
     };
+    get_activity_logins_api_v4_views_activity_logins_logins_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetActivityLoginsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetActivityLoginsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_activity_audits_api_v4_views_activity_audits_audits_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetActivityAuditsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetActivityAuditsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_activity_feedbacks_api_v4_views_activity_feedbacks_feedbacks_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetActivityFeedbacksRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetActivityFeedbacksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_activity_summary_api_v4_views_activity_summary_get_post: {
         parameters: {
             query?: never;
@@ -33622,6 +34085,41 @@ export interface operations {
             };
         };
     };
+    refresh_benchmark_tests_api_v4_views_benchmark_tests_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_chats_api_v4_views_benchmark_chats_get_post: {
         parameters: {
             query?: never;
@@ -33659,6 +34157,41 @@ export interface operations {
             };
         };
     };
+    refresh_benchmark_chats_api_v4_views_benchmark_chats_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_messages_api_v4_views_benchmark_messages_get_post: {
         parameters: {
             query?: never;
@@ -33683,6 +34216,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetBenchmarkMessagesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_benchmark_messages_api_v4_views_benchmark_messages_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
             /** @description Validation Error */

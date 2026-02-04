@@ -38,6 +38,7 @@ DECLARE
     v_rubric_artifact_id uuid;
     -- Resource IDs for attempt connections
     v_profiles_resource_id uuid;
+    v_simulations_resource_id uuid;
     v_cohorts_resource_id uuid;
     v_departments_resource_id uuid;
     v_roles_resource_id uuid;
@@ -78,10 +79,13 @@ BEGIN
     WHERE prj.profile_id = p_profile_id AND prj.active = true
     LIMIT 1;
 
-    -- Look up simulation_artifact ID from simulations_resource ID
-    SELECT ssj.simulation_id INTO v_simulation_artifact_id
+    -- p_simulation_id is a simulation_artifact ID (from /training/get)
+    v_simulation_artifact_id := p_simulation_id;
+
+    -- Resolve simulation resource ID for connection tables
+    SELECT ssj.simulations_id INTO v_simulations_resource_id
     FROM simulation_simulations_junction ssj
-    WHERE ssj.simulations_id = p_simulation_id
+    WHERE ssj.simulation_id = p_simulation_id AND ssj.active = true
     LIMIT 1;
 
     -- Get first scenario if not specified
@@ -138,9 +142,9 @@ BEGIN
     VALUES (NOW(), NOW(), false)
     RETURNING id INTO v_attempt_id;
 
-    -- Link attempt to simulation (p_simulation_id is already a simulations_resource ID)
+    -- Link attempt to simulation (using resolved resource ID)
     INSERT INTO simulation_attempts_simulations_connection (simulations_id, attempt_id, active)
-    VALUES (p_simulation_id, v_attempt_id, true);
+    VALUES (v_simulations_resource_id, v_attempt_id, true);
 
     -- Link attempt to profile (using resource ID)
     INSERT INTO simulation_attempts_profiles_connection (profiles_id, attempt_id, active)

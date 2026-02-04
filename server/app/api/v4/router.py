@@ -135,7 +135,6 @@ router.include_router(group_router)
 router.include_router(session_router)
 router.include_router(training_artifact_router)
 router.include_router(attempt_artifact_router)
-router.include_router(test_artifact_router)
 
 # View-based artifacts (aggregated data for UI sections)
 router.include_router(dashboard_artifact_router, prefix="/artifacts/dashboard")
@@ -145,6 +144,7 @@ router.include_router(pricing_artifact_router, prefix="/artifacts/pricing")
 router.include_router(activity_artifact_router, prefix="/artifacts/activity")
 router.include_router(health_artifact_router, prefix="/artifacts/health")
 router.include_router(benchmark_artifact_router, prefix="/artifacts/benchmark")
+router.include_router(test_artifact_router, prefix="/artifacts/test")
 
 # ============================================================================
 # Resources

@@ -183,28 +183,29 @@ runs_today_data AS (
     JOIN view_runs_entry mr ON mr.id = prj.run_id
     WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Check simulation exists (query simulations_resource since that's what cohorts reference)
+-- Check simulation exists (resolve artifact ID to resource via junction)
 simulation_data AS (
     SELECT
-        s.id as simulation_id,
+        p.simulation_id as simulation_id,
         TRUE as simulation_exists,
         s.name as simulation_name,
         s.active as simulation_is_active
-    FROM simulations_resource s
-    CROSS JOIN params p
-    WHERE s.id = p.simulation_id
+    FROM params p
+    JOIN simulation_simulations_junction ssj ON ssj.simulation_id = p.simulation_id AND ssj.active = true
+    JOIN simulations_resource s ON s.id = ssj.simulations_id
     LIMIT 1
 ),
 -- Check profile access to simulation via cohort
--- Note: cohorts_resource.simulation_ids contains simulations_resource IDs
+-- Note: cohorts_resource.simulation_ids contains simulations_resource IDs, so resolve artifact→resource first
 access_data AS (
     SELECT EXISTS (
         SELECT 1
         FROM params p
+        JOIN simulation_simulations_junction ssj ON ssj.simulation_id = p.simulation_id AND ssj.active = true
         JOIN profile_cohorts_junction pc ON pc.profile_id = p.profile_id AND pc.active = true
         JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = pc.cohort_id AND ccj.active = true
         JOIN cohorts_resource cr ON cr.id = ccj.cohorts_id
-        WHERE p.simulation_id = ANY(cr.simulation_ids)
+        WHERE ssj.simulations_id = ANY(cr.simulation_ids)
     ) as has_access
 ),
 -- Get scenario (use provided or first from simulation)

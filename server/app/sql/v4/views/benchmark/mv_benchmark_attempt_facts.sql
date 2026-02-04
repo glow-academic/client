@@ -1,8 +1,8 @@
 -- Materialized View: mv_benchmark_attempt_facts
 -- Attempt-level facts for BENCHMARK section - history page.
 --
--- Grain: One row per attempt_id
--- Purpose: Fast paginated list of benchmark attempts with eval info and status
+-- Grain: One row per test_id
+-- Purpose: Fast paginated list of benchmark tests with eval info and status
 --
 -- This MV is INDEPENDENT - it does not depend on any other MVs.
 -- Section: BENCHMARK
@@ -69,10 +69,10 @@ eval_run_counts AS (
     GROUP BY er.eval_id
 ),
 -- Count completed tests per attempt (tests with trace_id pattern: eval_{attempt_id}_{run_id})
-attempt_test_counts AS (
+test_run_counts AS (
     SELECT
         t.attempt_id,
-        COUNT(*) FILTER (WHERE t.completed = true)::bigint AS completed_tests
+        COUNT(*) FILTER (WHERE t.completed = true)::bigint AS completed_runs
     FROM view_tests_entry t
     WHERE t.trace_id LIKE 'eval_%'
     GROUP BY t.attempt_id
@@ -96,14 +96,14 @@ SELECT
 
     -- Run counts
     COALESCE(erc.total_runs, 0) AS total_runs,
-    COALESCE(atc.completed_tests, 0) AS completed_runs,
-    GREATEST(0, COALESCE(erc.total_runs, 0) - COALESCE(atc.completed_tests, 0)) AS pending_runs,
+    COALESCE(trc.completed_runs, 0) AS completed_runs,
+    GREATEST(0, COALESCE(erc.total_runs, 0) - COALESCE(trc.completed_runs, 0)) AS pending_runs,
 
     -- Derived status
     CASE
         WHEN COALESCE(erc.total_runs, 0) = 0 THEN 'pending'
-        WHEN COALESCE(atc.completed_tests, 0) < COALESCE(erc.total_runs, 0) THEN 'running'
-        WHEN COALESCE(atc.completed_tests, 0) >= COALESCE(erc.total_runs, 0) AND COALESCE(erc.total_runs, 0) > 0 THEN 'completed'
+        WHEN COALESCE(trc.completed_runs, 0) < COALESCE(erc.total_runs, 0) THEN 'running'
+        WHEN COALESCE(trc.completed_runs, 0) >= COALESCE(erc.total_runs, 0) AND COALESCE(erc.total_runs, 0) > 0 THEN 'completed'
         ELSE 'pending'
     END AS status
 
@@ -112,7 +112,7 @@ JOIN benchmark_tests_evals_connection bae ON bae.attempt_id = ba.id
 LEFT JOIN eval_rubrics er ON er.eval_id = bae.evals_id
 LEFT JOIN eval_departments ed ON ed.eval_id = bae.evals_id
 LEFT JOIN eval_run_counts erc ON erc.eval_id = bae.evals_id
-LEFT JOIN attempt_test_counts atc ON atc.attempt_id = ba.id
+LEFT JOIN test_run_counts trc ON trc.attempt_id = ba.id
 WITH NO DATA;
 
 -- ============================================================================

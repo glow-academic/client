@@ -5,8 +5,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.views.activity.session_facts.types import ActivitySessionFactsItem
+from app.api.v4.views.activity.audits.types import ActivityAuditItem
 from app.api.v4.views.activity.daily.types import ActivityDailyItem
+from app.api.v4.views.activity.feedbacks.types import ActivityFeedbackItem
+from app.api.v4.views.activity.logins.types import ActivityLoginItem
+from app.api.v4.views.activity.session_facts.types import ActivitySessionFactsItem
 from app.api.v4.views.activity.summary.types import ActivitySummaryItem
 
 
@@ -26,6 +29,9 @@ class ActivityViews(BaseModel):
     session_facts: list[ActivitySessionFactsItem] = Field(default_factory=list)
     daily: list[ActivityDailyItem] = Field(default_factory=list)
     summary: ActivitySummaryItem | None = None
+    logins: list[ActivityLoginItem] = Field(default_factory=list)
+    audits: list[ActivityAuditItem] = Field(default_factory=list)
+    feedbacks: list[ActivityFeedbackItem] = Field(default_factory=list)
 
 
 class ActivityResources(BaseModel):

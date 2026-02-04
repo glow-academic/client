@@ -60,7 +60,6 @@ message_counts AS (
         m.chat_id,
         COUNT(*)::bigint AS num_messages
     FROM benchmark_messages_entry m
-    WHERE m.active = true
     GROUP BY m.chat_id
 )
 SELECT

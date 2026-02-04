@@ -36,7 +36,7 @@ async def get_benchmark_attempt_facts_internal(
     page_offset: int = 0,
     bypass_cache: bool = False,
 ) -> GetBenchmarkAttemptFactsResponse:
-    """Internal function for fetching benchmark attempt facts data."""
+    """Internal function for fetching benchmark test facts data."""
     cache_key_val = cache_key(
         "views/benchmark/attempt_facts/get",
         {
@@ -101,7 +101,9 @@ async def get_benchmark_attempt_facts_internal(
 
     order_dir = "DESC" if sort_order == "desc" else "ASC"
 
-    count_query = f"SELECT COUNT(*) FROM mv_benchmark_attempt_facts WHERE {where_clause}"
+    count_query = (
+        f"SELECT COUNT(*) FROM mv_benchmark_attempt_facts WHERE {where_clause}"
+    )
     total_count = await conn.fetchval(count_query, *params)
 
     data_query = f"""
@@ -131,7 +133,9 @@ async def get_benchmark_attempt_facts_internal(
         for row in rows
     ]
 
-    response = GetBenchmarkAttemptFactsResponse(items=items, total_count=total_count or 0)
+    response = GetBenchmarkAttemptFactsResponse(
+        items=items, total_count=total_count or 0
+    )
 
     await set_cached(
         cache_key_val,

@@ -60,8 +60,7 @@ message_counts AS (
         COUNT(*)::bigint AS num_messages
     FROM benchmark_messages_entry m
     JOIN benchmark_chats_entry c ON c.id = m.chat_id
-    WHERE m.active = true
-      AND c.active = true
+    WHERE c.active = true
     GROUP BY c.attempt_id
 )
 SELECT

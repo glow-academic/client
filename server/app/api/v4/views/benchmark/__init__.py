@@ -13,5 +13,9 @@ router = APIRouter(prefix="/benchmark", tags=["views", "benchmark"])
 router.include_router(tests_router)
 router.include_router(chats_router)
 router.include_router(messages_router)
-router.include_router(attempt_facts_router, prefix="/attempt-facts", tags=["attempt_facts"])
-router.include_router(eval_summary_router, prefix="/eval-summary", tags=["eval_summary"])
+router.include_router(
+    attempt_facts_router, prefix="/attempt-facts", tags=["attempt_facts"]
+)
+router.include_router(
+    eval_summary_router, prefix="/eval-summary", tags=["eval_summary"]
+)

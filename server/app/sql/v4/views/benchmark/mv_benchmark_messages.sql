@@ -42,8 +42,7 @@ LEFT JOIN LATERAL (
     ORDER BY e.created_at ASC
     LIMIT 1
 ) el ON true
-WHERE bm.active = true
-  AND c.active = true
+WHERE c.active = true
   AND m.active = true
 WITH NO DATA;
 

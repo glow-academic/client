@@ -1,4 +1,4 @@
-"""Get endpoint for activity session facts view (mv_activity_session_facts)."""
+"""Get endpoint for activity feedbacks view (mv_activity_feedbacks)."""
 
 from datetime import datetime
 from typing import Annotated, Any
@@ -7,10 +7,10 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.views.activity.session_facts.types import (
-    ActivitySessionFactsItem,
-    GetActivitySessionFactsRequest,
-    GetActivitySessionFactsResponse,
+from app.api.v4.views.activity.feedbacks.types import (
+    ActivityFeedbackItem,
+    GetActivityFeedbacksRequest,
+    GetActivityFeedbacksResponse,
 )
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -22,27 +22,25 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 
-async def get_activity_session_facts_internal(
+async def get_activity_feedbacks_internal(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
-    active: bool | None = None,
+    feedback_type: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
-    sort_by: str = "date",
     sort_order: str = "desc",
     page_limit: int = 50,
     page_offset: int = 0,
     bypass_cache: bool = False,
-) -> GetActivitySessionFactsResponse:
-    """Internal function for fetching activity session facts data."""
+) -> GetActivityFeedbacksResponse:
+    """Internal function for fetching activity feedbacks data."""
     cache_key_val = cache_key(
-        "views/activity/session_facts/get",
+        "views/activity/feedbacks/get",
         {
             "profile_id": str(profile_id) if profile_id else None,
-            "active": active,
+            "feedback_type": feedback_type,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
-            "sort_by": sort_by,
             "sort_order": sort_order,
             "page_limit": page_limit,
             "page_offset": page_offset,
@@ -52,7 +50,7 @@ async def get_activity_session_facts_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return GetActivitySessionFactsResponse.model_validate(cached)
+            return GetActivityFeedbacksResponse.model_validate(cached)
 
     conditions: list[str] = []
     params: list[Any] = []
@@ -63,71 +61,65 @@ async def get_activity_session_facts_internal(
         params.append(profile_id)
         param_idx += 1
 
-    if active is not None:
-        conditions.append(f"active = ${param_idx}")
-        params.append(active)
+    if feedback_type:
+        conditions.append(f"feedback_type = ${param_idx}")
+        params.append(feedback_type)
         param_idx += 1
 
     if date_from:
-        conditions.append(f"session_created_at >= ${param_idx}")
+        conditions.append(f"created_at >= ${param_idx}")
         params.append(date_from)
         param_idx += 1
 
     if date_to:
-        conditions.append(f"session_created_at < ${param_idx}")
+        conditions.append(f"created_at < ${param_idx}")
         params.append(date_to)
         param_idx += 1
 
     where_clause = " AND ".join(conditions) if conditions else "TRUE"
-
-    sort_column = {
-        "date": "session_created_at",
-        "groups": "group_count",
-        "runs": "run_count",
-        "tokens": "total_tokens",
-    }.get(sort_by, "session_created_at")
-
     order_dir = "DESC" if sort_order == "desc" else "ASC"
 
-    count_query = f"SELECT COUNT(*) FROM mv_activity_session_facts WHERE {where_clause}"
-    total_count = await conn.fetchval(count_query, *params)
+    total_count = await conn.fetchval(
+        f"SELECT COUNT(*) FROM mv_activity_feedbacks WHERE {where_clause}",
+        *params,
+    )
 
     data_query = f"""
         SELECT *
-        FROM mv_activity_session_facts
+        FROM mv_activity_feedbacks
         WHERE {where_clause}
-        ORDER BY {sort_column} {order_dir}
+        ORDER BY created_at {order_dir}
         LIMIT ${param_idx} OFFSET ${param_idx + 1}
     """
     params.extend([page_limit, page_offset])
-
     rows = await conn.fetch(data_query, *params)
 
     items = [
-        ActivitySessionFactsItem(
-            session_id=row["session_id"],
-            profile_id=row["profile_id"],
-            session_created_at=row["session_created_at"],
-            session_updated_at=row["session_updated_at"],
+        ActivityFeedbackItem(
+            feedback_id=row["feedback_id"],
+            grade_id=row["grade_id"],
+            feedback_type=row["feedback_type"],
+            total=row["total"],
+            total_points=row["total_points"],
+            pass_points=row["pass_points"],
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
+            call_id=row["call_id"],
             active=row["active"] or False,
-            group_count=row["group_count"] or 0,
-            first_group_at=row["first_group_at"],
-            last_group_at=row["last_group_at"],
-            run_count=row["run_count"] or 0,
-            total_tokens=row["total_tokens"] or 0,
+            simulation_attempt_id=row["simulation_attempt_id"],
+            benchmark_test_id=row["benchmark_test_id"],
+            profile_id=row["profile_id"],
         )
         for row in rows
     ]
 
-    response = GetActivitySessionFactsResponse(
-        items=items, total_count=total_count or 0
-    )
+    response = GetActivityFeedbacksResponse(items=items, total_count=total_count or 0)
 
     await set_cached(
         cache_key_val,
         response.model_dump(mode="json"),
         ttl=60,
-        tags=["views", "activity", "session_facts"],
+        tags=["views", "activity", "feedbacks"],
     )
 
     return response
@@ -135,32 +127,31 @@ async def get_activity_session_facts_internal(
 
 @router.post(
     "/get",
-    response_model=GetActivitySessionFactsResponse,
+    response_model=GetActivityFeedbacksResponse,
     dependencies=[
         audit_activity(
-            "views.activity.session_facts.get",
-            "{{ actor.name }} fetched activity session facts data",
+            "views.activity.feedbacks.get",
+            "{{ actor.name }} fetched activity feedbacks data",
         )
     ],
 )
-async def get_activity_session_facts(
-    request: GetActivitySessionFactsRequest,
+async def get_activity_feedbacks(
+    request: GetActivityFeedbacksRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetActivitySessionFactsResponse:
-    """Get activity session facts data from mv_activity_session_facts."""
-    tags = ["views", "activity", "session_facts"]
+) -> GetActivityFeedbacksResponse:
+    """Get activity feedbacks data from mv_activity_feedbacks."""
+    tags = ["views", "activity", "feedbacks"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        result = await get_activity_session_facts_internal(
+        result = await get_activity_feedbacks_internal(
             conn=conn,
             profile_id=request.profile_id,
-            active=request.active,
+            feedback_type=request.feedback_type,
             date_from=request.date_from,
             date_to=request.date_to,
-            sort_by=request.sort_by,
             sort_order=request.sort_order,
             page_limit=request.page_limit,
             page_offset=request.page_offset,
@@ -169,7 +160,6 @@ async def get_activity_session_facts(
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return result
-
     except HTTPException:
         raise
     except ValueError as e:
@@ -178,6 +168,6 @@ async def get_activity_session_facts(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="views_activity_session_facts_get",
+            operation="views_activity_feedbacks_get",
             request=http_request,
         )

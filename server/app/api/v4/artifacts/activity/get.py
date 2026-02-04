@@ -8,13 +8,26 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.activity.types import (
     ActivityRequest,
+    ActivityResources,
     ActivityResponse,
     ActivityViews,
-    ActivityResources,
 )
-from app.api.v4.views.activity.session_facts.get import get_activity_session_facts_internal
+from app.api.v4.views.activity.audits.get import get_activity_audits_internal
+from app.api.v4.views.activity.audits.types import GetActivityAuditsResponse
 from app.api.v4.views.activity.daily.get import get_activity_daily_internal
+from app.api.v4.views.activity.daily.types import GetActivityDailyResponse
+from app.api.v4.views.activity.feedbacks.get import get_activity_feedbacks_internal
+from app.api.v4.views.activity.feedbacks.types import GetActivityFeedbacksResponse
+from app.api.v4.views.activity.logins.get import get_activity_logins_internal
+from app.api.v4.views.activity.logins.types import GetActivityLoginsResponse
+from app.api.v4.views.activity.session_facts.get import (
+    get_activity_session_facts_internal,
+)
+from app.api.v4.views.activity.session_facts.types import (
+    GetActivitySessionFactsResponse,
+)
 from app.api.v4.views.activity.summary.get import get_activity_summary_internal
+from app.api.v4.views.activity.summary.types import GetActivitySummaryResponse
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -44,7 +57,8 @@ async def get_activity(
     pool = get_pool()
 
     try:
-        async def fetch_session_facts():
+
+        async def fetch_session_facts() -> GetActivitySessionFactsResponse:
             async with pool.acquire() as c:
                 return await get_activity_session_facts_internal(
                     conn=c,
@@ -56,7 +70,7 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_daily():
+        async def fetch_daily() -> GetActivityDailyResponse:
             async with pool.acquire() as c:
                 return await get_activity_daily_internal(
                     conn=c,
@@ -66,21 +80,70 @@ async def get_activity(
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_summary():
+        async def fetch_summary() -> GetActivitySummaryResponse:
             async with pool.acquire() as c:
                 return await get_activity_summary_internal(
                     conn=c,
                     bypass_cache=bypass_cache,
                 )
 
-        session_facts_result, daily_result, summary_result = await asyncio.gather(
+        async def fetch_logins() -> GetActivityLoginsResponse:
+            async with pool.acquire() as c:
+                return await get_activity_logins_internal(
+                    conn=c,
+                    profile_id=request.profile_id,
+                    date_from=request.date_from,
+                    date_to=request.date_to,
+                    bypass_cache=bypass_cache,
+                )
+
+        async def fetch_audits() -> GetActivityAuditsResponse:
+            async with pool.acquire() as c:
+                return await get_activity_audits_internal(
+                    conn=c,
+                    profile_id=request.profile_id,
+                    date_from=request.date_from,
+                    date_to=request.date_to,
+                    bypass_cache=bypass_cache,
+                )
+
+        async def fetch_feedbacks() -> GetActivityFeedbacksResponse:
+            async with pool.acquire() as c:
+                return await get_activity_feedbacks_internal(
+                    conn=c,
+                    profile_id=request.profile_id,
+                    date_from=request.date_from,
+                    date_to=request.date_to,
+                    bypass_cache=bypass_cache,
+                )
+
+        (
+            session_facts_result,
+            daily_result,
+            summary_result,
+            logins_result,
+            audits_result,
+            feedbacks_result,
+        ) = await asyncio.gather(
             fetch_session_facts(),
             fetch_daily(),
             fetch_summary(),
+            fetch_logins(),
+            fetch_audits(),
+            fetch_feedbacks(),
         )
 
         profile_ids: set[str] = set()
         for item in session_facts_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        for item in logins_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        for item in audits_result.items:
+            if item.profile_id:
+                profile_ids.add(str(item.profile_id))
+        for item in feedbacks_result.items:
             if item.profile_id:
                 profile_ids.add(str(item.profile_id))
 
@@ -88,6 +151,9 @@ async def get_activity(
             session_facts=session_facts_result.items,
             daily=daily_result.items,
             summary=summary_result.summary,
+            logins=logins_result.items,
+            audits=audits_result.items,
+            feedbacks=feedbacks_result.items,
         )
         resources = ActivityResources(
             profiles={pid: {} for pid in profile_ids},

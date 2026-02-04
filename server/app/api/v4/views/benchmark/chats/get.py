@@ -40,7 +40,9 @@ async def get_benchmark_chats_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return [BenchmarkChatViewItem.model_validate(item) for item in cached["items"]]
+            return [
+                BenchmarkChatViewItem.model_validate(item) for item in cached["items"]
+            ]
 
     conditions: list[str] = []
     params: list[Any] = []
