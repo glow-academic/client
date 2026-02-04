@@ -18813,6 +18813,8 @@ class QGetPersonaResourceV4Item(BaseModel):
     color: str | None
     icon: str | None
     image_model: bool | None
+    instructions: str | None
+    examples: list[str] | None
     generated: bool | None
 
 class GetPersonaResourceSqlRow(BaseModel):
@@ -18848,6 +18850,8 @@ class QGetPersonasV4Item(BaseModel):
     color: str | None
     icon: str | None
     image_model: bool | None
+    instructions: str | None
+    examples: list[str] | None
     generated: bool | None
 
 class GetPersonasSqlRow(BaseModel):

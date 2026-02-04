@@ -170,19 +170,18 @@ hints_agg AS (
 -- Aggregate contents per message (id removed, only persona_id - metadata fetched via handler)
 contents_agg AS (
     SELECT
-        sce.simulation_message_id AS message_id,
+        sce.message_id AS message_id,
         ARRAY_AGG(
             (
-                ce.content,
+                sce.content,
                 sce.persona_id,
-                ce.created_at
+                sce.created_at
             )::types.mv_content
-            ORDER BY ce.created_at
+            ORDER BY sce.created_at
         ) AS contents
     FROM simulation_contents_entry sce
-    JOIN contents_entry ce ON ce.id = sce.content_id
-    WHERE ce.active = TRUE
-    GROUP BY sce.simulation_message_id
+    WHERE sce.active = TRUE
+    GROUP BY sce.message_id
 ),
 -- Base message data (position derived in service layer, practice on attempt level)
 base_messages AS (

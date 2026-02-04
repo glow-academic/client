@@ -22,7 +22,14 @@ latest_message AS (
         COALESCE(ce.content, '') as content
     FROM all_chats c
     JOIN view_simulation_messages_entry m ON m.chat_id = c.id
-    LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    LEFT JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     WHERE c.id = (SELECT chat_id FROM params)
       AND NOT EXISTS (
           SELECT 1 FROM view_message_tree_entry mt

@@ -74,7 +74,14 @@ existing_developer_messages AS (
         dmh.run_id,
         dmh.hash
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN developer_message_hash_array dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     ORDER BY dmh.hash, m.created_at DESC
@@ -124,7 +131,7 @@ new_developer_messages_matched AS (
     JOIN new_developer_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_developer_contents AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
     SELECT
         nd.message_id,
         nd.content,
@@ -164,7 +171,14 @@ existing_user_messages AS (
         umh.run_id,
         umh.hash
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN user_message_hash_array umh ON message_content_hash(ce.content, 'user') = umh.hash
     WHERE m.role = 'user'
     ORDER BY umh.hash, m.created_at DESC
@@ -214,7 +228,7 @@ new_user_messages_matched AS (
     JOIN new_user_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_user_contents AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
     SELECT
         nd.message_id,
         nd.content,
@@ -244,7 +258,14 @@ all_run_messages AS (
         ce.content,
         m.created_at
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     CROSS JOIN params p
     WHERE m.run_id = p.run_id
       AND m.role IN ('user', 'assistant')

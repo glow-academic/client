@@ -85678,6 +85678,31 @@
             ],
             "title": "Image Model"
           },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "examples": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples"
+          },
           "generated": {
             "anyOf": [
               {
@@ -85698,6 +85723,8 @@
           "color",
           "icon",
           "image_model",
+          "instructions",
+          "examples",
           "generated"
         ],
         "title": "QGetPersonaResourceV4Item"
@@ -85771,6 +85798,31 @@
             ],
             "title": "Image Model"
           },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "examples": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples"
+          },
           "generated": {
             "anyOf": [
               {
@@ -85791,6 +85843,8 @@
           "color",
           "icon",
           "image_model",
+          "instructions",
+          "examples",
           "generated"
         ],
         "title": "QGetPersonasV4Item"

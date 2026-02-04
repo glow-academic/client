@@ -48,7 +48,7 @@ first_content AS (
     SELECT DISTINCT ON (ce.message_id)
         ce.message_id,
         ce.content
-    FROM contents_entry ce
+    FROM simulation_contents_entry ce
     WHERE ce.active = true
     ORDER BY ce.message_id, ce.created_at ASC
 ),

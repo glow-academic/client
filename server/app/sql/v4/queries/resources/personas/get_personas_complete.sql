@@ -56,6 +56,8 @@ CREATE TYPE types.q_get_personas_v4_item AS (
     color text,
     icon text,
     image_model boolean,
+    instructions text,
+    examples text[],
     generated boolean
 );
 
@@ -78,6 +80,8 @@ SELECT COALESCE(
             COALESCE(p.color, ''),
             COALESCE(p.icon, ''),
             false,  -- image_model flag not stored in personas_resource
+            COALESCE(p.instructions, ''),
+            COALESCE(p.examples, ARRAY[]::text[]),
             COALESCE(p.generated, false)
         )::types.q_get_personas_v4_item
         ORDER BY array_position(p_ids, p.id)

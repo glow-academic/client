@@ -34,7 +34,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.persona_id, q.name, q.description, q.color, q.icon, q.image_model, q.generated)::types.q_get_personas_v4_item
+        (q.persona_id, q.name, q.description, q.color, q.icon, q.image_model, q.instructions, q.examples, q.generated)::types.q_get_personas_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_personas_v4_item[]
@@ -47,6 +47,8 @@ FROM (
         COALESCE(p.color, '') AS color,
         COALESCE(p.icon, '') AS icon,
         false AS image_model,
+        COALESCE(p.instructions, '') AS instructions,
+        COALESCE(p.examples, ARRAY[]::text[]) AS examples,
         COALESCE(p.generated, false) AS generated
     FROM personas_resource p
     -- Join to persona artifact to check active flag
@@ -69,7 +71,7 @@ FROM (
         AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
         -- Optional search filter
         AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, p.generated
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, p.instructions, p.examples, p.generated
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

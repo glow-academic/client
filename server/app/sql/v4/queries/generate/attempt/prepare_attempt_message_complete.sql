@@ -147,13 +147,8 @@ BEGIN
     VALUES (v_user_message_id, p_chat_id);
 
     -- Insert user content
-    WITH user_content AS (
-        INSERT INTO contents_entry (message_id, content)
-        VALUES (v_user_message_id, p_message)
-        RETURNING contents_entry.id as content_id
-    )
-    INSERT INTO simulation_contents_entry (content_id, simulation_message_id)
-    SELECT content_id, v_user_message_id FROM user_content;
+    INSERT INTO simulation_contents_entry (message_id, content)
+    VALUES (v_user_message_id, p_message);
 
     -- Create assistant message placeholder in base table
     INSERT INTO messages_entry (run_id, role, completed, audio, created_at, updated_at)
@@ -296,7 +291,7 @@ BEGIN
         ) as history
         FROM simulation_messages_entry sm
         JOIN messages_entry me ON me.id = sm.id
-        LEFT JOIN contents_entry ce ON ce.message_id = sm.id
+        LEFT JOIN simulation_contents_entry ce ON ce.message_id = sm.id
         WHERE sm.chat_id = p_chat_id
           AND me.completed = true
           AND sm.id != v_user_message_id

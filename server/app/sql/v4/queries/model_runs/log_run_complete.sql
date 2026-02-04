@@ -272,7 +272,14 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
     WHERE m.role = 'system'
     LIMIT 1
@@ -320,7 +327,14 @@ link_system_tool_to_junction AS (
 existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
-    JOIN view_contents_entry ce ON ce.message_id = esm.system_message_id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = esm.system_message_id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN view_messages_entry m_sys ON m_sys.id = esm.system_message_id
     JOIN view_calls_entry tc ON tc.run_id = m_sys.run_id
     LIMIT 1
@@ -331,8 +345,8 @@ system_tool_call_id AS (
     SELECT tool_call_id FROM existing_system_tool_call
 ),
 insert_system_content AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
-    SELECT nsm.system_message_id, smc.content, nsm.created_at, nsm.updated_at
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at, call_id)
+    SELECT nsm.system_message_id, smc.content, nsm.created_at, nsm.updated_at, stc.tool_call_id
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
     CROSS JOIN system_tool_call_id stc
@@ -386,8 +400,14 @@ existing_developer_messages_with_rn AS (
         ROW_NUMBER() OVER (PARTITION BY dmp.content ORDER BY m.created_at ASC) as rn
     FROM developer_messages_processed dmp
     JOIN view_messages_entry m ON m.role = 'developer'
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-        AND message_content_hash(ce.content, 'developer') = dmp.hash
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON message_content_hash(ce.content, 'developer') = dmp.hash
 ),
 existing_developer_messages AS (
     SELECT 
@@ -466,7 +486,14 @@ developer_message_with_tool_call AS (
 existing_developer_calls AS (
     SELECT edm.message_id, tc.id as tool_call_id
     FROM existing_developer_messages edm
-    JOIN view_contents_entry ce ON ce.message_id = edm.message_id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = edm.message_id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN view_messages_entry m_dev ON m_dev.id = edm.message_id
     JOIN view_calls_entry tc ON tc.run_id = m_dev.run_id
 ),
@@ -476,12 +503,13 @@ all_developer_calls AS (
     SELECT message_id, tool_call_id FROM existing_developer_calls
 ),
 insert_developer_content AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at, call_id)
     SELECT
         adtcm.message_id,
         dmp.content,
         dmtc.created_at,
-        dmtc.updated_at
+        dmtc.updated_at,
+        adtcm.tool_call_id
     FROM all_developer_calls adtcm
     JOIN developer_message_with_tool_call dmtc ON dmtc.message_id = adtcm.message_id
     JOIN developer_messages_processed dmp ON EXISTS (
@@ -490,7 +518,14 @@ insert_developer_content AS (
     )
     WHERE NOT EXISTS (
         SELECT 1 FROM existing_developer_messages edm
-        JOIN view_contents_entry ce2 ON ce2.message_id = edm.message_id AND ce2.idx = 0
+        JOIN LATERAL (
+            SELECT content
+            FROM simulation_contents_entry ce2
+            WHERE ce2.message_id = edm.message_id
+              AND ce2.active = true
+            ORDER BY ce2.created_at
+            LIMIT 1
+        ) ce2 ON TRUE
         WHERE ce2.content = dmp.content
     )
 ),
@@ -581,20 +616,27 @@ assistant_tool_call AS (
 existing_assistant_content AS (
     SELECT ce.id as content_id
     FROM assistant_message am
-    JOIN view_contents_entry ce ON ce.message_id = am.assistant_message_id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT id
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = am.assistant_message_id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     LIMIT 1
 ),
 update_existing_assistant_content AS (
-    UPDATE contents_entry
+    UPDATE simulation_contents_entry
     SET content = trim(x.assistant_output),
         updated_at = NOW()
     FROM params x
-    WHERE contents_entry.id = (SELECT content_id FROM existing_assistant_content)
+    WHERE simulation_contents_entry.id = (SELECT content_id FROM existing_assistant_content)
     RETURNING id as content_id
 ),
 insert_assistant_content AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
-    SELECT am.assistant_message_id, trim(x.assistant_output), am.created_at, am.updated_at
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at, call_id)
+    SELECT am.assistant_message_id, trim(x.assistant_output), am.created_at, am.updated_at, atc.tool_call_id
     FROM params x
     CROSS JOIN assistant_message am
     CROSS JOIN assistant_tool_call atc

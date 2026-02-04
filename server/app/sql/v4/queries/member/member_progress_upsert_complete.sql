@@ -215,7 +215,14 @@ link_user_tool_call_to_tool AS (
 existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
-    JOIN view_contents_entry ce ON ce.message_id = lum.message_id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = lum.message_id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN view_messages_entry m ON m.id = lum.message_id
     JOIN view_calls_entry tc ON tc.run_id = m.run_id
     LIMIT 1
@@ -227,8 +234,8 @@ user_tool_call_id AS (
     SELECT tool_call_id FROM existing_user_tool_call
 ),
 insert_user_content_if_needed AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
-    SELECT cm.message_id, p.message_contents, cm.created_at, cm.updated_at
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at, call_id)
+    SELECT cm.message_id, p.message_contents, cm.created_at, cm.updated_at, utc.tool_call_id
     FROM create_message_if_needed cm
     CROSS JOIN params p
     CROSS JOIN user_tool_call_id utc
@@ -244,11 +251,11 @@ update_existing_message AS (
     RETURNING id as message_id
 ),
 update_existing_message_content AS (
-    UPDATE contents_entry
+    UPDATE simulation_contents_entry
     SET content = p.message_contents,
         updated_at = NOW()
     FROM params p
-    WHERE contents_entry.message_id = (SELECT message_id FROM latest_user_message)
+    WHERE simulation_contents_entry.message_id = (SELECT message_id FROM latest_user_message)
       AND EXISTS (SELECT 1 FROM latest_user_message)
 ),
 upserted_message AS (
@@ -351,7 +358,14 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
     WHERE m.role = 'system'::message_type
     LIMIT 1
@@ -365,7 +379,7 @@ new_system_message AS (
 ),
 -- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
 insert_system_content AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
     SELECT nsm.system_message_id, smc.content, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -405,7 +419,14 @@ scenario_developer_hash AS (
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN scenario_developer_hash sdh ON message_content_hash(ce.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'::message_type
     LIMIT 1
@@ -419,7 +440,7 @@ new_scenario_developer_message AS (
 ),
 -- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
 insert_scenario_developer_content AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
     SELECT nsdm.developer_message_id, sdc.content, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc

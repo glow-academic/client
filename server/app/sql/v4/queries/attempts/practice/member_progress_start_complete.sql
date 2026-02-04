@@ -102,20 +102,13 @@ insert_user_message_sim AS (
     CROSS JOIN params p
     RETURNING id as user_message_id
 ),
--- Insert user content into contents_entry
+-- Insert user content into simulation_contents_entry
 insert_user_content AS (
-    INSERT INTO contents_entry (message_id, content)
+    INSERT INTO simulation_contents_entry (message_id, content)
     SELECT umb.user_message_id, p.message_contents
     FROM insert_user_message_base umb
     CROSS JOIN params p
-    RETURNING id as content_id, message_id
-),
--- Link user content to simulation
-insert_user_sim_content AS (
-    INSERT INTO simulation_contents_entry (content_id, simulation_message_id)
-    SELECT uc.content_id, uc.message_id
-    FROM insert_user_content uc
-    RETURNING content_id
+    RETURNING id as content_id
 ),
 -- Insert assistant message into base table
 insert_assistant_message_base AS (

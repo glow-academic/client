@@ -19244,6 +19244,10 @@ export interface components {
             icon: string | null;
             /** Image Model */
             image_model: boolean | null;
+            /** Instructions */
+            instructions: string | null;
+            /** Examples */
+            examples: string[] | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -19261,6 +19265,10 @@ export interface components {
             icon: string | null;
             /** Image Model */
             image_model: boolean | null;
+            /** Instructions */
+            instructions: string | null;
+            /** Examples */
+            examples: string[] | null;
             /** Generated */
             generated: boolean | null;
         };

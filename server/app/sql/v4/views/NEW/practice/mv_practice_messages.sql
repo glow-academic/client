@@ -136,7 +136,14 @@ messages_with_position AS (
     FROM simulation_messages_entry m
     JOIN simulation_chats_entry c ON c.id = m.chat_id
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
-    LEFT JOIN simulation_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    LEFT JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = TRUE
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     WHERE m.active = TRUE
       AND c.active = TRUE
       AND a.active = TRUE

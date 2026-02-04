@@ -22,16 +22,10 @@ WITH updated_message AS (
     RETURNING id, run_id
 ),
 new_content AS (
-    INSERT INTO contents_entry (message_id, content)
+    INSERT INTO simulation_contents_entry (message_id, content)
     SELECT message_id, assistant_content
     FROM updated_message
     RETURNING id AS content_id
-),
-new_sim_content AS (
-    INSERT INTO simulation_contents_entry (content_id, simulation_message_id)
-    SELECT nc.content_id, message_id
-    FROM new_content nc
-    RETURNING content_id
 ),
 updated_run AS (
     UPDATE runs_entry

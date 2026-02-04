@@ -1,5 +1,5 @@
 -- View: view_messages_complete
--- Combines messages_entry + contents_entry + hints_entry + audios_entry
+-- Combines messages_entry + simulation_contents_entry + hints_entry + audios_entry
 -- Write to _entry tables, read from this _view.
 -- Uses ARRAY_AGG for all content chunks. Filters active = true.
 --
@@ -28,7 +28,7 @@ SELECT
                 'call_id', c.call_id
             ) ORDER BY c.created_at
         )
-        FROM contents_entry c
+        FROM simulation_contents_entry c
         WHERE c.message_id = m.id AND c.active = true),
         '{}'::jsonb[]
     ) AS contents,

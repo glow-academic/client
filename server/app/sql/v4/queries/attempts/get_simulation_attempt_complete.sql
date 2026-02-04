@@ -1096,7 +1096,14 @@ messages_with_tree AS (
         FROM all_chats c
         JOIN view_simulation_messages_entry m ON m.chat_id = c.id
         JOIN view_runs_entry r ON r.id = m.run_id
-        LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        LEFT JOIN LATERAL (
+            SELECT content
+            FROM simulation_contents_entry ce
+            WHERE ce.message_id = m.id
+              AND ce.active = true
+            ORDER BY ce.created_at
+            LIMIT 1
+        ) ce ON TRUE
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
           AND m.role IN ('user'::message_type, 'assistant'::message_type)
@@ -1119,7 +1126,14 @@ messages_with_tree AS (
             mp.depth + 1 as depth,
             mp.path_root_id
         FROM view_simulation_messages_entry m
-        LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        LEFT JOIN LATERAL (
+            SELECT content
+            FROM simulation_contents_entry ce
+            WHERE ce.message_id = m.id
+              AND ce.active = true
+            ORDER BY ce.created_at
+            LIMIT 1
+        ) ce ON TRUE
         JOIN view_message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
         JOIN view_runs_entry r ON r.id = m.run_id
@@ -1145,7 +1159,14 @@ messages_with_tree AS (
         FROM all_chats c
         JOIN view_simulation_messages_entry m ON m.chat_id = c.id
         JOIN view_runs_entry r ON r.id = m.run_id
-        LEFT JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        LEFT JOIN LATERAL (
+            SELECT content
+            FROM simulation_contents_entry ce
+            WHERE ce.message_id = m.id
+              AND ce.active = true
+            ORDER BY ce.created_at
+            LIMIT 1
+        ) ce ON TRUE
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
           AND m.role IN ('user'::message_type, 'assistant'::message_type)

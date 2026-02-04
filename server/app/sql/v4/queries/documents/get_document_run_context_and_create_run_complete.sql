@@ -499,7 +499,14 @@ existing_developer_message AS (
         m.created_at,
         dmh.run_id
     FROM view_messages_entry m
-    JOIN view_contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN LATERAL (
+        SELECT content
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = m.id
+          AND ce.active = true
+        ORDER BY ce.created_at
+        LIMIT 1
+    ) ce ON TRUE
     JOIN developer_message_hash dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     LIMIT 1
@@ -512,7 +519,7 @@ new_developer_message AS (
     RETURNING id, created_at, updated_at
 ),
 insert_developer_content AS (
-    INSERT INTO contents_entry (message_id, content, created_at, updated_at)
+    INSERT INTO simulation_contents_entry (message_id, content, created_at, updated_at)
     SELECT
         nm.id,
         (SELECT content FROM developer_message_hash LIMIT 1),

@@ -41,6 +41,8 @@ CREATE TYPE types.q_get_persona_resource_v4_item AS (
     color text,
     icon text,
     image_model boolean,
+    instructions text,
+    examples text[],
     generated boolean
 );
 
@@ -56,16 +58,20 @@ STABLE
 AS $$
 SELECT
     (
-        p.id,
+        pr.id,
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''),
         COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), ''),
         COALESCE((SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), ''),
         COALESCE((SELECT pf.value FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'image_model' LIMIT 1), false),
-        COALESCE(p.generated, false)
+        COALESCE(pr.instructions, ''),
+        COALESCE(pr.examples, ARRAY[]::text[]),
+        COALESCE(pr.generated, false)
     )::types.q_get_persona_resource_v4_item as item
-FROM persona_artifact p
-WHERE p.id = id
+FROM personas_resource pr
+JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
+JOIN persona_artifact p ON p.id = ppj.persona_id
+WHERE pr.id = $1
   AND EXISTS (
       SELECT 1 FROM persona_flags_junction pf
       JOIN flags_resource f ON pf.flag_id = f.id

@@ -79,9 +79,9 @@ BEGIN
         v_table_name := entry_type || '_entry';
     END IF;
 
-    -- Special handling for contents: insert into contents_entry and link to simulation_contents_entry
+    -- Special handling for contents: insert into simulation_contents_entry
     IF entry_type = 'contents' THEN
-        v_table_name := 'contents_entry';
+        v_table_name := 'simulation_contents_entry';
 
         v_columns := ARRAY[]::text[];
         v_values := ARRAY[]::text[];
@@ -110,6 +110,18 @@ BEGIN
             ELSIF v_col_name = 'mcp' THEN
                 v_columns := array_append(v_columns, v_col_name);
                 v_values := array_append(v_values, mcp::text);
+            ELSIF v_col_name = 'message_id' THEN
+                v_columns := array_append(v_columns, v_col_name);
+                v_value := COALESCE(v_entry_data->>'message_id', v_entry_data->>'simulation_message_id');
+                v_values := array_append(v_values, quote_literal(v_value) || '::uuid');
+            ELSIF v_col_name = 'persona_id' THEN
+                v_columns := array_append(v_columns, v_col_name);
+                v_value := COALESCE(v_entry_data->>'persona_id', v_entry_data->>'personas_id');
+                IF v_value IS NULL OR v_value = '' THEN
+                    v_values := array_append(v_values, 'NULL');
+                ELSE
+                    v_values := array_append(v_values, quote_literal(v_value) || '::uuid');
+                END IF;
             ELSIF v_entry_data ? v_col_name AND v_entry_data->>v_col_name IS NOT NULL THEN
                 v_columns := array_append(v_columns, v_col_name);
                 v_value := v_entry_data->>v_col_name;
@@ -150,22 +162,6 @@ BEGIN
         );
 
         EXECUTE v_query INTO v_entry_id;
-
-        -- Link to simulation_contents_entry (required for simulation views)
-        IF v_entry_data ? 'message_id' AND v_entry_data->>'message_id' IS NOT NULL THEN
-            v_message_id := (v_entry_data->>'message_id')::uuid;
-            v_persona_id := NULL;
-            IF v_entry_data ? 'persona_id' THEN
-                v_persona_id := NULLIF(v_entry_data->>'persona_id', '')::uuid;
-            ELSIF v_entry_data ? 'personas_id' THEN
-                v_persona_id := NULLIF(v_entry_data->>'personas_id', '')::uuid;
-            END IF;
-
-            INSERT INTO simulation_contents_entry (content_id, simulation_message_id, persona_id)
-            VALUES (v_entry_id, v_message_id, v_persona_id)
-            ON CONFLICT DO NOTHING;
-        END IF;
-
         RETURN QUERY SELECT v_entry_id, false;
         RETURN;
     END IF;

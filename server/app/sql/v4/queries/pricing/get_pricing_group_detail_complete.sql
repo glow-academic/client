@@ -431,7 +431,16 @@ messages_with_content AS (
             ARRAY[(0, '', mwt.created_at, mwt.updated_at)::types.q_get_pricing_group_detail_v4_content]
         ) as contents
     FROM messages_with_tree mwt
-    LEFT JOIN view_contents_entry ce ON ce.message_id = mwt.id
+    LEFT JOIN LATERAL (
+        SELECT
+            (ROW_NUMBER() OVER (ORDER BY ce.created_at) - 1)::int AS idx,
+            ce.content,
+            ce.created_at,
+            ce.updated_at
+        FROM simulation_contents_entry ce
+        WHERE ce.message_id = mwt.id
+          AND ce.active = true
+    ) ce ON TRUE
     GROUP BY mwt.id, mwt.run_id, mwt.role, mwt.created_at, mwt.completed, mwt.updated_at, mwt.run_idx, mwt.depth
 ),
 -- Get run idx for each run
