@@ -130,7 +130,31 @@ counted AS (
     SELECT COUNT(*)::int AS total_count FROM filtered
 ),
 sorted AS (
-    SELECT *
+    SELECT
+        filtered.profile_id,
+        filtered.attempt_type,
+        filtered.is_archived,
+        filtered.total_attempts,
+        filtered.avg_score,
+        filtered.highest_score,
+        filtered.completion_pct,
+        filtered.first_attempt_pass_rate,
+        filtered.avg_messages_per_session,
+        filtered.avg_persona_response_sec,
+        filtered.session_efficiency,
+        filtered.total_time_minutes,
+        filtered.improvement_rate,
+        filtered.perfect_score_count,
+        filtered.quickest_pass_minutes,
+        filtered.first_attempt_at,
+        filtered.last_attempt_at,
+        filtered.simulation_ids,
+        filtered.scenario_ids,
+        filtered.cohort_ids,
+        p.sort_by,
+        p.sort_order,
+        p.page_limit,
+        p.page_offset
     FROM filtered
     CROSS JOIN params p
     ORDER BY
@@ -152,26 +176,26 @@ items_agg AS (
     SELECT COALESCE(
         ARRAY_AGG(
             (
-                profile_id,
-                attempt_type,
-                is_archived,
-                total_attempts,
-                avg_score,
-                highest_score,
-                completion_pct,
-                first_attempt_pass_rate,
-                avg_messages_per_session,
-                avg_persona_response_sec,
-                session_efficiency,
-                total_time_minutes,
-                improvement_rate,
-                perfect_score_count,
-                quickest_pass_minutes,
-                first_attempt_at,
-                last_attempt_at,
-                simulation_ids,
-                scenario_ids,
-                cohort_ids
+                sorted.profile_id,
+                sorted.attempt_type,
+                sorted.is_archived,
+                sorted.total_attempts,
+                sorted.avg_score,
+                sorted.highest_score,
+                sorted.completion_pct,
+                sorted.first_attempt_pass_rate,
+                sorted.avg_messages_per_session,
+                sorted.avg_persona_response_sec,
+                sorted.session_efficiency,
+                sorted.total_time_minutes,
+                sorted.improvement_rate,
+                sorted.perfect_score_count,
+                sorted.quickest_pass_minutes,
+                sorted.first_attempt_at,
+                sorted.last_attempt_at,
+                sorted.simulation_ids,
+                sorted.scenario_ids,
+                sorted.cohort_ids
             )::types.q_get_analytics_profile_metrics_view_v4_item
         ),
         ARRAY[]::types.q_get_analytics_profile_metrics_view_v4_item[]

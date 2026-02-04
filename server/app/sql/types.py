@@ -22229,6 +22229,88 @@ class GetProfileMetricsV4ApiResponse(BaseModel):
 
 
 
+# Generated from: get_analytics_profile_metrics_view
+
+class GetAnalyticsProfileMetricsViewSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    min_attempts: int | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.profile_ids,
+            self.cohort_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.attempt_type_filter,
+            self.is_archived_filter,
+            self.min_attempts,
+            self.sort_by,
+            self.sort_order,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetAnalyticsProfileMetricsViewV4Item(BaseModel):
+
+    profile_id: UUID | None
+    attempt_type: str | None
+    is_archived: bool | None
+    total_attempts: int | None
+    avg_score: float | None
+    highest_score: float | None
+    completion_pct: float | None
+    first_attempt_pass_rate: float | None
+    avg_messages_per_session: float | None
+    avg_persona_response_sec: float | None
+    session_efficiency: float | None
+    total_time_minutes: float | None
+    improvement_rate: float | None
+    perfect_score_count: int | None
+    quickest_pass_minutes: float | None
+    first_attempt_at: datetime | None
+    last_attempt_at: datetime | None
+    simulation_ids: list[UUID] | None
+    scenario_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+class GetAnalyticsProfileMetricsViewSqlRow(BaseModel):
+
+    total_count: int | None = None
+    items: list[QGetAnalyticsProfileMetricsViewV4Item] | None = None
+
+class GetAnalyticsProfileMetricsViewApiRequest(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    min_attempts: int | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetAnalyticsProfileMetricsViewApiResponse(BaseModel):
+
+    total_count: int | None = None
+    items: list[QGetAnalyticsProfileMetricsViewV4Item] | None = None
+
+
+
 # Generated from: get_analytics_rubric_group_scores_view
 
 class GetAnalyticsRubricGroupScoresViewSqlParams(BaseModel):
@@ -25263,6 +25345,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileMetricsV4ApiRequest",
         "GetProfileMetricsV4ApiResponse",
     ),
+    "app/sql/v4/queries/views/analytics/profile_metrics/get_analytics_profile_metrics_view_complete.sql": (
+        "GetAnalyticsProfileMetricsViewSqlParams",
+        "GetAnalyticsProfileMetricsViewSqlRow",
+        "GetAnalyticsProfileMetricsViewApiRequest",
+        "GetAnalyticsProfileMetricsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/rubric_group_scores/get_analytics_rubric_group_scores_view_complete.sql": (
         "GetAnalyticsRubricGroupScoresViewSqlParams",
         "GetAnalyticsRubricGroupScoresViewSqlRow",
@@ -27431,6 +27519,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/analytics/get_profile_metrics_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/analytics/profile_metrics/get_analytics_profile_metrics_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

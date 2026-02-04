@@ -19,7 +19,6 @@ import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -32,6 +31,7 @@ from app.main import (
     sio,
 )
 from app.socket.v4.artifacts.adapters.audio.openai import OpenAIRealtimeAdapter
+from app.sql.types import GetVoiceSessionContextSqlParams, GetVoiceSessionContextSqlRow
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.sql_helper import execute_sql_typed
 
@@ -63,19 +63,6 @@ server_router = APIRouter()
 
 # SQL path for voice session context
 SQL_PATH_VOICE_CONTEXT = "app/sql/v4/queries/audio/get_voice_session_context_complete.sql"
-
-
-# Local type for voice session context (auto-generated types not available yet)
-class VoiceSessionContextRow(BaseModel):
-    """Row returned by socket_get_voice_session_context_v4."""
-
-    model_config = {"extra": "allow"}
-
-    chat_id: uuid.UUID | None = None
-    attempt_id: uuid.UUID | None = None
-    simulation_id: uuid.UUID | None = None
-    api_key: str | None = None
-    provider_name: str | None = None
 
 
 # Global adapter instance (singleton)
@@ -133,11 +120,14 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         # Fetch voice configuration from database
         async with get_db_connection() as conn:
             context_row = cast(
-                VoiceSessionContextRow,
+                GetVoiceSessionContextSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH_VOICE_CONTEXT,
-                    params={"p_profile_id": profile_id, "p_chat_id": payload.chat_id},
+                    params=GetVoiceSessionContextSqlParams(
+                        p_profile_id=profile_id,
+                        p_chat_id=payload.chat_id,
+                    ),
                 ),
             )
 
