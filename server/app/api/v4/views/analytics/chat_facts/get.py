@@ -126,6 +126,11 @@ async def get_chat_facts_internal(
                     scenario_id=item.scenario_id,
                     persona_id=item.persona_id,
                     rubric_id=item.rubric_id,
+                    parameter_field_ids=list(item.parameter_field_ids)
+                    if item.parameter_field_ids
+                    else [],
+                    parameter_ids=list(item.parameter_ids) if item.parameter_ids else [],
+                    field_ids=list(item.field_ids) if item.field_ids else [],
                     attempt_created_at=item.attempt_created_at,
                     chat_created_at=item.chat_created_at,
                     grade_created_at=item.grade_created_at,

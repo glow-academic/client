@@ -816,7 +816,10 @@ export function AttemptChat({
       return;
     }
 
-    socket.emit("attempt_audio_start", { chat_id: currentChat.id });
+    const chatId = currentChat.id;
+
+    // BFF: Client sends chat_id, server generates group_id internally
+    socket.emit("attempt_audio_start", { chat_id: chatId });
 
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
@@ -829,7 +832,7 @@ export function AttemptChat({
       }, 10000);
 
       const handleStartResponse = (data: AttemptAudioReadyEvent) => {
-        if (data.chat_id !== currentChat.id) return;
+        if (data.chat_id !== chatId) return;
         clearTimeout(timeout);
         cleanup();
         if (data.success) {
@@ -846,7 +849,10 @@ export function AttemptChat({
   const handleVoiceStop = useCallback(async () => {
     if (!currentChat?.id || !socket || !isConnected) return;
 
-    socket.emit("attempt_audio_stop", { chat_id: currentChat.id });
+    const chatId = currentChat.id;
+
+    // BFF: Client sends chat_id, server looks up session by sid
+    socket.emit("attempt_audio_stop", { chat_id: chatId });
 
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
@@ -859,7 +865,7 @@ export function AttemptChat({
       }, 10000);
 
       const handleStopResponse = (data: AttemptAudioEndedEvent) => {
-        if (data.chat_id !== currentChat.id) return;
+        if (data.chat_id !== chatId) return;
         clearTimeout(timeout);
         cleanup();
         if (data.success) {
@@ -1060,6 +1066,7 @@ export function AttemptChat({
 
     // User started speaking (voice)
     const handleUserStart = (data: AttemptUserStartEvent) => {
+      // Filter by chat_id (BFF translation layer returns chat_id)
       if (data.chat_id !== currentChatIdRef.current) return;
 
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
@@ -1101,6 +1108,7 @@ export function AttemptChat({
 
     // User transcript delta (voice)
     const handleUserDelta = (data: AttemptUserDeltaEvent) => {
+      // Filter by chat_id (BFF translation layer returns chat_id)
       if (data.chat_id !== currentChatIdRef.current) return;
 
       transcriptDeltasRef.current.set(data.item_id, data.transcript);
@@ -1123,6 +1131,7 @@ export function AttemptChat({
 
     // Assistant audio chunk
     const handleAssistantAudio = (data: AttemptAssistantAudioEvent) => {
+      // Filter by chat_id (BFF translation layer returns chat_id)
       if (data.chat_id !== currentChatIdRef.current) return;
       voiceInputRef.current?.enqueue_audio_delta(data.audio);
     };

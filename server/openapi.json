@@ -33536,6 +33536,110 @@
       },
       "DashboardRequest": {
         "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Filters"
+          },
+          "actor_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Profile Id"
+          },
+          "target_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Profile Id"
+          },
           "cohort_id": {
             "anyOf": [
               {
@@ -33562,7 +33666,7 @@
           },
           "page_limit": {
             "type": "integer",
-            "maximum": 100.0,
+            "maximum": 200.0,
             "minimum": 1.0,
             "title": "Page Limit",
             "default": 50
@@ -33576,7 +33680,7 @@
         },
         "type": "object",
         "title": "DashboardRequest",
-        "description": "Request for getting dashboard data."
+        "description": "Request for getting dashboard data (get.py scope only)."
       },
       "DashboardResources": {
         "properties": {
@@ -33607,7 +33711,7 @@
         },
         "type": "object",
         "title": "DashboardResources",
-        "description": "Dashboard resource metadata."
+        "description": "Legacy dashboard resource metadata."
       },
       "DashboardResponse": {
         "properties": {
@@ -33625,7 +33729,7 @@
         },
         "type": "object",
         "title": "DashboardResponse",
-        "description": "Response with dashboard data."
+        "description": "Legacy response with views/resources.\n\nKept for compatibility with current get.py route implementation."
       },
       "DashboardViews": {
         "properties": {
@@ -33639,7 +33743,7 @@
         },
         "type": "object",
         "title": "DashboardViews",
-        "description": "Dashboard view data."
+        "description": "Legacy dashboard view data."
       },
       "DeleteAgentApiRequest": {
         "properties": {

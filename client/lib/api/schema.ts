@@ -6896,6 +6896,8 @@ export interface components {
          *     Emitted with audio chunks during voice mode.
          */
         AttemptAssistantAudioEvent: {
+            /** Chat Id */
+            chat_id: string;
             /**
              * Audio
              * Format: binary
@@ -6943,8 +6945,8 @@ export interface components {
          *     Emitted when voice session is ended.
          */
         AttemptAudioEndedEvent: {
-            /** Group Id */
-            group_id: string;
+            /** Chat Id */
+            chat_id: string;
             /** Success */
             success: boolean;
             /** Message */
@@ -6970,8 +6972,8 @@ export interface components {
          *     Emitted when voice session is ready.
          */
         AttemptAudioReadyEvent: {
-            /** Group Id */
-            group_id: string;
+            /** Chat Id */
+            chat_id: string;
             /** Success */
             success: boolean;
             /** Message */
@@ -6981,27 +6983,27 @@ export interface components {
          * AttemptAudioStartPayload
          * @description Request payload for attempt_audio_start WebSocket event.
          *
-         *     Starts a voice session for a group.
+         *     Starts a voice session for a chat.
          */
         AttemptAudioStartPayload: {
             /**
-             * Group Id
+             * Chat Id
              * Format: uuid
              */
-            group_id: string;
+            chat_id: string;
         };
         /**
          * AttemptAudioStopPayload
          * @description Request payload for attempt_audio_stop WebSocket event.
          *
-         *     Stops the voice session for a group.
+         *     Stops the voice session for a chat.
          */
         AttemptAudioStopPayload: {
             /**
-             * Group Id
+             * Chat Id
              * Format: uuid
              */
-            group_id: string;
+            chat_id: string;
         };
         /**
          * AttemptChatEndedEvent
@@ -7588,8 +7590,8 @@ export interface components {
          *     Emitted during voice transcription with incremental updates.
          */
         AttemptUserDeltaEvent: {
-            /** Group Id */
-            group_id: string;
+            /** Chat Id */
+            chat_id: string;
             /** Item Id */
             item_id: string;
             /** Transcript */
@@ -7602,8 +7604,8 @@ export interface components {
          *     Emitted when user speech is detected in voice mode.
          */
         AttemptUserStartEvent: {
-            /** Group Id */
-            group_id: string;
+            /** Chat Id */
+            chat_id: string;
             /** Item Id */
             item_id: string;
         };
@@ -8595,9 +8597,25 @@ export interface components {
         };
         /**
          * DashboardRequest
-         * @description Request for getting dashboard data.
+         * @description Request for getting dashboard data (get.py scope only).
          */
         DashboardRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Actor Profile Id */
+            actor_profile_id?: string | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
             /** Cohort Id */
             cohort_id?: string | null;
             /** Simulation Id */
@@ -8615,7 +8633,7 @@ export interface components {
         };
         /**
          * DashboardResources
-         * @description Dashboard resource metadata.
+         * @description Legacy dashboard resource metadata.
          */
         DashboardResources: {
             /** Simulations */
@@ -8639,7 +8657,9 @@ export interface components {
         };
         /**
          * DashboardResponse
-         * @description Response with dashboard data.
+         * @description Legacy response with views/resources.
+         *
+         *     Kept for compatibility with current get.py route implementation.
          */
         DashboardResponse: {
             views?: components["schemas"]["DashboardViews"];
@@ -8652,7 +8672,7 @@ export interface components {
         };
         /**
          * DashboardViews
-         * @description Dashboard view data.
+         * @description Legacy dashboard view data.
          */
         DashboardViews: {
             /** Attempt Facts */

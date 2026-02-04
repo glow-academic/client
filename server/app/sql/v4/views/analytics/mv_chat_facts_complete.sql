@@ -85,6 +85,23 @@ chat_persona AS (
     FROM simulation_chats_personas_connection cpc
     WHERE cpc.active = TRUE
     ORDER BY cpc.chat_id, cpc.created_at
+),
+-- Parameter/field resource IDs per chat (for direct resource lookup in API layer)
+chat_parameter_fields AS (
+    SELECT
+        cpfc.chat_id,
+        ARRAY_AGG(DISTINCT cpfc.parameter_fields_id ORDER BY cpfc.parameter_fields_id)
+            FILTER (WHERE cpfc.parameter_fields_id IS NOT NULL) AS parameter_field_ids,
+        ARRAY_AGG(DISTINCT pfr.parameter_id ORDER BY pfr.parameter_id)
+            FILTER (WHERE pfr.parameter_id IS NOT NULL) AS parameter_ids,
+        ARRAY_AGG(DISTINCT pfr.field_id ORDER BY pfr.field_id)
+            FILTER (WHERE pfr.field_id IS NOT NULL) AS field_ids
+    FROM simulation_chats_parameter_fields_connection cpfc
+    LEFT JOIN parameter_fields_resource pfr
+        ON pfr.id = cpfc.parameter_fields_id
+       AND pfr.active = TRUE
+    WHERE cpfc.active = TRUE
+    GROUP BY cpfc.chat_id
 )
 SELECT
     -- Primary key
@@ -103,6 +120,9 @@ SELECT
     csc.scenarios_id AS scenario_id,
     cp.persona_id,
     gr.rubric_id,
+    COALESCE(cpf.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
+    COALESCE(cpf.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids,
+    COALESCE(cpf.field_ids, ARRAY[]::uuid[]) AS field_ids,
 
     -- Timestamps
     a.created_at AS attempt_created_at,
@@ -145,6 +165,7 @@ LEFT JOIN simulation_attempts_roles_connection arc ON arc.attempt_id = a.id
 JOIN simulation_chats_scenarios_connection csc ON csc.chat_id = c.id
 -- Chat connections (optional)
 LEFT JOIN chat_persona cp ON cp.chat_id = c.id
+LEFT JOIN chat_parameter_fields cpf ON cpf.chat_id = c.id
 -- Grade data (optional)
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN grade_rubric gr ON gr.grade_id = lg.grade_id
@@ -194,6 +215,16 @@ CREATE INDEX mv_chat_facts_persona_id_idx
 CREATE INDEX mv_chat_facts_rubric_id_idx
     ON mv_chat_facts (rubric_id)
     WHERE rubric_id IS NOT NULL;
+
+-- Array indexes for parameter/field lookups
+CREATE INDEX mv_chat_facts_parameter_field_ids_gin_idx
+    ON mv_chat_facts USING GIN (parameter_field_ids);
+
+CREATE INDEX mv_chat_facts_parameter_ids_gin_idx
+    ON mv_chat_facts USING GIN (parameter_ids);
+
+CREATE INDEX mv_chat_facts_field_ids_gin_idx
+    ON mv_chat_facts USING GIN (field_ids);
 
 -- Time indexes
 CREATE INDEX mv_chat_facts_attempt_created_at_idx

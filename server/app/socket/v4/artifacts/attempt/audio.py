@@ -7,8 +7,15 @@ Handles WebSocket events for voice functionality:
 - attempt_mic_mute: Toggle microphone mute
 
 These handlers wrap the existing frames.py functionality with the unified attempt_* event contract.
+
+BFF Translation Layer:
+- Client sends chat_id (simple, intuitive API)
+- Server generates group_id internally for session management
+- AudioSession stores both for bidirectional mapping
+- Events emitted back to client use chat_id
 """
 
+import uuid
 from typing import Any
 
 from fastapi import APIRouter
@@ -19,8 +26,11 @@ from app.main import (
     _voice_message_ids,
     _voice_message_ids_lock,
     _voice_sessions,
+    get_internal_sio,
     sio,
 )
+
+internal_sio = get_internal_sio()
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAssistantAudioEvent,
     AttemptAudioEndedEvent,
@@ -33,7 +43,6 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptUserDeltaEvent,
     AttemptUserStartEvent,
 )
-from app.socket.v4.artifacts.frames import start_client_ws_sender
 from app.socket.v4.artifacts.session_store import (
     create_session,
     get_session_by_group_id,
@@ -52,19 +61,20 @@ server_router = APIRouter()
 async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
     """Handle attempt_audio_start event - start a voice session.
 
-    Emits attempt_audio_ready on success.
+    BFF Translation: Client sends chat_id, server generates group_id internally.
+    Emits attempt_audio_ready with chat_id on success.
     """
     try:
         payload = AttemptAudioStartPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
 
-        group_id = str(payload.group_id)
+        chat_id = str(payload.chat_id)
 
         if not profile_id_str:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    group_id=group_id,
+                    group_id=None,
                     type="audio",
                     message="Profile not found. Please reconnect.",
                 ).model_dump(mode="json"),
@@ -72,8 +82,11 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        # Create audio session (keyed by group_id)
-        session = create_session(sid, group_id)
+        # Generate unique group_id for this voice session (like SQL does for text)
+        group_id = str(uuid.uuid4())
+
+        # Create session with BOTH identifiers - group_id for internal, chat_id for events
+        session = create_session(sid, group_id, chat_id)
 
         # Store session reference by group_id for cleanup
         _voice_sessions[group_id] = {
@@ -81,11 +94,11 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             "session": session,
         }
 
-        # Start the background task to send audio frames to client
-        await start_client_ws_sender(sid, group_id)
+        # Note: Outbound audio is handled via internal_sio events (generate_audio_delta)
+        # which are translated to attempt_assistant_audio by the listener below
 
         event = AttemptAudioReadyEvent(
-            group_id=group_id,
+            chat_id=chat_id,
             success=True,
             message="Voice session ready",
         )
@@ -96,7 +109,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
 
-        logger.info(f"Audio session started - group_id={group_id}")
+        logger.info(f"Audio session started - chat_id={chat_id}, group_id={group_id}")
 
         # Log activity
         try:
@@ -104,7 +117,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 event_key="attempt.audio.started",
                 template="{{ actor.name }} started voice session",
-                context={"group_id": group_id},
+                context={"chat_id": chat_id, "group_id": group_id},
                 endpoint="/socket/v4/attempt/audio_start",
                 error=False,
             )
@@ -113,11 +126,11 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_audio_start: {str(e)}")
-        group_id = data.get("group_id", "")
+        chat_id = data.get("chat_id", "")
         await sio.emit(
             "attempt_error",
             AttemptUnifiedErrorEvent(
-                group_id=str(group_id) if group_id else None,
+                group_id=None,
                 type="audio",
                 message=f"Failed to start voice session: {str(e)}",
             ).model_dump(mode="json"),
@@ -129,26 +142,32 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
     """Handle attempt_audio_stop event - stop a voice session.
 
-    Emits attempt_audio_ended on success.
+    BFF Translation: Client sends chat_id, we look up session by sid to get group_id.
+    Emits attempt_audio_ended with chat_id on success.
     """
     try:
         payload = AttemptAudioStopPayload(**data)
-        group_id = str(payload.group_id)
+        chat_id = str(payload.chat_id)
 
-        # Get and remove voice session
-        session_data = _voice_sessions.pop(group_id, None)
-        if session_data:
-            # Remove from session store (cleans up by both sid and group_id)
-            remove_session(group_id)
-            logger.info(f"Audio session stopped - group_id={group_id}")
+        # Look up session by sid to get the group_id
+        session = get_session_by_sid(sid)
+        group_id = session.group_id if session else None
 
-        # Clear accumulated message IDs for this group
-        async with _voice_message_ids_lock:
-            if group_id in _voice_message_ids:
-                del _voice_message_ids[group_id]
+        if group_id:
+            # Get and remove voice session
+            session_data = _voice_sessions.pop(group_id, None)
+            if session_data:
+                # Remove from session store (cleans up by both sid and group_id)
+                remove_session(group_id)
+                logger.info(f"Audio session stopped - chat_id={chat_id}, group_id={group_id}")
+
+            # Clear accumulated message IDs for this group
+            async with _voice_message_ids_lock:
+                if group_id in _voice_message_ids:
+                    del _voice_message_ids[group_id]
 
         event = AttemptAudioEndedEvent(
-            group_id=group_id,
+            chat_id=chat_id,
             success=True,
             message="Voice session stopped",
         )
@@ -165,7 +184,7 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 event_key="attempt.audio.stopped",
                 template="{{ actor.name }} stopped voice session",
-                context={"group_id": group_id},
+                context={"chat_id": chat_id, "group_id": group_id},
                 endpoint="/socket/v4/attempt/audio_stop",
                 error=False,
             )
@@ -174,11 +193,11 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_audio_stop: {str(e)}")
-        group_id = data.get("group_id", "")
+        chat_id = data.get("chat_id", "")
         await sio.emit(
             "attempt_error",
             AttemptUnifiedErrorEvent(
-                group_id=str(group_id) if group_id else None,
+                group_id=None,
                 type="audio",
                 message=f"Failed to stop voice session: {str(e)}",
             ).model_dump(mode="json"),
@@ -289,23 +308,167 @@ def get_session_for_group(group_id: str):
     return None
 
 
-async def push_audio_to_session(group_id: str, audio_data: bytes) -> bool:
-    """Push audio data to a group's audio session outbound queue.
+async def emit_audio_delta(group_id: str, audio_data: bytes) -> bool:
+    """Emit audio delta via internal event bus.
 
-    This is called by the generation pipeline when audio is produced.
-    Returns True if audio was pushed, False if no session exists.
+    This is the preferred way for audio producers (e.g., OpenAI Realtime API)
+    to send audio to clients. The internal event is translated to domain-specific
+    events by the listener below.
+
+    Returns True if emitted, False if no session exists.
     """
     session = get_session_for_group(group_id)
     if not session:
         return False
 
-    await session.outbound_queue.put(
+    await internal_sio.emit(
+        "generate_audio_delta",
         {
-            "type": "audio",
-            "pcm16": audio_data,
-        }
+            "group_id": group_id,
+            "audio": audio_data,
+        },
     )
     return True
+
+
+async def emit_user_speech_start(group_id: str, item_id: str) -> bool:
+    """Emit user speech start via internal event bus.
+
+    Called when user speech is detected in voice mode.
+    """
+    session = get_session_for_group(group_id)
+    if not session:
+        return False
+
+    await internal_sio.emit(
+        "generate_user_speech_start",
+        {
+            "group_id": group_id,
+            "item_id": item_id,
+        },
+    )
+    return True
+
+
+async def emit_user_speech_delta(group_id: str, item_id: str, transcript: str) -> bool:
+    """Emit user speech transcript delta via internal event bus.
+
+    Called during voice transcription with incremental updates.
+    """
+    session = get_session_for_group(group_id)
+    if not session:
+        return False
+
+    await internal_sio.emit(
+        "generate_user_speech_delta",
+        {
+            "group_id": group_id,
+            "item_id": item_id,
+            "transcript": transcript,
+        },
+    )
+    return True
+
+
+# =============================================================================
+# Internal Event Listeners (BFF Translation Layer)
+# =============================================================================
+# These listeners receive generic internal events and translate them to
+# domain-specific client events, mapping group_id -> chat_id.
+# =============================================================================
+
+
+@internal_sio.on("generate_audio_delta")  # type: ignore
+async def handle_generate_audio_delta(data: dict[str, Any]) -> None:
+    """Handle generate_audio_delta - translate to attempt_assistant_audio.
+
+    BFF Translation: group_id from internal event -> chat_id for client event.
+    """
+    group_id = data.get("group_id")
+    if not group_id:
+        return
+
+    session = get_session_for_group(group_id)
+    if not session:
+        return
+
+    audio_data = data.get("audio")
+    if not audio_data:
+        return
+
+    event = AttemptAssistantAudioEvent(
+        chat_id=session.chat_id,
+        audio=audio_data,
+    )
+
+    await sio.emit(
+        "attempt_assistant_audio",
+        event.model_dump(mode="json"),
+        room=session.sid,
+    )
+
+
+@internal_sio.on("generate_user_speech_start")  # type: ignore
+async def handle_generate_user_speech_start(data: dict[str, Any]) -> None:
+    """Handle generate_user_speech_start - translate to attempt_user_start.
+
+    BFF Translation: group_id from internal event -> chat_id for client event.
+    """
+    group_id = data.get("group_id")
+    if not group_id:
+        return
+
+    session = get_session_for_group(group_id)
+    if not session:
+        return
+
+    item_id = data.get("item_id")
+    if not item_id:
+        return
+
+    event = AttemptUserStartEvent(
+        chat_id=session.chat_id,
+        item_id=item_id,
+    )
+
+    await sio.emit(
+        "attempt_user_start",
+        event.model_dump(mode="json"),
+        room=session.sid,
+    )
+
+
+@internal_sio.on("generate_user_speech_delta")  # type: ignore
+async def handle_generate_user_speech_delta(data: dict[str, Any]) -> None:
+    """Handle generate_user_speech_delta - translate to attempt_user_delta.
+
+    BFF Translation: group_id from internal event -> chat_id for client event.
+    """
+    group_id = data.get("group_id")
+    if not group_id:
+        return
+
+    session = get_session_for_group(group_id)
+    if not session:
+        return
+
+    item_id = data.get("item_id")
+    transcript = data.get("transcript", "")
+
+    if not item_id:
+        return
+
+    event = AttemptUserDeltaEvent(
+        chat_id=session.chat_id,
+        item_id=item_id,
+        transcript=transcript,
+    )
+
+    await sio.emit(
+        "attempt_user_delta",
+        event.model_dump(mode="json"),
+        room=session.sid,
+    )
 
 
 # =============================================================================

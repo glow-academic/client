@@ -1,20 +1,39 @@
 """Get endpoint for leaderboard artifact."""
 
+import asyncio
+from datetime import datetime
 from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.leaderboard.types import (
-    LeaderboardRequest,
-    LeaderboardResponse,
-    LeaderboardViews,
-    LeaderboardResources,
+from app.api.v4.artifacts.leaderboard.permissions import (
+    build_leaderboard_rows,
+    build_leaderboard_sections,
 )
+from app.api.v4.artifacts.leaderboard.types import (
+    LeaderboardProfileResource,
+    LeaderboardRequest,
+    LeaderboardResources,
+    LeaderboardResponse,
+    LeaderboardScenarioResource,
+    LeaderboardSections,
+    LeaderboardSimulationResource,
+    LeaderboardViews,
+)
+from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.scenarios.get import get_scenarios_internal
+from app.api.v4.resources.simulations.get import get_simulations_batch_internal
 from app.api.v4.views.analytics.attempts.get import get_attempt_facts_internal
+from app.api.v4.views.analytics.chat_facts.get import get_chat_facts_internal
+from app.api.v4.views.analytics.chat_facts.types import GetChatFactsRequest
+from app.api.v4.views.analytics.daily_metrics.get import get_daily_metrics_internal
+from app.api.v4.views.analytics.daily_metrics.types import GetDailyMetricsRequest
+from app.api.v4.views.analytics.profile_metrics.get import get_profile_metrics_internal
+from app.api.v4.views.analytics.profile_metrics.types import GetProfileMetricsRequest
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.main import get_db, get_pool
 
 router = APIRouter()
 
@@ -35,44 +54,262 @@ async def get_leaderboard(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> LeaderboardResponse:
-    """Get leaderboard artifact data."""
-    tags = ["artifacts", "leaderboard"]
+    """Get leaderboard artifact data.
+
+    Pulls four analytics MV slices in parallel and computes leaderboard
+    section skeletons.
+    """
+    tags = ["artifacts", "leaderboard", "views", "analytics"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        attempt_facts_result = await get_attempt_facts_internal(
-            conn=conn,
-            simulation_ids=[request.simulation_id] if request.simulation_id else None,
-            cohort_ids=[request.cohort_id] if request.cohort_id else None,
-            attempt_type="general",
-            is_archived=False,
-            sort_by="score",
-            sort_order="desc",
-            page_limit=request.page_limit,
-            page_offset=request.page_offset,
-            bypass_cache=bypass_cache,
+        pool = get_pool()
+        if not pool:
+            raise RuntimeError("Database pool not initialized")
+
+        parsed_start_date = (
+            datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
+            if request.start_date
+            else None
+        )
+        parsed_end_date = (
+            datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
+            if request.end_date
+            else None
         )
 
-        profile_ids: set[str] = set()
-        simulation_ids: set[str] = set()
+        simulation_ids_filter = (
+            request.simulation_ids
+            if request.simulation_ids
+            else ([request.simulation_id] if request.simulation_id else None)
+        )
+        cohort_ids_filter = (
+            request.cohort_ids
+            if request.cohort_ids
+            else ([request.cohort_id] if request.cohort_id else None)
+        )
 
-        for item in attempt_facts_result.items:
+        is_archived = bool(
+            request.simulation_filters and "archived" in request.simulation_filters
+        )
+        if request.simulation_filters and "general" in request.simulation_filters:
+            attempt_type = "general"
+        elif request.simulation_filters and "practice" in request.simulation_filters:
+            attempt_type = "practice"
+        else:
+            attempt_type = "general"
+
+        async def fetch_attempts() -> tuple[list, int]:
+            async with pool.acquire() as c:
+                result = await get_attempt_facts_internal(
+                    conn=c,
+                    profile_id=request.target_profile_id,
+                    attempt_type=attempt_type,
+                    is_archived=is_archived,
+                    simulation_ids=simulation_ids_filter,
+                    cohort_ids=cohort_ids_filter,
+                    department_ids=request.department_ids,
+                    scenario_ids=request.scenario_ids,
+                    date_from=parsed_start_date,
+                    date_to=parsed_end_date,
+                    search=request.search,
+                    sort_by=request.sort_by if request.sort_by in {"date", "score"} else "score",
+                    sort_order=request.sort_order,
+                    page_limit=request.page_limit,
+                    page_offset=request.page_offset,
+                    bypass_cache=bypass_cache,
+                )
+                return result.items, result.total_count
+
+        async def fetch_chat_facts() -> list:
+            async with pool.acquire() as c:
+                result = await get_chat_facts_internal(
+                    conn=c,
+                    request=GetChatFactsRequest(
+                        profile_id=request.target_profile_id,
+                        profile_ids=request.profile_ids,
+                        simulation_ids=simulation_ids_filter,
+                        cohort_ids=cohort_ids_filter,
+                        department_ids=request.department_ids,
+                        scenario_ids=request.scenario_ids,
+                        attempt_type=attempt_type,
+                        is_archived=is_archived,
+                        date_from=parsed_start_date,
+                        date_to=parsed_end_date,
+                        search=request.search,
+                        sort_by="date",
+                        sort_order=request.sort_order,
+                        page_limit=request.page_limit,
+                        page_offset=request.page_offset,
+                    ),
+                    bypass_cache=bypass_cache,
+                )
+                return result.items
+
+        async def fetch_daily_metrics() -> list:
+            async with pool.acquire() as c:
+                result = await get_daily_metrics_internal(
+                    conn=c,
+                    request=GetDailyMetricsRequest(
+                        cohort_ids=cohort_ids_filter,
+                        simulation_ids=simulation_ids_filter,
+                        attempt_type=attempt_type,
+                        is_archived=is_archived,
+                    ),
+                    bypass_cache=bypass_cache,
+                )
+                return result.items
+
+        async def fetch_profile_metrics() -> list:
+            async with pool.acquire() as c:
+                profile_sort_by = (
+                    request.sort_by
+                    if request.sort_by
+                    in {
+                        "avg_score",
+                        "highest_score",
+                        "total_attempts",
+                        "improvement",
+                        "last_attempt_at",
+                    }
+                    else "highest_score"
+                )
+                result = await get_profile_metrics_internal(
+                    conn=c,
+                    request=GetProfileMetricsRequest(
+                        profile_id=request.target_profile_id,
+                        profile_ids=request.profile_ids,
+                        cohort_ids=cohort_ids_filter,
+                        simulation_ids=simulation_ids_filter,
+                        scenario_ids=request.scenario_ids,
+                        attempt_type=attempt_type,
+                        is_archived=is_archived,
+                        sort_by=profile_sort_by,
+                        sort_order=request.sort_order,
+                        page_limit=request.page_limit,
+                        page_offset=request.page_offset,
+                    ),
+                    bypass_cache=bypass_cache,
+                )
+                return result.items
+
+        (attempts, total_count), chat_rows, daily_rows, profile_rows = await asyncio.gather(
+            fetch_attempts(),
+            fetch_chat_facts(),
+            fetch_daily_metrics(),
+            fetch_profile_metrics(),
+        )
+
+        profile_id_set = {row.profile_id for row in profile_rows}
+        simulation_id_set = {
+            simulation_id for row in profile_rows for simulation_id in row.simulation_ids
+        }
+        scenario_id_set = {
+            scenario_id for row in profile_rows for scenario_id in row.scenario_ids
+        }
+
+        for item in attempts:
             if item.profile_id:
-                profile_ids.add(str(item.profile_id))
+                profile_id_set.add(item.profile_id)
             if item.simulation_id:
-                simulation_ids.add(str(item.simulation_id))
+                simulation_id_set.add(item.simulation_id)
+            if item.scenario_ids:
+                for scenario_id in item.scenario_ids:
+                    scenario_id_set.add(scenario_id)
 
-        views = LeaderboardViews(attempt_facts=attempt_facts_result.items)
+        async def fetch_profiles() -> list:
+            async with pool.acquire() as c:
+                return await get_profiles_internal(
+                    conn=c,
+                    ids=list(profile_id_set),
+                    bypass_cache=bypass_cache,
+                )
+
+        async def fetch_simulations() -> list:
+            async with pool.acquire() as c:
+                return await get_simulations_batch_internal(
+                    conn=c,
+                    ids=list(simulation_id_set),
+                    bypass_cache=bypass_cache,
+                )
+
+        async def fetch_scenarios() -> list:
+            async with pool.acquire() as c:
+                return await get_scenarios_internal(
+                    conn=c,
+                    ids=list(scenario_id_set),
+                    bypass_cache=bypass_cache,
+                )
+
+        profiles, simulations, scenarios = await asyncio.gather(
+            fetch_profiles(),
+            fetch_simulations(),
+            fetch_scenarios(),
+        )
+
+        profile_name_by_id = {
+            str(item.profile_id): item.name
+            for item in profiles
+            if item.profile_id is not None
+        }
+        data = build_leaderboard_rows(profile_rows, profile_name_by_id=profile_name_by_id)
+
+        sections: LeaderboardSections = build_leaderboard_sections(
+            attempts=attempts,
+            chat_rows=chat_rows,
+            daily_rows=daily_rows,
+            profile_rows=profile_rows,
+            rows=data,
+        )
+
+        views = LeaderboardViews(
+            attempt_facts=attempts,
+            chat_facts=chat_rows,
+            daily_metrics=daily_rows,
+            profile_metrics=profile_rows,
+        )
+
+        profile_resources = {
+            str(item.profile_id): LeaderboardProfileResource(
+                profile_id=str(item.profile_id),
+                name=item.name,
+                role=None,
+            )
+            for item in profiles
+            if item.profile_id is not None
+        }
+        simulation_resources = {
+            str(item.simulation_id): LeaderboardSimulationResource(
+                simulation_id=str(item.simulation_id),
+                name=item.title,
+                description=item.description,
+            )
+            for item in simulations
+            if item.simulation_id is not None
+        }
+        scenario_resources = {
+            str(item.scenario_id): LeaderboardScenarioResource(
+                scenario_id=str(item.scenario_id),
+                name=item.name,
+                description=item.description,
+            )
+            for item in scenarios
+            if item.scenario_id is not None
+        }
+
         resources = LeaderboardResources(
-            profiles={pid: {} for pid in profile_ids},
-            simulations={sid: {} for sid in simulation_ids},
+            profiles=profile_resources,
+            simulations=simulation_resources,
+            scenarios=scenario_resources,
         )
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return LeaderboardResponse(
+            sections=sections,
+            data=data,
             views=views,
             resources=resources,
-            total_count=attempt_facts_result.total_count,
+            total_count=total_count,
         )
 
     except HTTPException:

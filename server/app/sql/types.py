@@ -21501,6 +21501,115 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_analytics_chat_facts_view
+
+class GetAnalyticsChatFactsViewSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    infinite_mode_filter: bool | None = None
+    completed_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.profile_ids,
+            self.simulation_ids,
+            self.cohort_ids,
+            self.department_ids,
+            self.scenario_ids,
+            self.persona_ids,
+            self.attempt_type_filter,
+            self.is_archived_filter,
+            self.infinite_mode_filter,
+            self.completed_filter,
+            self.date_from,
+            self.date_to,
+            self.search,
+            self.sort_by,
+            self.sort_order,
+            self.page_limit,
+            self.page_offset,
+        )
+
+class QGetAnalyticsChatFactsViewV4Item(BaseModel):
+
+    chat_id: UUID | None
+    attempt_id: UUID | None
+    grade_id: UUID | None
+    simulation_id: UUID | None
+    profile_id: UUID | None
+    cohort_id: UUID | None
+    department_id: UUID | None
+    role_id: UUID | None
+    scenario_id: UUID | None
+    persona_id: UUID | None
+    rubric_id: UUID | None
+    parameter_field_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    attempt_created_at: datetime | None
+    chat_created_at: datetime | None
+    grade_created_at: datetime | None
+    attempt_type: str | None
+    is_archived: bool | None
+    infinite_mode: bool | None
+    completed: bool | None
+    score: int | None
+    passed: bool | None
+    time_taken: int | None
+    grade_percent: float | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
+    num_messages_total: int | None
+    message_time_taken_seconds: list[int] | None
+
+class GetAnalyticsChatFactsViewSqlRow(BaseModel):
+
+    total_count: int | None = None
+    items: list[QGetAnalyticsChatFactsViewV4Item] | None = None
+
+class GetAnalyticsChatFactsViewApiRequest(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    infinite_mode_filter: bool | None = None
+    completed_filter: bool | None = None
+    date_from: datetime
+    date_to: datetime
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_limit: int | None = 50
+    page_offset: int | None = 0
+
+class GetAnalyticsChatFactsViewApiResponse(BaseModel):
+
+    total_count: int | None = None
+    items: list[QGetAnalyticsChatFactsViewV4Item] | None = None
+
+
+
 # Generated from: get_analytics_daily_metrics_view
 
 class GetAnalyticsDailyMetricsViewSqlParams(BaseModel):
@@ -21567,6 +21676,58 @@ class GetAnalyticsDailyMetricsViewApiResponse(BaseModel):
 
     total_count: int | None = None
     items: list[QGetAnalyticsDailyMetricsViewV4Item] | None = None
+
+
+
+# Generated from: get_analytics_first_attempt_pass_view
+
+class GetAnalyticsFirstAttemptPassViewSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: datetime
+    date_to: datetime
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.attempt_type_filter,
+            self.is_archived_filter,
+            self.date_from,
+            self.date_to,
+        )
+
+class QGetAnalyticsFirstAttemptPassViewV4Item(BaseModel):
+
+    attempt_id: UUID | None
+    profile_id: UUID | None
+    simulation_id: UUID | None
+    attempt_created_at: datetime | None
+    grade_percent: float | None
+    rubric_pass_points: int | None
+    rubric_total_points: int | None
+
+class GetAnalyticsFirstAttemptPassViewSqlRow(BaseModel):
+
+    items: list[QGetAnalyticsFirstAttemptPassViewV4Item] | None = None
+
+class GetAnalyticsFirstAttemptPassViewApiRequest(BaseModel):
+
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    attempt_type_filter: str | None = None
+    is_archived_filter: bool | None = False
+    date_from: datetime
+    date_to: datetime
+
+class GetAnalyticsFirstAttemptPassViewApiResponse(BaseModel):
+
+    items: list[QGetAnalyticsFirstAttemptPassViewV4Item] | None = None
 
 
 
@@ -22029,6 +22190,70 @@ class GetProfileMetricsV4ApiResponse(BaseModel):
     summary: QGetProfileMetricsV4Summary | None = None
     cohort_options: list[QGetProfileMetricsV4FilterOption] | None = None
     simulation_options: list[QGetProfileMetricsV4FilterOption] | None = None
+
+
+
+# Generated from: get_analytics_rubric_group_scores_view
+
+class GetAnalyticsRubricGroupScoresViewSqlParams(BaseModel):
+
+    chat_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_ids,
+        )
+
+class QGetAnalyticsRubricGroupScoresViewV4Item(BaseModel):
+
+    chat_id: UUID | None
+    rubric_id: UUID | None
+    standard_group_id: UUID | None
+    group_name: str | None
+    group_short_name: str | None
+    score_percent: float | None
+
+class GetAnalyticsRubricGroupScoresViewSqlRow(BaseModel):
+
+    items: list[QGetAnalyticsRubricGroupScoresViewV4Item] | None = None
+
+class GetAnalyticsRubricGroupScoresViewApiRequest(BaseModel):
+
+    chat_ids: list[UUID] | None = None
+
+class GetAnalyticsRubricGroupScoresViewApiResponse(BaseModel):
+
+    items: list[QGetAnalyticsRubricGroupScoresViewV4Item] | None = None
+
+
+
+# Generated from: get_simulation_scenario_counts
+
+class GetSimulationScenarioCountsSqlParams(BaseModel):
+
+    simulation_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_ids,
+        )
+
+class QGetSimulationScenarioCountsV4Item(BaseModel):
+
+    simulation_id: UUID | None
+    scenario_count: int | None
+
+class GetSimulationScenarioCountsSqlRow(BaseModel):
+
+    items: list[QGetSimulationScenarioCountsV4Item] | None = None
+
+class GetSimulationScenarioCountsApiRequest(BaseModel):
+
+    simulation_ids: list[UUID] | None = None
+
+class GetSimulationScenarioCountsApiResponse(BaseModel):
+
+    items: list[QGetSimulationScenarioCountsV4Item] | None = None
 
 
 
@@ -24954,11 +25179,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideoRunContextAndCreateRunApiRequest",
         "GetVideoRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/views/analytics/chat_facts/get_analytics_chat_facts_view_complete.sql": (
+        "GetAnalyticsChatFactsViewSqlParams",
+        "GetAnalyticsChatFactsViewSqlRow",
+        "GetAnalyticsChatFactsViewApiRequest",
+        "GetAnalyticsChatFactsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/analytics/daily_metrics/get_analytics_daily_metrics_view_complete.sql": (
         "GetAnalyticsDailyMetricsViewSqlParams",
         "GetAnalyticsDailyMetricsViewSqlRow",
         "GetAnalyticsDailyMetricsViewApiRequest",
         "GetAnalyticsDailyMetricsViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/analytics/first_attempt_pass/get_analytics_first_attempt_pass_view_complete.sql": (
+        "GetAnalyticsFirstAttemptPassViewSqlParams",
+        "GetAnalyticsFirstAttemptPassViewSqlRow",
+        "GetAnalyticsFirstAttemptPassViewApiRequest",
+        "GetAnalyticsFirstAttemptPassViewApiResponse",
     ),
     "app/sql/v4/queries/views/analytics/get_attempt_facts_complete.sql": (
         "GetAttemptFactsSqlParams",
@@ -24983,6 +25220,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileMetricsV4SqlRow",
         "GetProfileMetricsV4ApiRequest",
         "GetProfileMetricsV4ApiResponse",
+    ),
+    "app/sql/v4/queries/views/analytics/rubric_group_scores/get_analytics_rubric_group_scores_view_complete.sql": (
+        "GetAnalyticsRubricGroupScoresViewSqlParams",
+        "GetAnalyticsRubricGroupScoresViewSqlRow",
+        "GetAnalyticsRubricGroupScoresViewApiRequest",
+        "GetAnalyticsRubricGroupScoresViewApiResponse",
+    ),
+    "app/sql/v4/queries/views/analytics/simulation_scenario_counts/get_simulation_scenario_counts_complete.sql": (
+        "GetSimulationScenarioCountsSqlParams",
+        "GetSimulationScenarioCountsSqlRow",
+        "GetSimulationScenarioCountsApiRequest",
+        "GetSimulationScenarioCountsApiResponse",
     ),
     "app/sql/v4/queries/views/drafts/get_draft_resources_view_complete.sql": (
         "GetDraftResourcesViewSqlParams",
@@ -27104,7 +27353,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/analytics/chat_facts/get_analytics_chat_facts_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/analytics/daily_metrics/get_analytics_daily_metrics_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/analytics/first_attempt_pass/get_analytics_first_attempt_pass_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -27125,6 +27384,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/analytics/get_profile_metrics_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/analytics/rubric_group_scores/get_analytics_rubric_group_scores_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/analytics/simulation_scenario_counts/get_simulation_scenario_counts_complete.sql"]
     ) -> SqlString: ...
 
     @overload

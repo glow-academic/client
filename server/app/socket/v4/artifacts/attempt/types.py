@@ -184,19 +184,19 @@ class AttemptEndAllPayload(BaseModel):
 class AttemptAudioStartPayload(BaseModel):
     """Request payload for attempt_audio_start WebSocket event.
 
-    Starts a voice session for a group.
+    Starts a voice session for a chat.
     """
 
-    group_id: UUID
+    chat_id: UUID
 
 
 class AttemptAudioStopPayload(BaseModel):
     """Request payload for attempt_audio_stop WebSocket event.
 
-    Stops the voice session for a group.
+    Stops the voice session for a chat.
     """
 
-    group_id: UUID
+    chat_id: UUID
 
 
 class AttemptAudioFramePayload(BaseModel):
@@ -249,7 +249,7 @@ class AttemptUserStartEvent(BaseModel):
     Emitted when user speech is detected in voice mode.
     """
 
-    group_id: str
+    chat_id: str
     item_id: str
 
 
@@ -259,7 +259,7 @@ class AttemptUserDeltaEvent(BaseModel):
     Emitted during voice transcription with incremental updates.
     """
 
-    group_id: str
+    chat_id: str
     item_id: str
     transcript: str
 
@@ -306,6 +306,7 @@ class AttemptAssistantAudioEvent(BaseModel):
     Emitted with audio chunks during voice mode.
     """
 
+    chat_id: str
     audio: bytes
 
 
@@ -371,7 +372,7 @@ class AttemptAudioReadyEvent(BaseModel):
     Emitted when voice session is ready.
     """
 
-    group_id: str
+    chat_id: str
     success: bool
     message: str | None = None
 
@@ -382,7 +383,7 @@ class AttemptAudioEndedEvent(BaseModel):
     Emitted when voice session is ended.
     """
 
-    group_id: str
+    chat_id: str
     success: bool
     message: str | None = None
 

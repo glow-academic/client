@@ -43,6 +43,9 @@ CREATE TYPE types.q_get_analytics_chat_facts_view_v4_item AS (
     scenario_id uuid,
     persona_id uuid,
     rubric_id uuid,
+    parameter_field_ids uuid[],
+    parameter_ids uuid[],
+    field_ids uuid[],
     attempt_created_at timestamptz,
     chat_created_at timestamptz,
     grade_created_at timestamptz,
@@ -121,6 +124,9 @@ filtered AS (
         mv.scenario_id,
         mv.persona_id,
         mv.rubric_id,
+        mv.parameter_field_ids,
+        mv.parameter_ids,
+        mv.field_ids,
         mv.attempt_created_at,
         mv.chat_created_at,
         mv.grade_created_at,
@@ -164,15 +170,15 @@ counted AS (
     SELECT COUNT(*)::int AS total_count FROM filtered
 ),
 sorted AS (
-    SELECT *
-    FROM filtered
+    SELECT f.*
+    FROM filtered f
     CROSS JOIN params p
     ORDER BY
-        CASE WHEN p.sort_by = 'date' AND p.sort_order = 'desc' THEN chat_created_at END DESC NULLS LAST,
-        CASE WHEN p.sort_by = 'date' AND p.sort_order = 'asc' THEN chat_created_at END ASC NULLS LAST,
-        CASE WHEN p.sort_by = 'score' AND p.sort_order = 'desc' THEN grade_percent END DESC NULLS LAST,
-        CASE WHEN p.sort_by = 'score' AND p.sort_order = 'asc' THEN grade_percent END ASC NULLS LAST,
-        chat_created_at DESC NULLS LAST
+        CASE WHEN p.sort_by = 'date' AND p.sort_order = 'desc' THEN f.chat_created_at END DESC NULLS LAST,
+        CASE WHEN p.sort_by = 'date' AND p.sort_order = 'asc' THEN f.chat_created_at END ASC NULLS LAST,
+        CASE WHEN p.sort_by = 'score' AND p.sort_order = 'desc' THEN f.grade_percent END DESC NULLS LAST,
+        CASE WHEN p.sort_by = 'score' AND p.sort_order = 'asc' THEN f.grade_percent END ASC NULLS LAST,
+        f.chat_created_at DESC NULLS LAST
     LIMIT (SELECT page_limit FROM params)
     OFFSET (SELECT page_offset FROM params)
 ),
@@ -191,6 +197,9 @@ items_agg AS (
                 scenario_id,
                 persona_id,
                 rubric_id,
+                parameter_field_ids,
+                parameter_ids,
+                field_ids,
                 attempt_created_at,
                 chat_created_at,
                 grade_created_at,

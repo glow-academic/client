@@ -21,6 +21,9 @@ class ChatFactsItem(BaseModel):
     scenario_id: UUID
     persona_id: UUID | None = None
     rubric_id: UUID | None = None
+    parameter_field_ids: list[UUID] = Field(default_factory=list)
+    parameter_ids: list[UUID] = Field(default_factory=list)
+    field_ids: list[UUID] = Field(default_factory=list)
 
     attempt_created_at: datetime
     chat_created_at: datetime

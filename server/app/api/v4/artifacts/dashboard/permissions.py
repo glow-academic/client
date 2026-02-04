@@ -1,0 +1,1653 @@
+"""Dashboard calculation/business logic for get.py."""
+
+from collections import defaultdict
+from datetime import date
+from statistics import mean
+from typing import Any
+
+from app.api.v4.artifacts.dashboard.types import (
+    DashboardBundleResponse,
+    DashboardFooterMetrics,
+    DashboardHeaderMetric,
+    DashboardHeaderMetrics,
+    DashboardPrimaryMetrics,
+    DashboardSecondaryMetrics,
+)
+from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
+from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
+from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
+from app.api.v4.views.analytics.first_attempt_pass.types import FirstAttemptPassItem
+from app.api.v4.views.analytics.profile_metrics.types import ProfileMetricsItem
+from app.api.v4.views.analytics.rubric_group_scores.types import RubricGroupScoreItem
+
+
+def _empty_header_metric() -> DashboardHeaderMetric:
+    return DashboardHeaderMetric(
+        current_value=0,
+        trend_data=[],
+        has_data=False,
+        trend_analysis="Insufficient data",
+        status="neutral",
+    )
+
+
+def _round2(value: float | int | None) -> float | None:
+    if value is None:
+        return None
+    return round(float(value), 2)
+
+
+def _weighted_average(pairs: list[tuple[float | int | None, int]]) -> float | None:
+    usable = [(float(v), w) for v, w in pairs if v is not None and w > 0]
+    if not usable:
+        return None
+    total_weight = sum(w for _, w in usable)
+    if total_weight == 0:
+        return None
+    return sum(v * w for v, w in usable) / total_weight
+
+
+def _build_trend_analysis(
+    trend_values: list[float | None],
+    lower_is_better: bool = False,
+) -> str:
+    usable = [v for v in trend_values if v is not None]
+    if len(usable) < 2:
+        return "Insufficient data"
+
+    start = usable[0]
+    end = usable[-1]
+    delta = end - start
+
+    if abs(delta) < 1e-9:
+        return "Flat trend"
+
+    if start == 0:
+        direction = "up" if delta > 0 else "down"
+        if lower_is_better:
+            direction = "down" if delta > 0 else "up"
+        return f"{direction.capitalize()} {abs(delta):.2f} vs period start"
+
+    pct = (delta / abs(start)) * 100
+    direction = "up" if pct > 0 else "down"
+    if lower_is_better:
+        direction = "down" if pct > 0 else "up"
+    return f"{direction.capitalize()} {abs(pct):.1f}% vs period start"
+
+
+def _status_from_thresholds(
+    value: float | int | None,
+    success_threshold: float,
+    warning_threshold: float,
+    lower_is_better: bool = False,
+) -> str:
+    if value is None:
+        return "neutral"
+    n = float(value)
+    if lower_is_better:
+        if n <= success_threshold:
+            return "success"
+        if n <= warning_threshold:
+            return "warning"
+        return "danger"
+    if n >= success_threshold:
+        return "success"
+    if n >= warning_threshold:
+        return "warning"
+    return "danger"
+
+
+def _iso(d: date) -> str:
+    return d.isoformat()
+
+
+def _section_status(has_data: bool) -> str:
+    return "success" if has_data else "neutral"
+
+
+def _thresholds(thresholds: dict[str, int] | None) -> tuple[int, int, int]:
+    if not thresholds:
+        return (85, 80, 70)
+    return (
+        int(thresholds.get("success", 85)),
+        int(thresholds.get("warning", 80)),
+        int(thresholds.get("danger", 70)),
+    )
+
+
+def compute_header_metrics(
+    attempts: list[AttemptFactsItem],
+    daily_rows: list[DailyMetricsItem],
+    chat_rows: list[ChatFactsItem],
+    profile_rows: list[ProfileMetricsItem],
+    first_attempt_rows: list[FirstAttemptPassItem] | None = None,
+    simulation_scenario_counts: dict[str, int] | None = None,
+    thresholds: dict[str, int] | None = None,
+) -> DashboardHeaderMetrics:
+    """Compute header metrics from raw MV rows."""
+    if not (attempts or daily_rows or chat_rows or profile_rows):
+        return DashboardHeaderMetrics(
+            average_score=_empty_header_metric(),
+            completion_percentage=_empty_header_metric(),
+            first_attempt_pass_rate=_empty_header_metric(),
+            highest_score=_empty_header_metric(),
+            messages_per_session=_empty_header_metric(),
+            persona_response_times=_empty_header_metric(),
+            session_efficiency=_empty_header_metric(),
+            stagnation_rate=_empty_header_metric(),
+            time_spent=_empty_header_metric(),
+            total_attempts=_empty_header_metric(),
+        )
+
+    success_threshold, warning_threshold, danger_threshold = _thresholds(thresholds)
+    first_attempt_rows = first_attempt_rows or []
+    simulation_scenario_counts = simulation_scenario_counts or {}
+
+    daily_by_date: dict[date, dict[str, float]] = defaultdict(
+        lambda: {
+            "attempts": 0.0,
+            "completed": 0.0,
+            "passed": 0.0,
+            "sum_score_weighted": 0.0,
+            "score_weight": 0.0,
+            "sum_messages_weighted": 0.0,
+            "message_weight": 0.0,
+            "time_seconds": 0.0,
+        }
+    )
+    for row in daily_rows:
+        bucket = daily_by_date[row.date_key]
+        attempts_count = float(row.attempt_count or 0)
+        bucket["attempts"] += attempts_count
+        bucket["completed"] += float(row.completed_count or 0)
+        bucket["passed"] += float(row.passed_count or 0)
+        bucket["time_seconds"] += float(row.total_time_seconds or 0)
+        if row.avg_score is not None and attempts_count > 0:
+            bucket["sum_score_weighted"] += float(row.avg_score) * attempts_count
+            bucket["score_weight"] += attempts_count
+        if row.avg_messages is not None and attempts_count > 0:
+            bucket["sum_messages_weighted"] += float(row.avg_messages) * attempts_count
+            bucket["message_weight"] += attempts_count
+
+    attempt_high_by_date: dict[date, float] = {}
+    attempt_counts_by_date: dict[date, int] = defaultdict(int)
+    for attempt in attempts:
+        if attempt.attempt_created_at is None:
+            continue
+        d = attempt.attempt_created_at.date()
+        attempt_counts_by_date[d] += 1
+        if attempt.score_percent is None:
+            continue
+        score = float(attempt.score_percent)
+        current = attempt_high_by_date.get(d)
+        attempt_high_by_date[d] = score if current is None else max(current, score)
+
+    response_time_by_date: dict[date, list[float]] = defaultdict(list)
+    for row in chat_rows:
+        d = row.chat_created_at.date()
+        times = [float(t) for t in row.message_time_taken_seconds if t is not None]
+        if not times:
+            continue
+        response_time_by_date[d].append(mean(times))
+
+    first_attempt_by_date: dict[date, dict[str, float]] = defaultdict(
+        lambda: {"passed": 0.0, "total": 0.0}
+    )
+    for item in first_attempt_rows:
+        d = item.attempt_created_at.date()
+        first_attempt_by_date[d]["total"] += 1.0
+        pass_threshold = None
+        if item.rubric_pass_points is not None and item.rubric_total_points:
+            pass_threshold = (
+                float(item.rubric_pass_points) * 100.0 / float(item.rubric_total_points)
+            )
+        is_pass = (
+            item.grade_percent is not None
+            and pass_threshold is not None
+            and float(item.grade_percent) >= pass_threshold
+        )
+        first_attempt_by_date[d]["passed"] += 1.0 if is_pass else 0.0
+
+    chats_by_date: dict[date, list[ChatFactsItem]] = defaultdict(list)
+    for row in chat_rows:
+        chats_by_date[row.attempt_created_at.date()].append(row)
+
+    # Beta parity: normalized average score per attempt
+    # norm = sum(grade_percent) / max(expected_sim_scenarios, chats_in_attempt)
+    # only when completed_chats == graded_chats and completed_chats > 0
+    attempt_chat_agg: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "attempt_created_at": None,
+            "simulation_id": None,
+            "completed_chats": 0,
+            "graded_chats": 0,
+            "chats_in_attempt": 0,
+            "sum_grade_percent": 0.0,
+        }
+    )
+    for row in chat_rows:
+        aid = str(row.attempt_id)
+        a = attempt_chat_agg[aid]
+        a["attempt_created_at"] = row.attempt_created_at
+        a["simulation_id"] = str(row.simulation_id)
+        a["chats_in_attempt"] += 1
+        if row.completed:
+            a["completed_chats"] += 1
+        if row.completed and row.grade_percent is not None:
+            a["graded_chats"] += 1
+        if row.grade_percent is not None:
+            a["sum_grade_percent"] += float(row.grade_percent)
+
+    attempt_norm_by_date: dict[date, list[float]] = defaultdict(list)
+    for a in attempt_chat_agg.values():
+        created_at = a["attempt_created_at"]
+        simulation_id = a["simulation_id"]
+        if created_at is None or simulation_id is None:
+            continue
+        expected_from_sim = int(simulation_scenario_counts.get(simulation_id, 0))
+        chats_in_attempt = int(a["chats_in_attempt"])
+        expected = max(expected_from_sim, chats_in_attempt)
+        completed_chats = int(a["completed_chats"])
+        graded_chats = int(a["graded_chats"])
+        if expected > 0 and completed_chats > 0 and completed_chats == graded_chats:
+            norm = float(a["sum_grade_percent"]) / float(expected)
+            attempt_norm_by_date[created_at.date()].append(norm)
+
+    daily_dates = sorted(daily_by_date.keys())
+    all_dates = sorted(
+        set(daily_dates)
+        | set(attempt_counts_by_date.keys())
+        | set(response_time_by_date.keys())
+    )
+
+    avg_score_trend = []
+    completion_trend = []
+    first_pass_trend = []
+    messages_trend = []
+    session_efficiency_trend = []
+    time_spent_trend = []
+    total_attempts_trend = []
+    highest_score_trend = []
+    response_time_trend = []
+
+    for d in all_dates:
+        bucket = daily_by_date.get(d)
+        attempts_count = (
+            int(bucket["attempts"]) if bucket else attempt_counts_by_date.get(d, 0)
+        )
+        completed_count = int(bucket["completed"]) if bucket else 0
+
+        avg_score_vals = attempt_norm_by_date.get(d, [])
+        avg_score_val = mean(avg_score_vals) if avg_score_vals else None
+
+        completion_val = (
+            (completed_count / attempts_count) * 100 if attempts_count > 0 else None
+        )
+        first_day = first_attempt_by_date.get(d)
+        first_pass_val = (
+            (first_day["passed"] / first_day["total"]) * 100
+            if first_day and first_day["total"] > 0
+            else None
+        )
+
+        avg_messages_val = None
+        if bucket and bucket["message_weight"] > 0:
+            avg_messages_val = (
+                bucket["sum_messages_weighted"] / bucket["message_weight"]
+            )
+
+        # Beta parity formulas:
+        # session_efficiency = avgScore * (1 - min(1, avgMinutesPerSession/120)), clamped 0..100
+        # time_spent trend uses AVG(LEAST(chat_minutes, 30))
+        day_chats = chats_by_date.get(d, [])
+        day_scores = [
+            float(c.grade_percent) for c in day_chats if c.grade_percent is not None
+        ]
+        day_minutes = [
+            float(c.time_taken or 0) / 60.0
+            for c in day_chats
+            if c.time_taken is not None
+        ]
+        session_efficiency_val = None
+        if day_scores and day_minutes:
+            avg_score_day = mean(day_scores)
+            avg_min_day = sum(day_minutes) / len(day_minutes)
+            session_efficiency_val = max(
+                0.0,
+                min(100.0, avg_score_day * (1.0 - min(1.0, avg_min_day / 120.0))),
+            )
+        time_spent_min_val = (
+            (sum(min(m, 30.0) for m in day_minutes) / len(day_minutes))
+            if day_minutes
+            else None
+        )
+
+        avg_score_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(avg_score_val),
+                "count": len(avg_score_vals),
+            }
+        )
+        completion_trend.append(
+            {"date": _iso(d), "value": _round2(completion_val), "count": attempts_count}
+        )
+        first_pass_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(first_pass_val),
+                "count": completed_count,
+            }
+        )
+        messages_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(avg_messages_val),
+                "count": attempts_count,
+            }
+        )
+        session_efficiency_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(session_efficiency_val),
+                "count": attempts_count,
+            }
+        )
+        time_spent_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(time_spent_min_val),
+                "count": attempts_count,
+            }
+        )
+        total_attempts_trend.append(
+            {"date": _iso(d), "value": float(attempts_count), "count": attempts_count}
+        )
+        highest_score_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(attempt_high_by_date.get(d)),
+                "count": attempt_counts_by_date.get(d, attempts_count),
+            }
+        )
+
+        rt_values = response_time_by_date.get(d, [])
+        response_time_trend.append(
+            {
+                "date": _iso(d),
+                "value": _round2(mean(rt_values)) if rt_values else None,
+                "count": len(rt_values),
+            }
+        )
+
+    stagnation_trend = []
+    prev_score: float | None = None
+    for point in avg_score_trend:
+        cur = point["value"]
+        if cur is None or prev_score is None:
+            stagnation_val = None
+        else:
+            stagnation_val = 100.0 if cur <= prev_score else 0.0
+        stagnation_trend.append(
+            {"date": point["date"], "value": _round2(stagnation_val), "count": 1}
+        )
+        if cur is not None:
+            prev_score = cur
+
+    total_attempts_value = len(attempts)
+    all_norms = [v for vals in attempt_norm_by_date.values() for v in vals]
+    average_score_value = _round2(mean(all_norms)) if all_norms else None
+    completion_pct_value = _round2(
+        ((sum(1 for c in chat_rows if c.completed) / len(chat_rows)) * 100)
+        if chat_rows
+        else None
+    )
+    first_total = len(first_attempt_rows)
+    first_passed = 0
+    for item in first_attempt_rows:
+        if (
+            item.grade_percent is None
+            or item.rubric_pass_points is None
+            or not item.rubric_total_points
+        ):
+            continue
+        pass_threshold = (
+            float(item.rubric_pass_points) * 100.0 / float(item.rubric_total_points)
+        )
+        if float(item.grade_percent) >= pass_threshold:
+            first_passed += 1
+    first_attempt_pass_rate_value = _round2(
+        (first_passed / first_total * 100.0) if first_total > 0 else None
+    )
+    highest_score_value = _round2(
+        max(
+            (a.score_percent for a in attempts if a.score_percent is not None),
+            default=None,
+        )
+    )
+    messages_per_session_value = _round2(
+        _weighted_average([(d.avg_messages, d.attempt_count) for d in daily_rows])
+    )
+    persona_response_time_value = _round2(
+        _weighted_average(
+            [
+                (p.avg_persona_response_sec, max(p.total_attempts, 1))
+                for p in profile_rows
+            ]
+        )
+    )
+    all_scores = [
+        float(c.grade_percent) for c in chat_rows if c.grade_percent is not None
+    ]
+    all_minutes = [
+        float(c.time_taken or 0) / 60.0 for c in chat_rows if c.time_taken is not None
+    ]
+    session_efficiency_value = None
+    if all_scores and all_minutes:
+        avg_score_all = mean(all_scores)
+        avg_minutes_per_session = sum(all_minutes) / len(all_minutes)
+        session_efficiency_value = _round2(
+            max(
+                0.0,
+                min(
+                    100.0,
+                    avg_score_all * (1.0 - min(1.0, avg_minutes_per_session / 120.0)),
+                ),
+            )
+        )
+    time_spent_minutes_value = _round2(
+        sum(
+            min((c.time_taken or 0) / 60.0, 30.0)
+            for c in chat_rows
+            if c.time_taken is not None
+        )
+        if chat_rows
+        else None
+    )
+    stagnation_rate_value = _round2(
+        mean([p["value"] for p in stagnation_trend if p["value"] is not None])
+        if any(p["value"] is not None for p in stagnation_trend)
+        else None
+    )
+
+    def metric(
+        value: float | int | None,
+        trend_data: list[dict],
+        success_threshold: float,
+        warning_threshold: float,
+        lower_is_better: bool = False,
+    ) -> DashboardHeaderMetric:
+        trend_values = [p["value"] for p in trend_data]
+        has_data = value is not None and any(v is not None for v in trend_values)
+        return DashboardHeaderMetric(
+            current_value=value if value is not None else 0,
+            trend_data=trend_data,
+            has_data=has_data,
+            trend_analysis=_build_trend_analysis(
+                trend_values=trend_values, lower_is_better=lower_is_better
+            ),
+            status=(
+                _status_from_thresholds(
+                    value=value,
+                    success_threshold=success_threshold,
+                    warning_threshold=warning_threshold,
+                    lower_is_better=lower_is_better,
+                )
+                if value is not None
+                else "neutral"
+            ),
+        )
+
+    return DashboardHeaderMetrics(
+        average_score=metric(
+            value=average_score_value,
+            trend_data=avg_score_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        completion_percentage=metric(
+            value=completion_pct_value,
+            trend_data=completion_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        first_attempt_pass_rate=metric(
+            value=first_attempt_pass_rate_value,
+            trend_data=first_pass_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        highest_score=metric(
+            value=highest_score_value,
+            trend_data=highest_score_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        messages_per_session=metric(
+            value=messages_per_session_value,
+            trend_data=messages_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        persona_response_times=metric(
+            value=persona_response_time_value,
+            trend_data=response_time_trend,
+            success_threshold=danger_threshold,
+            warning_threshold=warning_threshold,
+            lower_is_better=True,
+        ),
+        session_efficiency=metric(
+            value=session_efficiency_value,
+            trend_data=session_efficiency_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        stagnation_rate=metric(
+            value=stagnation_rate_value,
+            trend_data=stagnation_trend,
+            success_threshold=danger_threshold,
+            warning_threshold=warning_threshold,
+            lower_is_better=True,
+        ),
+        time_spent=metric(
+            value=time_spent_minutes_value,
+            trend_data=time_spent_trend,
+            success_threshold=success_threshold,
+            warning_threshold=warning_threshold,
+        ),
+        total_attempts=metric(
+            value=total_attempts_value,
+            trend_data=total_attempts_trend,
+            success_threshold=1,
+            warning_threshold=1,
+        ),
+    )
+
+
+def compute_primary_metrics(
+    attempts: list[AttemptFactsItem],
+    daily_rows: list[DailyMetricsItem],
+    chat_rows: list[ChatFactsItem],
+    profile_rows: list[ProfileMetricsItem],
+    rubric_group_scores: list[RubricGroupScoreItem] | None = None,
+    thresholds: dict[str, int] | None = None,
+) -> DashboardPrimaryMetrics:
+    """Compute primary section metrics for dashboard get bundle."""
+    _ = profile_rows
+    _ = attempts
+    success_threshold, warning_threshold, _danger_threshold = _thresholds(thresholds)
+    rubric_group_scores = rubric_group_scores or []
+
+    # Growth
+    daily_group: dict[date, dict[str, float]] = defaultdict(
+        lambda: {
+            "attempts": 0.0,
+            "completed": 0.0,
+            "passed": 0.0,
+            "sum_score_weighted": 0.0,
+            "score_weight": 0.0,
+            "time_seconds": 0.0,
+        }
+    )
+    for row in daily_rows:
+        b = daily_group[row.date_key]
+        at = float(row.attempt_count or 0)
+        b["attempts"] += at
+        b["completed"] += float(row.completed_count or 0)
+        b["passed"] += float(row.passed_count or 0)
+        b["time_seconds"] += float(row.total_time_seconds or 0)
+        if row.avg_score is not None and at > 0:
+            b["sum_score_weighted"] += float(row.avg_score) * at
+            b["score_weight"] += at
+
+    growth_chart_data: list[dict] = []
+    prev_avg_score: float | None = None
+    for d in sorted(daily_group):
+        b = daily_group[d]
+        attempts_count = int(b["attempts"])
+        completed_count = int(b["completed"])
+        avg_score = (
+            (b["sum_score_weighted"] / b["score_weight"])
+            if b["score_weight"] > 0
+            else None
+        )
+        completion_rate = (
+            (completed_count / attempts_count) * 100 if attempts_count > 0 else None
+        )
+        first_pass_rate = (
+            (float(b["passed"]) / completed_count) * 100
+            if completed_count > 0
+            else None
+        )
+        session_efficiency = None
+        if avg_score is not None and attempts_count > 0 and b["time_seconds"] > 0:
+            minutes_per_attempt = (b["time_seconds"] / attempts_count) / 60.0
+            if minutes_per_attempt > 0:
+                session_efficiency = avg_score / minutes_per_attempt
+        stagnation_rate = None
+        if avg_score is not None and prev_avg_score is not None:
+            stagnation_rate = 100.0 if avg_score <= prev_avg_score else 0.0
+        if avg_score is not None:
+            prev_avg_score = avg_score
+
+        growth_chart_data.append(
+            {
+                "date": _iso(d),
+                "average_score": _round2(avg_score),
+                "completion_rate": _round2(completion_rate),
+                "first_attempt_pass_rate": _round2(first_pass_rate),
+                "session_efficiency": _round2(session_efficiency),
+                "stagnation_rate": _round2(stagnation_rate),
+            }
+        )
+
+    avg_series = [
+        p["average_score"] for p in growth_chart_data if p["average_score"] is not None
+    ]
+    last7 = avg_series[-7:]
+    prev7 = avg_series[-14:-7]
+    window_averages = {
+        "average_score": {
+            "n": len(last7),
+            "last": _round2(mean(last7)) if last7 else None,
+            "prev": _round2(mean(prev7)) if prev7 else None,
+        }
+    }
+    growth_data = {
+        "chart_data": growth_chart_data,
+        "available_metrics": [
+            {
+                "id": "averageScore",
+                "name": "Average Score",
+                "color": "#0ea5e9",
+                "unit": "%",
+                "description": "Average percent score",
+                "formatter_id": "percent",
+            },
+            {
+                "id": "completionRate",
+                "name": "Completion Rate",
+                "color": "#22c55e",
+                "unit": "%",
+                "description": "Completed attempts over total attempts",
+                "formatter_id": "percent",
+            },
+            {
+                "id": "firstAttemptPassRate",
+                "name": "First Pass Rate",
+                "color": "#f59e0b",
+                "unit": "%",
+                "description": "Passes over completed attempts",
+                "formatter_id": "percent",
+            },
+            {
+                "id": "sessionEfficiency",
+                "name": "Session Efficiency",
+                "color": "#6366f1",
+                "unit": "score/min",
+                "description": "Score per minute",
+                "formatter_id": "int",
+            },
+            {
+                "id": "stagnationRate",
+                "name": "Stagnation Rate",
+                "color": "#ef4444",
+                "unit": "%",
+                "description": "Share of non-improving periods",
+                "formatter_id": "percent",
+            },
+        ],
+        "window_averages": window_averages,
+        "status": _section_status(bool(growth_chart_data)),
+    }
+
+    # Persona performance (uses persona_id as stable label until persona metadata join is added)
+    persona_rows: dict[str, dict] = defaultdict(
+        lambda: {
+            "scores": [],
+            "sessions": 0,
+            "simulation_ids": set(),
+            "by_date": defaultdict(list),
+        }
+    )
+    for row in chat_rows:
+        if row.persona_id is None or row.grade_percent is None:
+            continue
+        pid = str(row.persona_id)
+        persona_rows[pid]["scores"].append(float(row.grade_percent))
+        persona_rows[pid]["sessions"] += 1
+        persona_rows[pid]["simulation_ids"].add(str(row.simulation_id))
+        persona_rows[pid]["by_date"][row.chat_created_at.date()].append(
+            float(row.grade_percent)
+        )
+
+    def persona_color(seed: str) -> str:
+        h = abs(hash(seed)) % 360
+        return f"hsl({h} 70% 45%)"
+
+    persona_chart_data = []
+    persona_color_junction = []
+    valid_simulation_ids: set[str] = set()
+    for pid, data in sorted(persona_rows.items()):
+        trend = []
+        for d, vals in sorted(data["by_date"].items()):
+            trend.append(
+                {
+                    "date": _iso(d),
+                    "score": _round2(mean(vals)),
+                    "timestamp": d.toordinal(),
+                    "simulation_id": next(iter(data["simulation_ids"]))
+                    if data["simulation_ids"]
+                    else None,
+                }
+            )
+        sim_ids = sorted(data["simulation_ids"])
+        valid_simulation_ids.update(sim_ids)
+        color = persona_color(pid)
+        persona_chart_data.append(
+            {
+                "name": pid,
+                "score": _round2(mean(data["scores"])) if data["scores"] else None,
+                "sessions": data["sessions"],
+                "color": color,
+                "trend_data": trend,
+                "simulation_ids": sim_ids,
+                "status": "neutral",
+            }
+        )
+        persona_color_junction.append({"persona_name": pid, "color": color})
+
+    persona_performance = {
+        "chart_data": persona_chart_data,
+        "valid_simulation_ids": sorted(valid_simulation_ids),
+        "persona_colors_junction": persona_color_junction,
+        "status": _section_status(bool(persona_chart_data)),
+    }
+
+    # Rubric heatmap correlation matrix from per-chat standard-group percentages
+    by_rubric_chat_group: dict[str, dict[str, dict[str, float]]] = defaultdict(
+        lambda: defaultdict(dict)
+    )
+    group_meta: dict[tuple[str, str], dict[str, str | None]] = {}
+    for row in rubric_group_scores:
+        if row.score_percent is None:
+            continue
+        rid = str(row.rubric_id)
+        cid = str(row.chat_id)
+        gid = str(row.standard_group_id)
+        by_rubric_chat_group[rid][cid][gid] = float(row.score_percent)
+        group_meta[(rid, gid)] = {
+            "name": row.group_name,
+            "short_name": row.group_short_name,
+        }
+
+    def _pearson(xs: list[float], ys: list[float]) -> float | None:
+        if len(xs) < 3 or len(ys) < 3 or len(xs) != len(ys):
+            return None
+        mx = mean(xs)
+        my = mean(ys)
+        num = sum((x - mx) * (y - my) for x, y in zip(xs, ys, strict=False))
+        den_x = sum((x - mx) ** 2 for x in xs) ** 0.5
+        den_y = sum((y - my) ** 2 for y in ys) ** 0.5
+        den = den_x * den_y
+        if den == 0:
+            return None
+        return num / den
+
+    matrices = []
+    avg_abs_corrs: list[float] = []
+    for rid, chat_map in sorted(by_rubric_chat_group.items()):
+        group_ids = sorted(
+            {gid for per_group in chat_map.values() for gid in per_group.keys()}
+        )
+        standard_groups = [
+            {
+                "id": gid,
+                "name": group_meta.get((rid, gid), {}).get("name") or gid,
+                "short_name": group_meta.get((rid, gid), {}).get("short_name"),
+                "rubric_id": rid,
+            }
+            for gid in group_ids
+        ]
+
+        matrix_rows = []
+        best_pair: tuple[str, str, float, int] | None = None
+        has_data = False
+        for g1 in group_ids:
+            cells = []
+            for g2 in group_ids:
+                pairs = [
+                    (groups[g1], groups[g2])
+                    for groups in chat_map.values()
+                    if g1 in groups and g2 in groups
+                ]
+                n = len(pairs)
+                r = _pearson([p[0] for p in pairs], [p[1] for p in pairs])
+                corr = r if r is not None else 0.0
+                if n >= 3:
+                    has_data = True
+                abs_corr = abs(corr)
+                if g1 != g2 and n >= 3:
+                    avg_abs_corrs.append(abs_corr)
+                    if best_pair is None or abs_corr > abs(best_pair[2]):
+                        best_pair = (g1, g2, corr, n)
+                strength = (
+                    "Strong"
+                    if abs_corr >= 0.7
+                    else "Moderate"
+                    if abs_corr >= 0.4
+                    else "Weak"
+                    if abs_corr > 0
+                    else "No Data"
+                )
+                if n < 3:
+                    color = "#e5e7eb"
+                    strength = "No Data"
+                elif corr >= 0:
+                    color = (
+                        "#10b981"
+                        if abs_corr >= 0.7
+                        else "#34d399"
+                        if abs_corr >= 0.4
+                        else "#a7f3d0"
+                    )
+                else:
+                    color = (
+                        "#ef4444"
+                        if abs_corr >= 0.7
+                        else "#f87171"
+                        if abs_corr >= 0.4
+                        else "#fecaca"
+                    )
+                cells.append(
+                    {
+                        "rubric_id": rid,
+                        "correlation": _round2(corr),
+                        "p_value": None,
+                        "color": color,
+                        "strength": strength,
+                        "data_points": n,
+                    }
+                )
+            matrix_rows.append({"cells": cells})
+
+        insights = None
+        if best_pair is not None:
+            g1, g2, r, n = best_pair
+            g1_name = group_meta.get((rid, g1), {}).get("name") or g1
+            g2_name = group_meta.get((rid, g2), {}).get("name") or g2
+            insights = f'Top pair: "{g1_name}" vs "{g2_name}" r={r:.2f} (n={n})'
+
+        matrices.append(
+            {
+                "rubric_id": rid,
+                "standard_groups": standard_groups,
+                "matrix": matrix_rows,
+                "insights": insights,
+                "has_data": has_data,
+            }
+        )
+
+    heatmap_avg = mean(avg_abs_corrs) * 100 if avg_abs_corrs else None
+    if heatmap_avg is None:
+        heatmap_status = "neutral"
+    elif heatmap_avg >= success_threshold:
+        heatmap_status = "success"
+    elif heatmap_avg >= warning_threshold:
+        heatmap_status = "warning"
+    else:
+        heatmap_status = "danger"
+
+    rubric_heatmap = {
+        "matrices": matrices,
+        "valid_rubric_ids": [m["rubric_id"] for m in matrices],
+        "status": heatmap_status,
+    }
+
+    return DashboardPrimaryMetrics(
+        growth_data=growth_data,
+        persona_performance=persona_performance,
+        rubric_heatmap=rubric_heatmap,
+    )
+
+
+def compute_secondary_metrics(
+    attempts: list[AttemptFactsItem],
+    daily_rows: list[DailyMetricsItem],
+    chat_rows: list[ChatFactsItem],
+    profile_rows: list[ProfileMetricsItem],
+    thresholds: dict[str, int] | None = None,
+) -> DashboardSecondaryMetrics:
+    """Compute secondary section metrics for dashboard get bundle."""
+    _ = profile_rows
+    success_threshold, warning_threshold, _danger_threshold = _thresholds(thresholds)
+
+    # Cohort performance
+    cohort_acc: dict[str, dict] = defaultdict(
+        lambda: {
+            "attempts": 0,
+            "completed": 0,
+            "passed": 0,
+            "sum_score_weighted": 0.0,
+            "score_weight": 0,
+            "max_students": 0,
+            "simulation_ids": set(),
+        }
+    )
+    cohort_daily = []
+    cohort_facts_map: dict[tuple[str, str], dict] = defaultdict(
+        lambda: {
+            "attempts": 0,
+            "completed": 0,
+            "passed": 0,
+            "sum_score_weighted": 0.0,
+            "score_weight": 0,
+        }
+    )
+    daily_facts_map: dict[tuple[str, str], dict] = defaultdict(
+        lambda: {"attempts": 0, "sum_score_weighted": 0.0, "score_weight": 0}
+    )
+    valid_sim_ids: set[str] = set()
+
+    for row in daily_rows:
+        sim_id = str(row.simulation_id)
+        valid_sim_ids.add(sim_id)
+        day = _iso(row.date_key)
+
+        daily_facts_key = (day, sim_id)
+        daily_facts_map[daily_facts_key]["attempts"] += row.attempt_count or 0
+        if row.avg_score is not None and (row.attempt_count or 0) > 0:
+            daily_facts_map[daily_facts_key]["sum_score_weighted"] += float(
+                row.avg_score
+            ) * float(row.attempt_count)
+            daily_facts_map[daily_facts_key]["score_weight"] += row.attempt_count
+
+        if row.cohort_id is None:
+            continue
+        cohort_id = str(row.cohort_id)
+        c = cohort_acc[cohort_id]
+        c["attempts"] += row.attempt_count or 0
+        c["completed"] += row.completed_count or 0
+        c["passed"] += row.passed_count or 0
+        c["max_students"] = max(c["max_students"], row.unique_profiles or 0)
+        c["simulation_ids"].add(sim_id)
+        if row.avg_score is not None and (row.attempt_count or 0) > 0:
+            c["sum_score_weighted"] += float(row.avg_score) * float(row.attempt_count)
+            c["score_weight"] += row.attempt_count
+
+        cohort_daily.append(
+            {"date": day, "avg_score": _round2(row.avg_score), "cohort_id": cohort_id}
+        )
+
+        k = (cohort_id, sim_id)
+        cohort_facts_map[k]["attempts"] += row.attempt_count or 0
+        cohort_facts_map[k]["completed"] += row.completed_count or 0
+        cohort_facts_map[k]["passed"] += row.passed_count or 0
+        if row.avg_score is not None and (row.attempt_count or 0) > 0:
+            cohort_facts_map[k]["sum_score_weighted"] += float(row.avg_score) * float(
+                row.attempt_count
+            )
+            cohort_facts_map[k]["score_weight"] += row.attempt_count
+
+    cohort_data = []
+    for cohort_id, c in sorted(cohort_acc.items()):
+        attempts_count = c["attempts"]
+        completed_count = c["completed"]
+        passed_count = c["passed"]
+        pass_rate = (passed_count / completed_count * 100) if completed_count > 0 else 0
+        avg_score = (
+            c["sum_score_weighted"] / c["score_weight"] if c["score_weight"] > 0 else 0
+        )
+        cohort_data.append(
+            {
+                "id": cohort_id,
+                "name": cohort_id,
+                "pass_rate": _round2(pass_rate),
+                "avg_percentage_score": _round2(avg_score),
+                "total_students": c["max_students"],
+                "passed_students": None,
+                "total_attempts": attempts_count,
+                "passed_attempts": passed_count,
+                "simulation_count": len(c["simulation_ids"]),
+                "required_simulations": len(c["simulation_ids"]),
+                "status": "neutral",
+            }
+        )
+
+    cohort_facts = []
+    for (cohort_id, sim_id), c in sorted(cohort_facts_map.items()):
+        pass_rate = (c["passed"] / c["completed"] * 100) if c["completed"] > 0 else 0
+        avg_score = (
+            c["sum_score_weighted"] / c["score_weight"] if c["score_weight"] > 0 else 0
+        )
+        cohort_facts.append(
+            {
+                "cohort_id": cohort_id,
+                "simulation_id": sim_id,
+                "pass_rate": _round2(pass_rate),
+                "avg_score": _round2(avg_score),
+                "attempts": c["attempts"],
+            }
+        )
+
+    daily_facts = []
+    for (day, sim_id), c in sorted(daily_facts_map.items()):
+        avg_score = (
+            c["sum_score_weighted"] / c["score_weight"] if c["score_weight"] > 0 else 0
+        )
+        daily_facts.append(
+            {"date": day, "simulation_id": sim_id, "avg_score": _round2(avg_score)}
+        )
+
+    cohort_avg = (
+        mean(
+            [
+                c["avg_percentage_score"]
+                for c in cohort_data
+                if c["avg_percentage_score"] is not None
+            ]
+        )
+        if cohort_data
+        else None
+    )
+    cohort_status = (
+        "neutral"
+        if cohort_avg is None
+        else "success"
+        if cohort_avg >= success_threshold
+        else "warning"
+        if cohort_avg >= warning_threshold
+        else "danger"
+    )
+    cohort_performance = {
+        "cohort_data": cohort_data,
+        "daily_data": cohort_daily,
+        "cohort_facts": cohort_facts,
+        "daily_facts": daily_facts,
+        "valid_simulation_ids": sorted(valid_sim_ids),
+        "status": cohort_status,
+    }
+
+    # Attempt improvement
+    attempts_by_profile: dict[str, list[AttemptFactsItem]] = defaultdict(list)
+    for item in attempts:
+        if item.profile_id is None or item.attempt_created_at is None:
+            continue
+        attempts_by_profile[str(item.profile_id)].append(item)
+
+    attempt_fact_acc: dict[tuple[str, int], dict] = defaultdict(
+        lambda: {"count": 0, "sum_grade": 0.0, "sum_minutes": 0.0, "passed": 0}
+    )
+    attempt_chart_acc: dict[int, dict] = defaultdict(
+        lambda: {"count": 0, "sum_grade": 0.0, "sum_minutes": 0.0, "passed": 0}
+    )
+    attempt_valid_sim_ids: set[str] = set()
+
+    for items in attempts_by_profile.values():
+        for idx, item in enumerate(
+            sorted(items, key=lambda a: a.attempt_created_at), start=1
+        ):
+            if item.simulation_id is None:
+                continue
+            sim_id = str(item.simulation_id)
+            attempt_valid_sim_ids.add(sim_id)
+            grade = float(item.score_percent) if item.score_percent is not None else 0.0
+            minutes = float(item.total_time_seconds or 0) / 60.0
+            passed = 1 if item.has_passed else 0
+
+            k = (sim_id, idx)
+            attempt_fact_acc[k]["count"] += 1
+            attempt_fact_acc[k]["sum_grade"] += grade
+            attempt_fact_acc[k]["sum_minutes"] += minutes
+            attempt_fact_acc[k]["passed"] += passed
+
+            attempt_chart_acc[idx]["count"] += 1
+            attempt_chart_acc[idx]["sum_grade"] += grade
+            attempt_chart_acc[idx]["sum_minutes"] += minutes
+            attempt_chart_acc[idx]["passed"] += passed
+
+    attempt_facts = []
+    for (sim_id, attempt_no), d in sorted(
+        attempt_fact_acc.items(), key=lambda x: (x[0][1], x[0][0])
+    ):
+        cnt = d["count"]
+        attempt_facts.append(
+            {
+                "simulation_id": sim_id,
+                "attempt_no": attempt_no,
+                "avg_grade": _round2(d["sum_grade"] / cnt if cnt else 0),
+                "avg_minutes": _round2(d["sum_minutes"] / cnt if cnt else 0),
+                "pass_rate": _round2((d["passed"] / cnt * 100) if cnt else 0),
+            }
+        )
+
+    attempt_chart_data = []
+    for attempt_no, d in sorted(attempt_chart_acc.items()):
+        cnt = d["count"]
+        attempt_chart_data.append(
+            {
+                "attempt": f"Attempt {attempt_no}",
+                "average_score": _round2(d["sum_grade"] / cnt if cnt else 0),
+                "average_time": _round2(d["sum_minutes"] / cnt if cnt else 0),
+                "pass_rate": _round2((d["passed"] / cnt * 100) if cnt else 0),
+            }
+        )
+
+    attempt_avg = (
+        mean(
+            [
+                c["average_score"]
+                for c in attempt_chart_data
+                if c["average_score"] is not None
+            ]
+        )
+        if attempt_chart_data
+        else None
+    )
+    attempt_status = (
+        "neutral"
+        if attempt_avg is None
+        else "success"
+        if attempt_avg >= success_threshold
+        else "warning"
+        if attempt_avg >= warning_threshold
+        else "danger"
+    )
+    attempt_improvement = {
+        "chart_data": attempt_chart_data,
+        "facts": attempt_facts,
+        "valid_simulation_ids": sorted(attempt_valid_sim_ids),
+        "status": attempt_status,
+    }
+
+    # Skill performance (rubric-level package)
+    rubric_sim_scores: dict[tuple[str, str], list[float]] = defaultdict(list)
+    rubric_points: dict[str, list[float]] = defaultdict(list)
+    for row in chat_rows:
+        if row.rubric_id is None or row.score is None:
+            continue
+        rid = str(row.rubric_id)
+        sim_id = str(row.simulation_id)
+        if row.grade_percent is not None:
+            rubric_sim_scores[(rid, sim_id)].append(float(row.grade_percent))
+        if row.rubric_total_points is not None:
+            rubric_points[rid].append(float(row.rubric_total_points))
+
+    rubric_packages: dict[str, dict] = defaultdict(
+        lambda: {"group_facts": [], "scores": []}
+    )
+    for (rid, sim_id), vals in sorted(rubric_sim_scores.items()):
+        avg_pct = mean(vals) if vals else 0.0
+        points = mean(rubric_points[rid]) if rubric_points[rid] else 0.0
+        rubric_packages[rid]["scores"].append(avg_pct)
+        rubric_packages[rid]["group_facts"].append(
+            {
+                "group_id": rid,
+                "group_name": "Rubric Aggregate",
+                "group_description": None,
+                "simulation_id": sim_id,
+                "score": _round2(avg_pct),
+                "points": _round2(points),
+                "avg_pct": _round2(avg_pct),
+            }
+        )
+
+    skill_packages = []
+    valid_rubrics = sorted(rubric_packages.keys())
+    for rid in valid_rubrics:
+        avg_overall = (
+            mean(rubric_packages[rid]["scores"])
+            if rubric_packages[rid]["scores"]
+            else 0.0
+        )
+        skill_packages.append(
+            {
+                "rubric_id": rid,
+                "radar_data": [
+                    {
+                        "metric": "Overall",
+                        "description": "Average rubric performance",
+                        "value": _round2(avg_overall),
+                        "full_mark": 100.0,
+                    }
+                ],
+                "group_facts": rubric_packages[rid]["group_facts"],
+            }
+        )
+
+    skill_avg = (
+        mean(
+            [
+                r["value"]
+                for p in skill_packages
+                for r in p["radar_data"]
+                if r["value"] is not None
+            ]
+        )
+        if skill_packages
+        else None
+    )
+    skill_status = (
+        "neutral"
+        if skill_avg is None
+        else "success"
+        if skill_avg >= success_threshold
+        else "warning"
+        if skill_avg >= warning_threshold
+        else "danger"
+    )
+    skill_performance = {
+        "packages": skill_packages,
+        "valid_rubric_ids": valid_rubrics,
+        "status": skill_status,
+    }
+
+    return DashboardSecondaryMetrics(
+        cohort_performance=cohort_performance,
+        attempt_improvement=attempt_improvement,
+        skill_performance=skill_performance,
+    )
+
+
+def compute_footer_metrics(
+    attempts: list[AttemptFactsItem],
+    daily_rows: list[DailyMetricsItem],
+    chat_rows: list[ChatFactsItem],
+    profile_rows: list[ProfileMetricsItem],
+    parameter_fields: list[Any] | None = None,
+    parameters: list[Any] | None = None,
+    fields: list[Any] | None = None,
+    thresholds: dict[str, int] | None = None,
+) -> DashboardFooterMetrics:
+    """Compute footer section metrics for dashboard get bundle."""
+    _ = (daily_rows, profile_rows)
+    success_threshold, warning_threshold, _danger_threshold = _thresholds(thresholds)
+
+    parameter_fields = parameter_fields or []
+    parameters = parameters or []
+    fields = fields or []
+
+    pf_lookup: dict[str, tuple[str, str]] = {}
+    for pf in parameter_fields:
+        pf_id = getattr(pf, "id", None)
+        pid = getattr(pf, "parameter_id", None)
+        fid = getattr(pf, "field_id", None)
+        if pf_id and pid and fid:
+            pf_lookup[str(pf_id)] = (str(pid), str(fid))
+
+    field_name_by_id: dict[str, str] = {}
+    for f in fields:
+        field_id = getattr(f, "field_id", None)
+        name = getattr(f, "name", None)
+        if field_id and name:
+            field_name_by_id[str(field_id)] = str(name)
+
+    numeric_parameter_ids: set[str] = set()
+    for p in parameters:
+        pid = getattr(p, "parameter_id", None)
+        if not pid:
+            continue
+        if bool(getattr(p, "document_parameter", False)) or bool(
+            getattr(p, "persona_parameter", False)
+        ):
+            numeric_parameter_ids.add(str(pid))
+
+    scenario_to_param_items: dict[str, set[tuple[str, str]]] = defaultdict(set)
+    for row in chat_rows:
+        scenario_id = str(row.scenario_id)
+        if row.parameter_field_ids:
+            for pfid in row.parameter_field_ids:
+                pair = pf_lookup.get(str(pfid))
+                if pair:
+                    scenario_to_param_items[scenario_id].add(pair)
+        elif row.parameter_ids and row.field_ids:
+            for pid in row.parameter_ids:
+                for fid in row.field_ids:
+                    scenario_to_param_items[scenario_id].add((str(pid), str(fid)))
+
+    valid_parameter_ids = sorted(
+        {pid for pairs in scenario_to_param_items.values() for (pid, _fid) in pairs}
+    )
+
+    # Simulation performance by scenario
+    scenario_acc: dict[tuple[str, str], dict] = defaultdict(
+        lambda: {
+            "count": 0,
+            "completed": 0,
+            "passed": 0,
+            "sum_score": 0.0,
+            "score_count": 0,
+        }
+    )
+    valid_sim_ids: set[str] = set()
+    for row in chat_rows:
+        sim_id = str(row.simulation_id)
+        scenario_id = str(row.scenario_id)
+        valid_sim_ids.add(sim_id)
+        k = (sim_id, scenario_id)
+        scenario_acc[k]["count"] += 1
+        scenario_acc[k]["completed"] += 1 if row.completed else 0
+        scenario_acc[k]["passed"] += 1 if row.passed else 0
+        if row.grade_percent is not None:
+            scenario_acc[k]["sum_score"] += float(row.grade_percent)
+            scenario_acc[k]["score_count"] += 1
+
+    scenario_facts = []
+    for (sim_id, scenario_id), d in sorted(scenario_acc.items()):
+        scenario_facts.append(
+            {
+                "simulation_id": sim_id,
+                "scenario_id": scenario_id,
+                "scenario_name": scenario_id,
+                "avg_score": _round2(
+                    d["sum_score"] / d["score_count"] if d["score_count"] else 0
+                ),
+                "success_rate": _round2(
+                    (d["passed"] / d["completed"] * 100) if d["completed"] else 0
+                ),
+                "total_attempts": d["count"],
+                "completed_attempts": d["completed"],
+            }
+        )
+
+    perf_score = (
+        mean(
+            [
+                (0.7 * (f["avg_score"] or 0)) + (0.3 * (f["success_rate"] or 0))
+                for f in scenario_facts
+            ]
+        )
+        if scenario_facts
+        else None
+    )
+    perf_status = (
+        "neutral"
+        if perf_score is None
+        else "success"
+        if perf_score >= success_threshold
+        else "warning"
+        if perf_score >= warning_threshold
+        else "danger"
+    )
+    simulation_performance = {
+        "scenario_facts": scenario_facts,
+        "valid_simulation_ids": sorted(valid_sim_ids),
+        "status": perf_status,
+    }
+
+    # Simulation composition from attempt rows
+    attempt_by_sim: dict[str, dict] = defaultdict(
+        lambda: {
+            "count": 0,
+            "sum_score": 0.0,
+            "score_count": 0,
+            "sum_chats": 0,
+            "sum_chats_completed": 0,
+            "scenario_ids": set(),
+        }
+    )
+    for a in attempts:
+        if a.simulation_id is None:
+            continue
+        sim_id = str(a.simulation_id)
+        d = attempt_by_sim[sim_id]
+        d["count"] += 1
+        d["sum_chats"] += a.num_chats or 0
+        d["sum_chats_completed"] += a.num_chats_completed or 0
+        if a.score_percent is not None:
+            d["sum_score"] += float(a.score_percent)
+            d["score_count"] += 1
+        for sid in a.scenario_ids or []:
+            d["scenario_ids"].add(str(sid))
+
+    simulation_facts = []
+    for sim_id, d in sorted(attempt_by_sim.items()):
+        completion = (
+            (d["sum_chats_completed"] / d["sum_chats"] * 100) if d["sum_chats"] else 0
+        )
+        simulation_facts.append(
+            {
+                "simulation_id": sim_id,
+                "title": sim_id,
+                "avg_score": _round2(
+                    d["sum_score"] / d["score_count"] if d["score_count"] else 0
+                ),
+                "completion_rate": _round2(completion),
+                "total_attempts": d["count"],
+                "scenario_count": len(d["scenario_ids"]),
+            }
+        )
+
+    simulation_parameter_facts_categorical = []
+    param_sim_counts: dict[tuple[str, str, str], int] = defaultdict(int)
+    for row in chat_rows:
+        sim_id = str(row.simulation_id)
+        for pid in row.parameter_ids or []:
+            pid_str = str(pid)
+            field_id = str(row.field_ids[0]) if row.field_ids else ""
+            param_sim_counts[(sim_id, pid_str, field_id)] += 1
+    for (sim_id, pid, field_id), count in sorted(param_sim_counts.items()):
+        simulation_parameter_facts_categorical.append(
+            {
+                "simulation_id": sim_id,
+                "parameter_id": pid,
+                "parameter_item_id": field_id or None,
+                "scenario_count": count,
+            }
+        )
+
+    comp_status = "success" if simulation_facts else "neutral"
+    simulation_composition = {
+        "simulation_facts": simulation_facts,
+        "simulation_parameter_facts_categorical": simulation_parameter_facts_categorical,
+        "simulation_parameter_facts_numeric": [],
+        "valid_simulation_ids": sorted(valid_sim_ids),
+        "status": comp_status,
+    }
+
+    # Scenario performance categorical facts
+    cat_map_seen = [
+        (pid, fid, scenario_id)
+        for scenario_id, pairs in scenario_to_param_items.items()
+        for (pid, fid) in sorted(pairs)
+    ]
+    attempt_daily: dict[tuple[str, str, str], dict] = defaultdict(
+        lambda: {"scores": [], "attempts": 0, "passed_attempts": 0}
+    )
+    for row in chat_rows:
+        if row.grade_percent is None:
+            continue
+        day = _iso(row.attempt_created_at.date())
+        scenario_id = str(row.scenario_id)
+        for pid, fid in scenario_to_param_items.get(scenario_id, set()):
+            k = (pid, fid, day)
+            attempt_daily[k]["scores"].append(float(row.grade_percent))
+            attempt_daily[k]["attempts"] += 1
+            attempt_daily[k]["passed_attempts"] += 1 if row.passed else 0
+
+    attribute_attempt_facts = []
+    for (pid, fid, day), d in sorted(attempt_daily.items()):
+        attribute_attempt_facts.append(
+            {
+                "parameter_id": pid,
+                "parameter_item_id": fid,
+                "date": day,
+                "timestamp": None,
+                "avg_score": _round2(mean(d["scores"])) if d["scores"] else None,
+                "attempts": d["attempts"],
+                "passed_attempts": d["passed_attempts"],
+            }
+        )
+
+    attribute_scenario_facts = [
+        {"parameter_id": pid, "parameter_item_id": fid, "scenario_id": scenario_id}
+        for (pid, fid, scenario_id) in cat_map_seen
+    ]
+
+    cat_avg = (
+        mean(
+            [
+                f["avg_score"]
+                for f in attribute_attempt_facts
+                if f["avg_score"] is not None
+            ]
+        )
+        if attribute_attempt_facts
+        else None
+    )
+    if cat_avg is None:
+        scenario_perf_status = "neutral"
+    elif cat_avg >= success_threshold:
+        scenario_perf_status = "success"
+    elif cat_avg >= warning_threshold:
+        scenario_perf_status = "warning"
+    else:
+        scenario_perf_status = "danger"
+
+    scenario_performance = {
+        "attribute_attempt_facts": attribute_attempt_facts,
+        "attribute_scenario_facts": attribute_scenario_facts,
+        "valid_parameter_ids": valid_parameter_ids,
+        "status": scenario_perf_status,
+    }
+
+    # Scenario stats numeric level facts (document/persona parameters)
+    param_levels: dict[str, list[str]] = defaultdict(list)
+    for pairs in scenario_to_param_items.values():
+        for pid, fid in pairs:
+            if pid in numeric_parameter_ids and fid not in param_levels[pid]:
+                param_levels[pid].append(fid)
+    for pid in param_levels:
+        param_levels[pid].sort()
+
+    scenario_numeric_map: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
+    for scenario_id, pairs in scenario_to_param_items.items():
+        for pid, fid in pairs:
+            if pid not in numeric_parameter_ids:
+                continue
+            level = param_levels[pid].index(fid) + 1 if fid in param_levels[pid] else 1
+            scenario_numeric_map[scenario_id].append((pid, level, fid))
+
+    numeric_acc: dict[tuple[str, str, float], dict] = defaultdict(
+        lambda: {"scores": [], "attempts": 0}
+    )
+    for row in chat_rows:
+        if row.grade_percent is None:
+            continue
+        for pid, level, fid in scenario_numeric_map.get(str(row.scenario_id), []):
+            label = field_name_by_id.get(fid, str(level))
+            k = (pid, label, float(level))
+            numeric_acc[k]["scores"].append(float(row.grade_percent))
+            numeric_acc[k]["attempts"] += 1
+
+    numeric_attempt_facts = []
+    for (pid, label, level), d in sorted(
+        numeric_acc.items(), key=lambda x: (x[0][0], x[0][2])
+    ):
+        numeric_attempt_facts.append(
+            {
+                "parameter_id": pid,
+                "level_label": label,
+                "level_value": _round2(level),
+                "score": _round2(mean(d["scores"])) if d["scores"] else None,
+                "attempts": d["attempts"],
+            }
+        )
+
+    numeric_scenario_facts = []
+    for scenario_id, vals in sorted(scenario_numeric_map.items()):
+        for pid, level, fid in sorted(vals, key=lambda x: (x[0], x[1])):
+            numeric_scenario_facts.append(
+                {
+                    "parameter_id": pid,
+                    "scenario_id": scenario_id,
+                    "level_label": field_name_by_id.get(fid, str(level)),
+                    "level_value": _round2(float(level)),
+                }
+            )
+
+    valid_numeric_parameter_ids = sorted(
+        {f["parameter_id"] for f in numeric_attempt_facts}
+    )
+    num_avg = (
+        mean([f["score"] for f in numeric_attempt_facts if f["score"] is not None])
+        if numeric_attempt_facts
+        else None
+    )
+    if num_avg is None:
+        scenario_stats_status = "neutral"
+    elif num_avg >= success_threshold:
+        scenario_stats_status = "success"
+    elif num_avg >= warning_threshold:
+        scenario_stats_status = "warning"
+    else:
+        scenario_stats_status = "danger"
+
+    scenario_stats = {
+        "numeric_attempt_facts": numeric_attempt_facts,
+        "numeric_scenario_facts": numeric_scenario_facts,
+        "valid_numeric_parameter_ids": valid_numeric_parameter_ids,
+        "status": scenario_stats_status,
+    }
+
+    return DashboardFooterMetrics(
+        scenario_performance=scenario_performance,
+        scenario_stats=scenario_stats,
+        simulation_performance=simulation_performance,
+        simulation_composition=simulation_composition,
+    )
+
+
+def build_dashboard_bundle(
+    attempts: list[AttemptFactsItem],
+    daily_rows: list[DailyMetricsItem],
+    chat_rows: list[ChatFactsItem],
+    profile_rows: list[ProfileMetricsItem],
+    first_attempt_rows: list[FirstAttemptPassItem] | None = None,
+    simulation_scenario_counts: dict[str, int] | None = None,
+    parameter_fields: list[Any] | None = None,
+    parameters: list[Any] | None = None,
+    fields: list[Any] | None = None,
+    rubric_group_scores: list[RubricGroupScoreItem] | None = None,
+    thresholds: dict[str, int] | None = None,
+) -> DashboardBundleResponse:
+    """Build full dashboard get response skeleton from MV slices.
+
+    get.py should fetch rows (filter/search only), then call this function.
+    """
+    return DashboardBundleResponse(
+        header_metrics=compute_header_metrics(
+            attempts=attempts,
+            daily_rows=daily_rows,
+            chat_rows=chat_rows,
+            profile_rows=profile_rows,
+            first_attempt_rows=first_attempt_rows,
+            simulation_scenario_counts=simulation_scenario_counts,
+            thresholds=thresholds,
+        ),
+        primary_metrics=compute_primary_metrics(
+            attempts=attempts,
+            daily_rows=daily_rows,
+            chat_rows=chat_rows,
+            profile_rows=profile_rows,
+            rubric_group_scores=rubric_group_scores,
+            thresholds=thresholds,
+        ),
+        secondary_metrics=compute_secondary_metrics(
+            attempts=attempts,
+            daily_rows=daily_rows,
+            chat_rows=chat_rows,
+            profile_rows=profile_rows,
+            thresholds=thresholds,
+        ),
+        footer_metrics=compute_footer_metrics(
+            attempts=attempts,
+            daily_rows=daily_rows,
+            chat_rows=chat_rows,
+            profile_rows=profile_rows,
+            parameter_fields=parameter_fields,
+            parameters=parameters,
+            fields=fields,
+            thresholds=thresholds,
+        ),
+    )

@@ -10,13 +10,15 @@ _session_store: dict[str, dict[str, Any]] = {}
 class AudioSession:
     """Audio session data structure.
 
-    Sessions are keyed by group_id (the conversation/session container).
+    Sessions are keyed by group_id (the internal session identifier).
+    The chat_id is stored for mapping back to client-facing events.
     Individual generations within a session use run_id.
     """
 
-    def __init__(self, sid: str, group_id: str):
+    def __init__(self, sid: str, group_id: str, chat_id: str):
         self.sid = sid
         self.group_id = group_id
+        self.chat_id = chat_id  # For mapping back to client-facing ID
         self.inbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self.outbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self.muted = False
@@ -36,9 +38,9 @@ def get_session(session_key: str) -> AudioSession | None:
     return None
 
 
-def create_session(sid: str, group_id: str) -> AudioSession:
+def create_session(sid: str, group_id: str, chat_id: str) -> AudioSession:
     """Create a new audio session."""
-    session = AudioSession(sid, group_id)
+    session = AudioSession(sid, group_id, chat_id)
     # Store by both sid and group_id for easy lookup
     _session_store[sid] = {"session": session, "group_id": group_id}
     _session_store[group_id] = {"session": session, "sid": sid}
