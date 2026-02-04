@@ -505,15 +505,45 @@ async def _persona_generate_impl(
                 jinja_context=jinja_context,
             )
 
-            # Step 6: Build messages for LLM (no database insertion needed for persona generation)
+            # Step 6: Build messages for LLM AND persist to database
             messages: list[dict[str, str]] = []
+
+            # Insert system prompt
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
+                await conn.execute(
+                    """
+                    INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
+                    VALUES ($1, 'system'::message_type, $2, true, NOW(), NOW())
+                    """,
+                    run_id,
+                    system_prompt,
+                )
+
+            # Insert developer instructions
             for m in rendered_developer_messages:
                 messages.append({"role": "developer", "content": m})
+                await conn.execute(
+                    """
+                    INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
+                    VALUES ($1, 'developer'::message_type, $2, true, NOW(), NOW())
+                    """,
+                    run_id,
+                    m,
+                )
+
+            # Insert user instructions
             if data.user_instructions:
                 for instruction in data.user_instructions:
                     messages.append({"role": "user", "content": instruction})
+                    await conn.execute(
+                        """
+                        INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
+                        VALUES ($1, 'user'::message_type, $2, true, NOW(), NOW())
+                        """,
+                        run_id,
+                        instruction,
+                    )
 
             # Step 7: Emit simplified payload to generate_artifact handler
             # The AI handler only needs to decrypt API key and stream LLM

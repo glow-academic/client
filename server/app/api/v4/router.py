@@ -45,6 +45,15 @@ from app.api.v4.artifacts.setting import router as settings_router
 from app.api.v4.artifacts.simulation import router as simulations_router
 from app.api.v4.artifacts.tool import router as tools_router
 
+# View-based artifact handlers (aggregated data for UI sections)
+from app.api.v4.artifacts.dashboard import router as dashboard_artifact_router
+from app.api.v4.artifacts.reports import router as reports_artifact_router
+from app.api.v4.artifacts.leaderboard import router as leaderboard_artifact_router
+from app.api.v4.artifacts.pricing import router as pricing_artifact_router
+from app.api.v4.artifacts.activity import router as activity_artifact_router
+from app.api.v4.artifacts.health import router as health_artifact_router
+from app.api.v4.artifacts.benchmark import router as benchmark_artifact_router
+
 # ============================================================================
 # Attempts
 # ============================================================================
@@ -132,6 +141,15 @@ router.include_router(tools_router)
 router.include_router(group_router)
 router.include_router(training_artifact_router)
 router.include_router(attempt_artifact_router)
+
+# View-based artifacts (aggregated data for UI sections)
+router.include_router(dashboard_artifact_router, prefix="/artifacts/dashboard")
+router.include_router(reports_artifact_router, prefix="/artifacts/reports")
+router.include_router(leaderboard_artifact_router, prefix="/artifacts/leaderboard")
+router.include_router(pricing_artifact_router, prefix="/artifacts/pricing")
+router.include_router(activity_artifact_router, prefix="/artifacts/activity")
+router.include_router(health_artifact_router, prefix="/artifacts/health")
+router.include_router(benchmark_artifact_router, prefix="/artifacts/benchmark")
 
 # ============================================================================
 # Resources

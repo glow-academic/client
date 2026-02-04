@@ -19,6 +19,9 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.persona.types import PersonaGenerationCompleteEvent
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
@@ -54,9 +57,17 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
     resource_type = data.get("resource_type")
     event_type = data.get("event_type")
 
-    # Only process actual tool completion events, not summary events
-    # text_complete: text-only response, no tool results
-    # run_complete: summary event with all results, already processed individually
+    # Handle text completion - save assistant message
+    if event_type == "text_complete":
+        await _handle_persona_text_complete(sid, data)
+        return
+
+    # Handle run complete - save final assistant content + update tokens
+    if event_type == "run_complete":
+        await _handle_persona_run_complete(sid, data)
+        return
+
+    # Only process tool completion events for resource generation
     if event_type not in ("tool_call_complete", "tool_result"):
         return
 
@@ -161,6 +172,78 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
         event.model_dump(mode="json"),
         room=sid,
     )
+
+
+async def _handle_persona_text_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle persona text generation completion - save assistant message."""
+    run_id = data.get("run_id")
+    final_content = data.get("text") or ""
+
+    if not run_id or not final_content:
+        return
+
+    try:
+        async with get_db_connection() as conn:
+            await conn.execute(
+                """
+                INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
+                VALUES ($1, 'assistant'::message_type, $2, true, NOW(), NOW())
+                """,
+                uuid.UUID(run_id),
+                final_content,
+            )
+    except Exception as e:
+        logger.exception(f"Failed to save persona text message: {str(e)}")
+
+
+async def _handle_persona_run_complete(sid: str, data: dict[str, Any]) -> None:
+    """Handle persona generation run completion - save assistant output if present."""
+    run_id = data.get("run_id")
+    assistant_output = data.get("assistant_output") or ""
+    input_tokens = data.get("input_text_tokens", 0)
+    output_tokens = data.get("output_text_tokens", 0)
+
+    if not run_id:
+        return
+
+    try:
+        async with get_db_connection() as conn:
+            # Save assistant message if there's text output (and wasn't already saved by text_complete)
+            if assistant_output:
+                # Check if assistant message already exists for this run
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM messages_entry
+                    WHERE run_id = $1 AND role = 'assistant'::message_type
+                    LIMIT 1
+                    """,
+                    uuid.UUID(run_id),
+                )
+                if not existing:
+                    await conn.execute(
+                        """
+                        INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
+                        VALUES ($1, 'assistant'::message_type, $2, true, NOW(), NOW())
+                        """,
+                        uuid.UUID(run_id),
+                        assistant_output,
+                    )
+
+            # Update run with token counts
+            if input_tokens or output_tokens:
+                await conn.execute(
+                    """
+                    UPDATE runs_entry
+                    SET input_tokens = COALESCE($2, input_tokens),
+                        output_tokens = COALESCE($3, output_tokens)
+                    WHERE id = $1
+                    """,
+                    uuid.UUID(run_id),
+                    input_tokens,
+                    output_tokens,
+                )
+    except Exception as e:
+        logger.exception(f"Failed to save persona run complete: {str(e)}")
 
 
 # =============================================================================

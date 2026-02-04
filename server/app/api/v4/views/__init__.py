@@ -8,8 +8,16 @@ from fastapi import APIRouter
 
 from app.api.v4.views.analytics import router as analytics_router
 from app.api.v4.views.simulation import router as simulation_router
+from app.api.v4.views.pricing import router as pricing_router
+from app.api.v4.views.activity import router as activity_router
+from app.api.v4.views.health import router as health_router
+from app.api.v4.views.benchmark import router as benchmark_router
 
 router = APIRouter(prefix="/views", tags=["views"])
 
 router.include_router(simulation_router)
 router.include_router(analytics_router)
+router.include_router(pricing_router)
+router.include_router(activity_router)
+router.include_router(health_router)
+router.include_router(benchmark_router)
