@@ -6967,6 +6967,8 @@ export interface components {
             message_id: string;
             /** Content */
             content: string;
+            /** Persona Id */
+            persona_id?: string | null;
         };
         /**
          * AttemptAssistantDeltaEvent

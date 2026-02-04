@@ -913,6 +913,11 @@ export function AttemptChat({
     const handleAssistantComplete = (data: AttemptAssistantCompleteEvent) => {
       if (data.chat_id !== currentChatIdRef.current) return;
 
+      const persona =
+        data.persona_id && attemptData?.resources?.personas
+          ? attemptData.resources.personas[data.persona_id]
+          : null;
+
       if (data.content !== undefined) {
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
@@ -920,6 +925,30 @@ export function AttemptChat({
           return newMap;
         });
       }
+
+      setOptimisticMessages((prev) => {
+        const newMap = new Map(prev);
+        const existingMessage = newMap.get(data.message_id);
+        const existingContent = existingMessage?.contents?.[0];
+
+        newMap.set(data.message_id, {
+          id: data.message_id,
+          type: "response",
+          created_at:
+            data.created_at || existingMessage?.created_at || new Date().toISOString(),
+          completed: true,
+          contents: [
+            {
+              content:
+                data.content ?? existingContent?.content ?? "",
+              name: persona?.name ?? existingContent?.name ?? null,
+              color: persona?.color ?? existingContent?.color ?? null,
+              icon: persona?.icon ?? existingContent?.icon ?? null,
+            },
+          ],
+        });
+        return newMap;
+      });
 
       if (sendingMessageTimeoutRef.current) {
         clearTimeout(sendingMessageTimeoutRef.current);
@@ -1420,7 +1449,16 @@ export function AttemptChat({
         clearTimeout(sendingMessageTimeoutRef.current);
       }
     };
-  }, [socket, router, attempt_id, chats, rubricStructure, isGrading, gradingProgress]);
+  }, [
+    socket,
+    router,
+    attempt_id,
+    chats,
+    rubricStructure,
+    isGrading,
+    gradingProgress,
+    attemptData?.resources?.personas,
+  ]);
 
   // ---------------------------------------------------------------------------
   // COMPONENT PROPS

@@ -29363,6 +29363,17 @@
           "content": {
             "type": "string",
             "title": "Content"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
           }
         },
         "type": "object",
