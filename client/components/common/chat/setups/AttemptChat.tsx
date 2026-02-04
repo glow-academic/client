@@ -171,6 +171,7 @@ export function AttemptChat({
   const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
     new Set()
   );
+  const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
 
   const [optimisticHints, setOptimisticHints] = useState<
     Record<string, HintsByMessage[]>
@@ -227,6 +228,7 @@ export function AttemptChat({
   const transcriptDeltasRef = useRef<Map<string, string>>(new Map());
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
   const voiceInputRef = useRef<VoiceInputHandle | null>(null);
+  const dataFetchedAtRef = useRef<number>(Date.now());
   const gradingProgressRef = useRef<{
     completed: number;
     total: number;
@@ -457,6 +459,69 @@ export function AttemptChat({
   const rubricStructure = attemptData?.rubric_structure || null;
   const isActive = attemptData?.is_active ?? true;
   const isAttemptOwner = true;
+  const showResults = attemptData?.show_results ?? false;
+
+  // Timer baseline from server (single source of truth + negative support)
+  const serverTimer = useMemo(() => {
+    const backendTimer = attemptData?.timer;
+    if (!backendTimer) {
+      return {
+        elapsed: 0,
+        remaining: null as number | null,
+        expired: false,
+        negative: false,
+      };
+    }
+    const remaining =
+      backendTimer.limit !== null && backendTimer.elapsed !== null
+        ? backendTimer.limit - backendTimer.elapsed
+        : null;
+    return {
+      elapsed: backendTimer.elapsed ?? 0,
+      remaining,
+      expired: backendTimer.exceeded ?? false,
+      negative: backendTimer.negative ?? false,
+    };
+  }, [attemptData?.timer]);
+
+  // Reset baseline when server timer updates
+  useEffect(() => {
+    dataFetchedAtRef.current = Date.now();
+    setLocalElapsedOffset(0);
+  }, [attemptData?.timer?.elapsed]);
+
+  // Tick timer for active chats
+  useEffect(() => {
+    if (!isActive || !currentChat || currentChat.completed || showResults) return;
+
+    const interval = setInterval(() => {
+      const secondsSinceFetch = Math.floor(
+        (Date.now() - dataFetchedAtRef.current) / 1000
+      );
+      setLocalElapsedOffset(secondsSinceFetch);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentChat, isActive, showResults]);
+
+  // Compute display timer (allows negative if server says so)
+  const displayTimer = useMemo(() => {
+    const elapsed = serverTimer.elapsed + localElapsedOffset;
+    let remaining = serverTimer.remaining;
+    if (remaining !== null) {
+      remaining = remaining - localElapsedOffset;
+      if (!serverTimer.negative) {
+        remaining = Math.max(remaining, 0);
+      }
+    }
+    return {
+      elapsed,
+      remaining,
+      expired:
+        serverTimer.expired || (remaining !== null && remaining <= 0),
+      negative: serverTimer.negative,
+    };
+  }, [serverTimer, localElapsedOffset]);
 
   // Check if this is a single chat attempt (no pagination needed)
   const isSingleChatAttempt = chats.length <= 1;
@@ -558,7 +623,6 @@ export function AttemptChat({
 
   // Auto-show grades/rubric or responses when all chats are completed
   useEffect(() => {
-    const showResults = attemptData?.show_results ?? false;
     const chats = attemptData?.views?.simulation_chats ?? [];
 
     if (showResults && chats.length > 0 && !userHasManuallyToggledGrades) {
@@ -579,6 +643,7 @@ export function AttemptChat({
     userHasManuallyToggledGrades,
     attemptData,
     currentChatIndex,
+    showResults,
   ]);
 
   // Reset question index when chat changes
@@ -1362,24 +1427,13 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
-    const timer = attemptData?.timer;
     const chatDocuments = resolvedChat?.documents || [];
     const chatTemplates = resolvedChat?.templates || [];
     const hasContent = chatDocuments.length > 0 || chatTemplates.length > 0;
     const currentChatData = attemptData?.views?.simulation_chats?.[currentChatIndex];
     const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
     return {
-      timer: timer
-        ? {
-            elapsed: timer.elapsed ?? 0,
-            remaining:
-              timer.limit !== null && timer.elapsed !== null
-                ? timer.limit - timer.elapsed
-                : null,
-            expired: timer.exceeded ?? false,
-            negative: timer.negative ?? false,
-          }
-        : undefined,
+      timer: attemptData?.timer ? displayTimer : undefined,
       show_documents: showDocuments,
       show_objectives: showObjectives,
       show_rubric: showGrades,
@@ -1427,6 +1481,7 @@ export function AttemptChat({
     currentChat,
     resolvedChat,
     scenario,
+    displayTimer,
     showDocuments,
     showObjectives,
     showGrades,

@@ -7691,6 +7691,42 @@ class SaveDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: create_entry_record
+
+class CreateEntryRecordSqlParams(BaseModel):
+
+    entry_type: str
+    call_id: UUID | None = None
+    mcp: bool | None = False
+    entry_data: Any | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.entry_type,
+            self.call_id,
+            self.mcp,
+            self.entry_data,
+        )
+
+class CreateEntryRecordSqlRow(BaseModel):
+
+    id: UUID | None = None
+    already_exists: bool | None = None
+
+class CreateEntryRecordApiRequest(BaseModel):
+
+    entry_type: str
+    call_id: UUID | None = None
+    mcp: bool | None = False
+    entry_data: Any | None = None
+
+class CreateEntryRecordApiResponse(BaseModel):
+
+    id: UUID | None = None
+    already_exists: bool | None = None
+
+
+
 # Generated from: duplicate_eval
 
 class DuplicateEvalSqlParams(BaseModel):
@@ -27201,6 +27237,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveDocumentApiRequest",
         "SaveDocumentApiResponse",
     ),
+    "app/sql/v4/queries/entries/create_entry_record_complete.sql": (
+        "CreateEntryRecordSqlParams",
+        "CreateEntryRecordSqlRow",
+        "CreateEntryRecordApiRequest",
+        "CreateEntryRecordApiResponse",
+    ),
     "app/sql/v4/queries/evals/duplicate_eval_complete.sql": (
         "DuplicateEvalSqlParams",
         "DuplicateEvalSqlRow",
@@ -29891,6 +29933,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/documents/save_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/create_entry_record_complete.sql"]
     ) -> SqlString: ...
 
     @overload

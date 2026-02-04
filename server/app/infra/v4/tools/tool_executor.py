@@ -12,13 +12,15 @@ This enables the agentic loop pattern where:
 
 import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg
 
 from app.infra.v4.artifacts.discovery import map_template_values_to_table_columns
 from app.infra.v4.tools.render_tool_template import render_tool_template
 from app.sql.types import (
+    CreateEntryRecordSqlParams,
+    CreateEntryRecordSqlRow,
     InfraToolsGetEntryTypeByToolIdSqlParams,
     InfraToolsGetResourceTypeByToolIdSqlParams,
     InfraToolsGetResourceTypeByToolIdSqlRow,
@@ -135,22 +137,25 @@ async def _execute_entry_tool(
                 "message": f"No values to insert for {tool_name}. Check tool configuration.",
             })
 
-        create_entry_sql = load_sql(
-            "app/sql/v4/queries/entries/create_entry_record_complete.sql"
+        entry_params = CreateEntryRecordSqlParams(
+            entry_type=entry_type,
+            call_id=None,
+            mcp=False,
+            entry_data=mapped_values,
         )
 
-        # Insert into {entry}_entry table
-        entry_row = await conn.fetchrow(
-            create_entry_sql,
-            entry_type,
-            None,  # call_id - not used in agentic flow
-            False,  # mcp
-            json.dumps(mapped_values),
+        entry_row = cast(
+            CreateEntryRecordSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/queries/entries/create_entry_record_complete.sql",
+                params=entry_params,
+            ),
         )
 
-        if entry_row and entry_row.get("id"):
-            entry_id = str(entry_row["id"])
-            already_exists = entry_row.get("already_exists", False)
+        if entry_row and entry_row.id:
+            entry_id = str(entry_row.id)
+            already_exists = bool(entry_row.already_exists)
             if already_exists:
                 return json.dumps({
                     "success": True,

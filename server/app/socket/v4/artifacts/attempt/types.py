@@ -27,7 +27,7 @@ from app.socket.v4.artifacts.types import (
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 
-ATTEMPT_MESSAGE_ENTRY_TYPES = ["chats", "contents", "hints"]
+ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
 ATTEMPT_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 
 
