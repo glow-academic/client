@@ -50,6 +50,7 @@ async def handle_attempt_error(data: dict[str, Any]) -> None:
         resource_type=data.get("resource_type"),
         resource_types=data.get("resource_types"),
         resource_id=data.get("resource_id"),
+        run_id=data.get("run_id"),
         success=False,
         message=error_message,
         trace_id=data.get("trace_id"),

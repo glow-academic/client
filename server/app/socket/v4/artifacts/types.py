@@ -48,6 +48,7 @@ class GenerationErrorEvent(BaseModel):
     resource_type: str | None = None
     resource_types: list[str] | None = None
     resource_id: str | None = None
+    run_id: str | None = None
     success: bool = False
     message: str
     trace_id: str | None = None
