@@ -232,6 +232,7 @@ async def _attempt_message_impl(
                 return
 
             user_message_id = str(prepare_row.user_message_id)
+            assistant_message_id = str(prepare_row.assistant_message_id)
             run_id = str(prepare_row.run_id)
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
             trace_id = prepare_row.trace_id
@@ -339,6 +340,8 @@ async def _attempt_message_impl(
 
             # Emit attempt_assistant_start for the assistant placeholder
             assistant_start_event = AttemptAssistantStartEvent(
+                chat_id=str(data.chat_id),
+                message_id=assistant_message_id,
                 created_at=created_at_str,
             )
             await sio.emit(

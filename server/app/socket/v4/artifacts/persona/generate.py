@@ -16,12 +16,11 @@ from typing import Any, cast
 from fastapi import APIRouter
 
 from app.api.v4.artifacts.persona.get import get_persona_internal
-from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
-from app.socket.v4.artifacts.persona.types import GeneratePersonaPayload
 from app.api.v4.artifacts.persona.types import (
     GetPersonaApiResponse,
     PersonaResourceBucket,
 )
+from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -31,6 +30,7 @@ from app.socket.v4.artifacts.persona.permissions import (
     format_generation_error,
     validate_generation_access,
 )
+from app.socket.v4.artifacts.persona.types import GeneratePersonaPayload
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.sql.types import (
     GetPersonaGenerationContextSqlParams,
@@ -43,7 +43,7 @@ from app.sql.types import (
     QGetPersonaResourceTreeV4Node,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -65,6 +65,9 @@ SQL_PATH_CONTEXT = (
 )
 SQL_PATH_PREPARE = (
     "app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql"
+)
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
 
 # Persona resource types
@@ -485,7 +488,6 @@ async def _persona_generate_impl(
             run_id = prepare_row.run_id
             group_id = prepare_row.group_id
             trace_id = prepare_row.trace_id
-            agent_name = prepare_row.agent_name
             system_prompt = prepare_row.system_prompt
             model_name = prepare_row.model_name
             provider_name = prepare_row.provider_name
@@ -507,42 +509,43 @@ async def _persona_generate_impl(
 
             # Step 6: Build messages for LLM AND persist to database
             messages: list[dict[str, str]] = []
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
 
             # Insert system prompt
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
-                await conn.execute(
-                    """
-                    INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
-                    VALUES ($1, 'system'::message_type, $2, true, NOW(), NOW())
-                    """,
+                await conn.fetchval(
+                    create_message_sql,
                     run_id,
+                    "system",
                     system_prompt,
+                    True,
+                    False,
                 )
 
             # Insert developer instructions
             for m in rendered_developer_messages:
                 messages.append({"role": "developer", "content": m})
-                await conn.execute(
-                    """
-                    INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
-                    VALUES ($1, 'developer'::message_type, $2, true, NOW(), NOW())
-                    """,
+                await conn.fetchval(
+                    create_message_sql,
                     run_id,
+                    "developer",
                     m,
+                    True,
+                    False,
                 )
 
             # Insert user instructions
             if data.user_instructions:
                 for instruction in data.user_instructions:
                     messages.append({"role": "user", "content": instruction})
-                    await conn.execute(
-                        """
-                        INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
-                        VALUES ($1, 'user'::message_type, $2, true, NOW(), NOW())
-                        """,
+                    await conn.fetchval(
+                        create_message_sql,
                         run_id,
+                        "user",
                         instruction,
+                        True,
+                        False,
                     )
 
             # Step 7: Emit simplified payload to generate_artifact handler

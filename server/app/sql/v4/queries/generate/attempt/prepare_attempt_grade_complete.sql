@@ -110,8 +110,8 @@ BEGIN
     VALUES (p_agent_id, v_run_id);
 
     -- Create grade entry (grade has chat_id directly)
-    INSERT INTO simulation_grades_entry (chat_id, created_at, updated_at, score, passed)
-    VALUES (v_chat_id, NOW(), NOW(), 0, false)
+    INSERT INTO simulation_grades_entry (chat_id, run_id, created_at, updated_at, score, passed)
+    VALUES (v_chat_id, v_run_id, NOW(), NOW(), 0, false)
     RETURNING id INTO v_grade_id;
 
     -- Return all data

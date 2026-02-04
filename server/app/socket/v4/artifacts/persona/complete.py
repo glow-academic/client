@@ -20,10 +20,14 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.persona.types import PersonaGenerationCompleteEvent
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
+    "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
+)
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -184,13 +188,14 @@ async def _handle_persona_text_complete(sid: str, data: dict[str, Any]) -> None:
 
     try:
         async with get_db_connection() as conn:
-            await conn.execute(
-                """
-                INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
-                VALUES ($1, 'assistant'::message_type, $2, true, NOW(), NOW())
-                """,
+            create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+            await conn.fetchval(
+                create_message_sql,
                 uuid.UUID(run_id),
+                "assistant",
                 final_content,
+                True,
+                False,
             )
     except Exception as e:
         logger.exception(f"Failed to save persona text message: {str(e)}")
@@ -220,13 +225,14 @@ async def _handle_persona_run_complete(sid: str, data: dict[str, Any]) -> None:
                     uuid.UUID(run_id),
                 )
                 if not existing:
-                    await conn.execute(
-                        """
-                        INSERT INTO messages_entry (run_id, role, content, completed, created_at, updated_at)
-                        VALUES ($1, 'assistant'::message_type, $2, true, NOW(), NOW())
-                        """,
+                    create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
+                    await conn.fetchval(
+                        create_message_sql,
                         uuid.UUID(run_id),
+                        "assistant",
                         assistant_output,
+                        True,
+                        False,
                     )
 
             # Update run with token counts

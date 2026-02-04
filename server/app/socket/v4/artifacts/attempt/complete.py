@@ -8,7 +8,6 @@ Handles both message completion and grade completion:
 - Grade: Emits attempt_graded with grade data
 """
 
-import json
 import uuid
 from typing import Any
 
@@ -25,12 +24,20 @@ from app.socket.v4.artifacts.attempt.types import (
     AttemptHintProgressEvent,
 )
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 server_router = APIRouter()
+
+SQL_PATH_GET_MESSAGE_CONTEXT = (
+    "app/sql/v4/queries/generate/attempt/get_attempt_message_completion_context_complete.sql"
+)
+SQL_PATH_GET_GRADE_CONTEXT = (
+    "app/sql/v4/queries/generate/attempt/get_attempt_grade_completion_context_complete.sql"
+)
 
 
 
@@ -57,8 +64,6 @@ async def handle_attempt_complete(data: dict[str, Any]) -> None:
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         return
-    profile_id = uuid.UUID(profile_id_str)
-
     resource_type = data.get("resource_type")
     event_type = data.get("event_type")
 
@@ -68,35 +73,65 @@ async def handle_attempt_complete(data: dict[str, Any]) -> None:
         await _handle_grade_complete(sid, data)
     elif resource_type in ("attempt", "voice"):
         # Message completion
-        await _handle_message_complete(sid, data, profile_id)
+        await _handle_message_complete(sid, data)
     elif event_type in ("tool_call_complete", "tool_result"):
         # Tool call completion (hints, contents, etc.)
         await _handle_tool_complete(sid, data)
 
 
 async def _handle_message_complete(
-    sid: str, data: dict[str, Any], profile_id: uuid.UUID
+    sid: str, data: dict[str, Any]
 ) -> None:
     """Handle message generation completion."""
     run_id = data.get("run_id")
-    final_content = data.get("content") or data.get("final_content")
-    input_tokens = data.get("input_tokens", 0)
-    output_tokens = data.get("output_tokens", 0)
+    final_content = (
+        data.get("assistant_output")
+        or data.get("content")
+        or data.get("final_content")
+        or data.get("text")
+    )
+    input_tokens = data.get("input_text_tokens", data.get("input_tokens", 0))
+    output_tokens = data.get("output_text_tokens", data.get("output_tokens", 0))
 
     if not run_id or not final_content:
         # Text completion without content - likely just status update
         return
 
     try:
-        # Save message content to database using run_id
+        run_uuid = uuid.UUID(run_id)
         async with get_db_connection() as conn:
+            context_row = await conn.fetchrow(
+                load_sql(SQL_PATH_GET_MESSAGE_CONTEXT),
+                run_uuid,
+            )
+            if not context_row:
+                return
+
+            message_id = context_row["message_id"]
+            chat_id = context_row["chat_id"]
+
             await conn.fetchrow(
-                "SELECT * FROM socket_save_attempt_message_content_by_run_v4($1, $2, $3, $4)",
-                uuid.UUID(run_id),
+                "SELECT * FROM socket_save_attempt_message_content_v4($1, $2, $3, $4, $5)",
+                message_id,
                 final_content,
+                run_uuid,
                 input_tokens,
                 output_tokens,
             )
+
+        assistant_event = AttemptAssistantCompleteEvent(
+            chat_id=str(chat_id),
+            message_id=str(message_id),
+            content=final_content,
+            created_at=context_row["created_at"].isoformat()
+            if context_row.get("created_at")
+            else None,
+        )
+        await sio.emit(
+            "attempt_assistant_complete",
+            assistant_event.model_dump(mode="json"),
+            room=sid,
+        )
 
         # Emit attempt_complete event
         event = AttemptCompleteEvent(
@@ -133,27 +168,62 @@ async def _handle_message_complete(
 
 async def _handle_grade_complete(sid: str, data: dict[str, Any]) -> None:
     """Handle grading completion."""
-    attempt_id = data.get("attempt_id")
-    chat_id = data.get("chat_id")
-    grade_id = data.get("grade_id")
-    simulation_id = data.get("metadata", {}).get("simulation_id")
+    run_id = data.get("run_id")
+    if not run_id:
+        return
 
-    # Extract grade data from tool results
-    tool_result = data.get("result") or {}
+    run_uuid = uuid.UUID(run_id)
+    input_tokens = data.get("input_text_tokens", data.get("input_tokens", 0))
+    output_tokens = data.get("output_text_tokens", data.get("output_tokens", 0))
+
     tool_results = data.get("tool_results") or []
-    if not tool_result and tool_results:
-        tool_result = tool_results[0]
+    score = _extract_grade_score(tool_results)
+    passed = _extract_grade_passed(tool_results)
+    feedback = _extract_grade_feedback(tool_results)
 
-    score = tool_result.get("score")
-    passed = tool_result.get("passed")
-    feedback = tool_result.get("feedback")
+    async with get_db_connection() as conn:
+        context_row = await conn.fetchrow(load_sql(SQL_PATH_GET_GRADE_CONTEXT), run_uuid)
+        if not context_row:
+            return
+
+        grade_id = context_row["grade_id"]
+        chat_id = context_row["chat_id"]
+        attempt_id = context_row["attempt_id"]
+        simulation_id = context_row["simulation_id"]
+
+        await conn.execute(
+            """
+            UPDATE runs_entry
+            SET input_tokens = COALESCE($2, input_tokens),
+                output_tokens = COALESCE($3, output_tokens),
+                updated_at = NOW()
+            WHERE id = $1
+            """,
+            run_uuid,
+            input_tokens,
+            output_tokens,
+        )
+
+        if score is not None or passed is not None:
+            await conn.execute(
+                """
+                UPDATE simulation_grades_entry
+                SET score = COALESCE($2, score),
+                    passed = COALESCE($3, passed),
+                    updated_at = NOW()
+                WHERE id = $1
+                """,
+                grade_id,
+                score,
+                passed,
+            )
 
     # Emit attempt_graded event
     event = AttemptGradedEvent(
-        simulation_id=simulation_id or "",
-        attempt_id=attempt_id or "",
-        chat_id=chat_id,
-        grade_id=grade_id,
+        simulation_id=str(simulation_id) if simulation_id else "",
+        attempt_id=str(attempt_id) if attempt_id else "",
+        chat_id=str(chat_id) if chat_id else None,
+        grade_id=str(grade_id) if grade_id else None,
         score=score,
         passed=passed,
         feedback=feedback,
@@ -192,11 +262,19 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
 
     # create_hint: emit hint completion only
     if entry_type == "hints":
+        run_id = data.get("run_id")
+        if not run_id:
+            return
+        context = await _get_message_context_by_run_id(run_id)
+        if not context:
+            return
         hint_text = arguments.get("hint")
         hints_payload = []
         if isinstance(hint_text, str) and hint_text:
             hints_payload.append({"id": entry_id, "hint": hint_text})
         hint_event = AttemptHintProgressEvent(
+            chat_id=context["chat_id"],
+            message_id=context["message_id"],
             type="complete",
             hints_count=len(hints_payload),
             hints=hints_payload,
@@ -208,31 +286,56 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
         )
         return
 
-    # create_content: finalize assistant content path when no text_complete arrives
-    if entry_type == "contents":
-        content_text = arguments.get("content")
-        persona_id = arguments.get("persona_id")
-        if not isinstance(content_text, str) or not content_text:
-            # Fallback: try parse from raw arguments_delta if present
-            arguments_delta = data.get("arguments_delta")
-            if isinstance(arguments_delta, str) and arguments_delta:
-                try:
-                    parsed = json.loads(arguments_delta)
-                    if isinstance(parsed.get("content"), str):
-                        content_text = parsed.get("content")
-                except json.JSONDecodeError:
-                    pass
 
-        if isinstance(content_text, str) and content_text:
-            assistant_complete_event = AttemptAssistantCompleteEvent(
-                content=content_text,
-                persona_id=str(persona_id) if persona_id else None,
+async def _get_message_context_by_run_id(run_id: str) -> dict[str, str] | None:
+    """Resolve chat/message identifiers for attempt message stream events."""
+    try:
+        async with get_db_connection() as conn:
+            context_row = await conn.fetchrow(
+                load_sql(SQL_PATH_GET_MESSAGE_CONTEXT),
+                uuid.UUID(run_id),
             )
-            await sio.emit(
-                "attempt_assistant_complete",
-                assistant_complete_event.model_dump(mode="json"),
-                room=sid,
-            )
+            if not context_row:
+                return None
+            return {
+                "chat_id": str(context_row["chat_id"]),
+                "message_id": str(context_row["message_id"]),
+            }
+    except Exception:
+        return None
+
+
+def _extract_grade_score(tool_results: list[dict[str, Any]]) -> int | None:
+    for item in tool_results:
+        result = item.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        if isinstance(result.get("score"), int):
+            return result["score"]
+        if isinstance(result.get("total"), int):
+            return result["total"]
+    return None
+
+
+def _extract_grade_passed(tool_results: list[dict[str, Any]]) -> bool | None:
+    for item in tool_results:
+        result = item.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        if isinstance(result.get("passed"), bool):
+            return result["passed"]
+    return None
+
+
+def _extract_grade_feedback(tool_results: list[dict[str, Any]]) -> str | None:
+    for item in tool_results:
+        result = item.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        feedback = result.get("feedback")
+        if isinstance(feedback, str) and feedback:
+            return feedback
+    return None
 
 
 # =============================================================================

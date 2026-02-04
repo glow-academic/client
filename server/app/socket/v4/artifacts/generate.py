@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import logging
-import traceback
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any, cast
@@ -686,6 +685,7 @@ async def _generate_artifact_impl(
                             tool_name=tool_name,
                             arguments=arguments_dict,
                             run_id=uuid.UUID(data.run_id) if data.run_id else None,
+                            external_call_id=tool_call_id,
                         )
 
                     # Parse result for internal tracking

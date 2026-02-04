@@ -21,13 +21,15 @@ from app.infra.v4.tools.render_tool_template import render_tool_template
 from app.sql.types import (
     CreateEntryRecordSqlParams,
     CreateEntryRecordSqlRow,
+    InfraToolsCreateCallForToolSqlParams,
+    InfraToolsCreateCallForToolSqlRow,
     InfraToolsGetEntryTypeByToolIdSqlParams,
     InfraToolsGetResourceTypeByToolIdSqlParams,
-    InfraToolsGetResourceTypeByToolIdSqlRow,
+    InfraToolsGetTemplateIdV4SqlParams,
+    InfraToolsGetTemplateIdV4SqlRow,
     InfraToolsGetToolIdByNameSqlParams,
-    InfraToolsGetToolIdByNameSqlRow,
     InfraToolsIsToolCreatableSqlParams,
-    InfraToolsIsToolCreatableSqlRow,
+    InfraToolsLinkToolCallSqlParams,
 )
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -40,6 +42,7 @@ async def execute_tool_call(
     tool_name: str,
     arguments: dict[str, Any],
     run_id: uuid.UUID | None = None,
+    external_call_id: str | None = None,
 ) -> str:
     """Execute a tool call and return result as JSON string for model.
 
@@ -86,11 +89,24 @@ async def execute_tool_call(
         if entry_result and getattr(entry_result, "entry_type", None):
             # Entry-based tool: insert into {entry}_entry table
             return await _execute_entry_tool(
-                conn, tool_id, tool_name, entry_result.entry_type, arguments, run_id
+                conn,
+                tool_id,
+                tool_name,
+                entry_result.entry_type,
+                arguments,
+                run_id,
+                external_call_id,
             )
 
         # Otherwise, fall back to resource-based tool logic
-        return await _execute_resource_tool(conn, tool_id, tool_name, arguments, run_id)
+        return await _execute_resource_tool(
+            conn,
+            tool_id,
+            tool_name,
+            arguments,
+            run_id,
+            external_call_id,
+        )
 
     except Exception as e:
         logger.exception(f"Error executing tool {tool_name}: {e}")
@@ -107,6 +123,7 @@ async def _execute_entry_tool(
     entry_type: str,
     arguments: dict[str, Any],
     run_id: uuid.UUID | None = None,
+    external_call_id: str | None = None,
 ) -> str:
     """Execute an entry-based tool (inserts into {entry}_entry table).
 
@@ -137,9 +154,17 @@ async def _execute_entry_tool(
                 "message": f"No values to insert for {tool_name}. Check tool configuration.",
             })
 
+        call_id = await _create_tool_call_record(
+            conn=conn,
+            tool_id=tool_id,
+            run_id=run_id,
+            arguments=arguments,
+            external_call_id=external_call_id,
+        )
+
         entry_params = CreateEntryRecordSqlParams(
             entry_type=entry_type,
-            call_id=None,
+            call_id=call_id,
             mcp=False,
             entry_data=json.dumps(mapped_values),
         )
@@ -162,12 +187,14 @@ async def _execute_entry_tool(
                     "message": f"Entry already exists, using existing {entry_type} entry",
                     "entry_id": entry_id,
                     "entry_type": entry_type,
+                    "call_id": str(call_id) if call_id else None,
                 })
             return json.dumps({
                 "success": True,
                 "message": f"Successfully created {entry_type} entry",
                 "entry_id": entry_id,
                 "entry_type": entry_type,
+                "call_id": str(call_id) if call_id else None,
             })
         else:
             return json.dumps({
@@ -189,6 +216,7 @@ async def _execute_resource_tool(
     tool_name: str,
     arguments: dict[str, Any],
     run_id: uuid.UUID | None = None,
+    external_call_id: str | None = None,
 ) -> str:
     """Execute a resource-based tool (inserts into {resource}_resource table).
 
@@ -236,6 +264,14 @@ async def _execute_resource_tool(
             conn, resource_type, rendered_values, tool_id=str(tool_id)
         )
 
+        call_id = await _create_tool_call_record(
+            conn=conn,
+            tool_id=tool_id,
+            run_id=run_id,
+            arguments=arguments,
+            external_call_id=external_call_id,
+        )
+
         resource_id: str | None = None
 
         if is_creatable:
@@ -255,7 +291,7 @@ async def _execute_resource_tool(
             resource_row = await conn.fetchrow(
                 create_resource_sql,
                 resource_type,
-                None,  # call_id - not used in agentic flow
+                call_id,
                 False,  # mcp
                 json.dumps(mapped_values),
             )
@@ -310,6 +346,7 @@ async def _execute_resource_tool(
             "success": True,
             "message": f"Successfully {action} {resource_type} entry",
             "resource_id": resource_id,
+            "call_id": str(call_id) if call_id else None,
         })
 
     except Exception as e:
@@ -318,3 +355,49 @@ async def _execute_resource_tool(
             "success": False,
             "message": f"Resource tool execution error: {str(e)}",
         })
+
+
+async def _create_tool_call_record(
+    conn: asyncpg.Connection,
+    tool_id: uuid.UUID,
+    run_id: uuid.UUID | None,
+    arguments: dict[str, Any],
+    external_call_id: str | None,
+) -> uuid.UUID | None:
+    """Persist call metadata for tool executions when a run_id is available."""
+    if run_id is None:
+        return None
+
+    template_result = cast(
+        InfraToolsGetTemplateIdV4SqlRow,
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql",
+            params=InfraToolsGetTemplateIdV4SqlParams(tool_id=tool_id),
+        ),
+    )
+    template_id = template_result.template_id if template_result else None
+
+    call_result = cast(
+        InfraToolsCreateCallForToolSqlRow,
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/queries/infrastructure/tools/create_call_for_tool_complete.sql",
+            params=InfraToolsCreateCallForToolSqlParams(
+                external_call_id=external_call_id or str(uuid.uuid4()),
+                run_id=run_id,
+                template_id=template_id,
+                arguments_raw=json.dumps(arguments),
+            ),
+        ),
+    )
+    if not call_result or not call_result.call_id:
+        return None
+
+    call_id = call_result.call_id
+    await execute_sql_typed(
+        conn,
+        "app/sql/v4/queries/infrastructure/tools/link_tool_call_complete.sql",
+        params=InfraToolsLinkToolCallSqlParams(tool_id=tool_id, call_id=call_id),
+    )
+    return call_id

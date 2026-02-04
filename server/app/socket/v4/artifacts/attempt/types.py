@@ -11,7 +11,6 @@ Entry types are predefined per handler (not in payload):
 """
 
 from typing import Any
-
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -22,12 +21,11 @@ from app.socket.v4.artifacts.types import (
     GenerationProgressEvent,
 )
 
-
 # =============================================================================
 # Entry type constants (predefined per handler, not in payload)
 # =============================================================================
 
-ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
+ATTEMPT_MESSAGE_ENTRY_TYPES = ["hints"]
 ATTEMPT_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 
 
@@ -272,7 +270,7 @@ class AttemptUserCompleteEvent(BaseModel):
     Emitted when user message is finalized (text or voice).
     """
 
-    group_id: str
+    chat_id: str
     message_id: str  # User message ID (not a generation run_id)
     content: str
     created_at: str
@@ -285,6 +283,8 @@ class AttemptAssistantStartEvent(BaseModel):
     Emitted when assistant message generation starts.
     """
 
+    chat_id: str
+    message_id: str
     created_at: str
     persona_id: str | None = None
 
@@ -295,6 +295,8 @@ class AttemptAssistantDeltaEvent(BaseModel):
     Emitted during message generation with accumulated content.
     """
 
+    chat_id: str
+    message_id: str
     content: str  # accumulated content
 
 
@@ -313,7 +315,10 @@ class AttemptAssistantCompleteEvent(BaseModel):
     Emitted when assistant message generation is complete.
     """
 
+    chat_id: str
+    message_id: str
     content: str
+    created_at: str | None = None
     persona_id: str | None = None
 
 
@@ -404,6 +409,8 @@ class AttemptHintProgressEvent(BaseModel):
     Emitted during hint generation (auto-triggered after message).
     """
 
+    chat_id: str
+    message_id: str
     type: str  # "start", "progress", "complete"
     hints_count: int | None = None
     hints: list[dict[str, Any]] | None = None
