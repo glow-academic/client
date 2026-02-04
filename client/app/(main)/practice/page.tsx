@@ -15,27 +15,20 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-// Using unified training endpoints with practice: true for practice mode
-// GET endpoint: operational data (scenario_ids for starting simulations)
-type PracticeOperationalIn = InputOf<"/api/v4/training/get", "post">;
-type PracticeOperationalOut = OutputOf<"/api/v4/training/get", "post">;
-// LIST endpoint: analytical data (stats, scores, history)
-type PracticeAnalyticalIn = InputOf<"/api/v4/training/list", "post">;
-type PracticeAnalyticalOut = OutputOf<"/api/v4/training/list", "post">;
+// Using /training/get for simulation cards (enhanced with stats)
+type PracticeCardsIn = InputOf<"/api/v4/training/get", "post">;
+type PracticeCardsOut = OutputOf<"/api/v4/training/get", "post">;
+// Using /attempt/list for history section
+type PracticeHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
+type PracticeHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
 
-// Merged type for Practice component - combines operational + analytical data
-type PracticeOut = Omit<PracticeAnalyticalOut, "items"> & {
-  items: Array<
-    NonNullable<PracticeAnalyticalOut["items"]>[number] & {
-      scenario_ids?: string[] | null;
-    }
-  > | null;
-};
+// Practice component uses cards data directly (no merge needed)
+type PracticeOut = PracticeCardsOut;
 
-/** ---- Direct fetch for operational data (scenario_ids) ---- */
-const getPracticeOperational = async (
-  input: PracticeOperationalIn
-): Promise<PracticeOperationalOut> => {
+/** ---- Direct fetch for simulation cards (enhanced with stats) ---- */
+const getPracticeCards = async (
+  input: PracticeCardsIn
+): Promise<PracticeCardsOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/training/get", input, {
@@ -48,13 +41,13 @@ const getPracticeOperational = async (
   });
 };
 
-/** ---- Direct fetch for analytical data (stats, history) ---- */
-const getPracticeAnalytical = async (
-  input: PracticeAnalyticalIn
-): Promise<PracticeAnalyticalOut> => {
+/** ---- Direct fetch for history data ---- */
+const getPracticeHistory = async (
+  input: PracticeHistoryIn
+): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/training/list", input, {
+  return api.post("/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -63,38 +56,6 @@ const getPracticeAnalytical = async (
     }),
   });
 };
-
-/** ---- Merge operational + analytical data by simulation_id ---- */
-function mergePracticeData(
-  operational: PracticeOperationalOut,
-  analytical: PracticeAnalyticalOut
-): PracticeOut {
-  // Build lookup map for scenario_ids by simulation_id
-  const scenarioIdsMap = new Map<string, string[]>();
-  if (operational.items) {
-    for (const item of operational.items) {
-      if (item.simulation_id && item.scenario_ids) {
-        scenarioIdsMap.set(
-          String(item.simulation_id),
-          item.scenario_ids.map(String)
-        );
-      }
-    }
-  }
-
-  // Merge scenario_ids into analytical items
-  const mergedItems = analytical.items?.map((item) => ({
-    ...item,
-    scenario_ids: item.simulation_id
-      ? scenarioIdsMap.get(String(item.simulation_id)) || null
-      : null,
-  })) || null;
-
-  return {
-    ...analytical,
-    items: mergedItems,
-  };
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -156,27 +117,12 @@ export default async function PracticePage({
   // Build practice filters - convert to snake_case
   // profile_id removed - comes from X-Profile-Id header automatically
   // Always pass department_ids (never empty array) - use all IDs from profile context
-  // practice: true for practice mode (uses unified training endpoint)
+  // practice: true for practice mode
 
-  // Operational endpoint (for scenario_ids)
-  const operationalFilters: PracticeOperationalIn = {
+  // Cards endpoint (now includes all stats needed for simulation cards)
+  const cardsFilters: PracticeCardsIn = {
     body: {
       practice: true,
-    },
-  };
-
-  // Analytical endpoint (for stats - fetching cards only, not history which is separate)
-  const now = new Date();
-  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-  const analyticalFilters: PracticeAnalyticalIn = {
-    body: {
-      practice: true,
-      start_date: oneYearAgo.toISOString(),
-      end_date: now.toISOString(),
-      department_ids: profileContext.department_ids || [],
-      page: 0,
-      page_size: 1, // We only need the items (cards), not history data
-      show_archived: false,
     },
   };
 
@@ -206,20 +152,8 @@ export default async function PracticePage({
   const historySortBy = searchParamsObj.get("historySortBy") || "date";
   const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
 
-  // Fetch both operational + analytical data in parallel, then merge
-  const [operationalData, analyticalData] = await Promise.all([
-    getPracticeOperational(operationalFilters),
-    getPracticeAnalytical(analyticalFilters),
-  ]);
-
-  // Merge operational (scenario_ids) + analytical (stats) data
-  const practiceData = mergePracticeData(operationalData, analyticalData);
-
-  // Remove history from response for server-driven pagination (history is fetched separately)
-  const practiceDataWithoutHistory = {
-    ...practiceData,
-    data: [], // history is in 'data' field from list endpoint
-  };
+  // Fetch cards data (now includes all stats needed for simulation cards)
+  const practiceData = await getPracticeCards(cardsFilters);
 
   // Get profileId from profile context
   const profileId = profileContext.id;
@@ -260,7 +194,7 @@ export default async function PracticePage({
 
   return (
     <div className="space-y-6">
-      <Practice practiceData={practiceDataWithoutHistory} isGuest={isGuest} />
+      <Practice practiceData={practiceData} isGuest={isGuest} />
 
       {/* History section moved out of Practice, fully server-driven - only show for non-guests */}
       {!isGuest && (
@@ -290,7 +224,6 @@ export default async function PracticePage({
               historyPage={historyPage}
               historyPageSize={historyPageSize}
               historySearch={historySearch}
-              historyProfileIds={historyProfileIds}
               historySimulationIds={historySimulationIds}
               historyScenarioIds={historyScenarioIds}
               historyInfiniteMode={historyInfiniteMode}
@@ -310,7 +243,6 @@ async function PracticeHistorySection({
   historyPage,
   historyPageSize,
   historySearch,
-  historyProfileIds,
   historySimulationIds,
   historyScenarioIds,
   historyInfiniteMode,
@@ -321,7 +253,6 @@ async function PracticeHistorySection({
   historyPage: number;
   historyPageSize: number;
   historySearch?: string | undefined;
-  historyProfileIds?: string[] | undefined;
   historySimulationIds?: string[] | undefined;
   historyScenarioIds?: string[] | undefined;
   historyInfiniteMode?: boolean | undefined;
@@ -329,14 +260,14 @@ async function PracticeHistorySection({
   historySortOrder: string;
   departmentIds: string[];
 }) {
-  // Build history filters for practice (uses unified training endpoint)
+  // Build history filters using /attempt/list endpoint
   // profile_id removed - comes from X-Profile-Id header automatically
   // Convert camelCase to snake_case for API
   // Default date range: last year
   // practice: true for practice mode
   const now = new Date();
   const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-  const historyFilters: PracticeAnalyticalIn = {
+  const historyFilters: PracticeHistoryIn = {
     body: {
       practice: true,
       start_date: oneYearAgo.toISOString(),
@@ -346,10 +277,6 @@ async function PracticeHistorySection({
       page_size: historyPageSize,
       show_archived: false,
       ...(historySearch && { search: historySearch }),
-      ...(historyProfileIds &&
-        historyProfileIds.length > 0 && {
-          profile_ids: historyProfileIds,
-        }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
           simulation_ids: historySimulationIds,
@@ -366,38 +293,38 @@ async function PracticeHistorySection({
     },
   };
 
-  const historyData = await getPracticeAnalytical(historyFilters);
+  const historyData = await getPracticeHistory(historyFilters);
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter((item) => item.is_archived).length;
-  const unarchivedCount = dataArray.filter((item) => !item.is_archived).length;
+  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profile_options || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const profileOptions = (historyData.profile_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
   const simulationOptions = (historyData.simulation_options || []).map(
-    (opt) => {
-      const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
       return {
-        value: String(opt["value"] || ""),
-        label: String(opt["label"] || ""),
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
         ...(count !== undefined && { count }),
       };
     }
   );
-  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const scenarioOptions = (historyData.scenario_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
@@ -422,4 +349,4 @@ async function PracticeHistorySection({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { PracticeAnalyticalIn as PracticeHistoryIn, PracticeAnalyticalOut as PracticeHistoryOut, PracticeOut };
+export type { PracticeHistoryIn, PracticeHistoryOut, PracticeOut };

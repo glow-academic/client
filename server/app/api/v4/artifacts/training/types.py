@@ -208,7 +208,8 @@ class GetTrainingGetRequest(BaseModel):
 class TrainingSimulationOperational(BaseModel):
     """Simulation data for starting a training session.
 
-    Contains only the data needed to start a simulation, not analytics.
+    Contains data needed to start a simulation AND card display stats.
+    Now serves as the unified type for home/practice simulation cards.
     """
 
     simulation_id: UUID
@@ -220,6 +221,25 @@ class TrainingSimulationOperational(BaseModel):
     # Display metadata
     color: str | None = None  # from persona
     icon: str | None = None  # from persona
+    # Card stats from mv_attempt_facts
+    view_mode: str | None = None  # 'member' | 'instructional' | 'practice'
+    num_sessions: int | None = None  # attempt_count
+    highest_score: int | None = None  # highest_score_percent rounded
+    has_passed: bool | None = None
+    # Computed by Python (business logic)
+    status: str | None = None  # 'passed' | 'in-progress' | 'not-started'
+    pass_pct: int | None = None  # computed from rubric points
+    # Cohort info
+    cohort_names_junction: str | None = None  # formatted "A, B, and C"
+    # Standard groups for rubric display
+    standard_groups: list[str] | None = None  # standard_group_ids as strings
+    # Practice mode flag
+    practice_simulation: bool | None = None  # True when practice=True
+    # Instructional mode only (home with elevated role)
+    completion_pct: int | None = None
+    passed_count: int | None = None
+    in_progress_count: int | None = None
+    not_started_count: int | None = None
 
 
 class GetTrainingGetResponse(BaseModel):

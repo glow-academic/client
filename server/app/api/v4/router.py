@@ -32,6 +32,7 @@ from app.api.v4.artifacts.parameter import router as parameters_router
 from app.api.v4.artifacts.persona import router as personas_router
 from app.api.v4.artifacts.training import router as training_artifact_router
 from app.api.v4.artifacts.attempt import router as attempt_artifact_router
+from app.api.v4.artifacts.test import router as test_artifact_router
 from app.api.v4.artifacts.profile import router as profile_router
 from app.api.v4.artifacts.provider import router as providers_router
 from app.api.v4.artifacts.rubric import router as rubrics_router
@@ -132,6 +133,7 @@ router.include_router(tools_router)
 router.include_router(group_router)
 router.include_router(training_artifact_router)
 router.include_router(attempt_artifact_router)
+router.include_router(test_artifact_router)
 
 # View-based artifacts (aggregated data for UI sections)
 router.include_router(dashboard_artifact_router, prefix="/artifacts/dashboard")

@@ -2281,6 +2281,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/test/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Test Artifact
+         * @description Get benchmark test artifact details with tests/chats/messages in parallel.
+         */
+        post: operations["get_test_artifact_api_v4_test_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/test/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Test Artifacts
+         * @description List benchmark tests with minimal filter metadata.
+         */
+        post: operations["list_test_artifacts_api_v4_test_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/test/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Test Artifacts
+         * @description Archive or unarchive benchmark tests by IDs.
+         */
+        post: operations["archive_test_artifacts_api_v4_test_archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/dashboard/get": {
         parameters: {
             query?: never;
@@ -4688,6 +4748,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/benchmark/tests/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Tests
+         * @description Get benchmark tests view rows from mv_benchmark_tests.
+         */
+        post: operations["get_benchmark_tests_api_v4_views_benchmark_tests_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/benchmark/chats/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Chats
+         * @description Get benchmark chat rows from mv_benchmark_chats.
+         */
+        post: operations["get_benchmark_chats_api_v4_views_benchmark_chats_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/benchmark/messages/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Messages
+         * @description Get benchmark message rows from mv_benchmark_messages.
+         */
+        post: operations["get_benchmark_messages_api_v4_views_benchmark_messages_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/benchmark/attempt-facts/get": {
         parameters: {
             query?: never;
@@ -6836,6 +6956,30 @@ export interface components {
             /** Content */
             content?: string | null;
         };
+        /**
+         * ArchiveTestsRequest
+         * @description Request for archiving/unarchiving benchmark tests.
+         */
+        ArchiveTestsRequest: {
+            /** Test Ids */
+            test_ids: string[];
+            /**
+             * Archived
+             * @default true
+             */
+            archived: boolean;
+        };
+        /**
+         * ArchiveTestsResponse
+         * @description Response for archiving/unarchiving benchmark tests.
+         */
+        ArchiveTestsResponse: {
+            /**
+             * Updated Count
+             * @default 0
+             */
+            updated_count: number;
+        };
         /** ArgsApiRequest */
         ArgsApiRequest: {
             /**
@@ -7794,6 +7938,50 @@ export interface components {
             status: string;
         };
         /**
+         * BenchmarkChatViewItem
+         * @description Single benchmark chat row from mv_benchmark_chats.
+         */
+        BenchmarkChatViewItem: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Run Ids */
+            run_ids?: string[];
+            /** Group Ids */
+            group_ids?: string[];
+            /** Chat Created At */
+            chat_created_at?: string | null;
+            /** Chat Updated At */
+            chat_updated_at?: string | null;
+            /** Chat Title */
+            chat_title?: string | null;
+            /**
+             * Chat Completed
+             * @default false
+             */
+            chat_completed: boolean;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken?: number | null;
+            /**
+             * Num Messages
+             * @default 0
+             */
+            num_messages: number;
+        };
+        /**
          * BenchmarkErrorEvent
          * @description Server-to-client event: benchmarks_error.
          */
@@ -7904,6 +8092,42 @@ export interface components {
              * @default pending
              */
             status: string;
+        };
+        /**
+         * BenchmarkMessageViewItem
+         * @description Single benchmark message row from mv_benchmark_messages.
+         */
+        BenchmarkMessageViewItem: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
         };
         /**
          * BenchmarkProgressEvent
@@ -8033,6 +8257,52 @@ export interface components {
             pending_run_ids?: string[] | null;
             /** Pending Group Ids */
             pending_group_ids?: string[] | null;
+        };
+        /**
+         * BenchmarkTestViewItem
+         * @description Single benchmark test row from mv_benchmark_tests.
+         */
+        BenchmarkTestViewItem: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /**
+             * Archived
+             * @default false
+             */
+            archived: boolean;
+            /** Test Created At */
+            test_created_at?: string | null;
+            /** Test Updated At */
+            test_updated_at?: string | null;
+            /**
+             * Num Chats
+             * @default 0
+             */
+            num_chats: number;
+            /**
+             * Num Chats Completed
+             * @default 0
+             */
+            num_chats_completed: number;
+            /**
+             * Num Messages
+             * @default 0
+             */
+            num_messages: number;
         };
         /**
          * BenchmarkViews
@@ -10692,6 +10962,24 @@ export interface components {
             total_count: number;
         };
         /**
+         * GetBenchmarkChatsRequest
+         * @description Request for benchmark chats view filtering.
+         */
+        GetBenchmarkChatsRequest: {
+            /** Test Id */
+            test_id?: string | null;
+            /** Chat Ids */
+            chat_ids?: string[];
+        };
+        /**
+         * GetBenchmarkChatsResponse
+         * @description Response for benchmark chats view.
+         */
+        GetBenchmarkChatsResponse: {
+            /** Items */
+            items?: components["schemas"]["BenchmarkChatViewItem"][];
+        };
+        /**
          * GetBenchmarkEvalSummaryRequest
          * @description Request for getting benchmark eval summary.
          */
@@ -10729,6 +11017,76 @@ export interface components {
         GetBenchmarkEvalSummaryResponse: {
             /** Items */
             items?: components["schemas"]["BenchmarkEvalSummaryItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GetBenchmarkMessagesRequest
+         * @description Request for benchmark messages view filtering.
+         */
+        GetBenchmarkMessagesRequest: {
+            /** Test Id */
+            test_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+        };
+        /**
+         * GetBenchmarkMessagesResponse
+         * @description Response for benchmark messages view.
+         */
+        GetBenchmarkMessagesResponse: {
+            /** Items */
+            items?: components["schemas"]["BenchmarkMessageViewItem"][];
+        };
+        /**
+         * GetBenchmarkTestsRequest
+         * @description Request for benchmark tests view filtering.
+         */
+        GetBenchmarkTestsRequest: {
+            /** Test Ids */
+            test_ids?: string[];
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'updated'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetBenchmarkTestsResponse
+         * @description Response for benchmark tests view.
+         */
+        GetBenchmarkTestsResponse: {
+            /** Items */
+            items?: components["schemas"]["BenchmarkTestViewItem"][];
             /**
              * Total Count
              * @default 0
@@ -14262,6 +14620,92 @@ export interface components {
             description?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /**
+         * GetTestArtifactRequest
+         * @description Request for benchmark test artifact detail.
+         */
+        GetTestArtifactRequest: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+        };
+        /**
+         * GetTestArtifactResponse
+         * @description Response for benchmark test artifact detail.
+         */
+        GetTestArtifactResponse: {
+            test?: components["schemas"]["BenchmarkTestViewItem"] | null;
+            /** Chats */
+            chats?: components["schemas"]["BenchmarkChatViewItem"][];
+            /** Messages */
+            messages?: components["schemas"]["BenchmarkMessageViewItem"][];
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
+        };
+        /**
+         * GetTestListRequest
+         * @description Request for benchmark test list artifact.
+         */
+        GetTestListRequest: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetTestListResponse
+         * @description Response for benchmark tests list artifact.
+         */
+        GetTestListResponse: {
+            /** Data */
+            data?: components["schemas"]["TestListItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+            /** Eval Options */
+            eval_options?: components["schemas"]["TestListFilterOption"][];
         };
         /** GetToolApiRequest */
         GetToolApiRequest: {
@@ -23305,6 +23749,63 @@ export interface components {
             attempt_id: string;
         };
         /**
+         * TestListFilterOption
+         * @description Filter option row for tests list.
+         */
+        TestListFilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label?: string | null;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
+        /**
+         * TestListItem
+         * @description List row for benchmark tests.
+         */
+        TestListItem: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /**
+             * Archived
+             * @default false
+             */
+            archived: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Num Chats
+             * @default 0
+             */
+            num_chats: number;
+            /**
+             * Num Chats Completed
+             * @default 0
+             */
+            num_chats_completed: number;
+            /**
+             * Num Messages
+             * @default 0
+             */
+            num_messages: number;
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
+        };
+        /**
          * TestProgressEvent
          * @description Server-to-client event: test_progress.
          */
@@ -23462,7 +23963,8 @@ export interface components {
          * TrainingSimulationOperational
          * @description Simulation data for starting a training session.
          *
-         *     Contains only the data needed to start a simulation, not analytics.
+         *     Contains data needed to start a simulation AND card display stats.
+         *     Now serves as the unified type for home/practice simulation cards.
          */
         TrainingSimulationOperational: {
             /**
@@ -23484,6 +23986,32 @@ export interface components {
             color?: string | null;
             /** Icon */
             icon?: string | null;
+            /** View Mode */
+            view_mode?: string | null;
+            /** Num Sessions */
+            num_sessions?: number | null;
+            /** Highest Score */
+            highest_score?: number | null;
+            /** Has Passed */
+            has_passed?: boolean | null;
+            /** Status */
+            status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string | null;
+            /** Standard Groups */
+            standard_groups?: string[] | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Completion Pct */
+            completion_pct?: number | null;
+            /** Passed Count */
+            passed_count?: number | null;
+            /** In Progress Count */
+            in_progress_count?: number | null;
+            /** Not Started Count */
+            not_started_count?: number | null;
         };
         /**
          * TrainingStartPayload
@@ -27905,6 +28433,117 @@ export interface operations {
             };
         };
     };
+    get_test_artifact_api_v4_test_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTestArtifactRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTestArtifactResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_test_artifacts_api_v4_test_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetTestListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetTestListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_test_artifacts_api_v4_test_archive_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchiveTestsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveTestsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_dashboard_api_v4_artifacts_dashboard_get_post: {
         parameters: {
             query?: never;
@@ -32230,6 +32869,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetHealthMetricsHourlyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_tests_api_v4_views_benchmark_tests_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkTestsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkTestsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_chats_api_v4_views_benchmark_chats_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkChatsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkChatsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_messages_api_v4_views_benchmark_messages_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkMessagesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkMessagesResponse"];
                 };
             };
             /** @description Validation Error */

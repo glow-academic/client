@@ -7378,6 +7378,13 @@ class QGetTrainingSimulationsV4Item(BaseModel):
     cohort_ids: list[UUID] | None
     color: str | None
     icon: str | None
+    attempt_count: int | None
+    highest_score_percent: float | None
+    has_passed: bool | None
+    cohort_names: list[str] | None
+    standard_group_ids: list[UUID] | None
+    rubric_total_points: int | None
+    rubric_pass_points: int | None
 
 
 
@@ -7404,6 +7411,7 @@ class QGetTrainingSimulationsV4StandardGroup(BaseModel):
 class GetTrainingSimulationsSqlRow(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     items: list[QGetTrainingSimulationsV4Item] | None = None
     standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
     standards: list[QGetTrainingSimulationsV4Standard] | None = None
@@ -7416,6 +7424,7 @@ class GetTrainingSimulationsApiRequest(BaseModel):
 class GetTrainingSimulationsApiResponse(BaseModel):
 
     actor_name: str | None = None
+    user_role: str | None = None
     items: list[QGetTrainingSimulationsV4Item] | None = None
     standard_groups: list[QGetTrainingSimulationsV4StandardGroup] | None = None
     standards: list[QGetTrainingSimulationsV4Standard] | None = None

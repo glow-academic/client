@@ -17,6 +17,12 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.training.permissions import (
+    compute_mode,
+    compute_pass_pct,
+    compute_status,
+    format_cohort_names,
+)
 from app.api.v4.artifacts.training.types import (
     GetTrainingGetRequest,
     GetTrainingGetResponse,
@@ -110,10 +116,45 @@ async def training_get(
                 actor={"name": result.actor_name, "id": profile_id},
             )
 
-        # Transform items
+        # Compute view mode from practice flag and user role
+        user_role = result.user_role if result else None
+        view_mode = compute_mode(practice, user_role)
+
+        # Transform items with computed card fields
         items: list[TrainingSimulationOperational] = []
         if result and result.items:
             for item in result.items:
+                # Compute pass_pct from rubric points
+                pass_pct = compute_pass_pct(
+                    item.rubric_total_points,
+                    item.rubric_pass_points,
+                )
+
+                # Compute status from has_passed and attempt_count
+                status = compute_status(
+                    item.has_passed,
+                    item.attempt_count,
+                )
+
+                # Format cohort names
+                cohort_names_junction = format_cohort_names(
+                    list(item.cohort_names) if item.cohort_names else None
+                )
+
+                # Round highest score
+                highest_score = (
+                    round(item.highest_score_percent)
+                    if item.highest_score_percent is not None
+                    else None
+                )
+
+                # Convert standard_group_ids to strings
+                standard_groups = (
+                    [str(sg_id) for sg_id in item.standard_group_ids]
+                    if item.standard_group_ids
+                    else None
+                )
+
                 items.append(
                     TrainingSimulationOperational(
                         simulation_id=item.simulation_id,
@@ -124,6 +165,16 @@ async def training_get(
                         cohort_ids=item.cohort_ids,
                         color=item.color,
                         icon=item.icon,
+                        # Card stats
+                        view_mode=view_mode,
+                        num_sessions=item.attempt_count or 0,
+                        highest_score=highest_score,
+                        has_passed=item.has_passed,
+                        status=status,
+                        pass_pct=pass_pct,
+                        cohort_names_junction=cohort_names_junction,
+                        standard_groups=standard_groups,
+                        practice_simulation=True if practice else None,
                     )
                 )
 
