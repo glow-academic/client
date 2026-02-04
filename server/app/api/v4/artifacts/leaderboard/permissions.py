@@ -5,6 +5,10 @@ The route should pass raw MV slices; this module returns deterministic output
 shapes that can be expanded without changing route wiring.
 """
 
+import json
+from collections import defaultdict
+from datetime import datetime
+
 from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardAccoladeWinner,
     LeaderboardAccoladeWinners,
@@ -26,6 +30,8 @@ def _metric(
     *,
     method: str = "mv_profile_metrics",
     key_field: str | None = None,
+    trend_data: list[str] | None = None,
+    data_points: list[str] | None = None,
     hover: str | None = None,
 ) -> LeaderboardMetric:
     return LeaderboardMetric(
@@ -33,10 +39,42 @@ def _metric(
         method=method,
         current_value=value,
         key_field=key_field,
-        trend_data=[],
-        data_points=[],
+        trend_data=trend_data or [],
+        data_points=data_points or [],
         hover=hover,
     )
+
+
+def _round_int(value: float | int | None) -> int | None:
+    if value is None:
+        return None
+    return int(round(float(value)))
+
+
+def _json_point(**kwargs: object) -> str:
+    return json.dumps(kwargs, separators=(",", ":"), default=str)
+
+
+def _format_dt(dt: datetime | None) -> str | None:
+    if dt is None:
+        return None
+    return dt.isoformat()
+
+
+def _profile_context(
+    profile_id: str,
+    attempts_by_profile: dict[str, list[AttemptFactsItem]],
+    chats_by_profile: dict[str, list[ChatFactsItem]],
+) -> dict[str, list]:
+    attempts = sorted(
+        attempts_by_profile.get(profile_id, []),
+        key=lambda a: a.attempt_created_at or datetime.min,
+    )
+    chats = sorted(
+        chats_by_profile.get(profile_id, []),
+        key=lambda c: c.grade_created_at or c.chat_created_at,
+    )
+    return {"attempts": attempts, "chats": chats}
 
 
 def _section(has_data: bool, note: str | None = None) -> LeaderboardSectionStatus:
@@ -50,59 +88,223 @@ def _section(has_data: bool, note: str | None = None) -> LeaderboardSectionStatu
 def build_leaderboard_rows(
     profile_rows: list[ProfileMetricsItem],
     profile_name_by_id: dict[str, str | None] | None = None,
+    attempts: list[AttemptFactsItem] | None = None,
+    chat_rows: list[ChatFactsItem] | None = None,
+    sort_by: str = "highest_score",
+    sort_order: str = "desc",
+    rank_offset: int = 0,
 ) -> list[LeaderboardDataRow]:
     """Build minimal leaderboard rows from profile-level MV rows."""
     rows: list[LeaderboardDataRow] = []
     profile_name_by_id = profile_name_by_id or {}
+    attempts_by_profile: dict[str, list[AttemptFactsItem]] = defaultdict(list)
+    chats_by_profile: dict[str, list[ChatFactsItem]] = defaultdict(list)
+    for item in attempts or []:
+        if item.profile_id is not None:
+            attempts_by_profile[str(item.profile_id)].append(item)
+    for item in chat_rows or []:
+        if item.profile_id is not None:
+            chats_by_profile[str(item.profile_id)].append(item)
+
     for row in profile_rows:
         profile_id = str(row.profile_id)
+        context = _profile_context(profile_id, attempts_by_profile, chats_by_profile)
+        profile_attempts = context["attempts"]
+        profile_chats = context["chats"]
+
+        score_points = [
+            _json_point(
+                date=_format_dt(a.attempt_created_at),
+                value=_round_int(a.score_percent),
+                attempt_id=str(a.attempt_id),
+            )
+            for a in profile_attempts
+            if a.score_percent is not None
+        ]
+        score_trend = list(score_points[-12:])
+        top_score = max(
+            (
+                _round_int(a.score_percent)
+                for a in profile_attempts
+                if a.score_percent is not None
+            ),
+            default=0,
+        )
+
+        chat_message_points = [
+            _json_point(
+                date=_format_dt(c.chat_created_at),
+                value=c.num_messages_total,
+                chat_id=str(c.chat_id),
+            )
+            for c in profile_chats
+            if c.num_messages_total is not None
+        ]
+        chat_message_trend = list(chat_message_points[-12:])
+
+        response_values: list[int] = [
+            int(v)
+            for c in profile_chats
+            for v in (c.message_time_taken_seconds or [])
+            if v is not None
+        ]
+        response_mean = (
+            int(round(sum(response_values) / len(response_values)))
+            if response_values
+            else 0
+        )
+        response_points = [
+            _json_point(
+                date=_format_dt(c.chat_created_at),
+                value=(
+                    int(
+                        round(
+                            sum(c.message_time_taken_seconds)
+                            / len(c.message_time_taken_seconds)
+                        )
+                    )
+                    if c.message_time_taken_seconds
+                    else 0
+                ),
+                chat_id=str(c.chat_id),
+            )
+            for c in profile_chats
+        ]
+        response_trend = list(response_points[-12:])
+
+        time_points = [
+            _json_point(
+                date=_format_dt(c.chat_created_at),
+                value=(
+                    int(round((c.time_taken or 0) / 60.0))
+                    if c.time_taken is not None
+                    else 0
+                ),
+                chat_id=str(c.chat_id),
+            )
+            for c in profile_chats
+        ]
+        time_trend = list(time_points[-12:])
+
+        improvement_points = [
+            _json_point(
+                date=_format_dt(a.attempt_created_at),
+                value=_round_int(a.score_percent),
+                attempt_id=str(a.attempt_id),
+            )
+            for a in profile_attempts
+            if a.score_percent is not None
+        ]
+        improvement_trend = list(improvement_points[-12:])
+
+        perfect_points = [
+            _json_point(
+                date=_format_dt(a.attempt_created_at),
+                value=1,
+                attempt_id=str(a.attempt_id),
+            )
+            for a in profile_attempts
+            if (a.score_percent or 0) >= 100
+        ]
+        perfect_trend = list(perfect_points[-12:])
+
+        quickest_points = [
+            _json_point(
+                date=_format_dt(c.chat_created_at),
+                value=int(round((c.time_taken or 0) / 60.0)),
+                chat_id=str(c.chat_id),
+            )
+            for c in profile_chats
+            if c.passed and c.time_taken is not None
+        ]
+        quickest_trend = list(quickest_points[-12:])
+
         highest_score_avg = (
-            float(row.highest_score)
+            _round_int(row.highest_score)
             if row.highest_score is not None
-            else (float(row.avg_score) if row.avg_score is not None else None)
+            else (_round_int(row.avg_score) if row.avg_score is not None else None)
         )
         metrics_entry = LeaderboardMetricsEntry(
             total_attempts=_metric(
                 row.total_attempts,
+                method="countDistinct",
                 key_field="total_attempts",
+                trend_data=[],
+                data_points=[
+                    _json_point(
+                        date=_format_dt(a.attempt_created_at),
+                        value=1,
+                        attempt_id=str(a.attempt_id),
+                    )
+                    for a in profile_attempts
+                ],
+                hover=f"attempts={row.total_attempts}",
             ),
             highest_score_avg=_metric(
                 highest_score_avg,
+                method="max",
                 key_field="highest_score",
+                trend_data=score_trend,
+                data_points=score_points,
+                hover=f"top={top_score}%",
             ),
             messages_per_session=_metric(
-                float(row.avg_messages_per_session)
+                _round_int(row.avg_messages_per_session)
                 if row.avg_messages_per_session is not None
                 else None,
+                method="avg",
                 key_field="avg_messages_per_session",
+                trend_data=chat_message_trend,
+                data_points=chat_message_points,
+                hover=f"samples={len(chat_message_points)}",
             ),
             persona_response_seconds=_metric(
-                float(row.avg_persona_response_sec)
+                _round_int(row.avg_persona_response_sec)
                 if row.avg_persona_response_sec is not None
                 else None,
+                method="avg",
                 key_field="avg_persona_response_sec",
-                hover="Lower is better",
+                trend_data=response_trend,
+                data_points=response_points,
+                hover=f"mean={response_mean}s; lower=better",
             ),
             time_spent_minutes=_metric(
-                float(row.total_time_minutes)
+                _round_int(row.total_time_minutes)
                 if row.total_time_minutes is not None
                 else None,
+                method="sum",
                 key_field="total_time_minutes",
+                trend_data=time_trend,
+                data_points=time_points,
+                hover=f"total={_round_int(row.total_time_minutes) or 0} min",
             ),
             improvement_rate_per_day=_metric(
-                float(row.improvement_rate) if row.improvement_rate is not None else None,
+                _round_int(row.improvement_rate)
+                if row.improvement_rate is not None
+                else None,
+                method="delta/day",
                 key_field="improvement_rate",
+                trend_data=improvement_trend,
+                data_points=improvement_points,
+                hover="based on best-grade deltas over time",
             ),
             perfect_score_count=_metric(
                 row.perfect_score_count,
+                method="count",
                 key_field="perfect_score_count",
+                trend_data=perfect_trend,
+                data_points=perfect_points,
+                hover=f"perfect={row.perfect_score_count}",
             ),
             quickest_pass_minutes=_metric(
-                float(row.quickest_pass_minutes)
+                _round_int(row.quickest_pass_minutes)
                 if row.quickest_pass_minutes is not None
                 else None,
+                method="min",
                 key_field="quickest_pass_minutes",
-                hover="Lower is better",
+                trend_data=quickest_trend,
+                data_points=quickest_points,
+                hover="lower is better",
             ),
         )
         rows.append(
@@ -114,27 +316,56 @@ def build_leaderboard_rows(
                 metrics_entry=metrics_entry,
             )
         )
+
+    sort_key_map = {
+        "highest_score": "highest_score_avg",
+        "highestScore": "highest_score_avg",
+        "total_attempts": "total_attempts",
+        "totalAttempts": "total_attempts",
+        "avg_messages": "messages_per_session",
+        "messagesPerSession": "messages_per_session",
+        "persona_response_seconds": "persona_response_seconds",
+        "personaResponseTimes": "persona_response_seconds",
+        "time_spent_minutes": "time_spent_minutes",
+        "timeSpent": "time_spent_minutes",
+        "improvement_rate_per_day": "improvement_rate_per_day",
+        "improvement": "improvement_rate_per_day",
+        "perfect_score_count": "perfect_score_count",
+        "quickest_pass_minutes": "quickest_pass_minutes",
+    }
+    selected_metric = sort_key_map.get(sort_by, "highest_score_avg")
+    reverse = sort_order.lower() != "asc"
+
+    def _sort_value(row: LeaderboardDataRow) -> float:
+        raw = _metric_value(row, selected_metric)
+        if raw is None:
+            return float("-inf")
+        return float(raw)
+
     rows.sort(
         key=lambda r: (
-            -float(r.metrics_entry.highest_score_avg.current_value or 0)
-            if r.metrics_entry and r.metrics_entry.highest_score_avg
-            else 0,
-            -float(r.metrics_entry.total_attempts.current_value or 0)
-            if r.metrics_entry and r.metrics_entry.total_attempts
-            else 0,
+            _sort_value(r),
+            float(_metric_value(r, "highest_score_avg") or 0),
+            float(_metric_value(r, "total_attempts") or 0),
             r.profile_id or "",
-        )
+        ),
+        reverse=reverse,
     )
+
     for i, row in enumerate(rows, start=1):
-        row.rank = i
+        row.rank = rank_offset + i
     return rows
 
 
-def _compute_header_metrics(profile_rows: list[ProfileMetricsItem]) -> LeaderboardHeaderMetrics:
+def _compute_header_metrics(
+    profile_rows: list[ProfileMetricsItem],
+) -> LeaderboardHeaderMetrics:
     total_profiles = len({row.profile_id for row in profile_rows})
     total_attempts = sum(row.total_attempts for row in profile_rows)
 
-    avg_scores = [float(row.avg_score) for row in profile_rows if row.avg_score is not None]
+    avg_scores = [
+        float(row.avg_score) for row in profile_rows if row.avg_score is not None
+    ]
     average_score = round(sum(avg_scores) / len(avg_scores), 2) if avg_scores else None
 
     perfect_scores = sum(row.perfect_score_count for row in profile_rows)
@@ -156,9 +387,7 @@ def _metric_value(row: LeaderboardDataRow, key: str) -> float | int | None:
     return metric.current_value
 
 
-def _pick_max(
-    rows: list[LeaderboardDataRow], key: str
-) -> LeaderboardDataRow | None:
+def _pick_max(rows: list[LeaderboardDataRow], key: str) -> LeaderboardDataRow | None:
     if not rows:
         return None
     with_values = [r for r in rows if _metric_value(r, key) is not None]
@@ -201,7 +430,9 @@ def _winner(
     )
 
 
-def compute_accolade_winners(rows: list[LeaderboardDataRow]) -> LeaderboardAccoladeWinners:
+def compute_accolade_winners(
+    rows: list[LeaderboardDataRow],
+) -> LeaderboardAccoladeWinners:
     """Compute deterministic accolade winners from normalized leaderboard rows."""
     highest_scorer = _pick_max(rows, "highest_score_avg")
     perfect_score = _pick_max(rows, "perfect_score_count")
@@ -214,13 +445,27 @@ def compute_accolade_winners(rows: list[LeaderboardDataRow]) -> LeaderboardAccol
 
     return LeaderboardAccoladeWinners(
         highest_scorer=_winner(highest_scorer, "highest_score_avg", "{value:.0f} avg"),
-        perfect_score=_winner(perfect_score, "perfect_score_count", "{value:.0f} perfect"),
-        longest_convo=_winner(longest_convo, "messages_per_session", "{value:.0f} msgs/session"),
-        response_times=_winner(response_times, "persona_response_seconds", "{value:.0f}s"),
-        quickest_pass=_winner(quickest_pass, "quickest_pass_minutes", "{value:.0f} min"),
-        the_persistent=_winner(the_persistent, "total_attempts", "{value:.0f} attempts"),
-        marathon_runner=_winner(marathon_runner, "time_spent_minutes", "{value:.0f} min"),
-        rapid_riser=_winner(rapid_riser, "improvement_rate_per_day", "{value:.0f} pts/day"),
+        perfect_score=_winner(
+            perfect_score, "perfect_score_count", "{value:.0f} perfect"
+        ),
+        longest_convo=_winner(
+            longest_convo, "messages_per_session", "{value:.0f} msgs/session"
+        ),
+        response_times=_winner(
+            response_times, "persona_response_seconds", "{value:.0f}s"
+        ),
+        quickest_pass=_winner(
+            quickest_pass, "quickest_pass_minutes", "{value:.0f} min"
+        ),
+        the_persistent=_winner(
+            the_persistent, "total_attempts", "{value:.0f} attempts"
+        ),
+        marathon_runner=_winner(
+            marathon_runner, "time_spent_minutes", "{value:.0f} min"
+        ),
+        rapid_riser=_winner(
+            rapid_riser, "improvement_rate_per_day", "{value:.0f} pts/day"
+        ),
     )
 
 
