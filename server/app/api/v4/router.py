@@ -12,14 +12,9 @@ See `AGENTS.md` for overall architecture principles.
 # mypy: ignore-errors
 
 # ============================================================================
-# Analytics
-# ============================================================================
-# ============================================================================
 # Imports
 # ============================================================================
 from fastapi import APIRouter, Depends
-
-from app.api.v4.analytics import router as analytics_router
 
 # ============================================================================
 # Artifacts (19 total)
@@ -152,10 +147,6 @@ router.include_router(benchmark_artifact_router, prefix="/artifacts/benchmark")
 # ============================================================================
 router.include_router(resources_router)
 
-# ============================================================================
-# Analytics & Dashboard Routes
-# ============================================================================
-router.include_router(analytics_router)
 
 # ============================================================================
 # Views (READ layer on entry_type tables)
