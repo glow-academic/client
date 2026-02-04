@@ -44,14 +44,16 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_parameters,
     has_access,
 )
-from app.api.v4.permissions import select_agents_for_artifact, select_multi_resource_agent
-from app.api.v4.types import CandidateAgent
 from app.api.v4.artifacts.persona.types import (
     GetPersonaApiRequest,
     GetPersonaApiResponse,
     PersonaFlagConfig,
     PersonaResourceBucket,
     PersonaResources,
+)
+from app.api.v4.permissions import (
+    select_agents_for_artifact,
+    select_multi_resource_agent,
 )
 from app.api.v4.resources.colors.get import get_colors_internal
 from app.api.v4.resources.colors.search import search_colors_internal
@@ -78,6 +80,8 @@ from app.api.v4.resources.parameters.search import (
     search_conditional_parameters_internal,
     search_parameters_internal,
 )
+from app.api.v4.types import CandidateAgent
+from app.api.v4.views.drafts.get import get_draft_resources_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -120,12 +124,22 @@ async def get_persona_internal(
     Raises:
         HTTPException: For validation errors (404, 403, 400)
     """
-    from app.main import get_pool
 
     # === QUERY 1: Access Check (always fresh, no cache) ===
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database pool not initialized")
+
+    draft_item = None
+    if draft_id is not None:
+        async with pool.acquire() as draft_conn:
+            draft_items = await get_draft_resources_internal(
+                conn=draft_conn,
+                draft_ids=[draft_id],
+                bypass_cache=bypass_cache,
+            )
+            if draft_items:
+                draft_item = draft_items[0]
 
     async with pool.acquire() as conn:
         query1_params = GetPersonaAccessSqlParams(
@@ -160,12 +174,21 @@ async def get_persona_internal(
                     detail="You don't have access to this persona. It may be restricted to other departments.",
                 )
 
+        effective_group_id = (
+            draft_item.group_id
+            if draft_item is not None and draft_item.group_id is not None
+            else access_result.group_id
+        )
+        effective_draft_version = (
+            draft_item.version if draft_item is not None else access_result.draft_version
+        )
+
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
         query2_params = GetPersonaIdsSqlParams(
             profile_id=profile_id,
             persona_id=persona_id,
             draft_id=draft_id,
-            group_id=access_result.group_id,
+            group_id=effective_group_id,
             user_department_ids=user_department_ids,
         )
 
@@ -173,6 +196,42 @@ async def get_persona_internal(
             GetPersonaIdsSqlRow,
             await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
         )
+
+    selected_name_id = ids_result.name_id
+    selected_description_id = ids_result.description_id
+    selected_color_id = ids_result.color_id
+    selected_icon_id = ids_result.icon_id
+    selected_instructions_id = ids_result.instructions_id
+    selected_active_flag_id = ids_result.active_flag_id
+
+    selected_department_ids = ids_result.department_ids or []
+    selected_parameter_field_ids = ids_result.parameter_field_ids or []
+    selected_example_ids = ids_result.example_ids or []
+    selected_parameter_ids = ids_result.parameter_ids or []
+
+    # Draft values override canonical persona-junction values.
+    if draft_item is not None:
+        if draft_item.name_ids:
+            selected_name_id = draft_item.name_ids[0]
+        if draft_item.description_ids:
+            selected_description_id = draft_item.description_ids[0]
+        if draft_item.color_ids:
+            selected_color_id = draft_item.color_ids[0]
+        if draft_item.icon_ids:
+            selected_icon_id = draft_item.icon_ids[0]
+        if draft_item.instruction_ids:
+            selected_instructions_id = draft_item.instruction_ids[0]
+        if draft_item.flag_ids:
+            selected_active_flag_id = draft_item.flag_ids[0]
+
+        if draft_item.department_ids:
+            selected_department_ids = draft_item.department_ids
+        if draft_item.parameter_field_ids:
+            selected_parameter_field_ids = draft_item.parameter_field_ids
+        if draft_item.example_ids:
+            selected_example_ids = draft_item.example_ids
+        if draft_item.parameter_ids:
+            selected_parameter_ids = draft_item.parameter_ids
 
     # Get tools existence flags from Query 2 (used for show_* UI flags)
     names_has_tools = ids_result.names_has_tools or False
@@ -241,18 +300,18 @@ async def get_persona_internal(
     # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
 
     # Selected IDs for fetching
-    name_ids = [ids_result.name_id] if ids_result.name_id else []
-    description_ids = [ids_result.description_id] if ids_result.description_id else []
-    color_ids = [ids_result.color_id] if ids_result.color_id else []
-    icon_ids = [ids_result.icon_id] if ids_result.icon_id else []
+    name_ids = [selected_name_id] if selected_name_id else []
+    description_ids = [selected_description_id] if selected_description_id else []
+    color_ids = [selected_color_id] if selected_color_id else []
+    icon_ids = [selected_icon_id] if selected_icon_id else []
     instructions_ids = (
-        [ids_result.instructions_id] if ids_result.instructions_id else []
+        [selected_instructions_id] if selected_instructions_id else []
     )
-    flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
-    department_ids = ids_result.department_ids or []
-    parameter_field_ids = ids_result.parameter_field_ids or []
-    example_ids = ids_result.example_ids or []
-    parameter_ids = ids_result.parameter_ids or []
+    flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
+    department_ids = selected_department_ids
+    parameter_field_ids = selected_parameter_field_ids
+    example_ids = selected_example_ids
+    parameter_ids = selected_parameter_ids
 
     # Parallel fetch all resources
     # NOTE: Each query needs its own connection from the pool because
@@ -266,7 +325,7 @@ async def get_persona_internal(
                 None,
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 "recent",
                 name_ids,
                 bypass_cache,
@@ -281,7 +340,7 @@ async def get_persona_internal(
                 None,  # No search filter for internal calls
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 "recent",
                 description_ids,
                 bypass_cache,
@@ -296,7 +355,7 @@ async def get_persona_internal(
                 None,  # No search filter for internal calls
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 "recent",
                 color_ids,
                 bypass_cache,
@@ -311,7 +370,7 @@ async def get_persona_internal(
                 None,  # No search filter for internal calls
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 "recent",
                 icon_ids,
                 bypass_cache,
@@ -326,7 +385,7 @@ async def get_persona_internal(
                 None,  # No search filter for internal calls
                 20,
                 0,
-                access_result.group_id,
+                effective_group_id,
                 "recent",
                 instructions_ids,
                 bypass_cache,
@@ -390,7 +449,7 @@ async def get_persona_internal(
                 0,
                 persona_id,
                 user_department_ids,
-                access_result.group_id,
+                effective_group_id,
                 example_source,
                 example_ids,
                 bypass_cache,
@@ -500,26 +559,20 @@ async def get_persona_internal(
     )
 
     # Find selected resources
-    name_resource = next((n for n in names if n.id == ids_result.name_id), None)
+    name_resource = next((n for n in names if n.id == selected_name_id), None)
     description_resource = next(
-        (d for d in descriptions if d.id == ids_result.description_id),
+        (d for d in descriptions if d.id == selected_description_id),
         None,
     )
-    color_resource = next((c for c in colors if c.id == ids_result.color_id), None)
-    icon_resource = next((i for i in icons if i.id == ids_result.icon_id), None)
+    color_resource = next((c for c in colors if c.id == selected_color_id), None)
+    icon_resource = next((i for i in icons if i.id == selected_icon_id), None)
     instructions_resource = next(
-        (i for i in instructions_list if i.id == ids_result.instructions_id),
+        (i for i in instructions_list if i.id == selected_instructions_id),
         None,
     )
     flag_resource = next(
-        (f for f in flags if f.id == ids_result.active_flag_id), None
+        (f for f in flags if f.id == selected_active_flag_id), None
     )
-
-    # Selected department/parameter_field/example/parameter resources
-    selected_department_ids = ids_result.department_ids or []
-    selected_parameter_field_ids = ids_result.parameter_field_ids or []
-    selected_example_ids = ids_result.example_ids or []
-    selected_parameter_ids = ids_result.parameter_ids or []
 
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
@@ -620,8 +673,8 @@ async def get_persona_internal(
         persona_exists=access_result.persona_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
-        draft_version=access_result.draft_version,
-        group_id=access_result.group_id,
+        draft_version=effective_draft_version,
+        group_id=effective_group_id,
         # Name
         show_name=show_name,
         name_agent_id=name_agent_id,  # Python-computed

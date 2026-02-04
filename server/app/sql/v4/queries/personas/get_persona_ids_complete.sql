@@ -86,37 +86,11 @@ WITH params AS (
     SELECT
         persona_id AS persona_id,
         profile_id AS profile_id,
-        draft_id AS draft_id,
         group_id AS group_id,
         user_department_ids AS user_department_ids
 ),
--- Draft multi-select resource IDs
-draft_departments_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
-    FROM params x
-    LEFT JOIN departments_drafts_connection dd ON dd.draft_id = x.draft_id
-    LIMIT 1
-),
-draft_parameter_fields_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(df.parameter_fields_id ORDER BY df.created_at), NULL), ARRAY[]::uuid[]) as parameter_field_ids
-    FROM params x
-    LEFT JOIN parameter_fields_drafts_connection df ON df.draft_id = x.draft_id
-    LIMIT 1
-),
-draft_examples_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), NULL), ARRAY[]::uuid[]) as example_ids
-    FROM params x
-    LEFT JOIN examples_drafts_connection de ON de.draft_id = x.draft_id
-    LIMIT 1
-),
-draft_parameters_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as parameter_ids
-    FROM params x
-    LEFT JOIN parameters_drafts_connection dp ON dp.draft_id = x.draft_id
-    LIMIT 1
-),
--- Persona junction multi-select resource IDs
-persona_departments_junction_data AS (
+-- Persona junction multi-select resource IDs (canonical only).
+persona_departments_data AS (
     SELECT
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
@@ -130,7 +104,7 @@ persona_departments_junction_data AS (
     FROM params
     LIMIT 1
 ),
-persona_parameter_fields_junction_data AS (
+persona_parameter_fields_data AS (
     SELECT
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
@@ -144,7 +118,7 @@ persona_parameter_fields_junction_data AS (
     FROM params
     LIMIT 1
 ),
-persona_examples_junction_data AS (
+persona_examples_data AS (
     SELECT
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
@@ -159,7 +133,7 @@ persona_examples_junction_data AS (
     FROM params
     LIMIT 1
 ),
-persona_parameters_junction_data AS (
+persona_parameters_data AS (
     SELECT
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
@@ -176,100 +150,42 @@ persona_parameters_junction_data AS (
     FROM params
     LIMIT 1
 ),
--- Combined multi-select IDs (draft preferred over persona)
-persona_departments_combined_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT department_ids FROM draft_departments_data), 1), 0) > 0
-                THEN (SELECT department_ids FROM draft_departments_data)
-            WHEN COALESCE(array_length((SELECT department_ids FROM persona_departments_junction_data), 1), 0) > 0
-                THEN (SELECT department_ids FROM persona_departments_junction_data)
-            ELSE ARRAY[]::uuid[]
-        END as department_ids
-    FROM params
-    LIMIT 1
-),
-persona_parameter_fields_combined_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT parameter_field_ids FROM draft_parameter_fields_data), 1), 0) > 0
-                THEN (SELECT parameter_field_ids FROM draft_parameter_fields_data)
-            WHEN COALESCE(array_length((SELECT parameter_field_ids FROM persona_parameter_fields_junction_data), 1), 0) > 0
-                THEN (SELECT parameter_field_ids FROM persona_parameter_fields_junction_data)
-            ELSE ARRAY[]::uuid[]
-        END as parameter_field_ids
-    FROM params
-    LIMIT 1
-),
-persona_examples_combined_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT example_ids FROM draft_examples_data), 1), 0) > 0
-                THEN (SELECT example_ids FROM draft_examples_data)
-            WHEN COALESCE(array_length((SELECT example_ids FROM persona_examples_junction_data), 1), 0) > 0
-                THEN (SELECT example_ids FROM persona_examples_junction_data)
-            ELSE ARRAY[]::uuid[]
-        END as example_ids
-    FROM params
-    LIMIT 1
-),
-persona_parameters_combined_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT parameter_ids FROM draft_parameters_data), 1), 0) > 0
-                THEN (SELECT parameter_ids FROM draft_parameters_data)
-            WHEN COALESCE(array_length((SELECT parameter_ids FROM persona_parameters_junction_data), 1), 0) > 0
-                THEN (SELECT parameter_ids FROM persona_parameters_junction_data)
-            ELSE ARRAY[]::uuid[]
-        END as parameter_ids
-    FROM params
-    LIMIT 1
-),
--- Single-select resource IDs (from draft or persona junction)
+-- Single-select resource IDs (canonical only).
 name_resource_data AS (
-    SELECT COALESCE(
-        (SELECT n.id FROM names_drafts_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT pn.name_id FROM persona_names_junction pn WHERE pn.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-    ) as name_id
+    SELECT
+        (SELECT pn.name_id FROM persona_names_junction pn WHERE pn.persona_id = (SELECT persona_id FROM params) AND pn.active = true LIMIT 1) as name_id
     FROM params
 ),
 description_resource_data AS (
-    SELECT COALESCE(
-        (SELECT dd.descriptions_id FROM descriptions_drafts_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT pd.description_id FROM persona_descriptions_junction pd WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-    ) as description_id
+    SELECT
+        (SELECT pd.description_id FROM persona_descriptions_junction pd WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true LIMIT 1) as description_id
     FROM params
 ),
 color_resource_data AS (
-    SELECT COALESCE(
-        (SELECT dc.colors_id FROM colors_drafts_connection dc WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT pc.color_id FROM persona_colors_junction pc WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-    ) as color_id
+    SELECT
+        (SELECT pc.color_id FROM persona_colors_junction pc WHERE pc.persona_id = (SELECT persona_id FROM params) AND pc.active = true LIMIT 1) as color_id
     FROM params
 ),
 icon_resource_data AS (
-    SELECT COALESCE(
-        (SELECT di.icons_id FROM icons_drafts_connection di WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT pi.icon_id FROM persona_icons_junction pi WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-    ) as icon_id
+    SELECT
+        (SELECT pi.icon_id FROM persona_icons_junction pi WHERE pi.persona_id = (SELECT persona_id FROM params) AND pi.active = true LIMIT 1) as icon_id
     FROM params
 ),
 instructions_resource_data AS (
-    SELECT COALESCE(
-        (SELECT dinst.instructions_id FROM instructions_drafts_connection dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT pinst.instruction_id FROM persona_instructions_junction pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-    ) as instructions_id
+    SELECT
+        (SELECT pinst.instruction_id FROM persona_instructions_junction pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) AND pinst.active = true LIMIT 1) as instructions_id
     FROM params
 ),
 flag_resource_data AS (
-    SELECT COALESCE(
-        (SELECT df.flags_id FROM flags_drafts_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT pf.flag_id FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND f.name = 'persona_active' AND pf.value = TRUE LIMIT 1)
-    ) as active_flag_id
+    SELECT
+        (SELECT pf.flag_id
+         FROM persona_flags_junction pf
+         JOIN flags_resource f ON pf.flag_id = f.id
+         WHERE pf.persona_id = (SELECT persona_id FROM params)
+           AND pf.active = true
+           AND f.name = 'persona_active'
+           AND pf.value = TRUE
+         LIMIT 1) as active_flag_id
     FROM params
 ),
 -- Candidate agents data (for Python-side agent scoring)
@@ -327,10 +243,10 @@ SELECT
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs
-    (SELECT department_ids FROM persona_departments_combined_data) as department_ids,
-    (SELECT parameter_field_ids FROM persona_parameter_fields_combined_data) as parameter_field_ids,
-    (SELECT example_ids FROM persona_examples_combined_data) as example_ids,
-    (SELECT parameter_ids FROM persona_parameters_combined_data) as parameter_ids,
+    (SELECT department_ids FROM persona_departments_data) as department_ids,
+    (SELECT parameter_field_ids FROM persona_parameter_fields_data) as parameter_field_ids,
+    (SELECT example_ids FROM persona_examples_data) as example_ids,
+    (SELECT parameter_ids FROM persona_parameters_data) as parameter_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,

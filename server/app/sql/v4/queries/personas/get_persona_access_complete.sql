@@ -70,25 +70,36 @@ user_departments AS (
     FROM params x
     LEFT JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
--- Get group_id from draft
-draft_group_data AS (
+-- Resolve canonical persona group context (draft override handled in Python service layer)
+persona_group_data AS (
     SELECT
         COALESCE(
-            d.group_id,
-            (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
+            (
+                SELECT ggc.groups_id
+                FROM persona_groups_junction pgj
+                JOIN groups_groups_connection ggc
+                    ON ggc.group_id = pgj.group_id
+                   AND ggc.active = true
+                WHERE pgj.persona_id = x.persona_id
+                  AND pgj.active = true
+                ORDER BY pgj.created_at DESC
+                LIMIT 1
+            ),
+            (
+                SELECT gr.id
+                FROM groups_resource gr
+                WHERE gr.active = true
+                ORDER BY gr.created_at DESC
+                LIMIT 1
+            )
         ) as group_id
     FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
--- Get draft version
+-- Draft version is resolved in Python via internal draft fetch layer
 draft_version_data AS (
-    SELECT d.version as draft_version
-    FROM params x
-    LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
-    WHERE TRUE
-    LIMIT 1
+    SELECT NULL::int as draft_version
 ),
 -- Get persona departments (for access check)
 persona_departments_data AS (
@@ -109,7 +120,7 @@ SELECT
     up.actor_name::text as actor_name,
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
     (SELECT draft_version FROM draft_version_data) as draft_version,
-    dgd.group_id,
+    pgd.group_id,
 
     -- User context for Python permission logic
     up.role::text as user_role,
@@ -121,5 +132,5 @@ SELECT
 FROM params x
 CROSS JOIN user_profile up
 CROSS JOIN user_departments ud
-CROSS JOIN draft_group_data dgd;
+CROSS JOIN persona_group_data pgd;
 $$;
