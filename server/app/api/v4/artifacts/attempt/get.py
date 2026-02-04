@@ -135,58 +135,28 @@ def _format_timer(elapsed: int, limit_seconds: int | None, infinite_mode: bool, 
     )
 
 
-@router.post(
-    "/get",
-    response_model=GetAttemptDetailResponse,
-    dependencies=[
-        audit_activity("attempt.get", "{{ actor.name }} viewed attempt detail")
-    ],
-)
-async def attempt_get(
-    request: GetAttemptDetailRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetAttemptDetailResponse:
-    """Get attempt detail with parallel MV fetching.
+async def get_attempt_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    attempt_id: UUID,
+    bypass_cache: bool = False,
+    cache_key_path: str = "/api/v4/attempt/get",
+    http_request: Request | None = None,
+) -> tuple[GetAttemptDetailResponse, bool]:
+    """Internal attempt detail fetcher with caching.
 
-    Uses view internal handlers with pool-based parallel fetch:
-    - View 1: simulation_attempts (attempt-level aggregates)
-    - View 2: simulation_chats (chat-level data with grades/feedbacks)
-    - View 3: simulation_messages (message-level data with strengths/improvements/hints)
-
-    Each query runs on its own connection from the pool for true parallelism.
-    The practice flag is determined from the attempt data itself.
+    Returns (response, cache_hit).
     """
     tags = ["attempt"]
+    body_dict = GetAttemptDetailRequest(attempt_id=attempt_id).model_dump(mode="json")
+    cache_key_val = cache_key(cache_key_path, body_dict)
 
-    # Check for cache bypass header
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-    # Generate cache key
-    body_dict = request.model_dump(mode="json")
-    cache_key_val = cache_key(http_request.url.path, body_dict)
-
-    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            response.headers["X-Cache-Tags"] = ",".join(tags)
-            response.headers["X-Cache-Hit"] = "1"
-            return GetAttemptDetailResponse.model_validate(cached["data"])
+            return GetAttemptDetailResponse.model_validate(cached["data"]), True
 
     try:
-        # Get profile_id from header and convert to UUID
-        profile_id_str = http_request.state.profile_id
-        if not profile_id_str:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
-        profile_id = UUID(profile_id_str)
-
-        attempt_id = request.attempt_id
-
         # Resolve profile_id (artifact) to profiles_id (resource) for MV comparison
         profiles_id = await conn.fetchval(
             """
@@ -245,11 +215,7 @@ async def attempt_get(
             standard_group_ids: list[UUID],
             standard_ids: list[UUID],
         ) -> dict[str, dict[UUID, dict]]:
-            """Fetch resource metadata using internal handlers (with caching).
-
-            Uses the same internal fetch functions as the resources endpoints,
-            which provide caching and consistent data access patterns.
-            """
+            """Fetch resource metadata using internal handlers (with caching)."""
             result: dict[str, dict[UUID, dict]] = {
                 "images": {},
                 "videos": {},
@@ -286,8 +252,8 @@ async def attempt_get(
                             result["videos"][item.video_id] = {
                                 "name": item.name,
                                 "description": item.description,
-                                "upload_id": item.upload_id,
                                 "length_seconds": item.length_seconds,
+                                "upload_id": item.upload_id,
                             }
 
                 # Fetch documents
@@ -339,7 +305,7 @@ async def attempt_get(
                             result["questions"][item.question_id] = {
                                 "question_text": item.question_text,
                                 "allow_multiple": item.allow_multiple,
-                                "time": item.time,  # Video timestamp when to show
+                                "time": item.time,
                             }
 
                 # Fetch options
@@ -350,12 +316,14 @@ async def attempt_get(
                             result["options"][item.option_id] = {
                                 "option_text": item.option_text,
                                 "is_correct": item.is_correct,
-                                "question_id": item.question_id,  # Link to parent question
+                                "question_id": item.question_id,
                             }
 
                 # Fetch problem statements
                 if problem_statement_ids:
-                    items = await get_problem_statements_internal(c, problem_statement_ids, bypass_cache=bypass_cache)
+                    items = await get_problem_statements_internal(
+                        c, problem_statement_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.problem_statement_id:
                             result["problem_statements"][item.problem_statement_id] = {
@@ -384,9 +352,11 @@ async def attempt_get(
                                 "pass_points": item.pass_points,
                             }
 
-                # Fetch standard_groups
+                # Fetch standard groups
                 if standard_group_ids:
-                    items = await get_standard_groups_internal(c, standard_group_ids, bypass_cache=bypass_cache)
+                    items = await get_standard_groups_internal(
+                        c, standard_group_ids, bypass_cache=bypass_cache
+                    )
                     for item in items:
                         if item.standard_group_id:
                             result["standard_groups"][item.standard_group_id] = {
@@ -411,35 +381,37 @@ async def attempt_get(
             return result
 
         # === EXECUTE ALL QUERIES IN PARALLEL ===
-        # First batch: attempt, chats, messages (needed to get simulation_id and chat_ids)
         attempt_result, chats_result, messages_result = await asyncio.gather(
             fetch_attempt(attempt_id),
             fetch_chats(attempt_id),
             fetch_messages(attempt_id),
         )
 
-        # Handle empty results
         if not attempt_result:
-            return GetAttemptDetailResponse(
-                attempt_exists=False,
-                access_denied=True,
-                actor_name=None,
+            return (
+                GetAttemptDetailResponse(
+                    attempt_exists=False,
+                    access_denied=True,
+                    actor_name=None,
+                ),
+                False,
             )
 
         attempt_item = attempt_result[0] if attempt_result else None
 
         if not attempt_item:
-            return GetAttemptDetailResponse(
-                attempt_exists=False,
-                access_denied=True,
-                actor_name=None,
+            return (
+                GetAttemptDetailResponse(
+                    attempt_exists=False,
+                    access_denied=True,
+                    actor_name=None,
+                ),
+                False,
             )
 
-        # Determine practice mode from attempt data (not from client request)
         practice = attempt_item.practice or False
 
         # === FETCH SIMULATION AND PROFILE METADATA ===
-        # These are now fetched via internal handlers instead of SQL JOINs
         simulation_name: str | None = None
         profile_name: str | None = None
 
@@ -461,40 +433,36 @@ async def attempt_get(
                     return items[0].name
             return None
 
-        # Fetch simulation and profile names in parallel
         simulation_name, profile_name = await asyncio.gather(
             fetch_simulation_meta(attempt_item.simulation_id),
             fetch_profile_meta(attempt_item.profile_id),
         )
 
-        # Check if profile matches (permission check)
-        # Note: attempt_item.profile_id is profiles_id (resource), so compare with profiles_id
         if not check_attempt_access(attempt_item.profile_id, profiles_id):
-            return GetAttemptDetailResponse(
-                attempt_exists=True,
-                access_denied=True,
-                actor_name=profile_name,
+            return (
+                GetAttemptDetailResponse(
+                    attempt_exists=True,
+                    access_denied=True,
+                    actor_name=profile_name,
+                ),
+                False,
             )
 
-        # Set audit context
-        if profile_name:
+        if profile_name and http_request:
             audit_set(
                 http_request,
                 actor={"name": profile_name, "id": profile_id},
             )
 
         # === COMPUTE TIME LIMIT FROM CHATS ===
-        # Sum time_limit_seconds from all chats (denormalized from scenario_time_limits)
         time_limit_seconds = sum(
             c.time_limit_seconds or 0 for c in (chats_result or [])
         )
-        # Check if any chat allows negative time
         allows_negative_time = any(
-            getattr(c, 'negative', False) for c in (chats_result or [])
+            getattr(c, "negative", False) for c in (chats_result or [])
         )
 
         # === COLLECT AND ENRICH RESOURCE REFS ===
-        # Collect all unique resource IDs from chats
         all_image_ids: list[UUID] = []
         all_video_ids: list[UUID] = []
         all_document_ids: list[UUID] = []
@@ -537,7 +505,6 @@ async def attempt_get(
             if chat_item.standard_ids:
                 all_standard_ids.extend(chat_item.standard_ids)
 
-        # Fetch metadata for all resources
         resource_meta = await fetch_resource_metadata(
             image_ids=list(set(all_image_ids)),
             video_ids=list(set(all_video_ids)),
@@ -712,10 +679,7 @@ async def attempt_get(
         is_own_attempt = attempt_item.profile_id == profiles_id
 
         for msg in messages_result or []:
-            # Transform to unified feedbacks (strengths + improvements with type)
             feedbacks: list[MessageFeedbackEntry] = []
-
-            # Add strengths as type="strength"
             if msg.strengths:
                 for idx, s in enumerate(msg.strengths):
                     highlights: list[HighlightEntry] = []
@@ -724,7 +688,6 @@ async def attempt_get(
                             highlights.append(
                                 HighlightEntry(section=h.section, idx=h.idx)
                             )
-                    # Generate unique ID: message_id + type + index
                     feedback_id = f"{msg.message_id}-strength-{idx}"
                     feedbacks.append(
                         MessageFeedbackEntry(
@@ -737,7 +700,6 @@ async def attempt_get(
                         )
                     )
 
-            # Add improvements as type="improvement"
             if msg.improvements:
                 for idx, i in enumerate(msg.improvements):
                     replaces: list[ReplacementEntry] = []
@@ -750,7 +712,6 @@ async def attempt_get(
                                     idx=r.idx,
                                 )
                             )
-                    # Generate unique ID: message_id + type + index
                     feedback_id = f"{msg.message_id}-improvement-{idx}"
                     feedbacks.append(
                         MessageFeedbackEntry(
@@ -763,7 +724,6 @@ async def attempt_get(
                         )
                     )
 
-            # Transform hints (always included, no message_id in view types)
             hints: list[HintEntry] | None = None
             if msg.hints:
                 hints = [
@@ -771,28 +731,20 @@ async def attempt_get(
                     for h in msg.hints
                 ]
 
-            # Transform contents - look up persona metadata from resource_meta
-            # Contents only have content, persona_id, created_at from MV
             contents: list[ContentEntry] | None = None
             if msg.contents:
                 contents = []
                 for c in msg.contents:
-                    # Look up persona metadata from resource_meta
                     persona_meta = resource_meta["personas"].get(c.persona_id, {}) if c.persona_id else {}
                     persona_name = persona_meta.get("name")
                     persona_color = persona_meta.get("color")
                     persona_icon = persona_meta.get("icon")
 
-                    # Compute display fields
-                    # For user messages (type='query'): use profile_name
-                    # For assistant messages (type='response'): use persona metadata
                     if msg.type == "query":
-                        # User message - use profile name
                         name = "You" if is_own_attempt else profile_name
                         color = None
                         icon = "User"
                     else:
-                        # Assistant message - use persona metadata
                         name = persona_name
                         color = persona_color
                         icon = persona_icon
@@ -827,12 +779,8 @@ async def attempt_get(
         # === BUILD CHATS (VIEW MODEL) ===
         chats: list[ChatData] = []
         for chat_item in chats_result or []:
-            # Build grade data
             grade = None
-            # Build grade from chat grade composite
-            # total_points/pass_points come from rubric metadata (not stored in grade entry)
             if chat_item.grade:
-                # Get rubric points from resource metadata
                 rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {}) if chat_item.rubric_id else {}
                 grade = GradeData(
                     score=chat_item.grade.score,
@@ -842,11 +790,9 @@ async def attempt_get(
                     pass_points=rubric_meta.get("pass_points"),
                 )
 
-            # Transform feedbacks (with standard_group_id from standards metadata)
             feedbacks: list[FeedbackEntry] = []
             if chat_item.feedbacks:
                 for fb in chat_item.feedbacks:
-                    # Look up standard_group_id from standards metadata
                     std_group_id = None
                     if fb.standard_id:
                         std_meta = resource_meta["standards"].get(fb.standard_id, {})
@@ -861,7 +807,6 @@ async def attempt_get(
                         )
                     )
 
-            # Transform analyses (chat-level analysis content)
             analyses_entries: list[AnalysisEntry] | None = None
             if chat_item.analyses:
                 analyses_entries = [
@@ -869,23 +814,18 @@ async def attempt_get(
                     for a in chat_item.analyses
                 ]
 
-            # Build grading state - derive achieved/passed from feedbacks + resource_meta
-            # Build grading state in Record format (what client needs)
             grading_state_data: GradingStateData | None = None
             if chat_item.grade or chat_item.feedbacks:
-                # Build Records for achieved/passed/feedback
                 achieved_dict: dict[str, bool] = {}
                 passed_dict: dict[str, bool] = {}
                 feedback_dict: dict[str, str] = {}
 
                 if chat_item.feedbacks:
-                    # Build feedbacks as dicts for the compute functions
                     feedbacks_dicts = [
                         {"standard_id": fb.standard_id, "total": fb.total}
                         for fb in chat_item.feedbacks
                     ]
 
-                    # Compute achieved standards (any standard with feedback is achieved)
                     achieved_raw = compute_achieved_standards(feedbacks_dicts)
                     if achieved_raw:
                         for a in achieved_raw:
@@ -893,7 +833,6 @@ async def attempt_get(
                             if std_id:
                                 achieved_dict[str(std_id)] = a.get("achieved", False)
 
-                    # Compute passed standards (total >= standard_group pass_points)
                     passed_raw = compute_passed_standards(
                         feedbacks_dicts,
                         resource_meta["standard_groups"],
@@ -905,7 +844,6 @@ async def attempt_get(
                             if std_id:
                                 passed_dict[str(std_id)] = p.get("passed", False)
 
-                    # feedback_by_standard_id from chats MV feedbacks
                     for fb in chat_item.feedbacks:
                         if fb.standard_id and fb.feedback:
                             feedback_dict[str(fb.standard_id)] = fb.feedback
@@ -920,17 +858,14 @@ async def attempt_get(
                 ChatData(
                     id=chat_item.chat_id,
                     completed=chat_item.completed,
-                    # is_current and position are computed after all chats are built
                     grade=grade,
                     feedbacks=feedbacks,
                     analyses=analyses_entries,
-                    # Chat-level flags
                     show_problem_statement=chat_item.show_problem_statement,
                     show_objectives=chat_item.show_objectives,
                     copy_paste_allowed=chat_item.copy_paste_allowed,
                     text_enabled=chat_item.text_enabled,
                     audio_enabled=chat_item.audio_enabled,
-                    # Extended fields
                     grading_state=grading_state_data,
                     scenario_id=chat_item.scenario_id,
                     problem_statement_id=chat_item.problem_statement_id,
@@ -961,7 +896,6 @@ async def attempt_get(
                 )
             )
 
-        # === BUILD ATTEMPT DATA ===
         attempt = AttemptData(
             id=attempt_item.attempt_id,
             created_at=(
@@ -973,36 +907,26 @@ async def attempt_get(
             profile_id=attempt_item.profile_id,
             profile_name=profile_name,
             department_id=attempt_item.department_id,
-            # Home mode only
             cohort_id=attempt_item.cohort_id if not practice else None,
-            # Practice mode only
-            is_archived=False if practice else None,  # Practice attempts from view are not archived
+            is_archived=False if practice else None,
         )
 
-        # === BUILD SIMULATION DATA ===
-        # Use chat-level flags from first chat (all chats in an attempt share same simulation config)
         first_chat = chats_result[0] if chats_result else None
         simulation = SimulationData(
             id=attempt_item.simulation_id,
             name=simulation_name,
-            description=None,  # Not in view
+            description=None,
             time_limit=time_limit_seconds if time_limit_seconds > 0 else None,
-            # Flags from chat-level (equivalent to simulation flags)
             hints_enabled=first_chat.hints_enabled if first_chat else None,
             objectives_enabled=first_chat.show_objectives if first_chat else None,
             image_input_active=first_chat.show_images if first_chat else None,
             copy_paste_allowed=first_chat.copy_paste_allowed if first_chat else None,
-            # Practice flag from attempt
             practice_simulation=practice,
-            # rubric_id from first chat
             rubric_id=first_chat.rubric_id if first_chat else None,
         )
 
-        # === COMPUTE DERIVED FIELDS (centralized in permissions.py) ===
-        # Compute position and is_current for each chat
         compute_chat_position_and_current(chats)
 
-        # Compute attempt aggregates from chats
         aggregates = compute_attempt_aggregates(chats)
         total_chats = aggregates["total_chats"]
         completed_chats = aggregates["completed_chats"]
@@ -1010,7 +934,6 @@ async def attempt_get(
         all_passed = aggregates["all_passed"]
         elapsed_seconds = aggregates["elapsed_seconds"]
 
-        # === BUILD TIMER DATA ===
         timer = _format_timer(
             elapsed=elapsed_seconds,
             limit_seconds=time_limit_seconds if time_limit_seconds > 0 else None,
@@ -1018,7 +941,6 @@ async def attempt_get(
             negative=allows_negative_time,
         )
 
-        # === BUILD AGGREGATED RESULTS ===
         total_possible = compute_total_possible_points(chats)
         percentage = compute_percentage(total_score, total_possible)
 
@@ -1031,17 +953,12 @@ async def attempt_get(
             total_chats=total_chats,
         )
 
-        # === COMPUTE NAVIGATION/UI FIELDS ===
         current_chat_index = compute_current_chat_index(chats)
         expected_chat_count = total_chats
-
-        # is_active: True if timer has not exceeded
         is_active = not timer.exceeded if timer else True
 
-        # === BUILD RUBRIC STRUCTURE in Record format (what client needs) ===
         rubric_structure: RubricStructureData | None = None
         if all_standard_group_ids or all_standard_ids:
-            # Build standard_groups dict: group_id -> list of standard_ids
             standard_groups_dict: dict[str, list[str]] = {}
             for std_id in set(all_standard_ids):
                 std_meta = resource_meta["standards"].get(std_id, {})
@@ -1052,7 +969,6 @@ async def attempt_get(
                         standard_groups_dict[sg_id_str] = []
                     standard_groups_dict[sg_id_str].append(str(std_id))
 
-            # Build standard_groups_mapping dict: group_id -> metadata
             standard_groups_mapping_dict: dict[str, StandardGroupMeta] = {}
             for sg_id in set(all_standard_group_ids):
                 sg_meta = resource_meta["standard_groups"].get(sg_id, {})
@@ -1063,7 +979,6 @@ async def attempt_get(
                     pass_points=sg_meta.get("pass_points"),
                 )
 
-            # Build standards_mapping dict: standard_id -> metadata
             standards_mapping_dict: dict[str, StandardMeta] = {}
             for std_id in set(all_standard_ids):
                 std_meta = resource_meta["standards"].get(std_id, {})
@@ -1079,16 +994,10 @@ async def attempt_get(
                 standards_mapping=standards_mapping_dict if standards_mapping_dict else None,
             )
 
-        # === COMPUTE UI CONTROL FLAGS ===
-        # show_results: True if all chats are completed
         all_chats_completed = all(chat.completed for chat in chats) if chats else False
         show_results = all_chats_completed
-
-        # should_show_controls: True if attempt is active and user can proceed
-        # (i.e., timer not exceeded and not all chats completed)
         should_show_controls = is_active and not all_chats_completed
 
-        # === BUILD RESPONSE ===
         api_response = GetAttemptDetailResponse(
             actor_name=profile_name,
             attempt_exists=True,
@@ -1097,15 +1006,12 @@ async def attempt_get(
             simulation=simulation,
             timer=timer,
             aggregated_results=aggregated_results,
-            # Navigation/UI fields
             current_chat_index=current_chat_index,
             expected_chat_count=expected_chat_count,
             is_active=is_active,
             show_results=show_results,
             should_show_controls=should_show_controls,
-            # Continuation options not yet implemented - will be added when needed
             available_continuation_options=None,
-            # Extended data (scenario_documents removed - use chat.documents)
             rubric_structure=rubric_structure,
             resources=resources_payload,
             views=AttemptViews(
@@ -1115,17 +1021,80 @@ async def attempt_get(
             ),
         )
 
-        # Cache response
         await set_cached(
             cache_key_val,
             {"data": api_response.model_dump(mode="json")},
             ttl=300,
             tags=tags,
         )
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "0"
 
-        return api_response
+        return api_response, False
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=cache_key_path,
+            operation="attempt_get",
+            sql_query="view_internals: attempts, chats, messages",
+            sql_params=None,
+            request=http_request,
+        )
+
+
+@router.post(
+    "/get",
+    response_model=GetAttemptDetailResponse,
+    dependencies=[
+        audit_activity("attempt.get", "{{ actor.name }} viewed attempt detail")
+    ],
+)
+async def attempt_get(
+    request: GetAttemptDetailRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetAttemptDetailResponse:
+    """Get attempt detail with parallel MV fetching.
+
+    Uses view internal handlers with pool-based parallel fetch:
+    - View 1: simulation_attempts (attempt-level aggregates)
+    - View 2: simulation_chats (chat-level data with grades/feedbacks)
+    - View 3: simulation_messages (message-level data with strengths/improvements/hints)
+
+    Each query runs on its own connection from the pool for true parallelism.
+    The practice flag is determined from the attempt data itself.
+    """
+    tags = ["attempt"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    try:
+        profile_id_str = http_request.state.profile_id
+        if not profile_id_str:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+        profile_id = UUID(profile_id_str)
+
+        attempt_id = request.attempt_id
+
+        response_data, cache_hit = await get_attempt_internal(
+            conn=conn,
+            profile_id=profile_id,
+            attempt_id=attempt_id,
+            bypass_cache=bypass_cache,
+            cache_key_path=http_request.url.path,
+            http_request=http_request,
+        )
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+
+        return response_data
 
     except HTTPException:
         raise

@@ -12,6 +12,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.attempt.get import get_attempt_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -50,6 +51,84 @@ server_router = APIRouter()
 # SQL paths
 SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql"
 SQL_PATH_PREPARE = "app/sql/v4/queries/generate/attempt/prepare_attempt_message_complete.sql"
+
+
+def _build_attempt_jinja_context(
+    response: Any,
+    chat_id: uuid.UUID,
+) -> dict[str, Any]:
+    views = response.views.model_dump() if response.views else {}
+    resources_map = response.resources.model_dump() if response.resources else {}
+
+    def resolve_list(ids: list[Any] | None, resource_key: str) -> list[Any]:
+        if not ids or resource_key not in resources_map:
+            return []
+        resource_dict = resources_map.get(resource_key) or {}
+        return [
+            resource_dict.get(str(rid))
+            for rid in ids
+            if resource_dict.get(str(rid)) is not None
+        ]
+
+    chat_view = None
+    if response.views and response.views.simulation_chats:
+        chat_view = next(
+            (c for c in response.views.simulation_chats if str(c.id) == str(chat_id)),
+            None,
+        )
+
+    scenario_obj = None
+    if chat_view and resources_map.get("scenarios") and chat_view.scenario_id:
+        scenario_obj = resources_map["scenarios"].get(str(chat_view.scenario_id))
+
+    legacy_resources = {
+        "scenario": scenario_obj or {},
+        "personas": resolve_list(getattr(chat_view, "persona_ids", None), "personas"),
+        "documents": resolve_list(getattr(chat_view, "document_ids", None), "documents"),
+        "images": resolve_list(getattr(chat_view, "image_ids", None), "images"),
+        "videos": resolve_list(getattr(chat_view, "video_ids", None), "videos"),
+        "templates": resolve_list(getattr(chat_view, "template_ids", None), "templates"),
+        "objectives": resolve_list(getattr(chat_view, "objective_ids", None), "objectives"),
+        "questions": resolve_list(getattr(chat_view, "question_ids", None), "questions"),
+        "options": resolve_list(getattr(chat_view, "option_ids", None), "options"),
+        "problem_statements": resolve_list(
+            [getattr(chat_view, "problem_statement_id", None)],
+            "problem_statements",
+        ),
+        "rubrics": resolve_list([getattr(chat_view, "rubric_id", None)], "rubrics"),
+        "standard_groups": resolve_list(
+            getattr(chat_view, "standard_group_ids", None), "standard_groups"
+        ),
+        "standards": resolve_list(getattr(chat_view, "standard_ids", None), "standards"),
+    }
+
+    messages = []
+    if response.views and response.views.simulation_messages:
+        for msg in response.views.simulation_messages:
+            if str(msg.chat_id) == str(chat_id):
+                messages.append(msg.model_dump())
+
+    attempt_id = response.attempt.id if response.attempt else None
+    attempt_practice = None
+    if response.views and response.views.simulation_attempts:
+        attempt_practice = response.views.simulation_attempts[0].practice
+
+    return {
+        "simulation": {
+            "id": str(response.simulation.id) if response.simulation and response.simulation.id else None,
+            "name": response.simulation.name if response.simulation else None,
+        },
+        "attempt": {
+            "id": str(attempt_id) if attempt_id else None,
+            "practice": attempt_practice,
+        },
+        "chat": {"id": str(chat_id)},
+        "resources": legacy_resources,
+        "messages": messages,
+        # New canonical payloads
+        "views": views,
+        "resource_maps": resources_map,
+    }
 
 
 async def _attempt_message_impl(
@@ -255,9 +334,29 @@ async def _attempt_message_impl(
                 resource_type = "attempt"
 
             # Step 4: Render developer instructions with Jinja
+            jinja_context = prepare_row.jinja_context
+            if context_row.attempt_id:
+                try:
+                    attempt_response, _cache_hit = await get_attempt_internal(
+                        conn=conn,
+                        profile_id=profile_id,
+                        attempt_id=context_row.attempt_id,
+                        bypass_cache=False,
+                        cache_key_path="/api/v4/attempt/get",
+                        http_request=None,
+                    )
+                    jinja_context = _build_attempt_jinja_context(
+                        attempt_response, data.chat_id
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Attempt message: falling back to SQL jinja_context "
+                        f"(attempt_id={context_row.attempt_id}): {exc}"
+                    )
+
             rendered_developer_messages = render_developer_instructions(
                 templates=prepare_row.developer_instruction_templates,
-                jinja_context=prepare_row.jinja_context,
+                jinja_context=jinja_context,
             )
 
             # Step 5: Build messages array
