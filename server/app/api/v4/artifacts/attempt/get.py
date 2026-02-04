@@ -857,6 +857,11 @@ async def get_attempt_internal(
             chats.append(
                 ChatData(
                     id=chat_item.chat_id,
+                    created_at=(
+                        chat_item.created_at.isoformat()
+                        if chat_item.created_at
+                        else None
+                    ),
                     completed=chat_item.completed,
                     grade=grade,
                     feedbacks=feedbacks,

@@ -55,79 +55,13 @@ SQL_PATH_PREPARE = "app/sql/v4/queries/generate/attempt/prepare_attempt_message_
 
 def _build_attempt_jinja_context(
     response: Any,
-    chat_id: uuid.UUID,
 ) -> dict[str, Any]:
     views = response.views.model_dump() if response.views else {}
-    resources_map = response.resources.model_dump() if response.resources else {}
-
-    def resolve_list(ids: list[Any] | None, resource_key: str) -> list[Any]:
-        if not ids or resource_key not in resources_map:
-            return []
-        resource_dict = resources_map.get(resource_key) or {}
-        return [
-            resource_dict.get(str(rid))
-            for rid in ids
-            if resource_dict.get(str(rid)) is not None
-        ]
-
-    chat_view = None
-    if response.views and response.views.simulation_chats:
-        chat_view = next(
-            (c for c in response.views.simulation_chats if str(c.id) == str(chat_id)),
-            None,
-        )
-
-    scenario_obj = None
-    if chat_view and resources_map.get("scenarios") and chat_view.scenario_id:
-        scenario_obj = resources_map["scenarios"].get(str(chat_view.scenario_id))
-
-    legacy_resources = {
-        "scenario": scenario_obj or {},
-        "personas": resolve_list(getattr(chat_view, "persona_ids", None), "personas"),
-        "documents": resolve_list(getattr(chat_view, "document_ids", None), "documents"),
-        "images": resolve_list(getattr(chat_view, "image_ids", None), "images"),
-        "videos": resolve_list(getattr(chat_view, "video_ids", None), "videos"),
-        "templates": resolve_list(getattr(chat_view, "template_ids", None), "templates"),
-        "objectives": resolve_list(getattr(chat_view, "objective_ids", None), "objectives"),
-        "questions": resolve_list(getattr(chat_view, "question_ids", None), "questions"),
-        "options": resolve_list(getattr(chat_view, "option_ids", None), "options"),
-        "problem_statements": resolve_list(
-            [getattr(chat_view, "problem_statement_id", None)],
-            "problem_statements",
-        ),
-        "rubrics": resolve_list([getattr(chat_view, "rubric_id", None)], "rubrics"),
-        "standard_groups": resolve_list(
-            getattr(chat_view, "standard_group_ids", None), "standard_groups"
-        ),
-        "standards": resolve_list(getattr(chat_view, "standard_ids", None), "standards"),
-    }
-
-    messages = []
-    if response.views and response.views.simulation_messages:
-        for msg in response.views.simulation_messages:
-            if str(msg.chat_id) == str(chat_id):
-                messages.append(msg.model_dump())
-
-    attempt_id = response.attempt.id if response.attempt else None
-    attempt_practice = None
-    if response.views and response.views.simulation_attempts:
-        attempt_practice = response.views.simulation_attempts[0].practice
+    resources = response.resources.model_dump() if response.resources else {}
 
     return {
-        "simulation": {
-            "id": str(response.simulation.id) if response.simulation and response.simulation.id else None,
-            "name": response.simulation.name if response.simulation else None,
-        },
-        "attempt": {
-            "id": str(attempt_id) if attempt_id else None,
-            "practice": attempt_practice,
-        },
-        "chat": {"id": str(chat_id)},
-        "resources": legacy_resources,
-        "messages": messages,
-        # New canonical payloads
         "views": views,
-        "resource_maps": resources_map,
+        "resources": resources,
     }
 
 
@@ -303,6 +237,9 @@ async def _attempt_message_impl(
             group_id = str(prepare_row.group_id) if prepare_row.group_id else None
             trace_id = prepare_row.trace_id
 
+            # Ensure MV is fresh before building developer context
+            await conn.execute("REFRESH MATERIALIZED VIEW mv_simulation_messages")
+
             # Step 3: Build model config
             if data.voice_mode and prepare_row.voice_model_name:
                 model_config = {
@@ -341,12 +278,12 @@ async def _attempt_message_impl(
                         conn=conn,
                         profile_id=profile_id,
                         attempt_id=context_row.attempt_id,
-                        bypass_cache=False,
+                        bypass_cache=True,
                         cache_key_path="/api/v4/attempt/get",
                         http_request=None,
                     )
                     jinja_context = _build_attempt_jinja_context(
-                        attempt_response, data.chat_id
+                        attempt_response,
                     )
                 except Exception as exc:
                     logger.warning(

@@ -141,7 +141,7 @@ async def _execute_entry_tool(
             entry_type=entry_type,
             call_id=None,
             mcp=False,
-            entry_data=mapped_values,
+            entry_data=json.dumps(mapped_values),
         )
 
         entry_row = cast(

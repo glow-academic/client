@@ -31942,6 +31942,17 @@
             "format": "uuid",
             "title": "Id"
           },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
           "completed": {
             "anyOf": [
               {

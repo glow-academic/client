@@ -429,6 +429,7 @@ class ChatData(BaseModel):
     """
 
     id: UUID
+    created_at: str | None = None
     completed: bool | None = None
     is_current: bool | None = None
     position: int | None = None
