@@ -40,8 +40,13 @@ from app.api.v4.views.analytics.profile_metrics.types import GetProfileMetricsRe
 from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
+from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
+ACTIVE_SETTINGS_SQL_PATH = (
+    "app/sql/v4/queries/settings/get_active_settings_complete.sql"
+)
 
 
 @router.post(
@@ -82,6 +87,8 @@ async def get_reports(
             if request.end_date
             else None
         )
+        parsed_start_day = parsed_start_date.date() if parsed_start_date else None
+        parsed_end_day = parsed_end_date.date() if parsed_end_date else None
 
         is_archived = bool(
             request.simulation_filters and "archived" in request.simulation_filters
@@ -92,6 +99,30 @@ async def get_reports(
             attempt_type = "practice"
         else:
             attempt_type = None
+        profile_sort_map = {
+            "averageScore": "avg_score",
+            "avg_score": "avg_score",
+            "highestScore": "highest_score",
+            "highest_score": "highest_score",
+            "completionPercentage": "completion_pct",
+            "completion_pct": "completion_pct",
+            "firstAttemptPassRate": "first_attempt_pass_rate",
+            "first_attempt_pass_rate": "first_attempt_pass_rate",
+            "messagesPerSession": "avg_messages_per_session",
+            "avg_messages_per_session": "avg_messages_per_session",
+            "personaResponseTimes": "avg_persona_response_sec",
+            "avg_persona_response_sec": "avg_persona_response_sec",
+            "sessionEfficiency": "session_efficiency",
+            "session_efficiency": "session_efficiency",
+            "timeSpent": "total_time_minutes",
+            "total_time_minutes": "total_time_minutes",
+            "improvement": "improvement",
+            "lastAttemptAt": "last_attempt_at",
+            "last_attempt_at": "last_attempt_at",
+            "totalAttempts": "total_attempts",
+            "total_attempts": "total_attempts",
+        }
+        profile_sort_by = profile_sort_map.get(request.sort_by, "avg_score")
 
         async def fetch_attempts() -> tuple[list, int]:
             async with pool.acquire() as c:
@@ -149,6 +180,8 @@ async def get_reports(
                         simulation_ids=request.simulation_ids,
                         attempt_type=attempt_type,
                         is_archived=is_archived,
+                        date_from=parsed_start_day,
+                        date_to=parsed_end_day,
                     ),
                     bypass_cache=bypass_cache,
                 )
@@ -166,8 +199,8 @@ async def get_reports(
                         scenario_ids=request.scenario_ids,
                         attempt_type=attempt_type,
                         is_archived=is_archived,
-                        sort_by="avg_score",
-                        sort_order="desc",
+                        sort_by=profile_sort_by,
+                        sort_order=request.sort_order,
                         page_limit=request.page_limit,
                         page_offset=request.page_offset,
                     ),
@@ -175,18 +208,55 @@ async def get_reports(
                 )
                 return result.items
 
-        (attempts, total_count), chat_rows, daily_rows, profile_rows = await asyncio.gather(
+        (
+            (attempts, total_count),
+            chat_rows,
+            daily_rows,
+            profile_rows,
+        ) = await asyncio.gather(
             fetch_attempts(),
             fetch_chat_facts(),
             fetch_daily_metrics(),
             fetch_profile_metrics(),
         )
 
+        threshold_success = 85
+        threshold_warning = 80
+        threshold_danger = 70
+        actor_profile_for_settings = (
+            request.actor_profile_id or request.target_profile_id
+        )
+        if actor_profile_for_settings:
+            async with pool.acquire() as c:
+                settings_row_raw = await execute_sql_typed(
+                    c,
+                    ACTIVE_SETTINGS_SQL_PATH,
+                    params=GetActiveSettingsSqlParams(
+                        profile_id=str(actor_profile_for_settings),
+                        department_id=(
+                            str(request.department_ids[0])
+                            if request.department_ids
+                            else None
+                        ),
+                    ),
+                )
+                if settings_row_raw:
+                    settings = GetActiveSettingsSqlRow.model_validate(settings_row_raw)
+                    threshold_success = settings.success_threshold or threshold_success
+                    threshold_warning = settings.warning_threshold or threshold_warning
+                    threshold_danger = settings.danger_threshold or threshold_danger
+
         sections: ReportsSections = build_reports_sections(
             attempts=attempts,
             chat_rows=chat_rows,
             daily_rows=daily_rows,
             profile_rows=profile_rows,
+            total_count=total_count,
+            thresholds={
+                "success": threshold_success,
+                "warning": threshold_warning,
+                "danger": threshold_danger,
+            },
         )
 
         views = ReportsViews(
@@ -213,6 +283,20 @@ async def get_reports(
             if item.scenario_ids:
                 for scenario_id in item.scenario_ids:
                     scenario_ids.add(str(scenario_id))
+            if item.persona_ids:
+                for persona_id in item.persona_ids:
+                    persona_ids.add(str(persona_id))
+
+        for row in profile_rows:
+            if row.simulation_ids:
+                for simulation_id in row.simulation_ids:
+                    simulation_ids.add(str(simulation_id))
+            if row.scenario_ids:
+                for scenario_id in row.scenario_ids:
+                    scenario_ids.add(str(scenario_id))
+            if row.cohort_ids:
+                for cohort_id in row.cohort_ids:
+                    cohort_ids.add(str(cohort_id))
 
         for row in chat_rows:
             if row.profile_id:

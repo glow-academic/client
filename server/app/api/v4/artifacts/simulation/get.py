@@ -54,7 +54,6 @@ from app.api.v4.resources.scenario_time_limits.get import get_scenario_time_limi
 from app.api.v4.resources.scenario_time_limits.search import (
     search_scenario_time_limits_internal,
 )
-from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -314,6 +313,9 @@ async def get_simulation(
                 return (selected, suggestions)
 
         async def fetch_scenarios():
+            # Lazy import to avoid circular dependency with scenarios.get
+            from app.api.v4.resources.scenarios.get import get_scenarios_internal
+
             async with pool.acquire() as c:
                 selected = await get_scenarios_internal(c, scenario_ids, bypass_cache)
                 suggestions = await search_scenarios_internal(

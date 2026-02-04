@@ -39,7 +39,63 @@ class ReportsMetric(BaseModel):
 
     current_value: float | int | None = None
     has_data: bool = False
+    method: str | None = None
+    data_points: list["ReportsDataPoint"] = Field(default_factory=list)
+    hover: "ReportsMetricHover | None" = None
     status: str = "neutral"
+
+
+class ReportsDataPoint(BaseModel):
+    """Metric trend point (lightweight equivalent of SQL data_point type)."""
+
+    profile_id: str | None = None
+    date: date | str | None = None
+    value: float | int | None = None
+    simulation_id: str | None = None
+    scenario_id: str | None = None
+    attempt_id: str | None = None
+
+
+class ReportsMetricHover(BaseModel):
+    """Metric hover payload (compatible field names with legacy SQL bundle)."""
+
+    mean: int = 0
+    median: int = 0
+    mode: int = 0
+    count: int = 0
+    completed: int = 0
+    total: int = 0
+    percent: int = 0
+    top: list[int] = Field(default_factory=list)
+    mean_seconds: int = 0
+    median_seconds: int = 0
+    samples: int = 0
+    avg_score_percent: int = 0
+    avg_minutes: int = 0
+    efficiency: int = 0
+    tracked: int = 0
+    stagnant: int = 0
+    rate_percent: int = 0
+    total_minutes: int = 0
+    total_hours: float = 0.0
+    attempts: int = 0
+    unique_simulations: int = 0
+    per_simulation_mean: int = 0
+
+
+class ReportsProfileMetrics(BaseModel):
+    """Per-profile metric bundle aligned to legacy report metric families."""
+
+    average_score: ReportsMetric = Field(default_factory=ReportsMetric)
+    completion_percentage: ReportsMetric = Field(default_factory=ReportsMetric)
+    first_attempt_pass_rate: ReportsMetric = Field(default_factory=ReportsMetric)
+    highest_score: ReportsMetric = Field(default_factory=ReportsMetric)
+    messages_per_session: ReportsMetric = Field(default_factory=ReportsMetric)
+    persona_response_times: ReportsMetric = Field(default_factory=ReportsMetric)
+    session_efficiency: ReportsMetric = Field(default_factory=ReportsMetric)
+    stagnation_rate: ReportsMetric = Field(default_factory=ReportsMetric)
+    time_spent: ReportsMetric = Field(default_factory=ReportsMetric)
+    total_attempts: ReportsMetric = Field(default_factory=ReportsMetric)
 
 
 class ReportsHeaderMetrics(BaseModel):
@@ -88,6 +144,7 @@ class ReportsLeaderboardRow(BaseModel):
     highest_score: float | None = None
     completion_percentage: float | None = None
     first_attempt_pass_rate: float | None = None
+    profile_metrics: ReportsProfileMetrics | None = None
 
 
 class ReportsLeaderboardSection(BaseModel):
