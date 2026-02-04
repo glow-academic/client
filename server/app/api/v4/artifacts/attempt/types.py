@@ -9,10 +9,9 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.v4.views.simulation.attempts.types import AttemptViewItem
-
 
 # =============================================================================
 # Attempt detail endpoint types (client-facing)
@@ -352,9 +351,9 @@ class ContentEntry(BaseModel):
     """
 
     content: str | None = None
-    name: str | None = None    # "You" for user messages, persona name for responses
-    color: str | None = None   # Persona color (null for user messages)
-    icon: str | None = None    # "User" for user messages, persona icon for responses
+    name: str | None = None  # "You" for user messages, persona name for responses
+    color: str | None = None  # Persona color (null for user messages)
+    icon: str | None = None  # "User" for user messages, persona icon for responses
     created_at: str | None = None
 
 
@@ -597,3 +596,78 @@ class GetAttemptDetailResponse(BaseModel):
     # New normalized maps
     resources: AttemptResources | None = None
     views: AttemptViews | None = None
+
+
+# =============================================================================
+# Attempt list endpoint types (unified history payload)
+# =============================================================================
+
+
+class AttemptListFilterOption(BaseModel):
+    """Filter option for attempt history dropdowns."""
+
+    value: str
+    label: str | None = None
+    count: int | None = None
+
+
+class GetAttemptListRequest(BaseModel):
+    """Request for unified attempt list/history fetch."""
+
+    practice: bool = False
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    search: str | None = None
+    sort_by: str | None = "date"
+    sort_order: str | None = "desc"
+    page: int = 0
+    page_size: int = 20
+    show_archived: bool = False
+
+
+class AttemptListItem(BaseModel):
+    """Unified attempt history row shape."""
+
+    attempt_id: UUID
+    date: str | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    num_scenarios: int | None = None
+    num_scenarios_completed: int | None = None
+    infinite_mode: bool | None = None
+    time_limit: int | None = None
+    persona_names_junction: list[str] | None = None
+    persona_colors_junction: list[str] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_titles: list[str] | None = None
+    department_ids: list[str] | None = None
+    cohort_names_junction: list[str] | None = None
+    score: int | None = None
+    score_status: str | None = None
+    pass_pct: int | None = None
+    show_view: bool | None = None
+    show_continue: bool | None = None
+    is_archived: bool | None = None
+    practice_simulation: bool | None = None
+    practice_scenario_id: UUID | None = None
+
+
+class GetAttemptListResponse(BaseModel):
+    """Response for unified attempt list/history fetch."""
+
+    actor_name: str | None = None
+    data: list[AttemptListItem] = Field(default_factory=list)
+    total_count: int = 0
+    page: int = 0
+    page_size: int = 20
+    total_pages: int = 0
+    simulation_options: list[AttemptListFilterOption] | None = None
+    scenario_options: list[AttemptListFilterOption] | None = None
+    profile_options: list[AttemptListFilterOption] | None = None

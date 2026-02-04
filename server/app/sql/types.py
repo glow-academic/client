@@ -3042,6 +3042,42 @@ class GetAudioRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_voice_session_context
+
+class GetVoiceSessionContextSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_chat_id,
+        )
+
+class GetVoiceSessionContextSqlRow(BaseModel):
+
+    chat_id: UUID | None = None
+    attempt_id: UUID | None = None
+    simulation_id: UUID | None = None
+    api_key: str | None = None
+    provider_name: str | None = None
+
+class GetVoiceSessionContextApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_chat_id: UUID
+
+class GetVoiceSessionContextApiResponse(BaseModel):
+
+    chat_id: UUID | None = None
+    attempt_id: UUID | None = None
+    simulation_id: UUID | None = None
+    api_key: str | None = None
+    provider_name: str | None = None
+
+
+
 # Generated from: consume_emulation_grant
 
 class ConsumeEmulationGrantSqlParams(BaseModel):
@@ -22995,6 +23031,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAudioRunContextAndCreateRunApiRequest",
         "GetAudioRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/queries/audio/get_voice_session_context_complete.sql": (
+        "GetVoiceSessionContextSqlParams",
+        "GetVoiceSessionContextSqlRow",
+        "GetVoiceSessionContextApiRequest",
+        "GetVoiceSessionContextApiResponse",
+    ),
     "app/sql/v4/queries/auth/consume_emulation_grant_complete.sql": (
         "ConsumeEmulationGrantSqlParams",
         "ConsumeEmulationGrantSqlRow",
@@ -25529,6 +25571,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/audio/get_audio_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/audio/get_voice_session_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

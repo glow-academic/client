@@ -16,12 +16,14 @@ BFF Translation Layer:
 """
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import (
     _voice_message_ids,
     _voice_message_ids_lock,
@@ -29,6 +31,9 @@ from app.main import (
     get_internal_sio,
     sio,
 )
+from app.socket.v4.artifacts.adapters.audio.openai import OpenAIRealtimeAdapter
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 from app.socket.v4.artifacts.attempt.types import (
@@ -56,12 +61,41 @@ logger = get_logger(__name__)
 client_router = APIRouter()
 server_router = APIRouter()
 
+# SQL path for voice session context
+SQL_PATH_VOICE_CONTEXT = "app/sql/v4/queries/audio/get_voice_session_context_complete.sql"
+
+
+# Local type for voice session context (auto-generated types not available yet)
+class VoiceSessionContextRow(BaseModel):
+    """Row returned by socket_get_voice_session_context_v4."""
+
+    model_config = {"extra": "allow"}
+
+    chat_id: uuid.UUID | None = None
+    attempt_id: uuid.UUID | None = None
+    simulation_id: uuid.UUID | None = None
+    api_key: str | None = None
+    provider_name: str | None = None
+
+
+# Global adapter instance (singleton)
+_audio_adapter: OpenAIRealtimeAdapter | None = None
+
+
+def get_audio_adapter() -> OpenAIRealtimeAdapter:
+    """Get or create the audio adapter singleton."""
+    global _audio_adapter
+    if _audio_adapter is None:
+        _audio_adapter = OpenAIRealtimeAdapter()
+    return _audio_adapter
+
 
 @sio.event  # type: ignore
 async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
     """Handle attempt_audio_start event - start a voice session.
 
     BFF Translation: Client sends chat_id, server generates group_id internally.
+    Fetches voice configuration, initializes the audio adapter, and starts streaming.
     Emits attempt_audio_ready with chat_id on success.
     """
     try:
@@ -82,6 +116,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
+        profile_id = uuid.UUID(profile_id_str)
+
         # Generate unique group_id for this voice session (like SQL does for text)
         group_id = str(uuid.uuid4())
 
@@ -94,9 +130,89 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             "session": session,
         }
 
-        # Note: Outbound audio is handled via internal_sio events (generate_audio_delta)
-        # which are translated to attempt_assistant_audio by the listener below
+        # Fetch voice configuration from database
+        async with get_db_connection() as conn:
+            context_row = cast(
+                VoiceSessionContextRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_VOICE_CONTEXT,
+                    params={"p_profile_id": profile_id, "p_chat_id": payload.chat_id},
+                ),
+            )
 
+            if not context_row:
+                await sio.emit(
+                    "attempt_error",
+                    AttemptUnifiedErrorEvent(
+                        group_id=group_id,
+                        type="audio",
+                        message="Failed to fetch voice configuration",
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+                return
+
+            # Get API key from settings
+            encrypted_api_key = context_row.api_key
+            if not encrypted_api_key:
+                await sio.emit(
+                    "attempt_error",
+                    AttemptUnifiedErrorEvent(
+                        group_id=group_id,
+                        type="audio",
+                        message="No API key configured for voice mode",
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+                return
+
+            # Decrypt API key
+            try:
+                api_key = decrypt_api_key(encrypted_api_key)
+            except Exception as e:
+                logger.exception(f"Failed to decrypt API key: {e}")
+                await sio.emit(
+                    "attempt_error",
+                    AttemptUnifiedErrorEvent(
+                        group_id=group_id,
+                        type="audio",
+                        message="Failed to decrypt API key",
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+                return
+
+            # Use realtime model (hardcoded for MVP - can be made configurable later)
+            model_name = "gpt-4o-realtime-preview-2024-12-17"
+
+            # Initialize the audio adapter
+            adapter = get_audio_adapter()
+            try:
+                await adapter.initialize_session(
+                    session=session,
+                    api_key=api_key,
+                    model=model_name,
+                    voice="alloy",  # Default voice
+                    instructions=None,  # Can be enhanced later
+                )
+            except Exception as e:
+                logger.exception(f"Failed to initialize audio adapter: {e}")
+                # Clean up session on failure
+                _voice_sessions.pop(group_id, None)
+                remove_session(group_id)
+                await sio.emit(
+                    "attempt_error",
+                    AttemptUnifiedErrorEvent(
+                        group_id=group_id,
+                        type="audio",
+                        message=f"Failed to connect to voice service: {str(e)}",
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+                return
+
+        # Emit success event
         event = AttemptAudioReadyEvent(
             chat_id=chat_id,
             success=True,
@@ -109,7 +225,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
 
-        logger.info(f"Audio session started - chat_id={chat_id}, group_id={group_id}")
+        logger.info(f"Audio session started - chat_id={chat_id}, group_id={group_id}, model={model_name}")
 
         # Log activity
         try:
@@ -143,6 +259,7 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
     """Handle attempt_audio_stop event - stop a voice session.
 
     BFF Translation: Client sends chat_id, we look up session by sid to get group_id.
+    Stops the audio adapter and cleans up resources.
     Emits attempt_audio_ended with chat_id on success.
     """
     try:
@@ -153,13 +270,20 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
         session = get_session_by_sid(sid)
         group_id = session.group_id if session else None
 
-        if group_id:
+        if group_id and session:
+            # Stop the audio adapter
+            adapter = get_audio_adapter()
+            try:
+                await adapter.stop_session(session)
+            except Exception as e:
+                logger.warning(f"Error stopping audio adapter: {e}")
+
             # Get and remove voice session
-            session_data = _voice_sessions.pop(group_id, None)
-            if session_data:
-                # Remove from session store (cleans up by both sid and group_id)
-                remove_session(group_id)
-                logger.info(f"Audio session stopped - chat_id={chat_id}, group_id={group_id}")
+            _voice_sessions.pop(group_id, None)
+
+            # Remove from session store (cleans up by both sid and group_id)
+            remove_session(group_id)
+            logger.info(f"Audio session stopped - chat_id={chat_id}, group_id={group_id}")
 
             # Clear accumulated message IDs for this group
             async with _voice_message_ids_lock:
@@ -467,6 +591,33 @@ async def handle_generate_user_speech_delta(data: dict[str, Any]) -> None:
     await sio.emit(
         "attempt_user_delta",
         event.model_dump(mode="json"),
+        room=session.sid,
+    )
+
+
+@internal_sio.on("generate_audio_error")  # type: ignore
+async def handle_generate_audio_error(data: dict[str, Any]) -> None:
+    """Handle generate_audio_error - translate to attempt_error.
+
+    BFF Translation: group_id from internal event -> chat_id for client event.
+    """
+    group_id = data.get("group_id")
+    if not group_id:
+        return
+
+    session = get_session_for_group(group_id)
+    if not session:
+        return
+
+    error_message = data.get("error_message", "Unknown audio error")
+
+    await sio.emit(
+        "attempt_error",
+        AttemptUnifiedErrorEvent(
+            group_id=group_id,
+            type="audio",
+            message=error_message,
+        ).model_dump(mode="json"),
         room=session.sid,
     )
 

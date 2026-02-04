@@ -6,13 +6,13 @@ Each artifact endpoint corresponds to a major UI section (dashboard, reports, et
 
 from fastapi import APIRouter
 
+from app.api.v4.artifacts.activity import router as activity_router
+from app.api.v4.artifacts.benchmark import router as benchmark_router
 from app.api.v4.artifacts.dashboard import router as dashboard_router
-from app.api.v4.artifacts.reports import router as reports_router
+from app.api.v4.artifacts.health import router as health_router
 from app.api.v4.artifacts.leaderboard import router as leaderboard_router
 from app.api.v4.artifacts.pricing import router as pricing_router
-from app.api.v4.artifacts.activity import router as activity_router
-from app.api.v4.artifacts.health import router as health_router
-from app.api.v4.artifacts.benchmark import router as benchmark_router
+from app.api.v4.artifacts.reports import router as reports_router
 
 router = APIRouter(prefix="/artifacts", tags=["artifacts"])
 

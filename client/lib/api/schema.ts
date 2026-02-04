@@ -2167,32 +2167,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/training/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Training List
-         * @description Get training list with simulation cards and attempt history.
-         *
-         *     ANALYTICAL endpoint: Returns both simulation overview cards AND
-         *     paginated attempt history in a single response.
-         *
-         *     Unified endpoint for home and practice modes, differentiated by
-         *     `practice: bool` parameter.
-         */
-        post: operations["training_list_api_v4_training_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/training/refresh": {
         parameters: {
             query?: never;
@@ -2247,6 +2221,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/attempt/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Attempts
+         * @description Get unified attempt history list for home/practice style screens.
+         */
+        post: operations["list_attempts_api_v4_attempt_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/attempt/archive": {
         parameters: {
             query?: never;
@@ -2261,6 +2255,26 @@ export interface paths {
          * @description Bulk archive or unarchive attempts (simulation or benchmark).
          */
         post: operations["archive_attempts_api_v4_attempt_archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/attempt/certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Certificate
+         * @description Generate a certificate PDF/text for a profile.
+         */
+        post: operations["export_certificate_api_v4_attempt_certificate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7367,6 +7381,75 @@ export interface components {
             chat_id: string;
         };
         /**
+         * AttemptListFilterOption
+         * @description Filter option for attempt history dropdowns.
+         */
+        AttemptListFilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * AttemptListItem
+         * @description Unified attempt history row shape.
+         */
+        AttemptListItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Date */
+            date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Num Scenarios */
+            num_scenarios?: number | null;
+            /** Num Scenarios Completed */
+            num_scenarios_completed?: number | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Persona Names Junction */
+            persona_names_junction?: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Titles */
+            scenario_titles?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction?: string[] | null;
+            /** Score */
+            score?: number | null;
+            /** Score Status */
+            score_status?: string | null;
+            /** Pass Pct */
+            pass_pct?: number | null;
+            /** Show View */
+            show_view?: boolean | null;
+            /** Show Continue */
+            show_continue?: boolean | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Practice Scenario Id */
+            practice_scenario_id?: string | null;
+        };
+        /**
          * AttemptMessagePayload
          * @description Request payload for attempt_message WebSocket event.
          *
@@ -9711,6 +9794,21 @@ export interface components {
             /** Feedback */
             feedback?: string | null;
         };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+        };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
             /** Upload Id */
@@ -10310,17 +10408,105 @@ export interface components {
              * Simulation Options
              * @description Available simulation filter options
              */
-            simulation_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
+            simulation_options?: components["schemas"]["FilterOption"][] | null;
             /**
              * Scenario Options
              * @description Available scenario filter options
              */
-            scenario_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
+            scenario_options?: components["schemas"]["FilterOption"][] | null;
             /**
              * Profile Options
              * @description Available profile filter options
              */
-            profile_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
+            profile_options?: components["schemas"]["FilterOption"][] | null;
+        };
+        /**
+         * GetAttemptListRequest
+         * @description Request for unified attempt list/history fetch.
+         */
+        GetAttemptListRequest: {
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Sort By
+             * @default date
+             */
+            sort_by: string | null;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number;
+            /**
+             * Show Archived
+             * @default false
+             */
+            show_archived: boolean;
+        };
+        /**
+         * GetAttemptListResponse
+         * @description Response for unified attempt list/history fetch.
+         */
+        GetAttemptListResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Data */
+            data?: components["schemas"]["AttemptListItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number;
+            /**
+             * Total Pages
+             * @default 0
+             */
+            total_pages: number;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["AttemptListFilterOption"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["AttemptListFilterOption"][] | null;
+            /** Profile Options */
+            profile_options?: components["schemas"]["AttemptListFilterOption"][] | null;
         };
         /**
          * GetAttemptsRequest
@@ -14214,109 +14400,6 @@ export interface components {
             standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
-        };
-        /**
-         * GetTrainingListRequest
-         * @description Client API request for training list (analytical).
-         *
-         *     Returns simulation cards with stats AND paginated attempt history.
-         *
-         *     Args:
-         *         practice: If True, returns practice data. If False, returns home data.
-         *         start_date: Start date filter (required).
-         *         end_date: End date filter (required).
-         *         cohort_ids: Filter by cohorts.
-         *         department_ids: Filter by departments.
-         *         simulation_ids: Filter by simulations.
-         *         scenario_ids: Filter by scenarios.
-         *         infinite_mode: Filter by infinite mode.
-         *         search: Search string.
-         *         sort_by: Sort field ('date' | 'score' | 'simulation_name').
-         *         sort_order: Sort order ('asc' | 'desc').
-         *         page: Page number (0-indexed).
-         *         page_size: Page size.
-         *         profile_ids: Filter by profiles (practice mode only).
-         *         show_archived: Show archived attempts (practice mode only).
-         */
-        GetTrainingListRequest: {
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /**
-             * Show Archived
-             * @default false
-             */
-            show_archived: boolean | null;
-        };
-        /**
-         * GetTrainingListResponse
-         * @description Client-facing API response for training list (analytical).
-         *
-         *     Combines simulation cards AND paginated attempt history in one response.
-         */
-        GetTrainingListResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Mode */
-            mode?: string | null;
-            /** Has Data */
-            has_data?: boolean | null;
-            /** Items */
-            items?: components["schemas"]["TrainingSimulationCard"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardMapping"][] | null;
-            /** Data */
-            data?: components["schemas"]["TrainingHistoryAttempt"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["app__api__v4__artifacts__training__types__FilterOption"][] | null;
         };
         /**
          * GetVideoApiRequest
@@ -23334,67 +23417,6 @@ export interface components {
             scenario_id?: string | null;
         };
         /**
-         * TrainingHistoryAttempt
-         * @description Attempt record for training history.
-         *
-         *     SQL JOINs all metadata. Python computes: score_status, show_view, show_continue, pass_pct.
-         *     Some fields are only populated based on mode:
-         *     - is_archived, practice_simulation, practice_scenario_id: practice mode only
-         */
-        TrainingHistoryAttempt: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Date */
-            date?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Num Scenarios */
-            num_scenarios?: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed?: number | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Persona Names Junction */
-            persona_names_junction?: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Titles */
-            scenario_titles?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string[] | null;
-            /** Score */
-            score?: number | null;
-            /** Score Status */
-            score_status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Show View */
-            show_view?: boolean | null;
-            /** Show Continue */
-            show_continue?: boolean | null;
-            /** Is Archived */
-            is_archived?: boolean | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
-            /** Practice Scenario Id */
-            practice_scenario_id?: string | null;
-        };
-        /**
          * TrainingProgressEvent
          * @description Server-to-client event: training_progress.
          *
@@ -23435,58 +23457,6 @@ export interface components {
             trace_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
-        };
-        /**
-         * TrainingSimulationCard
-         * @description Simulation card with analytical stats.
-         *
-         *     SQL JOINs all metadata. Python computes: status, pass_pct, cohort_names_junction.
-         *     Some fields are only populated based on mode:
-         *     - completion_pct, passed_count, in_progress_count, not_started_count: instructional mode only
-         *     - practice_simulation: practice mode only
-         */
-        TrainingSimulationCard: {
-            /** View Mode */
-            view_mode: string;
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Simulation Description */
-            simulation_description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Num Sessions */
-            num_sessions?: number | null;
-            /** Highest Score */
-            highest_score?: number | null;
-            /** Standard Groups */
-            standard_groups?: string[] | null;
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Has Passed */
-            has_passed?: boolean | null;
-            /** Status */
-            status?: string | null;
-            /** Pass Pct */
-            pass_pct?: number | null;
-            /** Cohort Names Junction */
-            cohort_names_junction?: string | null;
-            /** Completion Pct */
-            completion_pct?: number | null;
-            /** Passed Count */
-            passed_count?: number | null;
-            /** In Progress Count */
-            in_progress_count?: number | null;
-            /** Not Started Count */
-            not_started_count?: number | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
         };
         /**
          * TrainingSimulationOperational
@@ -23883,18 +23853,6 @@ export interface components {
             general_agent_id?: string | null;
         };
         /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
-        app__api__v4__artifacts__training__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /** Count */
-            count?: number | null;
-        };
-        /**
          * GetSimulationApiRequest
          * @description Request for getting a simulation by ID.
          */
@@ -23911,21 +23869,6 @@ export interface components {
          */
         app__api__v4__resources__simulations__get__GetSimulationApiResponse: {
             item?: components["schemas"]["GetSimulationV4Item"] | null;
-        };
-        /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
-        app__api__v4__views__analytics__attempts__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
         };
         /** GetEvalsListApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__1: {
@@ -27777,43 +27720,6 @@ export interface operations {
             };
         };
     };
-    training_list_api_v4_training_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTrainingListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTrainingListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     training_refresh_api_v4_training_refresh_post: {
         parameters: {
             query?: never;
@@ -27888,6 +27794,43 @@ export interface operations {
             };
         };
     };
+    list_attempts_api_v4_attempt_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAttemptListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAttemptListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     archive_attempts_api_v4_attempt_archive_post: {
         parameters: {
             query?: never;
@@ -27912,6 +27855,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_certificate_api_v4_attempt_certificate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetCertificateDataApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
