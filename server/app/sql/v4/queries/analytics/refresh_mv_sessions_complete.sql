@@ -4,10 +4,11 @@
 --   Depends on mv_group_pricing_facts (from pricing refresh)
 -- Layer 2:
 --   1. mv_session_facts (depends on mv_group_pricing_facts)
+--   2. mv_artifact_session_list (depends on mv_pricing_group_summary)
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 --
 -- NOTE: You should run api_refresh_pricing_v4 before this function
--- to ensure mv_group_pricing_facts is up to date.
+-- to ensure mv_group_pricing_facts and mv_pricing_group_summary are up to date.
 -- ============================================================================
 -- Step 1: Drop function if exists
 -- ============================================================================
@@ -48,6 +49,10 @@ BEGIN
     -- Step 1: Refresh session facts MV
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_session_facts;
     refreshed := array_append(refreshed, 'mv_session_facts');
+
+    -- Step 2: Refresh artifact session list MV (depends on mv_pricing_group_summary)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_artifact_session_list;
+    refreshed := array_append(refreshed, 'mv_artifact_session_list');
 
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(

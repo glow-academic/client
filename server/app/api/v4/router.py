@@ -27,6 +27,7 @@ from app.api.v4.artifacts.document import router as documents_router
 from app.api.v4.artifacts.eval import router as evals_router
 from app.api.v4.artifacts.field import router as fields_router
 from app.api.v4.artifacts.group import router as group_router
+from app.api.v4.artifacts.session import router as session_router
 from app.api.v4.artifacts.model import router as models_router
 from app.api.v4.artifacts.parameter import router as parameters_router
 from app.api.v4.artifacts.persona import router as personas_router
@@ -131,6 +132,7 @@ router.include_router(profile_router)
 router.include_router(auth_artifact_router)
 router.include_router(tools_router)
 router.include_router(group_router)
+router.include_router(session_router)
 router.include_router(training_artifact_router)
 router.include_router(attempt_artifact_router)
 router.include_router(test_artifact_router)

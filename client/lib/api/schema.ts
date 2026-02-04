@@ -2141,6 +2141,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/group/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Groups
+         * @description Get paginated group list with resource hydration.
+         */
+        post: operations["list_groups_api_v4_group_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/session/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Session
+         * @description Get session detail with paginated audits and groups.
+         */
+        post: operations["get_session_api_v4_session_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/session/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Sessions
+         * @description Get paginated session list with resource hydration.
+         */
+        post: operations["list_sessions_api_v4_session_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/training/get": {
         parameters: {
             query?: never;
@@ -4868,6 +4928,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/artifacts/session-list/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Artifact Session List
+         * @description Get artifact session list data from mv_artifact_session_list.
+         */
+        post: operations["get_artifact_session_list_api_v4_views_artifacts_session_list_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/artifacts/session-detail/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Artifact Session Detail
+         * @description Get artifact session detail from api_get_artifact_session_detail_v4.
+         */
+        post: operations["get_artifact_session_detail_api_v4_views_artifacts_session_detail_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/bulk/staff/process": {
         parameters: {
             query?: never;
@@ -7052,6 +7152,122 @@ export interface components {
         ArgsOutputsApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /**
+         * ArtifactSessionAudit
+         * @description Single audit entry for a session.
+         */
+        ArtifactSessionAudit: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
+        };
+        /**
+         * ArtifactSessionGroup
+         * @description Single group entry for a session.
+         */
+        ArtifactSessionGroup: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** First Run At */
+            first_run_at?: string | null;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+        };
+        /**
+         * ArtifactSessionListItem
+         * @description Single session from mv_artifact_session_list.
+         */
+        ArtifactSessionListItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /** Session Updated At */
+            session_updated_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /**
+             * Group Count
+             * @default 0
+             */
+            group_count: number;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /** First Run At */
+            first_run_at?: string | null;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /**
+             * Audit Count
+             * @default 0
+             */
+            audit_count: number;
+            /** Last Audit At */
+            last_audit_at?: string | null;
+            /**
+             * Error Count
+             * @default 0
+             */
+            error_count: number;
         };
         /**
          * AttemptAssistantAudioEvent
@@ -10529,6 +10745,110 @@ export interface components {
             agents?: components["schemas"]["QListAgentsV4Agent"][] | null;
         };
         /**
+         * GetArtifactSessionDetailRequest
+         * @description Request for getting artifact session detail.
+         */
+        GetArtifactSessionDetailRequest: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Audit Limit
+             * @default 50
+             */
+            audit_limit: number;
+            /**
+             * Audit Offset
+             * @default 0
+             */
+            audit_offset: number;
+        };
+        /**
+         * GetArtifactSessionDetailResponse
+         * @description Response with artifact session detail.
+         */
+        GetArtifactSessionDetailResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /**
+             * Session Exists
+             * @default false
+             */
+            session_exists: boolean;
+            /** Session Id */
+            session_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /**
+             * Audit Total Count
+             * @default 0
+             */
+            audit_total_count: number;
+            /** Audits */
+            audits?: components["schemas"]["ArtifactSessionAudit"][];
+            /** Groups */
+            groups?: components["schemas"]["ArtifactSessionGroup"][];
+        };
+        /**
+         * GetArtifactSessionListRequest
+         * @description Request for getting artifact session list.
+         */
+        GetArtifactSessionListRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'cost' | 'tokens' | 'groups' | 'runs'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetArtifactSessionListResponse
+         * @description Response with artifact session list.
+         */
+        GetArtifactSessionListResponse: {
+            /** Items */
+            items?: components["schemas"]["ArtifactSessionListItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
          * GetAttemptDetailRequest
          * @description Client API request for attempt detail.
          *
@@ -12063,6 +12383,58 @@ export interface components {
         GetFlagsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetFlagsV4Item"][] | null;
+        };
+        /**
+         * GetGroupListRequest
+         * @description Request for group list endpoint.
+         */
+        GetGroupListRequest: {
+            /** Session Id */
+            session_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'cost' | 'tokens' | 'runs'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetGroupListResponse
+         * @description Response for group list endpoint.
+         */
+        GetGroupListResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Items */
+            items?: components["schemas"]["GroupListItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetHealthMetricsHourlyRequest
@@ -14169,6 +14541,110 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /**
+         * GetSessionDetailRequest
+         * @description Request for session detail endpoint.
+         */
+        GetSessionDetailRequest: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Audit Limit
+             * @default 50
+             */
+            audit_limit: number;
+            /**
+             * Audit Offset
+             * @default 0
+             */
+            audit_offset: number;
+        };
+        /**
+         * GetSessionDetailResponse
+         * @description Response for session detail endpoint.
+         */
+        GetSessionDetailResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /**
+             * Session Exists
+             * @default false
+             */
+            session_exists: boolean;
+            /** Session Id */
+            session_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /**
+             * Audit Total Count
+             * @default 0
+             */
+            audit_total_count: number;
+            /** Audits */
+            audits?: components["schemas"]["ArtifactSessionAudit"][];
+            /** Groups */
+            groups?: components["schemas"]["ArtifactSessionGroup"][];
+        };
+        /**
+         * GetSessionListRequest
+         * @description Request for session list endpoint.
+         */
+        GetSessionListRequest: {
+            /** Active */
+            active?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'cost' | 'tokens' | 'groups' | 'runs'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetSessionListResponse
+         * @description Response for session list endpoint.
+         */
+        GetSessionListResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Items */
+            items?: components["schemas"]["SessionListItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
         /** GetSettingApiRequest */
         GetSettingApiRequest: {
             /** Setting Id */
@@ -14937,6 +15413,62 @@ export interface components {
             feedback_by_standard_id?: {
                 [key: string]: string;
             } | null;
+        };
+        /**
+         * GroupListItem
+         * @description Single group in the list response with hydrated metadata.
+         */
+        GroupListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Group Name */
+            group_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** First Run At */
+            first_run_at?: string | null;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Unique Agents
+             * @default 0
+             */
+            unique_agents: number;
+            /**
+             * Unique Models
+             * @default 0
+             */
+            unique_models: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Agent Names */
+            agent_names?: string[] | null;
+            /** Model Names */
+            model_names?: string[] | null;
         };
         /** GroupPositionsApiRequest */
         GroupPositionsApiRequest: {
@@ -23203,6 +23735,66 @@ export interface components {
             status: string;
         };
         /**
+         * SessionListItem
+         * @description Single session in the list response with hydrated metadata.
+         */
+        SessionListItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /** Session Updated At */
+            session_updated_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /**
+             * Group Count
+             * @default 0
+             */
+            group_count: number;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /** First Run At */
+            first_run_at?: string | null;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /**
+             * Audit Count
+             * @default 0
+             */
+            audit_count: number;
+            /** Last Audit At */
+            last_audit_at?: string | null;
+            /**
+             * Error Count
+             * @default 0
+             */
+            error_count: number;
+        };
+        /**
          * SimulationData
          * @description Simulation metadata.
          */
@@ -28211,6 +28803,117 @@ export interface operations {
             };
         };
     };
+    list_groups_api_v4_group_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_api_v4_session_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSessionDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSessionDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_v4_session_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSessionListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSessionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     training_get_api_v4_training_get_post: {
         parameters: {
             query?: never;
@@ -33091,6 +33794,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDraftResourcesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_artifact_session_list_api_v4_views_artifacts_session_list_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetArtifactSessionListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetArtifactSessionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_artifact_session_detail_api_v4_views_artifacts_session_detail_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetArtifactSessionDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetArtifactSessionDetailResponse"];
                 };
             };
             /** @description Validation Error */

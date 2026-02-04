@@ -18,6 +18,9 @@ import { getLayoutContext } from "../../../../layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type ReportsOverviewIn = InputOf<"/api/v4/analytics/reports/get", "post">;
 type ReportsOverviewOut = OutputOf<"/api/v4/analytics/reports/get", "post">;
+// Using /attempt/list for history section
+type ReportHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
+type ReportHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports overview responses exceed Next.js 2MB cache limit (~12.9MB).
@@ -30,6 +33,22 @@ const getReportsOverview = async (
   const bypassCache = await isHardRefresh();
 
   return api.post("/analytics/reports/get", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
+
+/** ---- Direct fetch for history data ---- */
+const getReportHistory = async (
+  input: ReportHistoryIn
+): Promise<ReportHistoryOut> => {
+  const bypassCache = await isHardRefresh();
+
+  return api.post("/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -313,8 +332,15 @@ export default async function ReportsPage({
           }
         >
           <ReportHistorySection
-            reportsData={reportsData}
             defaultFilters={defaultFilters}
+            historyPage={historyPage}
+            historyPageSize={historyPageSize}
+            historySearch={historySearch}
+            historySimulationIds={historySimulationIds}
+            historyScenarioIds={historyScenarioIds}
+            historyInfiniteMode={historyInfiniteMode}
+            historySortBy={historySortBy}
+            historySortOrder={historySortOrder}
           />
         </Suspense>
       </div>
@@ -324,10 +350,16 @@ export default async function ReportsPage({
 
 /** ---- Inline history section component (only used here) ---- */
 async function ReportHistorySection({
-  reportsData,
   defaultFilters,
+  historyPage,
+  historyPageSize,
+  historySearch,
+  historySimulationIds,
+  historyScenarioIds,
+  historyInfiniteMode,
+  historySortBy,
+  historySortOrder,
 }: {
-  reportsData: ReportsOverviewOut;
   defaultFilters: {
     start_date: string;
     end_date: string;
@@ -336,18 +368,80 @@ async function ReportHistorySection({
     roles: string[];
     simulation_filters: string[];
   };
+  historyPage: number;
+  historyPageSize: number;
+  historySearch?: string | undefined;
+  historySimulationIds?: string[] | undefined;
+  historyScenarioIds?: string[] | undefined;
+  historyInfiniteMode?: boolean | undefined;
+  historySortBy: string;
+  historySortOrder: string;
 }) {
-  // Use embedded history from reports overview response
-  const history = reportsData.history || [];
+  // Build history filters using /attempt/list endpoint
+  // practice: false for reports (home mode)
+  const historyFilters: ReportHistoryIn = {
+    body: {
+      practice: false,
+      start_date: defaultFilters.start_date,
+      end_date: defaultFilters.end_date,
+      department_ids: defaultFilters.department_ids,
+      page: historyPage,
+      page_size: historyPageSize,
+      show_archived: false,
+      ...(historySearch && { search: historySearch }),
+      ...(historySimulationIds &&
+        historySimulationIds.length > 0 && {
+          simulation_ids: historySimulationIds,
+        }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          scenario_ids: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        infinite_mode: historyInfiniteMode,
+      }),
+      sort_by: historySortBy,
+      sort_order: historySortOrder,
+    },
+  };
+
+  const historyData = await getReportHistory(historyFilters);
+
+  // Calculate archived/unarchived counts from data
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
+
+  // Extract options from API response
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const scenarioOptions = (historyData.scenario_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
 
   return (
     <SimulationHistory
-      data={history}
-      totalCount={history.length}
-      archivedCount={0}
-      unarchivedCount={history.length}
-      pageIndex={0}
-      pageSize={history.length}
+      data={dataArray}
+      totalCount={historyData.total_count || 0}
+      archivedCount={archivedCount}
+      unarchivedCount={unarchivedCount}
+      pageIndex={historyPage}
+      pageSize={historyPageSize}
       showExport={false}
       showArchive={false}
       singleProfile={true}
@@ -359,11 +453,11 @@ async function ReportHistorySection({
         roles: defaultFilters.roles,
       }}
       profileOptions={[]}
-      simulationOptions={[]}
-      scenarioOptions={[]}
+      simulationOptions={simulationOptions}
+      scenarioOptions={scenarioOptions}
     />
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { ReportsOverviewIn, ReportsOverviewOut };
+export type { ReportHistoryIn, ReportHistoryOut, ReportsOverviewIn, ReportsOverviewOut };

@@ -1,0 +1,162 @@
+"""Session list endpoint - POST /artifacts/session/list.
+
+Imports from views/artifacts/session_list internal function and adds
+resource hydration.
+"""
+
+from typing import Annotated
+from uuid import UUID
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from app.api.v4.artifacts.session.types import (
+    GetSessionListRequest,
+    GetSessionListResponse,
+    SessionListItem,
+)
+from app.api.v4.views.artifacts.session_list.get import get_artifact_session_list_internal
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+
+router = APIRouter()
+
+
+async def get_session_list_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    request: GetSessionListRequest,
+    actor_name: str | None = None,
+    bypass_cache: bool = False,
+    cache_key_path: str = "/api/v4/artifacts/session/list",
+) -> GetSessionListResponse:
+    """Internal function for session list with resource hydration."""
+    body = request.model_dump(mode="json")
+    body["profile_id"] = str(profile_id)
+    cache_key_val = cache_key(cache_key_path, body)
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return GetSessionListResponse.model_validate(cached["data"])
+
+    # Fetch from views layer
+    view_result = await get_artifact_session_list_internal(
+        conn=conn,
+        profile_id=profile_id,
+        active=request.active,
+        date_from=request.date_from,
+        date_to=request.date_to,
+        sort_by=request.sort_by,
+        sort_order=request.sort_order,
+        page_limit=request.page_limit,
+        page_offset=request.page_offset,
+        bypass_cache=bypass_cache,
+    )
+
+    # Transform view items to artifact items
+    items = [
+        SessionListItem(
+            session_id=view_item.session_id,
+            profile_id=view_item.profile_id,
+            profile_name=view_item.profile_name,
+            session_created_at=view_item.session_created_at,
+            session_updated_at=view_item.session_updated_at,
+            active=view_item.active,
+            group_count=view_item.group_count,
+            run_count=view_item.run_count,
+            first_run_at=view_item.first_run_at,
+            last_run_at=view_item.last_run_at,
+            total_tokens=view_item.total_tokens,
+            total_cost=view_item.total_cost,
+            audit_count=view_item.audit_count,
+            last_audit_at=view_item.last_audit_at,
+            error_count=view_item.error_count,
+        )
+        for view_item in view_result.items
+    ]
+
+    api_response = GetSessionListResponse(
+        actor_name=actor_name,
+        items=items,
+        total_count=view_result.total_count,
+    )
+
+    await set_cached(
+        cache_key_val,
+        {"data": api_response.model_dump(mode="json")},
+        ttl=300,
+        tags=["artifacts", "session", "list"],
+    )
+
+    return api_response
+
+
+@router.post(
+    "/list",
+    response_model=GetSessionListResponse,
+    dependencies=[
+        audit_activity(
+            "artifacts.session.list", "{{ actor.name }} fetched session list"
+        )
+    ],
+)
+async def list_sessions(
+    request: GetSessionListRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetSessionListResponse:
+    """Get paginated session list with resource hydration."""
+    tags = ["artifacts", "session", "list"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    try:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Get actor name for audit
+        actor_name = await conn.fetchval(
+            """
+            SELECT n.name
+            FROM profile_names_junction pn
+            JOIN names_resource n ON pn.name_id = n.id
+            WHERE pn.profile_id = $1
+            LIMIT 1
+            """,
+            profile_id,
+        )
+
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+
+        result = await get_session_list_internal(
+            conn=conn,
+            profile_id=profile_id,
+            request=request,
+            actor_name=actor_name,
+            bypass_cache=bypass_cache,
+            cache_key_path=http_request.url.path,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return result
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="artifacts_session_list",
+            request=http_request,
+        )

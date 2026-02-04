@@ -18,8 +18,9 @@ import { getLayoutContext } from "../../layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/api/v4/analytics/dashboard/get", "post">;
 type DashboardOut = OutputOf<"/api/v4/analytics/dashboard/get", "post">;
-type DashboardHistoryIn = InputOf<"/api/v4/analytics/dashboard/list", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v4/analytics/dashboard/list", "post">;
+// Using /attempt/list for history section
+type DashboardHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
+type DashboardHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v4/attempts/simulation/archive",
   "post"
@@ -50,18 +51,13 @@ const getDashboardOverview = async (
   });
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch for history data ---- */
 const getDashboardHistory = async (
   input: DashboardHistoryIn
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  // InputOf types have body property with snake_case fields
-  return api.post("/analytics/dashboard/list", input, {
+  return api.post("/attempt/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -275,11 +271,9 @@ export default async function DashboardPage({
         >
           <DashboardHistorySection
             defaultFilters={filters}
-            simulationFilters={filters.simulationFilters}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             historySearch={historySearch}
-            historyProfileIds={historyProfileIds}
             historySimulationIds={historySimulationIds}
             historyScenarioIds={historyScenarioIds}
             historyInfiniteMode={historyInfiniteMode}
@@ -305,11 +299,9 @@ async function bulkArchiveAttempts(
 /** ---- Inline history section component (only used here) ---- */
 async function DashboardHistorySection({
   defaultFilters,
-  simulationFilters,
   historyPage,
   historyPageSize,
   historySearch,
-  historyProfileIds,
   historySimulationIds,
   historyScenarioIds,
   historyInfiniteMode,
@@ -324,11 +316,9 @@ async function DashboardHistorySection({
     departmentIds: string[];
     roles: string[];
   };
-  simulationFilters: string[];
   historyPage: number;
   historyPageSize: number;
   historySearch?: string | undefined;
-  historyProfileIds?: string[] | undefined;
   historySimulationIds?: string[] | undefined;
   historyScenarioIds?: string[] | undefined;
   historyInfiniteMode?: boolean | undefined;
@@ -338,26 +328,18 @@ async function DashboardHistorySection({
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
 }) {
-  // Build history filters matching logic from dashboard page
-  // Use the provided simulationFilters as-is - don't override it
-  // This allows filtering to specific types (e.g., ["general"] excludes archived, ["archived"] shows only archived)
-  const historySimulationFilters = simulationFilters;
-
+  // Build history filters using /attempt/list endpoint
+  // practice: false for dashboard (home mode)
   const historyFilters: DashboardHistoryIn = {
     body: {
+      practice: false,
       start_date: defaultFilters.startDate,
       end_date: defaultFilters.endDate,
-      cohort_ids: defaultFilters.cohortIds,
       department_ids: defaultFilters.departmentIds,
-      roles: defaultFilters.roles,
-      simulation_filters: historySimulationFilters,
+      page: historyPage,
       page_size: historyPageSize,
-      offset: historyPage * historyPageSize,
+      show_archived: false,
       ...(historySearch && { search: historySearch }),
-      ...(historyProfileIds &&
-        historyProfileIds.length > 0 && {
-          profile_ids: historyProfileIds,
-        }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
           simulation_ids: historySimulationIds,
@@ -375,6 +357,11 @@ async function DashboardHistorySection({
   };
 
   const historyData = await getDashboardHistory(historyFilters);
+
+  // Calculate archived/unarchived counts from data
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
@@ -406,7 +393,7 @@ async function DashboardHistorySection({
       };
     }
   );
-  const scenarioOptions = (historyData.scenario_options_junction || []).map(
+  const scenarioOptions = (historyData.scenario_options || []).map(
     (opt: {
       value?: string | null;
       label?: string | null;
@@ -423,10 +410,10 @@ async function DashboardHistorySection({
 
   return (
     <SimulationHistory
-      data={historyData.data || []}
+      data={dataArray}
       totalCount={historyData.total_count || 0}
-      archivedCount={historyData.archived_count || 0}
-      unarchivedCount={historyData.unarchived_count || 0}
+      archivedCount={archivedCount}
+      unarchivedCount={unarchivedCount}
       pageIndex={historyPage}
       pageSize={historyPageSize}
       showExport={false}
