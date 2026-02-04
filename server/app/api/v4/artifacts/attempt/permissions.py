@@ -149,7 +149,7 @@ def compute_attempt_aggregates(chats: list["ChatData"]) -> dict:
 
 
 def compute_total_possible_points(chats: list["ChatData"]) -> float:
-    """Compute total possible points from completed chats' rubric total_points.
+    """Compute total possible points from completed chats' grade total_points.
 
     Args:
         chats: List of ChatData objects
@@ -159,8 +159,8 @@ def compute_total_possible_points(chats: list["ChatData"]) -> float:
     """
     total = 0.0
     for chat in chats:
-        if chat.completed and chat.rubric and chat.rubric.total_points:
-            total += chat.rubric.total_points
+        if chat.completed and chat.grade and chat.grade.total_points:
+            total += chat.grade.total_points
     return total
 
 

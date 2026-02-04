@@ -29834,30 +29834,6 @@
         "title": "AttemptEndedEvent",
         "description": "Server-to-client event: attempt_ended.\n\nEmitted when an entire attempt is ended."
       },
-      "AttemptEntries": {
-        "properties": {
-          "messages_by_chat": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "items": {
-                    "$ref": "#/components/schemas/MessageData"
-                  },
-                  "type": "array"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Messages By Chat"
-          }
-        },
-        "type": "object",
-        "title": "AttemptEntries",
-        "description": "Entries grouped by chat."
-      },
       "AttemptErrorEvent": {
         "properties": {
           "artifact_type": {
@@ -31216,6 +31192,55 @@
         "title": "AttemptViewItem",
         "description": "Single attempt from the simulation attempts view."
       },
+      "AttemptViews": {
+        "properties": {
+          "simulation_attempts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AttemptViewItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Attempts"
+          },
+          "simulation_chats": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Chats"
+          },
+          "simulation_messages": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MessageData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Messages"
+          }
+        },
+        "type": "object",
+        "title": "AttemptViews",
+        "description": "View payloads grouped by view type."
+      },
       "AvailableContinuationOptions": {
         "properties": {
           "next_sequential_options": {
@@ -31988,20 +32013,6 @@
             ],
             "title": "Analyses"
           },
-          "messages": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/MessageData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Messages"
-          },
           "show_problem_statement": {
             "anyOf": [
               {
@@ -32077,16 +32088,6 @@
               }
             ]
           },
-          "scenario": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ScenarioEntry"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "scenario_id": {
             "anyOf": [
               {
@@ -32099,16 +32100,6 @@
             ],
             "title": "Scenario Id"
           },
-          "problem_statement": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProblemStatementEntry"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "problem_statement_id": {
             "anyOf": [
               {
@@ -32120,20 +32111,6 @@
               }
             ],
             "title": "Problem Statement Id"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ObjectiveEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
           },
           "objective_ids": {
             "anyOf": [
@@ -32150,20 +32127,6 @@
             ],
             "title": "Objective Ids"
           },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PersonaEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
-          },
           "persona_ids": {
             "anyOf": [
               {
@@ -32178,20 +32141,6 @@
               }
             ],
             "title": "Persona Ids"
-          },
-          "images": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ImageEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images"
           },
           "image_ids": {
             "anyOf": [
@@ -32208,30 +32157,6 @@
             ],
             "title": "Image Ids"
           },
-          "background_image": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ImageEntry"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "videos": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/VideoEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos"
-          },
           "video_ids": {
             "anyOf": [
               {
@@ -32246,30 +32171,6 @@
               }
             ],
             "title": "Video Ids"
-          },
-          "video": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/VideoEntry"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "questions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QuestionEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions"
           },
           "question_ids": {
             "anyOf": [
@@ -32315,20 +32216,6 @@
             ],
             "title": "Responses"
           },
-          "documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DocumentEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents"
-          },
           "document_ids": {
             "anyOf": [
               {
@@ -32343,20 +32230,6 @@
               }
             ],
             "title": "Document Ids"
-          },
-          "templates": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/TemplateEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates"
           },
           "template_ids": {
             "anyOf": [
@@ -32373,16 +32246,6 @@
             ],
             "title": "Template Ids"
           },
-          "rubric": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RubricEntry"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "rubric_id": {
             "anyOf": [
               {
@@ -32394,20 +32257,6 @@
               }
             ],
             "title": "Rubric Id"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardGroupEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
           },
           "standard_group_ids": {
             "anyOf": [
@@ -32423,20 +32272,6 @@
               }
             ],
             "title": "Standard Group Ids"
-          },
-          "standards": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StandardEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards"
           },
           "standard_ids": {
             "anyOf": [
@@ -32459,7 +32294,7 @@
           "id"
         ],
         "title": "ChatData",
-        "description": "Chat with scenario, persona, grade, and messages.\n\nSplit into view categories:\n- Normal/General View: problem_statement, objectives, personas, images\n- Video/Quiz View: videos, questions, options, responses\n- Both Views: documents, templates"
+        "description": "Chat view data with IDs for related resources.\n\nSplit into view categories:\n- Normal/General View: problem_statement, objectives, personas, images\n- Video/Quiz View: videos, questions, options, responses\n- Both Views: documents, templates"
       },
       "ChatViewItem": {
         "properties": {
@@ -38055,20 +37890,6 @@
               }
             ]
           },
-          "chats": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ChatData"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chats"
-          },
           "timer": {
             "anyOf": [
               {
@@ -38174,10 +37995,10 @@
               }
             ]
           },
-          "entries": {
+          "views": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AttemptEntries"
+                "$ref": "#/components/schemas/AttemptViews"
               },
               {
                 "type": "null"
@@ -64416,6 +64237,18 @@
             "format": "uuid",
             "title": "Id"
           },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
           "type": {
             "anyOf": [
               {
@@ -64866,6 +64699,18 @@
               }
             ],
             "title": "Option Id"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
           },
           "option_text": {
             "anyOf": [

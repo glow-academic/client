@@ -12,7 +12,6 @@ then results are assembled in Python.
 """
 
 import asyncio
-from collections import defaultdict
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -33,8 +32,8 @@ from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AnalysisEntry,
     AttemptData,
-    AttemptEntries,
     AttemptResources,
+    AttemptViews,
     ChatData,
     ContentEntry,
     DocumentEntry,
@@ -486,8 +485,6 @@ async def attempt_get(
 
         # === COMPUTE TIME LIMIT FROM CHATS ===
         # Sum time_limit_seconds from all chats (denormalized from scenario_time_limits)
-        simulation_id = attempt_item.simulation_id
-        chat_ids = [c.chat_id for c in (chats_result or [])]
         time_limit_seconds = sum(
             c.time_limit_seconds or 0 for c in (chats_result or [])
         )
@@ -495,11 +492,6 @@ async def attempt_get(
         allows_negative_time = any(
             getattr(c, 'negative', False) for c in (chats_result or [])
         )
-
-        # === GROUP MESSAGES BY CHAT_ID ===
-        messages_by_chat: dict[UUID, list[Any]] = defaultdict(list)
-        for msg in messages_result or []:
-            messages_by_chat[msg.chat_id].append(msg)
 
         # === COLLECT AND ENRICH RESOURCE REFS ===
         # Collect all unique resource IDs from chats
@@ -646,6 +638,7 @@ async def attempt_get(
             options={
                 str(option_id): OptionEntry(
                     option_id=option_id,
+                    question_id=resource_meta["options"].get(option_id, {}).get("question_id"),
                     option_text=resource_meta["options"].get(option_id, {}).get("option_text"),
                     is_correct=resource_meta["options"].get(option_id, {}).get("is_correct"),
                 )
@@ -714,129 +707,126 @@ async def attempt_get(
             else None,
         )
 
-        # === BUILD CHATS WITH MESSAGES ===
+        # === BUILD MESSAGES (VIEW MODEL) ===
+        messages_payload: list[MessageData] = []
+        is_own_attempt = attempt_item.profile_id == profiles_id
+
+        for msg in messages_result or []:
+            # Transform to unified feedbacks (strengths + improvements with type)
+            feedbacks: list[MessageFeedbackEntry] = []
+
+            # Add strengths as type="strength"
+            if msg.strengths:
+                for idx, s in enumerate(msg.strengths):
+                    highlights: list[HighlightEntry] = []
+                    if s.highlights:
+                        for h in s.highlights:
+                            highlights.append(
+                                HighlightEntry(section=h.section, idx=h.idx)
+                            )
+                    # Generate unique ID: message_id + type + index
+                    feedback_id = f"{msg.message_id}-strength-{idx}"
+                    feedbacks.append(
+                        MessageFeedbackEntry(
+                            id=feedback_id,
+                            name=s.name,
+                            description=s.description,
+                            type="strength",
+                            highlights=highlights,
+                            replaces=None,
+                        )
+                    )
+
+            # Add improvements as type="improvement"
+            if msg.improvements:
+                for idx, i in enumerate(msg.improvements):
+                    replaces: list[ReplacementEntry] = []
+                    if i.replacements:
+                        for r in i.replacements:
+                            replaces.append(
+                                ReplacementEntry(
+                                    section=r.section,
+                                    replace=r.replace_text,
+                                    idx=r.idx,
+                                )
+                            )
+                    # Generate unique ID: message_id + type + index
+                    feedback_id = f"{msg.message_id}-improvement-{idx}"
+                    feedbacks.append(
+                        MessageFeedbackEntry(
+                            id=feedback_id,
+                            name=i.name,
+                            description=i.description,
+                            type="improvement",
+                            highlights=None,
+                            replaces=replaces,
+                        )
+                    )
+
+            # Transform hints (always included, no message_id in view types)
+            hints: list[HintEntry] | None = None
+            if msg.hints:
+                hints = [
+                    HintEntry(hint=h.hint, idx=h.idx)
+                    for h in msg.hints
+                ]
+
+            # Transform contents - look up persona metadata from resource_meta
+            # Contents only have content, persona_id, created_at from MV
+            contents: list[ContentEntry] | None = None
+            if msg.contents:
+                contents = []
+                for c in msg.contents:
+                    # Look up persona metadata from resource_meta
+                    persona_meta = resource_meta["personas"].get(c.persona_id, {}) if c.persona_id else {}
+                    persona_name = persona_meta.get("name")
+                    persona_color = persona_meta.get("color")
+                    persona_icon = persona_meta.get("icon")
+
+                    # Compute display fields
+                    # For user messages (type='query'): use profile_name
+                    # For assistant messages (type='response'): use persona metadata
+                    if msg.type == "query":
+                        # User message - use profile name
+                        name = "You" if is_own_attempt else profile_name
+                        color = None
+                        icon = "User"
+                    else:
+                        # Assistant message - use persona metadata
+                        name = persona_name
+                        color = persona_color
+                        icon = persona_icon
+
+                    contents.append(
+                        ContentEntry(
+                            content=c.content,
+                            name=name,
+                            color=color,
+                            icon=icon,
+                            created_at=(
+                                c.created_at.isoformat() if c.created_at else None
+                            ),
+                        )
+                    )
+
+            messages_payload.append(
+                MessageData(
+                    id=msg.message_id,
+                    chat_id=msg.chat_id,
+                    type=msg.type,
+                    created_at=(
+                        msg.created_at.isoformat() if msg.created_at else None
+                    ),
+                    completed=msg.completed,
+                    contents=contents,
+                    feedbacks=feedbacks if feedbacks else None,
+                    hints=hints,
+                )
+            )
+
+        # === BUILD CHATS (VIEW MODEL) ===
         chats: list[ChatData] = []
         for chat_item in chats_result or []:
-            chat_messages = messages_by_chat.get(chat_item.chat_id, [])
-
-            # Transform messages
-            # Note: Messages MV now has simplified types - no id/message_id on nested types,
-            # contents only have persona_id (metadata fetched via internal handlers)
-            messages: list[MessageData] = []
-            is_own_attempt = attempt_item.profile_id == profiles_id
-
-            for msg in chat_messages:
-                # Transform to unified feedbacks (strengths + improvements with type)
-                feedbacks: list[MessageFeedbackEntry] = []
-
-                # Add strengths as type="strength"
-                if msg.strengths:
-                    for idx, s in enumerate(msg.strengths):
-                        highlights: list[HighlightEntry] = []
-                        if s.highlights:
-                            for h in s.highlights:
-                                highlights.append(
-                                    HighlightEntry(section=h.section, idx=h.idx)
-                                )
-                        # Generate unique ID: message_id + type + index
-                        feedback_id = f"{msg.message_id}-strength-{idx}"
-                        feedbacks.append(
-                            MessageFeedbackEntry(
-                                id=feedback_id,
-                                name=s.name,
-                                description=s.description,
-                                type="strength",
-                                highlights=highlights,
-                                replaces=None,
-                            )
-                        )
-
-                # Add improvements as type="improvement"
-                if msg.improvements:
-                    for idx, i in enumerate(msg.improvements):
-                        replaces: list[ReplacementEntry] = []
-                        if i.replacements:
-                            for r in i.replacements:
-                                replaces.append(
-                                    ReplacementEntry(
-                                        section=r.section,
-                                        replace=r.replace_text,
-                                        idx=r.idx,
-                                    )
-                                )
-                        # Generate unique ID: message_id + type + index
-                        feedback_id = f"{msg.message_id}-improvement-{idx}"
-                        feedbacks.append(
-                            MessageFeedbackEntry(
-                                id=feedback_id,
-                                name=i.name,
-                                description=i.description,
-                                type="improvement",
-                                highlights=None,
-                                replaces=replaces,
-                            )
-                        )
-
-                # Transform hints (always included, no message_id in view types)
-                hints: list[HintEntry] | None = None
-                if msg.hints:
-                    hints = [
-                        HintEntry(hint=h.hint, idx=h.idx)
-                        for h in msg.hints
-                    ]
-
-                # Transform contents - look up persona metadata from resource_meta
-                # Contents only have content, persona_id, created_at from MV
-                contents: list[ContentEntry] | None = None
-                if msg.contents:
-                    contents = []
-                    for c in msg.contents:
-                        # Look up persona metadata from resource_meta
-                        persona_meta = resource_meta["personas"].get(c.persona_id, {}) if c.persona_id else {}
-                        persona_name = persona_meta.get("name")
-                        persona_color = persona_meta.get("color")
-                        persona_icon = persona_meta.get("icon")
-
-                        # Compute display fields
-                        # For user messages (type='query'): use profile_name
-                        # For assistant messages (type='response'): use persona metadata
-                        if msg.type == "query":
-                            # User message - use profile name
-                            name = "You" if is_own_attempt else profile_name
-                            color = None
-                            icon = "User"
-                        else:
-                            # Assistant message - use persona metadata
-                            name = persona_name
-                            color = persona_color
-                            icon = persona_icon
-
-                        contents.append(
-                            ContentEntry(
-                                content=c.content,
-                                name=name,
-                                color=color,
-                                icon=icon,
-                                created_at=(
-                                    c.created_at.isoformat() if c.created_at else None
-                                ),
-                            )
-                        )
-
-                messages.append(
-                    MessageData(
-                        id=msg.message_id,
-                        type=msg.type,
-                        created_at=(
-                            msg.created_at.isoformat() if msg.created_at else None
-                        ),
-                        completed=msg.completed,
-                        contents=contents,
-                        feedbacks=feedbacks if feedbacks else None,
-                        hints=hints,
-                    )
-                )
-
             # Build grade data
             grade = None
             # Build grade from chat grade composite
@@ -926,182 +916,6 @@ async def attempt_get(
                     feedback_by_standard_id=feedback_dict if feedback_dict else None,
                 )
 
-            # === BUILD ENRICHED RESOURCE ENTRIES ===
-            # Normal/General View resources
-            problem_statement_entry: ProblemStatementEntry | None = None
-            if chat_item.problem_statement_id:
-                ps_meta = resource_meta["problem_statements"].get(chat_item.problem_statement_id, {})
-                problem_statement_entry = ProblemStatementEntry(
-                    problem_statement_id=chat_item.problem_statement_id,
-                    problem_statement=ps_meta.get("problem_statement"),
-                )
-
-            objectives_entries: list[ObjectiveEntry] | None = None
-            if chat_item.objective_ids:
-                objectives_entries = [
-                    ObjectiveEntry(
-                        objective_id=obj_id,
-                        objective=resource_meta["objectives"].get(obj_id, {}).get("objective"),
-                    )
-                    for obj_id in chat_item.objective_ids
-                ]
-
-            personas_entries: list[PersonaEntry] | None = None
-            if chat_item.persona_ids:
-                personas_entries = [
-                    PersonaEntry(
-                        id=p_id,
-                        name=resource_meta["personas"].get(p_id, {}).get("name"),
-                        icon=resource_meta["personas"].get(p_id, {}).get("icon"),
-                        color=resource_meta["personas"].get(p_id, {}).get("color"),
-                    )
-                    for p_id in chat_item.persona_ids
-                ]
-
-            enriched_images: list[ImageEntry] | None = None
-            if chat_item.image_ids:
-                enriched_images = [
-                    ImageEntry(
-                        image_id=img_id,
-                        upload_id=resource_meta["images"].get(img_id, {}).get("upload_id"),
-                        name=resource_meta["images"].get(img_id, {}).get("name"),
-                        description=resource_meta["images"].get(img_id, {}).get("description"),
-                    )
-                    for img_id in chat_item.image_ids
-                ]
-
-            # Video/Quiz View resources
-            enriched_videos: list[VideoEntry] | None = None
-            if chat_item.video_ids:
-                enriched_videos = [
-                    VideoEntry(
-                        video_id=vid_id,
-                        upload_id=resource_meta["videos"].get(vid_id, {}).get("upload_id"),
-                        name=resource_meta["videos"].get(vid_id, {}).get("name"),
-                        description=resource_meta["videos"].get(vid_id, {}).get("description"),
-                        length_seconds=resource_meta["videos"].get(vid_id, {}).get("length_seconds"),
-                    )
-                    for vid_id in chat_item.video_ids
-                ]
-
-            # Build questions with nested options
-            # Group options by question_id first
-            options_by_question: dict[UUID, list[OptionEntry]] = defaultdict(list)
-            if chat_item.option_ids:
-                for o_id in chat_item.option_ids:
-                    opt_meta = resource_meta["options"].get(o_id, {})
-                    q_id = opt_meta.get("question_id")
-                    if q_id:
-                        options_by_question[q_id].append(
-                            OptionEntry(
-                                option_id=o_id,
-                                option_text=opt_meta.get("option_text"),
-                                is_correct=opt_meta.get("is_correct"),
-                            )
-                        )
-
-            questions_entries: list[QuestionEntry] | None = None
-            if chat_item.question_ids:
-                questions_entries = []
-                for q_id in chat_item.question_ids:
-                    q_meta = resource_meta["questions"].get(q_id, {})
-                    time_val = q_meta.get("time")
-                    # Convert single time to list for client (times array)
-                    times = [time_val] if time_val is not None else None
-                    questions_entries.append(
-                        QuestionEntry(
-                            question_id=q_id,
-                            question_text=q_meta.get("question_text"),
-                            allow_multiple=q_meta.get("allow_multiple"),
-                            times=times,
-                            options=options_by_question.get(q_id) or None,
-                        )
-                    )
-
-            responses_entries: list[QuizResponse] | None = None
-            if chat_item.responses:
-                responses_entries = [
-                    QuizResponse(
-                        question_id=r.question_id,
-                        option_id=r.option_id,
-                        completed=r.completed,
-                        created_at=r.created_at,
-                    )
-                    for r in chat_item.responses
-                ]
-
-            # Both Views resources
-            enriched_documents: list[DocumentEntry] | None = None
-            if chat_item.document_ids:
-                enriched_documents = [
-                    DocumentEntry(
-                        document_id=doc_id,
-                        upload_id=resource_meta["documents"].get(doc_id, {}).get("upload_id"),
-                        name=resource_meta["documents"].get(doc_id, {}).get("name"),
-                        description=resource_meta["documents"].get(doc_id, {}).get("description"),
-                    )
-                    for doc_id in chat_item.document_ids
-                ]
-
-            templates_entries: list[TemplateEntry] | None = None
-            if chat_item.template_ids:
-                templates_entries = [
-                    TemplateEntry(
-                        template_id=t_id,
-                        name=resource_meta["templates"].get(t_id, {}).get("name"),
-                        description=resource_meta["templates"].get(t_id, {}).get("description"),
-                    )
-                    for t_id in chat_item.template_ids
-                ]
-
-            # Scenario resource (enriched from internal handler)
-            scenario_entry: ScenarioEntry | None = None
-            if chat_item.scenario_id:
-                scenario_meta = resource_meta["scenarios"].get(chat_item.scenario_id, {})
-                scenario_entry = ScenarioEntry(
-                    scenario_id=chat_item.scenario_id,
-                    name=scenario_meta.get("name"),
-                    description=scenario_meta.get("description"),
-                )
-
-            # Rubric/Grade resources (enriched from internal handlers)
-            rubric_entry: RubricEntry | None = None
-            if chat_item.rubric_id:
-                rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {})
-                rubric_entry = RubricEntry(
-                    rubric_id=chat_item.rubric_id,
-                    name=rubric_meta.get("name"),
-                    description=rubric_meta.get("description"),
-                    total_points=rubric_meta.get("total_points"),
-                    pass_points=rubric_meta.get("pass_points"),
-                )
-
-            standard_groups_entries: list[StandardGroupEntry] | None = None
-            if chat_item.standard_group_ids:
-                standard_groups_entries = [
-                    StandardGroupEntry(
-                        standard_group_id=sg_id,
-                        name=resource_meta["standard_groups"].get(sg_id, {}).get("name"),
-                        description=resource_meta["standard_groups"].get(sg_id, {}).get("description"),
-                        points=resource_meta["standard_groups"].get(sg_id, {}).get("points"),
-                        pass_points=resource_meta["standard_groups"].get(sg_id, {}).get("pass_points"),
-                    )
-                    for sg_id in chat_item.standard_group_ids
-                ]
-
-            standards_entries: list[StandardEntry] | None = None
-            if chat_item.standard_ids:
-                standards_entries = [
-                    StandardEntry(
-                        standard_id=s_id,
-                        standard_group_id=resource_meta["standards"].get(s_id, {}).get("standard_group_id"),
-                        name=resource_meta["standards"].get(s_id, {}).get("name"),
-                        description=resource_meta["standards"].get(s_id, {}).get("description"),
-                        points=resource_meta["standards"].get(s_id, {}).get("points"),
-                    )
-                    for s_id in chat_item.standard_ids
-                ]
-
             chats.append(
                 ChatData(
                     id=chat_item.chat_id,
@@ -1110,7 +924,6 @@ async def attempt_get(
                     grade=grade,
                     feedbacks=feedbacks,
                     analyses=analyses_entries,
-                    messages=messages,
                     # Chat-level flags
                     show_problem_statement=chat_item.show_problem_statement,
                     show_objectives=chat_item.show_objectives,
@@ -1119,38 +932,31 @@ async def attempt_get(
                     audio_enabled=chat_item.audio_enabled,
                     # Extended fields
                     grading_state=grading_state_data,
-                    # Scenario resource (enriched from internal handler)
-                    scenario=scenario_entry,
                     scenario_id=chat_item.scenario_id,
-                    # Normal/General View resources
-                    problem_statement=problem_statement_entry,
                     problem_statement_id=chat_item.problem_statement_id,
-                    objectives=objectives_entries,
                     objective_ids=chat_item.objective_ids,
-                    personas=personas_entries,
                     persona_ids=chat_item.persona_ids,
-                    images=enriched_images,
                     image_ids=chat_item.image_ids,
-                    background_image=enriched_images[0] if enriched_images else None,
-                    # Video/Quiz View resources
-                    videos=enriched_videos,
                     video_ids=chat_item.video_ids,
-                    video=enriched_videos[0] if enriched_videos else None,
-                    questions=questions_entries,  # Options nested inside questions
                     question_ids=chat_item.question_ids,
                     option_ids=chat_item.option_ids,
-                    responses=responses_entries,
-                    # Both Views resources
-                    documents=enriched_documents,
+                    responses=(
+                        [
+                            QuizResponse(
+                                question_id=r.question_id,
+                                option_id=r.option_id,
+                                completed=r.completed,
+                                created_at=r.created_at,
+                            )
+                            for r in chat_item.responses
+                        ]
+                        if chat_item.responses
+                        else None
+                    ),
                     document_ids=chat_item.document_ids,
-                    templates=templates_entries,
                     template_ids=chat_item.template_ids,
-                    # Rubric/Grade resources (enriched from internal handlers)
-                    rubric=rubric_entry,
                     rubric_id=chat_item.rubric_id,
-                    standard_groups=standard_groups_entries,
                     standard_group_ids=chat_item.standard_group_ids,
-                    standards=standards_entries,
                     standard_ids=chat_item.standard_ids,
                 )
             )
@@ -1289,7 +1095,6 @@ async def attempt_get(
             access_denied=False,
             attempt=attempt,
             simulation=simulation,
-            chats=chats,
             timer=timer,
             aggregated_results=aggregated_results,
             # Navigation/UI fields
@@ -1303,11 +1108,10 @@ async def attempt_get(
             # Extended data (scenario_documents removed - use chat.documents)
             rubric_structure=rubric_structure,
             resources=resources_payload,
-            entries=AttemptEntries(
-                messages_by_chat={
-                    str(chat_id): chat_messages
-                    for chat_id, chat_messages in messages_by_chat.items()
-                }
+            views=AttemptViews(
+                simulation_attempts=[attempt_item],
+                simulation_chats=chats,
+                simulation_messages=messages_payload,
             ),
         )
 

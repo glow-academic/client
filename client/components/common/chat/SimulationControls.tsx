@@ -49,17 +49,22 @@ export function SimulationControls({
 
   // Find current chat from server data (new flat structure)
   const currentChat = useMemo(() => {
-    if (!attemptData?.chats || attemptData.chats.length === 0) return null;
-    return attemptData.chats[currentChatIndex] || attemptData.chats[0] || null;
+    const chats = attemptData?.views?.simulation_chats ?? [];
+    if (chats.length === 0) return null;
+    return chats[currentChatIndex] || chats[0] || null;
   }, [attemptData, currentChatIndex]);
 
   const currentChatId = currentChat?.id || null;
 
   // Get current messages from server data (new flat structure)
   const currentMessages = useMemo(() => {
-    if (!currentChat?.messages) return [];
-    return currentChat.messages;
-  }, [currentChat]);
+    const messages = attemptData?.views?.simulation_messages ?? [];
+    if (!currentChat?.id) return [];
+    const chatId = String(currentChat.id);
+    return messages.filter(
+      (message) => message.chat_id && String(message.chat_id) === chatId
+    );
+  }, [attemptData, currentChat]);
 
   // Grading state - listen to WebSocket events
   const [isGrading, setIsGrading] = useState(false);

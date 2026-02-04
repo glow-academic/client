@@ -751,13 +751,15 @@ async def get_persona(
             audit_ctx: dict[str, Any] = {
                 "actor": {"name": response_data.actor_name, "id": profile_id}
             }
-            if (
-                request.persona_id
-                and response_data.name_resource
-                and response_data.name_resource.name
-            ):
+            current_name = None
+            current_resources = (
+                response_data.resources.current if response_data.resources else None
+            )
+            if current_resources and current_resources.names:
+                current_name = getattr(current_resources.names[0], "name", None)
+            if request.persona_id and current_name:
                 audit_ctx["persona"] = {
-                    "name": response_data.name_resource.name,
+                    "name": current_name,
                     "id": str(request.persona_id),
                 }
             audit_set(http_request, **audit_ctx)

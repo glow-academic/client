@@ -7186,16 +7186,6 @@ export interface components {
             message?: string | null;
         };
         /**
-         * AttemptEntries
-         * @description Entries grouped by chat.
-         */
-        AttemptEntries: {
-            /** Messages By Chat */
-            messages_by_chat?: {
-                [key: string]: components["schemas"]["MessageData"][];
-            } | null;
-        };
-        /**
          * AttemptErrorEvent
          * @description Server-to-client event: attempt_error.
          *
@@ -7731,6 +7721,18 @@ export interface components {
             created_at?: string | null;
         };
         /**
+         * AttemptViews
+         * @description View payloads grouped by view type.
+         */
+        AttemptViews: {
+            /** Simulation Attempts */
+            simulation_attempts?: components["schemas"]["AttemptViewItem"][] | null;
+            /** Simulation Chats */
+            simulation_chats?: components["schemas"]["ChatData"][] | null;
+            /** Simulation Messages */
+            simulation_messages?: components["schemas"]["MessageData"][] | null;
+        };
+        /**
          * AvailableContinuationOptions
          * @description Available continuation options for an attempt.
          */
@@ -7936,7 +7938,7 @@ export interface components {
         };
         /**
          * ChatData
-         * @description Chat with scenario, persona, grade, and messages.
+         * @description Chat view data with IDs for related resources.
          *
          *     Split into view categories:
          *     - Normal/General View: problem_statement, objectives, personas, images
@@ -7960,8 +7962,6 @@ export interface components {
             feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
             /** Analyses */
             analyses?: components["schemas"]["AnalysisEntry"][] | null;
-            /** Messages */
-            messages?: components["schemas"]["MessageData"][] | null;
             /** Show Problem Statement */
             show_problem_statement?: boolean | null;
             /** Show Objectives */
@@ -7974,55 +7974,32 @@ export interface components {
             audio_enabled?: boolean | null;
             grading_state?: components["schemas"]["GradingStateData"] | null;
             dynamic_rubric?: components["schemas"]["DynamicRubricData"] | null;
-            scenario?: components["schemas"]["ScenarioEntry"] | null;
             /** Scenario Id */
             scenario_id?: string | null;
-            problem_statement?: components["schemas"]["ProblemStatementEntry"] | null;
             /** Problem Statement Id */
             problem_statement_id?: string | null;
-            /** Objectives */
-            objectives?: components["schemas"]["ObjectiveEntry"][] | null;
             /** Objective Ids */
             objective_ids?: string[] | null;
-            /** Personas */
-            personas?: components["schemas"]["PersonaEntry"][] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
-            /** Images */
-            images?: components["schemas"]["ImageEntry"][] | null;
             /** Image Ids */
             image_ids?: string[] | null;
-            background_image?: components["schemas"]["ImageEntry"] | null;
-            /** Videos */
-            videos?: components["schemas"]["VideoEntry"][] | null;
             /** Video Ids */
             video_ids?: string[] | null;
-            video?: components["schemas"]["VideoEntry"] | null;
-            /** Questions */
-            questions?: components["schemas"]["QuestionEntry"][] | null;
             /** Question Ids */
             question_ids?: string[] | null;
             /** Option Ids */
             option_ids?: string[] | null;
             /** Responses */
             responses?: components["schemas"]["QuizResponse"][] | null;
-            /** Documents */
-            documents?: components["schemas"]["DocumentEntry"][] | null;
             /** Document Ids */
             document_ids?: string[] | null;
-            /** Templates */
-            templates?: components["schemas"]["TemplateEntry"][] | null;
             /** Template Ids */
             template_ids?: string[] | null;
-            rubric?: components["schemas"]["RubricEntry"] | null;
             /** Rubric Id */
             rubric_id?: string | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupEntry"][] | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardEntry"][] | null;
             /** Standard Ids */
             standard_ids?: string[] | null;
         };
@@ -9514,8 +9491,6 @@ export interface components {
             access_denied?: boolean | null;
             attempt?: components["schemas"]["AttemptData"] | null;
             simulation?: components["schemas"]["SimulationData"] | null;
-            /** Chats */
-            chats?: components["schemas"]["ChatData"][] | null;
             timer?: components["schemas"]["TimerData"] | null;
             aggregated_results?: components["schemas"]["AggregatedResults"] | null;
             /** Current Chat Index */
@@ -9531,7 +9506,7 @@ export interface components {
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
             resources?: components["schemas"]["AttemptResources"] | null;
-            entries?: components["schemas"]["AttemptEntries"] | null;
+            views?: components["schemas"]["AttemptViews"] | null;
         };
         /**
          * GetAttemptFactsRequest
@@ -15048,6 +15023,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Chat Id */
+            chat_id?: string | null;
             /** Type */
             type?: string | null;
             /** Created At */
@@ -15178,6 +15155,8 @@ export interface components {
         OptionEntry: {
             /** Option Id */
             option_id?: string | null;
+            /** Question Id */
+            question_id?: string | null;
             /** Option Text */
             option_text?: string | null;
             /** Is Correct */

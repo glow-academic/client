@@ -4,10 +4,14 @@ These types define the client-facing API contract for attempt detail.
 The practice flag is determined server-side from the attempt data itself.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
+
+from app.api.v4.views.simulation.attempts.types import AttemptViewItem
 
 
 # =============================================================================
@@ -116,6 +120,7 @@ class OptionEntry(BaseModel):
     """Option entry nested under a question."""
 
     option_id: UUID | None = None
+    question_id: UUID | None = None
     option_text: str | None = None
     is_correct: bool | None = None
 
@@ -391,6 +396,7 @@ class MessageData(BaseModel):
     """
 
     id: UUID
+    chat_id: UUID | None = None
     type: str | None = None  # 'query' | 'response'
     created_at: str | None = None
     completed: bool | None = None
@@ -414,7 +420,7 @@ class GradeData(BaseModel):
 
 
 class ChatData(BaseModel):
-    """Chat with scenario, persona, grade, and messages.
+    """Chat view data with IDs for related resources.
 
     Split into view categories:
     - Normal/General View: problem_statement, objectives, personas, images
@@ -429,7 +435,6 @@ class ChatData(BaseModel):
     grade: GradeData | None = None
     feedbacks: list[FeedbackEntry] | None = None
     analyses: list[AnalysisEntry] | None = None  # Chat-level analysis content
-    messages: list[MessageData] | None = None
 
     # Chat-level flags
     show_problem_statement: bool | None = None
@@ -442,42 +447,28 @@ class ChatData(BaseModel):
     grading_state: GradingStateData | None = None
     dynamic_rubric: DynamicRubricData | None = None
 
-    # --- Scenario resource (enriched from internal handler) ---
-    scenario: ScenarioEntry | None = None
+    # --- Scenario resource ID ---
     scenario_id: UUID | None = None
 
-    # --- Normal/General View resources ---
-    problem_statement: ProblemStatementEntry | None = None
+    # --- Normal/General View resource IDs ---
     problem_statement_id: UUID | None = None
-    objectives: list[ObjectiveEntry] | None = None
     objective_ids: list[UUID] | None = None
-    personas: list[PersonaEntry] | None = None
     persona_ids: list[UUID] | None = None
-    images: list[ImageEntry] | None = None
     image_ids: list[UUID] | None = None
-    background_image: ImageEntry | None = None  # First image, used as chat background
 
-    # --- Video/Quiz View resources ---
-    videos: list[VideoEntry] | None = None
+    # --- Video/Quiz View resource IDs ---
     video_ids: list[UUID] | None = None
-    video: VideoEntry | None = None  # First video, used for video player
-    questions: list[QuestionEntry] | None = None  # Options nested inside
     question_ids: list[UUID] | None = None
     option_ids: list[UUID] | None = None
     responses: list[QuizResponse] | None = None
 
-    # --- Both Views resources ---
-    documents: list[DocumentEntry] | None = None
+    # --- Both Views resource IDs ---
     document_ids: list[UUID] | None = None
-    templates: list[TemplateEntry] | None = None
     template_ids: list[UUID] | None = None
 
-    # --- Rubric/Grade resources (enriched from internal handlers) ---
-    rubric: RubricEntry | None = None
+    # --- Rubric/Grade resource IDs ---
     rubric_id: UUID | None = None
-    standard_groups: list[StandardGroupEntry] | None = None
     standard_group_ids: list[UUID] | None = None
-    standards: list[StandardEntry] | None = None
     standard_ids: list[UUID] | None = None
 
 
@@ -499,10 +490,12 @@ class AttemptResources(BaseModel):
     standards: dict[str, StandardEntry] | None = None
 
 
-class AttemptEntries(BaseModel):
-    """Entries grouped by chat."""
+class AttemptViews(BaseModel):
+    """View payloads grouped by view type."""
 
-    messages_by_chat: dict[str, list[MessageData]] | None = None
+    simulation_attempts: list[AttemptViewItem] | None = None
+    simulation_chats: list[ChatData] | None = None
+    simulation_messages: list[MessageData] | None = None
 
 
 class SimulationData(BaseModel):
@@ -588,7 +581,6 @@ class GetAttemptDetailResponse(BaseModel):
     access_denied: bool | None = None
     attempt: AttemptData | None = None
     simulation: SimulationData | None = None
-    chats: list[ChatData] | None = None
     timer: TimerData | None = None
     aggregated_results: AggregatedResults | None = None
     # Navigation/UI control
@@ -603,4 +595,4 @@ class GetAttemptDetailResponse(BaseModel):
     rubric_structure: RubricStructureData | None = None
     # New normalized maps
     resources: AttemptResources | None = None
-    entries: AttemptEntries | None = None
+    views: AttemptViews | None = None
