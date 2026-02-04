@@ -44,7 +44,7 @@ SELECT
 
     -- Aggregated counts
     COUNT(*)::int AS event_count,
-    COUNT(DISTINCT a.profile_id)::int AS unique_profiles,
+    COUNT(DISTINCT s.profile_id)::int AS unique_profiles,
 
     -- Categorized counts
     COUNT(*) FILTER (WHERE a.endpoint LIKE '%.saved')::int AS saved_count,
@@ -55,6 +55,7 @@ SELECT
     COUNT(*) FILTER (WHERE a.endpoint LIKE '%.updated')::int AS updated_count
 
 FROM audits_entry a
+LEFT JOIN sessions_entry s ON s.id = a.session_id
 WHERE a.endpoint IS NOT NULL AND a.endpoint != ''
 GROUP BY (a.created_at::date), a.endpoint
 WITH NO DATA;

@@ -63,10 +63,10 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 HOME_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/analytics/NEW/home/get_home_context_complete.sql"
+    "app/sql/v4/queries/analytics/home/get_home_context_complete.sql"
 )
 PRACTICE_CONTEXT_SQL_PATH = (
-    "app/sql/v4/queries/analytics/NEW/practice/get_practice_context_complete.sql"
+    "app/sql/v4/queries/analytics/practice/get_practice_context_complete.sql"
 )
 
 router = APIRouter()

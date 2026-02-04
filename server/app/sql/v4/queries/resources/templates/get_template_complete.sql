@@ -57,10 +57,11 @@ SELECT
         t.id,
         t.name,
         COALESCE(t.description, ''),
-        COALESCE(t.html, ''),
+        COALESCE(te.content, ''),
         COALESCE(t.generated, false)
     )::types.q_get_template_resource_v4_item as item
 FROM templates_resource t
-WHERE t.id = id
+LEFT JOIN texts_entry te ON te.id = t.texts_id AND te.active = true
+WHERE t.id = api_get_template_resource_v4.id
   AND t.active = true;
 $$;

@@ -71,7 +71,7 @@ SELECT
 
     -- Timestamps
     s.created_at AS session_created_at,
-    s.updated_at AS session_updated_at,
+    s.created_at AS session_updated_at,
 
     -- Status
     COALESCE(s.active, FALSE) AS active,
@@ -112,10 +112,6 @@ CREATE INDEX mv_activity_session_facts_created_at_idx
 
 CREATE INDEX mv_activity_session_facts_created_at_desc_idx
     ON mv_activity_session_facts (session_created_at DESC);
-
--- Date-based index for filtering
-CREATE INDEX mv_activity_session_facts_created_date_idx
-    ON mv_activity_session_facts ((session_created_at::date));
 
 -- Active status filtering
 CREATE INDEX mv_activity_session_facts_active_idx

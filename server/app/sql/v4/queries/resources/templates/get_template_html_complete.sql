@@ -27,7 +27,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT COALESCE(t.html, '') as html
+SELECT COALESCE(te.content, '') as html
 FROM templates_resource t
-WHERE t.id = id;
+LEFT JOIN texts_entry te ON te.id = t.texts_id AND te.active = true
+WHERE t.id = api_get_template_html_v4.id;
 $$;

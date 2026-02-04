@@ -44,8 +44,8 @@ SELECT
     rpf.group_id,
 
     -- Context IDs (from first/most common values)
-    rpf.session_id,
-    rpf.profile_id,
+    MODE() WITHIN GROUP (ORDER BY rpf.session_id) AS session_id,
+    MODE() WITHIN GROUP (ORDER BY rpf.profile_id) AS profile_id,
     -- Use mode() to get most common agent/model in the group
     MODE() WITHIN GROUP (ORDER BY rpf.agent_id) AS primary_agent_id,
     MODE() WITHIN GROUP (ORDER BY rpf.model_id) AS primary_model_id,
@@ -81,10 +81,7 @@ SELECT
 
 FROM mv_pricing_run_facts rpf
 WHERE rpf.group_id IS NOT NULL
-GROUP BY
-    rpf.group_id,
-    rpf.session_id,
-    rpf.profile_id
+GROUP BY rpf.group_id
 WITH NO DATA;
 
 -- ============================================================================
@@ -124,13 +121,6 @@ CREATE INDEX mv_pricing_group_summary_last_run_at_idx
 
 CREATE INDEX mv_pricing_group_summary_last_run_at_desc_idx
     ON mv_pricing_group_summary (last_run_at DESC);
-
--- Date-based indexes for filtering
-CREATE INDEX mv_pricing_group_summary_first_run_date_idx
-    ON mv_pricing_group_summary ((first_run_at::date));
-
-CREATE INDEX mv_pricing_group_summary_last_run_date_idx
-    ON mv_pricing_group_summary ((last_run_at::date));
 
 -- Cost indexes for sorting/filtering
 CREATE INDEX mv_pricing_group_summary_total_cost_idx

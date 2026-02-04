@@ -2247,6 +2247,168 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/attempt/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Attempts
+         * @description Bulk archive or unarchive attempts (simulation or benchmark).
+         */
+        post: operations["archive_attempts_api_v4_attempt_archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/dashboard/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard
+         * @description Get dashboard artifact data.
+         *
+         *     Combines attempt facts with resource metadata for the dashboard UI.
+         */
+        post: operations["get_dashboard_api_v4_artifacts_dashboard_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/reports/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Reports
+         * @description Get reports artifact data.
+         */
+        post: operations["get_reports_api_v4_artifacts_reports_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/leaderboard/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Leaderboard
+         * @description Get leaderboard artifact data.
+         */
+        post: operations["get_leaderboard_api_v4_artifacts_leaderboard_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/pricing/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing
+         * @description Get pricing artifact data.
+         */
+        post: operations["get_pricing_api_v4_artifacts_pricing_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/activity/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity
+         * @description Get activity artifact data.
+         */
+        post: operations["get_activity_api_v4_artifacts_activity_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/health/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Health
+         * @description Get health artifact data.
+         */
+        post: operations["get_health_api_v4_artifacts_health_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/benchmark/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark
+         * @description Get benchmark artifact data.
+         */
+        post: operations["get_benchmark_api_v4_artifacts_benchmark_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/args": {
         parameters: {
             query?: never;
@@ -4050,416 +4212,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/home/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Home Overview
-         * @description Get home overview with items and mappings.
-         *
-         *     Home always shows general simulations only (no simulationFilters parameter).
-         *     Bundle only returns top half (items + mappings), history is separate endpoint.
-         */
-        post: operations["get_home_overview_api_v4_analytics_home_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/home/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Home History
-         * @description Get paginated home history with search, filters, sorting, and pagination.
-         */
-        post: operations["get_home_history_api_v4_analytics_home_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/reports/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Reports
-         * @description Get complete reports overview bundle with history for individual profile - requires profileId.
-         */
-        post: operations["get_reports_api_v4_analytics_reports_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/reports/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Report
-         * @description Export reports data as CSV or ZIP file.
-         */
-        post: operations["export_report_api_v4_analytics_reports_report_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/reports/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Reports
-         * @description Get reports bundle with aggregated metrics per profile and entity mappings.
-         */
-        post: operations["get_reports_api_v4_analytics_reports_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/activity/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Activity Bundle
-         * @description Get activity bundle with header metrics.
-         */
-        post: operations["get_activity_bundle_api_v4_analytics_activity_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/activity/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Activity List
-         * @description Get paginated list of activity entries.
-         */
-        post: operations["get_activity_list_api_v4_analytics_activity_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/dashboard/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard
-         * @description Get complete dashboard bundle with all metrics, history, insights, and mappings.
-         */
-        post: operations["get_dashboard_api_v4_analytics_dashboard_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/dashboard/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard History
-         * @description Get paginated dashboard history with search, filters, sorting, and pagination.
-         */
-        post: operations["get_dashboard_history_api_v4_analytics_dashboard_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/practice/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Practice Overview
-         * @description Get practice overview data with items and all entity mappings.
-         *
-         *     Practice uses simplified filters: only profileId and departmentIds.
-         *     No cohort/role/date filtering for personal practice.
-         *     Note: History is not included in overview - use /practice/history endpoint separately.
-         */
-        post: operations["get_practice_overview_api_v4_analytics_practice_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/practice/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Practice History
-         * @description Get paginated practice history with search, filters, sorting, and pagination.
-         */
-        post: operations["get_practice_history_api_v4_analytics_practice_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/leaderboard/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Leaderboard
-         * @description Get leaderboard bundle with top profiles, metrics, and entity mappings.
-         */
-        post: operations["get_leaderboard_api_v4_analytics_leaderboard_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/leaderboard/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Leaderboard List
-         * @description Get paginated list of leaderboard profiles with metrics.
-         */
-        post: operations["get_leaderboard_list_api_v4_analytics_leaderboard_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/pricing/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Pricing
-         * @description Get pricing metrics with model usage and cost analysis.
-         */
-        post: operations["get_pricing_api_v4_analytics_pricing_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/pricing/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Pricing List
-         * @description Get paginated, filtered, searched, sorted pricing runs for table.
-         */
-        post: operations["get_pricing_list_api_v4_analytics_pricing_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/benchmark/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Benchmark Overview
-         * @description Get benchmark overview with evals list and all entity mappings.
-         *
-         *     Benchmark uses department_ids filter (analytics endpoint pattern).
-         *     Note: History is not included in overview - use /benchmark/history endpoint separately.
-         */
-        post: operations["get_benchmark_overview_api_v4_analytics_benchmark_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/benchmark/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Benchmark History
-         * @description Get paginated benchmark history with search, filters, sorting, and pagination.
-         */
-        post: operations["get_benchmark_history_api_v4_analytics_benchmark_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/health/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Health
-         * @description Get health bundle with health KPIs and metrics.
-         */
-        post: operations["get_health_api_v4_analytics_health_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/health/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Health List
-         * @description Get paginated list of health activity metrics.
-         */
-        post: operations["get_health_list_api_v4_analytics_health_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/analytics/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Analytics
-         * @description Refresh the analytics materialized view. Creates view if it doesn't exist.
-         */
-        post: operations["refresh_analytics_api_v4_analytics_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/simulation/attempts/get": {
         parameters: {
             query?: never;
@@ -4667,137 +4419,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/simulation/overview/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Overview
-         * @description Get simulation overview data from the materialized view.
-         *
-         *     This endpoint fetches simulation-level aggregated data with:
-         *     - Mode-aware aggregation (member vs instructional)
-         *     - Instructional stats: passed_count, in_progress_count, not_started_count, total_members
-         *     - Standard groups and standards for sidebar/legend
-         */
-        post: operations["get_overview_api_v4_views_simulation_overview_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/overview/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Overview View
-         * @description Refresh the mv_simulation_overview materialized view concurrently.
-         */
-        post: operations["refresh_overview_view_api_v4_views_simulation_overview_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/overview/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate Overview View
-         * @description Recreate the mv_simulation_overview materialized view.
-         */
-        post: operations["recreate_overview_view_api_v4_views_simulation_overview_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/history/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get History
-         * @description Get simulation history data from the materialized view.
-         *
-         *     This endpoint fetches paginated attempt history with:
-         *     - Filtering (date, cohort, department, simulation, scenario, search, infinite_mode, archived, profile_ids)
-         *     - Sorting and pagination
-         *     - Filter options (simulation_options, scenario_options, profile_options)
-         *     - All metadata JOINed
-         */
-        post: operations["get_history_api_v4_views_simulation_history_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/history/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh History View
-         * @description Refresh the mv_simulation_history materialized view concurrently.
-         */
-        post: operations["refresh_history_view_api_v4_views_simulation_history_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/simulation/history/recreate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Recreate History View
-         * @description Recreate the mv_simulation_history materialized view.
-         */
-        post: operations["recreate_history_view_api_v4_views_simulation_history_recreate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/analytics/attempts/get": {
         parameters: {
             query?: never;
@@ -4827,7 +4448,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/simulation/get": {
+    "/api/v4/views/pricing/run-facts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4837,17 +4458,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Simulation Attempt
-         * @description Get complete attempt data with all related entities and computed values.
+         * Get Pricing Run Facts
+         * @description Get pricing run facts data from mv_pricing_run_facts.
          */
-        post: operations["get_simulation_attempt_api_v4_attempts_simulation_get_post"];
+        post: operations["get_pricing_run_facts_api_v4_views_pricing_run_facts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/simulation/archive": {
+    "/api/v4/views/pricing/group-summary/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4857,17 +4478,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Archive Simulation Attempts
-         * @description Bulk archive or unarchive simulation attempts.
+         * Get Pricing Group Summary
+         * @description Get pricing group summary data from mv_pricing_group_summary.
          */
-        post: operations["archive_simulation_attempts_api_v4_attempts_simulation_archive_post"];
+        post: operations["get_pricing_group_summary_api_v4_views_pricing_group_summary_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/benchmark/get": {
+    "/api/v4/views/pricing/daily/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4877,17 +4498,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Benchmark Attempt
-         * @description Get complete eval attempt data with all runs and status.
+         * Get Pricing Daily
+         * @description Get pricing daily data from mv_pricing_daily.
          */
-        post: operations["get_benchmark_attempt_api_v4_attempts_benchmark_get_post"];
+        post: operations["get_pricing_daily_api_v4_views_pricing_daily_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/benchmark/archive": {
+    "/api/v4/views/activity/session-facts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4897,17 +4518,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Archive Benchmark Attempts
-         * @description Bulk archive or unarchive simulation attempts.
+         * Get Activity Session Facts
+         * @description Get activity session facts data from mv_activity_session_facts.
          */
-        post: operations["archive_benchmark_attempts_api_v4_attempts_benchmark_archive_post"];
+        post: operations["get_activity_session_facts_api_v4_views_activity_session_facts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/general/get": {
+    "/api/v4/views/activity/daily/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4917,24 +4538,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get General Attempt
-         * @description Get complete general attempt data with all related entities and computed values.
-         *
-         *     General attempts include:
-         *     - Cohort support
-         *     - Continuation options from previous attempts
-         *     - Previous chat history for scenarios
-         *
-         *     Use this endpoint for non-practice simulation attempts.
+         * Get Activity Daily
+         * @description Get activity daily data from mv_activity_daily.
          */
-        post: operations["get_general_attempt_api_v4_attempts_general_get_post"];
+        post: operations["get_activity_daily_api_v4_views_activity_daily_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/practice/get": {
+    "/api/v4/views/activity/summary/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4944,17 +4558,110 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Practice Attempt
-         * @description Get complete practice attempt data with all related entities and computed values.
-         *
-         *     Practice attempts include:
-         *     - Hints data (practice-specific feature)
-         *     - Single-run (no continuation options)
-         *     - No previous chat history
-         *
-         *     Use this endpoint for practice simulation attempts.
+         * Get Activity Summary
+         * @description Get activity summary data from mv_activity_summary.
          */
-        post: operations["get_practice_attempt_api_v4_attempts_practice_get_post"];
+        post: operations["get_activity_summary_api_v4_views_activity_summary_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/health/service-hourly/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Health Service Hourly
+         * @description Get health service hourly data from mv_health_service_hourly.
+         */
+        post: operations["get_health_service_hourly_api_v4_views_health_service_hourly_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/health/metrics-hourly/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Health Metrics Hourly
+         * @description Get health metrics hourly data from mv_health_metrics_hourly.
+         */
+        post: operations["get_health_metrics_hourly_api_v4_views_health_metrics_hourly_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/benchmark/attempt-facts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Attempt Facts
+         * @description Get benchmark attempt facts data from mv_benchmark_attempt_facts.
+         */
+        post: operations["get_benchmark_attempt_facts_api_v4_views_benchmark_attempt_facts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/benchmark/eval-summary/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Eval Summary
+         * @description Get benchmark eval summary data from mv_benchmark_eval_summary.
+         */
+        post: operations["get_benchmark_eval_summary_api_v4_views_benchmark_eval_summary_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/drafts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Draft Resources
+         * @description Get denormalized draft resources data from mv_draft_resources.
+         */
+        post: operations["get_draft_resources_api_v4_views_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6000,26 +5707,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/attempt/assistant_delta": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Assistant Delta Api
-         * @description Server-to-client event: Attempt assistant delta (streaming content).
-         */
-        post: operations["attempt_assistant_delta_api_socket_v4_server_attempt_assistant_delta_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/server/attempt/complete": {
         parameters: {
             query?: never;
@@ -6054,26 +5741,6 @@ export interface paths {
          * @description Server-to-client event: Attempt assistant message completed.
          */
         post: operations["attempt_assistant_complete_api_socket_v4_server_attempt_assistant_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/attempt/turn_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Turn Complete Api
-         * @description Server-to-client event: Attempt conversation turn completed.
-         */
-        post: operations["attempt_turn_complete_api_socket_v4_server_attempt_turn_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6831,6 +6498,231 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ActivityDailyItem
+         * @description Single day from mv_activity_daily.
+         */
+        ActivityDailyItem: {
+            /**
+             * Date Key
+             * Format: date
+             */
+            date_key: string;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Event Count
+             * @default 0
+             */
+            event_count: number;
+            /**
+             * Unique Profiles
+             * @default 0
+             */
+            unique_profiles: number;
+            /**
+             * Saved Count
+             * @default 0
+             */
+            saved_count: number;
+            /**
+             * Created Count
+             * @default 0
+             */
+            created_count: number;
+            /**
+             * Duplicated Count
+             * @default 0
+             */
+            duplicated_count: number;
+            /**
+             * Uploaded Count
+             * @default 0
+             */
+            uploaded_count: number;
+            /**
+             * Deleted Count
+             * @default 0
+             */
+            deleted_count: number;
+            /**
+             * Updated Count
+             * @default 0
+             */
+            updated_count: number;
+        };
+        /**
+         * ActivityRequest
+         * @description Request for getting activity data.
+         */
+        ActivityRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * ActivityResources
+         * @description Activity resource metadata.
+         */
+        ActivityResources: {
+            /** Profiles */
+            profiles?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * ActivityResponse
+         * @description Response with activity data.
+         */
+        ActivityResponse: {
+            views?: components["schemas"]["ActivityViews"];
+            resources?: components["schemas"]["ActivityResources"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * ActivitySessionFactsItem
+         * @description Single session from mv_activity_session_facts.
+         */
+        ActivitySessionFactsItem: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Created At */
+            session_created_at?: string | null;
+            /** Session Updated At */
+            session_updated_at?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /**
+             * Group Count
+             * @default 0
+             */
+            group_count: number;
+            /** First Group At */
+            first_group_at?: string | null;
+            /** Last Group At */
+            last_group_at?: string | null;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+        };
+        /**
+         * ActivitySummaryItem
+         * @description Global activity summary from mv_activity_summary.
+         */
+        ActivitySummaryItem: {
+            /**
+             * Total Sessions
+             * @default 0
+             */
+            total_sessions: number;
+            /**
+             * Active Sessions
+             * @default 0
+             */
+            active_sessions: number;
+            /**
+             * Total Active Profiles
+             * @default 0
+             */
+            total_active_profiles: number;
+            /**
+             * Total Logins
+             * @default 0
+             */
+            total_logins: number;
+            /**
+             * Total Content Created
+             * @default 0
+             */
+            total_content_created: number;
+            /**
+             * Total Problems
+             * @default 0
+             */
+            total_problems: number;
+            /**
+             * Unresolved Problems
+             * @default 0
+             */
+            unresolved_problems: number;
+            /**
+             * Sessions Last 24H
+             * @default 0
+             */
+            sessions_last_24h: number;
+            /**
+             * Logins Last 24H
+             * @default 0
+             */
+            logins_last_24h: number;
+            /**
+             * Events Last 24H
+             * @default 0
+             */
+            events_last_24h: number;
+            /**
+             * Sessions Last 7D
+             * @default 0
+             */
+            sessions_last_7d: number;
+            /**
+             * Logins Last 7D
+             * @default 0
+             */
+            logins_last_7d: number;
+            /**
+             * Active Profiles Last 7D
+             * @default 0
+             */
+            active_profiles_last_7d: number;
+            /** Refreshed At */
+            refreshed_at?: string | null;
+        };
+        /**
+         * ActivityViews
+         * @description Activity view data.
+         */
+        ActivityViews: {
+            /** Session Facts */
+            session_facts?: components["schemas"]["ActivitySessionFactsItem"][];
+            /** Daily */
+            daily?: components["schemas"]["ActivityDailyItem"][];
+            summary?: components["schemas"]["ActivitySummaryItem"] | null;
+        };
+        /**
          * AggregatedResults
          * @description Aggregated results for the attempt.
          */
@@ -6944,10 +6836,6 @@ export interface components {
          *     Emitted with audio chunks during voice mode.
          */
         AttemptAssistantAudioEvent: {
-            /** Chat Id */
-            chat_id: string;
-            /** Message Id */
-            message_id?: string | null;
             /**
              * Audio
              * Format: binary
@@ -6967,22 +6855,10 @@ export interface components {
             message_id: string;
             /** Content */
             content: string;
+            /** Created At */
+            created_at?: string | null;
             /** Persona Id */
             persona_id?: string | null;
-        };
-        /**
-         * AttemptAssistantDeltaEvent
-         * @description Server-to-client event: attempt_assistant_delta.
-         *
-         *     Emitted during message generation with accumulated content.
-         */
-        AttemptAssistantDeltaEvent: {
-            /** Chat Id */
-            chat_id: string;
-            /** Message Id */
-            message_id: string;
-            /** Content */
-            content: string;
         };
         /**
          * AttemptAssistantStartEvent
@@ -7007,8 +6883,8 @@ export interface components {
          *     Emitted when voice session is ended.
          */
         AttemptAudioEndedEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Group Id */
+            group_id: string;
             /** Success */
             success: boolean;
             /** Message */
@@ -7034,8 +6910,8 @@ export interface components {
          *     Emitted when voice session is ready.
          */
         AttemptAudioReadyEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Group Id */
+            group_id: string;
             /** Success */
             success: boolean;
             /** Message */
@@ -7045,27 +6921,27 @@ export interface components {
          * AttemptAudioStartPayload
          * @description Request payload for attempt_audio_start WebSocket event.
          *
-         *     Starts a voice session for a chat.
+         *     Starts a voice session for a group.
          */
         AttemptAudioStartPayload: {
             /**
-             * Chat Id
+             * Group Id
              * Format: uuid
              */
-            chat_id: string;
+            group_id: string;
         };
         /**
          * AttemptAudioStopPayload
          * @description Request payload for attempt_audio_stop WebSocket event.
          *
-         *     Stops the voice session for a chat.
+         *     Stops the voice session for a group.
          */
         AttemptAudioStopPayload: {
             /**
-             * Chat Id
+             * Group Id
              * Format: uuid
              */
-            chat_id: string;
+            group_id: string;
         };
         /**
          * AttemptChatEndedEvent
@@ -7107,10 +6983,6 @@ export interface components {
             message: string;
             /** Type */
             type?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Message Id */
-            message_id?: string | null;
             /** Final Content */
             final_content?: string | null;
             /**
@@ -7207,6 +7079,8 @@ export interface components {
             resource_types?: string[] | null;
             /** Resource Id */
             resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
             /**
              * Success
              * @default false
@@ -7216,10 +7090,6 @@ export interface components {
             message: string;
             /** Trace Id */
             trace_id?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Message Id */
-            message_id?: string | null;
         };
         /**
          * AttemptFactsItem
@@ -7507,10 +7377,6 @@ export interface components {
             arguments_delta?: string | null;
             /** Trace Id */
             trace_id?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Message Id */
-            message_id?: string | null;
             /** Delta */
             delta?: string | null;
             /** Accumulated Content */
@@ -7638,16 +7504,6 @@ export interface components {
             message?: string | null;
         };
         /**
-         * AttemptTurnCompleteEvent
-         * @description Server-to-client event: attempt_turn_complete.
-         *
-         *     Emitted when the full conversation turn is complete.
-         */
-        AttemptTurnCompleteEvent: {
-            /** Chat Id */
-            chat_id: string;
-        };
-        /**
          * AttemptUserCompleteEvent
          * @description Server-to-client event: attempt_user_complete.
          *
@@ -7672,8 +7528,8 @@ export interface components {
          *     Emitted during voice transcription with incremental updates.
          */
         AttemptUserDeltaEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Group Id */
+            group_id: string;
             /** Item Id */
             item_id: string;
             /** Transcript */
@@ -7686,8 +7542,8 @@ export interface components {
          *     Emitted when user speech is detected in voice mode.
          */
         AttemptUserStartEvent: {
-            /** Chat Id */
-            chat_id: string;
+            /** Group Id */
+            group_id: string;
             /** Item Id */
             item_id: string;
         };
@@ -7741,6 +7597,50 @@ export interface components {
         AvailableContinuationOptions: {
             /** Next Sequential Options */
             next_sequential_options?: components["schemas"]["ContinuationOption"][] | null;
+        };
+        /**
+         * BenchmarkAttemptFactsItem
+         * @description Single attempt from mv_benchmark_attempt_facts.
+         */
+        BenchmarkAttemptFactsItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Attempt Created At */
+            attempt_created_at?: string | null;
+            /**
+             * Archived
+             * @default false
+             */
+            archived: boolean;
+            /**
+             * Total Runs
+             * @default 0
+             */
+            total_runs: number;
+            /**
+             * Completed Runs
+             * @default 0
+             */
+            completed_runs: number;
+            /**
+             * Pending Runs
+             * @default 0
+             */
+            pending_runs: number;
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
         };
         /**
          * BenchmarkErrorEvent
@@ -7804,6 +7704,57 @@ export interface components {
             } | null;
         };
         /**
+         * BenchmarkEvalSummaryItem
+         * @description Single eval from mv_benchmark_eval_summary.
+         */
+        BenchmarkEvalSummaryItem: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Use Groups
+             * @default false
+             */
+            use_groups: boolean;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
+            /**
+             * Total Runs
+             * @default 0
+             */
+            total_runs: number;
+            /**
+             * Completed Runs
+             * @default 0
+             */
+            completed_runs: number;
+            /**
+             * Pending Runs
+             * @default 0
+             */
+            pending_runs: number;
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
+        };
+        /**
          * BenchmarkProgressEvent
          * @description Server-to-client event: benchmarks_progress.
          */
@@ -7830,6 +7781,63 @@ export interface components {
              * @default true
              */
             success: boolean;
+        };
+        /**
+         * BenchmarkRequest
+         * @description Request for getting benchmark data.
+         */
+        BenchmarkRequest: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * BenchmarkResources
+         * @description Benchmark resource metadata.
+         */
+        BenchmarkResources: {
+            /** Evals */
+            evals?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Rubrics */
+            rubrics?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * BenchmarkResponse
+         * @description Response with benchmark data.
+         */
+        BenchmarkResponse: {
+            views?: components["schemas"]["BenchmarkViews"];
+            resources?: components["schemas"]["BenchmarkResources"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * BenchmarkStartPayload
@@ -7874,6 +7882,16 @@ export interface components {
             pending_run_ids?: string[] | null;
             /** Pending Group Ids */
             pending_group_ids?: string[] | null;
+        };
+        /**
+         * BenchmarkViews
+         * @description Benchmark view data.
+         */
+        BenchmarkViews: {
+            /** Attempt Facts */
+            attempt_facts?: components["schemas"]["BenchmarkAttemptFactsItem"][];
+            /** Eval Summary */
+            eval_summary?: components["schemas"]["BenchmarkEvalSummaryItem"][];
         };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
@@ -8370,6 +8388,71 @@ export interface components {
             /** Session Id */
             session_id?: string | null;
         };
+        /**
+         * DashboardRequest
+         * @description Request for getting dashboard data.
+         */
+        DashboardRequest: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * DashboardResources
+         * @description Dashboard resource metadata.
+         */
+        DashboardResources: {
+            /** Simulations */
+            simulations?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Cohorts */
+            cohorts?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Profiles */
+            profiles?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * DashboardResponse
+         * @description Response with dashboard data.
+         */
+        DashboardResponse: {
+            views?: components["schemas"]["DashboardViews"];
+            resources?: components["schemas"]["DashboardResources"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * DashboardViews
+         * @description Dashboard view data.
+         */
+        DashboardViews: {
+            /** Attempt Facts */
+            attempt_facts?: components["schemas"]["AttemptFactsItem"][];
+        };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
             /**
@@ -8468,23 +8551,6 @@ export interface components {
             document_id?: string | null;
             /** Document Name */
             document_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** DeleteEvalApiRequest */
-        DeleteEvalApiRequest: {
-            /**
-             * Eval Id
-             * Format: uuid
-             */
-            eval_id: string;
-        };
-        /** DeleteEvalApiResponse */
-        DeleteEvalApiResponse: {
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Eval Name */
-            eval_name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -8741,6 +8807,95 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * DraftResourcesViewItem
+         * @description Single draft row from mv_draft_resources.
+         */
+        DraftResourcesViewItem: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+            /**
+             * Generated
+             * @default false
+             */
+            generated: boolean;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Group Id */
+            group_id?: string | null;
+            /** Resource Types */
+            resource_types?: string[];
+            /** Resource Ids */
+            resource_ids?: string[];
+            /** Name Ids */
+            name_ids?: string[];
+            /** Description Ids */
+            description_ids?: string[];
+            /** Flag Ids */
+            flag_ids?: string[];
+            /** Color Ids */
+            color_ids?: string[];
+            /** Icon Ids */
+            icon_ids?: string[];
+            /** Auth Ids */
+            auth_ids?: string[];
+            /** Tool Ids */
+            tool_ids?: string[];
+            /** Instruction Ids */
+            instruction_ids?: string[];
+            /** Document Ids */
+            document_ids?: string[];
+            /** Department Ids */
+            department_ids?: string[];
+            /** Parameter Ids */
+            parameter_ids?: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[];
+            /** Field Ids */
+            field_ids?: string[];
+            /** Example Ids */
+            example_ids?: string[];
+            /** Question Ids */
+            question_ids?: string[];
+            /** Template Ids */
+            template_ids?: string[];
+            /** Text Ids */
+            text_ids?: string[];
+            /** Run Rubric Ids */
+            run_rubric_ids?: string[];
+            /** Group Rubric Ids */
+            group_rubric_ids?: string[];
+            /** Binding Ids */
+            binding_ids?: string[];
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[];
+            /** Persona Ids */
+            persona_ids?: string[];
+            /** Scenario Ids */
+            scenario_ids?: string[];
+            /** Simulation Ids */
+            simulation_ids?: string[];
         };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
@@ -9141,40 +9296,6 @@ export interface components {
          * @description Export request - extends GetReportsBundleApiRequest with export-specific options.
          */
         ExportRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 100
-             */
-            page_size: number | null;
             /** Metrics */
             metrics?: string[] | null;
             /**
@@ -9182,6 +9303,8 @@ export interface components {
              * @default false
              */
             brightspace_format: boolean;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * FeedbackEntry
@@ -9233,56 +9356,95 @@ export interface components {
             /** Status */
             status?: string | null;
         };
-        /** GetActivityBundleApiRequest */
-        GetActivityBundleApiRequest: Record<string, never>;
-        /** GetActivityBundleApiResponse */
-        GetActivityBundleApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Sessions Count */
-            sessions_count?: number | null;
-            /** Active Profiles Count */
-            active_profiles_count?: number | null;
-            /** Logins Count */
-            logins_count?: number | null;
-            /** Content Created Count */
-            content_created_count?: number | null;
-            /** Available Events */
-            available_events?: components["schemas"]["QGetActivityBundleV4EventType"][] | null;
-            /** Chart Data */
-            chart_data?: components["schemas"]["QGetActivityBundleV4ChartPoint"][] | null;
-            /** Problems */
-            problems?: components["schemas"]["QGetActivityBundleV4Problem"][] | null;
-        };
-        /** GetActivityListApiRequest */
-        GetActivityListApiRequest: {
+        /**
+         * GetActivityDailyRequest
+         * @description Request for getting activity daily data.
+         */
+        GetActivityDailyRequest: {
+            /** Event Type */
+            event_type?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
             /**
-             * Page
+             * Page Limit
+             * @default 30
+             */
+            page_limit: number;
+            /**
+             * Page Offset
              * @default 0
              */
-            page: number | null;
+            page_offset: number;
+        };
+        /**
+         * GetActivityDailyResponse
+         * @description Response with activity daily data.
+         */
+        GetActivityDailyResponse: {
+            /** Items */
+            items?: components["schemas"]["ActivityDailyItem"][];
             /**
-             * Page Size
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GetActivitySessionFactsRequest
+         * @description Request for getting activity session facts.
+         */
+        GetActivitySessionFactsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'groups' | 'runs' | 'tokens'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
              * @default 50
              */
-            page_size: number | null;
-            /** Search */
-            search?: string | null;
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
         };
-        /** GetActivityListApiResponse */
-        GetActivityListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Sessions */
-            sessions?: components["schemas"]["QGetActivityListV4Session"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
+        /**
+         * GetActivitySessionFactsResponse
+         * @description Response with activity session facts.
+         */
+        GetActivitySessionFactsResponse: {
+            /** Items */
+            items?: components["schemas"]["ActivitySessionFactsItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GetActivitySummaryResponse
+         * @description Response with activity summary.
+         */
+        GetActivitySummaryResponse: {
+            summary?: components["schemas"]["ActivitySummaryItem"] | null;
         };
         /** GetAgentApiRequest */
         GetAgentApiRequest: {
@@ -9761,79 +9923,101 @@ export interface components {
             /** Auths */
             auths?: components["schemas"]["QGetAuthListV4Auth"][] | null;
         };
-        /** GetBenchmarkHistoryApiRequest */
-        GetBenchmarkHistoryApiRequest: {
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Eval Ids */
-            eval_ids?: string[] | null;
+        /**
+         * GetBenchmarkAttemptFactsRequest
+         * @description Request for getting benchmark attempt facts.
+         */
+        GetBenchmarkAttemptFactsRequest: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
             /** Status */
             status?: string | null;
             /** Archived */
             archived?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
             /**
-             * Page
+             * Sort By
+             * @description 'date' | 'status'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
              * @default 0
              */
-            page: number | null;
+            page_offset: number;
+        };
+        /**
+         * GetBenchmarkAttemptFactsResponse
+         * @description Response with benchmark attempt facts.
+         */
+        GetBenchmarkAttemptFactsResponse: {
+            /** Items */
+            items?: components["schemas"]["BenchmarkAttemptFactsItem"][];
             /**
-             * Page Size
-             * @default 20
+             * Total Count
+             * @default 0
              */
-            page_size: number | null;
+            total_count: number;
         };
-        /** GetBenchmarkHistoryApiResponse */
-        GetBenchmarkHistoryApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["QGetBenchmarkHistoryV4Attempt"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
+        /**
+         * GetBenchmarkEvalSummaryRequest
+         * @description Request for getting benchmark eval summary.
+         */
+        GetBenchmarkEvalSummaryRequest: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Status */
+            status?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'status' | 'runs'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
         };
-        /** GetBenchmarkOverviewApiRequest */
-        GetBenchmarkOverviewApiRequest: {
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Eval Ids */
-            eval_ids?: string[] | null;
-        };
-        /** GetBenchmarkOverviewApiResponse */
-        GetBenchmarkOverviewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Evals */
-            evals?: components["schemas"]["QGetBenchmarkOverviewV4Eval"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetBenchmarkOverviewV4Rubric"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetBenchmarkOverviewV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetBenchmarkOverviewV4Agent"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetBenchmarkOverviewV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetBenchmarkOverviewV4Standard"][] | null;
-            /** Rubric Standard Groups Junction */
-            rubric_standard_groups_junction?: components["schemas"]["QGetBenchmarkOverviewV4RubricStandardGroup"][] | null;
-            /** Rubric Options */
-            rubric_options?: components["schemas"]["QGetBenchmarkOverviewV4RubricOption"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["QGetBenchmarkOverviewV4DepartmentOption"][] | null;
-            /** Agent Options */
-            agent_options?: components["schemas"]["QGetBenchmarkOverviewV4AgentOption"][] | null;
+        /**
+         * GetBenchmarkEvalSummaryResponse
+         * @description Response with benchmark eval summary.
+         */
+        GetBenchmarkEvalSummaryResponse: {
+            /** Items */
+            items?: components["schemas"]["BenchmarkEvalSummaryItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
@@ -10025,95 +10209,6 @@ export interface components {
         GetColorsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetColorsV4Item"][] | null;
-        };
-        /** GetDashboardBundleApiRequest */
-        GetDashboardBundleApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** GetDashboardBundleApiResponse */
-        GetDashboardBundleApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            header_metrics?: components["schemas"]["QGetDashboardBundleV4HeaderMetrics"] | null;
-            primary_metrics?: components["schemas"]["QGetDashboardBundleV4PrimaryMetrics"] | null;
-            secondary_metrics?: components["schemas"]["QGetDashboardBundleV4SecondaryMetrics"] | null;
-            footer_metrics?: components["schemas"]["QGetDashboardBundleV4FooterMetrics"] | null;
-            /** History */
-            history?: components["schemas"]["QGetDashboardBundleV4AttemptHistoryRow"][] | null;
-            insights?: components["schemas"]["QGetDashboardBundleV4Insights"] | null;
-            thresholds?: components["schemas"]["QGetDashboardBundleV4Thresholds"] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetDashboardBundleV4Simulation"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetDashboardBundleV4Rubric"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetDashboardBundleV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetDashboardBundleV4Field"][] | null;
-        };
-        /** GetDashboardHistoryApiRequest */
-        GetDashboardHistoryApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
-            /** Offset */
-            offset: number;
-        };
-        /** GetDashboardHistoryApiResponse */
-        GetDashboardHistoryApiResponse: {
-            /** Data */
-            data?: components["schemas"]["QGetDashboardHistoryV4AttemptHistoryRow"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Archived Count */
-            archived_count?: number | null;
-            /** Unarchived Count */
-            unarchived_count?: number | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["QGetDashboardHistoryV4ProfileOption"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetDashboardHistoryV4SimulationOption"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["QGetDashboardHistoryV4ScenarioOption"][] | null;
         };
         /** GetDepartmentApiRequest */
         GetDepartmentApiRequest: {
@@ -10445,6 +10540,25 @@ export interface components {
             /** Document Type Options */
             document_type_options?: string[] | null;
         };
+        /**
+         * GetDraftResourcesRequest
+         * @description Request for getting draft resources view rows.
+         */
+        GetDraftResourcesRequest: {
+            /**
+             * Draft Ids
+             * @description Optional draft IDs to fetch. Empty list returns all rows.
+             */
+            draft_ids?: string[];
+        };
+        /**
+         * GetDraftResourcesResponse
+         * @description Response containing draft resources view rows.
+         */
+        GetDraftResourcesResponse: {
+            /** Items */
+            items?: components["schemas"]["DraftResourcesViewItem"][];
+        };
         /** GetEvalApiRequest */
         GetEvalApiRequest: {
             /** Eval Id */
@@ -10605,53 +10719,6 @@ export interface components {
             /** Available Groups */
             available_groups?: components["schemas"]["QGetEvalV4AvailableGroup"][] | null;
         };
-        /** GetEvalAttemptApiRequest */
-        GetEvalAttemptApiRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-        };
-        /** GetEvalAttemptApiResponse */
-        GetEvalAttemptApiResponse: {
-            /** Attempt Exists */
-            attempt_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            attempt?: components["schemas"]["QGetEvalAttemptV4Attempt"] | null;
-            eval?: components["schemas"]["QGetEvalAttemptV4Eval"] | null;
-            /** Runs Entry */
-            runs_entry?: components["schemas"]["QGetEvalAttemptV4Run"][] | null;
-            status_summary?: components["schemas"]["QGetEvalAttemptV4StatusSummary"] | null;
-        };
-        /** GetEvalsListApiRequest */
-        GetEvalsListApiRequest: Record<string, never>;
-        /** GetEvalsListApiResponse */
-        GetEvalsListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Evals */
-            evals?: components["schemas"]["QListEvalsV4Eval"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QListEvalsV4Rubric"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QListEvalsV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QListEvalsV4Agent"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QListEvalsV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QListEvalsV4Standard"][] | null;
-            /** Rubric Standard Groups Junction */
-            rubric_standard_groups_junction?: components["schemas"]["QListEvalsV4RubricStandardGroup"][] | null;
-            /** Rubric Options */
-            rubric_options?: components["schemas"]["QListEvalsV4Option"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["QListEvalsV4Option"][] | null;
-            /** Agent Options */
-            agent_options?: components["schemas"]["QListEvalsV4Option"][] | null;
-        };
         /** GetExamplesApiRequest */
         GetExamplesApiRequest: {
             /** Ids */
@@ -10795,298 +10862,73 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetFlagsV4Item"][] | null;
         };
-        /** GetGeneralAttemptApiRequest */
-        GetGeneralAttemptApiRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-        };
-        /** GetGeneralAttemptApiResponse */
-        GetGeneralAttemptApiResponse: {
-            /** Attempt Exists */
-            attempt_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Access Denied */
-            access_denied?: boolean | null;
-            attempt?: components["schemas"]["QGetGeneralAttemptV4Attempt"] | null;
-            simulation?: components["schemas"]["QGetGeneralAttemptV4Simulation"] | null;
-            /** Attempt Profiles */
-            attempt_profiles?: components["schemas"]["QGetGeneralAttemptV4AttemptProfile"][] | null;
-            /** Chats Entry */
-            chats_entry?: components["schemas"]["QGetGeneralAttemptV4ChatData"][] | null;
-            /** Scenario Documents Junction */
-            scenario_documents_junction?: components["schemas"]["QGetGeneralAttemptV4ScenarioDocument"][] | null;
-            aggregated_results?: components["schemas"]["QGetGeneralAttemptV4AggregatedResults"] | null;
-            timer?: components["schemas"]["QGetGeneralAttemptV4Timer"] | null;
-            /** Current Chat Index */
-            current_chat_index?: number | null;
-            /** Expected Chat Count */
-            expected_chat_count?: number | null;
-            /** Is Single Chat Attempt */
-            is_single_chat_attempt?: boolean | null;
-            /** Is Last Attempt */
-            is_last_attempt?: boolean | null;
-            /** Show Results */
-            show_results?: boolean | null;
-            /** Should Show Controls */
-            should_show_controls?: boolean | null;
-            /** Remaining Scenarios Count */
-            remaining_scenarios_count?: number | null;
-            /** Is Last Remaining Scenario */
-            is_last_remaining_scenario?: boolean | null;
-            /** Can Pick Multiple Alternatives */
-            can_pick_multiple_alternatives?: boolean | null;
-            /** Is Active */
-            is_active?: boolean | null;
-            rubric_structure?: components["schemas"]["QGetGeneralAttemptV4RubricStructure"] | null;
-            /** All Simulation Scenarios */
-            all_simulation_scenarios?: components["schemas"]["QGetGeneralAttemptV4AllSimulationScenario"][] | null;
-            available_continuation_options?: components["schemas"]["QGetGeneralAttemptV4AvailableContinuationOptions"] | null;
-        };
-        /** GetHealthApiRequest */
-        GetHealthApiRequest: Record<string, never>;
-        /** GetHealthApiResponse */
-        GetHealthApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            health_kpis?: components["schemas"]["QGetHealthBundleV4HealthKpis"] | null;
-            /** Metrics */
-            metrics?: components["schemas"]["QGetHealthBundleV4MetricsDataPoint"][] | null;
-        };
-        /** GetHealthListApiRequest */
-        GetHealthListApiRequest: {
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 50
-             */
-            page_size: number | null;
-        };
-        /** GetHealthListApiResponse */
-        GetHealthListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Metrics */
-            metrics?: components["schemas"]["QGetHealthListV4Metric"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-        };
         /**
-         * GetHistoryRequest
-         * @description Request for getting history data.
+         * GetHealthMetricsHourlyRequest
+         * @description Request for getting health metrics hourly data.
          */
-        GetHistoryRequest: {
-            /**
-             * Profile Id
-             * @description Filter by profile ID
-             */
-            profile_id?: string | null;
-            /**
-             * Simulation Ids
-             * @description Filter by simulation IDs
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Cohort Ids
-             * @description Filter by cohort IDs
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Filter by department IDs
-             */
-            department_ids?: string[] | null;
-            /**
-             * Practice
-             * @description Filter by practice mode. None=all, True=practice, False=home
-             */
-            practice?: boolean | null;
-            /**
-             * Date From
-             * @description Filter by date range start
-             */
+        GetHealthMetricsHourlyRequest: {
+            /** Date From */
             date_from?: string | null;
-            /**
-             * Date To
-             * @description Filter by date range end
-             */
+            /** Date To */
             date_to?: string | null;
             /**
-             * Scenario Ids
-             * @description Filter by scenario IDs
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Infinite Mode
-             * @description Filter by infinite mode
-             */
-            infinite_mode?: boolean | null;
-            /**
-             * Search
-             * @description Search by simulation name
-             */
-            search?: string | null;
-            /**
-             * Sort By
-             * @description Sort field: date, score, simulation_name
-             * @default date
-             */
-            sort_by: string | null;
-            /**
-             * Sort Order
-             * @description Sort order: asc, desc
-             * @default desc
-             */
-            sort_order: string | null;
-            /**
              * Page Limit
-             * @description Items per page
-             * @default 50
+             * @default 168
              */
             page_limit: number;
             /**
              * Page Offset
-             * @description Pagination offset
              * @default 0
              */
             page_offset: number;
-            /**
-             * Profile Ids
-             * @description Filter by multiple profile IDs (for multi-user view)
-             */
-            profile_ids?: string[] | null;
-            /**
-             * Show Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            show_archived: boolean;
         };
         /**
-         * GetHistoryResponse
-         * @description Response containing history data.
+         * GetHealthMetricsHourlyResponse
+         * @description Response with health metrics hourly data.
          */
-        GetHistoryResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
+        GetHealthMetricsHourlyResponse: {
+            /** Items */
+            items?: components["schemas"]["HealthMetricsHourlyItem"][];
             /**
              * Total Count
-             * @description Total count for pagination
              * @default 0
              */
             total_count: number;
-            /**
-             * Items
-             * @description History data items
-             */
-            items?: components["schemas"]["HistoryViewItem"][];
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["app__api__v4__views__simulation__history__types__FilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["app__api__v4__views__simulation__history__types__FilterOption"][] | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["app__api__v4__views__simulation__history__types__FilterOption"][] | null;
         };
-        /** GetHomeHistoryApiRequest */
-        GetHomeHistoryApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
+        /**
+         * GetHealthServiceHourlyRequest
+         * @description Request for getting health service hourly data.
+         */
+        GetHealthServiceHourlyRequest: {
+            /** Service */
+            service?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
             /**
-             * Page
+             * Page Limit
+             * @default 168
+             */
+            page_limit: number;
+            /**
+             * Page Offset
              * @default 0
              */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
+            page_offset: number;
         };
-        /** GetHomeHistoryApiResponse */
-        GetHomeHistoryApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["QGetHomeHistoryV4AttemptHistoryRow"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
-        };
-        /** GetHomeOverviewApiRequest */
-        GetHomeOverviewApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** GetHomeOverviewApiResponse */
-        GetHomeOverviewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Mode */
-            mode?: string | null;
-            /** Has Data */
-            has_data?: boolean | null;
+        /**
+         * GetHealthServiceHourlyResponse
+         * @description Response with health service hourly data.
+         */
+        GetHealthServiceHourlyResponse: {
             /** Items */
-            items?: components["schemas"]["QGetHomeOverviewV4SimulationItem"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetHomeOverviewV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetHomeOverviewV4Standard"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetHomeOverviewV4Simulation"][] | null;
+            items?: components["schemas"]["HealthServiceHourlyItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /** GetIconsApiRequest */
         GetIconsApiRequest: {
@@ -11158,71 +11000,6 @@ export interface components {
             name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /** GetLeaderboardApiRequest */
-        GetLeaderboardApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Roles */
-            roles?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** GetLeaderboardApiResponse */
-        GetLeaderboardApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["QGetLeaderboardBundleV4Row"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetLeaderboardBundleV4Simulation"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QGetLeaderboardBundleV4Scenario"][] | null;
-            /** Primary Color */
-            primary_color?: string | null;
-            /** Accent Color */
-            accent_color?: string | null;
-        };
-        /** GetLeaderboardListApiRequest */
-        GetLeaderboardListApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Roles */
-            roles?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
-            /** Offset */
-            offset: number;
-        };
-        /** GetLeaderboardListApiResponse */
-        GetLeaderboardListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["QGetLeaderboardListV4Row"][] | null;
-            /** Total Count */
-            total_count?: number | null;
         };
         /** GetLoginDataApiRequest */
         GetLoginDataApiRequest: {
@@ -11620,71 +11397,6 @@ export interface components {
              */
             items: components["schemas"]["GetOptionV4Item"][];
         };
-        /**
-         * GetOverviewRequest
-         * @description Request for getting overview data.
-         */
-        GetOverviewRequest: {
-            /**
-             * Start Date
-             * @description Start date for filtering (ISO format)
-             */
-            start_date?: string | null;
-            /**
-             * End Date
-             * @description End date for filtering (ISO format)
-             */
-            end_date?: string | null;
-            /**
-             * Profile Id
-             * @description Filter by profile ID
-             */
-            profile_id?: string | null;
-            /**
-             * Simulation Ids
-             * @description Filter by simulation IDs
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Cohort Ids
-             * @description Filter by cohort IDs
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Filter by department IDs
-             */
-            department_ids?: string[] | null;
-            /**
-             * Practice
-             * @description Filter by practice mode. None=all, True=practice, False=home
-             */
-            practice?: boolean | null;
-        };
-        /**
-         * GetOverviewResponse
-         * @description Response containing overview data.
-         */
-        GetOverviewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /**
-             * Has Data
-             * @default false
-             */
-            has_data: boolean;
-            /**
-             * Items
-             * @description Simulation card items
-             */
-            items?: components["schemas"]["OverviewViewItem"][];
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["StandardGroupItem"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["StandardItem"][] | null;
-        };
         /** GetParameterApiRequest */
         GetParameterApiRequest: {
             /** Parameter Id */
@@ -12010,258 +11722,170 @@ export interface components {
              */
             page_offset: number | null;
         };
-        /** GetPracticeAttemptApiRequest */
-        GetPracticeAttemptApiRequest: {
+        /**
+         * GetPricingDailyRequest
+         * @description Request for getting pricing daily data.
+         */
+        GetPricingDailyRequest: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
             /**
-             * Attempt Id
-             * Format: uuid
+             * Page Limit
+             * @default 30
              */
-            attempt_id: string;
-        };
-        /** GetPracticeAttemptApiResponse */
-        GetPracticeAttemptApiResponse: {
-            /** Attempt Exists */
-            attempt_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Access Denied */
-            access_denied?: boolean | null;
-            attempt?: components["schemas"]["QGetPracticeAttemptV4Attempt"] | null;
-            simulation?: components["schemas"]["QGetPracticeAttemptV4Simulation"] | null;
-            /** Attempt Profiles */
-            attempt_profiles?: components["schemas"]["QGetPracticeAttemptV4AttemptProfile"][] | null;
-            /** Chats Entry */
-            chats_entry?: components["schemas"]["QGetPracticeAttemptV4ChatData"][] | null;
-            /** Scenario Documents Junction */
-            scenario_documents_junction?: components["schemas"]["QGetPracticeAttemptV4ScenarioDocument"][] | null;
-            aggregated_results?: components["schemas"]["QGetPracticeAttemptV4AggregatedResults"] | null;
-            timer?: components["schemas"]["QGetPracticeAttemptV4Timer"] | null;
-            /** Current Chat Index */
-            current_chat_index?: number | null;
-            /** Expected Chat Count */
-            expected_chat_count?: number | null;
-            /** Is Single Chat Attempt */
-            is_single_chat_attempt?: boolean | null;
-            /** Is Last Attempt */
-            is_last_attempt?: boolean | null;
-            /** Show Results */
-            show_results?: boolean | null;
-            /** Should Show Controls */
-            should_show_controls?: boolean | null;
-            /** Remaining Scenarios Count */
-            remaining_scenarios_count?: number | null;
-            /** Is Last Remaining Scenario */
-            is_last_remaining_scenario?: boolean | null;
-            /** Can Pick Multiple Alternatives */
-            can_pick_multiple_alternatives?: boolean | null;
-            /** Is Active */
-            is_active?: boolean | null;
-            rubric_structure?: components["schemas"]["QGetPracticeAttemptV4RubricStructure"] | null;
-            /** All Simulation Scenarios */
-            all_simulation_scenarios?: components["schemas"]["QGetPracticeAttemptV4AllSimulationScenario"][] | null;
-        };
-        /** GetPracticeHistoryApiRequest */
-        GetPracticeHistoryApiRequest: {
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page Size
-             * @default 20
-             */
-            page_size: number | null;
+            page_limit: number;
             /**
              * Page Offset
              * @default 0
              */
-            page_offset: number | null;
+            page_offset: number;
         };
-        /** GetPracticeHistoryApiResponse */
-        GetPracticeHistoryApiResponse: {
-            /** Data */
-            data?: components["schemas"]["QGetPracticeHistoryV4Attempt"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["QGetPracticeHistoryV4ProfileOption"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["QGetPracticeHistoryV4SimulationOption"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["QGetPracticeHistoryV4ScenarioOption"][] | null;
-        };
-        /** GetPracticeOverviewApiRequest */
-        GetPracticeOverviewApiRequest: {
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetPracticeOverviewApiResponse */
-        GetPracticeOverviewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Mode */
-            mode?: string | null;
-            /** Has Data */
-            has_data?: boolean | null;
+        /**
+         * GetPricingDailyResponse
+         * @description Response with pricing daily data.
+         */
+        GetPricingDailyResponse: {
             /** Items */
-            items?: components["schemas"]["QGetPracticeOverviewV4PracticeSimulation"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetPracticeOverviewV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetPracticeOverviewV4Standard"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetPracticeOverviewV4Simulation"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetPracticeOverviewV4Persona"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QGetPracticeOverviewV4Scenario"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetPracticeOverviewV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetPracticeOverviewV4Field"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetPracticeOverviewV4Department"][] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Draft Persona Ids */
-            draft_persona_ids?: unknown | null;
-            /** Draft Parameter Item Ids */
-            draft_parameter_item_ids?: unknown | null;
-            /** Draft Department Ids */
-            draft_department_ids?: unknown | null;
+            items?: components["schemas"]["PricingDailyItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
-        /** GetPricingAnalyticsApiRequest */
-        GetPricingAnalyticsApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Roles */
-            roles: string[];
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Simulation Filters */
-            simulation_filters: string[];
+        /**
+         * GetPricingGroupSummaryRequest
+         * @description Request for getting pricing group summary.
+         */
+        GetPricingGroupSummaryRequest: {
+            /** Session Id */
+            session_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'cost' | 'tokens' | 'runs'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
         };
-        /** GetPricingAnalyticsApiResponse */
-        GetPricingAnalyticsApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Model Runs */
-            model_runs?: components["schemas"]["QGetPricingAnalyticsV4ModelRun"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetPricingAnalyticsV4Model"][] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QGetPricingAnalyticsV4Profile"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetPricingAnalyticsV4Agent"][] | null;
+        /**
+         * GetPricingGroupSummaryResponse
+         * @description Response with pricing group summary.
+         */
+        GetPricingGroupSummaryResponse: {
+            /** Items */
+            items?: components["schemas"]["PricingGroupSummaryItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
-        /** GetPricingGroupDetailApiRequest */
-        GetPricingGroupDetailApiRequest: {
+        /**
+         * GetPricingRunFactsRequest
+         * @description Request for getting pricing run facts with filters.
+         */
+        GetPricingRunFactsRequest: {
             /**
              * Group Id
-             * Format: uuid
+             * @description Filter by group ID
              */
-            group_id: string;
-        };
-        /** GetPricingGroupDetailApiResponse */
-        GetPricingGroupDetailApiResponse: {
-            /** Group Exists */
-            group_exists?: boolean | null;
-            /** Group Id */
             group_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Runs */
-            runs?: components["schemas"]["QGetPricingGroupDetailV4RunWithMessages"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetPricingGroupDetailV4Model"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetPricingGroupDetailV4Agent"][] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QGetPricingGroupDetailV4Profile"][] | null;
-        };
-        /** GetPricingRunsApiRequest */
-        GetPricingRunsApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Roles */
-            roles: string[];
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Simulation Filters */
-            simulation_filters: string[];
-            /** Search */
-            search: string;
-            /** Model Ids */
-            model_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Actor Ids */
-            actor_ids: string[];
-            /** Sort By */
+            /**
+             * Agent Id
+             * @description Filter by agent ID
+             */
+            agent_id?: string | null;
+            /**
+             * Model Id
+             * @description Filter by model ID
+             */
+            model_id?: string | null;
+            /**
+             * Profile Id
+             * @description Filter by profile ID
+             */
+            profile_id?: string | null;
+            /**
+             * Session Id
+             * @description Filter by session ID
+             */
+            session_id?: string | null;
+            /**
+             * Date From
+             * @description Filter by date range start
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by date range end
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description Sort field: 'date' | 'cost' | 'tokens'
+             * @default date
+             */
             sort_by: string;
-            /** Sort Order */
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' | 'desc'
+             * @default desc
+             */
             sort_order: string;
-            /** Limit Count */
-            limit_count: number;
-            /** Offset Count */
-            offset_count: number;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
         };
-        /** GetPricingRunsApiResponse */
-        GetPricingRunsApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Group Runs */
-            group_runs?: components["schemas"]["QGetPricingRunsV4GroupRun"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Model Options */
-            model_options?: components["schemas"]["QGetPricingRunsV4FilterOption"][] | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["QGetPricingRunsV4FilterOption"][] | null;
-            /** Actor Options */
-            actor_options?: components["schemas"]["QGetPricingRunsV4FilterOption"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetPricingRunsV4Model"][] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QGetPricingRunsV4Profile"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetPricingRunsV4Agent"][] | null;
+        /**
+         * GetPricingRunFactsResponse
+         * @description Response with pricing run facts.
+         */
+        GetPricingRunFactsResponse: {
+            /** Items */
+            items?: components["schemas"]["PricingRunFactsItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
         };
         /**
          * GetProblemStatementApiRequest
@@ -12674,124 +12298,6 @@ export interface components {
             allow_multiple?: boolean | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** GetReportsBundleApiRequest */
-        GetReportsBundleApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Sort By */
-            sort_by?: string | null;
-            /** Sort Order */
-            sort_order?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @default 100
-             */
-            page_size: number | null;
-        };
-        /** GetReportsBundleApiResponse */
-        GetReportsBundleApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Data */
-            data?: components["schemas"]["QReportsBundleV4Profile"][] | null;
-            /** Total Count */
-            total_count?: number | null;
-            /** Page */
-            page?: number | null;
-            /** Page Size */
-            page_size?: number | null;
-            /** Total Pages */
-            total_pages?: number | null;
-            /** Profile Options */
-            profile_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
-            /** Scenario Options Junction */
-            scenario_options_junction?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QReportsBundleV4Scenario"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QReportsBundleV4Simulation"][] | null;
-        };
-        /** GetReportsOverviewApiRequest */
-        GetReportsOverviewApiRequest: {
-            /** Start Date */
-            start_date: string;
-            /** End Date */
-            end_date: string;
-            /**
-             * Actor Profile Id
-             * Format: uuid
-             */
-            actor_profile_id: string;
-            /**
-             * Target Profile Id
-             * Format: uuid
-             */
-            target_profile_id: string;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** GetReportsOverviewApiResponse */
-        GetReportsOverviewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Profile Emails Junction */
-            profile_emails_junction?: string[] | null;
-            /** Profile Primary Email */
-            profile_primary_email?: string | null;
-            /** Profile Type */
-            profile_type?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            header_metrics?: components["schemas"]["QReportsOverviewV4HeaderMetrics"] | null;
-            primary_metrics?: components["schemas"]["QReportsOverviewV4PrimaryMetrics"] | null;
-            secondary_metrics?: components["schemas"]["QReportsOverviewV4SecondaryMetrics"] | null;
-            footer_metrics?: components["schemas"]["QReportsOverviewV4FooterMetrics"] | null;
-            /** History */
-            history?: components["schemas"]["QReportsOverviewV4AttemptHistoryRow"][] | null;
-            insights?: components["schemas"]["QReportsOverviewV4Insights"] | null;
-            thresholds?: components["schemas"]["QReportsOverviewV4Thresholds"] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QReportsOverviewV4Simulation"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QReportsOverviewV4Rubric"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QReportsOverviewV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QReportsOverviewV4Field"][] | null;
         };
         /**
          * GetRolesApiRequest
@@ -13608,57 +13114,6 @@ export interface components {
             /** Keys */
             keys?: components["schemas"]["QGetSettingsListV4Key"][] | null;
         };
-        /** GetSimulationAttemptApiRequest */
-        GetSimulationAttemptApiRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-        };
-        /** GetSimulationAttemptApiResponse */
-        GetSimulationAttemptApiResponse: {
-            /** Attempt Exists */
-            attempt_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Access Denied */
-            access_denied?: boolean | null;
-            attempt?: components["schemas"]["QGetSimulationAttemptV4Attempt"] | null;
-            simulation?: components["schemas"]["QGetSimulationAttemptV4Simulation"] | null;
-            /** Attempt Profiles */
-            attempt_profiles?: components["schemas"]["QGetSimulationAttemptV4AttemptProfile"][] | null;
-            /** Chats Entry */
-            chats_entry?: components["schemas"]["QGetSimulationAttemptV4ChatData"][] | null;
-            /** Scenario Documents Junction */
-            scenario_documents_junction?: components["schemas"]["QGetSimulationAttemptV4ScenarioDocument"][] | null;
-            aggregated_results?: components["schemas"]["QGetSimulationAttemptV4AggregatedResults"] | null;
-            timer?: components["schemas"]["QGetSimulationAttemptV4Timer"] | null;
-            /** Current Chat Index */
-            current_chat_index?: number | null;
-            /** Expected Chat Count */
-            expected_chat_count?: number | null;
-            /** Is Single Chat Attempt */
-            is_single_chat_attempt?: boolean | null;
-            /** Is Last Attempt */
-            is_last_attempt?: boolean | null;
-            /** Show Results */
-            show_results?: boolean | null;
-            /** Should Show Controls */
-            should_show_controls?: boolean | null;
-            /** Remaining Scenarios Count */
-            remaining_scenarios_count?: number | null;
-            /** Is Last Remaining Scenario */
-            is_last_remaining_scenario?: boolean | null;
-            /** Can Pick Multiple Alternatives */
-            can_pick_multiple_alternatives?: boolean | null;
-            /** Is Active */
-            is_active?: boolean | null;
-            rubric_structure?: components["schemas"]["QGetSimulationAttemptV4RubricStructure"] | null;
-            /** All Simulation Scenarios */
-            all_simulation_scenarios?: components["schemas"]["QGetSimulationAttemptV4AllSimulationScenario"][] | null;
-            available_continuation_options?: components["schemas"]["QGetSimulationAttemptV4AvailableContinuationOptions"] | null;
-        };
         /**
          * GetSimulationPositionsApiRequest
          * @description Request for getting simulation positions by simulation IDs.
@@ -14300,6 +13755,173 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HealthMetricsHourlyItem
+         * @description Single hour from mv_health_metrics_hourly.
+         */
+        HealthMetricsHourlyItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /**
+             * Sample Count
+             * @default 0
+             */
+            sample_count: number;
+            /**
+             * Avg Cpu Percent
+             * @default 0
+             */
+            avg_cpu_percent: number;
+            /**
+             * Min Cpu Percent
+             * @default 0
+             */
+            min_cpu_percent: number;
+            /**
+             * Max Cpu Percent
+             * @default 0
+             */
+            max_cpu_percent: number;
+            /**
+             * Avg Latency Ms
+             * @default 0
+             */
+            avg_latency_ms: number;
+            /**
+             * Min Latency Ms
+             * @default 0
+             */
+            min_latency_ms: number;
+            /**
+             * Max Latency Ms
+             * @default 0
+             */
+            max_latency_ms: number;
+            /**
+             * Avg Memory Bytes
+             * @default 0
+             */
+            avg_memory_bytes: number;
+            /**
+             * Min Memory Bytes
+             * @default 0
+             */
+            min_memory_bytes: number;
+            /**
+             * Max Memory Bytes
+             * @default 0
+             */
+            max_memory_bytes: number;
+            /**
+             * Max Requests Total
+             * @default 0
+             */
+            max_requests_total: number;
+            /**
+             * Max Errors Total
+             * @default 0
+             */
+            max_errors_total: number;
+        };
+        /**
+         * HealthRequest
+         * @description Request for getting health data.
+         */
+        HealthRequest: {
+            /** Service */
+            service?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @default 168
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * HealthResponse
+         * @description Response with health data.
+         */
+        HealthResponse: {
+            views?: components["schemas"]["HealthViews"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * HealthServiceHourlyItem
+         * @description Single hour from mv_health_service_hourly.
+         */
+        HealthServiceHourlyItem: {
+            /**
+             * Date Hour
+             * Format: date-time
+             */
+            date_hour: string;
+            /** Service */
+            service: string;
+            /**
+             * Check Count
+             * @default 0
+             */
+            check_count: number;
+            /**
+             * Ok Count
+             * @default 0
+             */
+            ok_count: number;
+            /**
+             * Fail Count
+             * @default 0
+             */
+            fail_count: number;
+            /**
+             * Uptime Percent
+             * @default 0
+             */
+            uptime_percent: number;
+            /**
+             * Avg Latency Ms
+             * @default 0
+             */
+            avg_latency_ms: number;
+            /**
+             * Min Latency Ms
+             * @default 0
+             */
+            min_latency_ms: number;
+            /**
+             * Max Latency Ms
+             * @default 0
+             */
+            max_latency_ms: number;
+            /** Latest Ok */
+            latest_ok?: boolean | null;
+            /** Latest Error */
+            latest_error?: string | null;
+        };
+        /**
+         * HealthViews
+         * @description Health view data.
+         */
+        HealthViews: {
+            /** Service Hourly */
+            service_hourly?: components["schemas"]["HealthServiceHourlyItem"][];
+            /** Metrics Hourly */
+            metrics_hourly?: components["schemas"]["HealthMetricsHourlyItem"][];
+        };
+        /**
          * HighlightEntry
          * @description Highlight entry within a strength.
          */
@@ -14338,104 +13960,6 @@ export interface components {
             hint?: string | null;
             /** Idx */
             idx?: number | null;
-        };
-        /**
-         * HistoryViewItem
-         * @description Single attempt from the history view.
-         */
-        HistoryViewItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Cohort Name */
-            cohort_name?: string | null;
-            /** Department Name */
-            department_name?: string | null;
-            /** Persona Color */
-            persona_color?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Attempt Created At */
-            attempt_created_at?: string | null;
-            /**
-             * Practice
-             * @default false
-             */
-            practice: boolean;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /**
-             * Is Archived
-             * @default false
-             */
-            is_archived: boolean;
-            /**
-             * Num Chats
-             * @default 0
-             */
-            num_chats: number;
-            /**
-             * Num Chats Completed
-             * @default 0
-             */
-            num_chats_completed: number;
-            /**
-             * Num Scenarios
-             * @default 0
-             */
-            num_scenarios: number;
-            /**
-             * Num Scenarios Completed
-             * @default 0
-             */
-            num_scenarios_completed: number;
-            /** Score Percent */
-            score_percent?: number | null;
-            /**
-             * Has Passed
-             * @default false
-             */
-            has_passed: boolean;
-            /**
-             * Total Time Seconds
-             * @default 0
-             */
-            total_time_seconds: number;
-            /** Rubric Total Points */
-            rubric_total_points?: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points?: number | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Scenario Names */
-            scenario_names?: string[] | null;
-            /** Persona Names */
-            persona_names?: string[] | null;
-            /** Persona Colors */
-            persona_colors?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
         };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
@@ -14605,6 +14129,65 @@ export interface components {
         KeysApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /**
+         * LeaderboardRequest
+         * @description Request for getting leaderboard data.
+         */
+        LeaderboardRequest: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * LeaderboardResources
+         * @description Leaderboard resource metadata.
+         */
+        LeaderboardResources: {
+            /** Profiles */
+            profiles?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Simulations */
+            simulations?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * LeaderboardResponse
+         * @description Response with leaderboard data.
+         */
+        LeaderboardResponse: {
+            views?: components["schemas"]["LeaderboardViews"];
+            resources?: components["schemas"]["LeaderboardResources"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * LeaderboardViews
+         * @description Leaderboard view data.
+         */
+        LeaderboardViews: {
+            /** Attempt Facts */
+            attempt_facts?: components["schemas"]["AttemptFactsItem"][];
         };
         /**
          * ListCohortApiCohort
@@ -15192,64 +14775,6 @@ export interface components {
         OptionsApiResponse: {
             /** Option Id */
             option_id?: string | null;
-        };
-        /**
-         * OverviewViewItem
-         * @description Single simulation overview from the view.
-         */
-        OverviewViewItem: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Simulation Name */
-            simulation_name?: string | null;
-            /** Simulation Description */
-            simulation_description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Persona Color */
-            persona_color?: string | null;
-            /** Persona Icon */
-            persona_icon?: string | null;
-            /** Cohort Names */
-            cohort_names?: string[] | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Practice */
-            practice?: boolean | null;
-            /**
-             * Attempt Count
-             * @default 0
-             */
-            attempt_count: number;
-            /**
-             * Completed Count
-             * @default 0
-             */
-            completed_count: number;
-            /** Highest Score */
-            highest_score?: number | null;
-            /**
-             * Has Passed
-             * @default false
-             */
-            has_passed: boolean;
-            /** Rubric Total Points */
-            rubric_total_points?: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points?: number | null;
-            /** Passed Count */
-            passed_count?: number | null;
-            /** In Progress Count */
-            in_progress_count?: number | null;
-            /** Not Started Count */
-            not_started_count?: number | null;
-            /** Total Members */
-            total_members?: number | null;
         };
         /** ParameterFieldsApiRequest */
         ParameterFieldsApiRequest: {
@@ -15994,6 +15519,8 @@ export interface components {
             resource_types?: string[] | null;
             /** Resource Id */
             resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
             /**
              * Success
              * @default false
@@ -16126,6 +15653,317 @@ export interface components {
             pricing_id?: string | null;
         };
         /**
+         * PricingDailyItem
+         * @description Single day from mv_pricing_daily.
+         */
+        PricingDailyItem: {
+            /**
+             * Date Key
+             * Format: date
+             */
+            date_key: string;
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Group Count
+             * @default 0
+             */
+            group_count: number;
+            /**
+             * Unique Profiles
+             * @default 0
+             */
+            unique_profiles: number;
+            /**
+             * Unique Sessions
+             * @default 0
+             */
+            unique_sessions: number;
+            /**
+             * Total Input Tokens
+             * @default 0
+             */
+            total_input_tokens: number;
+            /**
+             * Total Output Tokens
+             * @default 0
+             */
+            total_output_tokens: number;
+            /**
+             * Total Cached Tokens
+             * @default 0
+             */
+            total_cached_tokens: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Input Cost
+             * @default 0
+             */
+            total_input_cost: string;
+            /**
+             * Total Output Cost
+             * @default 0
+             */
+            total_output_cost: string;
+            /**
+             * Total Cached Cost
+             * @default 0
+             */
+            total_cached_cost: string;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /**
+             * Avg Tokens Per Run
+             * @default 0
+             */
+            avg_tokens_per_run: number;
+            /**
+             * Avg Cost Per Run
+             * @default 0
+             */
+            avg_cost_per_run: string;
+        };
+        /**
+         * PricingGroupSummaryItem
+         * @description Single group from mv_pricing_group_summary.
+         */
+        PricingGroupSummaryItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Session Id */
+            session_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Primary Agent Id */
+            primary_agent_id?: string | null;
+            /** Primary Model Id */
+            primary_model_id?: string | null;
+            /** First Run At */
+            first_run_at?: string | null;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Unique Agents
+             * @default 0
+             */
+            unique_agents: number;
+            /**
+             * Unique Models
+             * @default 0
+             */
+            unique_models: number;
+            /**
+             * Total Input Tokens
+             * @default 0
+             */
+            total_input_tokens: number;
+            /**
+             * Total Output Tokens
+             * @default 0
+             */
+            total_output_tokens: number;
+            /**
+             * Total Cached Tokens
+             * @default 0
+             */
+            total_cached_tokens: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Input Cost
+             * @default 0
+             */
+            total_input_cost: string;
+            /**
+             * Total Output Cost
+             * @default 0
+             */
+            total_output_cost: string;
+            /**
+             * Total Cached Cost
+             * @default 0
+             */
+            total_cached_cost: string;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /** Group Name */
+            group_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+        };
+        /**
+         * PricingRequest
+         * @description Request for getting pricing data.
+         */
+        PricingRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * PricingResources
+         * @description Pricing resource metadata.
+         */
+        PricingResources: {
+            /** Agents */
+            agents?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Models */
+            models?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Profiles */
+            profiles?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * PricingResponse
+         * @description Response with pricing data.
+         */
+        PricingResponse: {
+            views?: components["schemas"]["PricingViews"];
+            resources?: components["schemas"]["PricingResources"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * PricingRunFactsItem
+         * @description Single run from mv_pricing_run_facts.
+         */
+        PricingRunFactsItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Input Cost
+             * @default 0
+             */
+            input_cost: string;
+            /**
+             * Output Cost
+             * @default 0
+             */
+            output_cost: string;
+            /**
+             * Cached Cost
+             * @default 0
+             */
+            cached_cost: string;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /** Run Created At */
+            run_created_at?: string | null;
+            /** Group Name */
+            group_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * PricingViews
+         * @description Pricing view data.
+         */
+        PricingViews: {
+            /** Group Summary */
+            group_summary?: components["schemas"]["PricingGroupSummaryItem"][];
+            /** Daily */
+            daily?: components["schemas"]["PricingDailyItem"][];
+        };
+        /**
          * ProblemStatementEntry
          * @description Problem statement entry with resource metadata.
          */
@@ -16249,52 +16087,6 @@ export interface components {
         ProtocolsApiResponse: {
             /** Protocols Id */
             protocols_id?: string | null;
-        };
-        /** QGetActivityBundleV4ChartPoint */
-        QGetActivityBundleV4ChartPoint: {
-            /** Date */
-            date: string | null;
-            /** Event Id */
-            event_id: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetActivityBundleV4EventType */
-        QGetActivityBundleV4EventType: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Total Count */
-            total_count: number | null;
-        };
-        /** QGetActivityBundleV4Problem */
-        QGetActivityBundleV4Problem: {
-            /** Problem Id */
-            problem_id: string | null;
-            /** Type */
-            type: string | null;
-            /** Message */
-            message: string | null;
-            /** Resolved */
-            resolved: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-        };
-        /** QGetActivityListV4Session */
-        QGetActivityListV4Session: {
-            /** Session Id */
-            session_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Active */
-            active: boolean | null;
         };
         /** QGetAgentV4Department */
         QGetAgentV4Department: {
@@ -16561,155 +16353,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetBenchmarkHistoryV4Attempt */
-        QGetBenchmarkHistoryV4Attempt: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Eval Id */
-            eval_id: string | null;
-            /** Eval Name */
-            eval_name: string | null;
-            /** Eval Description */
-            eval_description: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Status */
-            status: string | null;
-            /** Total Runs */
-            total_runs: number | null;
-            /** Completed Runs */
-            completed_runs: number | null;
-            /** Pending Runs */
-            pending_runs: number | null;
-        };
-        /** QGetBenchmarkOverviewV4Agent */
-        QGetBenchmarkOverviewV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetBenchmarkOverviewV4AgentOption */
-        QGetBenchmarkOverviewV4AgentOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QGetBenchmarkOverviewV4Department */
-        QGetBenchmarkOverviewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetBenchmarkOverviewV4DepartmentOption */
-        QGetBenchmarkOverviewV4DepartmentOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QGetBenchmarkOverviewV4Eval */
-        QGetBenchmarkOverviewV4Eval: {
-            /** Eval Id */
-            eval_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Agent Ids */
-            agent_ids: string[] | null;
-            /** Dynamic */
-            dynamic: boolean | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Rubric Description */
-            rubric_description: string | null;
-            /** Total Runs */
-            total_runs: number | null;
-            /** Completed Runs */
-            completed_runs: number | null;
-            /** Pending Runs */
-            pending_runs: number | null;
-            /** Status */
-            status: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-        };
-        /** QGetBenchmarkOverviewV4Rubric */
-        QGetBenchmarkOverviewV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QGetBenchmarkOverviewV4RubricOption */
-        QGetBenchmarkOverviewV4RubricOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QGetBenchmarkOverviewV4RubricStandardGroup */
-        QGetBenchmarkOverviewV4RubricStandardGroup: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-        };
-        /** QGetBenchmarkOverviewV4Standard */
-        QGetBenchmarkOverviewV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetBenchmarkOverviewV4StandardGroup */
-        QGetBenchmarkOverviewV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
         /**
          * QGetCohortsV4Item
          * @description Cohort item returned from get endpoint.
@@ -16738,764 +16381,6 @@ export interface components {
             hex_code: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetDashboardBundleV4AttemptHistoryRow */
-        QGetDashboardBundleV4AttemptHistoryRow: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Num Scenarios */
-            num_scenarios: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed: number | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Persona Names Junction */
-            persona_names_junction: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: string[] | null;
-            /** Score */
-            score: number | null;
-            /** Score Status */
-            score_status: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Scenario Titles */
-            scenario_titles: string[] | null;
-            /** Is Archived */
-            is_archived: boolean | null;
-            /** Show View */
-            show_view: boolean | null;
-            /** Show Continue */
-            show_continue: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id: string | null;
-        };
-        /** QGetDashboardBundleV4AttemptImprovementData */
-        QGetDashboardBundleV4AttemptImprovementData: {
-            /** Attempt */
-            attempt: string | null;
-            /** Average Score */
-            average_score: number | null;
-            /** Average Time */
-            average_time: number | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-        };
-        /** QGetDashboardBundleV4AttemptImprovementFact */
-        QGetDashboardBundleV4AttemptImprovementFact: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Attempt No */
-            attempt_no: number | null;
-            /** Avg Grade */
-            avg_grade: number | null;
-            /** Avg Minutes */
-            avg_minutes: number | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-        };
-        /** QGetDashboardBundleV4AttemptImprovementResponse */
-        QGetDashboardBundleV4AttemptImprovementResponse: {
-            /** Chart Data */
-            chart_data: components["schemas"]["QGetDashboardBundleV4AttemptImprovementData"][] | null;
-            /** Facts */
-            facts: components["schemas"]["QGetDashboardBundleV4AttemptImprovementFact"][] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4CohortDailyFact */
-        QGetDashboardBundleV4CohortDailyFact: {
-            /** Date */
-            date: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-        };
-        /** QGetDashboardBundleV4CohortData */
-        QGetDashboardBundleV4CohortData: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Avg Percentage Score */
-            avg_percentage_score: number | null;
-            /** Total Students */
-            total_students: number | null;
-            /** Passed Students */
-            passed_students: number | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Passed Attempts */
-            passed_attempts: number | null;
-            /** Simulation Count */
-            simulation_count: number | null;
-            /** Required Simulations */
-            required_simulations: number | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4CohortFact */
-        QGetDashboardBundleV4CohortFact: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Attempts */
-            attempts: number | null;
-        };
-        /** QGetDashboardBundleV4CohortInsight */
-        QGetDashboardBundleV4CohortInsight: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Insight */
-            insight: string | null;
-        };
-        /** QGetDashboardBundleV4CohortPerformanceResponse */
-        QGetDashboardBundleV4CohortPerformanceResponse: {
-            /** Cohort Data */
-            cohort_data: components["schemas"]["QGetDashboardBundleV4CohortData"][] | null;
-            /** Daily Data */
-            daily_data: components["schemas"]["QGetDashboardBundleV4DailyData"][] | null;
-            /** Cohort Facts */
-            cohort_facts: components["schemas"]["QGetDashboardBundleV4CohortFact"][] | null;
-            /** Daily Facts */
-            daily_facts: components["schemas"]["QGetDashboardBundleV4CohortDailyFact"][] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4DailyData */
-        QGetDashboardBundleV4DailyData: {
-            /** Date */
-            date: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Cohort Id */
-            cohort_id: string | null;
-        };
-        /** QGetDashboardBundleV4DataPoint */
-        QGetDashboardBundleV4DataPoint: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetDashboardBundleV4Field */
-        QGetDashboardBundleV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
-        /** QGetDashboardBundleV4FooterMetrics */
-        QGetDashboardBundleV4FooterMetrics: {
-            scenario_performance: components["schemas"]["QGetDashboardBundleV4ScenarioPerformanceResponse"] | null;
-            scenario_stats: components["schemas"]["QGetDashboardBundleV4ScenarioStatsResponse"] | null;
-            simulation_performance: components["schemas"]["QGetDashboardBundleV4SimulationPerformanceResponse"] | null;
-            simulation_composition: components["schemas"]["QGetDashboardBundleV4SimulationCompositionResponse"] | null;
-        };
-        /** QGetDashboardBundleV4GrowthDataPoint */
-        QGetDashboardBundleV4GrowthDataPoint: {
-            /** Date */
-            date: string | null;
-            /** Average Score */
-            average_score: number | null;
-            /** Completion Rate */
-            completion_rate: number | null;
-            /** First Attempt Pass Rate */
-            first_attempt_pass_rate: number | null;
-            /** Session Efficiency */
-            session_efficiency: number | null;
-            /** Stagnation Rate */
-            stagnation_rate: number | null;
-        };
-        /** QGetDashboardBundleV4GrowthDataResponse */
-        QGetDashboardBundleV4GrowthDataResponse: {
-            /** Chart Data */
-            chart_data: components["schemas"]["QGetDashboardBundleV4GrowthDataPoint"][] | null;
-            /** Available Metrics */
-            available_metrics: components["schemas"]["QGetDashboardBundleV4GrowthMetric"][] | null;
-            window_averages: components["schemas"]["QGetDashboardBundleV4GrowthWindowAverages"] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4GrowthMetric */
-        QGetDashboardBundleV4GrowthMetric: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Color */
-            color: string | null;
-            /** Unit */
-            unit: string | null;
-            /** Description */
-            description: string | null;
-            /** Formatter Id */
-            formatter_id: string | null;
-        };
-        /** QGetDashboardBundleV4GrowthWindowAverage */
-        QGetDashboardBundleV4GrowthWindowAverage: {
-            /** N */
-            n: number | null;
-            /** Last */
-            last: number | null;
-            /** Prev */
-            prev: number | null;
-        };
-        /** QGetDashboardBundleV4GrowthWindowAverages */
-        QGetDashboardBundleV4GrowthWindowAverages: {
-            average_score: components["schemas"]["QGetDashboardBundleV4GrowthWindowAverage"] | null;
-        };
-        /** QGetDashboardBundleV4HeaderMetrics */
-        QGetDashboardBundleV4HeaderMetrics: {
-            average_score: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            completion_percentage: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            first_attempt_pass_rate: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            highest_score: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            messages_per_session: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            persona_response_times: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            session_efficiency: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            stagnation_rate: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            time_spent: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-            total_attempts: components["schemas"]["QGetDashboardBundleV4MetricResponse"] | null;
-        };
-        /** QGetDashboardBundleV4Insights */
-        QGetDashboardBundleV4Insights: {
-            /** Growth */
-            growth: string | null;
-            /** Persona */
-            persona: components["schemas"]["QGetDashboardBundleV4PersonaInsight"][] | null;
-            /** Rubric Heatmap */
-            rubric_heatmap: string | null;
-            /** Attempt Improvement */
-            attempt_improvement: string | null;
-            /** Cohort */
-            cohort: components["schemas"]["QGetDashboardBundleV4CohortInsight"][] | null;
-            /** Skill Performance */
-            skill_performance: string | null;
-            /** Scenario Performance */
-            scenario_performance: string | null;
-            /** Scenario Stats */
-            scenario_stats: string | null;
-            /** Simulation Performance */
-            simulation_performance: string | null;
-            /** Simulation Composition */
-            simulation_composition: string | null;
-        };
-        /** QGetDashboardBundleV4MetricResponse */
-        QGetDashboardBundleV4MetricResponse: {
-            /** Has Data */
-            has_data: boolean | null;
-            /** Method */
-            method: string | null;
-            /** Current Value */
-            current_value: number | null;
-            /** Status */
-            status: string | null;
-            /** Trend Analysis */
-            trend_analysis: string | null;
-            /** Value Field */
-            value_field: string | null;
-            /** Key Field */
-            key_field: string | null;
-            /** Trend Data */
-            trend_data: components["schemas"]["QGetDashboardBundleV4TrendData"][] | null;
-            /** Data Points */
-            data_points: components["schemas"]["QGetDashboardBundleV4DataPoint"][] | null;
-        };
-        /** QGetDashboardBundleV4NumericAttemptFact */
-        QGetDashboardBundleV4NumericAttemptFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Level Label */
-            level_label: string | null;
-            /** Level Value */
-            level_value: number | null;
-            /** Score */
-            score: number | null;
-            /** Attempts */
-            attempts: number | null;
-        };
-        /** QGetDashboardBundleV4NumericScenarioFact */
-        QGetDashboardBundleV4NumericScenarioFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Level Label */
-            level_label: string | null;
-            /** Level Value */
-            level_value: number | null;
-        };
-        /** QGetDashboardBundleV4Parameter */
-        QGetDashboardBundleV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Numerical */
-            numerical: boolean | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-        };
-        /** QGetDashboardBundleV4PersonaColor */
-        QGetDashboardBundleV4PersonaColor: {
-            /** Persona Name */
-            persona_name: string | null;
-            /** Color */
-            color: string | null;
-        };
-        /** QGetDashboardBundleV4PersonaInsight */
-        QGetDashboardBundleV4PersonaInsight: {
-            /** Persona Name */
-            persona_name: string | null;
-            /** Insight */
-            insight: string | null;
-        };
-        /** QGetDashboardBundleV4PersonaPerformanceData */
-        QGetDashboardBundleV4PersonaPerformanceData: {
-            /** Name */
-            name: string | null;
-            /** Score */
-            score: number | null;
-            /** Sessions */
-            sessions: number | null;
-            /** Color */
-            color: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Trend Data */
-            trend_data: components["schemas"]["QGetDashboardBundleV4PersonaTrendData"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4PersonaPerformanceResponse */
-        QGetDashboardBundleV4PersonaPerformanceResponse: {
-            /** Chart Data */
-            chart_data: components["schemas"]["QGetDashboardBundleV4PersonaPerformanceData"][] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: components["schemas"]["QGetDashboardBundleV4PersonaColor"][] | null;
-        };
-        /** QGetDashboardBundleV4PersonaTrendData */
-        QGetDashboardBundleV4PersonaTrendData: {
-            /** Date */
-            date: string | null;
-            /** Score */
-            score: number | null;
-            /** Timestamp */
-            timestamp: number | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-        };
-        /** QGetDashboardBundleV4PrimaryMetrics */
-        QGetDashboardBundleV4PrimaryMetrics: {
-            growth_data: components["schemas"]["QGetDashboardBundleV4GrowthDataResponse"] | null;
-            persona_performance: components["schemas"]["QGetDashboardBundleV4PersonaPerformanceResponse"] | null;
-            rubric_heatmap: components["schemas"]["QGetDashboardBundleV4RubricHeatmapResponse"] | null;
-        };
-        /** QGetDashboardBundleV4Rubric */
-        QGetDashboardBundleV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetDashboardBundleV4RubricHeatmapCell */
-        QGetDashboardBundleV4RubricHeatmapCell: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Correlation */
-            correlation: number | null;
-            /** P Value */
-            p_value: number | null;
-            /** Color */
-            color: string | null;
-            /** Strength */
-            strength: string | null;
-            /** Data Points */
-            data_points: number | null;
-        };
-        /** QGetDashboardBundleV4RubricHeatmapResponse */
-        QGetDashboardBundleV4RubricHeatmapResponse: {
-            /** Matrices */
-            matrices: components["schemas"]["QGetDashboardBundleV4RubricMatrixPackage"][] | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4RubricHeatmapRow */
-        QGetDashboardBundleV4RubricHeatmapRow: {
-            /** Cells */
-            cells: components["schemas"]["QGetDashboardBundleV4RubricHeatmapCell"][] | null;
-        };
-        /** QGetDashboardBundleV4RubricMatrixPackage */
-        QGetDashboardBundleV4RubricMatrixPackage: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Standard Groups */
-            standard_groups: components["schemas"]["QGetDashboardBundleV4StandardGroup"][] | null;
-            /** Matrix */
-            matrix: components["schemas"]["QGetDashboardBundleV4RubricHeatmapRow"][] | null;
-            /** Insights */
-            insights: string | null;
-            /** Has Data */
-            has_data: boolean | null;
-        };
-        /** QGetDashboardBundleV4ScenarioAttributeAttemptFact */
-        QGetDashboardBundleV4ScenarioAttributeAttemptFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Timestamp */
-            timestamp: number | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Attempts */
-            attempts: number | null;
-            /** Passed Attempts */
-            passed_attempts: number | null;
-        };
-        /** QGetDashboardBundleV4ScenarioAttributeScenarioFact */
-        QGetDashboardBundleV4ScenarioAttributeScenarioFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-        };
-        /** QGetDashboardBundleV4ScenarioFact */
-        QGetDashboardBundleV4ScenarioFact: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Scenario Name */
-            scenario_name: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Success Rate */
-            success_rate: number | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Completed Attempts */
-            completed_attempts: number | null;
-        };
-        /** QGetDashboardBundleV4ScenarioPerformanceResponse */
-        QGetDashboardBundleV4ScenarioPerformanceResponse: {
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[] | null;
-            /** Attribute Attempt Facts */
-            attribute_attempt_facts: components["schemas"]["QGetDashboardBundleV4ScenarioAttributeAttemptFact"][] | null;
-            /** Attribute Scenario Facts */
-            attribute_scenario_facts: components["schemas"]["QGetDashboardBundleV4ScenarioAttributeScenarioFact"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4ScenarioStatsResponse */
-        QGetDashboardBundleV4ScenarioStatsResponse: {
-            /** Valid Numeric Parameter Ids */
-            valid_numeric_parameter_ids: string[] | null;
-            /** Numeric Attempt Facts */
-            numeric_attempt_facts: components["schemas"]["QGetDashboardBundleV4NumericAttemptFact"][] | null;
-            /** Numeric Scenario Facts */
-            numeric_scenario_facts: components["schemas"]["QGetDashboardBundleV4NumericScenarioFact"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4SecondaryMetrics */
-        QGetDashboardBundleV4SecondaryMetrics: {
-            attempt_improvement: components["schemas"]["QGetDashboardBundleV4AttemptImprovementResponse"] | null;
-            cohort_performance: components["schemas"]["QGetDashboardBundleV4CohortPerformanceResponse"] | null;
-            skill_performance: components["schemas"]["QGetDashboardBundleV4SkillPerformanceResponse"] | null;
-        };
-        /** QGetDashboardBundleV4Simulation */
-        QGetDashboardBundleV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetDashboardBundleV4SimulationCompositionResponse */
-        QGetDashboardBundleV4SimulationCompositionResponse: {
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Simulation Facts */
-            simulation_facts: components["schemas"]["QGetDashboardBundleV4SimulationFact"][] | null;
-            /** Simulation Parameter Facts Categorical */
-            simulation_parameter_facts_categorical: components["schemas"]["QGetDashboardBundleV4SimulationParameterFactCategorical"][] | null;
-            /** Simulation Parameter Facts Numeric */
-            simulation_parameter_facts_numeric: components["schemas"]["QGetDashboardBundleV4SimulationParameterFactNumeric"][] | null;
-            /** Has Data */
-            has_data: boolean | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4SimulationFact */
-        QGetDashboardBundleV4SimulationFact: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Completion Rate */
-            completion_rate: number | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Scenario Count */
-            scenario_count: number | null;
-        };
-        /** QGetDashboardBundleV4SimulationParameterFactCategorical */
-        QGetDashboardBundleV4SimulationParameterFactCategorical: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Scenario Count */
-            scenario_count: number | null;
-        };
-        /** QGetDashboardBundleV4SimulationParameterFactNumeric */
-        QGetDashboardBundleV4SimulationParameterFactNumeric: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Avg Level */
-            avg_level: number | null;
-            /** Level Label */
-            level_label: string | null;
-            /** Scenario Count */
-            scenario_count: number | null;
-        };
-        /** QGetDashboardBundleV4SimulationPerformanceResponse */
-        QGetDashboardBundleV4SimulationPerformanceResponse: {
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Scenario Facts */
-            scenario_facts: components["schemas"]["QGetDashboardBundleV4ScenarioFact"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4SkillPackage */
-        QGetDashboardBundleV4SkillPackage: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Radar Data */
-            radar_data: components["schemas"]["QGetDashboardBundleV4SkillRadarData"][] | null;
-            /** Group Facts */
-            group_facts: components["schemas"]["QGetDashboardBundleV4SkillStandardFact"][] | null;
-        };
-        /** QGetDashboardBundleV4SkillPerformanceResponse */
-        QGetDashboardBundleV4SkillPerformanceResponse: {
-            /** Packages */
-            packages: components["schemas"]["QGetDashboardBundleV4SkillPackage"][] | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QGetDashboardBundleV4SkillRadarData */
-        QGetDashboardBundleV4SkillRadarData: {
-            /** Metric */
-            metric: string | null;
-            /** Description */
-            description: string | null;
-            /** Value */
-            value: number | null;
-            /** Full Mark */
-            full_mark: number | null;
-        };
-        /** QGetDashboardBundleV4SkillStandardFact */
-        QGetDashboardBundleV4SkillStandardFact: {
-            /** Group Id */
-            group_id: string | null;
-            /** Group Name */
-            group_name: string | null;
-            /** Group Description */
-            group_description: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Points */
-            points: number | null;
-            /** Avg Pct */
-            avg_pct: number | null;
-        };
-        /** QGetDashboardBundleV4StandardGroup */
-        QGetDashboardBundleV4StandardGroup: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Short Name */
-            short_name: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-        };
-        /** QGetDashboardBundleV4Thresholds */
-        QGetDashboardBundleV4Thresholds: {
-            /** Success */
-            success: number | null;
-            /** Warning */
-            warning: number | null;
-            /** Danger */
-            danger: number | null;
-        };
-        /** QGetDashboardBundleV4TrendData */
-        QGetDashboardBundleV4TrendData: {
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetDashboardHistoryV4AttemptHistoryRow */
-        QGetDashboardHistoryV4AttemptHistoryRow: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Num Scenarios */
-            num_scenarios: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed: number | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Persona Names Junction */
-            persona_names_junction: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: string[] | null;
-            /** Score */
-            score: number | null;
-            /** Score Status */
-            score_status: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Scenario Titles */
-            scenario_titles: string[] | null;
-            /** Is Archived */
-            is_archived: boolean | null;
-            /** Show View */
-            show_view: boolean | null;
-            /** Show Continue */
-            show_continue: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id: string | null;
-        };
-        /** QGetDashboardHistoryV4ProfileOption */
-        QGetDashboardHistoryV4ProfileOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetDashboardHistoryV4ScenarioOption */
-        QGetDashboardHistoryV4ScenarioOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetDashboardHistoryV4SimulationOption */
-        QGetDashboardHistoryV4SimulationOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
         };
         /** QGetDepartmentV4Cohort */
         QGetDepartmentV4Cohort: {
@@ -17718,92 +16603,6 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
-        /** QGetEvalAttemptV4Attempt */
-        QGetEvalAttemptV4Attempt: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Eval Id */
-            eval_id: string | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-        };
-        /** QGetEvalAttemptV4Eval */
-        QGetEvalAttemptV4Eval: {
-            /** Eval Id */
-            eval_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Agent Ids */
-            agent_ids: string[] | null;
-            /** Dynamic */
-            dynamic: boolean | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Rubric Description */
-            rubric_description: string | null;
-            /** Eval Agent Id */
-            eval_agent_id: string | null;
-            /** System Prompt */
-            system_prompt: string | null;
-        };
-        /** QGetEvalAttemptV4Run */
-        QGetEvalAttemptV4Run: {
-            /** Run Id */
-            run_id: string | null;
-            /** Status */
-            status: string | null;
-            /** Test Id */
-            test_id: string | null;
-            /** Eval Run Completed */
-            eval_run_completed: boolean | null;
-            /** Eval Run Assigned At */
-            eval_run_assigned_at: string | null;
-            /** Eval Run Updated At */
-            eval_run_updated_at: string | null;
-            /** Run Created At */
-            run_created_at: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Grade Score */
-            grade_score: number | null;
-            /** Grade Passed */
-            grade_passed: boolean | null;
-            /** Grade Created At */
-            grade_created_at: string | null;
-        };
-        /** QGetEvalAttemptV4StatusSummary */
-        QGetEvalAttemptV4StatusSummary: {
-            /** Not Started */
-            not_started: number | null;
-            /** In Progress */
-            in_progress: number | null;
-            /** Completed */
-            completed: number | null;
-            /** Total */
-            total: number | null;
-        };
         /** QGetEvalV4Agent */
         QGetEvalV4Agent: {
             /** Agent Id */
@@ -18010,683 +16809,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetGeneralAttemptV4AggregatedResults */
-        QGetGeneralAttemptV4AggregatedResults: {
-            /** Total Score */
-            total_score: number | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-            /** Percentage */
-            percentage: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Chats Completed */
-            chats_completed: number | null;
-            /** Total Chats */
-            total_chats: number | null;
-        };
-        /** QGetGeneralAttemptV4AllSimulationScenario */
-        QGetGeneralAttemptV4AllSimulationScenario: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Persona Icon */
-            persona_icon: string | null;
-            /** Persona Color */
-            persona_color: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Default Scenario */
-            default_scenario: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement: boolean | null;
-            /** Show Objectives */
-            show_objectives: boolean | null;
-            /** Show Images */
-            show_images: boolean | null;
-            /** Background Image */
-            background_image: string | null;
-            /** Objectives */
-            objectives: string[] | null;
-            /** Previous Chats */
-            previous_chats: components["schemas"]["QGetGeneralAttemptV4PreviousChat"][] | null;
-        };
-        /** QGetGeneralAttemptV4Attempt */
-        QGetGeneralAttemptV4Attempt: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Profile Id */
-            profile_id: string | null;
-        };
-        /** QGetGeneralAttemptV4AttemptProfile */
-        QGetGeneralAttemptV4AttemptProfile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QGetGeneralAttemptV4AvailableContinuationOptions */
-        QGetGeneralAttemptV4AvailableContinuationOptions: {
-            /** Next Sequential Options */
-            next_sequential_options: components["schemas"]["QGetGeneralAttemptV4ContinuationOption"][] | null;
-            /** Has Options */
-            has_options: boolean | null;
-        };
-        /** QGetGeneralAttemptV4Chat */
-        QGetGeneralAttemptV4Chat: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Title */
-            title: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Completed At */
-            completed_at: string | null;
-            /** Trace Id */
-            trace_id: string | null;
-            /** Document Ids */
-            document_ids: string[] | null;
-        };
-        /** QGetGeneralAttemptV4ChatData */
-        QGetGeneralAttemptV4ChatData: {
-            chat: components["schemas"]["QGetGeneralAttemptV4Chat"] | null;
-            scenario: components["schemas"]["QGetGeneralAttemptV4Scenario"] | null;
-            /** Messages */
-            messages: components["schemas"]["QGetGeneralAttemptV4Message"][] | null;
-            grade: components["schemas"]["QGetGeneralAttemptV4Grade"] | null;
-            grading_state: components["schemas"]["QGetGeneralAttemptV4GradingState"] | null;
-            dynamic_rubric: components["schemas"]["QGetGeneralAttemptV4DynamicRubric"] | null;
-            /** Previous Chats */
-            previous_chats: components["schemas"]["QGetGeneralAttemptV4PreviousChat"][] | null;
-            /** Personas */
-            personas: components["schemas"]["QGetGeneralAttemptV4Persona"][] | null;
-            /** Content Type */
-            content_type: string | null;
-        };
-        /** QGetGeneralAttemptV4ContinuationOption */
-        QGetGeneralAttemptV4ContinuationOption: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Position */
-            position: number | null;
-            /** Scenario Name */
-            scenario_name: string | null;
-            /** Previous Chat Id */
-            previous_chat_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Score */
-            score: number | null;
-            /** Percentage */
-            percentage: number | null;
-            /** Time Taken */
-            time_taken: number | null;
-        };
-        /** QGetGeneralAttemptV4DynamicRubric */
-        QGetGeneralAttemptV4DynamicRubric: {
-            /** Chat Id */
-            chat_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Skill Scores */
-            skill_scores: components["schemas"]["QGetGeneralAttemptV4SkillScore"][] | null;
-            /** Skill Feedbacks */
-            skill_feedbacks: components["schemas"]["QGetGeneralAttemptV4SkillFeedback"][] | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-        };
-        /** QGetGeneralAttemptV4Grade */
-        QGetGeneralAttemptV4Grade: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Simulation Chat Id */
-            simulation_chat_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Score */
-            score: number | null;
-            /** Time Taken */
-            time_taken: number | null;
-        };
-        /** QGetGeneralAttemptV4GradingState */
-        QGetGeneralAttemptV4GradingState: {
-            /** Achieved Standards */
-            achieved_standards: components["schemas"]["QGetGeneralAttemptV4StandardAchievement"][] | null;
-            /** Passed Standards */
-            passed_standards: components["schemas"]["QGetGeneralAttemptV4StandardPass"][] | null;
-            /** Feedback By Standard Id */
-            feedback_by_standard_id: components["schemas"]["QGetGeneralAttemptV4StandardFeedback"][] | null;
-        };
-        /** QGetGeneralAttemptV4HighlightsEntry */
-        QGetGeneralAttemptV4HighlightsEntry: {
-            /** Section */
-            section: string | null;
-        };
-        /** QGetGeneralAttemptV4Message */
-        QGetGeneralAttemptV4Message: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Chat Id */
-            chat_id: string | null;
-            /** Content */
-            content: string | null;
-            /** Type */
-            type: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Feedbacks */
-            feedbacks: components["schemas"]["QGetGeneralAttemptV4MessageFeedback"][] | null;
-        };
-        /** QGetGeneralAttemptV4MessageFeedback */
-        QGetGeneralAttemptV4MessageFeedback: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Replaces */
-            replaces: components["schemas"]["QGetGeneralAttemptV4ReplacementsEntry"][] | null;
-            /** Highlights */
-            highlights: components["schemas"]["QGetGeneralAttemptV4HighlightsEntry"][] | null;
-        };
-        /** QGetGeneralAttemptV4Persona */
-        QGetGeneralAttemptV4Persona: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Color */
-            color: string | null;
-        };
-        /** QGetGeneralAttemptV4PreviousChat */
-        QGetGeneralAttemptV4PreviousChat: {
-            /** Chat Id */
-            chat_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Title */
-            title: string | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-            /** Percentage */
-            percentage: number | null;
-        };
-        /** QGetGeneralAttemptV4ReplacementsEntry */
-        QGetGeneralAttemptV4ReplacementsEntry: {
-            /** Section */
-            section: string | null;
-            /** Replace */
-            replace: string | null;
-        };
-        /** QGetGeneralAttemptV4RubricStructure */
-        QGetGeneralAttemptV4RubricStructure: {
-            /** Standard Groups */
-            standard_groups: components["schemas"]["QGetGeneralAttemptV4StandardGroupStandards"][] | null;
-            /** Standard Groups Mapping */
-            standard_groups_mapping: components["schemas"]["QGetGeneralAttemptV4StandardGroupMapping"][] | null;
-            /** Standards Mapping */
-            standards_mapping: components["schemas"]["QGetGeneralAttemptV4StandardMapping"][] | null;
-        };
-        /** QGetGeneralAttemptV4Scenario */
-        QGetGeneralAttemptV4Scenario: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Persona Icon */
-            persona_icon: string | null;
-            /** Persona Color */
-            persona_color: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Default Scenario */
-            default_scenario: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement: boolean | null;
-            /** Show Objectives */
-            show_objectives: boolean | null;
-            /** Show Images */
-            show_images: boolean | null;
-            /** Background Image */
-            background_image: string | null;
-            /** Objectives */
-            objectives: string[] | null;
-        };
-        /** QGetGeneralAttemptV4ScenarioDocument */
-        QGetGeneralAttemptV4ScenarioDocument: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Type */
-            type: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Extension */
-            extension: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[] | null;
-        };
-        /** QGetGeneralAttemptV4Simulation */
-        QGetGeneralAttemptV4Simulation: {
-            /** Id */
-            id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Default Simulation */
-            default_simulation: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Hints Enabled */
-            hints_enabled: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled: boolean | null;
-            /** Image Input Active */
-            image_input_active: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-        };
-        /** QGetGeneralAttemptV4SkillFeedback */
-        QGetGeneralAttemptV4SkillFeedback: {
-            /** Skill Name */
-            skill_name: string | null;
-            /** Feedback */
-            feedback: string | null;
-        };
-        /** QGetGeneralAttemptV4SkillScore */
-        QGetGeneralAttemptV4SkillScore: {
-            /** Skill Name */
-            skill_name: string | null;
-            /** Score */
-            score: number | null;
-        };
-        /** QGetGeneralAttemptV4StandardAchievement */
-        QGetGeneralAttemptV4StandardAchievement: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Achieved */
-            achieved: boolean | null;
-        };
-        /** QGetGeneralAttemptV4StandardFeedback */
-        QGetGeneralAttemptV4StandardFeedback: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Feedback */
-            feedback: string | null;
-        };
-        /** QGetGeneralAttemptV4StandardGroupMapping */
-        QGetGeneralAttemptV4StandardGroupMapping: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QGetGeneralAttemptV4StandardGroupStandards */
-        QGetGeneralAttemptV4StandardGroupStandards: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-        };
-        /** QGetGeneralAttemptV4StandardMapping */
-        QGetGeneralAttemptV4StandardMapping: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetGeneralAttemptV4StandardPass */
-        QGetGeneralAttemptV4StandardPass: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Passed */
-            passed: boolean | null;
-        };
-        /** QGetGeneralAttemptV4Timer */
-        QGetGeneralAttemptV4Timer: {
-            /** Elapsed */
-            elapsed: number | null;
-            /** Limit */
-            limit: number | null;
-            /** Exceeded */
-            exceeded: boolean | null;
-            /** Formatted */
-            formatted: string | null;
-        };
-        /** QGetHealthBundleV4HealthKpi */
-        QGetHealthBundleV4HealthKpi: {
-            /** Ok */
-            ok: boolean | null;
-            /** Latency Ms */
-            latency_ms: number | null;
-            /** Error */
-            error: string | null;
-            /** Trend */
-            trend: components["schemas"]["QGetHealthBundleV4TrendData"][] | null;
-        };
-        /** QGetHealthBundleV4HealthKpis */
-        QGetHealthBundleV4HealthKpis: {
-            websocket: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
-            redis: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
-            document: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
-            database: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
-            authentication: components["schemas"]["QGetHealthBundleV4HealthKpi"] | null;
-        };
-        /** QGetHealthBundleV4MetricsDataPoint */
-        QGetHealthBundleV4MetricsDataPoint: {
-            /** Date */
-            date: string | null;
-            /** Cpu Percent */
-            cpu_percent: number | null;
-            /** Latency Ms */
-            latency_ms: number | null;
-            /** Memory Bytes */
-            memory_bytes: number | null;
-            /** Requests Total */
-            requests_total: number | null;
-            /** Errors Total */
-            errors_total: number | null;
-            /** Sample Count */
-            sample_count: number | null;
-        };
-        /** QGetHealthBundleV4TrendData */
-        QGetHealthBundleV4TrendData: {
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Latency */
-            latency: number | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetHealthListV4Metric */
-        QGetHealthListV4Metric: {
-            /** Date */
-            date: string | null;
-            /** Cpu Percent */
-            cpu_percent: number | null;
-            /** Latency Ms */
-            latency_ms: number | null;
-            /** Memory Bytes */
-            memory_bytes: number | null;
-            /** Requests Total */
-            requests_total: number | null;
-            /** Errors Total */
-            errors_total: number | null;
-            /** Sample Count */
-            sample_count: number | null;
-        };
-        /** QGetHomeHistoryV4AttemptHistoryRow */
-        QGetHomeHistoryV4AttemptHistoryRow: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Num Scenarios */
-            num_scenarios: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed: number | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Persona Names Junction */
-            persona_names_junction: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: string[] | null;
-            /** Score */
-            score: number | null;
-            /** Score Status */
-            score_status: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Scenario Titles */
-            scenario_titles: string[] | null;
-            /** Is Archived */
-            is_archived: boolean | null;
-            /** Show View */
-            show_view: boolean | null;
-            /** Show Continue */
-            show_continue: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id: string | null;
-        };
-        /** QGetHomeHistoryV4Option */
-        QGetHomeHistoryV4Option: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetHomeOverviewV4Simulation */
-        QGetHomeOverviewV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetHomeOverviewV4SimulationItem */
-        QGetHomeOverviewV4SimulationItem: {
-            /** View Mode */
-            view_mode: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Simulation Title */
-            simulation_title: string | null;
-            /** Simulation Description */
-            simulation_description: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Num Sessions */
-            num_sessions: number | null;
-            /** Highest Score */
-            highest_score: number | null;
-            /** Standard Groups */
-            standard_groups: string[] | null;
-            /** Color */
-            color: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Has Passed */
-            has_passed: boolean | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Status */
-            status: string | null;
-            /** Completion Pct */
-            completion_pct: number | null;
-            /** Passed Count */
-            passed_count: number | null;
-            /** In Progress Count */
-            in_progress_count: number | null;
-            /** Not Started Count */
-            not_started_count: number | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Cohort Name */
-            cohort_name: string | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string | null;
-        };
-        /** QGetHomeOverviewV4Standard */
-        QGetHomeOverviewV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetHomeOverviewV4StandardGroup */
-        QGetHomeOverviewV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
         /** QGetIconsV4Item */
         QGetIconsV4Item: {
             /** Id */
@@ -18721,97 +16843,6 @@ export interface components {
             template: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetLeaderboardBundleV4Metric */
-        QGetLeaderboardBundleV4Metric: {
-            /** Has Data */
-            has_data: boolean | null;
-            /** Method */
-            method: string | null;
-            /** Current Value */
-            current_value: number | null;
-            /** Key Field */
-            key_field: string | null;
-            /** Trend Data */
-            trend_data: string[] | null;
-            /** Data Points */
-            data_points: string[] | null;
-            /** Hover */
-            hover: string | null;
-        };
-        /** QGetLeaderboardBundleV4Metrics */
-        QGetLeaderboardBundleV4Metrics: {
-            total_attempts: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            highest_score_avg: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            messages_per_session: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            persona_response_seconds: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            time_spent_minutes: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            improvement_rate_per_day: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            perfect_score_count: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-            quickest_pass_minutes: components["schemas"]["QGetLeaderboardBundleV4Metric"] | null;
-        };
-        /** QGetLeaderboardBundleV4Row */
-        QGetLeaderboardBundleV4Row: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            metrics: components["schemas"]["QGetLeaderboardBundleV4Metrics"] | null;
-        };
-        /** QGetLeaderboardBundleV4Scenario */
-        QGetLeaderboardBundleV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetLeaderboardBundleV4Simulation */
-        QGetLeaderboardBundleV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetLeaderboardListV4Row */
-        QGetLeaderboardListV4Row: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Highest Score */
-            highest_score: number | null;
-            /** Avg Messages */
-            avg_messages: number | null;
-            /** Persona Response Time */
-            persona_response_time: number | null;
-            /** Total Time */
-            total_time: number | null;
-            /** Improvement Rate */
-            improvement_rate: number | null;
-            /** Perfect Count */
-            perfect_count: number | null;
-            /** Quickest Pass */
-            quickest_pass: number | null;
-            /** Rank */
-            rank: number | null;
         };
         /** QGetLoginDataV4Department */
         QGetLoginDataV4Department: {
@@ -19273,893 +17304,6 @@ export interface components {
             examples: string[] | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetPracticeAttemptV4AggregatedResults */
-        QGetPracticeAttemptV4AggregatedResults: {
-            /** Total Score */
-            total_score: number | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-            /** Percentage */
-            percentage: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Chats Completed */
-            chats_completed: number | null;
-            /** Total Chats */
-            total_chats: number | null;
-        };
-        /** QGetPracticeAttemptV4AllSimulationScenario */
-        QGetPracticeAttemptV4AllSimulationScenario: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Persona Icon */
-            persona_icon: string | null;
-            /** Persona Color */
-            persona_color: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Default Scenario */
-            default_scenario: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement: boolean | null;
-            /** Show Objectives */
-            show_objectives: boolean | null;
-            /** Show Images */
-            show_images: boolean | null;
-            /** Background Image */
-            background_image: string | null;
-            /** Objectives */
-            objectives: string[] | null;
-        };
-        /** QGetPracticeAttemptV4Attempt */
-        QGetPracticeAttemptV4Attempt: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Profile Id */
-            profile_id: string | null;
-        };
-        /** QGetPracticeAttemptV4AttemptProfile */
-        QGetPracticeAttemptV4AttemptProfile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QGetPracticeAttemptV4Chat */
-        QGetPracticeAttemptV4Chat: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Title */
-            title: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Completed At */
-            completed_at: string | null;
-            /** Trace Id */
-            trace_id: string | null;
-            /** Document Ids */
-            document_ids: string[] | null;
-        };
-        /** QGetPracticeAttemptV4ChatData */
-        QGetPracticeAttemptV4ChatData: {
-            chat: components["schemas"]["QGetPracticeAttemptV4Chat"] | null;
-            scenario: components["schemas"]["QGetPracticeAttemptV4Scenario"] | null;
-            /** Messages */
-            messages: components["schemas"]["QGetPracticeAttemptV4Message"][] | null;
-            /** Hints */
-            hints: components["schemas"]["QGetPracticeAttemptV4HintsByMessage"][] | null;
-            grade: components["schemas"]["QGetPracticeAttemptV4Grade"] | null;
-            grading_state: components["schemas"]["QGetPracticeAttemptV4GradingState"] | null;
-            dynamic_rubric: components["schemas"]["QGetPracticeAttemptV4DynamicRubric"] | null;
-            /** Personas */
-            personas: components["schemas"]["QGetPracticeAttemptV4Persona"][] | null;
-            /** Content Type */
-            content_type: string | null;
-        };
-        /** QGetPracticeAttemptV4DynamicRubric */
-        QGetPracticeAttemptV4DynamicRubric: {
-            /** Chat Id */
-            chat_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Skill Scores */
-            skill_scores: components["schemas"]["QGetPracticeAttemptV4SkillScore"][] | null;
-            /** Skill Feedbacks */
-            skill_feedbacks: components["schemas"]["QGetPracticeAttemptV4SkillFeedback"][] | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-        };
-        /** QGetPracticeAttemptV4Grade */
-        QGetPracticeAttemptV4Grade: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Simulation Chat Id */
-            simulation_chat_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Score */
-            score: number | null;
-            /** Time Taken */
-            time_taken: number | null;
-        };
-        /** QGetPracticeAttemptV4GradingState */
-        QGetPracticeAttemptV4GradingState: {
-            /** Achieved Standards */
-            achieved_standards: components["schemas"]["QGetPracticeAttemptV4StandardAchievement"][] | null;
-            /** Passed Standards */
-            passed_standards: components["schemas"]["QGetPracticeAttemptV4StandardPass"][] | null;
-            /** Feedback By Standard Id */
-            feedback_by_standard_id: components["schemas"]["QGetPracticeAttemptV4StandardFeedback"][] | null;
-        };
-        /** QGetPracticeAttemptV4HighlightsEntry */
-        QGetPracticeAttemptV4HighlightsEntry: {
-            /** Section */
-            section: string | null;
-        };
-        /** QGetPracticeAttemptV4Hint */
-        QGetPracticeAttemptV4Hint: {
-            /** Simulation Message Id */
-            simulation_message_id: string | null;
-            /** Hint */
-            hint: string | null;
-            /** Idx */
-            idx: number | null;
-            /** Created At */
-            created_at: string | null;
-        };
-        /** QGetPracticeAttemptV4HintsByMessage */
-        QGetPracticeAttemptV4HintsByMessage: {
-            /** Message Id */
-            message_id: string | null;
-            /** Hints */
-            hints: components["schemas"]["QGetPracticeAttemptV4Hint"][] | null;
-        };
-        /** QGetPracticeAttemptV4Message */
-        QGetPracticeAttemptV4Message: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Chat Id */
-            chat_id: string | null;
-            /** Content */
-            content: string | null;
-            /** Type */
-            type: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Feedbacks */
-            feedbacks: components["schemas"]["QGetPracticeAttemptV4MessageFeedback"][] | null;
-        };
-        /** QGetPracticeAttemptV4MessageFeedback */
-        QGetPracticeAttemptV4MessageFeedback: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Replaces */
-            replaces: components["schemas"]["QGetPracticeAttemptV4ReplacementsEntry"][] | null;
-            /** Highlights */
-            highlights: components["schemas"]["QGetPracticeAttemptV4HighlightsEntry"][] | null;
-        };
-        /** QGetPracticeAttemptV4Persona */
-        QGetPracticeAttemptV4Persona: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Color */
-            color: string | null;
-        };
-        /** QGetPracticeAttemptV4ReplacementsEntry */
-        QGetPracticeAttemptV4ReplacementsEntry: {
-            /** Section */
-            section: string | null;
-            /** Replace */
-            replace: string | null;
-        };
-        /** QGetPracticeAttemptV4RubricStructure */
-        QGetPracticeAttemptV4RubricStructure: {
-            /** Standard Groups */
-            standard_groups: components["schemas"]["QGetPracticeAttemptV4StandardGroupStandards"][] | null;
-            /** Standard Groups Mapping */
-            standard_groups_mapping: components["schemas"]["QGetPracticeAttemptV4StandardGroupMapping"][] | null;
-            /** Standards Mapping */
-            standards_mapping: components["schemas"]["QGetPracticeAttemptV4StandardMapping"][] | null;
-        };
-        /** QGetPracticeAttemptV4Scenario */
-        QGetPracticeAttemptV4Scenario: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Persona Icon */
-            persona_icon: string | null;
-            /** Persona Color */
-            persona_color: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Default Scenario */
-            default_scenario: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement: boolean | null;
-            /** Show Objectives */
-            show_objectives: boolean | null;
-            /** Show Images */
-            show_images: boolean | null;
-            /** Background Image */
-            background_image: string | null;
-            /** Objectives */
-            objectives: string[] | null;
-        };
-        /** QGetPracticeAttemptV4ScenarioDocument */
-        QGetPracticeAttemptV4ScenarioDocument: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Type */
-            type: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Extension */
-            extension: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[] | null;
-        };
-        /** QGetPracticeAttemptV4Simulation */
-        QGetPracticeAttemptV4Simulation: {
-            /** Id */
-            id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Default Simulation */
-            default_simulation: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Hints Enabled */
-            hints_enabled: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled: boolean | null;
-            /** Image Input Active */
-            image_input_active: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-        };
-        /** QGetPracticeAttemptV4SkillFeedback */
-        QGetPracticeAttemptV4SkillFeedback: {
-            /** Skill Name */
-            skill_name: string | null;
-            /** Feedback */
-            feedback: string | null;
-        };
-        /** QGetPracticeAttemptV4SkillScore */
-        QGetPracticeAttemptV4SkillScore: {
-            /** Skill Name */
-            skill_name: string | null;
-            /** Score */
-            score: number | null;
-        };
-        /** QGetPracticeAttemptV4StandardAchievement */
-        QGetPracticeAttemptV4StandardAchievement: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Achieved */
-            achieved: boolean | null;
-        };
-        /** QGetPracticeAttemptV4StandardFeedback */
-        QGetPracticeAttemptV4StandardFeedback: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Feedback */
-            feedback: string | null;
-        };
-        /** QGetPracticeAttemptV4StandardGroupMapping */
-        QGetPracticeAttemptV4StandardGroupMapping: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QGetPracticeAttemptV4StandardGroupStandards */
-        QGetPracticeAttemptV4StandardGroupStandards: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-        };
-        /** QGetPracticeAttemptV4StandardMapping */
-        QGetPracticeAttemptV4StandardMapping: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetPracticeAttemptV4StandardPass */
-        QGetPracticeAttemptV4StandardPass: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Passed */
-            passed: boolean | null;
-        };
-        /** QGetPracticeAttemptV4Timer */
-        QGetPracticeAttemptV4Timer: {
-            /** Elapsed */
-            elapsed: number | null;
-            /** Limit */
-            limit: number | null;
-            /** Exceeded */
-            exceeded: boolean | null;
-            /** Formatted */
-            formatted: string | null;
-        };
-        /** QGetPracticeHistoryV4Attempt */
-        QGetPracticeHistoryV4Attempt: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Num Scenarios */
-            num_scenarios: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed: number | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Persona Names Junction */
-            persona_names_junction: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: string[] | null;
-            /** Score */
-            score: number | null;
-            /** Score Status */
-            score_status: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Scenario Titles */
-            scenario_titles: string[] | null;
-            /** Is Archived */
-            is_archived: boolean | null;
-            /** Show View */
-            show_view: boolean | null;
-            /** Show Continue */
-            show_continue: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id: string | null;
-        };
-        /** QGetPracticeHistoryV4ProfileOption */
-        QGetPracticeHistoryV4ProfileOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetPracticeHistoryV4ScenarioOption */
-        QGetPracticeHistoryV4ScenarioOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetPracticeHistoryV4SimulationOption */
-        QGetPracticeHistoryV4SimulationOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetPracticeOverviewV4Department */
-        QGetPracticeOverviewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetPracticeOverviewV4Field */
-        QGetPracticeOverviewV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
-        /** QGetPracticeOverviewV4Parameter */
-        QGetPracticeOverviewV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-        };
-        /** QGetPracticeOverviewV4Persona */
-        QGetPracticeOverviewV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string | null;
-            /** Icon */
-            icon: string | null;
-        };
-        /** QGetPracticeOverviewV4PracticeSimulation */
-        QGetPracticeOverviewV4PracticeSimulation: {
-            /** View Mode */
-            view_mode: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Simulation Title */
-            simulation_title: string | null;
-            /** Simulation Description */
-            simulation_description: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Num Sessions */
-            num_sessions: number | null;
-            /** Highest Score */
-            highest_score: number | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Color */
-            color: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Has Passed */
-            has_passed: boolean | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Status */
-            status: string | null;
-            /** Completion Pct */
-            completion_pct: number | null;
-            /** Passed Count */
-            passed_count: number | null;
-            /** In Progress Count */
-            in_progress_count: number | null;
-            /** Not Started Count */
-            not_started_count: number | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Cohort Name */
-            cohort_name: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Last Activity Ts */
-            last_activity_ts: string | null;
-            /** Has Activity */
-            has_activity: boolean | null;
-            /** Standard Groups */
-            standard_groups: string[] | null;
-        };
-        /** QGetPracticeOverviewV4Scenario */
-        QGetPracticeOverviewV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
-        };
-        /** QGetPracticeOverviewV4Simulation */
-        QGetPracticeOverviewV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetPracticeOverviewV4Standard */
-        QGetPracticeOverviewV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetPracticeOverviewV4StandardGroup */
-        QGetPracticeOverviewV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QGetPricingAnalyticsV4Agent */
-        QGetPricingAnalyticsV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-        };
-        /** QGetPricingAnalyticsV4DebugInfo */
-        QGetPricingAnalyticsV4DebugInfo: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Content */
-            content: string | null;
-        };
-        /** QGetPricingAnalyticsV4Model */
-        QGetPricingAnalyticsV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Input Ppm */
-            input_ppm: number | null;
-            /** Output Ppm */
-            output_ppm: number | null;
-        };
-        /** QGetPricingAnalyticsV4ModelRun */
-        QGetPricingAnalyticsV4ModelRun: {
-            /** Run Id */
-            run_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Input Tokens */
-            input_tokens: number | null;
-            /** Output Tokens */
-            output_tokens: number | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Run Cost */
-            run_cost: number | null;
-            /** Debug Info */
-            debug_info: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
-        };
-        /** QGetPricingAnalyticsV4Profile */
-        QGetPricingAnalyticsV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-        };
-        /** QGetPricingGroupDetailV4Agent */
-        QGetPricingGroupDetailV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-        };
-        /** QGetPricingGroupDetailV4Content */
-        QGetPricingGroupDetailV4Content: {
-            /** Idx */
-            idx: number | null;
-            /** Content */
-            content: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-        };
-        /** QGetPricingGroupDetailV4Message */
-        QGetPricingGroupDetailV4Message: {
-            /** Id */
-            id: string | null;
-            /** Role */
-            role: string | null;
-            /** Contents */
-            contents: components["schemas"]["QGetPricingGroupDetailV4Content"][] | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Run Idx */
-            run_idx: number | null;
-            /** Depth */
-            depth: number | null;
-        };
-        /** QGetPricingGroupDetailV4Model */
-        QGetPricingGroupDetailV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetPricingGroupDetailV4Profile */
-        QGetPricingGroupDetailV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-        };
-        /** QGetPricingGroupDetailV4RunMetadata */
-        QGetPricingGroupDetailV4RunMetadata: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Input Tokens */
-            input_tokens: number | null;
-            /** Output Tokens */
-            output_tokens: number | null;
-            /** Cached Input Tokens */
-            cached_input_tokens: number | null;
-            /** Cost */
-            cost: number | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-        };
-        /** QGetPricingGroupDetailV4RunWithMessages */
-        QGetPricingGroupDetailV4RunWithMessages: {
-            run: components["schemas"]["QGetPricingGroupDetailV4RunMetadata"] | null;
-            /** Messages */
-            messages: components["schemas"]["QGetPricingGroupDetailV4Message"][] | null;
-            /** Previous Context Start Index */
-            previous_context_start_index: number | null;
-        };
-        /** QGetPricingRunsV4Agent */
-        QGetPricingRunsV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-        };
-        /** QGetPricingRunsV4DebugInfo */
-        QGetPricingRunsV4DebugInfo: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Content */
-            content: string | null;
-        };
-        /** QGetPricingRunsV4FilterOption */
-        QGetPricingRunsV4FilterOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QGetPricingRunsV4GroupRun */
-        QGetPricingRunsV4GroupRun: {
-            /** Group Id */
-            group_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Run Count */
-            run_count: number | null;
-            /** Total Input Tokens */
-            total_input_tokens: number | null;
-            /** Total Output Tokens */
-            total_output_tokens: number | null;
-            /** Total Cost */
-            total_cost: number | null;
-            /** Runs */
-            runs: components["schemas"]["QGetPricingRunsV4RunSummary"][] | null;
-        };
-        /** QGetPricingRunsV4Model */
-        QGetPricingRunsV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Input Ppm */
-            input_ppm: number | null;
-            /** Output Ppm */
-            output_ppm: number | null;
-        };
-        /** QGetPricingRunsV4Profile */
-        QGetPricingRunsV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-        };
-        /** QGetPricingRunsV4RunSummary */
-        QGetPricingRunsV4RunSummary: {
-            /** Run Id */
-            run_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Input Tokens */
-            input_tokens: number | null;
-            /** Output Tokens */
-            output_tokens: number | null;
-            /** Cost */
-            cost: number | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Debug Info */
-            debug_info: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
         };
         /** QGetProblemStatementsV4Item */
         QGetProblemStatementsV4Item: {
@@ -21027,581 +18171,6 @@ export interface components {
             /** Value */
             value?: string | null;
         };
-        /** QGetSimulationAttemptV4AggregatedResults */
-        QGetSimulationAttemptV4AggregatedResults: {
-            /** Total Score */
-            total_score: number | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-            /** Percentage */
-            percentage: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Chats Completed */
-            chats_completed: number | null;
-            /** Total Chats */
-            total_chats: number | null;
-        };
-        /** QGetSimulationAttemptV4AllSimulationScenario */
-        QGetSimulationAttemptV4AllSimulationScenario: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Persona Icon */
-            persona_icon: string | null;
-            /** Persona Color */
-            persona_color: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Default Scenario */
-            default_scenario: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement: boolean | null;
-            /** Show Objectives */
-            show_objectives: boolean | null;
-            /** Show Images */
-            show_images: boolean | null;
-            /** Background Image */
-            background_image: string | null;
-            /** Objectives */
-            objectives: string[] | null;
-            /** Previous Chats */
-            previous_chats: components["schemas"]["QGetSimulationAttemptV4PreviousChat"][] | null;
-        };
-        /** QGetSimulationAttemptV4Attempt */
-        QGetSimulationAttemptV4Attempt: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Profile Id */
-            profile_id: string | null;
-        };
-        /** QGetSimulationAttemptV4AttemptProfile */
-        QGetSimulationAttemptV4AttemptProfile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QGetSimulationAttemptV4AvailableContinuationOptions */
-        QGetSimulationAttemptV4AvailableContinuationOptions: {
-            /** Next Sequential Options */
-            next_sequential_options: components["schemas"]["QGetSimulationAttemptV4ContinuationOption"][] | null;
-            /** Has Options */
-            has_options: boolean | null;
-        };
-        /** QGetSimulationAttemptV4Chat */
-        QGetSimulationAttemptV4Chat: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Title */
-            title: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Completed At */
-            completed_at: string | null;
-            /** Trace Id */
-            trace_id: string | null;
-            /** Document Ids */
-            document_ids: string[] | null;
-        };
-        /** QGetSimulationAttemptV4ChatData */
-        QGetSimulationAttemptV4ChatData: {
-            chat: components["schemas"]["QGetSimulationAttemptV4Chat"] | null;
-            scenario: components["schemas"]["QGetSimulationAttemptV4Scenario"] | null;
-            /** Messages */
-            messages: components["schemas"]["QGetSimulationAttemptV4Message"][] | null;
-            /** Hints */
-            hints: components["schemas"]["QGetSimulationAttemptV4HintsByMessage"][] | null;
-            grade: components["schemas"]["QGetSimulationAttemptV4Grade"] | null;
-            grading_state: components["schemas"]["QGetSimulationAttemptV4GradingState"] | null;
-            dynamic_rubric: components["schemas"]["QGetSimulationAttemptV4DynamicRubric"] | null;
-            /** Previous Chats */
-            previous_chats: components["schemas"]["QGetSimulationAttemptV4PreviousChat"][] | null;
-            /** Personas */
-            personas: components["schemas"]["QGetSimulationAttemptV4Persona"][] | null;
-            /** Content Type */
-            content_type: string | null;
-            video: components["schemas"]["QGetSimulationAttemptV4Video"] | null;
-            quiz: components["schemas"]["QGetSimulationAttemptV4Quiz"] | null;
-        };
-        /** QGetSimulationAttemptV4ContinuationOption */
-        QGetSimulationAttemptV4ContinuationOption: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Position */
-            position: number | null;
-            /** Scenario Name */
-            scenario_name: string | null;
-            /** Previous Chat Id */
-            previous_chat_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Score */
-            score: number | null;
-            /** Percentage */
-            percentage: number | null;
-            /** Time Taken */
-            time_taken: number | null;
-        };
-        /** QGetSimulationAttemptV4DynamicRubric */
-        QGetSimulationAttemptV4DynamicRubric: {
-            /** Chat Id */
-            chat_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Skill Scores */
-            skill_scores: components["schemas"]["QGetSimulationAttemptV4SkillScore"][] | null;
-            /** Skill Feedbacks */
-            skill_feedbacks: components["schemas"]["QGetSimulationAttemptV4SkillFeedback"][] | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-        };
-        /** QGetSimulationAttemptV4Grade */
-        QGetSimulationAttemptV4Grade: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Simulation Chat Id */
-            simulation_chat_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Score */
-            score: number | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Total Points */
-            total_points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QGetSimulationAttemptV4GradingState */
-        QGetSimulationAttemptV4GradingState: {
-            /** Achieved Standards */
-            achieved_standards: components["schemas"]["QGetSimulationAttemptV4StandardAchievement"][] | null;
-            /** Passed Standards */
-            passed_standards: components["schemas"]["QGetSimulationAttemptV4StandardPass"][] | null;
-            /** Feedback By Standard Id */
-            feedback_by_standard_id: components["schemas"]["QGetSimulationAttemptV4StandardFeedback"][] | null;
-        };
-        /** QGetSimulationAttemptV4HighlightsEntry */
-        QGetSimulationAttemptV4HighlightsEntry: {
-            /** Section */
-            section: string | null;
-        };
-        /** QGetSimulationAttemptV4Hint */
-        QGetSimulationAttemptV4Hint: {
-            /** Simulation Message Id */
-            simulation_message_id: string | null;
-            /** Hint */
-            hint: string | null;
-            /** Idx */
-            idx: number | null;
-            /** Created At */
-            created_at: string | null;
-        };
-        /** QGetSimulationAttemptV4HintsByMessage */
-        QGetSimulationAttemptV4HintsByMessage: {
-            /** Message Id */
-            message_id: string | null;
-            /** Hints */
-            hints: components["schemas"]["QGetSimulationAttemptV4Hint"][] | null;
-        };
-        /** QGetSimulationAttemptV4Message */
-        QGetSimulationAttemptV4Message: {
-            /** Id */
-            id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Chat Id */
-            chat_id: string | null;
-            /** Content */
-            content: string | null;
-            /** Type */
-            type: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Feedbacks */
-            feedbacks: components["schemas"]["QGetSimulationAttemptV4MessageFeedback"][] | null;
-        };
-        /** QGetSimulationAttemptV4MessageFeedback */
-        QGetSimulationAttemptV4MessageFeedback: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Replaces */
-            replaces: components["schemas"]["QGetSimulationAttemptV4ReplacementsEntry"][] | null;
-            /** Highlights */
-            highlights: components["schemas"]["QGetSimulationAttemptV4HighlightsEntry"][] | null;
-        };
-        /** QGetSimulationAttemptV4Option */
-        QGetSimulationAttemptV4Option: {
-            /** Id */
-            id: string | null;
-            /** Option Text */
-            option_text: string | null;
-            /** Type */
-            type: string | null;
-            /** Is Correct */
-            is_correct: boolean | null;
-        };
-        /** QGetSimulationAttemptV4Persona */
-        QGetSimulationAttemptV4Persona: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Color */
-            color: string | null;
-        };
-        /** QGetSimulationAttemptV4PreviousChat */
-        QGetSimulationAttemptV4PreviousChat: {
-            /** Chat Id */
-            chat_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Passed */
-            passed: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Title */
-            title: string | null;
-            /** Time Taken */
-            time_taken: number | null;
-            /** Total Possible Points */
-            total_possible_points: number | null;
-            /** Percentage */
-            percentage: number | null;
-        };
-        /** QGetSimulationAttemptV4Question */
-        QGetSimulationAttemptV4Question: {
-            /** Id */
-            id: string | null;
-            /** Question Text */
-            question_text: string | null;
-            /** Type */
-            type: string | null;
-            /** Allow Multiple */
-            allow_multiple: boolean | null;
-            /** Times */
-            times: number[] | null;
-            /** Options */
-            options: components["schemas"]["QGetSimulationAttemptV4Option"][] | null;
-        };
-        /** QGetSimulationAttemptV4Quiz */
-        QGetSimulationAttemptV4Quiz: {
-            /** Id */
-            id: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Responses */
-            responses: components["schemas"]["QGetSimulationAttemptV4QuizResponse"][] | null;
-        };
-        /** QGetSimulationAttemptV4QuizResponse */
-        QGetSimulationAttemptV4QuizResponse: {
-            /** Question Id */
-            question_id: string | null;
-            /** Option Id */
-            option_id: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Created At */
-            created_at: string | null;
-        };
-        /** QGetSimulationAttemptV4ReplacementsEntry */
-        QGetSimulationAttemptV4ReplacementsEntry: {
-            /** Section */
-            section: string | null;
-            /** Replace */
-            replace: string | null;
-        };
-        /** QGetSimulationAttemptV4RubricStructure */
-        QGetSimulationAttemptV4RubricStructure: {
-            /** Standard Groups */
-            standard_groups: components["schemas"]["QGetSimulationAttemptV4StandardGroupStandards"][] | null;
-            /** Standard Groups Mapping */
-            standard_groups_mapping: components["schemas"]["QGetSimulationAttemptV4StandardGroupMapping"][] | null;
-            /** Standards Mapping */
-            standards_mapping: components["schemas"]["QGetSimulationAttemptV4StandardMapping"][] | null;
-        };
-        /** QGetSimulationAttemptV4Scenario */
-        QGetSimulationAttemptV4Scenario: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Problem Statement */
-            problem_statement: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Persona Icon */
-            persona_icon: string | null;
-            /** Persona Color */
-            persona_color: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Generated */
-            generated: boolean | null;
-            /** Default Scenario */
-            default_scenario: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement: boolean | null;
-            /** Show Objectives */
-            show_objectives: boolean | null;
-            /** Show Images */
-            show_images: boolean | null;
-            /** Background Image */
-            background_image: string | null;
-            /** Objectives */
-            objectives: string[] | null;
-        };
-        /** QGetSimulationAttemptV4ScenarioDocument */
-        QGetSimulationAttemptV4ScenarioDocument: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Type */
-            type: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Extension */
-            extension: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Field Ids */
-            field_ids: string[] | null;
-        };
-        /** QGetSimulationAttemptV4Simulation */
-        QGetSimulationAttemptV4Simulation: {
-            /** Id */
-            id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Department Id */
-            department_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Default Simulation */
-            default_simulation: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Hints Enabled */
-            hints_enabled: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled: boolean | null;
-            /** Image Input Active */
-            image_input_active: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-        };
-        /** QGetSimulationAttemptV4SkillFeedback */
-        QGetSimulationAttemptV4SkillFeedback: {
-            /** Skill Name */
-            skill_name: string | null;
-            /** Feedback */
-            feedback: string | null;
-        };
-        /** QGetSimulationAttemptV4SkillScore */
-        QGetSimulationAttemptV4SkillScore: {
-            /** Skill Name */
-            skill_name: string | null;
-            /** Score */
-            score: number | null;
-        };
-        /** QGetSimulationAttemptV4StandardAchievement */
-        QGetSimulationAttemptV4StandardAchievement: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Achieved */
-            achieved: boolean | null;
-        };
-        /** QGetSimulationAttemptV4StandardFeedback */
-        QGetSimulationAttemptV4StandardFeedback: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Feedback */
-            feedback: string | null;
-        };
-        /** QGetSimulationAttemptV4StandardGroupMapping */
-        QGetSimulationAttemptV4StandardGroupMapping: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QGetSimulationAttemptV4StandardGroupStandards */
-        QGetSimulationAttemptV4StandardGroupStandards: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-        };
-        /** QGetSimulationAttemptV4StandardMapping */
-        QGetSimulationAttemptV4StandardMapping: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetSimulationAttemptV4StandardPass */
-        QGetSimulationAttemptV4StandardPass: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Passed */
-            passed: boolean | null;
-        };
-        /** QGetSimulationAttemptV4Timer */
-        QGetSimulationAttemptV4Timer: {
-            /** Elapsed */
-            elapsed: number | null;
-            /** Limit */
-            limit: number | null;
-            /** Exceeded */
-            exceeded: boolean | null;
-            /** Formatted */
-            formatted: string | null;
-        };
-        /** QGetSimulationAttemptV4Video */
-        QGetSimulationAttemptV4Video: {
-            /** Id */
-            id: string | null;
-            /** Title */
-            title: string | null;
-            /** Length Seconds */
-            length_seconds: number | null;
-            /** Upload Id */
-            upload_id: string | null;
-            /** Video Documents */
-            video_documents: components["schemas"]["QGetSimulationAttemptV4VideoDocument"][] | null;
-            /** Questions */
-            questions: components["schemas"]["QGetSimulationAttemptV4Question"][] | null;
-            /** Show Image */
-            show_image: boolean | null;
-        };
-        /** QGetSimulationAttemptV4VideoDocument */
-        QGetSimulationAttemptV4VideoDocument: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Extension */
-            extension: string | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
-        };
         /** QGetTemplatesV4Item */
         QGetTemplatesV4Item: {
             /** Template Id */
@@ -21924,114 +18493,6 @@ export interface components {
             value: string | null;
             /** Label */
             label: string | null;
-        };
-        /** QListEvalsV4Agent */
-        QListEvalsV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListEvalsV4Department */
-        QListEvalsV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QListEvalsV4Eval */
-        QListEvalsV4Eval: {
-            /** Eval Id */
-            eval_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Agent Ids */
-            agent_ids: string[] | null;
-            /** Use Groups */
-            use_groups: boolean | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Rubric Description */
-            rubric_description: string | null;
-            /** Total Runs */
-            total_runs: number | null;
-            /** Completed Runs */
-            completed_runs: number | null;
-            /** Pending Runs */
-            pending_runs: number | null;
-            /** Status */
-            status: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-        };
-        /** QListEvalsV4Option */
-        QListEvalsV4Option: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QListEvalsV4Rubric */
-        QListEvalsV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-        };
-        /** QListEvalsV4RubricStandardGroup */
-        QListEvalsV4RubricStandardGroup: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-        };
-        /** QListEvalsV4Standard */
-        QListEvalsV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QListEvalsV4StandardGroup */
-        QListEvalsV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
         };
         /** QListFieldsV4Department */
         QListFieldsV4Department: {
@@ -22493,826 +18954,6 @@ export interface components {
             /** Errors */
             errors: components["schemas"]["QProcessDocumentCsvV4CsvRowError"][] | null;
         };
-        /** QReportsBundleV4DataPoint */
-        QReportsBundleV4DataPoint: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-        };
-        /** QReportsBundleV4FilterOption */
-        QReportsBundleV4FilterOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QReportsBundleV4Hover */
-        QReportsBundleV4Hover: {
-            /** Mean */
-            mean: number | null;
-            /** Median */
-            median: number | null;
-            /** Mode */
-            mode: number | null;
-            /** Count */
-            count: number | null;
-            /** Completed */
-            completed: number | null;
-            /** Total */
-            total: number | null;
-            /** Percent */
-            percent: number | null;
-            /** Top */
-            top: number[] | null;
-            /** Mean Seconds */
-            mean_seconds: number | null;
-            /** Median Seconds */
-            median_seconds: number | null;
-            /** Samples */
-            samples: number | null;
-            /** Avg Score Percent */
-            avg_score_percent: number | null;
-            /** Avg Minutes */
-            avg_minutes: number | null;
-            /** Efficiency */
-            efficiency: number | null;
-            /** Tracked */
-            tracked: number | null;
-            /** Stagnant */
-            stagnant: number | null;
-            /** Rate Percent */
-            rate_percent: number | null;
-            /** Total Minutes */
-            total_minutes: number | null;
-            /** Total Hours */
-            total_hours: number | null;
-            /** Attempts */
-            attempts: number | null;
-            /** Unique Simulations */
-            unique_simulations: number | null;
-            /** Per Simulation Mean */
-            per_simulation_mean: number | null;
-        };
-        /** QReportsBundleV4Metric */
-        QReportsBundleV4Metric: {
-            /** Has Data */
-            has_data: boolean | null;
-            /** Method */
-            method: string | null;
-            /** Current Value */
-            current_value: number | null;
-            /** Data Points */
-            data_points: components["schemas"]["QReportsBundleV4DataPoint"][] | null;
-            hover: components["schemas"]["QReportsBundleV4Hover"] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsBundleV4Profile */
-        QReportsBundleV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Emails */
-            emails: string[] | null;
-            /** Primary Email */
-            primary_email: string | null;
-            /** Role */
-            role: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            profile_metrics: components["schemas"]["QReportsBundleV4ProfileMetrics"] | null;
-        };
-        /** QReportsBundleV4ProfileMetrics */
-        QReportsBundleV4ProfileMetrics: {
-            average_score: components["schemas"]["QReportsBundleV4Metric"] | null;
-            completion_percentage: components["schemas"]["QReportsBundleV4Metric"] | null;
-            first_attempt_pass_rate: components["schemas"]["QReportsBundleV4Metric"] | null;
-            highest_score: components["schemas"]["QReportsBundleV4Metric"] | null;
-            messages_per_session: components["schemas"]["QReportsBundleV4Metric"] | null;
-            persona_response_times: components["schemas"]["QReportsBundleV4Metric"] | null;
-            session_efficiency: components["schemas"]["QReportsBundleV4Metric"] | null;
-            stagnation_rate: components["schemas"]["QReportsBundleV4Metric"] | null;
-            time_spent: components["schemas"]["QReportsBundleV4Metric"] | null;
-            total_attempts: components["schemas"]["QReportsBundleV4Metric"] | null;
-        };
-        /** QReportsBundleV4Scenario */
-        QReportsBundleV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QReportsBundleV4Simulation */
-        QReportsBundleV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Points Junction */
-            rubric_points_junction: number | null;
-            /** Rubric Pass Points */
-            rubric_pass_points: number | null;
-        };
-        /** QReportsOverviewV4AttemptHistoryRow */
-        QReportsOverviewV4AttemptHistoryRow: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Simulation Name */
-            simulation_name: string | null;
-            /** Num Scenarios */
-            num_scenarios: number | null;
-            /** Num Scenarios Completed */
-            num_scenarios_completed: number | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Persona Names Junction */
-            persona_names_junction: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: string[] | null;
-            /** Score */
-            score: number | null;
-            /** Score Status */
-            score_status: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Scenario Titles */
-            scenario_titles: string[] | null;
-            /** Is Archived */
-            is_archived: boolean | null;
-            /** Show View */
-            show_view: boolean | null;
-            /** Show Continue */
-            show_continue: boolean | null;
-            /** Practice Simulation */
-            practice_simulation: boolean | null;
-            /** Pass Pct */
-            pass_pct: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Cohort Names Junction */
-            cohort_names_junction: string[] | null;
-            /** Practice Scenario Id */
-            practice_scenario_id: string | null;
-        };
-        /** QReportsOverviewV4AttemptImprovementData */
-        QReportsOverviewV4AttemptImprovementData: {
-            /** Attempt */
-            attempt: string | null;
-            /** Average Score */
-            average_score: number | null;
-            /** Average Time */
-            average_time: number | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-        };
-        /** QReportsOverviewV4AttemptImprovementFact */
-        QReportsOverviewV4AttemptImprovementFact: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Attempt No */
-            attempt_no: number | null;
-            /** Avg Grade */
-            avg_grade: number | null;
-            /** Avg Minutes */
-            avg_minutes: number | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-        };
-        /** QReportsOverviewV4AttemptImprovementResponse */
-        QReportsOverviewV4AttemptImprovementResponse: {
-            /** Chart Data */
-            chart_data: components["schemas"]["QReportsOverviewV4AttemptImprovementData"][] | null;
-            /** Facts */
-            facts: components["schemas"]["QReportsOverviewV4AttemptImprovementFact"][] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4CohortDailyFact */
-        QReportsOverviewV4CohortDailyFact: {
-            /** Date */
-            date: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-        };
-        /** QReportsOverviewV4CohortData */
-        QReportsOverviewV4CohortData: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Avg Percentage Score */
-            avg_percentage_score: number | null;
-            /** Total Students */
-            total_students: number | null;
-            /** Passed Students */
-            passed_students: number | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Passed Attempts */
-            passed_attempts: number | null;
-            /** Simulation Count */
-            simulation_count: number | null;
-            /** Required Simulations */
-            required_simulations: number | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4CohortFact */
-        QReportsOverviewV4CohortFact: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Pass Rate */
-            pass_rate: number | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Attempts */
-            attempts: number | null;
-        };
-        /** QReportsOverviewV4CohortInsight */
-        QReportsOverviewV4CohortInsight: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Insight */
-            insight: string | null;
-        };
-        /** QReportsOverviewV4CohortPerformanceResponse */
-        QReportsOverviewV4CohortPerformanceResponse: {
-            /** Cohort Data */
-            cohort_data: components["schemas"]["QReportsOverviewV4CohortData"][] | null;
-            /** Daily Data */
-            daily_data: components["schemas"]["QReportsOverviewV4DailyData"][] | null;
-            /** Cohort Facts */
-            cohort_facts: components["schemas"]["QReportsOverviewV4CohortFact"][] | null;
-            /** Daily Facts */
-            daily_facts: components["schemas"]["QReportsOverviewV4CohortDailyFact"][] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4DailyData */
-        QReportsOverviewV4DailyData: {
-            /** Date */
-            date: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Cohort Id */
-            cohort_id: string | null;
-        };
-        /** QReportsOverviewV4DataPoint */
-        QReportsOverviewV4DataPoint: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Count */
-            count: number | null;
-        };
-        /** QReportsOverviewV4Field */
-        QReportsOverviewV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
-        /** QReportsOverviewV4FooterMetrics */
-        QReportsOverviewV4FooterMetrics: {
-            scenario_performance: components["schemas"]["QReportsOverviewV4ScenarioPerformanceResponse"] | null;
-            scenario_stats: components["schemas"]["QReportsOverviewV4ScenarioStatsResponse"] | null;
-            simulation_performance: components["schemas"]["QReportsOverviewV4SimulationPerformanceResponse"] | null;
-            simulation_composition: components["schemas"]["QReportsOverviewV4SimulationCompositionResponse"] | null;
-        };
-        /** QReportsOverviewV4GrowthDataPoint */
-        QReportsOverviewV4GrowthDataPoint: {
-            /** Date */
-            date: string | null;
-            /** Average Score */
-            average_score: number | null;
-            /** Completion Rate */
-            completion_rate: number | null;
-            /** First Attempt Pass Rate */
-            first_attempt_pass_rate: number | null;
-            /** Session Efficiency */
-            session_efficiency: number | null;
-            /** Stagnation Rate */
-            stagnation_rate: number | null;
-        };
-        /** QReportsOverviewV4GrowthDataResponse */
-        QReportsOverviewV4GrowthDataResponse: {
-            /** Chart Data */
-            chart_data: components["schemas"]["QReportsOverviewV4GrowthDataPoint"][] | null;
-            /** Available Metrics */
-            available_metrics: components["schemas"]["QReportsOverviewV4GrowthMetric"][] | null;
-            window_averages: components["schemas"]["QReportsOverviewV4GrowthWindowAverages"] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4GrowthMetric */
-        QReportsOverviewV4GrowthMetric: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Color */
-            color: string | null;
-            /** Unit */
-            unit: string | null;
-            /** Description */
-            description: string | null;
-            /** Formatter Id */
-            formatter_id: string | null;
-        };
-        /** QReportsOverviewV4GrowthWindowAverage */
-        QReportsOverviewV4GrowthWindowAverage: {
-            /** N */
-            n: number | null;
-            /** Last */
-            last: number | null;
-            /** Prev */
-            prev: number | null;
-        };
-        /** QReportsOverviewV4GrowthWindowAverages */
-        QReportsOverviewV4GrowthWindowAverages: {
-            average_score: components["schemas"]["QReportsOverviewV4GrowthWindowAverage"] | null;
-        };
-        /** QReportsOverviewV4HeaderMetrics */
-        QReportsOverviewV4HeaderMetrics: {
-            average_score: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            completion_percentage: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            first_attempt_pass_rate: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            highest_score: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            messages_per_session: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            persona_response_times: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            session_efficiency: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            stagnation_rate: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            time_spent: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-            total_attempts: components["schemas"]["QReportsOverviewV4MetricResponse"] | null;
-        };
-        /** QReportsOverviewV4Insights */
-        QReportsOverviewV4Insights: {
-            /** Growth */
-            growth: string | null;
-            /** Persona */
-            persona: components["schemas"]["QReportsOverviewV4PersonaInsight"][] | null;
-            /** Rubric Heatmap */
-            rubric_heatmap: string | null;
-            /** Attempt Improvement */
-            attempt_improvement: string | null;
-            /** Cohort */
-            cohort: components["schemas"]["QReportsOverviewV4CohortInsight"][] | null;
-            /** Skill Performance */
-            skill_performance: string | null;
-            /** Scenario Performance */
-            scenario_performance: string | null;
-            /** Scenario Stats */
-            scenario_stats: string | null;
-            /** Simulation Performance */
-            simulation_performance: string | null;
-            /** Simulation Composition */
-            simulation_composition: string | null;
-        };
-        /** QReportsOverviewV4MetricResponse */
-        QReportsOverviewV4MetricResponse: {
-            /** Has Data */
-            has_data: boolean | null;
-            /** Method */
-            method: string | null;
-            /** Current Value */
-            current_value: number | null;
-            /** Status */
-            status: string | null;
-            /** Trend Analysis */
-            trend_analysis: string | null;
-            /** Value Field */
-            value_field: string | null;
-            /** Key Field */
-            key_field: string | null;
-            /** Trend Data */
-            trend_data: components["schemas"]["QReportsOverviewV4TrendData"][] | null;
-            /** Data Points */
-            data_points: components["schemas"]["QReportsOverviewV4DataPoint"][] | null;
-        };
-        /** QReportsOverviewV4NumericAttemptFact */
-        QReportsOverviewV4NumericAttemptFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Level Label */
-            level_label: string | null;
-            /** Level Value */
-            level_value: number | null;
-            /** Score */
-            score: number | null;
-            /** Attempts */
-            attempts: number | null;
-        };
-        /** QReportsOverviewV4NumericScenarioFact */
-        QReportsOverviewV4NumericScenarioFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Level Label */
-            level_label: string | null;
-            /** Level Value */
-            level_value: number | null;
-        };
-        /** QReportsOverviewV4Parameter */
-        QReportsOverviewV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Numerical */
-            numerical: boolean | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-        };
-        /** QReportsOverviewV4PersonaColor */
-        QReportsOverviewV4PersonaColor: {
-            /** Persona Name */
-            persona_name: string | null;
-            /** Color */
-            color: string | null;
-        };
-        /** QReportsOverviewV4PersonaInsight */
-        QReportsOverviewV4PersonaInsight: {
-            /** Persona Name */
-            persona_name: string | null;
-            /** Insight */
-            insight: string | null;
-        };
-        /** QReportsOverviewV4PersonaPerformanceData */
-        QReportsOverviewV4PersonaPerformanceData: {
-            /** Name */
-            name: string | null;
-            /** Score */
-            score: number | null;
-            /** Sessions */
-            sessions: number | null;
-            /** Color */
-            color: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Trend Data */
-            trend_data: components["schemas"]["QReportsOverviewV4PersonaTrendData"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4PersonaPerformanceResponse */
-        QReportsOverviewV4PersonaPerformanceResponse: {
-            /** Chart Data */
-            chart_data: components["schemas"]["QReportsOverviewV4PersonaPerformanceData"][] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Persona Colors Junction */
-            persona_colors_junction: components["schemas"]["QReportsOverviewV4PersonaColor"][] | null;
-        };
-        /** QReportsOverviewV4PersonaTrendData */
-        QReportsOverviewV4PersonaTrendData: {
-            /** Date */
-            date: string | null;
-            /** Score */
-            score: number | null;
-            /** Timestamp */
-            timestamp: number | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-        };
-        /** QReportsOverviewV4PrimaryMetrics */
-        QReportsOverviewV4PrimaryMetrics: {
-            growth_data: components["schemas"]["QReportsOverviewV4GrowthDataResponse"] | null;
-            persona_performance: components["schemas"]["QReportsOverviewV4PersonaPerformanceResponse"] | null;
-            rubric_heatmap: components["schemas"]["QReportsOverviewV4RubricHeatmapResponse"] | null;
-        };
-        /** QReportsOverviewV4Rubric */
-        QReportsOverviewV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QReportsOverviewV4RubricHeatmapCell */
-        QReportsOverviewV4RubricHeatmapCell: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Correlation */
-            correlation: number | null;
-            /** P Value */
-            p_value: number | null;
-            /** Color */
-            color: string | null;
-            /** Strength */
-            strength: string | null;
-            /** Data Points */
-            data_points: number | null;
-        };
-        /** QReportsOverviewV4RubricHeatmapResponse */
-        QReportsOverviewV4RubricHeatmapResponse: {
-            /** Matrices */
-            matrices: components["schemas"]["QReportsOverviewV4RubricMatrixPackage"][] | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4RubricHeatmapRow */
-        QReportsOverviewV4RubricHeatmapRow: {
-            /** Cells */
-            cells: components["schemas"]["QReportsOverviewV4RubricHeatmapCell"][] | null;
-        };
-        /** QReportsOverviewV4RubricMatrixPackage */
-        QReportsOverviewV4RubricMatrixPackage: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Standard Groups */
-            standard_groups: components["schemas"]["QReportsOverviewV4StandardGroup"][] | null;
-            /** Matrix */
-            matrix: components["schemas"]["QReportsOverviewV4RubricHeatmapRow"][] | null;
-            /** Insights */
-            insights: string | null;
-            /** Has Data */
-            has_data: boolean | null;
-        };
-        /** QReportsOverviewV4ScenarioAttributeAttemptFact */
-        QReportsOverviewV4ScenarioAttributeAttemptFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Date */
-            date: string | null;
-            /** Timestamp */
-            timestamp: number | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Attempts */
-            attempts: number | null;
-            /** Passed Attempts */
-            passed_attempts: number | null;
-        };
-        /** QReportsOverviewV4ScenarioAttributeScenarioFact */
-        QReportsOverviewV4ScenarioAttributeScenarioFact: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-        };
-        /** QReportsOverviewV4ScenarioFact */
-        QReportsOverviewV4ScenarioFact: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Scenario Name */
-            scenario_name: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Success Rate */
-            success_rate: number | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Completed Attempts */
-            completed_attempts: number | null;
-        };
-        /** QReportsOverviewV4ScenarioPerformanceResponse */
-        QReportsOverviewV4ScenarioPerformanceResponse: {
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[] | null;
-            /** Attribute Attempt Facts */
-            attribute_attempt_facts: components["schemas"]["QReportsOverviewV4ScenarioAttributeAttemptFact"][] | null;
-            /** Attribute Scenario Facts */
-            attribute_scenario_facts: components["schemas"]["QReportsOverviewV4ScenarioAttributeScenarioFact"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4ScenarioStatsResponse */
-        QReportsOverviewV4ScenarioStatsResponse: {
-            /** Valid Numeric Parameter Ids */
-            valid_numeric_parameter_ids: string[] | null;
-            /** Numeric Attempt Facts */
-            numeric_attempt_facts: components["schemas"]["QReportsOverviewV4NumericAttemptFact"][] | null;
-            /** Numeric Scenario Facts */
-            numeric_scenario_facts: components["schemas"]["QReportsOverviewV4NumericScenarioFact"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4SecondaryMetrics */
-        QReportsOverviewV4SecondaryMetrics: {
-            attempt_improvement: components["schemas"]["QReportsOverviewV4AttemptImprovementResponse"] | null;
-            cohort_performance: components["schemas"]["QReportsOverviewV4CohortPerformanceResponse"] | null;
-            skill_performance: components["schemas"]["QReportsOverviewV4SkillPerformanceResponse"] | null;
-        };
-        /** QReportsOverviewV4Simulation */
-        QReportsOverviewV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QReportsOverviewV4SimulationCompositionResponse */
-        QReportsOverviewV4SimulationCompositionResponse: {
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Simulation Facts */
-            simulation_facts: components["schemas"]["QReportsOverviewV4SimulationFact"][] | null;
-            /** Simulation Parameter Facts Categorical */
-            simulation_parameter_facts_categorical: components["schemas"]["QReportsOverviewV4SimulationParameterFactCategorical"][] | null;
-            /** Simulation Parameter Facts Numeric */
-            simulation_parameter_facts_numeric: components["schemas"]["QReportsOverviewV4SimulationParameterFactNumeric"][] | null;
-            /** Has Data */
-            has_data: boolean | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4SimulationFact */
-        QReportsOverviewV4SimulationFact: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Avg Score */
-            avg_score: number | null;
-            /** Completion Rate */
-            completion_rate: number | null;
-            /** Total Attempts */
-            total_attempts: number | null;
-            /** Scenario Count */
-            scenario_count: number | null;
-        };
-        /** QReportsOverviewV4SimulationParameterFactCategorical */
-        QReportsOverviewV4SimulationParameterFactCategorical: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Scenario Count */
-            scenario_count: number | null;
-        };
-        /** QReportsOverviewV4SimulationParameterFactNumeric */
-        QReportsOverviewV4SimulationParameterFactNumeric: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Avg Level */
-            avg_level: number | null;
-            /** Level Label */
-            level_label: string | null;
-            /** Scenario Count */
-            scenario_count: number | null;
-        };
-        /** QReportsOverviewV4SimulationPerformanceResponse */
-        QReportsOverviewV4SimulationPerformanceResponse: {
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[] | null;
-            /** Scenario Facts */
-            scenario_facts: components["schemas"]["QReportsOverviewV4ScenarioFact"][] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4SkillPackage */
-        QReportsOverviewV4SkillPackage: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Radar Data */
-            radar_data: components["schemas"]["QReportsOverviewV4SkillRadarData"][] | null;
-            /** Group Facts */
-            group_facts: components["schemas"]["QReportsOverviewV4SkillStandardFact"][] | null;
-        };
-        /** QReportsOverviewV4SkillPerformanceResponse */
-        QReportsOverviewV4SkillPerformanceResponse: {
-            /** Packages */
-            packages: components["schemas"]["QReportsOverviewV4SkillPackage"][] | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Status */
-            status: string | null;
-        };
-        /** QReportsOverviewV4SkillRadarData */
-        QReportsOverviewV4SkillRadarData: {
-            /** Metric */
-            metric: string | null;
-            /** Description */
-            description: string | null;
-            /** Value */
-            value: number | null;
-            /** Full Mark */
-            full_mark: number | null;
-        };
-        /** QReportsOverviewV4SkillStandardFact */
-        QReportsOverviewV4SkillStandardFact: {
-            /** Group Id */
-            group_id: string | null;
-            /** Group Name */
-            group_name: string | null;
-            /** Group Description */
-            group_description: string | null;
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Score */
-            score: number | null;
-            /** Points */
-            points: number | null;
-            /** Avg Pct */
-            avg_pct: number | null;
-        };
-        /** QReportsOverviewV4StandardGroup */
-        QReportsOverviewV4StandardGroup: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Short Name */
-            short_name: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-        };
-        /** QReportsOverviewV4Thresholds */
-        QReportsOverviewV4Thresholds: {
-            /** Success */
-            success: number | null;
-            /** Warning */
-            warning: number | null;
-            /** Danger */
-            danger: number | null;
-        };
-        /** QReportsOverviewV4TrendData */
-        QReportsOverviewV4TrendData: {
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Count */
-            count: number | null;
-        };
         /** QSaveEvalV4GroupRubricLink */
         QSaveEvalV4GroupRubricLink: {
             /** Group Id */
@@ -23469,25 +19110,6 @@ export interface components {
             /** Created At */
             created_at?: string | null;
         };
-        /** RefreshHomeMvsNewApiRequest */
-        RefreshHomeMvsNewApiRequest: {
-            /**
-             * Concurrent
-             * @default true
-             */
-            concurrent: boolean | null;
-        };
-        /** RefreshHomeMvsNewApiResponse */
-        RefreshHomeMvsNewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Success */
-            success?: boolean | null;
-            /** Refreshed Mvs */
-            refreshed_mvs?: string[] | null;
-            /** Duration Ms */
-            duration_ms?: number | null;
-        };
         /**
          * RefreshResponse
          * @description Response for refresh/recreate operations.
@@ -23515,22 +19137,6 @@ export interface components {
              */
             duration_ms?: number | null;
         };
-        /** RefreshViewApiRequest */
-        RefreshViewApiRequest: {
-            /** View Name */
-            view_name: string;
-        };
-        /** RefreshViewApiResponse */
-        RefreshViewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Status */
-            status?: string | null;
-        };
         /**
          * ReplacementEntry
          * @description Replacement entry within an improvement.
@@ -23554,6 +19160,73 @@ export interface components {
             replace_text?: string | null;
             /** Idx */
             idx?: number | null;
+        };
+        /**
+         * ReportsRequest
+         * @description Request for getting reports data.
+         */
+        ReportsRequest: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * ReportsResources
+         * @description Reports resource metadata.
+         */
+        ReportsResources: {
+            /** Simulations */
+            simulations?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Profiles */
+            profiles?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Scenarios */
+            scenarios?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * ReportsResponse
+         * @description Response with reports data.
+         */
+        ReportsResponse: {
+            views?: components["schemas"]["ReportsViews"];
+            resources?: components["schemas"]["ReportsResources"];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * ReportsViews
+         * @description Reports view data.
+         */
+        ReportsViews: {
+            /** Attempt Facts */
+            attempt_facts?: components["schemas"]["AttemptFactsItem"][];
         };
         /** RequestLimitsApiRequest */
         RequestLimitsApiRequest: {
@@ -25551,25 +21224,6 @@ export interface components {
             pass_points?: number | null;
         };
         /**
-         * StandardGroupItem
-         * @description Standard group mapping for sidebar/legend.
-         */
-        StandardGroupItem: {
-            /**
-             * Standard Group Id
-             * Format: uuid
-             */
-            standard_group_id: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-        };
-        /**
          * StandardGroupMapping
          * @description Standard group metadata for sidebar/legend.
          */
@@ -25634,25 +21288,6 @@ export interface components {
         StandardGroupsApiResponse: {
             /** Standard Group Id */
             standard_group_id?: string | null;
-        };
-        /**
-         * StandardItem
-         * @description Standard mapping for sidebar/legend.
-         */
-        StandardItem: {
-            /**
-             * Standard Id
-             * Format: uuid
-             */
-            standard_id: string;
-            /** Standard Group Id */
-            standard_group_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points?: number | null;
         };
         /**
          * StandardMapping
@@ -25907,6 +21542,8 @@ export interface components {
             resource_types?: string[] | null;
             /** Resource Id */
             resource_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
             /**
              * Success
              * @default false
@@ -26513,20 +22150,37 @@ export interface components {
              */
             count: number;
         };
-        /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
-        app__api__v4__views__simulation__history__types__FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label?: string | null;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
+        /** GetEvalsListApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__1: {
+            [key: string]: unknown;
+        };
+        /** DeleteEvalApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__2: {
+            [key: string]: unknown;
+        };
+        /** GetPricingGroupDetailApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__3: {
+            [key: string]: unknown;
+        };
+        /** RefreshHomeMvsNewApiRequest */
+        app__sql__types___build_missing_type___locals____MissingSqlType__4: {
+            [key: string]: unknown;
+        };
+        /** GetEvalsListApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__5: {
+            [key: string]: unknown;
+        };
+        /** DeleteEvalApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
+            [key: string]: unknown;
+        };
+        /** GetPricingGroupDetailApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__7: {
+            [key: string]: unknown;
+        };
+        /** RefreshHomeMvsNewApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__8: {
+            [key: string]: unknown;
         };
     };
     responses: never;
@@ -27917,7 +23571,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetEvalsListApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
             };
         };
         responses: {
@@ -27927,7 +23581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetEvalsListApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
                 };
             };
             /** @description Validation Error */
@@ -28065,7 +23719,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteEvalApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
             };
         };
         responses: {
@@ -28075,7 +23729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteEvalApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
                 };
             };
             /** @description Validation Error */
@@ -30285,7 +25939,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetPricingGroupDetailApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
             };
         };
         responses: {
@@ -30295,7 +25949,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetPricingGroupDetailApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
                 };
             };
             /** @description Validation Error */
@@ -30396,7 +26050,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RefreshHomeMvsNewApiRequest"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
             };
         };
         responses: {
@@ -30406,7 +26060,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RefreshHomeMvsNewApiResponse"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
                 };
             };
             /** @description Validation Error */
@@ -30444,6 +26098,302 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAttemptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_attempts_api_v4_attempt_archive_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkArchiveAttemptsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_api_v4_artifacts_dashboard_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reports_api_v4_artifacts_reports_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_leaderboard_api_v4_artifacts_leaderboard_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaderboardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaderboardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_api_v4_artifacts_pricing_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_activity_api_v4_artifacts_activity_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_health_api_v4_artifacts_health_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HealthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_api_v4_artifacts_benchmark_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenchmarkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33787,746 +29737,6 @@ export interface operations {
             };
         };
     };
-    get_home_overview_api_v4_analytics_home_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHomeOverviewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHomeOverviewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_home_history_api_v4_analytics_home_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHomeHistoryApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHomeHistoryApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reports_api_v4_analytics_reports_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetReportsOverviewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetReportsOverviewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_report_api_v4_analytics_reports_report_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reports_api_v4_analytics_reports_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetReportsBundleApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetReportsBundleApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_activity_bundle_api_v4_analytics_activity_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetActivityBundleApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetActivityBundleApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_activity_list_api_v4_analytics_activity_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetActivityListApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetActivityListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_api_v4_analytics_dashboard_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDashboardBundleApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDashboardBundleApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_history_api_v4_analytics_dashboard_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDashboardHistoryApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDashboardHistoryApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_practice_overview_api_v4_analytics_practice_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPracticeOverviewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeOverviewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_practice_history_api_v4_analytics_practice_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPracticeHistoryApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeHistoryApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_api_v4_analytics_leaderboard_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetLeaderboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetLeaderboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_list_api_v4_analytics_leaderboard_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetLeaderboardListApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetLeaderboardListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pricing_api_v4_analytics_pricing_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPricingAnalyticsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPricingAnalyticsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pricing_list_api_v4_analytics_pricing_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPricingRunsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPricingRunsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_benchmark_overview_api_v4_analytics_benchmark_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBenchmarkOverviewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkOverviewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_benchmark_history_api_v4_analytics_benchmark_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBenchmarkHistoryApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkHistoryApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_health_api_v4_analytics_health_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHealthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHealthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_health_list_api_v4_analytics_health_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHealthListApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHealthListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_analytics_api_v4_analytics_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshViewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshViewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_attempts_api_v4_views_simulation_attempts_get_post: {
         parameters: {
             query?: never;
@@ -34836,212 +30046,6 @@ export interface operations {
             };
         };
     };
-    get_overview_api_v4_views_simulation_overview_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetOverviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_overview_view_api_v4_views_simulation_overview_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_overview_view_api_v4_views_simulation_overview_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_history_api_v4_views_simulation_history_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHistoryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHistoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_history_view_api_v4_views_simulation_history_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recreate_history_view_api_v4_views_simulation_history_recreate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_attempt_facts_api_v4_views_analytics_attempts_get_post: {
         parameters: {
             query?: never;
@@ -35079,7 +30083,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_attempt_api_v4_attempts_simulation_get_post: {
+    get_pricing_run_facts_api_v4_views_pricing_run_facts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35092,7 +30096,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetSimulationAttemptApiRequest"];
+                "application/json": components["schemas"]["GetPricingRunFactsRequest"];
             };
         };
         responses: {
@@ -35102,7 +30106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSimulationAttemptApiResponse"];
+                    "application/json": components["schemas"]["GetPricingRunFactsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35116,7 +30120,7 @@ export interface operations {
             };
         };
     };
-    archive_simulation_attempts_api_v4_attempts_simulation_archive_post: {
+    get_pricing_group_summary_api_v4_views_pricing_group_summary_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35129,7 +30133,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkArchiveAttemptsApiRequest"];
+                "application/json": components["schemas"]["GetPricingGroupSummaryRequest"];
             };
         };
         responses: {
@@ -35139,7 +30143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
+                    "application/json": components["schemas"]["GetPricingGroupSummaryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35153,7 +30157,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_attempt_api_v4_attempts_benchmark_get_post: {
+    get_pricing_daily_api_v4_views_pricing_daily_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35166,7 +30170,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetEvalAttemptApiRequest"];
+                "application/json": components["schemas"]["GetPricingDailyRequest"];
             };
         };
         responses: {
@@ -35176,7 +30180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetEvalAttemptApiResponse"];
+                    "application/json": components["schemas"]["GetPricingDailyResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35190,7 +30194,7 @@ export interface operations {
             };
         };
     };
-    archive_benchmark_attempts_api_v4_attempts_benchmark_archive_post: {
+    get_activity_session_facts_api_v4_views_activity_session_facts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35203,7 +30207,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkArchiveAttemptsApiRequest"];
+                "application/json": components["schemas"]["GetActivitySessionFactsRequest"];
             };
         };
         responses: {
@@ -35213,7 +30217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
+                    "application/json": components["schemas"]["GetActivitySessionFactsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35227,7 +30231,7 @@ export interface operations {
             };
         };
     };
-    get_general_attempt_api_v4_attempts_general_get_post: {
+    get_activity_daily_api_v4_views_activity_daily_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35240,7 +30244,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetGeneralAttemptApiRequest"];
+                "application/json": components["schemas"]["GetActivityDailyRequest"];
             };
         };
         responses: {
@@ -35250,7 +30254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetGeneralAttemptApiResponse"];
+                    "application/json": components["schemas"]["GetActivityDailyResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35264,7 +30268,40 @@ export interface operations {
             };
         };
     };
-    get_practice_attempt_api_v4_attempts_practice_get_post: {
+    get_activity_summary_api_v4_views_activity_summary_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetActivitySummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_health_service_hourly_api_v4_views_health_service_hourly_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35277,7 +30314,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetPracticeAttemptApiRequest"];
+                "application/json": components["schemas"]["GetHealthServiceHourlyRequest"];
             };
         };
         responses: {
@@ -35287,7 +30324,155 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetPracticeAttemptApiResponse"];
+                    "application/json": components["schemas"]["GetHealthServiceHourlyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_health_metrics_hourly_api_v4_views_health_metrics_hourly_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetHealthMetricsHourlyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHealthMetricsHourlyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_attempt_facts_api_v4_views_benchmark_attempt_facts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkAttemptFactsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkAttemptFactsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_eval_summary_api_v4_views_benchmark_eval_summary_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkEvalSummaryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkEvalSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_draft_resources_api_v4_views_drafts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDraftResourcesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDraftResourcesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -37202,41 +32387,6 @@ export interface operations {
             };
         };
     };
-    attempt_assistant_delta_api_socket_v4_server_attempt_assistant_delta_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptAssistantDeltaEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     attempt_complete_api_socket_v4_server_attempt_complete_post: {
         parameters: {
             query?: never;
@@ -37282,41 +32432,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptAssistantCompleteEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_turn_complete_api_socket_v4_server_attempt_turn_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptTurnCompleteEvent"];
             };
         };
         responses: {

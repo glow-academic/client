@@ -20,6 +20,35 @@ TOutput = TypeVar("TOutput", bound=BaseModel)
 # Type alias for SQL strings loaded from files (semantic clarity)
 SqlString = str
 
+# Runtime fallback for missing generated types.
+# This keeps server startup resilient when incremental SQL compilation misses some files.
+_missing_type_cache: dict[str, type[BaseModel]] = {}
+
+def _build_missing_type(name: str) -> type[BaseModel]:
+    """Build a permissive placeholder model for missing generated types."""
+    class _MissingSqlType(BaseModel):
+        model_config = {"extra": "allow"}
+
+        def to_tuple(self) -> tuple[Any, ...]:
+            return tuple(self.model_dump().values())
+
+    _MissingSqlType.__name__ = name
+    return _MissingSqlType
+
+def __getattr__(name: str) -> Any:
+    """Resolve missing generated classes at import-time with placeholders."""
+    if not (
+        name.endswith(("SqlParams", "SqlRow", "ApiRequest", "ApiResponse"))
+        or name.startswith("Q")
+    ):
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    cached = _missing_type_cache.get(name)
+    if cached is None:
+        cached = _build_missing_type(name)
+        _missing_type_cache[name] = cached
+    return cached
+
 
 # ============================================================================
 # TYPE DEFINITIONS

@@ -51,7 +51,9 @@ sessions_active AS (
 ),
 -- Active profiles (profiles with activity records)
 active_profiles AS (
-    SELECT COUNT(DISTINCT profile_id)::bigint AS cnt FROM profile_activity_junction
+    SELECT COUNT(DISTINCT profile_id)::bigint AS cnt
+    FROM sessions_entry
+    WHERE profile_id IS NOT NULL
 ),
 -- Total logins
 logins_total AS (
@@ -103,7 +105,7 @@ last_7d_logins AS (
 ),
 last_7d_active_profiles AS (
     SELECT COUNT(DISTINCT profile_id)::bigint AS cnt
-    FROM audits_entry
+    FROM sessions_entry
     WHERE created_at >= NOW() - INTERVAL '7 days'
       AND profile_id IS NOT NULL
 ),
