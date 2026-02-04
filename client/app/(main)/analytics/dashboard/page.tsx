@@ -16,8 +16,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v4/analytics/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/api/v4/analytics/dashboard/get", "post">;
+type DashboardIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 // Using /attempt/list for history section
 type DashboardHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
 type DashboardHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
@@ -41,7 +41,7 @@ const getDashboardOverview = async (
   const bypassCache = await isHardRefresh();
 
   // InputOf types have body property with snake_case fields
-  return api.post("/analytics/dashboard/get", input, {
+  return api.post("/artifacts/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

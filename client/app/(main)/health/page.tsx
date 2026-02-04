@@ -11,13 +11,13 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/api/v4/analytics/health/get", "post">;
-type HealthBundleOut = OutputOf<"/api/v4/analytics/health/get", "post">;
+type HealthBundleIn = InputOf<"/api/v4/artifacts/health/get", "post">;
+type HealthBundleOut = OutputOf<"/api/v4/artifacts/health/get", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(
   async (input: HealthBundleIn): Promise<HealthBundleOut> => {
-    return api.post("/analytics/health/get", input);
+    return api.post("/artifacts/health/get", input);
   },
 );
 

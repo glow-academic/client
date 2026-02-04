@@ -4648,6 +4648,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/analytics/health/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Health Analytics
+         * @description Get health analytics bundle.
+         */
+        post: operations["get_health_analytics_api_v4_views_analytics_health_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/analytics/pricing/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing Analytics
+         * @description Get pricing analytics summary.
+         */
+        post: operations["get_pricing_analytics_api_v4_views_analytics_pricing_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/analytics/pricing/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing Runs
+         * @description Get pricing runs list.
+         */
+        post: operations["get_pricing_runs_api_v4_views_analytics_pricing_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/pricing/run-facts/get": {
         parameters: {
             query?: never;
@@ -12789,6 +12849,22 @@ export interface components {
             total_count: number;
         };
         /**
+         * GetHealthAnalyticsRequest
+         * @description Request for health analytics bundle.
+         */
+        GetHealthAnalyticsRequest: Record<string, never>;
+        /**
+         * GetHealthAnalyticsResponse
+         * @description Response for health analytics bundle.
+         */
+        GetHealthAnalyticsResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            health_kpis?: components["schemas"]["HealthKpis"] | null;
+            /** Metrics */
+            metrics?: components["schemas"]["HealthMetricsItem"][];
+        };
+        /**
          * GetHealthMetricsHourlyRequest
          * @description Request for getting health metrics hourly data.
          */
@@ -13649,6 +13725,40 @@ export interface components {
             page_offset: number | null;
         };
         /**
+         * GetPricingAnalyticsRequest
+         * @description Request for pricing analytics summary.
+         */
+        GetPricingAnalyticsRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Roles */
+            roles?: string[];
+            /** Cohort Ids */
+            cohort_ids?: string[];
+            /** Simulation Filters */
+            simulation_filters?: string[];
+        };
+        /**
+         * GetPricingAnalyticsResponse
+         * @description Response for pricing analytics summary.
+         */
+        GetPricingAnalyticsResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Model Runs */
+            model_runs?: components["schemas"]["PricingModelRunItem"][];
+            /** Models */
+            models?: components["schemas"]["PricingModelItem"][];
+            /** Profiles */
+            profiles?: components["schemas"]["PricingProfileItem"][];
+            /** Agents */
+            agents?: components["schemas"]["PricingAgentItem"][];
+        };
+        /**
          * GetPricingDailyRequest
          * @description Request for getting pricing daily data.
          */
@@ -13812,6 +13922,94 @@ export interface components {
              * @default 0
              */
             total_count: number;
+        };
+        /**
+         * GetPricingRunsRequest
+         * @description Request for pricing runs list.
+         */
+        GetPricingRunsRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Roles */
+            roles?: string[];
+            /** Cohort Ids */
+            cohort_ids?: string[];
+            /** Simulation Filters */
+            simulation_filters?: string[];
+            /** Search */
+            search?: string | null;
+            /** Model Ids */
+            model_ids?: string[];
+            /** Profile Ids */
+            profile_ids?: string[];
+            /** Actor Ids */
+            actor_ids?: string[];
+            /**
+             * Sort By
+             * @default createdAt
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Limit Count
+             * @default 10
+             */
+            limit_count: number;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number;
+        };
+        /**
+         * GetPricingRunsResponse
+         * @description Response for pricing runs list.
+         */
+        GetPricingRunsResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Group Runs */
+            group_runs?: components["schemas"]["PricingGroupRunItem"][];
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 10
+             */
+            page_size: number;
+            /**
+             * Total Pages
+             * @default 0
+             */
+            total_pages: number;
+            /** Model Options */
+            model_options?: components["schemas"]["PricingFilterOption"][];
+            /** Profile Options */
+            profile_options?: components["schemas"]["PricingFilterOption"][];
+            /** Actor Options */
+            actor_options?: components["schemas"]["PricingFilterOption"][];
+            /** Models */
+            models?: components["schemas"]["PricingModelItem"][];
+            /** Profiles */
+            profiles?: components["schemas"]["PricingProfileItem"][];
+            /** Agents */
+            agents?: components["schemas"]["PricingAgentItem"][];
         };
         /**
          * GetProblemStatementApiRequest
@@ -15930,6 +16128,37 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HealthKpiItem
+         * @description Health KPI for a service.
+         */
+        HealthKpiItem: {
+            /**
+             * Ok
+             * @default false
+             */
+            ok: boolean;
+            /**
+             * Latency Ms
+             * @default 0
+             */
+            latency_ms: number;
+            /** Error */
+            error?: string | null;
+            /** Trend */
+            trend?: components["schemas"]["HealthTrendItem"][];
+        };
+        /**
+         * HealthKpis
+         * @description Collection of KPIs by service.
+         */
+        HealthKpis: {
+            websocket?: components["schemas"]["HealthKpiItem"] | null;
+            redis?: components["schemas"]["HealthKpiItem"] | null;
+            document?: components["schemas"]["HealthKpiItem"] | null;
+            database?: components["schemas"]["HealthKpiItem"] | null;
+            authentication?: components["schemas"]["HealthKpiItem"] | null;
+        };
+        /**
          * HealthMetricsHourlyItem
          * @description Single hour from mv_health_metrics_hourly.
          */
@@ -15999,6 +16228,44 @@ export interface components {
              * @default 0
              */
             max_errors_total: number;
+        };
+        /**
+         * HealthMetricsItem
+         * @description Metrics time series data point.
+         */
+        HealthMetricsItem: {
+            /** Date */
+            date: string;
+            /**
+             * Cpu Percent
+             * @default 0
+             */
+            cpu_percent: number;
+            /**
+             * Latency Ms
+             * @default 0
+             */
+            latency_ms: number;
+            /**
+             * Memory Bytes
+             * @default 0
+             */
+            memory_bytes: number;
+            /**
+             * Requests Total
+             * @default 0
+             */
+            requests_total: number;
+            /**
+             * Errors Total
+             * @default 0
+             */
+            errors_total: number;
+            /**
+             * Sample Count
+             * @default 0
+             */
+            sample_count: number;
         };
         /**
          * HealthRequest
@@ -16085,6 +16352,29 @@ export interface components {
             latest_ok?: boolean | null;
             /** Latest Error */
             latest_error?: string | null;
+        };
+        /**
+         * HealthTrendItem
+         * @description Single trend data point for a service.
+         */
+        HealthTrendItem: {
+            /** Date */
+            date: string;
+            /**
+             * Value
+             * @default 0
+             */
+            value: number;
+            /**
+             * Latency
+             * @default 0
+             */
+            latency: number;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
         };
         /**
          * HealthViews
@@ -18035,6 +18325,19 @@ export interface components {
             /** Point Id */
             point_id?: string | null;
         };
+        /**
+         * PricingAgentItem
+         * @description Agent reference data for pricing analytics.
+         */
+        PricingAgentItem: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Name */
+            name?: string | null;
+        };
         /** PricingApiRequest */
         PricingApiRequest: {
             /**
@@ -18144,6 +18447,71 @@ export interface components {
             avg_cost_per_run: string;
         };
         /**
+         * PricingDebugInfoItem
+         * @description Debug info entry for a run.
+         */
+        PricingDebugInfoItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Content */
+            content: string;
+        };
+        /**
+         * PricingFilterOption
+         * @description Filter option for pricing list UI.
+         */
+        PricingFilterOption: {
+            /** Value */
+            value?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
+         * PricingGroupRunItem
+         * @description Group summary for pricing list.
+         */
+        PricingGroupRunItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Total Input Tokens
+             * @default 0
+             */
+            total_input_tokens: number;
+            /**
+             * Total Output Tokens
+             * @default 0
+             */
+            total_output_tokens: number;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /** Runs Entry */
+            runs_entry?: components["schemas"]["PricingRunSummaryItem"][];
+        };
+        /**
          * PricingGroupSummaryItem
          * @description Single group from mv_pricing_group_summary.
          */
@@ -18228,6 +18596,80 @@ export interface components {
             agent_ids?: string[] | null;
             /** Model Ids */
             model_ids?: string[] | null;
+        };
+        /**
+         * PricingModelItem
+         * @description Model reference data for pricing analytics.
+         */
+        PricingModelItem: {
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Input Ppm
+             * @default 0
+             */
+            input_ppm: string;
+            /**
+             * Output Ppm
+             * @default 0
+             */
+            output_ppm: string;
+        };
+        /**
+         * PricingModelRunItem
+         * @description Run summary for pricing analytics chart.
+         */
+        PricingModelRunItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /**
+             * Run Cost
+             * @default 0
+             */
+            run_cost: string;
+            /** Debug Info */
+            debug_info?: components["schemas"]["PricingDebugInfoItem"][];
+        };
+        /**
+         * PricingProfileItem
+         * @description Profile reference data for pricing analytics.
+         */
+        PricingProfileItem: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Name */
+            name?: string | null;
         };
         /**
          * PricingRequest
@@ -18358,6 +18800,42 @@ export interface components {
             group_name?: string | null;
             /** Trace Id */
             trace_id?: string | null;
+        };
+        /**
+         * PricingRunSummaryItem
+         * @description Run summary row for pricing list.
+         */
+        PricingRunSummaryItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: string;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Debug Info Entry */
+            debug_info_entry?: components["schemas"]["PricingDebugInfoItem"][];
         };
         /**
          * PricingViews
@@ -33632,6 +34110,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProfileMetricsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_health_analytics_api_v4_views_analytics_health_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetHealthAnalyticsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHealthAnalyticsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_analytics_api_v4_views_analytics_pricing_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPricingAnalyticsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPricingAnalyticsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_runs_api_v4_views_analytics_pricing_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPricingRunsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPricingRunsResponse"];
                 };
             };
             /** @description Validation Error */

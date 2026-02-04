@@ -16,8 +16,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsOverviewIn = InputOf<"/api/v4/analytics/reports/get", "post">;
-type ReportsOverviewOut = OutputOf<"/api/v4/analytics/reports/get", "post">;
+type ReportsOverviewIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
+type ReportsOverviewOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 // Using /attempt/list for history section
 type ReportHistoryIn = InputOf<"/api/v4/attempt/list", "post">;
 type ReportHistoryOut = OutputOf<"/api/v4/attempt/list", "post">;
@@ -32,7 +32,7 @@ const getReportsOverview = async (
 ): Promise<ReportsOverviewOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/reports/get", input, {
+  return api.post("/artifacts/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

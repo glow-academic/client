@@ -16,8 +16,8 @@ type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
 type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v4/debug/debug", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v4/debug/debug", "post">;
-type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
-type RefreshAnalyticsOut = OutputOf<"/api/v4/analytics/refresh", "post">;
+type RefreshAnalyticsIn = InputOf<"/api/v4/training/refresh", "post">;
+type RefreshAnalyticsOut = OutputOf<"/api/v4/training/refresh", "post">;
 type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
@@ -397,7 +397,7 @@ export async function createFeedback(
 export async function refreshAnalytics(
   input: RefreshAnalyticsIn
 ): Promise<RefreshAnalyticsOut> {
-  return api.post("/analytics/refresh", input);
+  return api.post("/training/refresh", input);
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */

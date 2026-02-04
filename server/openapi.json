@@ -21780,6 +21780,315 @@
         ]
       }
     },
+    "/api/v4/views/analytics/health/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "health"
+        ],
+        "summary": "Get Health Analytics",
+        "description": "Get health analytics bundle.",
+        "operationId": "get_health_analytics_api_v4_views_analytics_health_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHealthAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetHealthAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "health"
+        ]
+      }
+    },
+    "/api/v4/views/analytics/pricing/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "pricing"
+        ],
+        "summary": "Get Pricing Analytics",
+        "description": "Get pricing analytics summary.",
+        "operationId": "get_pricing_analytics_api_v4_views_analytics_pricing_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPricingAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPricingAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "pricing"
+        ]
+      }
+    },
+    "/api/v4/views/analytics/pricing/list": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "pricing"
+        ],
+        "summary": "Get Pricing Runs",
+        "description": "Get pricing runs list.",
+        "operationId": "get_pricing_runs_api_v4_views_analytics_pricing_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPricingRunsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPricingRunsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "views",
+          "views",
+          "analytics",
+          "pricing"
+        ]
+      }
+    },
     "/api/v4/views/pricing/run-facts/get": {
       "post": {
         "tags": [
@@ -49473,6 +49782,47 @@
         "title": "GetGroupListResponse",
         "description": "Response for group list endpoint."
       },
+      "GetHealthAnalyticsRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetHealthAnalyticsRequest",
+        "description": "Request for health analytics bundle."
+      },
+      "GetHealthAnalyticsResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "health_kpis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthKpis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/HealthMetricsItem"
+            },
+            "type": "array",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "title": "GetHealthAnalyticsResponse",
+        "description": "Response for health analytics bundle."
+      },
       "GetHealthMetricsHourlyRequest": {
         "properties": {
           "date_from": {
@@ -53639,6 +53989,113 @@
         "type": "object",
         "title": "GetPersonasListApiRequest"
       },
+      "GetPricingAnalyticsRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "simulation_filters": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Filters"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingAnalyticsRequest",
+        "description": "Request for pricing analytics summary."
+      },
+      "GetPricingAnalyticsResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "model_runs": {
+            "items": {
+              "$ref": "#/components/schemas/PricingModelRunItem"
+            },
+            "type": "array",
+            "title": "Model Runs"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/PricingModelItem"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/PricingProfileItem"
+            },
+            "type": "array",
+            "title": "Profiles"
+          },
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/PricingAgentItem"
+            },
+            "type": "array",
+            "title": "Agents"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingAnalyticsResponse",
+        "description": "Response for pricing analytics summary."
+      },
       "GetPricingDailyRequest": {
         "properties": {
           "model_id": {
@@ -53989,6 +54446,212 @@
         "type": "object",
         "title": "GetPricingRunFactsResponse",
         "description": "Response with pricing run facts."
+      },
+      "GetPricingRunsRequest": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "simulation_filters": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Filters"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "actor_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Actor Ids"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By",
+            "default": "createdAt"
+          },
+          "sort_order": {
+            "type": "string",
+            "title": "Sort Order",
+            "default": "desc"
+          },
+          "limit_count": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit Count",
+            "default": 10
+          },
+          "offset_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "GetPricingRunsRequest",
+        "description": "Request for pricing runs list."
+      },
+      "GetPricingRunsResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "group_runs": {
+            "items": {
+              "$ref": "#/components/schemas/PricingGroupRunItem"
+            },
+            "type": "array",
+            "title": "Group Runs"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "default": 0
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "default": 10
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages",
+            "default": 0
+          },
+          "model_options": {
+            "items": {
+              "$ref": "#/components/schemas/PricingFilterOption"
+            },
+            "type": "array",
+            "title": "Model Options"
+          },
+          "profile_options": {
+            "items": {
+              "$ref": "#/components/schemas/PricingFilterOption"
+            },
+            "type": "array",
+            "title": "Profile Options"
+          },
+          "actor_options": {
+            "items": {
+              "$ref": "#/components/schemas/PricingFilterOption"
+            },
+            "type": "array",
+            "title": "Actor Options"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/PricingModelItem"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/PricingProfileItem"
+            },
+            "type": "array",
+            "title": "Profiles"
+          },
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/PricingAgentItem"
+            },
+            "type": "array",
+            "title": "Agents"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingRunsResponse",
+        "description": "Response for pricing runs list."
       },
       "GetProblemStatementApiRequest": {
         "properties": {
@@ -63625,6 +64288,98 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HealthKpiItem": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "default": false
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "trend": {
+            "items": {
+              "$ref": "#/components/schemas/HealthTrendItem"
+            },
+            "type": "array",
+            "title": "Trend"
+          }
+        },
+        "type": "object",
+        "title": "HealthKpiItem",
+        "description": "Health KPI for a service."
+      },
+      "HealthKpis": {
+        "properties": {
+          "websocket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthKpiItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "redis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthKpiItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthKpiItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "database": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthKpiItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "authentication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthKpiItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HealthKpis",
+        "description": "Collection of KPIs by service."
+      },
       "HealthMetricsHourlyItem": {
         "properties": {
           "date_hour": {
@@ -63699,6 +64454,50 @@
         ],
         "title": "HealthMetricsHourlyItem",
         "description": "Single hour from mv_health_metrics_hourly."
+      },
+      "HealthMetricsItem": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "cpu_percent": {
+            "type": "number",
+            "title": "Cpu Percent",
+            "default": 0.0
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "memory_bytes": {
+            "type": "integer",
+            "title": "Memory Bytes",
+            "default": 0
+          },
+          "requests_total": {
+            "type": "integer",
+            "title": "Requests Total",
+            "default": 0
+          },
+          "errors_total": {
+            "type": "integer",
+            "title": "Errors Total",
+            "default": 0
+          },
+          "sample_count": {
+            "type": "integer",
+            "title": "Sample Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "HealthMetricsItem",
+        "description": "Metrics time series data point."
       },
       "HealthRequest": {
         "properties": {
@@ -63846,6 +64645,35 @@
         ],
         "title": "HealthServiceHourlyItem",
         "description": "Single hour from mv_health_service_hourly."
+      },
+      "HealthTrendItem": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "default": 0.0
+          },
+          "latency": {
+            "type": "number",
+            "title": "Latency",
+            "default": 0.0
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "HealthTrendItem",
+        "description": "Single trend data point for a service."
       },
       "HealthViews": {
         "properties": {
@@ -71760,6 +72588,32 @@
         "type": "object",
         "title": "PointsApiResponse"
       },
+      "PricingAgentItem": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id"
+        ],
+        "title": "PricingAgentItem",
+        "description": "Agent reference data for pricing analytics."
+      },
       "PricingApiRequest": {
         "properties": {
           "agent_id": {
@@ -71923,6 +72777,127 @@
         ],
         "title": "PricingDailyItem",
         "description": "Single day from mv_pricing_daily."
+      },
+      "PricingDebugInfoItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "content"
+        ],
+        "title": "PricingDebugInfoItem",
+        "description": "Debug info entry for a run."
+      },
+      "PricingFilterOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "title": "PricingFilterOption",
+        "description": "Filter option for pricing list UI."
+      },
+      "PricingGroupRunItem": {
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "run_count": {
+            "type": "integer",
+            "title": "Run Count",
+            "default": 0
+          },
+          "total_input_tokens": {
+            "type": "integer",
+            "title": "Total Input Tokens",
+            "default": 0
+          },
+          "total_output_tokens": {
+            "type": "integer",
+            "title": "Total Output Tokens",
+            "default": 0
+          },
+          "total_cost": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Cost",
+            "default": "0"
+          },
+          "runs_entry": {
+            "items": {
+              "$ref": "#/components/schemas/PricingRunSummaryItem"
+            },
+            "type": "array",
+            "title": "Runs Entry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id"
+        ],
+        "title": "PricingGroupRunItem",
+        "description": "Group summary for pricing list."
       },
       "PricingGroupSummaryItem": {
         "properties": {
@@ -72121,6 +73096,167 @@
         ],
         "title": "PricingGroupSummaryItem",
         "description": "Single group from mv_pricing_group_summary."
+      },
+      "PricingModelItem": {
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "input_ppm": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Input Ppm",
+            "default": "0"
+          },
+          "output_ppm": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Output Ppm",
+            "default": "0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id"
+        ],
+        "title": "PricingModelItem",
+        "description": "Model reference data for pricing analytics."
+      },
+      "PricingModelRunItem": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens",
+            "default": 0
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens",
+            "default": 0
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "run_cost": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Run Cost",
+            "default": "0"
+          },
+          "debug_info": {
+            "items": {
+              "$ref": "#/components/schemas/PricingDebugInfoItem"
+            },
+            "type": "array",
+            "title": "Debug Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id"
+        ],
+        "title": "PricingModelRunItem",
+        "description": "Run summary for pricing analytics chart."
+      },
+      "PricingProfileItem": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id"
+        ],
+        "title": "PricingProfileItem",
+        "description": "Profile reference data for pricing analytics."
       },
       "PricingRequest": {
         "properties": {
@@ -72403,6 +73539,92 @@
         ],
         "title": "PricingRunFactsItem",
         "description": "Single run from mv_pricing_run_facts."
+      },
+      "PricingRunSummaryItem": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens",
+            "default": 0
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens",
+            "default": 0
+          },
+          "cost": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost",
+            "default": "0"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "debug_info_entry": {
+            "items": {
+              "$ref": "#/components/schemas/PricingDebugInfoItem"
+            },
+            "type": "array",
+            "title": "Debug Info Entry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id"
+        ],
+        "title": "PricingRunSummaryItem",
+        "description": "Run summary row for pricing list."
       },
       "PricingViews": {
         "properties": {

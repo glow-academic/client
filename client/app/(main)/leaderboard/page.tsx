@@ -14,8 +14,8 @@ import type { Metadata } from "next";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/api/v4/analytics/leaderboard/get", "post">;
-type LeaderboardOut = OutputOf<"/api/v4/analytics/leaderboard/get", "post">;
+type LeaderboardIn = InputOf<"/api/v4/artifacts/leaderboard/get", "post">;
+type LeaderboardOut = OutputOf<"/api/v4/artifacts/leaderboard/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Leaderboard responses can get large and exceed Next.js 2MB cache limit.
@@ -27,7 +27,7 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/leaderboard/get", input, {
+  return api.post("/artifacts/leaderboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

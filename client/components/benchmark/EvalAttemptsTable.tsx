@@ -40,8 +40,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkBundleIn = InputOf<"/api/v4/analytics/benchmark/get", "post">;
-type BenchmarkBundleOut = OutputOf<"/api/v4/analytics/benchmark/get", "post">;
+type BenchmarkBundleIn = InputOf<"/api/v4/artifacts/benchmark/get", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v4/artifacts/benchmark/get", "post">;
 type AttemptsArray = NonNullable<BenchmarkBundleOut["attempts"]>;
 type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 
@@ -49,7 +49,7 @@ type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 const getBenchmarkBundle = async (
   input: BenchmarkBundleIn
 ): Promise<BenchmarkBundleOut> => {
-  return api.post("/analytics/benchmark/get", input, {
+  return api.post("/artifacts/benchmark/get", input, {
     cache: "no-store",
   });
 };
