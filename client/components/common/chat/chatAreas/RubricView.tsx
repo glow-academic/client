@@ -44,8 +44,8 @@ export function RubricView({
         standardsMapping={standardsMapping}
         {...(grading_state && {
           gradingState: {
-            achievedStandards: grading_state.achieved_standards,
-            passedStandards: grading_state.passed_standards,
+            achievedStandards: grading_state.achieved_standards ?? {},
+            passedStandards: grading_state.passed_standards ?? {},
             feedbackByStandardId: grading_state.feedback_by_standard_id,
           },
         })}

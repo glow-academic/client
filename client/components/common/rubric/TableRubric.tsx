@@ -72,13 +72,13 @@ export default function TableRubric({
   // Helper function to determine if a standard was achieved (from server-computed state)
   const isStandardAchieved = (standardId: string) => {
     if (!gradingState) return false;
-    return gradingState.achievedStandards[standardId] || false;
+    return gradingState.achievedStandards?.[standardId] || false;
   };
 
   // Helper function to determine if a standard has been passed (from server-computed state)
   const isStandardPassed = (standardId: string) => {
     if (!gradingState) return false;
-    return gradingState.passedStandards[standardId] || false;
+    return gradingState.passedStandards?.[standardId] || false;
   };
 
   // Group standards by standard group using props data
