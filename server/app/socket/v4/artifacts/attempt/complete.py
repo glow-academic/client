@@ -8,6 +8,7 @@ Handles both message completion and grade completion:
 - Grade: Emits attempt_graded with grade data
 """
 
+import json
 import uuid
 from typing import Any, cast
 
@@ -238,44 +239,32 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
         tool_result = tool_results[0]
 
     tool_name = data.get("tool_name")
-    resource_id = tool_result.get("resource_id")
+    entry_id = tool_result.get("entry_id")
+    entry_type = tool_result.get("entry_type")
     chat_id = data.get("chat_id")
     message_id = data.get("message_id")
+    arguments = data.get("arguments") or {}
 
-    if not resource_id:
+    if not entry_id:
         # Tool execution may have failed, check success flag
         tool_success = tool_result.get("success", True)
         if not tool_success:
             # Tool execution failed - model can retry
             return
+        return
 
-    # Emit progress event with tool completion
-    event = AttemptCompleteEvent(
-        artifact_type="attempt",
-        group_id=data.get("group_id", ""),
-        resource_type=tool_name or "tool",
-        run_id=data.get("run_id"),
-        success=True,
-        message=f"{tool_name} completed",
-        chat_id=chat_id,
-        message_id=message_id,
-    )
-
-    await sio.emit(
-        "attempt_complete",
-        event.model_dump(mode="json"),
-        room=sid,
-    )
-
-    # If this is a hints tool, emit the attempt_hint_progress event
-    if tool_name == "hints" and chat_id and message_id:
-        hints = tool_result.get("hints", [])
+    # create_hint: emit hint completion only
+    if entry_type == "hints" and chat_id and message_id:
+        hint_text = arguments.get("hint")
+        hints_payload = []
+        if isinstance(hint_text, str) and hint_text:
+            hints_payload.append({"id": entry_id, "hint": hint_text})
         hint_event = AttemptHintProgressEvent(
             chat_id=str(chat_id),
             message_id=str(message_id),
             type="complete",
-            hints_count=len(hints) if hints else 0,
-            hints=hints,
+            hints_count=len(hints_payload),
+            hints=hints_payload,
         )
         await sio.emit(
             "attempt_hint_progress",
@@ -288,6 +277,52 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
             hint_event.model_dump(mode="json"),
             room=f"attempt_{chat_id}",
         )
+        return
+
+    # create_content: finalize assistant content path when no text_complete arrives
+    if entry_type == "contents" and chat_id and message_id:
+        content_text = arguments.get("content")
+        persona_id = arguments.get("persona_id")
+        if not isinstance(content_text, str) or not content_text:
+            # Fallback: try parse from raw arguments_delta if present
+            arguments_delta = data.get("arguments_delta")
+            if isinstance(arguments_delta, str) and arguments_delta:
+                try:
+                    parsed = json.loads(arguments_delta)
+                    if isinstance(parsed.get("content"), str):
+                        content_text = parsed.get("content")
+                except json.JSONDecodeError:
+                    pass
+
+        if isinstance(content_text, str) and content_text:
+            assistant_complete_event = AttemptAssistantCompleteEvent(
+                chat_id=str(chat_id),
+                message_id=str(message_id),
+                content=content_text,
+                persona_id=str(persona_id) if persona_id else None,
+            )
+            await sio.emit(
+                "attempt_assistant_complete",
+                assistant_complete_event.model_dump(mode="json"),
+                room=sid,
+            )
+            await sio.emit(
+                "attempt_assistant_complete",
+                assistant_complete_event.model_dump(mode="json"),
+                room=f"attempt_{chat_id}",
+            )
+
+            turn_complete_event = AttemptTurnCompleteEvent(chat_id=str(chat_id))
+            await sio.emit(
+                "attempt_turn_complete",
+                turn_complete_event.model_dump(mode="json"),
+                room=sid,
+            )
+            await sio.emit(
+                "attempt_turn_complete",
+                turn_complete_event.model_dump(mode="json"),
+                room=f"attempt_{chat_id}",
+            )
 
 
 # =============================================================================

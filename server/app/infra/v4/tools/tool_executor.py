@@ -161,11 +161,13 @@ async def _execute_entry_tool(
                     "success": True,
                     "message": f"Entry already exists, using existing {entry_type} entry",
                     "entry_id": entry_id,
+                    "entry_type": entry_type,
                 })
             return json.dumps({
                 "success": True,
                 "message": f"Successfully created {entry_type} entry",
                 "entry_id": entry_id,
+                "entry_type": entry_type,
             })
         else:
             return json.dumps({

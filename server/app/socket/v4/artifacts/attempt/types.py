@@ -118,6 +118,8 @@ class AttemptCompleteEvent(GenerationCompleteEvent):
     """
 
     artifact_type: str = "attempt"
+
+
     chat_id: str | None = None
     message_id: str | None = None
     final_content: str | None = None
@@ -329,6 +331,7 @@ class AttemptAssistantCompleteEvent(BaseModel):
     chat_id: str
     message_id: str
     content: str
+    persona_id: str | None = None
 
 
 class AttemptTurnCompleteEvent(BaseModel):

@@ -4,6 +4,7 @@ Listens to AI generation progress events and emits attempt-specific
 progress updates to clients. Filters by artifact_type='attempt'.
 """
 
+import json
 from typing import Any
 
 from fastapi import APIRouter
@@ -93,6 +94,39 @@ async def handle_attempt_progress(data: dict[str, Any]) -> None:
             delta_event.model_dump(mode="json"),
             room=f"attempt_{chat_id}",
         )
+
+    # Tool-driven assistant content (create_content) should also stream through assistant_delta
+    if (
+        data.get("event_type") == "tool_call_delta"
+        and data.get("tool_name") == "create_content"
+        and chat_id
+        and message_id
+    ):
+        arguments_delta = data.get("arguments_delta")
+        if isinstance(arguments_delta, str) and arguments_delta:
+            content_value = None
+            try:
+                parsed = json.loads(arguments_delta)
+                content_value = parsed.get("content")
+            except json.JSONDecodeError:
+                content_value = None
+
+            if isinstance(content_value, str) and content_value:
+                delta_event = AttemptAssistantDeltaEvent(
+                    chat_id=str(chat_id),
+                    message_id=str(message_id),
+                    content=content_value,
+                )
+                await sio.emit(
+                    "attempt_assistant_delta",
+                    delta_event.model_dump(mode="json"),
+                    room=sid,
+                )
+                await sio.emit(
+                    "attempt_assistant_delta",
+                    delta_event.model_dump(mode="json"),
+                    room=f"attempt_{chat_id}",
+                )
 
 
 # =============================================================================
