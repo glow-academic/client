@@ -51,6 +51,12 @@ def _round2(value: float | int | None) -> float | None:
     return round(float(value), 2)
 
 
+def _date_str(value: date | datetime | None) -> str | None:
+    if value is None:
+        return None
+    return value.isoformat()
+
+
 def _status_standard(value: float | int | None, thresholds: dict[str, int]) -> str:
     if value is None or float(value) == 0:
         return "neutral"
@@ -123,7 +129,7 @@ def _compute_stagnation_stats(
             points.append(
                 ReportsDataPoint(
                     profile_id=profile_id,
-                    date=ts.date(),
+                    date=_date_str(ts.date()),
                     value=_round2(score),
                 )
             )
@@ -205,13 +211,13 @@ def compute_reports_header_metrics(
     )
 
     avg_score_points = [
-        ReportsDataPoint(date=row.date_key, value=_round2(row.avg_score))
+        ReportsDataPoint(date=_date_str(row.date_key), value=_round2(row.avg_score))
         for row in sorted(daily_rows, key=lambda r: r.date_key)
         if row.avg_score is not None
     ]
     completion_points = [
         ReportsDataPoint(
-            date=row.date_key,
+            date=_date_str(row.date_key),
             value=_round2(
                 ((row.completed_count or 0) / (row.attempt_count or 1) * 100)
                 if (row.attempt_count or 0) > 0
@@ -538,7 +544,7 @@ def compute_trends_section(
         pass_rate = (passed_n / attempts_n) * 100 if attempts_n > 0 else None
         points.append(
             ReportsTrendPoint(
-                date=day,
+                date=_date_str(day),
                 attempts=attempts_n,
                 completed_attempts=completed_n,
                 passed_attempts=passed_n,

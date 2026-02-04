@@ -4,23 +4,18 @@ from typing import cast
 from uuid import UUID
 
 import asyncpg
-from pydantic import BaseModel
 
 from app.api.v4.views.analytics.simulation_scenario_counts.types import (
     GetSimulationScenarioCountsResponse,
     SimulationScenarioCountItem,
 )
+from app.sql.types import (
+    GetSimulationScenarioCountsSqlParams,
+    GetSimulationScenarioCountsSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/views/analytics/simulation_scenario_counts/get_simulation_scenario_counts_complete.sql"
-
-
-class GetSimulationScenarioCountsSqlParams(BaseModel):
-    simulation_ids: list[UUID]
-
-
-class GetSimulationScenarioCountsSqlRow(BaseModel):
-    items: list | None = None
 
 
 async def get_simulation_scenario_counts_internal(

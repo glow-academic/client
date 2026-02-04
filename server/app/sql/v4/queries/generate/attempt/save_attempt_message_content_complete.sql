@@ -1,4 +1,5 @@
 -- Save attempt message content - updates assistant message with generated content
+-- After migration 381: completed lives on messages_entry, content goes to simulation_contents_entry
 
 -- 1) Drop function first
 DO $$
@@ -26,27 +27,30 @@ CREATE OR REPLACE FUNCTION socket_save_attempt_message_content_v4(
 RETURNS TABLE (
     success boolean
 )
-LANGUAGE plpgsql
+LANGUAGE sql
 VOLATILE
 AS $$
-BEGIN
-    -- Update message content and mark as completed
-    UPDATE simulation_messages_entry
-    SET
-        content = p_content,
-        completed = true,
+WITH updated_message AS (
+    UPDATE messages_entry
+    SET completed = true,
         updated_at = NOW()
-    WHERE id = p_message_id;
-
-    -- Update run token counts if provided
-    IF p_run_id IS NOT NULL AND (p_input_tokens IS NOT NULL OR p_output_tokens IS NOT NULL) THEN
-        UPDATE runs_entry
-        SET
-            input_tokens = COALESCE(p_input_tokens, input_tokens),
-            output_tokens = COALESCE(p_output_tokens, output_tokens)
-        WHERE id = p_run_id;
-    END IF;
-
-    RETURN QUERY SELECT TRUE;
-END;
+    WHERE id = p_message_id
+    RETURNING id, run_id
+),
+new_content AS (
+    INSERT INTO simulation_contents_entry (message_id, content)
+    SELECT p_message_id, p_content
+    FROM updated_message
+    RETURNING id AS content_id
+),
+updated_run AS (
+    UPDATE runs_entry
+    SET input_tokens = COALESCE(p_input_tokens, input_tokens),
+        output_tokens = COALESCE(p_output_tokens, output_tokens),
+        updated_at = NOW()
+    WHERE id = (SELECT run_id FROM updated_message)
+      AND p_run_id IS NOT NULL
+    RETURNING id
+)
+SELECT TRUE as success;
 $$;

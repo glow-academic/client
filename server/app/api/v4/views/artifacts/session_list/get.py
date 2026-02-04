@@ -19,8 +19,11 @@ from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import load_sql
 
 router = APIRouter()
+
+MV_SQL_PATH = "app/sql/v4/views/artifacts/mv_z_artifact_session_list.sql"
 
 
 async def get_artifact_session_list_internal(
@@ -90,6 +93,12 @@ async def get_artifact_session_list_internal(
     }.get(sort_by, "session_created_at")
 
     order_dir = "DESC" if sort_order == "desc" else "ASC"
+
+    mv_exists = await conn.fetchval(
+        "SELECT to_regclass('public.mv_artifact_session_list')"
+    )
+    if mv_exists is None:
+        await conn.execute(load_sql(MV_SQL_PATH))
 
     count_query = f"SELECT COUNT(*) FROM mv_artifact_session_list WHERE {where_clause}"
     total_count = await conn.fetchval(count_query, *params)

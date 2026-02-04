@@ -4,23 +4,18 @@ from typing import cast
 from uuid import UUID
 
 import asyncpg
-from pydantic import BaseModel
 
 from app.api.v4.views.analytics.rubric_group_scores.types import (
     GetRubricGroupScoresResponse,
     RubricGroupScoreItem,
 )
+from app.sql.types import (
+    GetAnalyticsRubricGroupScoresViewSqlParams,
+    GetAnalyticsRubricGroupScoresViewSqlRow,
+)
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/views/analytics/rubric_group_scores/get_analytics_rubric_group_scores_view_complete.sql"
-
-
-class GetRubricGroupScoresSqlParams(BaseModel):
-    chat_ids: list[UUID]
-
-
-class GetRubricGroupScoresSqlRow(BaseModel):
-    items: list | None = None
 
 
 async def get_rubric_group_scores_internal(
@@ -32,11 +27,11 @@ async def get_rubric_group_scores_internal(
         return GetRubricGroupScoresResponse(items=[])
 
     result = cast(
-        GetRubricGroupScoresSqlRow,
+        GetAnalyticsRubricGroupScoresViewSqlRow,
         await execute_sql_typed(
             conn,
             SQL_PATH,
-            params=GetRubricGroupScoresSqlParams(chat_ids=chat_ids),
+            params=GetAnalyticsRubricGroupScoresViewSqlParams(chat_ids=chat_ids),
         ),
     )
 

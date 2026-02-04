@@ -1,6 +1,6 @@
 """Types for reports artifact get bundle."""
 
-from datetime import date, datetime
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -49,7 +49,7 @@ class ReportsDataPoint(BaseModel):
     """Metric trend point (lightweight equivalent of SQL data_point type)."""
 
     profile_id: str | None = None
-    date: date | str | None = None
+    date: str | None = None
     value: float | int | None = None
     simulation_id: str | None = None
     scenario_id: str | None = None
@@ -157,7 +157,7 @@ class ReportsLeaderboardSection(BaseModel):
 class ReportsTrendPoint(BaseModel):
     """Time-series aggregate point."""
 
-    date: date | str | None = None
+    date: str | None = None
     attempts: int = 0
     completed_attempts: int = 0
     passed_attempts: int = 0
