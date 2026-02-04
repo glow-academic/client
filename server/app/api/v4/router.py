@@ -54,10 +54,6 @@ from app.api.v4.artifacts.activity import router as activity_artifact_router
 from app.api.v4.artifacts.health import router as health_artifact_router
 from app.api.v4.artifacts.benchmark import router as benchmark_artifact_router
 
-# ============================================================================
-# Attempts
-# ============================================================================
-from app.api.v4.attempts import router as attempts_router
 
 # ============================================================================
 # Auth (not available to MCP)
@@ -165,11 +161,6 @@ router.include_router(analytics_router)
 # Views (READ layer on entry_type tables)
 # ============================================================================
 router.include_router(views_router)
-
-# ============================================================================
-# Attempts
-# ============================================================================
-router.include_router(attempts_router)
 
 # ============================================================================
 # Bulk Operations

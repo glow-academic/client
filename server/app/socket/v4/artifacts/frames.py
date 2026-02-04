@@ -5,7 +5,7 @@ from typing import Any
 
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.session_store import (
-    get_session_by_run_id,
+    get_session_by_group_id,
     get_session_by_sid,
 )
 
@@ -16,13 +16,13 @@ internal_sio = get_internal_sio()
 async def audio_frame_send(sid: str, data: dict[str, Any]) -> None:
     """Handle audio_frame_send event from client - push to inbound_queue."""
     try:
-        # Get session by sid or run_id
+        # Get session by sid or group_id
         session = get_session_by_sid(sid)
         if not session:
-            # Try to get by run_id if provided
-            run_id = data.get("run_id")
-            if run_id:
-                session = get_session_by_run_id(str(run_id))
+            # Try to get by group_id if provided
+            group_id = data.get("group_id")
+            if group_id:
+                session = get_session_by_group_id(str(group_id))
 
         if not session:
             # Session not found - ignore silently (session may not be initialized yet)
@@ -49,13 +49,13 @@ async def audio_frame_send(sid: str, data: dict[str, Any]) -> None:
 async def mic_set_muted(sid: str, data: dict[str, Any]) -> None:
     """Handle mic.set_muted event from client - push control message to inbound_queue."""
     try:
-        # Get session by sid or run_id
+        # Get session by sid or group_id
         session = get_session_by_sid(sid)
         if not session:
-            # Try to get by run_id if provided
-            run_id = data.get("run_id")
-            if run_id:
-                session = get_session_by_run_id(str(run_id))
+            # Try to get by group_id if provided
+            group_id = data.get("group_id")
+            if group_id:
+                session = get_session_by_group_id(str(group_id))
 
         if not session:
             # Session not found - ignore silently
@@ -74,10 +74,10 @@ async def mic_set_muted(sid: str, data: dict[str, Any]) -> None:
         pass
 
 
-async def _client_ws_sender_task(sid: str, run_id: str) -> None:
+async def _client_ws_sender_task(sid: str, group_id: str) -> None:
     """Background task that drains outbound_queue and sends audio frames to client."""
     try:
-        session = get_session_by_run_id(run_id)
+        session = get_session_by_group_id(group_id)
         if not session:
             return
 
@@ -107,7 +107,7 @@ async def _client_ws_sender_task(sid: str, run_id: str) -> None:
 
 
 # Start background sender task when session is created
-# This will be called from generate.py after session creation
-async def start_client_ws_sender(sid: str, run_id: str) -> None:
+# This will be called from audio.py after session creation
+async def start_client_ws_sender(sid: str, group_id: str) -> None:
     """Start background task to send audio frames to client."""
-    asyncio.create_task(_client_ws_sender_task(sid, run_id))
+    asyncio.create_task(_client_ws_sender_task(sid, group_id))

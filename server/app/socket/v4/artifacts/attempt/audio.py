@@ -36,7 +36,7 @@ from app.socket.v4.artifacts.attempt.types import (
 from app.socket.v4.artifacts.frames import start_client_ws_sender
 from app.socket.v4.artifacts.session_store import (
     create_session,
-    get_session_by_run_id,
+    get_session_by_group_id,
     get_session_by_sid,
     remove_session,
 )
@@ -58,13 +58,13 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         payload = AttemptAudioStartPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
 
-        run_id = str(payload.run_id)
+        group_id = str(payload.group_id)
 
         if not profile_id_str:
             await sio.emit(
                 "attempt_error",
                 AttemptUnifiedErrorEvent(
-                    run_id=run_id,
+                    group_id=group_id,
                     type="audio",
                     message="Profile not found. Please reconnect.",
                 ).model_dump(mode="json"),
@@ -72,20 +72,20 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        # Create audio session
-        session = create_session(sid, run_id)
+        # Create audio session (keyed by group_id)
+        session = create_session(sid, group_id)
 
-        # Store session reference by run_id for cleanup
-        _voice_sessions[run_id] = {
+        # Store session reference by group_id for cleanup
+        _voice_sessions[group_id] = {
             "sid": sid,
             "session": session,
         }
 
         # Start the background task to send audio frames to client
-        await start_client_ws_sender(sid, run_id)
+        await start_client_ws_sender(sid, group_id)
 
         event = AttemptAudioReadyEvent(
-            run_id=run_id,
+            group_id=group_id,
             success=True,
             message="Voice session ready",
         )
@@ -96,7 +96,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             room=sid,
         )
 
-        logger.info(f"Audio session started - run_id={run_id}")
+        logger.info(f"Audio session started - group_id={group_id}")
 
         # Log activity
         try:
@@ -104,7 +104,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 event_key="attempt.audio.started",
                 template="{{ actor.name }} started voice session",
-                context={"run_id": run_id},
+                context={"group_id": group_id},
                 endpoint="/socket/v4/attempt/audio_start",
                 error=False,
             )
@@ -113,11 +113,11 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_audio_start: {str(e)}")
-        run_id = data.get("run_id", "")
+        group_id = data.get("group_id", "")
         await sio.emit(
             "attempt_error",
             AttemptUnifiedErrorEvent(
-                run_id=str(run_id) if run_id else None,
+                group_id=str(group_id) if group_id else None,
                 type="audio",
                 message=f"Failed to start voice session: {str(e)}",
             ).model_dump(mode="json"),
@@ -133,22 +133,22 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
     """
     try:
         payload = AttemptAudioStopPayload(**data)
-        run_id = str(payload.run_id)
+        group_id = str(payload.group_id)
 
         # Get and remove voice session
-        session_data = _voice_sessions.pop(run_id, None)
+        session_data = _voice_sessions.pop(group_id, None)
         if session_data:
-            # Remove from session store (cleans up by both sid and run_id)
-            remove_session(run_id)
-            logger.info(f"Audio session stopped - run_id={run_id}")
+            # Remove from session store (cleans up by both sid and group_id)
+            remove_session(group_id)
+            logger.info(f"Audio session stopped - group_id={group_id}")
 
-        # Clear accumulated message IDs
+        # Clear accumulated message IDs for this group
         async with _voice_message_ids_lock:
-            if run_id in _voice_message_ids:
-                del _voice_message_ids[run_id]
+            if group_id in _voice_message_ids:
+                del _voice_message_ids[group_id]
 
         event = AttemptAudioEndedEvent(
-            run_id=run_id,
+            group_id=group_id,
             success=True,
             message="Voice session stopped",
         )
@@ -165,7 +165,7 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 event_key="attempt.audio.stopped",
                 template="{{ actor.name }} stopped voice session",
-                context={"run_id": run_id},
+                context={"group_id": group_id},
                 endpoint="/socket/v4/attempt/audio_stop",
                 error=False,
             )
@@ -174,11 +174,11 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_audio_stop: {str(e)}")
-        run_id = data.get("run_id", "")
+        group_id = data.get("group_id", "")
         await sio.emit(
             "attempt_error",
             AttemptUnifiedErrorEvent(
-                run_id=str(run_id) if run_id else None,
+                group_id=str(group_id) if group_id else None,
                 type="audio",
                 message=f"Failed to stop voice session: {str(e)}",
             ).model_dump(mode="json"),
@@ -197,13 +197,13 @@ async def attempt_audio_frame(sid: str, data: dict[str, Any]) -> None:
         session = get_session_by_sid(sid)
 
         if not session:
-            # Try to get by run_id if provided
-            run_id = data.get("run_id")
-            if run_id:
-                session = get_session_by_run_id(str(run_id))
-                # Also check _voice_sessions by run_id
+            # Try to get by group_id if provided
+            group_id = data.get("group_id")
+            if group_id:
+                session = get_session_by_group_id(str(group_id))
+                # Also check _voice_sessions by group_id
                 if not session:
-                    session_data = _voice_sessions.get(str(run_id))
+                    session_data = _voice_sessions.get(str(group_id))
                     if session_data:
                         session = session_data.get("session")
 
@@ -241,13 +241,13 @@ async def attempt_mic_mute(sid: str, data: dict[str, Any]) -> None:
         session = get_session_by_sid(sid)
 
         if not session:
-            # Try to get by run_id if provided
-            run_id = data.get("run_id")
-            if run_id:
-                session = get_session_by_run_id(str(run_id))
-                # Also check _voice_sessions by run_id
+            # Try to get by group_id if provided
+            group_id = data.get("group_id")
+            if group_id:
+                session = get_session_by_group_id(str(group_id))
+                # Also check _voice_sessions by group_id
                 if not session:
-                    session_data = _voice_sessions.get(str(run_id))
+                    session_data = _voice_sessions.get(str(group_id))
                     if session_data:
                         session = session_data.get("session")
 
@@ -272,30 +272,30 @@ async def attempt_mic_mute(sid: str, data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-def get_session_for_run(run_id: str):
-    """Get the audio session for a run_id.
+def get_session_for_group(group_id: str):
+    """Get the audio session for a group_id.
 
     Returns the AudioSession if one exists, None otherwise.
     """
     # First try session store
-    session = get_session_by_run_id(run_id)
+    session = get_session_by_group_id(group_id)
     if session:
         return session
 
     # Fallback to _voice_sessions
-    session_data = _voice_sessions.get(run_id)
+    session_data = _voice_sessions.get(group_id)
     if session_data:
         return session_data.get("session")
     return None
 
 
-async def push_audio_to_session(run_id: str, audio_data: bytes) -> bool:
-    """Push audio data to a run's audio session outbound queue.
+async def push_audio_to_session(group_id: str, audio_data: bytes) -> bool:
+    """Push audio data to a group's audio session outbound queue.
 
     This is called by the generation pipeline when audio is produced.
     Returns True if audio was pushed, False if no session exists.
     """
-    session = get_session_for_run(run_id)
+    session = get_session_for_group(group_id)
     if not session:
         return False
 

@@ -168,10 +168,10 @@ DEFAULT_CATEGORIES = [
 ]
 
 
-# Global storage for voice sessions (run_id -> session data)
+# Global storage for voice sessions (group_id -> session data)
 _voice_sessions: dict[str, dict[str, Any]] = {}
 
-# Global storage for voice message IDs (run_id -> list of message IDs)
+# Global storage for voice message IDs (group_id -> list of message IDs)
 # Accumulates message IDs created during voice tool calls, processed when response.done arrives
 _voice_message_ids: dict[str, list[str]] = {}
 _voice_message_ids_lock = asyncio.Lock()

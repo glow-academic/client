@@ -35,14 +35,14 @@ router = APIRouter()
         )
     ],
 )
-async def archive_simulation_attempts(
+async def archive_attempts(
     request: BulkArchiveAttemptsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkArchiveAttemptsApiResponse:
-    """Bulk archive or unarchive simulation attempts."""
-    tags = ["attempts"]  # From router tags
+    """Bulk archive or unarchive attempts (simulation or benchmark)."""
+    tags = ["attempts"]
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -139,7 +139,7 @@ async def archive_simulation_attempts(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="archive_simulation_attempts",
+            operation="archive_attempts",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
