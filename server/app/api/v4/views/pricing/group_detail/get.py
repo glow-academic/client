@@ -1,7 +1,7 @@
 """Get endpoint for pricing group detail view.
 
 Fetches run metadata from mv_pricing_run_facts and messages from
-messages_entry + simulation_contents_entry with tree ordering.
+messages_entry + simulation_contents_entry.
 """
 
 from typing import Annotated, Any
@@ -42,7 +42,7 @@ async def get_pricing_group_detail_internal(
     """Internal function for fetching group detail with messages.
 
     Returns run metadata from mv_pricing_run_facts and messages
-    ordered by message tree traversal.
+    ordered by role (system, developer, user, assistant) then created_at.
     """
     cache_key_val = cache_key(
         "views/pricing/group_detail/get",
@@ -83,122 +83,44 @@ async def get_pricing_group_detail_internal(
     # Map run_id -> index in chronological order (run_idx)
     run_id_to_idx: dict[UUID, int] = {rid: idx for idx, rid in enumerate(run_ids)}
 
-    # Step 3: Get all messages for these runs with content via tree traversal
-    # Uses recursive CTE to walk ancestor chain from each run's latest message
+    # Step 3: Get all messages for these runs with content
+    # Simple approach: fetch all messages per run, ordered by role then created_at
     message_rows = await conn.fetch(
         """
-        WITH RECURSIVE
-        -- Find the latest user/assistant message per run (entry point for tree walk)
-        latest_per_run AS (
-            SELECT DISTINCT ON (m.run_id)
-                m.id AS message_id,
-                m.run_id
-            FROM messages_entry m
-            WHERE m.run_id = ANY($1)
-              AND m.role IN ('user', 'assistant')
-              AND m.active = true
-            ORDER BY m.run_id, m.created_at DESC
-        ),
-        -- Recursive ancestor walk from each run's latest message
-        ancestor_path AS (
-            -- Base: the latest message itself
-            SELECT
-                m.id,
-                lpr.run_id AS origin_run_id,
-                m.run_id AS msg_run_id,
-                m.role,
-                m.created_at,
-                0 AS depth_from_latest
-            FROM latest_per_run lpr
-            JOIN messages_entry m ON m.id = lpr.message_id
-
-            UNION ALL
-
-            -- Recursive: walk up parent links
-            SELECT
-                parent_msg.id,
-                ap.origin_run_id,
-                parent_msg.run_id AS msg_run_id,
-                parent_msg.role,
-                parent_msg.created_at,
-                ap.depth_from_latest + 1
-            FROM ancestor_path ap
-            JOIN simulation_message_tree_entry mt
-                ON mt.child_id = ap.id AND mt.active = true
-            JOIN messages_entry parent_msg
-                ON parent_msg.id = mt.parent_id AND parent_msg.active = true
-            WHERE ap.depth_from_latest < 100
-        ),
-        -- Also include system/developer messages from the first run
-        -- for all subsequent runs (they won't be in the ancestor chain)
-        first_run_system_msgs AS (
-            SELECT
-                m.id,
-                target_run.run_id AS origin_run_id,
-                m.run_id AS msg_run_id,
-                m.role,
-                m.created_at,
-                999 AS depth_from_latest
-            FROM messages_entry m
-            CROSS JOIN LATERAL (
-                SELECT unnest($1::uuid[]) AS run_id
-            ) target_run
-            WHERE m.run_id = $2
-              AND m.role IN ('system', 'developer')
-              AND m.active = true
-              AND target_run.run_id != $2
-        ),
-        -- Combine and deduplicate (DISTINCT ON handles duplicates
-        -- where ancestor_path already found a system/dev message)
-        all_msgs AS (
-            SELECT DISTINCT ON (origin_run_id, id)
-                id, origin_run_id, msg_run_id, role, created_at, depth_from_latest
-            FROM (
-                SELECT * FROM ancestor_path
-                UNION ALL
-                SELECT * FROM first_run_system_msgs
-            ) combined
-            ORDER BY origin_run_id, id, depth_from_latest ASC
-        ),
-        -- Attach content from simulation_contents_entry
-        msgs_with_content AS (
-            SELECT
-                am.id,
-                am.origin_run_id,
-                am.msg_run_id,
-                am.role,
-                am.created_at,
-                am.depth_from_latest,
-                COALESCE(
-                    ARRAY_AGG(sce.content ORDER BY sce.created_at) FILTER (WHERE sce.id IS NOT NULL),
-                    ARRAY[]::text[]
-                ) AS contents
-            FROM all_msgs am
-            LEFT JOIN simulation_contents_entry sce
-                ON sce.message_id = am.id AND sce.active = true
-            GROUP BY am.id, am.origin_run_id, am.msg_run_id, am.role, am.created_at, am.depth_from_latest
-        )
         SELECT
-            id,
-            origin_run_id,
-            msg_run_id,
-            role,
-            created_at,
-            depth_from_latest,
-            contents
-        FROM msgs_with_content
-        ORDER BY origin_run_id, depth_from_latest DESC, created_at
+            m.id,
+            m.run_id,
+            m.role,
+            m.created_at,
+            COALESCE(
+                ARRAY_AGG(sce.content ORDER BY sce.created_at) FILTER (WHERE sce.id IS NOT NULL),
+                ARRAY[]::text[]
+            ) AS contents
+        FROM messages_entry m
+        LEFT JOIN simulation_contents_entry sce
+            ON sce.message_id = m.id AND sce.active = true
+        WHERE m.run_id = ANY($1)
+          AND m.active = true
+        GROUP BY m.id, m.run_id, m.role, m.created_at
+        ORDER BY m.run_id,
+            CASE m.role
+                WHEN 'system' THEN 1
+                WHEN 'developer' THEN 2
+                WHEN 'user' THEN 3
+                WHEN 'assistant' THEN 4
+                ELSE 5
+            END,
+            m.created_at
         """,
         run_ids,
-        run_ids[0],  # first run ID for system/developer messages
     )
 
     # Step 4: Group messages by run and build response
     run_messages: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
     for row in message_rows:
-        origin_run_id = row["origin_run_id"]
-        if origin_run_id in run_messages:
-            run_messages[origin_run_id].append(dict(row))
+        run_id = row["run_id"]
+        if run_id in run_messages:
+            run_messages[run_id].append(dict(row))
 
     runs: list[GroupDetailRunWithMessages] = []
     for run_row in run_rows:
@@ -221,13 +143,10 @@ async def get_pricing_group_detail_internal(
         # Build messages list
         messages: list[GroupDetailMessage] = []
         for msg in run_messages.get(run_id, []):
-            msg_run_id = msg["msg_run_id"]
-            msg_run_idx = run_id_to_idx.get(msg_run_id, 0)
-
             contents = [
                 GroupDetailContent(content=c) for c in (msg["contents"] or [])
             ]
-            # If no simulation contents, try text_id fallback
+            # If no simulation contents, use empty content
             if not contents:
                 contents = [GroupDetailContent(content=None)]
 
@@ -236,17 +155,13 @@ async def get_pricing_group_detail_internal(
                     id=msg["id"],
                     role=msg["role"],
                     contents=contents,
-                    run_idx=msg_run_idx,
+                    run_idx=run_idx,  # Message belongs to current run
                 )
             )
 
-        # Step 5: Calculate previous_context_start_index
+        # Step 5: previous_context_start_index is not needed since each run
+        # only shows its own messages (no context from previous runs)
         previous_context_start_index: int | None = None
-        if run_idx > 0 and messages:
-            for i, m in enumerate(messages):
-                if m.run_idx == run_idx:
-                    previous_context_start_index = i
-                    break
 
         runs.append(
             GroupDetailRunWithMessages(
