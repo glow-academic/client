@@ -43,7 +43,6 @@ SQL_PATH_GET_GRADE_CONTEXT = (
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
-@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_attempt_complete(data: dict[str, Any]) -> None:
     """Handle generate_*_complete events - filter by attempt artifact_type and emit attempt-specific event."""
     # Skip processing if in eval mode
@@ -110,10 +109,17 @@ async def _handle_message_complete(
             message_id = context_row["message_id"]
             chat_id = context_row["chat_id"]
 
-            await conn.fetchrow(
-                "SELECT * FROM socket_save_attempt_message_content_v4($1, $2, $3, $4, $5)",
-                message_id,
-                final_content,
+            # Content is already inserted by the create_content tool call
+            # (via api_create_entry_record_v4) with proper persona_id.
+            # We only update token usage on the run here.
+            await conn.execute(
+                """
+                UPDATE runs_entry
+                SET input_tokens = COALESCE($2, input_tokens),
+                    output_tokens = COALESCE($3, output_tokens),
+                    updated_at = NOW()
+                WHERE id = $1
+                """,
                 run_uuid,
                 input_tokens,
                 output_tokens,
