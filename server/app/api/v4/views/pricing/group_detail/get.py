@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from app.api.v4.views.pricing.group_detail.types import (
     GetGroupDetailResponse,
+    GroupDetailCall,
     GroupDetailContent,
     GroupDetailMessage,
     GroupDetailRunMetadata,
@@ -115,7 +116,29 @@ async def get_pricing_group_detail_internal(
         run_ids,
     )
 
-    # Step 4: Group messages by run and build response
+    # Step 4: Get all calls for these runs
+    call_rows = await conn.fetch(
+        """
+        SELECT
+            c.id,
+            c.run_id,
+            c.created_at,
+            c.arguments_raw
+        FROM calls_entry c
+        WHERE c.run_id = ANY($1)
+        ORDER BY c.run_id, c.created_at
+        """,
+        run_ids,
+    )
+
+    # Group calls by run_id
+    run_calls: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
+    for row in call_rows:
+        run_id = row["run_id"]
+        if run_id in run_calls:
+            run_calls[run_id].append(dict(row))
+
+    # Step 5: Group messages by run and build response
     run_messages: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
     for row in message_rows:
         run_id = row["run_id"]
@@ -140,9 +163,32 @@ async def get_pricing_group_detail_internal(
             profile_id=run_row["profile_id"],
         )
 
-        # Build messages list
+        # Build messages list with calls attached
+        # Calls are attached to the message that follows them (by timestamp)
         messages: list[GroupDetailMessage] = []
+        calls_for_run = run_calls.get(run_id, [])
+        call_idx = 0  # Track which calls we've processed
+
         for msg in run_messages.get(run_id, []):
+            msg_created_at = msg["created_at"]
+
+            # Find calls that occurred before this message
+            calls_before_msg: list[GroupDetailCall] = []
+            while call_idx < len(calls_for_run):
+                call = calls_for_run[call_idx]
+                if call["created_at"] < msg_created_at:
+                    calls_before_msg.append(
+                        GroupDetailCall(
+                            id=call["id"],
+                            template_name=None,
+                            arguments=call["arguments_raw"],
+                            created_at=call["created_at"],
+                        )
+                    )
+                    call_idx += 1
+                else:
+                    break
+
             contents = [
                 GroupDetailContent(content=c) for c in (msg["contents"] or [])
             ]
@@ -155,11 +201,25 @@ async def get_pricing_group_detail_internal(
                     id=msg["id"],
                     role=msg["role"],
                     contents=contents,
+                    calls=calls_before_msg,
                     run_idx=run_idx,  # Message belongs to current run
                 )
             )
 
-        # Step 5: previous_context_start_index is not needed since each run
+        # Attach any remaining calls to the last message (or create a placeholder)
+        if call_idx < len(calls_for_run) and messages:
+            remaining_calls = [
+                GroupDetailCall(
+                    id=call["id"],
+                    template_name=None,
+                    arguments=call["arguments_raw"],
+                    created_at=call["created_at"],
+                )
+                for call in calls_for_run[call_idx:]
+            ]
+            messages[-1].calls.extend(remaining_calls)
+
+        # Step 6: previous_context_start_index is not needed since each run
         # only shows its own messages (no context from previous runs)
         previous_context_start_index: int | None = None
 

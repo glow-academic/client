@@ -12,12 +12,22 @@ class GroupDetailContent(BaseModel):
     content: str | None = None
 
 
+class GroupDetailCall(BaseModel):
+    """A tool/function call made during the run."""
+
+    id: UUID
+    template_name: str | None = None
+    arguments: str | None = None
+    created_at: datetime
+
+
 class GroupDetailMessage(BaseModel):
     """Single message with contents and run origin info."""
 
     id: UUID | None = None
     role: str | None = None
     contents: list[GroupDetailContent] = Field(default_factory=list)
+    calls: list[GroupDetailCall] = Field(default_factory=list)
     run_idx: int = 0
 
 

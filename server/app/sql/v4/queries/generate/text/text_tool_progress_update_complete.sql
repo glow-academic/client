@@ -69,10 +69,9 @@ existing_tool_call AS (
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, run_id, created_at, updated_at)
+    INSERT INTO calls_entry (external_call_id, arguments_raw, completed, run_id, created_at, updated_at)
     SELECT
         COALESCE(p.call_id, 'text_' || p.tool_call_id),
-        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gt.tool_id LIMIT 1),
         '',
         false,
         p.run_id,

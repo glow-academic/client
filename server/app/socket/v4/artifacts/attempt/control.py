@@ -224,11 +224,10 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload, profile_id: uuid.
                     LIMIT 1
                 ),
                 new_call AS (
-                    INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed)
+                    INSERT INTO calls_entry (external_call_id, run_id, arguments_raw, completed)
                     SELECT
                         $2,
                         lr.run_id,
-                        '019bbf87-0969-7918-baff-8a6aea670506'::uuid,
                         $3,
                         true
                     FROM last_run lr
@@ -408,11 +407,10 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
                     LIMIT 1
                 ),
                 new_call AS (
-                    INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed)
+                    INSERT INTO calls_entry (external_call_id, run_id, arguments_raw, completed)
                     SELECT
                         $2,
                         lr.run_id,
-                        '019bbf87-0969-7918-baff-8a6aea670506'::uuid,
                         $3,
                         true
                     FROM last_run lr

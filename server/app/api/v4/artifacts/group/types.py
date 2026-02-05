@@ -68,12 +68,22 @@ class GroupDetailContentItem(BaseModel):
     content: str | None = None
 
 
+class GroupDetailCallItem(BaseModel):
+    """A tool/function call made during the run."""
+
+    id: UUID
+    template_name: str | None = None
+    arguments: str | None = None
+    created_at: datetime
+
+
 class GroupDetailMessageItem(BaseModel):
     """A message with contents."""
 
     id: UUID | None = None
     role: str | None = None
     contents: list[GroupDetailContentItem] = Field(default_factory=list)
+    calls: list[GroupDetailCallItem] = Field(default_factory=list)
 
 
 class GroupDetailRunItem(BaseModel):

@@ -187,11 +187,10 @@ create_message_if_needed AS (
 ),
 -- Create synthetic tool call for new user view_messages_entry
 user_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls_entry (external_call_id, run_id, arguments_raw, completed, created_at, updated_at)
     SELECT
         'member_progress_user_' || cm.message_id::text,
         ur.run_id,
-        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gst.tool_id LIMIT 1),
         '',
         true,
         cm.created_at,

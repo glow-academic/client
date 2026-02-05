@@ -22,7 +22,6 @@ CREATE OR REPLACE FUNCTION api_get_call_by_external_id_v4(
 RETURNS TABLE (
     id uuid,
     tool_id uuid,
-    template_id uuid,
     arguments_raw text
 )
 LANGUAGE sql
@@ -31,7 +30,6 @@ AS $$
     SELECT
         c.id,
         tcj.tool_id,
-        c.template_id,
         c.arguments_raw
     FROM view_calls_entry c
     JOIN tool_calls_junction tcj ON tcj.call_id = c.id

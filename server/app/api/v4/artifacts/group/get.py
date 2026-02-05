@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.group.types import (
     GetGroupDetailRequest,
     GetGroupDetailResponse,
+    GroupDetailCallItem,
     GroupDetailContentItem,
     GroupDetailMessageItem,
     GroupDetailResourceItem,
@@ -166,6 +167,15 @@ async def get_group(
                         contents=[
                             GroupDetailContentItem(content=c.content)
                             for c in view_msg.contents
+                        ],
+                        calls=[
+                            GroupDetailCallItem(
+                                id=c.id,
+                                template_name=c.template_name,
+                                arguments=c.arguments,
+                                created_at=c.created_at,
+                            )
+                            for c in view_msg.calls
                         ],
                     )
                 )

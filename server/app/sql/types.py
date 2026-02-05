@@ -1237,7 +1237,6 @@ class GetCallByExternalIdSqlRow(BaseModel):
 
     id: UUID | None = None
     tool_id: UUID | None = None
-    template_id: UUID | None = None
     arguments_raw: str | None = None
 
 class GetCallByExternalIdApiRequest(BaseModel):
@@ -1248,7 +1247,6 @@ class GetCallByExternalIdApiResponse(BaseModel):
 
     id: UUID | None = None
     tool_id: UUID | None = None
-    template_id: UUID | None = None
     arguments_raw: str | None = None
 
 
@@ -8668,14 +8666,12 @@ class InfraToolsCreateCallForToolSqlParams(BaseModel):
 
     external_call_id: str
     run_id: UUID
-    template_id: UUID
     arguments_raw: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.external_call_id,
             self.run_id,
-            self.template_id,
             self.arguments_raw,
         )
 
@@ -8687,7 +8683,6 @@ class InfraToolsCreateCallForToolApiRequest(BaseModel):
 
     external_call_id: str
     run_id: UUID
-    template_id: UUID
     arguments_raw: str
 
 class InfraToolsCreateCallForToolApiResponse(BaseModel):

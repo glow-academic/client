@@ -15,8 +15,6 @@ from app.sql.types import (
     InfraToolsCreateCallForToolSqlRow,
     InfraToolsGetResourceTypeByToolIdSqlParams,
     InfraToolsGetResourceTypeByToolIdSqlRow,
-    InfraToolsGetTemplateIdV4SqlParams,
-    InfraToolsGetTemplateIdV4SqlRow,
     InfraToolsGetToolIdByNameSqlParams,
     InfraToolsGetToolIdByNameSqlRow,
     InfraToolsIsToolCreatableSqlParams,
@@ -116,22 +114,10 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
 
         resource_type = resource_result.resource_type
 
-        template_params = InfraToolsGetTemplateIdV4SqlParams(tool_id=tool_id)
-        template_result = cast(
-            InfraToolsGetTemplateIdV4SqlRow,
-            await execute_sql_typed(
-                conn,
-                "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql",
-                params=template_params,
-            ),
-        )
-        template_id = template_result.template_id if template_result else None
-
         # Create call entry
         call_params = InfraToolsCreateCallForToolSqlParams(
             external_call_id=str(call_id),
             run_id=uuid.UUID(run_id),
-            template_id=template_id,
             arguments_raw=json.dumps(arguments),
         )
         call_result = cast(

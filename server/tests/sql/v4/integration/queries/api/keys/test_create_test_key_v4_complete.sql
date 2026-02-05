@@ -22,11 +22,10 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH call_record AS (
-        INSERT INTO calls_entry (id, external_call_id, template_id, arguments_raw, completed, created_at, updated_at)
+        INSERT INTO calls_entry (id, external_call_id, arguments_raw, completed, created_at, updated_at)
         VALUES (
             uuidv7(),
             'test_create_key_' || uuidv7()::text,
-            NULL,
             jsonb_build_object('key_name', key_name, 'key_description', key_description, 'key_active', key_active)::text,
             true,
             NOW(),

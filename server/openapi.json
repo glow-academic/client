@@ -63454,6 +63454,92 @@
         "title": "GradingStateData",
         "description": "Grading state for a chat in Record format.\n\nAll fields are Records keyed by standard_id strings.\nThis is the exact format the client needs - no transformation required."
       },
+      "GroupDetailCall": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Name"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "GroupDetailCall",
+        "description": "A tool/function call made during the run."
+      },
+      "GroupDetailCallItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Name"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "GroupDetailCallItem",
+        "description": "A tool/function call made during the run."
+      },
       "GroupDetailContent": {
         "properties": {
           "content": {
@@ -63522,6 +63608,13 @@
             "type": "array",
             "title": "Contents"
           },
+          "calls": {
+            "items": {
+              "$ref": "#/components/schemas/GroupDetailCall"
+            },
+            "type": "array",
+            "title": "Calls"
+          },
           "run_idx": {
             "type": "integer",
             "title": "Run Idx",
@@ -63563,6 +63656,13 @@
             },
             "type": "array",
             "title": "Contents"
+          },
+          "calls": {
+            "items": {
+              "$ref": "#/components/schemas/GroupDetailCallItem"
+            },
+            "type": "array",
+            "title": "Calls"
           }
         },
         "type": "object",

@@ -25,8 +25,6 @@ from app.sql.types import (
     InfraToolsCreateCallForToolSqlRow,
     InfraToolsGetEntryTypeByToolIdSqlParams,
     InfraToolsGetResourceTypeByToolIdSqlParams,
-    InfraToolsGetTemplateIdV4SqlParams,
-    InfraToolsGetTemplateIdV4SqlRow,
     InfraToolsGetToolIdByNameSqlParams,
     InfraToolsIsToolCreatableSqlParams,
     InfraToolsLinkToolCallSqlParams,
@@ -368,16 +366,6 @@ async def _create_tool_call_record(
     if run_id is None:
         return None
 
-    template_result = cast(
-        InfraToolsGetTemplateIdV4SqlRow,
-        await execute_sql_typed(
-            conn,
-            "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql",
-            params=InfraToolsGetTemplateIdV4SqlParams(tool_id=tool_id),
-        ),
-    )
-    template_id = template_result.template_id if template_result else None
-
     call_result = cast(
         InfraToolsCreateCallForToolSqlRow,
         await execute_sql_typed(
@@ -386,7 +374,6 @@ async def _create_tool_call_record(
             params=InfraToolsCreateCallForToolSqlParams(
                 external_call_id=external_call_id or str(uuid.uuid4()),
                 run_id=run_id,
-                template_id=template_id,
                 arguments_raw=json.dumps(arguments),
             ),
         ),

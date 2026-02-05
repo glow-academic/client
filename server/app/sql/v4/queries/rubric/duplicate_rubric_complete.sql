@@ -261,26 +261,26 @@ groups_mapping AS (
     ORDER BY og.id, ngwo.id
 ),
 standard_call_context AS (
-    SELECT tcj.tool_id, c.template_id, 1 as priority
+    SELECT tcj.tool_id, 1 as priority
     FROM view_calls_entry c
     JOIN tool_calls_junction tcj ON tcj.call_id = c.id
     JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_standard_group'
     UNION ALL
-    SELECT tcj.tool_id, c.template_id, 2 as priority
+    SELECT tcj.tool_id, 2 as priority
     FROM view_calls_entry c
     JOIN tool_calls_junction tcj ON tcj.call_id = c.id
     JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_rubrics'
     UNION ALL
-    SELECT tcj.tool_id, c.template_id, 3 as priority
+    SELECT tcj.tool_id, 3 as priority
     FROM view_calls_entry c
     JOIN tool_calls_junction tcj ON tcj.call_id = c.id
 ),
 standard_call_params AS (
-    SELECT tool_id, template_id
+    SELECT tool_id
     FROM standard_call_context
     ORDER BY priority
     LIMIT 1
@@ -289,8 +289,7 @@ standard_calls AS (
     SELECT
         os.id as standard_id,
         uuidv7() as call_id,
-        scp.tool_id,
-        scp.template_id
+        scp.tool_id
     FROM original_standards os
     CROSS JOIN standard_call_params scp
 ),
@@ -298,7 +297,6 @@ insert_standard_calls AS (
     INSERT INTO calls_entry (
         id,
         external_call_id,
-        template_id,
         arguments_raw,
         completed,
         created_at,
@@ -307,7 +305,6 @@ insert_standard_calls AS (
     SELECT
         sc.call_id,
         'standard_resource_' || sc.standard_id::text || '_' || sc.call_id::text,
-        sc.template_id,
         jsonb_build_object(
             'standard_id', sc.standard_id::text,
             'standard_group_id', os.standard_group_id::text

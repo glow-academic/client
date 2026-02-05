@@ -303,10 +303,9 @@ get_prompt_tool_id AS (
     LIMIT 1
 ),
 system_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, created_at, updated_at, run_id)
+    INSERT INTO calls_entry (external_call_id, arguments_raw, completed, created_at, updated_at, run_id)
     SELECT
         'log_run_system_' || nsm.system_message_id::text,
-        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gpt.tool_id LIMIT 1),
         '',
         true,
         nsm.created_at,
@@ -439,10 +438,9 @@ get_instruct_tool_id AS (
     LIMIT 1
 ),
 developer_calls_with_rn AS (
-    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, created_at, updated_at, run_id)
+    INSERT INTO calls_entry (external_call_id, arguments_raw, completed, created_at, updated_at, run_id)
     SELECT
         'log_run_developer_' || ndm.message_id::text,
-        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = git.tool_id LIMIT 1),
         '',
         true,
         ndm.created_at,
@@ -599,10 +597,9 @@ assistant_message AS (
     SELECT assistant_message_id, created_at, updated_at FROM new_assistant_message
 ),
 assistant_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, created_at, updated_at, run_id)
+    INSERT INTO calls_entry (external_call_id, arguments_raw, completed, created_at, updated_at, run_id)
     SELECT
         'log_run_assistant_' || am.assistant_message_id::text,
-        NULL,
         '',
         true,
         am.created_at,

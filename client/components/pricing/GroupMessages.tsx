@@ -31,6 +31,7 @@ import {
   MessageSquare,
   Settings,
   User,
+  Wrench,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -91,6 +92,7 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [showDeveloperPrompt, setShowDeveloperPrompt] = useState(false);
   const [showPreviousContext, setShowPreviousContext] = useState(true);
+  const [showToolCalls, setShowToolCalls] = useState(true);
 
   // This component only handles group responses (has 'runs' property)
   // Type assertion is safe here since this component is specifically for groups
@@ -100,9 +102,17 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   type GroupResponseType = PricingGroupDetailOut & { runs: unknown[]; models?: unknown[]; agents?: unknown[]; profiles?: unknown[] };
   const groupResponse = isGroupResponse ? (groupDetail as GroupResponseType) : null;
   
+  // Type for tool calls
+  type CallItem = {
+    id: string;
+    template_name: string | null;
+    arguments: string | null;
+    created_at: string;
+  };
+
   const runs = useMemo(() => {
     if (!groupResponse) return [];
-    return (groupResponse.runs ?? []) as Array<{ run: { created_at: string; model_id: string | null; agent_id: string | null; profile_id: string | null; cost: number | null; input_tokens: number | null; [key: string]: unknown }; messages: Array<{ id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; [key: string]: unknown }>; previous_context_start_index: number | null }>;
+    return (groupResponse.runs ?? []) as Array<{ run: { created_at: string; model_id: string | null; agent_id: string | null; profile_id: string | null; cost: number | null; input_tokens: number | null; [key: string]: unknown }; messages: Array<{ id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; calls?: CallItem[]; [key: string]: unknown }>; previous_context_start_index: number | null }>;
   }, [groupResponse]);
   
   // Use arrays directly (no mapping construction)
@@ -136,7 +146,7 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
 
   // Filter messages based on toggle switches
   // Use the message type from the run structure
-  type MessageItem = { id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; [key: string]: unknown };
+  type MessageItem = { id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; calls?: CallItem[]; [key: string]: unknown };
   const filteredMessages = useMemo(() => {
     if (!currentRun) {
       return [];
@@ -247,6 +257,19 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                   Show developer prompt
                 </Label>
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-tool-calls"
+                  checked={showToolCalls}
+                  onCheckedChange={setShowToolCalls}
+                />
+                <Label
+                  htmlFor="show-tool-calls"
+                  className="text-sm cursor-pointer"
+                >
+                  Show tool calls
+                </Label>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
@@ -324,6 +347,9 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                     originalIndex === currentRun.previous_context_start_index &&
                     showPreviousContext; // Only show boundary when previous context is visible
 
+                  // Get calls attached to this message
+                  const messageCalls = (msg.calls || []) as CallItem[];
+
                   return (
                     <div key={msg.id || `msg-${originalIndex}`}>
                       {isPreviousContextBoundary && (
@@ -336,6 +362,56 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                               Previous context
                             </span>
                           </div>
+                        </div>
+                      )}
+                      {/* Tool calls that occurred before this message */}
+                      {showToolCalls && messageCalls.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          {messageCalls.map((call) => (
+                            <div
+                              key={call.id}
+                              className="flex gap-3 justify-start"
+                            >
+                              <div className="flex-shrink-0">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                      <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Tool Call</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="flex flex-col gap-1 max-w-[80%] items-start">
+                                <div className="rounded-lg p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-mono text-sm font-semibold text-amber-700 dark:text-amber-300">
+                                      {call.template_name || "Unknown function"}
+                                    </span>
+                                  </div>
+                                  {call.arguments && (
+                                    <pre className="text-xs bg-amber-100/50 dark:bg-amber-900/30 rounded p-2 overflow-x-auto max-w-full">
+                                      <code className="text-amber-800 dark:text-amber-200">
+                                        {(() => {
+                                          try {
+                                            return JSON.stringify(
+                                              JSON.parse(call.arguments),
+                                              null,
+                                              2
+                                            );
+                                          } catch {
+                                            return call.arguments;
+                                          }
+                                        })()}
+                                      </code>
+                                    </pre>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                       <div

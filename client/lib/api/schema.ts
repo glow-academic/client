@@ -16232,6 +16232,46 @@ export interface components {
             } | null;
         };
         /**
+         * GroupDetailCall
+         * @description A tool/function call made during the run.
+         */
+        GroupDetailCall: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Template Name */
+            template_name?: string | null;
+            /** Arguments */
+            arguments?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * GroupDetailCallItem
+         * @description A tool/function call made during the run.
+         */
+        GroupDetailCallItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Template Name */
+            template_name?: string | null;
+            /** Arguments */
+            arguments?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
          * GroupDetailContent
          * @description Single content block within a message.
          */
@@ -16258,6 +16298,8 @@ export interface components {
             role?: string | null;
             /** Contents */
             contents?: components["schemas"]["GroupDetailContent"][];
+            /** Calls */
+            calls?: components["schemas"]["GroupDetailCall"][];
             /**
              * Run Idx
              * @default 0
@@ -16275,6 +16317,8 @@ export interface components {
             role?: string | null;
             /** Contents */
             contents?: components["schemas"]["GroupDetailContentItem"][];
+            /** Calls */
+            calls?: components["schemas"]["GroupDetailCallItem"][];
         };
         /**
          * GroupDetailResourceItem

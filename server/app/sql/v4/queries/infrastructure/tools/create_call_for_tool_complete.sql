@@ -18,7 +18,6 @@ END $$;
 CREATE OR REPLACE FUNCTION infra_create_call_for_tool_v4(
     external_call_id text,
     run_id uuid,
-    template_id uuid,
     arguments_raw text
 )
 RETURNS TABLE (
@@ -30,7 +29,6 @@ AS $$
     INSERT INTO calls_entry (
         external_call_id,
         run_id,
-        template_id,
         arguments_raw,
         completed,
         created_at,
@@ -40,7 +38,6 @@ AS $$
         $1,
         $2,
         $3,
-        $4,
         true,
         NOW(),
         NOW()
