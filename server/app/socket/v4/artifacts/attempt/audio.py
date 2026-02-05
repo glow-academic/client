@@ -510,14 +510,11 @@ async def handle_generate_audio_delta(data: dict[str, Any]) -> None:
     if not audio_data:
         return
 
-    event = AttemptAssistantAudioEvent(
-        chat_id=session.chat_id,
-        audio=audio_data,
-    )
-
+    # Use mode="python" so bytes stay as bytes — Socket.IO natively
+    # sends binary attachments alongside the JSON packet (no base64 needed).
     await sio.emit(
         "attempt_assistant_audio",
-        event.model_dump(mode="json"),
+        {"chat_id": session.chat_id, "audio": audio_data},
         room=session.sid,
     )
 
