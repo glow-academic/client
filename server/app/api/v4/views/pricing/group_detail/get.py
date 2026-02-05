@@ -84,8 +84,8 @@ async def get_pricing_group_detail_internal(
     # Map run_id -> index in chronological order (run_idx)
     run_id_to_idx: dict[UUID, int] = {rid: idx for idx, rid in enumerate(run_ids)}
 
-    # Step 3: Get all messages for these runs with content
-    # Simple approach: fetch all messages per run, ordered by role then created_at
+    # Step 3: Get all messages for these runs with content and their associated calls
+    # Calls are linked via simulation_contents_entry.call_id
     message_rows = await conn.fetch(
         """
         SELECT
@@ -96,7 +96,11 @@ async def get_pricing_group_detail_internal(
             COALESCE(
                 ARRAY_AGG(sce.content ORDER BY sce.created_at) FILTER (WHERE sce.id IS NOT NULL),
                 ARRAY[]::text[]
-            ) AS contents
+            ) AS contents,
+            COALESCE(
+                ARRAY_AGG(DISTINCT sce.call_id) FILTER (WHERE sce.call_id IS NOT NULL),
+                ARRAY[]::uuid[]
+            ) AS call_ids
         FROM messages_entry m
         LEFT JOIN simulation_contents_entry sce
             ON sce.message_id = m.id AND sce.active = true
@@ -116,31 +120,32 @@ async def get_pricing_group_detail_internal(
         run_ids,
     )
 
-    # Step 4: Get all calls for these runs with tool names
-    call_rows = await conn.fetch(
-        """
-        SELECT
-            c.id,
-            c.run_id,
-            c.created_at,
-            c.arguments_raw,
-            n.name as tool_name
-        FROM calls_entry c
-        LEFT JOIN tool_calls_junction tcj ON tcj.call_id = c.id
-        LEFT JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
-        LEFT JOIN names_resource n ON n.id = tn.name_id
-        WHERE c.run_id = ANY($1)
-        ORDER BY c.run_id, c.created_at
-        """,
-        run_ids,
-    )
+    # Collect all call_ids from messages
+    all_call_ids: list[UUID] = []
+    for row in message_rows:
+        if row["call_ids"]:
+            all_call_ids.extend(row["call_ids"])
 
-    # Group calls by run_id
-    run_calls: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
-    for row in call_rows:
-        run_id = row["run_id"]
-        if run_id in run_calls:
-            run_calls[run_id].append(dict(row))
+    # Step 4: Get call details for all call_ids
+    call_details: dict[UUID, dict[str, Any]] = {}
+    if all_call_ids:
+        call_rows = await conn.fetch(
+            """
+            SELECT
+                c.id,
+                c.created_at,
+                c.arguments_raw,
+                n.name as tool_name
+            FROM calls_entry c
+            LEFT JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+            LEFT JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+            LEFT JOIN names_resource n ON n.id = tn.name_id
+            WHERE c.id = ANY($1)
+            """,
+            all_call_ids,
+        )
+        for row in call_rows:
+            call_details[row["id"]] = dict(row)
 
     # Step 5: Group messages by run and build response
     run_messages: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
@@ -168,20 +173,16 @@ async def get_pricing_group_detail_internal(
         )
 
         # Build messages list with calls attached
-        # Calls are attached to the message that follows them (by timestamp)
+        # Calls are linked via simulation_contents_entry.call_id
         messages: list[GroupDetailMessage] = []
-        calls_for_run = run_calls.get(run_id, [])
-        call_idx = 0  # Track which calls we've processed
 
         for msg in run_messages.get(run_id, []):
-            msg_created_at = msg["created_at"]
-
-            # Find calls that occurred before this message
-            calls_before_msg: list[GroupDetailCall] = []
-            while call_idx < len(calls_for_run):
-                call = calls_for_run[call_idx]
-                if call["created_at"] < msg_created_at:
-                    calls_before_msg.append(
+            # Build calls for this message from call_ids
+            msg_calls: list[GroupDetailCall] = []
+            for call_id in msg.get("call_ids") or []:
+                if call_id in call_details:
+                    call = call_details[call_id]
+                    msg_calls.append(
                         GroupDetailCall(
                             id=call["id"],
                             template_name=call.get("tool_name"),
@@ -189,9 +190,6 @@ async def get_pricing_group_detail_internal(
                             created_at=call["created_at"],
                         )
                     )
-                    call_idx += 1
-                else:
-                    break
 
             contents = [
                 GroupDetailContent(content=c) for c in (msg["contents"] or [])
@@ -205,23 +203,10 @@ async def get_pricing_group_detail_internal(
                     id=msg["id"],
                     role=msg["role"],
                     contents=contents,
-                    calls=calls_before_msg,
+                    calls=msg_calls,
                     run_idx=run_idx,  # Message belongs to current run
                 )
             )
-
-        # Attach any remaining calls to the last message (or create a placeholder)
-        if call_idx < len(calls_for_run) and messages:
-            remaining_calls = [
-                GroupDetailCall(
-                    id=call["id"],
-                    template_name=call.get("tool_name"),
-                    arguments=call["arguments_raw"],
-                    created_at=call["created_at"],
-                )
-                for call in calls_for_run[call_idx:]
-            ]
-            messages[-1].calls.extend(remaining_calls)
 
         # Step 6: previous_context_start_index is not needed since each run
         # only shows its own messages (no context from previous runs)
