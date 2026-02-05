@@ -34,20 +34,34 @@ DROP MATERIALIZED VIEW IF EXISTS mv_pricing_run_facts CASCADE;
 CREATE MATERIALIZED VIEW mv_pricing_run_facts AS
 WITH run_pricing_rollup AS (
     SELECT
-        rp.run_id,
-        COALESCE(SUM(rp.count) FILTER (WHERE rp.pricing_type = 'input'), 0)::numeric AS input_cost,
-        COALESCE(SUM(rp.count) FILTER (WHERE rp.pricing_type = 'output'), 0)::numeric AS output_cost,
-        COALESCE(SUM(rp.count) FILTER (WHERE rp.pricing_type = 'cached'), 0)::numeric AS cached_cost
-    FROM run_pricing_entry rp
-    WHERE rp.active = TRUE
-    GROUP BY rp.run_id
+        rpe.run_id,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'input'), 0)::numeric AS input_cost,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'output'), 0)::numeric AS output_cost,
+        COALESCE(SUM(
+            (rpe.count::numeric / aur.value::numeric) * pr.price
+        ) FILTER (WHERE rpe.pricing_type = 'cached'), 0)::numeric AS cached_cost
+    FROM run_pricing_entry rpe
+    JOIN agent_runs_junction arj2 ON arj2.run_id = rpe.run_id AND arj2.active = TRUE
+    JOIN agent_models_junction amj2 ON amj2.agent_id = arj2.agent_id AND amj2.active = TRUE
+    JOIN model_pricing_junction mpj ON mpj.model_id = amj2.model_id AND mpj.active = TRUE
+    JOIN pricing_resource pr ON pr.id = mpj.pricing_id
+        AND pr.pricing_type = rpe.pricing_type
+        AND pr.unit_id = rpe.unit_id
+        AND pr.active = TRUE
+    JOIN artifact_units_relation aur ON aur.id = rpe.unit_id AND aur.active = TRUE
+    WHERE rpe.active = TRUE
+    GROUP BY rpe.run_id
 )
 SELECT
     r.id AS run_id,
     r.group_id,
     arj.agent_id,
     amj.model_id,
-    s.profile_id,
+    prj.profile_id,
     gi.session_id,
     COALESCE(r.input_tokens, 0) AS input_tokens,
     COALESCE(r.output_tokens, 0) AS output_tokens,
@@ -65,7 +79,7 @@ LEFT JOIN run_pricing_rollup rpr ON rpr.run_id = r.id
 LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id AND arj.active = TRUE
 LEFT JOIN agent_models_junction amj ON amj.agent_id = arj.agent_id AND amj.active = TRUE
 LEFT JOIN groups_entry gi ON gi.id = r.group_id AND gi.active = TRUE
-LEFT JOIN sessions_entry s ON s.id = gi.session_id
+LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id AND prj.active = TRUE
 WITH NO DATA;
 
 -- ============================================================================

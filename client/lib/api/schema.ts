@@ -4968,6 +4968,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/views/pricing/group-detail/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing Group Detail
+         * @description Get pricing group detail data with messages.
+         */
+        post: operations["get_pricing_group_detail_api_v4_views_pricing_group_detail_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/views/activity/session-facts/get": {
         parameters: {
             query?: never;
@@ -16212,6 +16232,149 @@ export interface components {
             } | null;
         };
         /**
+         * GroupDetailContent
+         * @description Single content block within a message.
+         */
+        GroupDetailContent: {
+            /** Content */
+            content?: string | null;
+        };
+        /**
+         * GroupDetailContentItem
+         * @description Single content block in a message.
+         */
+        GroupDetailContentItem: {
+            /** Content */
+            content?: string | null;
+        };
+        /**
+         * GroupDetailMessage
+         * @description Single message with contents and run origin info.
+         */
+        GroupDetailMessage: {
+            /** Id */
+            id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Contents */
+            contents?: components["schemas"]["GroupDetailContent"][];
+            /**
+             * Run Idx
+             * @default 0
+             */
+            run_idx: number;
+        };
+        /**
+         * GroupDetailMessageItem
+         * @description A message with contents.
+         */
+        GroupDetailMessageItem: {
+            /** Id */
+            id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Contents */
+            contents?: components["schemas"]["GroupDetailContentItem"][];
+        };
+        /**
+         * GroupDetailResourceItem
+         * @description A named resource (model, agent, or profile).
+         */
+        GroupDetailResourceItem: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * GroupDetailRunItem
+         * @description Run metadata for the detail response.
+         */
+        GroupDetailRunItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * GroupDetailRunMetadata
+         * @description Run-level metadata from mv_pricing_run_facts.
+         */
+        GroupDetailRunMetadata: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
          * GroupListItem
          * @description Single group in the list response with hydrated metadata.
          */
@@ -26083,6 +26246,49 @@ export interface components {
             voices_id?: string | null;
         };
         /**
+         * GetGroupDetailRequest
+         * @description Request for group detail endpoint.
+         */
+        app__api__v4__artifacts__group__types__GetGroupDetailRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+        };
+        /**
+         * GetGroupDetailResponse
+         * @description Response for group detail endpoint.
+         */
+        app__api__v4__artifacts__group__types__GetGroupDetailResponse: {
+            /**
+             * Group Exists
+             * @default false
+             */
+            group_exists: boolean;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Runs */
+            runs?: components["schemas"]["app__api__v4__artifacts__group__types__GroupDetailRunWithMessages"][];
+            /** Models */
+            models?: components["schemas"]["GroupDetailResourceItem"][];
+            /** Agents */
+            agents?: components["schemas"]["GroupDetailResourceItem"][];
+            /** Profiles */
+            profiles?: components["schemas"]["GroupDetailResourceItem"][];
+        };
+        /**
+         * GroupDetailRunWithMessages
+         * @description A run with its messages and context boundary.
+         */
+        app__api__v4__artifacts__group__types__GroupDetailRunWithMessages: {
+            run: components["schemas"]["GroupDetailRunItem"];
+            /** Messages */
+            messages?: components["schemas"]["GroupDetailMessageItem"][];
+            /** Previous Context Start Index */
+            previous_context_start_index?: number | null;
+        };
+        /**
          * GetSimulationApiRequest
          * @description Request for getting a single simulation.
          */
@@ -26303,6 +26509,41 @@ export interface components {
              */
             count: number;
         };
+        /**
+         * GetGroupDetailRequest
+         * @description Request for group detail view endpoint.
+         */
+        app__api__v4__views__pricing__group_detail__get__GetGroupDetailRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+        };
+        /**
+         * GetGroupDetailResponse
+         * @description Views-layer response for group detail.
+         */
+        app__api__v4__views__pricing__group_detail__types__GetGroupDetailResponse: {
+            /**
+             * Group Exists
+             * @default false
+             */
+            group_exists: boolean;
+            /** Runs */
+            runs?: components["schemas"]["app__api__v4__views__pricing__group_detail__types__GroupDetailRunWithMessages"][];
+        };
+        /**
+         * GroupDetailRunWithMessages
+         * @description A run with its ordered messages and context boundary.
+         */
+        app__api__v4__views__pricing__group_detail__types__GroupDetailRunWithMessages: {
+            run: components["schemas"]["GroupDetailRunMetadata"];
+            /** Messages */
+            messages?: components["schemas"]["GroupDetailMessage"][];
+            /** Previous Context Start Index */
+            previous_context_start_index?: number | null;
+        };
         /** GetEvalsListApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__1: {
             [key: string]: unknown;
@@ -26311,28 +26552,20 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__2: {
             [key: string]: unknown;
         };
-        /** GetPricingGroupDetailApiRequest */
+        /** RefreshHomeMvsNewApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__3: {
             [key: string]: unknown;
         };
-        /** RefreshHomeMvsNewApiRequest */
+        /** GetEvalsListApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__4: {
             [key: string]: unknown;
         };
-        /** GetEvalsListApiResponse */
+        /** DeleteEvalApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__5: {
             [key: string]: unknown;
         };
-        /** DeleteEvalApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
-            [key: string]: unknown;
-        };
-        /** GetPricingGroupDetailApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__7: {
-            [key: string]: unknown;
-        };
         /** RefreshHomeMvsNewApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__8: {
+        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
             [key: string]: unknown;
         };
     };
@@ -27734,7 +27967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
                 };
             };
             /** @description Validation Error */
@@ -27882,7 +28115,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
                 };
             };
             /** @description Validation Error */
@@ -30092,7 +30325,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
+                "application/json": components["schemas"]["app__api__v4__artifacts__group__types__GetGroupDetailRequest"];
             };
         };
         responses: {
@@ -30102,7 +30335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
+                    "application/json": components["schemas"]["app__api__v4__artifacts__group__types__GetGroupDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30277,7 +30510,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
             };
         };
         responses: {
@@ -30287,7 +30520,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
                 };
             };
             /** @description Validation Error */
@@ -35185,6 +35418,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPricingDailyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_group_detail_api_v4_views_pricing_group_detail_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v4__views__pricing__group_detail__get__GetGroupDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v4__views__pricing__group_detail__types__GetGroupDetailResponse"];
                 };
             };
             /** @description Validation Error */
