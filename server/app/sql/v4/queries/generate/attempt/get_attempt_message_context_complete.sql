@@ -63,6 +63,7 @@ RETURNS TABLE (
     chat_exists boolean,
     chat_is_completed boolean,
     chat_id uuid,
+    hints_enabled boolean,
 
     -- Entry types
     valid_entry_types text[]
@@ -205,7 +206,8 @@ chat_data AS (
         c.id as chat_id,
         TRUE as chat_exists,
         COALESCE(c.completed, FALSE) as chat_is_completed,
-        c.attempt_id
+        c.attempt_id,
+        c.hints_enabled
     FROM simulation_chats_entry c
     CROSS JOIN params p
     WHERE c.id = p.chat_id
@@ -250,6 +252,7 @@ SELECT
     COALESCE(cd.chat_exists, FALSE),
     COALESCE(cd.chat_is_completed, FALSE),
     cd.chat_id,
+    COALESCE(cd.hints_enabled, FALSE),
     ve.valid_types
 FROM params p
 LEFT JOIN agent_data ad ON TRUE

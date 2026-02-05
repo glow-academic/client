@@ -2364,6 +2364,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/dashboard/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dashboard Refresh
+         * @description Refresh all dashboard section materialized views.
+         */
+        post: operations["dashboard_refresh_api_v4_artifacts_dashboard_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/reports/get": {
         parameters: {
             query?: never;
@@ -2380,6 +2400,26 @@ export interface paths {
          *     Pulls four analytics MV slices in parallel and computes section skeletons.
          */
         post: operations["get_reports_api_v4_artifacts_reports_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/reports/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reports Refresh
+         * @description Refresh all reports section materialized views.
+         */
+        post: operations["reports_refresh_api_v4_artifacts_reports_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2409,6 +2449,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/leaderboard/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Leaderboard Refresh
+         * @description Refresh all leaderboard section materialized views.
+         */
+        post: operations["leaderboard_refresh_api_v4_artifacts_leaderboard_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/pricing/get": {
         parameters: {
             query?: never;
@@ -2423,6 +2483,26 @@ export interface paths {
          * @description Get pricing artifact data.
          */
         post: operations["get_pricing_api_v4_artifacts_pricing_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/pricing/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pricing Refresh
+         * @description Refresh all pricing section materialized views.
+         */
+        post: operations["pricing_refresh_api_v4_artifacts_pricing_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2449,6 +2529,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/activity/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activity Refresh
+         * @description Refresh all activity section materialized views.
+         */
+        post: operations["activity_refresh_api_v4_artifacts_activity_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/health/get": {
         parameters: {
             query?: never;
@@ -2469,6 +2569,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/health/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Health Refresh
+         * @description Refresh all health section materialized views.
+         */
+        post: operations["health_refresh_api_v4_artifacts_health_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/benchmark/get": {
         parameters: {
             query?: never;
@@ -2483,6 +2603,26 @@ export interface paths {
          * @description Get benchmark artifact data.
          */
         post: operations["get_benchmark_api_v4_artifacts_benchmark_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/benchmark/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Benchmark Refresh
+         * @description Refresh all benchmark section materialized views.
+         */
+        post: operations["benchmark_refresh_api_v4_artifacts_benchmark_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -22096,6 +22236,81 @@ export interface components {
             /** Created At */
             created_at?: string | null;
         };
+        /** RefreshMvBenchmarkApiRequest */
+        RefreshMvBenchmarkApiRequest: Record<string, never>;
+        /** RefreshMvBenchmarkApiResponse */
+        RefreshMvBenchmarkApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Refreshed Views */
+            refreshed_views?: string[] | null;
+        };
+        /** RefreshMvDashboardApiRequest */
+        RefreshMvDashboardApiRequest: Record<string, never>;
+        /** RefreshMvDashboardApiResponse */
+        RefreshMvDashboardApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Refreshed Views */
+            refreshed_views?: string[] | null;
+        };
+        /** RefreshMvHealthApiRequest */
+        RefreshMvHealthApiRequest: Record<string, never>;
+        /** RefreshMvHealthApiResponse */
+        RefreshMvHealthApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Refreshed Views */
+            refreshed_views?: string[] | null;
+        };
+        /** RefreshMvPricingApiRequest */
+        RefreshMvPricingApiRequest: Record<string, never>;
+        /** RefreshMvPricingApiResponse */
+        RefreshMvPricingApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Refreshed Views */
+            refreshed_views?: string[] | null;
+        };
+        /** RefreshMvSessionsApiRequest */
+        RefreshMvSessionsApiRequest: Record<string, never>;
+        /** RefreshMvSessionsApiResponse */
+        RefreshMvSessionsApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Refreshed Views */
+            refreshed_views?: string[] | null;
+        };
         /**
          * RefreshResponse
          * @description Response for refresh/recreate operations.
@@ -30041,6 +30256,43 @@ export interface operations {
             };
         };
     };
+    dashboard_refresh_api_v4_artifacts_dashboard_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvDashboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvDashboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reports_api_v4_artifacts_reports_get_post: {
         parameters: {
             query?: never;
@@ -30065,6 +30317,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reports_refresh_api_v4_artifacts_reports_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvDashboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvDashboardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30115,6 +30404,43 @@ export interface operations {
             };
         };
     };
+    leaderboard_refresh_api_v4_artifacts_leaderboard_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvDashboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvDashboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_pricing_api_v4_artifacts_pricing_get_post: {
         parameters: {
             query?: never;
@@ -30139,6 +30465,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pricing_refresh_api_v4_artifacts_pricing_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvPricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvPricingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30189,6 +30552,43 @@ export interface operations {
             };
         };
     };
+    activity_refresh_api_v4_artifacts_activity_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvSessionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvSessionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_health_api_v4_artifacts_health_get_post: {
         parameters: {
             query?: never;
@@ -30226,6 +30626,43 @@ export interface operations {
             };
         };
     };
+    health_refresh_api_v4_artifacts_health_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvHealthApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvHealthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_api_v4_artifacts_benchmark_get_post: {
         parameters: {
             query?: never;
@@ -30250,6 +30687,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BenchmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    benchmark_refresh_api_v4_artifacts_benchmark_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMvBenchmarkApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshMvBenchmarkApiResponse"];
                 };
             };
             /** @description Validation Error */

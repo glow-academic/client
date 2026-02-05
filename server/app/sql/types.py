@@ -6772,6 +6772,7 @@ class GetAttemptMessageContextSqlRow(BaseModel):
     chat_exists: bool | None = None
     chat_is_completed: bool | None = None
     chat_id: UUID | None = None
+    hints_enabled: bool | None = None
     valid_entry_types: list[str] | None = None
 
 class GetAttemptMessageContextApiRequest(BaseModel):
@@ -6805,6 +6806,7 @@ class GetAttemptMessageContextApiResponse(BaseModel):
     chat_exists: bool | None = None
     chat_is_completed: bool | None = None
     chat_id: UUID | None = None
+    hints_enabled: bool | None = None
     valid_entry_types: list[str] | None = None
 
 
@@ -6944,7 +6946,6 @@ class PrepareAttemptMessageSqlRow(BaseModel):
     voice_reasoning: str | None = None
     tools: list[IAttemptMessageToolV4] | None = None
     developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
     chat_history: Any | None = None
 
 class PrepareAttemptMessageApiRequest(BaseModel):
@@ -6981,7 +6982,6 @@ class PrepareAttemptMessageApiResponse(BaseModel):
     voice_reasoning: str | None = None
     tools: list[IAttemptMessageToolV4] | None = None
     developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
     chat_history: Any | None = None
 
 

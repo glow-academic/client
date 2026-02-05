@@ -14,7 +14,7 @@ import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
   getLayoutContextData,
-  refreshAnalytics,
+  refreshPage,
   searchSimulatableProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
@@ -84,7 +84,7 @@ export default async function MainLayout({
           initialAutosave={initialAutosave}
           switchEffectiveProfileAction={switchEffectiveProfile}
           createFeedbackAction={createFeedback}
-          refreshAnalyticsAction={refreshAnalytics}
+          refreshPageAction={refreshPage}
           searchSimulatableProfilesAction={searchSimulatableProfiles}
         >
           <UnifiedAccessDenied
@@ -140,7 +140,7 @@ export default async function MainLayout({
         initialAutosave={initialAutosave}
         switchEffectiveProfileAction={switchEffectiveProfile}
         createFeedbackAction={createFeedback}
-        refreshAnalyticsAction={refreshAnalytics}
+        refreshPageAction={refreshPage}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
       >
         {/* Only the PAGE AREA suspends */}

@@ -40,8 +40,7 @@ import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
   LayoutContextResponse,
-  RefreshAnalyticsIn,
-  RefreshAnalyticsOut,
+  RefreshPageFn,
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
@@ -56,7 +55,7 @@ function MainLayoutContent({
   attemptData,
   switchEffectiveProfileAction,
   createFeedbackAction,
-  refreshAnalyticsAction,
+  refreshPageAction,
   searchSimulatableProfilesAction,
 }: {
   children: React.ReactNode;
@@ -65,9 +64,7 @@ function MainLayoutContent({
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn
-  ) => Promise<RefreshAnalyticsOut>;
+  refreshPageAction: RefreshPageFn;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
@@ -418,7 +415,7 @@ function MainLayoutContent({
                 homePage={isHomePage}
                 reportPage={isReportPage}
                 practicePage={isPracticePage}
-                refreshAnalytics={refreshAnalyticsAction}
+                refreshPage={refreshPageAction}
               />
             )}
 
@@ -480,7 +477,7 @@ export function MainLayoutClient({
   initialAutosave,
   switchEffectiveProfileAction,
   createFeedbackAction,
-  refreshAnalyticsAction,
+  refreshPageAction,
   searchSimulatableProfilesAction,
 }: {
   children: React.ReactNode;
@@ -494,9 +491,7 @@ export function MainLayoutClient({
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn
-  ) => Promise<RefreshAnalyticsOut>;
+  refreshPageAction: RefreshPageFn;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
@@ -548,7 +543,7 @@ export function MainLayoutClient({
                 attemptData={attemptData}
                 switchEffectiveProfileAction={switchEffectiveProfileAction}
                 createFeedbackAction={createFeedbackAction}
-                refreshAnalyticsAction={refreshAnalyticsAction}
+                refreshPageAction={refreshPageAction}
                 searchSimulatableProfilesAction={
                   searchSimulatableProfilesAction
                 }

@@ -173,6 +173,13 @@ async def _attempt_message_impl(
                 valid_entry_types=context_row.valid_entry_types or [],
             )
 
+            # Build dynamic entry types based on hints_enabled
+            hints_enabled = context_row.hints_enabled or False
+            if hints_enabled:
+                effective_entry_types = ATTEMPT_MESSAGE_ENTRY_TYPES
+            else:
+                effective_entry_types = [t for t in ATTEMPT_MESSAGE_ENTRY_TYPES if t != "hints"]
+
             # Validate using business logic
             is_valid, failures = validate_attempt_message_access(ctx)
 
@@ -205,7 +212,7 @@ async def _attempt_message_impl(
                 p_voice_mode=data.voice_mode,
                 p_upload_id=data.upload_id,
                 p_group_id=data.group_id,
-                p_entry_types=ATTEMPT_MESSAGE_ENTRY_TYPES,
+                p_entry_types=effective_entry_types,
             )
 
             prepare_row = cast(
@@ -271,25 +278,15 @@ async def _attempt_message_impl(
                 resource_type = "attempt"
 
             # Step 4: Render developer instructions with Jinja
-            jinja_context = prepare_row.jinja_context
-            if context_row.attempt_id:
-                try:
-                    attempt_response, _cache_hit = await get_attempt_internal(
-                        conn=conn,
-                        profile_id=profile_id,
-                        attempt_id=context_row.attempt_id,
-                        bypass_cache=True,
-                        cache_key_path="/api/v4/attempt/get",
-                        http_request=None,
-                    )
-                    jinja_context = _build_attempt_jinja_context(
-                        attempt_response,
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "Attempt message: falling back to SQL jinja_context "
-                        f"(attempt_id={context_row.attempt_id}): {exc}"
-                    )
+            attempt_response, _cache_hit = await get_attempt_internal(
+                conn=conn,
+                profile_id=profile_id,
+                attempt_id=context_row.attempt_id,
+                bypass_cache=True,
+                cache_key_path="/api/v4/attempt/get",
+                http_request=None,
+            )
+            jinja_context = _build_attempt_jinja_context(attempt_response)
 
             rendered_developer_messages = render_developer_instructions(
                 templates=prepare_row.developer_instruction_templates,

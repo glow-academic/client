@@ -255,7 +255,7 @@ AS $$
                     improvements,
                     hints
                 )::types.q_get_simulation_messages_view_v4_item
-                ORDER BY chat_id, created_at
+                ORDER BY chat_id, created_at, message_id
             ),
             ARRAY[]::types.q_get_simulation_messages_view_v4_item[]
         ) AS items

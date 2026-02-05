@@ -16,8 +16,17 @@ type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
 type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v4/debug/debug", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v4/debug/debug", "post">;
-type RefreshAnalyticsIn = InputOf<"/api/v4/training/refresh", "post">;
-type RefreshAnalyticsOut = OutputOf<"/api/v4/training/refresh", "post">;
+/** Page-specific refresh endpoint mapping */
+const REFRESH_ENDPOINT_MAP: Record<string, string> = {
+  training: "/training/refresh",
+  dashboard: "/artifacts/dashboard/refresh",
+  leaderboard: "/artifacts/leaderboard/refresh",
+  reports: "/artifacts/reports/refresh",
+  pricing: "/artifacts/pricing/refresh",
+  benchmark: "/artifacts/benchmark/refresh",
+  activity: "/artifacts/activity/refresh",
+  health: "/artifacts/health/refresh",
+};
 type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
@@ -394,10 +403,14 @@ export async function createFeedback(
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
-export async function refreshAnalytics(
-  input: RefreshAnalyticsIn
-): Promise<RefreshAnalyticsOut> {
-  return api.post("/training/refresh", input);
+/** Page-targeted refresh: calls the correct /refresh endpoint for the given page. */
+export async function refreshPage(page: string): Promise<void> {
+  "use server";
+  const endpoint = REFRESH_ENDPOINT_MAP[page];
+  if (!endpoint) {
+    throw new Error(`Unknown refresh page: ${page}`);
+  }
+  await api.post(endpoint as Parameters<typeof api.post>[0], { body: {} });
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
@@ -436,6 +449,8 @@ export async function bulkCreateOrUpdateStaff(
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
+export type RefreshPageFn = (page: string) => Promise<void>;
+
 export type {
   AttemptFullIn,
   AttemptFullOut,
@@ -447,8 +462,6 @@ export type {
   GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
-  RefreshAnalyticsIn,
-  RefreshAnalyticsOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SearchStaffIn,

@@ -43,6 +43,7 @@ SQL_PATH_GET_GRADE_CONTEXT = (
 
 
 @internal_sio.on("generate_call_complete")  # type: ignore
+@internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_attempt_complete(data: dict[str, Any]) -> None:
     """Handle generate_*_complete events - filter by attempt artifact_type and emit attempt-specific event."""
     # Skip processing if in eval mode
@@ -81,7 +82,17 @@ async def handle_attempt_complete(data: dict[str, Any]) -> None:
 async def _handle_message_complete(
     sid: str, data: dict[str, Any]
 ) -> None:
-    """Handle message generation completion."""
+    """Handle message generation completion.
+
+    Only processes the final run_complete event (not mid-loop text_complete).
+    Content is already inserted by the create_content tool call — we only
+    mark the message as completed and update token usage.
+    """
+    # Only process the final event, not mid-loop text_complete events
+    event_type = data.get("event_type")
+    if event_type != "run_complete":
+        return
+
     run_id = data.get("run_id")
     final_content = (
         data.get("assistant_output")
@@ -111,7 +122,16 @@ async def _handle_message_complete(
 
             # Content is already inserted by the create_content tool call
             # (via api_create_entry_record_v4) with proper persona_id.
-            # We only update token usage on the run here.
+            # Here we only: mark the message as completed (audit) and
+            # update token usage on the run.
+            await conn.execute(
+                """
+                UPDATE messages_entry
+                SET completed = true, updated_at = NOW()
+                WHERE id = $1
+                """,
+                message_id,
+            )
             await conn.execute(
                 """
                 UPDATE runs_entry
@@ -158,6 +178,13 @@ async def _handle_message_complete(
         )
 
         logger.info(f"Attempt message complete - run_id={run_id}")
+
+        # Refresh MVs so the new message is immediately visible
+        try:
+            async with get_db_connection() as conn:
+                await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_simulation_messages")
+        except Exception as mv_err:
+            logger.warning(f"MV refresh failed (non-fatal): {mv_err}")
 
     except Exception as e:
         logger.exception(f"Failed to save attempt message: {str(e)}")

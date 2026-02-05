@@ -7,10 +7,7 @@
 
 "use client";
 
-import type {
-  RefreshAnalyticsIn,
-  RefreshAnalyticsOut,
-} from "@/app/(main)/layout-server";
+import type { RefreshPageFn } from "@/app/(main)/layout-server";
 import {
   PROFILE_ROLES,
   type ProfileRole,
@@ -36,18 +33,31 @@ import {
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
 import { RoleSelector } from "./analytics/RoleSelector";
 
+/** Map pathname prefix to the refresh page key */
+function getRefreshPageFromPathname(pathname: string): string {
+  if (pathname.startsWith("/analytics/dashboard")) return "dashboard";
+  if (pathname.startsWith("/analytics/reports")) return "reports";
+  if (pathname.startsWith("/analytics/pricing")) return "pricing";
+  if (pathname.startsWith("/analytics/activity")) return "activity";
+  if (pathname.startsWith("/leaderboard")) return "leaderboard";
+  if (pathname.startsWith("/benchmark")) return "benchmark";
+  if (pathname.startsWith("/health")) return "health";
+  // Home and practice pages use the training refresh
+  return "training";
+}
+
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
   practicePage?: boolean;
-  refreshAnalytics: (input: RefreshAnalyticsIn) => Promise<RefreshAnalyticsOut>;
+  refreshPage: RefreshPageFn;
 }
 
 export function AnalyticsFilters({
   homePage = false,
   reportPage = false,
   practicePage = false,
-  refreshAnalytics,
+  refreshPage,
 }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
@@ -93,9 +103,8 @@ export function AnalyticsFilters({
 
     setIsRefreshing(true);
     try {
-      await refreshAnalytics({ body: {} });
-      // Note: Analytics pages using server actions will revalidate automatically
-      // via Next.js cache revalidation, so no manual query invalidation needed
+      const page = getRefreshPageFromPathname(pathname);
+      await refreshPage(page);
     } catch {
       toast.error("Failed to refresh analytics data");
     } finally {
