@@ -36,6 +36,7 @@ async def artifact_tool_call_internal(data: dict[str, Any]) -> None:
     """Handle tool_call events for artifact domains."""
     artifact_type = data.get("artifact_type")
     if artifact_type not in {
+        "attempt",
         "persona",
         "agent",
         "scenario",
