@@ -116,15 +116,19 @@ async def get_pricing_group_detail_internal(
         run_ids,
     )
 
-    # Step 4: Get all calls for these runs
+    # Step 4: Get all calls for these runs with tool names
     call_rows = await conn.fetch(
         """
         SELECT
             c.id,
             c.run_id,
             c.created_at,
-            c.arguments_raw
+            c.arguments_raw,
+            n.name as tool_name
         FROM calls_entry c
+        LEFT JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+        LEFT JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+        LEFT JOIN names_resource n ON n.id = tn.name_id
         WHERE c.run_id = ANY($1)
         ORDER BY c.run_id, c.created_at
         """,
@@ -180,7 +184,7 @@ async def get_pricing_group_detail_internal(
                     calls_before_msg.append(
                         GroupDetailCall(
                             id=call["id"],
-                            template_name=None,
+                            template_name=call.get("tool_name"),
                             arguments=call["arguments_raw"],
                             created_at=call["created_at"],
                         )
@@ -211,7 +215,7 @@ async def get_pricing_group_detail_internal(
             remaining_calls = [
                 GroupDetailCall(
                     id=call["id"],
-                    template_name=None,
+                    template_name=call.get("tool_name"),
                     arguments=call["arguments_raw"],
                     created_at=call["created_at"],
                 )
