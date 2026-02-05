@@ -18110,6 +18110,10 @@ export interface components {
             icon?: string | null;
             /** Color */
             color?: string | null;
+            /** Instructions */
+            instructions?: string | null;
+            /** Examples */
+            examples?: string[] | null;
         };
         /**
          * PersonaFlagConfig

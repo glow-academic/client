@@ -255,6 +255,8 @@ class PersonaEntry(BaseModel):
     name: str | None = None
     icon: str | None = None
     color: str | None = None
+    instructions: str | None = None
+    examples: list[str] | None = None
 
 
 # -----------------------------------------------------------------------------

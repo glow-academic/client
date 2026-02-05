@@ -286,6 +286,8 @@ async def get_attempt_internal(
                                 "name": item.name,
                                 "icon": item.icon,
                                 "color": item.color,
+                                "instructions": item.instructions,
+                                "examples": item.examples,
                             }
 
                 # Fetch objectives
@@ -573,6 +575,8 @@ async def get_attempt_internal(
                     name=resource_meta["personas"].get(persona_id, {}).get("name"),
                     icon=resource_meta["personas"].get(persona_id, {}).get("icon"),
                     color=resource_meta["personas"].get(persona_id, {}).get("color"),
+                    instructions=resource_meta["personas"].get(persona_id, {}).get("instructions"),
+                    examples=resource_meta["personas"].get(persona_id, {}).get("examples"),
                 )
                 for persona_id in resource_meta["personas"].keys()
             }
