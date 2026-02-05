@@ -3910,6 +3910,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_personas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Scenario Personas
+         * @description Create scenario_personas resource (always INSERT).
+         */
+        post: operations["create_scenario_personas_api_v4_resources_scenario_personas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_personas/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario Personas
+         * @description Get scenario personas by simulation and scenario IDs.
+         */
+        post: operations["get_scenario_personas_api_v4_resources_scenario_personas_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_personas/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Scenario Personas
+         * @description Search available scenario personas for scenarios.
+         */
+        post: operations["search_scenario_personas_api_v4_resources_scenario_personas_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenario_positions": {
         parameters: {
             query?: never;
@@ -15172,6 +15232,21 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
         };
+        /** GetScenarioPersonasApiRequest */
+        GetScenarioPersonasApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** GetScenarioPersonasApiResponse */
+        GetScenarioPersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
+        };
         /** GetScenarioPositionsApiRequest */
         GetScenarioPositionsApiRequest: {
             /**
@@ -18211,6 +18286,8 @@ export interface components {
             scenario_rubric_ids?: string[] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
+            /** Scenario Persona Ids */
+            scenario_persona_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -20985,6 +21062,27 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetScenarioPersonasV4Item */
+        QGetScenarioPersonasV4Item: {
+            /** Id */
+            id: string | null;
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Persona Description */
+            persona_description: string | null;
+            /** Persona Icon */
+            persona_icon: string | null;
+            /** Persona Color */
+            persona_color: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetScenarioPositionsV4Item */
         QGetScenarioPositionsV4Item: {
             /** Id */
@@ -23711,6 +23809,8 @@ export interface components {
             scenario_rubric_ids?: string[] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
+            /** Scenario Persona Ids */
+            scenario_persona_ids?: string[] | null;
         };
         /**
          * SaveSimulationApiResponse
@@ -24031,6 +24131,44 @@ export interface components {
             video_persona?: boolean | null;
             /** Non Video Persona */
             non_video_persona?: boolean | null;
+        };
+        /** ScenarioPersonasApiRequest */
+        ScenarioPersonasApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ScenarioPersonasApiResponse */
+        ScenarioPersonasApiResponse: {
+            /** Id */
+            id?: string | null;
         };
         /** ScenarioPositionsApiRequest */
         ScenarioPositionsApiRequest: {
@@ -24488,6 +24626,21 @@ export interface components {
         SearchScenarioFlagsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
+        };
+        /** SearchScenarioPersonasApiRequest */
+        SearchScenarioPersonasApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+        };
+        /** SearchScenarioPersonasApiResponse */
+        SearchScenarioPersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
         };
         /** SearchScenarioPositionsApiRequest */
         SearchScenarioPositionsApiRequest: {
@@ -25092,6 +25245,30 @@ export interface components {
             description?: string | null;
             /** Icon */
             icon?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+        };
+        /**
+         * SimulationScenarioPersona
+         * @description Scenario persona for simulation.
+         */
+        SimulationScenarioPersona: {
+            /** Id */
+            id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Persona Description */
+            persona_description?: string | null;
+            /** Persona Icon */
+            persona_icon?: string | null;
+            /** Persona Color */
+            persona_color?: string | null;
             /** Generated */
             generated?: boolean | null;
         };
@@ -26062,6 +26239,20 @@ export interface components {
             scenario_time_limit_suggestions?: string[] | null;
             /** Scenario Time Limits */
             scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimit"][] | null;
+            /** Scenario Persona Ids */
+            scenario_persona_ids?: string[] | null;
+            /** Scenario Persona Resources */
+            scenario_persona_resources?: components["schemas"]["SimulationScenarioPersona"][] | null;
+            /** Show Scenario Personas */
+            show_scenario_personas?: boolean | null;
+            /** Scenario Personas Agent Id */
+            scenario_personas_agent_id?: string | null;
+            /** Scenario Personas Required */
+            scenario_personas_required?: boolean | null;
+            /** Scenario Persona Suggestions */
+            scenario_persona_suggestions?: string[] | null;
+            /** Scenario Personas */
+            scenario_personas?: components["schemas"]["SimulationScenarioPersona"][] | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** General Agent Id */
@@ -33131,6 +33322,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleRoutesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_scenario_personas_api_v4_resources_scenario_personas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioPersonasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioPersonasApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scenario_personas_api_v4_resources_scenario_personas_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioPersonasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioPersonasApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_scenario_personas_api_v4_resources_scenario_personas_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchScenarioPersonasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchScenarioPersonasApiResponse"];
                 };
             };
             /** @description Validation Error */

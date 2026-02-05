@@ -44,6 +44,10 @@ from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.scenario_flags.get import get_scenario_flags_internal
 from app.api.v4.resources.scenario_flags.search import search_scenario_flags_internal
+from app.api.v4.resources.scenario_personas.get import get_scenario_personas_internal
+from app.api.v4.resources.scenario_personas.search import (
+    search_scenario_personas_internal,
+)
 from app.api.v4.resources.scenario_positions.get import get_scenario_positions_internal
 from app.api.v4.resources.scenario_positions.search import (
     search_scenario_positions_internal,
@@ -189,6 +193,7 @@ async def get_simulation(
             artifact_resources=SIMULATION_RESOURCES,
             resources_needed=[
                 "scenario_flags",
+                "scenario_personas",
                 "scenario_positions",
                 "scenario_rubrics",
                 "scenario_time_limits",
@@ -197,6 +202,7 @@ async def get_simulation(
         )
 
         scenario_flags_agent_id = agent_ids.get("scenario_flags")
+        scenario_personas_agent_id = agent_ids.get("scenario_personas")
         scenario_positions_agent_id = agent_ids.get("scenario_positions")
         scenario_rubrics_agent_id = agent_ids.get("scenario_rubrics")
         scenario_time_limits_agent_id = agent_ids.get("scenario_time_limits")
@@ -340,6 +346,16 @@ async def get_simulation(
                 )
                 return (selected, suggestions)
 
+        async def fetch_scenario_personas():
+            async with pool.acquire() as c:
+                selected = await get_scenario_personas_internal(
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
+                )
+                suggestions = await search_scenario_personas_internal(
+                    c, request.simulation_id, effective_scenario_ids, bypass_cache
+                )
+                return (selected, suggestions)
+
         async def fetch_scenario_positions():
             async with pool.acquire() as c:
                 selected = await get_scenario_positions_internal(
@@ -386,6 +402,7 @@ async def get_simulation(
             (departments_selected, departments_suggestions),
             (scenarios_selected, scenarios_suggestions),
             (scenario_flags_selected, scenario_flags_suggestions),
+            (scenario_personas_selected, scenario_personas_suggestions),
             (scenario_positions_selected, scenario_positions_suggestions),
             (scenario_rubrics_selected, scenario_rubrics_suggestions),
             (scenario_time_limits_selected, scenario_time_limits_suggestions),
@@ -397,6 +414,7 @@ async def get_simulation(
             fetch_departments(),
             fetch_scenarios(),
             fetch_scenario_flags(),
+            fetch_scenario_personas(),
             fetch_scenario_positions(),
             fetch_scenario_rubrics(),
             fetch_scenario_time_limits(),
@@ -406,6 +424,10 @@ async def get_simulation(
         # Combine scenario junction resources
         scenario_flags = _dedupe_by_id(
             list(scenario_flags_selected) + list(scenario_flags_suggestions), "id"
+        )
+        scenario_personas = _dedupe_by_id(
+            list(scenario_personas_selected) + list(scenario_personas_suggestions),
+            "id",
         )
         scenario_positions = _dedupe_by_id(
             list(scenario_positions_selected) + list(scenario_positions_suggestions),
@@ -547,6 +569,7 @@ async def get_simulation(
 
         # Show scenario-related fields when scenarios exist or are available
         show_scenario_flags = bool(effective_scenario_ids or scenario_flags or scenarios)
+        show_scenario_personas = bool(effective_scenario_ids or scenario_personas or scenarios)
         show_scenario_positions = bool(effective_scenario_ids or scenario_positions or scenarios)
         show_scenario_rubrics = bool(effective_scenario_ids or scenario_rubrics or scenarios)
         show_scenario_time_limits = bool(effective_scenario_ids or scenario_time_limits or scenarios)
@@ -651,6 +674,14 @@ async def get_simulation(
             scenario_rubric_suggestions=[],
             scenario_rubrics=[_to_dict(sr) for sr in scenario_rubrics],
             rubrics=[_to_dict(r) for r in rubrics],
+            # Scenario personas
+            scenario_persona_ids=ids_result.scenario_persona_ids or [],
+            scenario_persona_resources=[_to_dict(sp) for sp in scenario_personas_selected],
+            show_scenario_personas=show_scenario_personas,
+            scenario_personas_agent_id=scenario_personas_agent_id,
+            scenario_personas_required=False,
+            scenario_persona_suggestions=[],
+            scenario_personas=[_to_dict(sp) for sp in scenario_personas],
             # Scenario time limits
             scenario_time_limit_ids=ids_result.scenario_time_limit_ids or [],
             scenario_time_limit_resources=[

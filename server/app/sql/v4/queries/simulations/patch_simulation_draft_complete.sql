@@ -29,6 +29,7 @@ CREATE OR REPLACE FUNCTION api_patch_simulation_draft_v4(
     scenario_position_ids uuid[] DEFAULT NULL,
     scenario_rubric_ids uuid[] DEFAULT NULL,
     scenario_time_limit_ids uuid[] DEFAULT NULL,
+    scenario_persona_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -106,7 +107,15 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'Scenario time limit resource not found';
     END IF;
-    
+
+    IF scenario_persona_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM unnest(scenario_persona_ids) AS scenario_persona_id
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_personas_resource WHERE id = scenario_persona_id)
+    ) THEN
+        RAISE EXCEPTION 'Scenario persona resource not found';
+    END IF;
+
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
@@ -141,7 +150,8 @@ BEGIN
             DELETE FROM scenario_positions_drafts_connection WHERE scenario_positions_drafts_connection.draft_id = v_draft_id;
             DELETE FROM scenario_rubrics_drafts_connection WHERE scenario_rubrics_drafts_connection.draft_id = v_draft_id;
             DELETE FROM scenario_time_limits_drafts_connection WHERE scenario_time_limits_drafts_connection.draft_id = v_draft_id;
-            
+            DELETE FROM scenario_personas_drafts_connection WHERE scenario_personas_drafts_connection.draft_id = v_draft_id;
+
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
                 INSERT INTO names_drafts_connection (draft_id, names_id, version)
@@ -219,7 +229,16 @@ BEGIN
                 ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
-            
+
+            IF scenario_persona_ids IS NOT NULL THEN
+                DELETE FROM scenario_personas_drafts_connection WHERE scenario_personas_drafts_connection.draft_id = v_draft_id;
+                INSERT INTO scenario_personas_drafts_connection (draft_id, scenario_personas_id, version)
+                SELECT v_draft_id, scenario_persona_id, v_new_version
+                FROM UNNEST(scenario_persona_ids) as scenario_persona_id
+                ON CONFLICT ON CONSTRAINT scenario_personas_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
             RETURN;
         END IF;
@@ -309,6 +328,14 @@ BEGIN
         SELECT v_draft_id, scenario_time_limit_id, v_new_version
         FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
         ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
+    IF scenario_persona_ids IS NOT NULL THEN
+        INSERT INTO scenario_personas_drafts_connection (draft_id, scenario_personas_id, version)
+        SELECT v_draft_id, scenario_persona_id, v_new_version
+        FROM UNNEST(scenario_persona_ids) as scenario_persona_id
+        ON CONFLICT ON CONSTRAINT scenario_personas_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 

@@ -50,6 +50,7 @@ RETURNS TABLE (
     scenario_position_ids uuid[],
     scenario_rubric_ids uuid[],
     scenario_time_limit_ids uuid[],
+    scenario_persona_ids uuid[],
     -- Agent IDs
     name_agent_id uuid,
     description_agent_id uuid,
@@ -167,6 +168,16 @@ scenario_time_limit_data AS (
         (SELECT ARRAY_AGG(sstl.scenario_time_limit_id) FROM simulation_scenario_time_limits_junction sstl WHERE sstl.simulation_id = (SELECT p_simulation_id FROM params) AND sstl.active = true),
         ARRAY[]::uuid[]
     ) as scenario_time_limit_ids
+),
+-- Get scenario_persona_ids
+scenario_persona_data AS (
+    SELECT COALESCE(
+        -- From draft
+        (SELECT ARRAY_AGG(spd.scenario_personas_id) FROM scenario_personas_drafts_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
+        -- From simulation
+        (SELECT ARRAY_AGG(ssp.scenario_persona_id) FROM simulation_scenario_personas_junction ssp WHERE ssp.simulation_id = (SELECT p_simulation_id FROM params) AND ssp.active = true),
+        ARRAY[]::uuid[]
+    ) as scenario_persona_ids
 ),
 -- Candidate agents data (for Python-side agent scoring)
 candidate_agents_data AS (
@@ -356,6 +367,7 @@ SELECT
     (SELECT scenario_position_ids FROM scenario_position_data),
     (SELECT scenario_rubric_ids FROM scenario_rubric_data),
     (SELECT scenario_time_limit_ids FROM scenario_time_limit_data),
+    (SELECT scenario_persona_ids FROM scenario_persona_data),
     ad.name_agent_id,
     ad.description_agent_id,
     ad.flag_agent_id,

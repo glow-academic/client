@@ -114,6 +114,20 @@ class SimulationScenarioRubric(BaseModel):
     generated: bool | None = None
 
 
+class SimulationScenarioPersona(BaseModel):
+    """Scenario persona for simulation."""
+
+    id: UUID | None = None
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    persona_id: UUID | None = None
+    persona_name: str | None = None
+    persona_description: str | None = None
+    persona_icon: str | None = None
+    persona_color: str | None = None
+    generated: bool | None = None
+
+
 class SimulationScenarioTimeLimit(BaseModel):
     """Scenario time limit for simulation."""
 
@@ -200,6 +214,7 @@ class GetSimulationIdsSqlRow(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
 
     # Agent IDs
     name_agent_id: UUID | None = None
@@ -421,6 +436,15 @@ class GetSimulationApiResponse(BaseModel):
     scenario_time_limit_suggestions: list[UUID] | None = None
     scenario_time_limits: list[SimulationScenarioTimeLimit] | None = None
 
+    # Scenario personas
+    scenario_persona_ids: list[UUID] | None = None
+    scenario_persona_resources: list[SimulationScenarioPersona] | None = None
+    show_scenario_personas: bool | None = None
+    scenario_personas_agent_id: UUID | None = None
+    scenario_personas_required: bool | None = None
+    scenario_persona_suggestions: list[UUID] | None = None
+    scenario_personas: list[SimulationScenarioPersona] | None = None
+
     # Multi-resource combination agent IDs
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
@@ -503,6 +527,7 @@ class SaveSimulationApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
 
 
 class SaveSimulationApiResponse(BaseModel):
@@ -534,6 +559,7 @@ class SaveSimulationSqlParams(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert to tuple for SQL execution."""
@@ -550,6 +576,7 @@ class SaveSimulationSqlParams(BaseModel):
             self.scenario_position_ids,
             self.scenario_rubric_ids,
             self.scenario_time_limit_ids,
+            self.scenario_persona_ids,
         )
 
 
@@ -617,6 +644,7 @@ class PatchSimulationDraftApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 

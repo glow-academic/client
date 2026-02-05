@@ -24,6 +24,7 @@ SIMULATION_RESOURCES: set[str] = {
     "departments",
     "scenarios",
     "scenario_flags",
+    "scenario_personas",
     "scenario_positions",
     "scenario_rubrics",
     "scenario_time_limits",

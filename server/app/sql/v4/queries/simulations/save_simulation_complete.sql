@@ -32,7 +32,8 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     scenario_flag_ids uuid[] DEFAULT NULL,
     scenario_position_ids uuid[] DEFAULT NULL,
     scenario_rubric_ids uuid[] DEFAULT NULL,
-    scenario_time_limit_ids uuid[] DEFAULT NULL
+    scenario_time_limit_ids uuid[] DEFAULT NULL,
+    scenario_persona_ids uuid[] DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_id uuid,
@@ -58,6 +59,7 @@ DECLARE
     v_scenario_position_ids uuid[];
     v_scenario_rubric_ids uuid[];
     v_scenario_time_limit_ids uuid[];
+    v_scenario_persona_ids uuid[];
 BEGIN
     -- Assign parameters to local variables
     v_profile_id := profile_id;
@@ -72,6 +74,7 @@ BEGIN
     v_scenario_position_ids := COALESCE(scenario_position_ids, ARRAY[]::uuid[]);
     v_scenario_rubric_ids := COALESCE(scenario_rubric_ids, ARRAY[]::uuid[]);
     v_scenario_time_limit_ids := COALESCE(scenario_time_limit_ids, ARRAY[]::uuid[]);
+    v_scenario_persona_ids := COALESCE(scenario_persona_ids, ARRAY[]::uuid[]);
 
     -- Validate required fields
     IF v_group_id IS NULL THEN
@@ -176,6 +179,15 @@ BEGIN
         END IF;
     END IF;
 
+    IF array_length(v_scenario_persona_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_scenario_persona_ids) AS scenario_persona_id
+            WHERE NOT EXISTS (SELECT 1 FROM scenario_personas_resource WHERE id = scenario_persona_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more scenario_persona_ids not found';
+        END IF;
+    END IF;
+
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
         DELETE FROM simulation_names_junction WHERE simulation_id = v_simulation_id;
@@ -187,6 +199,7 @@ BEGIN
         DELETE FROM simulation_scenario_positions_junction WHERE simulation_id = v_simulation_id;
         DELETE FROM simulation_scenario_rubrics_junction WHERE simulation_id = v_simulation_id;
         DELETE FROM simulation_scenario_time_limits_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_personas_junction WHERE simulation_id = v_simulation_id;
     END IF;
 
     -- Continue with simulation save using SQL (simulation already created/updated above)
@@ -203,6 +216,7 @@ BEGIN
             v_scenario_position_ids AS scenario_position_ids,
             v_scenario_rubric_ids AS scenario_rubric_ids,
             v_scenario_time_limit_ids AS scenario_time_limit_ids,
+            v_scenario_persona_ids AS scenario_persona_ids,
             v_profile_id AS profile_id
     ),
     user_profile AS (
@@ -397,6 +411,28 @@ BEGIN
         CROSS JOIN UNNEST(x.scenario_time_limit_ids) as scenario_time_limit_id
         WHERE COALESCE(array_length(x.scenario_time_limit_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenario_time_limits_pkey DO UPDATE SET
+            active = true
+    ),
+    link_scenario_personas AS (
+        INSERT INTO simulation_scenario_personas_junction (
+            simulation_id,
+            scenario_persona_id,
+            created_at,
+            generated,
+            mcp,
+            active
+        )
+        SELECT
+            x.simulation_id,
+            scenario_persona_id,
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN UNNEST(x.scenario_persona_ids) as scenario_persona_id
+        WHERE COALESCE(array_length(x.scenario_persona_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_scenario_personas_pkey DO UPDATE SET
             active = true
     ),
     -- Sync linked resources with name/description

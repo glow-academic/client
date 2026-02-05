@@ -23,6 +23,7 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
+import { ScenarioPersonas } from "@/components/resources/ScenarioPersonas";
 import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
 import { ScenarioRubrics } from "@/components/resources/ScenarioRubrics";
 import { ScenarioTimeLimits } from "@/components/resources/ScenarioTimeLimits";
@@ -64,6 +65,14 @@ type CreateDraftScenarioFlagsOut = OutputOf<
   "/api/v4/resources/scenario_flags",
   "post"
 >;
+type CreateDraftScenarioPersonasIn = InputOf<
+  "/api/v4/resources/scenario_personas",
+  "post"
+>;
+type CreateDraftScenarioPersonasOut = OutputOf<
+  "/api/v4/resources/scenario_personas",
+  "post"
+>;
 type CreateDraftScenarioPositionsIn = InputOf<
   "/api/v4/resources/scenario_positions",
   "post"
@@ -92,13 +101,14 @@ type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
 
 type SimulationData = OutputOf<"/api/v4/simulations/get", "post">;
-type SimulationResourceType = ResourceType | "scenario_time_limits";
+type SimulationResourceType = ResourceType | "scenario_personas" | "scenario_time_limits";
 
 // Type for flush results - each resource returns its created ID(s)
 type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
   scenario_flag_ids?: string[];
+  scenario_persona_ids?: string[];
   scenario_position_ids?: string[];
   scenario_rubric_ids?: string[];
   scenario_time_limit_ids?: string[];
@@ -125,6 +135,9 @@ export interface SimulationProps {
   createScenarioFlagsAction?: (
     input: CreateDraftScenarioFlagsIn
   ) => Promise<CreateDraftScenarioFlagsOut>;
+  createScenarioPersonasAction?: (
+    input: CreateDraftScenarioPersonasIn
+  ) => Promise<CreateDraftScenarioPersonasOut>;
   createScenarioPositionsAction?: (
     input: CreateDraftScenarioPositionsIn
   ) => Promise<CreateDraftScenarioPositionsOut>;
@@ -144,6 +157,7 @@ function SimulationComponent({
   createNamesAction,
   createDescriptionsAction,
   createScenarioFlagsAction,
+  createScenarioPersonasAction,
   createScenarioPositionsAction,
   createScenarioRubricsAction,
   createScenarioTimeLimitsAction,
@@ -177,6 +191,7 @@ function SimulationComponent({
       names: createRegisterFlush("names"),
       descriptions: createRegisterFlush("descriptions"),
       scenario_flags: createRegisterFlush("scenario_flags"),
+      scenario_personas: createRegisterFlush("scenario_personas"),
       scenario_positions: createRegisterFlush("scenario_positions"),
       scenario_rubrics: createRegisterFlush("scenario_rubrics"),
       scenario_time_limits: createRegisterFlush("scenario_time_limits"),
@@ -291,6 +306,14 @@ function SimulationComponent({
       scenario_flags_required: simulationData.scenario_flags_required,
       scenario_flag_suggestions: simulationData.scenario_flag_suggestions,
       scenario_flags: simulationData.scenario_flags,
+      scenario_persona_ids: simulationData.scenario_persona_ids,
+      scenario_persona_resources: simulationData.scenario_persona_resources,
+      show_scenario_personas: simulationData.show_scenario_personas,
+      scenario_personas_agent_id: simulationData.scenario_personas_agent_id,
+      scenario_personas_required: simulationData.scenario_personas_required,
+      scenario_persona_suggestions:
+        simulationData.scenario_persona_suggestions,
+      scenario_personas: simulationData.scenario_personas,
       scenario_position_ids: simulationData.scenario_position_ids,
       scenario_position_resources: simulationData.scenario_position_resources,
       show_scenario_positions: simulationData.show_scenario_positions,
@@ -367,6 +390,13 @@ function SimulationComponent({
     simulationData?.scenario_flags_required,
     simulationData?.scenario_flag_suggestions,
     simulationData?.scenario_flags,
+    simulationData?.scenario_persona_ids,
+    simulationData?.scenario_persona_resources,
+    simulationData?.show_scenario_personas,
+    simulationData?.scenario_personas_agent_id,
+    simulationData?.scenario_personas_required,
+    simulationData?.scenario_persona_suggestions,
+    simulationData?.scenario_personas,
     simulationData?.scenario_position_ids,
     simulationData?.scenario_position_resources,
     simulationData?.show_scenario_positions,
@@ -428,6 +458,12 @@ function SimulationComponent({
               (f) => f.generated
             ) ?? false
           );
+        case "scenario_personas":
+          return (
+            stableSimulationDataFields.scenario_persona_resources?.some(
+              (p) => p.generated
+            ) ?? false
+          );
         case "scenario_positions":
           return (
             stableSimulationDataFields.scenario_position_resources?.some(
@@ -463,6 +499,7 @@ function SimulationComponent({
         department_ids: [] as string[],
         scenario_ids: [] as string[],
         scenario_flag_ids: [] as string[],
+        scenario_persona_ids: [] as string[],
         scenario_position_ids: [] as string[],
         scenario_rubric_ids: [] as string[],
         scenario_time_limit_ids: [] as string[],
@@ -477,6 +514,7 @@ function SimulationComponent({
       department_ids: data.department_ids ?? [],
       scenario_ids: data.scenario_ids ?? [],
       scenario_flag_ids: data.scenario_flag_ids ?? [],
+      scenario_persona_ids: data.scenario_persona_ids ?? [],
       scenario_position_ids: data.scenario_position_ids ?? [],
       scenario_rubric_ids:
         data.scenario_rubric_ids ?? [],
@@ -515,6 +553,10 @@ function SimulationComponent({
     () => JSON.stringify(formState.scenario_flag_ids),
     [formState.scenario_flag_ids]
   );
+  const formStateScenarioPersonaIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_persona_ids),
+    [formState.scenario_persona_ids]
+  );
   const formStateScenarioPositionIdsStr = React.useMemo(
     () => JSON.stringify(formState.scenario_position_ids),
     [formState.scenario_position_ids]
@@ -545,6 +587,8 @@ function SimulationComponent({
           JSON.stringify(newState.scenario_ids) ||
         JSON.stringify(prev.scenario_flag_ids) !==
           JSON.stringify(newState.scenario_flag_ids) ||
+        JSON.stringify(prev.scenario_persona_ids) !==
+          JSON.stringify(newState.scenario_persona_ids) ||
         JSON.stringify(prev.scenario_position_ids) !==
           JSON.stringify(newState.scenario_position_ids) ||
         JSON.stringify(prev.scenario_rubric_ids) !==
@@ -566,6 +610,7 @@ function SimulationComponent({
     departmentIdsStr,
     JSON.stringify(simulationData?.scenario_ids ?? []),
     JSON.stringify(simulationData?.scenario_flag_ids ?? []),
+    JSON.stringify(simulationData?.scenario_persona_ids ?? []),
     JSON.stringify(simulationData?.scenario_position_ids ?? []),
     JSON.stringify(simulationData?.scenario_rubric_ids ?? []),
     JSON.stringify(simulationData?.scenario_time_limit_ids ?? []),
@@ -651,6 +696,7 @@ function SimulationComponent({
       department_ids: formState.department_ids,
       scenario_ids: formState.scenario_ids,
       scenario_flag_ids: formState.scenario_flag_ids,
+      scenario_persona_ids: formState.scenario_persona_ids,
       scenario_position_ids: formState.scenario_position_ids,
       scenario_rubric_ids: formState.scenario_rubric_ids,
       scenario_time_limit_ids: formState.scenario_time_limit_ids,
@@ -665,6 +711,7 @@ function SimulationComponent({
     formStateDepartmentIdsStr,
     formStateScenarioIdsStr,
     formStateScenarioFlagIdsStr,
+    formStateScenarioPersonaIdsStr,
     formStateScenarioPositionIdsStr,
     formStateScenarioRubricIdsStr,
     formStateScenarioTimeLimitIdsStr,
@@ -687,6 +734,7 @@ function SimulationComponent({
       formState.department_ids.length > 0 ||
       formState.scenario_ids.length > 0 ||
       formState.scenario_flag_ids.length > 0 ||
+      formState.scenario_persona_ids.length > 0 ||
       formState.scenario_position_ids.length > 0 ||
       formState.scenario_rubric_ids.length > 0 ||
       formState.scenario_time_limit_ids.length > 0;
@@ -748,6 +796,7 @@ function SimulationComponent({
             department_ids: formState.department_ids,
             scenario_ids: formState.scenario_ids,
             scenario_flag_ids: formState.scenario_flag_ids,
+            scenario_persona_ids: formState.scenario_persona_ids,
             scenario_position_ids: formState.scenario_position_ids,
             scenario_rubric_ids: formState.scenario_rubric_ids,
             scenario_time_limit_ids: formState.scenario_time_limit_ids,
@@ -905,6 +954,10 @@ function SimulationComponent({
               mergedFlushResults.scenario_flag_ids !== undefined
                 ? mergedFlushResults.scenario_flag_ids
                 : currentFormState.scenario_flag_ids,
+            scenario_persona_ids:
+              mergedFlushResults.scenario_persona_ids !== undefined
+                ? mergedFlushResults.scenario_persona_ids
+                : currentFormState.scenario_persona_ids,
             scenario_position_ids:
               mergedFlushResults.scenario_position_ids !== undefined
                 ? mergedFlushResults.scenario_position_ids
@@ -991,6 +1044,7 @@ function SimulationComponent({
         title?: string | null;
       }>;
       scenario_flag_ids?: string[];
+      scenario_persona_ids?: string[];
       scenario_position_ids?: string[];
       scenario_rubric_ids?: string[];
       scenario_time_limit_ids?: string[];
@@ -1014,6 +1068,7 @@ function SimulationComponent({
         "departments",
         "scenarios",
         "scenario_flags",
+        "scenario_personas",
         "scenario_positions",
         "scenario_rubrics",
         "scenario_time_limits",
@@ -1053,6 +1108,19 @@ function SimulationComponent({
             updates.scenario_flag_ids = [
               ...prev.scenario_flag_ids,
               ...newScenarioFlagIds,
+            ];
+          }
+          if (
+            data.scenario_persona_ids &&
+            data.scenario_persona_ids.length > 0
+          ) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newScenarioPersonaIds = data.scenario_persona_ids.filter(
+              (id) => !prev.scenario_persona_ids.includes(id)
+            );
+            updates.scenario_persona_ids = [
+              ...prev.scenario_persona_ids,
+              ...newScenarioPersonaIds,
             ];
           }
           if (
@@ -1173,6 +1241,7 @@ function SimulationComponent({
         "departments",
         "scenarios",
         "scenario_flags",
+        "scenario_personas",
         "scenario_positions",
         "scenario_rubrics",
         "scenario_time_limits",
@@ -1213,6 +1282,7 @@ function SimulationComponent({
         "flags",
         "scenarios",
         "scenario_flags",
+        "scenario_personas",
         "scenario_positions",
         "scenario_rubrics",
         "scenario_time_limits",
@@ -1233,6 +1303,7 @@ function SimulationComponent({
           flags: "flags",
           scenarios: "scenarios",
           scenario_flags: "scenario_flags",
+          scenario_personas: "scenario_personas",
           scenario_positions: "scenario_positions",
           scenario_rubrics: "scenario_rubrics",
           scenario_time_limits: "scenario_time_limits",
@@ -1346,6 +1417,15 @@ function SimulationComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateScenarioPersonas = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["scenario_personas"],
+        determineAgentType(["scenario_personas"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
   const handleGenerateScenarioPositions = useCallback(
     async () =>
       handleGenerateResources(
@@ -1425,6 +1505,7 @@ function SimulationComponent({
         department_ids: baseFormState.department_ids,
         scenario_ids: baseFormState.scenario_ids,
         scenario_flag_ids: baseFormState.scenario_flag_ids,
+        scenario_persona_ids: baseFormState.scenario_persona_ids,
         scenario_position_ids: baseFormState.scenario_position_ids,
         scenario_rubric_ids: baseFormState.scenario_rubric_ids,
         scenario_time_limit_ids: baseFormState.scenario_time_limit_ids,
@@ -1472,6 +1553,15 @@ function SimulationComponent({
       ) {
         toast.error("Scenario flags are required");
         throw new Error("Scenario flags are required");
+      }
+
+      if (
+        simulationData?.scenario_personas_required &&
+        (!effectiveFormState.scenario_persona_ids ||
+          effectiveFormState.scenario_persona_ids.length === 0)
+      ) {
+        toast.error("Scenario personas are required");
+        throw new Error("Scenario personas are required");
       }
 
       if (
@@ -1556,6 +1646,10 @@ function SimulationComponent({
               effectiveFormState.scenario_flag_ids.length > 0
                 ? effectiveFormState.scenario_flag_ids
                 : undefined,
+            scenario_persona_ids:
+              effectiveFormState.scenario_persona_ids.length > 0
+                ? effectiveFormState.scenario_persona_ids
+                : undefined,
             scenario_position_ids:
               effectiveFormState.scenario_position_ids.length > 0
                 ? effectiveFormState.scenario_position_ids
@@ -1596,6 +1690,7 @@ function SimulationComponent({
       simulationData?.departments_required,
       simulationData?.scenarios_required,
       simulationData?.scenario_flags_required,
+      simulationData?.scenario_personas_required,
       simulationData?.scenario_positions_required,
       simulationData?.scenario_rubrics_required,
       simulationData?.scenario_time_limits_required,
@@ -1623,6 +1718,9 @@ function SimulationComponent({
       const hasScenarioFlags =
         !(simulationData?.scenario_flags_required ?? false) ||
         formState.scenario_flag_ids.length > 0;
+      const hasScenarioPersonas =
+        !(simulationData?.scenario_personas_required ?? false) ||
+        formState.scenario_persona_ids.length > 0;
       const hasScenarioPositions =
         !(simulationData?.scenario_positions_required ?? false) ||
         formState.scenario_position_ids.length > 0;
@@ -1642,6 +1740,7 @@ function SimulationComponent({
           return (
             hasScenarios &&
             hasScenarioFlags &&
+            hasScenarioPersonas &&
             hasScenarioPositions &&
             hasScenarioRubrics &&
             hasScenarioTimeLimits
@@ -1662,6 +1761,7 @@ function SimulationComponent({
       scenarios: [
         "scenarios",
         "scenario_flags",
+        "scenario_personas",
         "scenario_positions",
         "scenario_rubrics",
         "scenario_time_limits",
@@ -1673,6 +1773,7 @@ function SimulationComponent({
         "flags",
         "scenarios",
         "scenario_flags",
+        "scenario_personas",
         "scenario_positions",
         "scenario_rubrics",
         "scenario_time_limits",
@@ -1690,6 +1791,7 @@ function SimulationComponent({
       flags: "Flags",
       scenarios: "Scenarios",
       scenario_flags: "Scenario Flags",
+      scenario_personas: "Scenario Personas",
       scenario_positions: "Scenario Positions",
       scenario_rubrics: "Scenario Rubrics",
       scenario_time_limits: "Scenario Time Limits",
@@ -1773,6 +1875,7 @@ function SimulationComponent({
         resetFields: [
           "scenario_ids",
           "scenario_flag_ids",
+          "scenario_persona_ids",
           "scenario_position_ids",
           "scenario_rubric_ids",
           "scenario_time_limit_ids",
@@ -1793,6 +1896,7 @@ function SimulationComponent({
       "active",
       "scenario_ids",
       "scenario_flag_ids",
+      "scenario_persona_ids",
       "scenario_position_ids",
       "scenario_rubric_ids",
       "scenario_time_limit_ids",
@@ -1828,6 +1932,7 @@ function SimulationComponent({
             ...prev,
             scenario_ids: [],
             scenario_flag_ids: [],
+            scenario_persona_ids: [],
             scenario_position_ids: [],
             scenario_rubric_ids: [],
             scenario_time_limit_ids: [],
@@ -2103,6 +2208,9 @@ function SimulationComponent({
           const showScenarioFlags =
             (currentSimulationData.show_scenario_flags ?? false) ||
             hasSelectedScenarios;
+          const showScenarioPersonas =
+            (currentSimulationData.show_scenario_personas ?? false) ||
+            hasSelectedScenarios;
           const showScenarioPositions =
             (currentSimulationData.show_scenario_positions ?? false) ||
             hasSelectedScenarios;
@@ -2124,6 +2232,7 @@ function SimulationComponent({
               resetFields={[
                 "scenario_ids",
                 "scenario_flag_ids",
+                "scenario_persona_ids",
                 "scenario_position_ids",
                 "scenario_rubric_ids",
                 "scenario_time_limit_ids",
@@ -2256,6 +2365,47 @@ function SimulationComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.scenario_flags}
+                />
+                <ScenarioPersonas
+                  scenario_persona_ids={formState.scenario_persona_ids ?? []}
+                  scenario_persona_resources={
+                    currentSimulationData.scenario_persona_resources ?? []
+                  }
+                  show_scenario_personas={
+                    showScenarioPersonas
+                  }
+                  scenario_persona_suggestions={
+                    currentSimulationData.scenario_persona_suggestions ?? []
+                  }
+                  scenario_personas={
+                    currentSimulationData.scenario_personas ?? []
+                  }
+                  scenarios={currentSimulationData.scenarios ?? []}
+                  scenario_resources={
+                    currentSimulationData.scenario_resources ?? []
+                  }
+                  disabled={disabled}
+                  onChange={() => {}}
+                  onPersonaIdsChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      scenario_persona_ids: ids,
+                    }))
+                  }
+                  simulation_id={simulationId || null}
+                  scenario_ids={formState.scenario_ids}
+                  createScenarioPersonasAction={createScenarioPersonasAction}
+                  onGenerate={handleGenerateScenarioPersonas}
+                  isGenerating={isGenerating("scenario_personas")}
+                  group_id={currentSimulationData.group_id ?? null}
+                  agent_id={
+                    currentSimulationData.scenario_personas_agent_id ?? null
+                  }
+                  required={
+                    currentSimulationData.scenario_personas_required ?? false
+                  }
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks.scenario_personas}
                 />
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
@@ -2399,6 +2549,7 @@ function SimulationComponent({
       handleGenerateFlags,
       handleGenerateScenarios,
       handleGenerateScenarioFlags,
+      handleGenerateScenarioPersonas,
       handleGenerateScenarioPositions,
       handleGenerateScenarioRubrics,
       handleGenerateScenarioTimeLimits,
@@ -2409,6 +2560,7 @@ function SimulationComponent({
       createNamesAction,
       createDescriptionsAction,
       createScenarioFlagsAction,
+      createScenarioPersonasAction,
       createScenarioPositionsAction,
       createScenarioRubricsAction,
       createScenarioTimeLimitsAction,
@@ -2488,6 +2640,7 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
     department_ids: prevProps.simulationData?.department_ids,
     scenario_ids: prevProps.simulationData?.scenario_ids,
     scenario_flag_ids: prevProps.simulationData?.scenario_flag_ids,
+    scenario_persona_ids: prevProps.simulationData?.scenario_persona_ids,
     scenario_position_ids: prevProps.simulationData?.scenario_position_ids,
     scenario_rubric_ids: prevProps.simulationData?.scenario_rubric_ids,
     scenario_time_limit_ids:
@@ -2500,6 +2653,7 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
     department_ids: nextProps.simulationData?.department_ids,
     scenario_ids: nextProps.simulationData?.scenario_ids,
     scenario_flag_ids: nextProps.simulationData?.scenario_flag_ids,
+    scenario_persona_ids: nextProps.simulationData?.scenario_persona_ids,
     scenario_position_ids: nextProps.simulationData?.scenario_position_ids,
     scenario_rubric_ids: nextProps.simulationData?.scenario_rubric_ids,
     scenario_time_limit_ids:
@@ -2523,6 +2677,8 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
     prevProps.createScenarioFlagsAction !==
       nextProps.createScenarioFlagsAction ||
+    prevProps.createScenarioPersonasAction !==
+      nextProps.createScenarioPersonasAction ||
     prevProps.createScenarioPositionsAction !==
       nextProps.createScenarioPositionsAction ||
     prevProps.createScenarioRubricsAction !==

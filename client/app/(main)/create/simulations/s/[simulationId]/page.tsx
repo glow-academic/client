@@ -53,6 +53,14 @@ type CreateDraftScenarioRubricsOut = OutputOf<
   "/api/v4/resources/scenario_rubrics",
   "post"
 >;
+type CreateDraftScenarioPersonasIn = InputOf<
+  "/api/v4/resources/scenario_personas",
+  "post"
+>;
+type CreateDraftScenarioPersonasOut = OutputOf<
+  "/api/v4/resources/scenario_personas",
+  "post"
+>;
 type CreateDraftScenarioTimeLimitsIn = InputOf<
   "/api/v4/resources/scenario_time_limits",
   "post"
@@ -188,6 +196,14 @@ async function createDraftScenarioRubrics(
   return api.post("/resources/scenario_rubrics", input);
 }
 
+async function createDraftScenarioPersonas(
+  input: CreateDraftScenarioPersonasIn
+): Promise<CreateDraftScenarioPersonasOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/scenario_personas", input);
+}
+
 async function createDraftScenarioTimeLimits(
   input: CreateDraftScenarioTimeLimitsIn
 ): Promise<CreateDraftScenarioTimeLimitsOut> {
@@ -259,6 +275,7 @@ export default async function EditSimulationPage({
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
           createScenarioFlagsAction={createDraftScenarioFlags}
+          createScenarioPersonasAction={createDraftScenarioPersonas}
           createScenarioPositionsAction={createDraftScenarioPositions}
           createScenarioRubricsAction={
             createDraftScenarioRubrics

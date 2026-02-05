@@ -15594,6 +15594,114 @@ class SearchScenarioFlagsApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_personas
+
+class GetScenarioPersonasSqlParams(BaseModel):
+
+    simulation_id: UUID
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+            self.scenario_ids,
+        )
+
+class QGetScenarioPersonasV4Item(BaseModel):
+
+    id: UUID | None
+    simulation_id: UUID | None
+    scenario_id: UUID | None
+    persona_id: UUID | None
+    persona_name: str | None
+    persona_description: str | None
+    persona_icon: str | None
+    persona_color: str | None
+    generated: bool | None
+
+class GetScenarioPersonasSqlRow(BaseModel):
+
+    items: list[QGetScenarioPersonasV4Item] | None = None
+
+class GetScenarioPersonasApiRequest(BaseModel):
+
+    simulation_id: UUID
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetScenarioPersonasApiResponse(BaseModel):
+
+    items: list[QGetScenarioPersonasV4Item] | None = None
+
+
+
+# Generated from: search_scenario_personas
+
+class SearchScenarioPersonasSqlParams(BaseModel):
+
+    simulation_id: UUID
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+            self.scenario_ids,
+        )
+
+class SearchScenarioPersonasSqlRow(BaseModel):
+
+    items: list[QGetScenarioPersonasV4Item] | None = None
+
+class SearchScenarioPersonasApiRequest(BaseModel):
+
+    simulation_id: UUID
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SearchScenarioPersonasApiResponse(BaseModel):
+
+    items: list[QGetScenarioPersonasV4Item] | None = None
+
+
+
+# Generated from: scenario_personas
+
+class ScenarioPersonasSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    simulation_id: UUID
+    scenario_id: UUID
+    persona_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.simulation_id,
+            self.scenario_id,
+            self.persona_id,
+            self.mcp,
+        )
+
+class ScenarioPersonasSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ScenarioPersonasApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    simulation_id: UUID
+    scenario_id: UUID
+    persona_id: UUID
+    mcp: bool | None = False
+
+class ScenarioPersonasApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: get_scenario_positions
 
 class GetScenarioPositionsSqlParams(BaseModel):
@@ -19727,6 +19835,7 @@ class GetSimulationIdsSqlRow(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
     name_agent_id: UUID | None = None
     description_agent_id: UUID | None = None
     flag_agent_id: UUID | None = None
@@ -19759,6 +19868,7 @@ class GetSimulationIdsApiResponse(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
     name_agent_id: UUID | None = None
     description_agent_id: UUID | None = None
     flag_agent_id: UUID | None = None
@@ -20118,6 +20228,7 @@ class PatchSimulationDraftSqlParams(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -20133,6 +20244,7 @@ class PatchSimulationDraftSqlParams(BaseModel):
             self.scenario_position_ids,
             self.scenario_rubric_ids,
             self.scenario_time_limit_ids,
+            self.scenario_persona_ids,
             self.expected_version,
         )
 
@@ -20154,6 +20266,7 @@ class PatchSimulationDraftApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchSimulationDraftApiResponse(BaseModel):
@@ -20180,6 +20293,7 @@ class SaveSimulationSqlParams(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -20195,6 +20309,7 @@ class SaveSimulationSqlParams(BaseModel):
             self.scenario_position_ids,
             self.scenario_rubric_ids,
             self.scenario_time_limit_ids,
+            self.scenario_persona_ids,
         )
 
 class SaveSimulationSqlRow(BaseModel):
@@ -20215,6 +20330,7 @@ class SaveSimulationApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_persona_ids: list[UUID] | None = None
 
 class SaveSimulationApiResponse(BaseModel):
 
@@ -24732,6 +24848,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchScenarioFlagsApiRequest",
         "SearchScenarioFlagsApiResponse",
     ),
+    "app/sql/v4/queries/resources/scenario_personas/get_scenario_personas_complete.sql": (
+        "GetScenarioPersonasSqlParams",
+        "GetScenarioPersonasSqlRow",
+        "GetScenarioPersonasApiRequest",
+        "GetScenarioPersonasApiResponse",
+    ),
+    "app/sql/v4/queries/resources/scenario_personas/search_scenario_personas_complete.sql": (
+        "SearchScenarioPersonasSqlParams",
+        "SearchScenarioPersonasSqlRow",
+        "SearchScenarioPersonasApiRequest",
+        "SearchScenarioPersonasApiResponse",
+    ),
+    "app/sql/v4/queries/resources/scenario_personas_complete.sql": (
+        "ScenarioPersonasSqlParams",
+        "ScenarioPersonasSqlRow",
+        "ScenarioPersonasApiRequest",
+        "ScenarioPersonasApiResponse",
+    ),
     "app/sql/v4/queries/resources/scenario_positions/get_scenario_positions_complete.sql": (
         "GetScenarioPositionsSqlParams",
         "GetScenarioPositionsSqlRow",
@@ -27028,6 +27162,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/scenario_flags/search_scenario_flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/scenario_personas/get_scenario_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/scenario_personas/search_scenario_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/scenario_personas_complete.sql"]
     ) -> SqlString: ...
 
     @overload

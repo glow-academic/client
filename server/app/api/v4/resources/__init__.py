@@ -227,6 +227,19 @@ from app.api.v4.resources.setting_role_routes.create import (
 )
 
 router.include_router(setting_role_routes_router)
+from app.api.v4.resources.scenario_personas.create import (
+    router as scenario_personas_router,
+)
+from app.api.v4.resources.scenario_personas.get import (
+    router as scenario_personas_get_router,
+)
+from app.api.v4.resources.scenario_personas.search import (
+    router as scenario_personas_search_router,
+)
+
+router.include_router(scenario_personas_router)
+router.include_router(scenario_personas_get_router)
+router.include_router(scenario_personas_search_router)
 from app.api.v4.resources.scenario_positions.create import (
     router as scenario_positions_router,
 )
