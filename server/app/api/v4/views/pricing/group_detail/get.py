@@ -120,32 +120,39 @@ async def get_pricing_group_detail_internal(
         run_ids,
     )
 
-    # Collect all call_ids from messages
-    all_call_ids: list[UUID] = []
+    # Collect all call_ids from messages (linked via simulation_contents_entry)
+    linked_call_ids: set[UUID] = set()
     for row in message_rows:
         if row["call_ids"]:
-            all_call_ids.extend(row["call_ids"])
+            linked_call_ids.update(row["call_ids"])
 
-    # Step 4: Get call details for all call_ids
+    # Step 4: Get ALL calls for these runs (including orphan calls like end_conversation)
+    all_call_rows = await conn.fetch(
+        """
+        SELECT
+            c.id,
+            c.run_id,
+            c.created_at,
+            c.arguments_raw,
+            n.name as tool_name
+        FROM calls_entry c
+        LEFT JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+        LEFT JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+        LEFT JOIN names_resource n ON n.id = tn.name_id
+        WHERE c.run_id = ANY($1)
+        """,
+        run_ids,
+    )
+
+    # Build call_details dict and track orphan calls per run
     call_details: dict[UUID, dict[str, Any]] = {}
-    if all_call_ids:
-        call_rows = await conn.fetch(
-            """
-            SELECT
-                c.id,
-                c.created_at,
-                c.arguments_raw,
-                n.name as tool_name
-            FROM calls_entry c
-            LEFT JOIN tool_calls_junction tcj ON tcj.call_id = c.id
-            LEFT JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
-            LEFT JOIN names_resource n ON n.id = tn.name_id
-            WHERE c.id = ANY($1)
-            """,
-            all_call_ids,
-        )
-        for row in call_rows:
-            call_details[row["id"]] = dict(row)
+    orphan_calls_by_run: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
+    for row in all_call_rows:
+        call_dict = dict(row)
+        call_details[row["id"]] = call_dict
+        # If this call is not linked to any message content, it's an orphan
+        if row["id"] not in linked_call_ids:
+            orphan_calls_by_run[row["run_id"]].append(call_dict)
 
     # Step 5: Group messages by run and build response
     run_messages: dict[UUID, list[dict[str, Any]]] = {rid: [] for rid in run_ids}
@@ -207,6 +214,19 @@ async def get_pricing_group_detail_internal(
                     run_idx=run_idx,  # Message belongs to current run
                 )
             )
+
+        # Attach orphan calls (like end_conversation) to the last message
+        orphan_calls = orphan_calls_by_run.get(run_id, [])
+        if orphan_calls and messages:
+            for call in orphan_calls:
+                messages[-1].calls.append(
+                    GroupDetailCall(
+                        id=call["id"],
+                        template_name=call.get("tool_name"),
+                        arguments=call["arguments_raw"],
+                        created_at=call["created_at"],
+                    )
+                )
 
         # Step 6: previous_context_start_index is not needed since each run
         # only shows its own messages (no context from previous runs)

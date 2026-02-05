@@ -364,52 +364,77 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                           </div>
                         </div>
                       )}
-                      {/* Tool calls that occurred before this message */}
+                      {/* Tool calls attached to this message */}
                       {showToolCalls && messageCalls.length > 0 && (
                         <div className="space-y-2 mb-3">
                           {messageCalls.map((call) => (
                             <div
                               key={call.id}
-                              className="flex gap-3 justify-start"
+                              className={cn(
+                                "flex gap-2",
+                                isUser ? "justify-end" : "justify-start"
+                              )}
                             >
-                              <div className="flex-shrink-0">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                      <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Tool Call</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                              <div className="flex flex-col gap-1 max-w-[80%] items-start">
-                                <div className="rounded-lg p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-mono text-sm font-semibold text-amber-700 dark:text-amber-300">
-                                      {call.template_name || "Unknown function"}
-                                    </span>
-                                  </div>
-                                  {call.arguments && (
-                                    <pre className="text-xs bg-amber-100/50 dark:bg-amber-900/30 rounded p-2 overflow-x-auto max-w-full">
-                                      <code className="text-amber-800 dark:text-amber-200">
-                                        {(() => {
-                                          try {
-                                            return JSON.stringify(
-                                              JSON.parse(call.arguments),
-                                              null,
-                                              2
-                                            );
-                                          } catch {
-                                            return call.arguments;
-                                          }
-                                        })()}
-                                      </code>
-                                    </pre>
-                                  )}
+                              {!isUser && (
+                                <div className="flex-shrink-0">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="w-6 h-6 rounded bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                        <Wrench className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Tool Call</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 </div>
-                              </div>
+                              )}
+                              <details className="group max-w-[60%]">
+                                <summary className={cn(
+                                  "cursor-pointer rounded-lg px-3 py-1.5 text-xs font-mono font-medium",
+                                  "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800",
+                                  "text-amber-700 dark:text-amber-300",
+                                  "hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors",
+                                  "list-none flex items-center gap-1.5"
+                                )}>
+                                  <Wrench className="h-3 w-3 inline-block" />
+                                  {call.template_name || "tool_call"}
+                                  <span className="text-amber-500 dark:text-amber-500 ml-1 group-open:rotate-90 transition-transform">
+                                    ▶
+                                  </span>
+                                </summary>
+                                {call.arguments && (
+                                  <pre className="mt-1 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap break-words">
+                                    <code className="text-amber-800 dark:text-amber-200">
+                                      {(() => {
+                                        try {
+                                          return JSON.stringify(
+                                            JSON.parse(call.arguments),
+                                            null,
+                                            2
+                                          );
+                                        } catch {
+                                          return call.arguments;
+                                        }
+                                      })()}
+                                    </code>
+                                  </pre>
+                                )}
+                              </details>
+                              {isUser && (
+                                <div className="flex-shrink-0">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="w-6 h-6 rounded bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                        <Wrench className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Tool Call</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
