@@ -19,7 +19,7 @@ CREATE OR REPLACE VIEW view_grade_per_standard_group AS
 WITH
 -- Unified chats (general + practice)
 all_chats AS (
-    SELECT id, attempt_id, created_at, updated_at, title, completed, generated, mcp, active
+    SELECT id, attempt_id, created_at, updated_at, title, generated, mcp, active
     FROM simulation_chats_entry
 ),
 -- Unified chat→scenario connections

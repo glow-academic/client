@@ -213,6 +213,39 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload, profile_id: uuid.
             """
             await conn.execute(insert_completion_sql, chat_id_uuid)
 
+            # Create end_conversation call entry
+            end_conv_sql = """
+                WITH last_run AS (
+                    SELECT me.run_id
+                    FROM simulation_messages_entry sm
+                    JOIN messages_entry me ON me.id = sm.id
+                    WHERE sm.chat_id = $1 AND me.run_id IS NOT NULL
+                    ORDER BY me.created_at DESC
+                    LIMIT 1
+                ),
+                new_call AS (
+                    INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed)
+                    SELECT
+                        $2,
+                        lr.run_id,
+                        '019bbf87-0969-7918-baff-8a6aea670506'::uuid,
+                        $3,
+                        true
+                    FROM last_run lr
+                    RETURNING id
+                )
+                INSERT INTO tool_calls_junction (tool_id, call_id)
+                SELECT '019b484d-9837-760c-aa73-2421c6d107c0'::uuid, nc.id
+                FROM new_call nc
+            """
+            end_conv_call_id = str(uuid.uuid4())
+            await conn.execute(
+                end_conv_sql,
+                chat_id_uuid,
+                end_conv_call_id,
+                '{"end_reason":"user_ended"}',
+            )
+
             # Check for next incomplete scenario
             sql = load_sql(
                 "app/sql/v4/queries/simulations/check_next_incomplete_scenario_complete.sql"
@@ -365,8 +398,38 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
                 VALUES ($1)
                 ON CONFLICT (chat_id) DO NOTHING
             """
+            end_conv_sql = """
+                WITH last_run AS (
+                    SELECT me.run_id
+                    FROM simulation_messages_entry sm
+                    JOIN messages_entry me ON me.id = sm.id
+                    WHERE sm.chat_id = $1 AND me.run_id IS NOT NULL
+                    ORDER BY me.created_at DESC
+                    LIMIT 1
+                ),
+                new_call AS (
+                    INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed)
+                    SELECT
+                        $2,
+                        lr.run_id,
+                        '019bbf87-0969-7918-baff-8a6aea670506'::uuid,
+                        $3,
+                        true
+                    FROM last_run lr
+                    RETURNING id
+                )
+                INSERT INTO tool_calls_junction (tool_id, call_id)
+                SELECT '019b484d-9837-760c-aa73-2421c6d107c0'::uuid, nc.id
+                FROM new_call nc
+            """
             for chat in chats:
                 await conn.execute(insert_completion_sql, chat["id"])
+                await conn.execute(
+                    end_conv_sql,
+                    chat["id"],
+                    str(uuid.uuid4()),
+                    '{"end_reason":"user_ended_all"}',
+                )
 
             # Emit attempt_ended event
             event = AttemptEndedEvent(

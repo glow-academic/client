@@ -29,8 +29,8 @@ AS $$
     ),
     new_chat AS (
         -- Create simulation chat
-        INSERT INTO simulation_chats_entry (title, completed, attempt_id)
-        SELECT 'Test Chat', false, test_create_test_chat_v4.attempt_id
+        INSERT INTO simulation_chats_entry (title, attempt_id)
+        SELECT 'Test Chat', test_create_test_chat_v4.attempt_id
         RETURNING id
     ),
     simulation_connection AS (

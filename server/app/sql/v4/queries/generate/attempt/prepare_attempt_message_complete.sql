@@ -100,7 +100,17 @@ BEGIN
     END IF;
 
     IF v_group_id IS NULL THEN
-        -- Get active session
+        -- Reuse chat's existing group
+        SELECT sce.group_id INTO v_group_id
+        FROM simulation_chats_entry sce
+        WHERE sce.id = p_chat_id AND sce.group_id IS NOT NULL;
+        IF v_group_id IS NOT NULL THEN
+            SELECT trace_id INTO v_trace_id FROM groups_entry WHERE id = v_group_id;
+        END IF;
+    END IF;
+
+    IF v_group_id IS NULL THEN
+        -- First turn: create group and set on chat
         SELECT id INTO v_session_id
         FROM sessions_entry
         WHERE profile_id = p_profile_id AND active = true
@@ -110,6 +120,8 @@ BEGIN
         INSERT INTO groups_entry (created_at, updated_at, session_id)
         VALUES (NOW(), NOW(), v_session_id)
         RETURNING groups_entry.id, groups_entry.trace_id INTO v_group_id, v_trace_id;
+
+        UPDATE simulation_chats_entry SET group_id = v_group_id WHERE id = p_chat_id;
     END IF;
 
     -- Create run
@@ -136,9 +148,9 @@ BEGIN
     INSERT INTO simulation_messages_entry (id, chat_id)
     VALUES (v_user_message_id, p_chat_id);
 
-    -- Insert user content
-    INSERT INTO simulation_contents_entry (message_id, content)
-    VALUES (v_user_message_id, p_message);
+    -- Insert user content (with Student persona)
+    INSERT INTO simulation_contents_entry (message_id, content, persona_id)
+    VALUES (v_user_message_id, p_message, '019bb25e-e60c-7352-9b81-f411f56092a9'::uuid);
 
     -- Create assistant message placeholder in base table
     -- Offset by 1ms so ORDER BY created_at is deterministic (user before assistant)
