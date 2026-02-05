@@ -22,6 +22,7 @@ from app.api.v4.artifacts.reports.types import (
     ReportsSimulationResource,
     ReportsViews,
 )
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
@@ -426,12 +427,31 @@ async def get_reports(
                     description=item.description,
                 )
 
+        simulation_options = [
+            FilterOption(value=sid, label=resources.simulations[sid].name)
+            for sid in resources.simulations
+            if resources.simulations[sid].name
+        ]
+        profile_options = [
+            FilterOption(value=pid, label=resources.profiles[pid].name)
+            for pid in resources.profiles
+            if resources.profiles[pid].name
+        ]
+        scenario_options = [
+            FilterOption(value=sid, label=resources.scenarios[sid].name)
+            for sid in resources.scenarios
+            if resources.scenarios[sid].name
+        ]
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return ReportsResponse(
             sections=sections,
             views=views,
             resources=resources,
             total_count=total_count,
+            simulation_options=simulation_options,
+            profile_options=profile_options,
+            scenario_options=scenario_options,
         )
 
     except HTTPException:

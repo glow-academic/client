@@ -12,6 +12,7 @@ from app.api.v4.artifacts.pricing.types import (
     PricingViews,
     PricingResources,
 )
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.pricing.group_summary.get import get_pricing_group_summary_internal
 from app.api.v4.views.pricing.daily.get import get_pricing_daily_internal
 from app.infra.v4.activity.audit import audit_activity
@@ -104,11 +105,20 @@ async def get_pricing(
             profiles={pid: {} for pid in profile_ids},
         )
 
+        model_options = [
+            FilterOption(value=mid) for mid in sorted(model_ids)
+        ]
+        agent_options = [
+            FilterOption(value=aid) for aid in sorted(agent_ids)
+        ]
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return PricingResponse(
             views=views,
             resources=resources,
             total_count=group_summary_result.total_count,
+            model_options=model_options,
+            agent_options=agent_options,
         )
 
     except HTTPException:

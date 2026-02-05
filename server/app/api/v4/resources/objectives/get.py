@@ -66,7 +66,7 @@ class GetObjectiveSqlParams(BaseModel):
 class GetObjectiveSqlRow(BaseModel):
     """SQL row for get objective."""
 
-    item: GetObjectiveV4Item | None = None
+    items: list[GetObjectiveV4Item] | None = None
 
 
 # =============================================================================
@@ -96,7 +96,8 @@ async def get_objective_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    item = result.item if result else None
+    items = result.items if result and result.items else []
+    item = items[0] if items else None
 
     await set_cached(
         cache_key_val,

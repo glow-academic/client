@@ -21,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { SimulationFilter } from "@/hooks/use-analytics-params";
 import { cn } from "@/lib/utils";
 
 export interface AttemptSelectorProps {

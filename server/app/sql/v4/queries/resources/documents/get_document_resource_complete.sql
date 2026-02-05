@@ -48,20 +48,24 @@ CREATE OR REPLACE FUNCTION api_get_document_resource_v4(
     document_id uuid
 )
 RETURNS TABLE (
-    item types.q_get_document_resource_v4_item
+    items types.q_get_document_resource_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    (
-        d.id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = d.id LIMIT 1), ''),
-        COALESCE(u.file_path, ''),
-        COALESCE(u.mime_type, ''),
-        COALESCE(d.generated, false)
-    )::types.q_get_document_resource_v4_item as item
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            d.id,
+            (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+            COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = d.id LIMIT 1), ''),
+            COALESCE(u.file_path, ''),
+            COALESCE(u.mime_type, ''),
+            COALESCE(d.generated, false)
+        )::types.q_get_document_resource_v4_item
+    ),
+    ARRAY[]::types.q_get_document_resource_v4_item[]
+) as items
 FROM documents_resource d
 LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
 LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id

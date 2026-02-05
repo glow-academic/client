@@ -10,10 +10,13 @@ import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { searchParamsToFilters } from "@/utils/analytics-filters";
+import {
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getLayoutContext } from "../layout-server";
+import { loadHomeSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using /training/get for simulation cards (enhanced with stats)
@@ -58,76 +61,6 @@ const getHomeHistory = async (
   });
 };
 
-/** ---- Inline filters function for home page ---- */
-async function getHomeFilters(searchParams: URLSearchParams | undefined) {
-  // Use cached layout context (reuses data already fetched by layout)
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-  const profileContext = await getLayoutContext({
-    body: {},
-  });
-
-  // Compute startDate using same logic as analytics context
-  let startDate: Date;
-  if (profileContext.earliest_attempt_date) {
-    startDate = new Date(profileContext.earliest_attempt_date);
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    // Fallback to 30 days ago (matching analytics context)
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-
-  const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
-    roles: [] as string[],
-    simulationFilters: ["general" as const],
-    departmentIds: [] as string[],
-  };
-
-  // If search params are provided, merge them with defaults
-  let filters = defaults;
-  if (searchParams) {
-    const parsedFilters = searchParamsToFilters(searchParams, defaults);
-    filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
-      roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
-    };
-  }
-
-  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
-  const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
-      : profileContext.cohort_ids || [];
-  const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
-      : profileContext.department_ids || [];
-  const roles =
-    filters.roles && filters.roles.length > 0
-      ? filters.roles
-      : profileContext.scoped_roles || [];
-
-  return {
-    startDate: filters.startDate,
-    endDate: filters.endDate,
-    cohortIds,
-    departmentIds,
-    roles,
-  };
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Home",
@@ -141,32 +74,12 @@ interface HomePageProps {
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  // Access control handled server-side in layout
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-  // Parse search params
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadHomeSearchParams(await searchParams);
 
-  // Get filters from search params or defaults, then subset to Home fields
-  // Note: getHomeFilters uses getLayoutContext which reuses cached data from layout
-  const defaultFilters = await getHomeFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
-  );
-
-  // Extract subset for Home: startDate, endDate
-  // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
-  // profileId removed - comes from X-Profile-Id header automatically
-  // Convert camelCase to snake_case for API
-  // practice: false for home mode
+  // Compute defaults and resolve filters
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // Cards endpoint (now includes all stats needed for simulation cards)
   const cardsFilters: HomeCardsIn = {
@@ -175,36 +88,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     },
   };
 
-  // Extract pagination and filter params from search params
-  // Note: historyProfileIds removed - home history is single-user (uses auth header)
-  const historyPage = searchParamsObj.get("historyPage")
-    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
-    : 0;
-  const historyPageSize = searchParamsObj.get("historyPageSize")
-    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
-    : 10;
-  const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historySimulationIds = searchParamsObj.get("historySimulationIds")
-    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
-    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyInfiniteMode =
-    searchParamsObj.get("historyInfiniteMode") === "true"
-      ? true
-      : searchParamsObj.get("historyInfiniteMode") === "false"
-        ? false
-        : undefined;
-  const historySortBy = searchParamsObj.get("historySortBy") || "date";
-  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
+  // History params with defaults
+  const historyPage = q.historyPage ?? 0;
+  const historyPageSize = q.historyPageSize ?? 10;
+  const historySearch = q.historySearch ?? undefined;
+  const historySimulationIds = q.historySimulationIds ?? undefined;
+  const historyScenarioIds = q.historyScenarioIds ?? undefined;
+  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+  const historySortBy = q.historySortBy ?? "date";
+  const historySortOrder = q.historySortOrder ?? "desc";
 
   // Fetch cards data (now includes all stats needed for simulation cards)
   const homeData = await getHomeCards(cardsFilters);
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include analytics filter params so history re-fetches when filters change
-  // Note: historyProfileIds removed - home history is single-user
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -218,14 +115,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         : "std",
     historySortBy,
     historySortOrder,
-    defaultFilters.startDate, // Include analytics filters to trigger re-fetch when filters change
+    defaultFilters.startDate,
     defaultFilters.endDate,
     defaultFilters.cohortIds.join(","),
     defaultFilters.departmentIds.join(","),
     defaultFilters.roles.join(","),
-    (
-      defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }
-    ).simulationFilters?.join(",") || "general",
+    defaultFilters.simulationFilters.join(","),
   ].join("|");
 
   return (
@@ -301,9 +196,6 @@ async function HomeHistorySection({
   historySortOrder: string;
 }) {
   // Build history filters using /attempt/list endpoint
-  // profileId removed - comes from X-Profile-Id header automatically
-  // roles and profile_ids removed - home history is single-user
-  // Convert camelCase to snake_case for API
   // practice: false for home mode
   const historyFilters: HomeHistoryIn = {
     body: {
@@ -339,9 +231,7 @@ async function HomeHistorySection({
   const archivedCount = 0;
   const unarchivedCount = dataArray.length;
 
-  // Use server-provided data directly (no transformation needed)
-  // Extract options from API response and cast to expected format
-  // Note: profile_options removed - home history is single-user
+  // Extract options from API response
   const profileOptions: { value: string; label: string; count?: number }[] = [];
   const simulationOptions = (historyData.simulation_options || []).map(
     (opt) => {

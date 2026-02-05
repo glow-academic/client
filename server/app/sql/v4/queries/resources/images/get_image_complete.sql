@@ -47,19 +47,23 @@ CREATE OR REPLACE FUNCTION api_get_image_resource_v4(
     image_id uuid
 )
 RETURNS TABLE (
-    item types.q_get_image_resource_v4_item
+    items types.q_get_image_resource_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    (
-        i.id,
-        i.name,
-        COALESCE(i.description, ''),
-        i.upload_id,
-        COALESCE(i.generated, false)
-    )::types.q_get_image_resource_v4_item as item
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            i.id,
+            i.name,
+            COALESCE(i.description, ''),
+            i.upload_id,
+            COALESCE(i.generated, false)
+        )::types.q_get_image_resource_v4_item
+    ),
+    ARRAY[]::types.q_get_image_resource_v4_item[]
+) as items
 FROM images_resource i
 WHERE i.id = image_id
   AND i.active = true;

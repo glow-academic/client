@@ -10,12 +10,13 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import {
-  searchParamsToFilters,
   type AnalyticsFilters,
-} from "@/utils/analytics-filters";
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getLayoutContext } from "../../layout-server";
+import { loadReportsSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v4/artifacts/reports/get", "post">;
@@ -39,79 +40,6 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
-/** ---- Inline filters function for reports page ---- */
-async function getReportsFilters(searchParams?: URLSearchParams) {
-  // Use cached layout context (reuses data already fetched by layout)
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-  const profileContext = await getLayoutContext({
-    body: {},
-  });
-
-  // Compute startDate using same logic as analytics context
-  let startDate: Date;
-  if (profileContext.earliest_attempt_date) {
-    startDate = new Date(profileContext.earliest_attempt_date);
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    // Fallback to 30 days ago (matching analytics context)
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-
-  const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
-    roles: [] as string[],
-    simulationFilters: ["general" as const],
-    departmentIds: [] as string[],
-  };
-
-  // If search params are provided, merge them with defaults
-  let filters = defaults;
-  if (searchParams) {
-    const parsedFilters = searchParamsToFilters(searchParams, defaults);
-    filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
-      roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
-    };
-  }
-
-  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
-  const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
-      : profileContext.cohort_ids || [];
-  const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
-      : profileContext.department_ids || [];
-  const roles =
-    filters.roles && filters.roles.length > 0
-      ? filters.roles
-      : profileContext.scoped_roles || [];
-
-  const result: AnalyticsFilters = {
-    startDate: filters.startDate,
-    endDate: filters.endDate,
-  };
-  if (cohortIds.length > 0) result.cohortIds = cohortIds;
-  if (departmentIds.length > 0) result.departmentIds = departmentIds;
-  if (roles.length > 0) result.roles = roles;
-  if (filters.simulationFilters.length > 0)
-    result.simulationFilters = filters.simulationFilters;
-  return result;
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Reports",
@@ -127,45 +55,33 @@ interface ReportsPageProps {
 export default async function ReportsFullPage({
   searchParams,
 }: ReportsPageProps) {
-  // Access control handled server-side in layout
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-  // Parse search params
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadReportsSearchParams(await searchParams);
 
-  // Get filters from search params or defaults
-  const filters = await getReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
-  );
+  // Compute defaults and resolve filters
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const resolved = resolveAnalyticsFilters(q, defaults, profileContext);
 
-  // Extract pagination and filter params from search params for reports table
-  const reportsPage = searchParamsObj.get("reportsPage")
-    ? parseInt(searchParamsObj.get("reportsPage") || "0", 10)
-    : 0;
-  const reportsPageSize = searchParamsObj.get("reportsPageSize")
-    ? parseInt(searchParamsObj.get("reportsPageSize") || "100", 10)
-    : 100;
-  const reportsSearch = searchParamsObj.get("reportsSearch") || undefined;
-  const reportsProfileIds = searchParamsObj.get("reportsProfileIds")
-    ? searchParamsObj.get("reportsProfileIds")?.split(",").filter(Boolean)
-    : undefined;
-  const reportsSimulationIds = searchParamsObj.get("reportsSimulationIds")
-    ? searchParamsObj.get("reportsSimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const reportsScenarioIds = searchParamsObj.get("reportsScenarioIds")
-    ? searchParamsObj.get("reportsScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const reportsSortBy = searchParamsObj.get("reportsSortBy") || "averageScore";
-  const reportsSortOrder = searchParamsObj.get("reportsSortOrder") || "desc";
+  // Build AnalyticsFilters for Reports component (optional arrays)
+  const filters: AnalyticsFilters = {
+    startDate: resolved.startDate,
+    endDate: resolved.endDate,
+  };
+  if (resolved.cohortIds.length > 0) filters.cohortIds = resolved.cohortIds;
+  if (resolved.departmentIds.length > 0) filters.departmentIds = resolved.departmentIds;
+  if (resolved.roles.length > 0) filters.roles = resolved.roles;
+  if (resolved.simulationFilters.length > 0)
+    filters.simulationFilters = resolved.simulationFilters;
+
+  // Reports-specific params with defaults
+  const reportsPage = q.reportsPage ?? 0;
+  const reportsPageSize = q.reportsPageSize ?? 100;
+  const reportsSearch = q.reportsSearch ?? undefined;
+  const reportsProfileIds = q.reportsProfileIds ?? undefined;
+  const reportsSimulationIds = q.reportsSimulationIds ?? undefined;
+  const reportsScenarioIds = q.reportsScenarioIds ?? undefined;
+  const reportsSortBy = q.reportsSortBy ?? "averageScore";
+  const reportsSortOrder = q.reportsSortOrder ?? "desc";
 
   // Create reportsKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so reports re-fetch when filters change
@@ -178,14 +94,12 @@ export default async function ReportsFullPage({
     (reportsScenarioIds || []).join(","),
     reportsSortBy,
     reportsSortOrder,
-    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
+    filters.startDate,
     filters.endDate,
     (filters.cohortIds || []).join(","),
     (filters.departmentIds || []).join(","),
     (filters.roles || []).join(","),
-    (
-      filters as typeof filters & { simulationFilters?: string[] }
-    ).simulationFilters?.join(",") || "general",
+    (filters.simulationFilters || []).join(","),
   ].join("|");
 
   // Create empty reports data for loading state

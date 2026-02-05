@@ -8705,6 +8705,10 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            /** Eval Options */
+            eval_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Rubric Options */
+            rubric_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
         };
         /**
          * BenchmarkStartPayload
@@ -9471,6 +9475,8 @@ export interface components {
             fields?: components["schemas"]["DashboardFieldMeta"][];
             thresholds?: components["schemas"]["DashboardThresholds"] | null;
             insights?: components["schemas"]["DashboardInsights"] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
         };
         /** DashboardFieldMeta */
         DashboardFieldMeta: {
@@ -10556,21 +10562,6 @@ export interface components {
             /** Feedback */
             feedback?: string | null;
         };
-        /**
-         * FilterOption
-         * @description Filter option for dropdowns.
-         */
-        FilterOption: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /**
-             * Count
-             * @default 0
-             */
-            count: number;
-        };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
             /** Upload Id */
@@ -11410,17 +11401,17 @@ export interface components {
              * Simulation Options
              * @description Available simulation filter options
              */
-            simulation_options?: components["schemas"]["FilterOption"][] | null;
+            simulation_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
             /**
              * Scenario Options
              * @description Available scenario filter options
              */
-            scenario_options?: components["schemas"]["FilterOption"][] | null;
+            scenario_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
             /**
              * Profile Options
              * @description Available profile filter options
              */
-            profile_options?: components["schemas"]["FilterOption"][] | null;
+            profile_options?: components["schemas"]["app__api__v4__views__analytics__attempts__types__FilterOption"][] | null;
         };
         /**
          * GetAttemptListRequest
@@ -12447,7 +12438,8 @@ export interface components {
         };
         /** GetDocumentResourceApiResponse */
         GetDocumentResourceApiResponse: {
-            item?: components["schemas"]["QGetDocumentResourceV4Item"] | null;
+            /** Items */
+            items?: components["schemas"]["QGetDocumentResourceV4Item"][] | null;
         };
         /** GetDocumentsListApiRequest */
         GetDocumentsListApiRequest: Record<string, never>;
@@ -13695,7 +13687,8 @@ export interface components {
         };
         /** GetPersonaResourceApiResponse */
         GetPersonaResourceApiResponse: {
-            item?: components["schemas"]["QGetPersonaResourceV4Item"] | null;
+            /** Items */
+            items?: components["schemas"]["QGetPersonaResourceV4Item"][] | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: {
@@ -16784,6 +16777,10 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Profile Options */
+            profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
         };
         /** LeaderboardScenarioResource */
         LeaderboardScenarioResource: {
@@ -18733,6 +18730,10 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            /** Model Options */
+            model_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Agent Options */
+            agent_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
         };
         /**
          * PricingRunFactsItem
@@ -22574,6 +22575,12 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Profile Options */
+            profile_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["app__api__v4__artifacts__types__FilterOption"][];
         };
         /** ReportsRubricResource */
         ReportsRubricResource: {
@@ -25803,6 +25810,18 @@ export interface components {
             general_agent_id?: string | null;
         };
         /**
+         * FilterOption
+         * @description A single filter option for dropdown selectors.
+         */
+        app__api__v4__artifacts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label?: string | null;
+            /** Count */
+            count?: number | null;
+        };
+        /**
          * GetSimulationApiRequest
          * @description Request for getting a simulation by ID.
          */
@@ -25819,6 +25838,21 @@ export interface components {
          */
         app__api__v4__resources__simulations__get__GetSimulationApiResponse: {
             item?: components["schemas"]["GetSimulationV4Item"] | null;
+        };
+        /**
+         * FilterOption
+         * @description Filter option for dropdowns.
+         */
+        app__api__v4__views__analytics__attempts__types__FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
         };
         /** GetEvalsListApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__1: {

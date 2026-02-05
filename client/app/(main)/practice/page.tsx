@@ -13,6 +13,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
+import { loadPracticeSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using /training/get for simulation cards (enhanced with stats)
@@ -72,52 +73,25 @@ interface PracticePageProps {
 export default async function PracticePage({
   searchParams,
 }: PracticePageProps) {
-  // Access control handled server-side in layout
-  // Practice page allows guest role users (authenticated users with guest role)
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts) or cookies
-  // Parse search params
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadPracticeSearchParams(await searchParams);
 
   // Get profileId and departmentIds from profile context with resolved UUIDs
-  // Use cached layout context (reuses data already fetched by layout)
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts) or cookies
   let profileContext;
   try {
     profileContext = await getLayoutContext({
       body: {},
     });
   } catch (error) {
-    // Handle 401 Unauthorized (invalid session - profile doesn't exist)
-    // This can happen if the database was reset but the session still has old profile IDs
-    // The layout's getLayoutContextData will also fail with the same 401 error,
-    // and the layout will show access denied UI. Re-throw the error so the layout handles it.
     if (
       error instanceof Error &&
       "status" in error &&
       (error as { status: number }).status === 401
     ) {
-      // Re-throw the error - the layout's getLayoutContextData will also fail with 401,
-      // and the updated layout code will show access denied UI
       throw error;
     }
-    // Re-throw other errors
     throw error;
   }
-
-  // Build practice filters - convert to snake_case
-  // profile_id removed - comes from X-Profile-Id header automatically
-  // Always pass department_ids (never empty array) - use all IDs from profile context
-  // practice: true for practice mode
 
   // Cards endpoint (now includes all stats needed for simulation cards)
   const cardsFilters: PracticeCardsIn = {
@@ -126,31 +100,16 @@ export default async function PracticePage({
     },
   };
 
-  // Extract pagination and filter params from search params
-  const historyPage = searchParamsObj.get("historyPage")
-    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
-    : 0;
-  const historyPageSize = searchParamsObj.get("historyPageSize")
-    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
-    : 10;
-  const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historyProfileIds = searchParamsObj.get("historyProfileIds")
-    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historySimulationIds = searchParamsObj.get("historySimulationIds")
-    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
-    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyInfiniteMode =
-    searchParamsObj.get("historyInfiniteMode") === "true"
-      ? true
-      : searchParamsObj.get("historyInfiniteMode") === "false"
-        ? false
-        : undefined;
-  const historySortBy = searchParamsObj.get("historySortBy") || "date";
-  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
+  // History params with defaults
+  const historyPage = q.historyPage ?? 0;
+  const historyPageSize = q.historyPageSize ?? 10;
+  const historySearch = q.historySearch ?? undefined;
+  const historyProfileIds = q.historyProfileIds ?? undefined;
+  const historySimulationIds = q.historySimulationIds ?? undefined;
+  const historyScenarioIds = q.historyScenarioIds ?? undefined;
+  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+  const historySortBy = q.historySortBy ?? "date";
+  const historySortOrder = q.historySortOrder ?? "desc";
 
   // Fetch cards data (now includes all stats needed for simulation cards)
   const practiceData = await getPracticeCards(cardsFilters);
@@ -162,14 +121,12 @@ export default async function PracticePage({
   const isGuest = !profileId || profileContext.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include analytics filter params so history re-fetches when filters change
-  const analyticsStartDate = searchParamsObj.get("startDate") || "";
-  const analyticsEndDate = searchParamsObj.get("endDate") || "";
-  const analyticsCohortIds = searchParamsObj.get("cohortIds") || "";
-  const analyticsDepartmentIds = searchParamsObj.get("departmentIds") || "";
-  const analyticsRoles = searchParamsObj.get("roles") || "";
-  const analyticsSimulationFilters =
-    searchParamsObj.get("simulationFilters") || "general";
+  const analyticsStartDate = q.startDate || "";
+  const analyticsEndDate = q.endDate || "";
+  const analyticsCohortIds = (q.cohortIds || []).join(",");
+  const analyticsDepartmentIds = (q.departmentIds || []).join(",");
+  const analyticsRoles = (q.roles || []).join(",");
+  const analyticsSimulationFilters = (q.simulationFilters || ["general"]).join(",");
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -184,7 +141,7 @@ export default async function PracticePage({
         : "std",
     historySortBy,
     historySortOrder,
-    analyticsStartDate, // Include analytics filters to trigger re-fetch when filters change
+    analyticsStartDate,
     analyticsEndDate,
     analyticsCohortIds,
     analyticsDepartmentIds,
@@ -260,11 +217,7 @@ async function PracticeHistorySection({
   historySortOrder: string;
   departmentIds: string[];
 }) {
-  // Build history filters using /attempt/list endpoint
-  // profile_id removed - comes from X-Profile-Id header automatically
-  // Convert camelCase to snake_case for API
   // Default date range: last year
-  // practice: true for practice mode
   const now = new Date();
   const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   const historyFilters: PracticeHistoryIn = {
@@ -295,13 +248,12 @@ async function PracticeHistorySection({
 
   const historyData = await getPracticeHistory(historyFilters);
 
-  // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
+  // Calculate archived/unarchived counts from data
   const dataArray = historyData.data || [];
   const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
   const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
 
-  // Use server-provided data directly (no transformation needed)
-  // Extract options from API response and cast to expected format
+  // Extract options from API response
   const profileOptions = (historyData.profile_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
     const count = typeof opt.count === "number" ? opt.count : undefined;
     return {

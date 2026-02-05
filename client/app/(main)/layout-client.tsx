@@ -22,7 +22,6 @@ import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBrea
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
-import { AnalyticsProvider } from "@/contexts/analytics-context";
 import {
   BreadcrumbProvider,
   useBreadcrumbContext,
@@ -545,19 +544,17 @@ export function MainLayoutClient({
         <BreadcrumbProvider>
           <GenerationProvider>
             <SaveProvider initialAutosave={initialAutosave}>
-              <AnalyticsProvider>
-                <MainLayoutContent
-                  attemptData={attemptData}
-                  switchEffectiveProfileAction={switchEffectiveProfileAction}
-                  createFeedbackAction={createFeedbackAction}
-                  refreshAnalyticsAction={refreshAnalyticsAction}
-                  searchSimulatableProfilesAction={
-                    searchSimulatableProfilesAction
-                  }
-                >
-                  {children}
-                </MainLayoutContent>
-              </AnalyticsProvider>
+              <MainLayoutContent
+                attemptData={attemptData}
+                switchEffectiveProfileAction={switchEffectiveProfileAction}
+                createFeedbackAction={createFeedbackAction}
+                refreshAnalyticsAction={refreshAnalyticsAction}
+                searchSimulatableProfilesAction={
+                  searchSimulatableProfilesAction
+                }
+              >
+                {children}
+              </MainLayoutContent>
             </SaveProvider>
           </GenerationProvider>
         </BreadcrumbProvider>

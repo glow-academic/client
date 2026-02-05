@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import FilterOption
+
 # ============================================================================
 # Request
 # ============================================================================
@@ -467,3 +469,5 @@ class DashboardBundleResponse(BaseModel):
 
     thresholds: DashboardThresholds | None = None
     insights: DashboardInsights | None = None
+
+    simulation_options: list[FilterOption] = Field(default_factory=list)

@@ -68,7 +68,7 @@ class GetImageSqlParams(BaseModel):
 class GetImageSqlRow(BaseModel):
     """SQL row for get image."""
 
-    item: GetImageV4Item | None = None
+    items: list[GetImageV4Item] | None = None
 
 
 # =============================================================================
@@ -98,7 +98,8 @@ async def get_image_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    item = result.item if result else None
+    items = result.items if result and result.items else []
+    item = items[0] if items else None
 
     await set_cached(
         cache_key_val,

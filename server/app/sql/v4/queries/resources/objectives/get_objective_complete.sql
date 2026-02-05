@@ -45,17 +45,21 @@ CREATE OR REPLACE FUNCTION api_get_objective_resource_v4(
     id uuid
 )
 RETURNS TABLE (
-    item types.q_get_objective_resource_v4_item
+    items types.q_get_objective_resource_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    (
-        o.id,
-        o.objective,
-        COALESCE(o.generated, false)
-    )::types.q_get_objective_resource_v4_item as item
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            o.id,
+            o.objective,
+            COALESCE(o.generated, false)
+        )::types.q_get_objective_resource_v4_item
+    ),
+    ARRAY[]::types.q_get_objective_resource_v4_item[]
+) as items
 FROM objectives_resource o
 WHERE o.id = id
   AND o.active = true;

@@ -44,7 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { AnalyticsFilters } from "@/utils/analytics-filters";
+import type { AnalyticsFilters } from "@/lib/search-params/analytics-defaults";
 import {
   ColumnFiltersState,
   SortingState,

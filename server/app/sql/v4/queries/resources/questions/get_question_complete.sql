@@ -46,18 +46,22 @@ CREATE OR REPLACE FUNCTION api_get_question_resource_v4(
     id uuid
 )
 RETURNS TABLE (
-    item types.q_get_question_resource_v4_item
+    items types.q_get_question_resource_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    (
-        q.id,
-        q.question_text,
-        COALESCE(q.allow_multiple, false),
-        COALESCE(q.generated, false)
-    )::types.q_get_question_resource_v4_item as item
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            q.id,
+            q.question_text,
+            COALESCE(q.allow_multiple, false),
+            COALESCE(q.generated, false)
+        )::types.q_get_question_resource_v4_item
+    ),
+    ARRAY[]::types.q_get_question_resource_v4_item[]
+) as items
 FROM questions_resource q
 WHERE q.id = id
   AND q.active = true;

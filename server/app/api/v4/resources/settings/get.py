@@ -101,7 +101,7 @@ class GetSettingsSqlParams(BaseModel):
 class GetSettingsSqlRow(BaseModel):
     """SQL row for get settings."""
 
-    item: QGetSettingsV4Item | None = None
+    items: list[QGetSettingsV4Item] | None = None
 
 
 # =============================================================================
@@ -140,7 +140,8 @@ async def get_settings_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    item: QGetSettingsV4Item | None = result.item if result else None
+    items_list = result.items if result and result.items else []
+    item: QGetSettingsV4Item | None = items_list[0] if items_list else None
 
     # Cache result
     await set_cached(

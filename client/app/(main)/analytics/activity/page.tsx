@@ -11,6 +11,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { loadActivitySearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/api/v4/artifacts/activity/get", "post">;
@@ -69,27 +70,13 @@ interface ActivityPageProps {
 export default async function ActivityPage({
   searchParams,
 }: ActivityPageProps) {
-  // Parse search params
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadActivitySearchParams(await searchParams);
 
-  // Extract pagination params for sessions list
-  const activityPage = searchParamsObj.get("activityPage")
-    ? parseInt(searchParamsObj.get("activityPage") || "0", 10)
-    : 0;
-  const activityPageSize = searchParamsObj.get("activityPageSize")
-    ? parseInt(searchParamsObj.get("activityPageSize") || "50", 10)
-    : 50;
-  const activitySearch = searchParamsObj.get("activitySearch") || undefined;
+  // Activity-specific params with defaults
+  const activityPage = q.activityPage ?? 0;
+  const activityPageSize = q.activityPageSize ?? 50;
+  const activitySearch = q.activitySearch ?? undefined;
 
   // Create activityKey for Suspense boundary to trigger re-fetch on URL param changes
   const activityKey = [

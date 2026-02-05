@@ -12,6 +12,7 @@ from app.api.v4.artifacts.benchmark.types import (
     BenchmarkViews,
     BenchmarkResources,
 )
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.benchmark.attempt_facts.get import get_benchmark_attempt_facts_internal
 from app.api.v4.views.benchmark.eval_summary.get import get_benchmark_eval_summary_internal
 from app.infra.v4.activity.audit import audit_activity
@@ -96,11 +97,20 @@ async def get_benchmark(
             rubrics={rid: {} for rid in rubric_ids},
         )
 
+        eval_options = [
+            FilterOption(value=eid) for eid in sorted(eval_ids)
+        ]
+        rubric_options = [
+            FilterOption(value=rid) for rid in sorted(rubric_ids)
+        ]
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return BenchmarkResponse(
             views=views,
             resources=resources,
             total_count=attempt_facts_result.total_count,
+            eval_options=eval_options,
+            rubric_options=rubric_options,
         )
 
     except HTTPException:

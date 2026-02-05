@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.analytics.attempts.types import AttemptFactsItem
 from app.api.v4.views.analytics.chat_facts.types import ChatFactsItem
 from app.api.v4.views.analytics.daily_metrics.types import DailyMetricsItem
@@ -172,3 +173,6 @@ class LeaderboardResponse(BaseModel):
     primary_color: str | None = None
     accent_color: str | None = None
     total_count: int = Field(default=0)
+
+    simulation_options: list[FilterOption] = Field(default_factory=list)
+    profile_options: list[FilterOption] = Field(default_factory=list)

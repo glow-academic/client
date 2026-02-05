@@ -17,8 +17,11 @@ import {
 } from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
+import {
+  type SimulationFilter,
+  useAnalyticsParams,
+} from "@/hooks/use-analytics-params";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RefreshCw, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -62,7 +65,7 @@ export function AnalyticsFilters({
     setSelectedRoles,
     simulationFilters,
     setSimulationFilters,
-  } = useAnalytics();
+  } = useAnalyticsParams();
 
   const { cohorts, cohortMemberCounts, departments, scopedRoles } =
     useProfile();

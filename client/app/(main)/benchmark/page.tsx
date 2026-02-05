@@ -13,6 +13,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
+import { loadBenchmarkSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 type BenchmarkOverviewIn = InputOf<"/api/v4/artifacts/benchmark/get", "post">;
@@ -39,10 +40,7 @@ type EvalsListOut = {
   agent_options: BenchmarkOverviewOut["agent_options"];
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Benchmark overview responses can get large. Using cache: 'no-store' to disable Next.js default fetch caching.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch (no Next.js cache) ---- */
 const getBenchmarkOverview = async (
   input: BenchmarkOverviewIn
 ): Promise<BenchmarkOverviewOut> => {
@@ -59,11 +57,6 @@ const getBenchmarkOverview = async (
   });
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Benchmark history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
 const getBenchmarkHistory = async (
   input: BenchmarkHistoryIn
 ): Promise<BenchmarkHistoryOut> => {
@@ -95,82 +88,47 @@ interface BenchmarkPageProps {
 export default async function BenchmarkPage({
   searchParams,
 }: BenchmarkPageProps) {
-  // Access control handled server-side in layout
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
-  // Parse search params
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadBenchmarkSearchParams(await searchParams);
 
-  // Get profileId and departmentIds from profile context with resolved UUIDs
-  // Use cached layout context (reuses data already fetched by layout)
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts) or cookies
+  // Get profileId and departmentIds from profile context
   let profileContext;
   try {
     profileContext = await getLayoutContext({
       body: {},
     });
   } catch (error) {
-    // Handle 401 Unauthorized (invalid session - profile doesn't exist)
-    // This can happen if the database was reset but the session still has old profile IDs
-    // The layout's getLayoutContextData will also fail with the same 401 error,
-    // and the layout will show access denied UI. Re-throw the error so the layout handles it.
     if (
       error instanceof Error &&
       "status" in error &&
       (error as { status: number }).status === 401
     ) {
-      // Re-throw the error - the layout's getLayoutContextData will also fail with 401,
-      // and the updated layout code will show access denied UI
       throw error;
     }
-    // Re-throw other errors
     throw error;
   }
 
-  // Build benchmark overview filters (department_ids only) - convert to snake_case
-  // profile_id removed - comes from X-Profile-Id header automatically
-  // Always pass department_ids (never empty array) - use all IDs from profile context
+  // Build benchmark overview filters (department_ids only)
   const overviewFilters: BenchmarkOverviewIn = {
     body: {
-      department_ids: profileContext.department_ids || [], // Always pass (non-empty from profile context)
+      department_ids: profileContext.department_ids || [],
     },
   };
 
-  // Extract pagination and filter params from search params
-  const historyPage = searchParamsObj.get("historyPage")
-    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
-    : 0;
-  const historyPageSize = searchParamsObj.get("historyPageSize")
-    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
-    : 10;
-  const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historyEvalIds = searchParamsObj.get("historyEvalIds")
-    ? searchParamsObj.get("historyEvalIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyStatus = searchParamsObj.get("historyStatus") || undefined;
-  const historyArchived =
-    searchParamsObj.get("historyArchived") === "true"
-      ? true
-      : searchParamsObj.get("historyArchived") === "false"
-        ? false
-        : undefined;
-  const historySortBy = searchParamsObj.get("historySortBy") || "created_at";
-  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
+  // History params with defaults
+  const historyPage = q.historyPage ?? 0;
+  const historyPageSize = q.historyPageSize ?? 10;
+  const historySearch = q.historySearch ?? undefined;
+  const historyEvalIds = q.historyEvalIds ?? undefined;
+  const historyStatus = q.historyStatus ?? undefined;
+  const historyArchived = q.historyArchived ?? undefined;
+  const historySortBy = q.historySortBy ?? "created_at";
+  const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Fetch benchmark overview server-side (evals only - history is separate endpoint)
+  // Fetch benchmark overview server-side
   const overviewData = await getBenchmarkOverview(overviewFilters);
 
   // Convert arrays to dicts for backward compatibility with Benchmark component
-  // API now returns arrays instead of dicts (composite types)
   const rubricMapping: Record<string, Record<string, unknown>> = {};
   for (const rubric of overviewData.rubrics || []) {
     if (rubric.rubric_id) {
@@ -246,9 +204,9 @@ export default async function BenchmarkPage({
         rubricStandardGroupsMapping[rsg.rubric_id] = {};
       }
       const standardIds = rsg.standard_ids || [];
-      const rubricMapping = rubricStandardGroupsMapping[rsg.rubric_id];
-      if (rubricMapping) {
-        rubricMapping[rsg.standard_group_id] = standardIds.map((id) =>
+      const rubricMap = rubricStandardGroupsMapping[rsg.rubric_id];
+      if (rubricMap) {
+        rubricMap[rsg.standard_group_id] = standardIds.map((id) =>
           id.toString()
         );
       }
@@ -269,7 +227,7 @@ export default async function BenchmarkPage({
     agent_options: overviewData.agent_options || [],
   };
 
-  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
+  // Create historyKey for Suspense boundary
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -281,8 +239,7 @@ export default async function BenchmarkPage({
     historySortOrder,
   ].join("|");
 
-  // Build rubric mappings from evals list response (similar to practice page)
-  // Transform standard_groups_mapping and standards_mapping into rubric-specific mappings
+  // Build rubric mappings from evals list response
   const rubricMappings: Record<
     string,
     {
@@ -303,7 +260,6 @@ export default async function BenchmarkPage({
     }
   > = {};
 
-  // Build rubric mappings for each unique rubric_id
   const uniqueRubricIds = Array.from(
     new Set(
       (evalsData.evals || [])
@@ -313,24 +269,19 @@ export default async function BenchmarkPage({
   );
 
   for (const rubricId of uniqueRubricIds) {
-    // Get standard_group_ids map for this rubric (groupId -> standard_ids[])
     const rubricStandardGroupsMap =
       evalsData.rubric_standard_groups_mapping?.[rubricId] || {};
 
-    // Build standard_groups mapping (groupId -> standard_ids[])
-    // The map already contains standard_ids arrays per group
     const standard_groups: Record<string, string[]> = {};
     for (const [groupId, standardIds] of Object.entries(
       rubricStandardGroupsMap
     )) {
-      // standardIds is already an array from the SQL query
       if (Array.isArray(standardIds)) {
         standard_groups[groupId] = standardIds;
       }
     }
 
-    // Build standardGroupsMapping from standard_groups_mapping
-    const standardGroupsMapping: Record<
+    const sgMapping: Record<
       string,
       {
         name: string;
@@ -342,7 +293,7 @@ export default async function BenchmarkPage({
     for (const groupId of Object.keys(standard_groups)) {
       const groupData = evalsData.standard_groups_mapping?.[groupId];
       if (groupData) {
-        standardGroupsMapping[groupId] = {
+        sgMapping[groupId] = {
           name: groupData.name || "",
           description: groupData.description || "",
           points: groupData.points || 0,
@@ -354,7 +305,7 @@ export default async function BenchmarkPage({
     if (rubricId) {
       rubricMappings[rubricId] = {
         standard_groups,
-        standardGroupsMapping,
+        standardGroupsMapping: sgMapping,
         standardsMapping: evalsData.standards_mapping || {},
       };
     }
@@ -411,9 +362,6 @@ async function BenchmarkHistorySection({
   historySortOrder: string;
   departmentIds: string[];
 }) {
-  // Build history filters for benchmark (department_ids, eval_ids, status, archived, search)
-  // profile_id removed - comes from X-Profile-Id header automatically
-  // Convert camelCase to snake_case for API
   const historyFilters: BenchmarkHistoryIn = {
     body: {
       department_ids: departmentIds,
@@ -433,10 +381,7 @@ async function BenchmarkHistorySection({
 
   const historyData = await getBenchmarkHistory(historyFilters);
 
-  // Calculate archived/unarchived counts from data
   const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter((item) => item.archived).length;
-  const unarchivedCount = dataArray.filter((item) => !item.archived).length;
 
   return (
     <div className="space-y-4">

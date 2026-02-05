@@ -67,7 +67,7 @@ class GetQuestionSqlParams(BaseModel):
 class GetQuestionSqlRow(BaseModel):
     """SQL row for get question."""
 
-    item: GetQuestionV4Item | None = None
+    items: list[GetQuestionV4Item] | None = None
 
 
 # =============================================================================
@@ -97,7 +97,8 @@ async def get_question_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    item = result.item if result else None
+    items = result.items if result and result.items else []
+    item = items[0] if items else None
 
     await set_cached(
         cache_key_val,

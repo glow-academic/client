@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.benchmark.attempt_facts.types import BenchmarkAttemptFactsItem
 from app.api.v4.views.benchmark.eval_summary.types import BenchmarkEvalSummaryItem
 
@@ -41,3 +42,6 @@ class BenchmarkResponse(BaseModel):
     views: BenchmarkViews = Field(default_factory=BenchmarkViews)
     resources: BenchmarkResources = Field(default_factory=BenchmarkResources)
     total_count: int = Field(default=0)
+
+    eval_options: list[FilterOption] = Field(default_factory=list)
+    rubric_options: list[FilterOption] = Field(default_factory=list)

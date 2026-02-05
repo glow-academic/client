@@ -71,29 +71,9 @@ class GetSimulationSqlParams(BaseModel):
 
 
 class GetSimulationSqlRow(BaseModel):
-    """SQL row for get simulation.
+    """SQL row for get simulation."""
 
-    Note: PostgreSQL expands composite types in RETURNS TABLE,
-    so we receive the columns directly instead of nested in 'item'.
-    """
-
-    simulation_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    time_limit: int | None = None
-    generated: bool | None = None
-
-    def to_item(self) -> GetSimulationV4Item | None:
-        """Convert SQL row to item format."""
-        if self.simulation_id is None:
-            return None
-        return GetSimulationV4Item(
-            simulation_id=self.simulation_id,
-            name=self.name,
-            description=self.description,
-            time_limit=self.time_limit,
-            generated=self.generated,
-        )
+    items: list[GetSimulationV4Item] | None = None
 
 
 # =============================================================================
@@ -116,10 +96,8 @@ async def get_simulation_internal(
     Returns:
         Simulation item or None if not found
     """
-    # Generate cache key
     cache_key_val = cache_key("simulations/get", {"id": str(id)})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
@@ -128,25 +106,15 @@ async def get_simulation_internal(
                 return GetSimulationV4Item.model_validate(item_data)
             return None
 
-    # Execute SQL directly - PostgreSQL expands composite types from RETURNS TABLE
-    # so we can't use execute_sql_typed which expects the nested 'item' structure
-    rows = await conn.fetch(
-        'SELECT * FROM "public"."api_get_simulations_v4"($1)',
-        id,
+    params = GetSimulationSqlParams(id=id)
+    result = cast(
+        GetSimulationSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    item = None
-    if rows:
-        row = dict(rows[0])
-        item = GetSimulationV4Item(
-            simulation_id=row.get("simulation_id"),
-            name=row.get("name"),
-            description=row.get("description"),
-            time_limit=row.get("time_limit"),
-            generated=row.get("generated"),
-        )
+    items = result.items if result and result.items else []
+    item = items[0] if items else None
 
-    # Cache response
     await set_cached(
         cache_key_val,
         {"data": item.model_dump(mode="json") if item else None},

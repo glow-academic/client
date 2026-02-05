@@ -13394,7 +13394,7 @@ class QGetDocumentResourceV4Item(BaseModel):
 
 class GetDocumentResourceSqlRow(BaseModel):
 
-    item: QGetDocumentResourceV4Item | None = None
+    items: list[QGetDocumentResourceV4Item] | None = None
 
 class GetDocumentResourceApiRequest(BaseModel):
 
@@ -13402,7 +13402,7 @@ class GetDocumentResourceApiRequest(BaseModel):
 
 class GetDocumentResourceApiResponse(BaseModel):
 
-    item: QGetDocumentResourceV4Item | None = None
+    items: list[QGetDocumentResourceV4Item] | None = None
 
 
 
@@ -13965,7 +13965,7 @@ class QGetImageResourceV4Item(BaseModel):
 
 class GetImageSqlRow(BaseModel):
 
-    item: QGetImageResourceV4Item | None = None
+    items: list[QGetImageResourceV4Item] | None = None
 
 class GetImageApiRequest(BaseModel):
 
@@ -13973,7 +13973,7 @@ class GetImageApiRequest(BaseModel):
 
 class GetImageApiResponse(BaseModel):
 
-    item: QGetImageResourceV4Item | None = None
+    items: list[QGetImageResourceV4Item] | None = None
 
 
 
@@ -14375,7 +14375,7 @@ class QGetObjectiveResourceV4Item(BaseModel):
 
 class GetObjectiveSqlRow(BaseModel):
 
-    item: QGetObjectiveResourceV4Item | None = None
+    items: list[QGetObjectiveResourceV4Item] | None = None
 
 class GetObjectiveApiRequest(BaseModel):
 
@@ -14383,7 +14383,7 @@ class GetObjectiveApiRequest(BaseModel):
 
 class GetObjectiveApiResponse(BaseModel):
 
-    item: QGetObjectiveResourceV4Item | None = None
+    items: list[QGetObjectiveResourceV4Item] | None = None
 
 
 
@@ -14768,7 +14768,7 @@ class QGetPersonaResourceV4Item(BaseModel):
 
 class GetPersonaResourceSqlRow(BaseModel):
 
-    item: QGetPersonaResourceV4Item | None = None
+    items: list[QGetPersonaResourceV4Item] | None = None
 
 class GetPersonaResourceApiRequest(BaseModel):
 
@@ -14776,7 +14776,7 @@ class GetPersonaResourceApiRequest(BaseModel):
 
 class GetPersonaResourceApiResponse(BaseModel):
 
-    item: QGetPersonaResourceV4Item | None = None
+    items: list[QGetPersonaResourceV4Item] | None = None
 
 
 
@@ -14942,7 +14942,7 @@ class QGetProblemStatementResourceV4Item(BaseModel):
 
 class GetProblemStatementSqlRow(BaseModel):
 
-    item: QGetProblemStatementResourceV4Item | None = None
+    items: list[QGetProblemStatementResourceV4Item] | None = None
 
 class GetProblemStatementApiRequest(BaseModel):
 
@@ -14950,7 +14950,7 @@ class GetProblemStatementApiRequest(BaseModel):
 
 class GetProblemStatementApiResponse(BaseModel):
 
-    item: QGetProblemStatementResourceV4Item | None = None
+    items: list[QGetProblemStatementResourceV4Item] | None = None
 
 
 
@@ -15178,7 +15178,7 @@ class QGetQuestionResourceV4Item(BaseModel):
 
 class GetQuestionSqlRow(BaseModel):
 
-    item: QGetQuestionResourceV4Item | None = None
+    items: list[QGetQuestionResourceV4Item] | None = None
 
 class GetQuestionApiRequest(BaseModel):
 
@@ -15186,7 +15186,7 @@ class GetQuestionApiRequest(BaseModel):
 
 class GetQuestionApiResponse(BaseModel):
 
-    item: QGetQuestionResourceV4Item | None = None
+    items: list[QGetQuestionResourceV4Item] | None = None
 
 
 
@@ -16036,7 +16036,7 @@ class QGetSettingsV4Item(BaseModel):
 
 class GetSettingsSqlRow(BaseModel):
 
-    item: QGetSettingsV4Item | None = None
+    items: list[QGetSettingsV4Item] | None = None
 
 class GetSettingsApiRequest(BaseModel):
 
@@ -16044,7 +16044,7 @@ class GetSettingsApiRequest(BaseModel):
 
 class GetSettingsApiResponse(BaseModel):
 
-    item: QGetSettingsV4Item | None = None
+    items: list[QGetSettingsV4Item] | None = None
 
 
 
@@ -16273,7 +16273,7 @@ class QGetSimulationsV4Item(BaseModel):
 
 class GetSimulationsSqlRow(BaseModel):
 
-    item: QGetSimulationsV4Item | None = None
+    items: list[QGetSimulationsV4Item] | None = None
 
 class GetSimulationsApiRequest(BaseModel):
 
@@ -16281,7 +16281,7 @@ class GetSimulationsApiRequest(BaseModel):
 
 class GetSimulationsApiResponse(BaseModel):
 
-    item: QGetSimulationsV4Item | None = None
+    items: list[QGetSimulationsV4Item] | None = None
 
 
 
@@ -16489,7 +16489,7 @@ class QGetTemplateResourceV4Item(BaseModel):
 
 class GetTemplateSqlRow(BaseModel):
 
-    item: QGetTemplateResourceV4Item | None = None
+    items: list[QGetTemplateResourceV4Item] | None = None
 
 class GetTemplateApiRequest(BaseModel):
 
@@ -16497,7 +16497,7 @@ class GetTemplateApiRequest(BaseModel):
 
 class GetTemplateApiResponse(BaseModel):
 
-    item: QGetTemplateResourceV4Item | None = None
+    items: list[QGetTemplateResourceV4Item] | None = None
 
 
 
@@ -16720,7 +16720,7 @@ class QGetVideoResourceV4Item(BaseModel):
 
 class GetVideoSqlRow(BaseModel):
 
-    item: QGetVideoResourceV4Item | None = None
+    items: list[QGetVideoResourceV4Item] | None = None
 
 class GetVideoApiRequest(BaseModel):
 
@@ -16728,7 +16728,7 @@ class GetVideoApiRequest(BaseModel):
 
 class GetVideoApiResponse(BaseModel):
 
-    item: QGetVideoResourceV4Item | None = None
+    items: list[QGetVideoResourceV4Item] | None = None
 
 
 

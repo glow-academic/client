@@ -49,21 +49,25 @@ CREATE OR REPLACE FUNCTION api_get_video_resource_v4(
     video_id uuid
 )
 RETURNS TABLE (
-    item types.q_get_video_resource_v4_item
+    items types.q_get_video_resource_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    (
-        v.id,
-        v.name,
-        COALESCE(v.description, ''),
-        v.length_seconds,
-        COALESCE(v.completed, false),
-        v.upload_id,
-        COALESCE(v.generated, false)
-    )::types.q_get_video_resource_v4_item as item
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            v.id,
+            v.name,
+            COALESCE(v.description, ''),
+            v.length_seconds,
+            COALESCE(v.completed, false),
+            v.upload_id,
+            COALESCE(v.generated, false)
+        )::types.q_get_video_resource_v4_item
+    ),
+    ARRAY[]::types.q_get_video_resource_v4_item[]
+) as items
 FROM videos_resource v
 WHERE v.id = video_id
   AND v.active = true;

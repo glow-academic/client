@@ -47,19 +47,23 @@ CREATE OR REPLACE FUNCTION api_get_template_resource_v4(
     id uuid
 )
 RETURNS TABLE (
-    item types.q_get_template_resource_v4_item
+    items types.q_get_template_resource_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    (
-        t.id,
-        t.name,
-        COALESCE(t.description, ''),
-        COALESCE(te.content, ''),
-        COALESCE(t.generated, false)
-    )::types.q_get_template_resource_v4_item as item
+SELECT COALESCE(
+    ARRAY_AGG(
+        (
+            t.id,
+            t.name,
+            COALESCE(t.description, ''),
+            COALESCE(te.content, ''),
+            COALESCE(t.generated, false)
+        )::types.q_get_template_resource_v4_item
+    ),
+    ARRAY[]::types.q_get_template_resource_v4_item[]
+) as items
 FROM templates_resource t
 LEFT JOIN texts_entry te ON te.id = t.texts_id AND te.active = true
 WHERE t.id = api_get_template_resource_v4.id

@@ -12,6 +12,7 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
 )
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
 from app.api.v4.resources.parameters.get import get_parameters_internal
@@ -378,6 +379,15 @@ async def get_dashboard(
                 ),
             }
             for item in fields
+        ]
+
+        bundle.simulation_options = [
+            FilterOption(
+                value=str(item.simulation_id) if item.simulation_id else "",
+                label=item.title,
+            )
+            for item in simulations
+            if item.simulation_id
         ]
 
         response.headers["X-Cache-Tags"] = ",".join(tags)

@@ -10,10 +10,13 @@ import Report from "@/components/reports/Report";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { searchParamsToFilters } from "@/utils/analytics-filters";
+import {
+  computeAnalyticsDefaults,
+  resolveAnalyticsFilters,
+} from "@/lib/search-params/analytics-defaults";
 import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
-import { getLayoutContext } from "../../../../layout-server";
+import { loadProfileReportSearchParams } from "./searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsOverviewIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
@@ -58,78 +61,6 @@ const getReportHistory = async (
   });
 };
 
-/** ---- Inline filters function for profile reports page ---- */
-async function getProfileReportsFilters(searchParams?: URLSearchParams) {
-  // Use cached layout context (reuses data already fetched by layout)
-  const profileContext = await getLayoutContext({
-    body: {},
-  });
-  const actorProfileId = profileContext.id || null;
-
-  // Compute startDate using same logic as analytics context
-  let startDate: Date;
-  if (profileContext.earliest_attempt_date) {
-    startDate = new Date(profileContext.earliest_attempt_date);
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    // Fallback to 30 days ago (matching analytics context)
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-
-  const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
-    roles: [] as string[],
-    simulationFilters: ["general" as const],
-    departmentIds: [] as string[],
-  };
-
-  // If search params are provided, merge them with defaults
-  let filters = defaults;
-  if (searchParams) {
-    const parsedFilters = searchParamsToFilters(searchParams, defaults);
-    filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
-      roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
-    };
-  }
-
-  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
-  const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
-      : profileContext.cohort_ids || [];
-  const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
-      : profileContext.department_ids || [];
-  const roles =
-    filters.roles && filters.roles.length > 0
-      ? filters.roles
-      : profileContext.scoped_roles || [];
-
-  return {
-    start_date: filters.startDate,
-    end_date: filters.endDate,
-    cohort_ids: cohortIds,
-    department_ids: departmentIds,
-    roles,
-    simulation_filters: filters.simulationFilters,
-    actor_profile_id: actorProfileId,
-  };
-}
-
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
   _parent: ResolvingMetadata
@@ -137,35 +68,17 @@ export async function generateMetadata(
   const { profileId } = await params;
 
   try {
-    // Get profile data from reports endpoint instead of separate profile endpoint
-    const profileContext = await getLayoutContext({
-      body: {},
-    });
-
-    // Compute startDate using same logic as analytics context
-    let startDate: Date;
-    if (profileContext.earliest_attempt_date) {
-      startDate = new Date(profileContext.earliest_attempt_date);
-      startDate.setHours(0, 0, 0, 0);
-    } else {
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-    }
-
-    const endDate = new Date();
-    endDate.setHours(23, 59, 59, 999);
+    const { defaults, profileContext } = await computeAnalyticsDefaults();
 
     const reportsData = await getReportsOverview({
       body: {
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
+        start_date: defaults.startDate,
+        end_date: defaults.endDate,
         cohort_ids: profileContext.cohort_ids || [],
         department_ids: profileContext.department_ids || [],
         roles: profileContext.scoped_roles || [],
         simulation_filters: ["general"],
-        actor_profile_id:
-          profileContext.id || profileId,
+        actor_profile_id: profileContext.id || profileId,
         target_profile_id: profileId,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
@@ -195,71 +108,42 @@ export default async function ReportsPage({
   searchParams,
 }: ProfileReportsPageProps) {
   const { profileId } = await params;
-  // Access control handled server-side in layout
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
 
-  // Parse search params
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadProfileReportSearchParams(await searchParams);
 
-  // Get filters from search params or defaults
-  const defaultFilters = await getProfileReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
-  );
+  // Compute defaults and resolve filters
+  const { defaults, profileContext } = await computeAnalyticsDefaults();
+  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
+
+  // Build reports filters with target_profile_id from URL path
   const reportsFilters = {
-    start_date: defaultFilters.start_date,
-    end_date: defaultFilters.end_date,
-    cohort_ids: defaultFilters.cohort_ids,
-    department_ids: defaultFilters.department_ids,
-    roles: defaultFilters.roles,
-    simulation_filters: defaultFilters.simulation_filters,
-    actor_profile_id: defaultFilters.actor_profile_id || profileId,
+    start_date: filters.startDate,
+    end_date: filters.endDate,
+    cohort_ids: filters.cohortIds,
+    department_ids: filters.departmentIds,
+    roles: filters.roles,
+    simulation_filters: filters.simulationFilters,
+    actor_profile_id: profileContext.id || profileId,
     target_profile_id: profileId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 
-  // Extract pagination and filter params from search params for history
-  const historyPage = searchParamsObj.get("historyPage")
-    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
-    : 0;
-  const historyPageSize = searchParamsObj.get("historyPageSize")
-    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
-    : 10;
-  const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historyProfileIds = searchParamsObj.get("historyProfileIds")
-    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historySimulationIds = searchParamsObj.get("historySimulationIds")
-    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
-    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyInfiniteMode =
-    searchParamsObj.get("historyInfiniteMode") === "true"
-      ? true
-      : searchParamsObj.get("historyInfiniteMode") === "false"
-        ? false
-        : undefined;
-  const historySortBy = searchParamsObj.get("historySortBy") || "date";
-  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
+  // History params with defaults
+  const historyPage = q.historyPage ?? 0;
+  const historyPageSize = q.historyPageSize ?? 10;
+  const historySearch = q.historySearch ?? undefined;
+  const historySimulationIds = q.historySimulationIds ?? undefined;
+  const historyScenarioIds = q.historyScenarioIds ?? undefined;
+  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+  const historySortBy = q.historySortBy ?? "date";
+  const historySortOrder = q.historySortOrder ?? "desc";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include analytics filter params so history re-fetches when filters change
   const historyKey = [
     historyPage,
     historyPageSize,
     historySearch || "",
-    (historyProfileIds || []).join(","),
     (historySimulationIds || []).join(","),
     (historyScenarioIds || []).join(","),
     historyInfiniteMode === undefined
@@ -269,16 +153,12 @@ export default async function ReportsPage({
         : "std",
     historySortBy,
     historySortOrder,
-    defaultFilters.start_date,
-    defaultFilters.end_date,
-    defaultFilters.cohort_ids.join(","),
-    defaultFilters.department_ids.join(","),
-    defaultFilters.roles.join(","),
-    (
-      defaultFilters as typeof defaultFilters & {
-        simulation_filters?: string[];
-      }
-    ).simulation_filters?.join(",") || "general",
+    filters.startDate,
+    filters.endDate,
+    filters.cohortIds.join(","),
+    filters.departmentIds.join(","),
+    filters.roles.join(","),
+    filters.simulationFilters.join(","),
   ].join("|");
 
   // Fetch reports overview data server-side (includes profile data)
@@ -318,11 +198,11 @@ export default async function ReportsPage({
               showArchive={false}
               singleProfile={true}
               initialFilters={{
-                startDate: defaultFilters.start_date,
-                endDate: defaultFilters.end_date,
-                cohortIds: defaultFilters.cohort_ids,
-                departmentIds: defaultFilters.department_ids,
-                roles: defaultFilters.roles,
+                startDate: filters.startDate,
+                endDate: filters.endDate,
+                cohortIds: filters.cohortIds,
+                departmentIds: filters.departmentIds,
+                roles: filters.roles,
               }}
               profileOptions={[]}
               simulationOptions={[]}
@@ -332,7 +212,7 @@ export default async function ReportsPage({
           }
         >
           <ReportHistorySection
-            defaultFilters={defaultFilters}
+            defaultFilters={filters}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             historySearch={historySearch}
@@ -361,12 +241,12 @@ async function ReportHistorySection({
   historySortOrder,
 }: {
   defaultFilters: {
-    start_date: string;
-    end_date: string;
-    cohort_ids: string[];
-    department_ids: string[];
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
     roles: string[];
-    simulation_filters: string[];
+    simulationFilters: string[];
   };
   historyPage: number;
   historyPageSize: number;
@@ -382,9 +262,9 @@ async function ReportHistorySection({
   const historyFilters: ReportHistoryIn = {
     body: {
       practice: false,
-      start_date: defaultFilters.start_date,
-      end_date: defaultFilters.end_date,
-      department_ids: defaultFilters.department_ids,
+      start_date: defaultFilters.startDate,
+      end_date: defaultFilters.endDate,
+      department_ids: defaultFilters.departmentIds,
       page: historyPage,
       page_size: historyPageSize,
       show_archived: false,
@@ -446,10 +326,10 @@ async function ReportHistorySection({
       showArchive={false}
       singleProfile={true}
       initialFilters={{
-        startDate: defaultFilters.start_date,
-        endDate: defaultFilters.end_date,
-        cohortIds: defaultFilters.cohort_ids,
-        departmentIds: defaultFilters.department_ids,
+        startDate: defaultFilters.startDate,
+        endDate: defaultFilters.endDate,
+        cohortIds: defaultFilters.cohortIds,
+        departmentIds: defaultFilters.departmentIds,
         roles: defaultFilters.roles,
       }}
       profileOptions={[]}

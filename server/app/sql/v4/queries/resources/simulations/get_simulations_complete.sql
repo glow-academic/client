@@ -47,41 +47,45 @@ CREATE OR REPLACE FUNCTION api_get_simulations_v4(
     p_simulation_id uuid
 )
 RETURNS TABLE (
-    item types.q_get_simulations_v4_item
+    items types.q_get_simulations_v4_item[]
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT
-    ROW(
-        s.id,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
-        COALESCE(
-            (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1),
-            ''
-        ),
-        COALESCE(
-            (SELECT SUM(stlr.time_limit_seconds)
-             FROM simulation_scenario_time_limits_junction sstl
-             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
-             JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-             WHERE sstl.simulation_id = s.id
-               AND sstl.active = true
-               AND stlr.active = true
-               AND EXISTS (
-                   SELECT 1 FROM simulation_scenario_flags_junction ssf
-                   JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
-                   JOIN flags_resource f ON sfr.flag_id = f.id
-                   WHERE ssf.simulation_id = ss.simulation_id
-                     AND sfr.scenario_id = ss.scenario_id
-                     AND f.name = 'scenario_active'
-                     AND ssf.value = true
-               )
+SELECT COALESCE(
+    ARRAY_AGG(
+        ROW(
+            s.id,
+            (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
+            COALESCE(
+                (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1),
+                ''
             ),
-            0
-        )::bigint,
-        COALESCE(s.generated, false)
-    )::types.q_get_simulations_v4_item as item
+            COALESCE(
+                (SELECT SUM(stlr.time_limit_seconds)
+                 FROM simulation_scenario_time_limits_junction sstl
+                 JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+                 JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+                 WHERE sstl.simulation_id = s.id
+                   AND sstl.active = true
+                   AND stlr.active = true
+                   AND EXISTS (
+                       SELECT 1 FROM simulation_scenario_flags_junction ssf
+                       JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
+                       JOIN flags_resource f ON sfr.flag_id = f.id
+                       WHERE ssf.simulation_id = ss.simulation_id
+                         AND sfr.scenario_id = ss.scenario_id
+                         AND f.name = 'scenario_active'
+                         AND ssf.value = true
+                   )
+                ),
+                0
+            )::bigint,
+            COALESCE(s.generated, false)
+        )::types.q_get_simulations_v4_item
+    ),
+    ARRAY[]::types.q_get_simulations_v4_item[]
+) as items
 FROM simulation_artifact s
 WHERE s.id = p_simulation_id
   AND EXISTS (

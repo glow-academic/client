@@ -21,6 +21,7 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardSimulationResource,
     LeaderboardViews,
 )
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_batch_internal
@@ -360,6 +361,17 @@ async def get_leaderboard(
             scenarios=scenario_resources,
         )
 
+        simulation_options = [
+            FilterOption(value=sid, label=simulation_resources[sid].name)
+            for sid in simulation_resources
+            if simulation_resources[sid].name
+        ]
+        profile_options = [
+            FilterOption(value=pid, label=profile_resources[pid].name)
+            for pid in profile_resources
+            if profile_resources[pid].name
+        ]
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return LeaderboardResponse(
             sections=sections,
@@ -369,6 +381,8 @@ async def get_leaderboard(
             primary_color=primary_color,
             accent_color=accent_color,
             total_count=profile_total_count,
+            simulation_options=simulation_options,
+            profile_options=profile_options,
         )
 
     except HTTPException:

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -96,11 +96,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/list": {
@@ -193,11 +189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/save": {
@@ -290,11 +282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/duplicate": {
@@ -387,11 +375,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/delete": {
@@ -484,11 +468,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/draft": {
@@ -581,11 +561,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/docs": {
@@ -670,11 +646,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/get": {
@@ -767,11 +739,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/list": {
@@ -864,11 +832,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/save": {
@@ -961,11 +925,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/duplicate": {
@@ -1058,11 +1018,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/delete": {
@@ -1155,11 +1111,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/draft": {
@@ -1252,11 +1204,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/simulations/get": {
@@ -1349,11 +1297,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/list": {
@@ -1446,11 +1390,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/save": {
@@ -1543,11 +1483,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/duplicate": {
@@ -1640,11 +1576,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/delete": {
@@ -1737,11 +1669,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/draft": {
@@ -1834,11 +1762,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/documents/list": {
@@ -1931,11 +1855,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/get": {
@@ -2028,11 +1948,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/save": {
@@ -2125,11 +2041,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/duplicate": {
@@ -2222,11 +2134,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/delete": {
@@ -2319,11 +2227,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/draft": {
@@ -2416,11 +2320,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/departments/get": {
@@ -2513,11 +2413,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/list": {
@@ -2610,11 +2506,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/save": {
@@ -2707,11 +2599,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/duplicate": {
@@ -2804,11 +2692,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/delete": {
@@ -2901,11 +2785,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/draft": {
@@ -2998,11 +2878,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/list": {
@@ -3095,11 +2971,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/get": {
@@ -3192,11 +3064,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/save": {
@@ -3289,11 +3157,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/duplicate": {
@@ -3386,11 +3250,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/delete": {
@@ -3483,11 +3343,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/draft": {
@@ -3580,11 +3436,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/evals/list": {
@@ -3677,11 +3529,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/get": {
@@ -3774,11 +3622,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/save": {
@@ -3871,11 +3715,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/duplicate": {
@@ -3968,11 +3808,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/delete": {
@@ -4065,11 +3901,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/draft": {
@@ -4162,11 +3994,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/get": {
@@ -4259,11 +4087,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/list": {
@@ -4356,11 +4180,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/save": {
@@ -4453,11 +4273,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/duplicate": {
@@ -4550,11 +4366,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/delete": {
@@ -4647,11 +4459,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/draft": {
@@ -4744,11 +4552,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/settings/list": {
@@ -4841,11 +4645,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/get": {
@@ -4938,11 +4738,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/save": {
@@ -5035,11 +4831,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/duplicate": {
@@ -5132,11 +4924,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/draft": {
@@ -5229,11 +5017,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/agents/get": {
@@ -5326,11 +5110,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/list": {
@@ -5423,11 +5203,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/save": {
@@ -5520,11 +5296,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/duplicate": {
@@ -5617,11 +5389,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/delete": {
@@ -5714,11 +5482,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/draft": {
@@ -5811,11 +5575,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/models/get": {
@@ -5908,11 +5668,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/list": {
@@ -6005,11 +5761,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/save": {
@@ -6102,11 +5854,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/duplicate": {
@@ -6199,11 +5947,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/delete": {
@@ -6296,11 +6040,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/draft": {
@@ -6393,11 +6133,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/providers/list": {
@@ -6490,11 +6226,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/get": {
@@ -6587,11 +6319,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/save": {
@@ -6684,11 +6412,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/duplicate": {
@@ -6781,11 +6505,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/delete": {
@@ -6878,11 +6598,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/draft": {
@@ -6975,11 +6691,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/parameters/get": {
@@ -7072,11 +6784,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/list": {
@@ -7169,11 +6877,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/save": {
@@ -7266,11 +6970,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/duplicate": {
@@ -7363,11 +7063,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/delete": {
@@ -7460,11 +7156,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/draft": {
@@ -7557,11 +7249,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/fields/get": {
@@ -7654,11 +7342,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/list": {
@@ -7751,11 +7435,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/save": {
@@ -7848,11 +7528,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/duplicate": {
@@ -7945,11 +7621,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/delete": {
@@ -8042,11 +7714,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/draft": {
@@ -8139,11 +7807,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/profiles/get": {
@@ -8236,11 +7900,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/list": {
@@ -8333,11 +7993,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/save": {
@@ -8430,11 +8086,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/draft": {
@@ -8527,11 +8179,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/profiles/delete": {
@@ -8624,11 +8272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profiles"
-        ]
+        }
       }
     },
     "/api/v4/auths/get": {
@@ -8721,11 +8365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/list": {
@@ -8818,11 +8458,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/save": {
@@ -8915,11 +8551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/duplicate": {
@@ -9012,11 +8644,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/delete": {
@@ -9109,11 +8737,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/auths/draft": {
@@ -9206,11 +8830,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auths"
-        ]
+        }
       }
     },
     "/api/v4/tools/list": {
@@ -9303,11 +8923,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/get": {
@@ -9400,11 +9016,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/save": {
@@ -9497,11 +9109,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/duplicate": {
@@ -9594,11 +9202,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/delete": {
@@ -9691,11 +9295,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/draft": {
@@ -9788,11 +9388,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/group/get": {
@@ -9886,12 +9482,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "group"
-        ]
+        }
       }
     },
     "/api/v4/group/list": {
@@ -9985,12 +9576,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "group"
-        ]
+        }
       }
     },
     "/api/v4/session/get": {
@@ -10084,12 +9670,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "session"
-        ]
+        }
       }
     },
     "/api/v4/session/list": {
@@ -10183,12 +9764,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "session"
-        ]
+        }
       }
     },
     "/api/v4/training/get": {
@@ -10282,12 +9858,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/training/refresh": {
@@ -10381,12 +9952,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "training"
-        ]
+        }
       }
     },
     "/api/v4/attempt/get": {
@@ -10480,12 +10046,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/attempt/list": {
@@ -10579,12 +10140,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/attempt/archive": {
@@ -10678,12 +10234,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/attempt/certificate": {
@@ -10775,12 +10326,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "attempt"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/dashboard/get": {
@@ -10872,10 +10418,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/reports/get": {
@@ -10967,10 +10510,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/leaderboard/get": {
@@ -11062,10 +10602,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/pricing/get": {
@@ -11157,10 +10694,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/activity/get": {
@@ -11252,10 +10786,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/health/get": {
@@ -11347,10 +10878,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/benchmark/get": {
@@ -11442,10 +10970,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/get": {
@@ -11539,12 +11064,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/list": {
@@ -11638,12 +11158,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/artifacts/test/archive": {
@@ -11737,12 +11252,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "artifacts",
-          "test"
-        ]
+        }
       }
     },
     "/api/v4/resources/args": {
@@ -11835,11 +11345,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/args_outputs": {
@@ -11932,11 +11438,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/cohorts/get": {
@@ -12029,11 +11531,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors": {
@@ -12126,11 +11624,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors/get": {
@@ -12223,11 +11717,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors/search": {
@@ -12319,11 +11809,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments/get": {
@@ -12416,11 +11902,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments/search": {
@@ -12512,11 +11994,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions": {
@@ -12609,11 +12087,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions/get": {
@@ -12706,11 +12180,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions/search": {
@@ -12802,11 +12272,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/documents/get": {
@@ -12899,11 +12365,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/emails": {
@@ -12996,11 +12458,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/endpoints": {
@@ -13093,11 +12551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples": {
@@ -13190,11 +12644,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples/get": {
@@ -13287,11 +12737,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples/search": {
@@ -13383,11 +12829,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields/get": {
@@ -13480,11 +12922,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields/search": {
@@ -13576,11 +13014,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields": {
@@ -13673,11 +13107,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields/get": {
@@ -13770,11 +13200,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameter_fields/search": {
@@ -13867,11 +13293,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags/get": {
@@ -13964,11 +13386,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags/search": {
@@ -14060,11 +13478,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_positions": {
@@ -14157,11 +13571,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/group_rubrics": {
@@ -14254,11 +13664,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons/get": {
@@ -14351,11 +13757,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons/search": {
@@ -14447,11 +13849,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images": {
@@ -14544,11 +13942,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images/get": {
@@ -14641,11 +14035,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions": {
@@ -14738,11 +14128,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions/get": {
@@ -14835,11 +14221,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions/search": {
@@ -14931,11 +14313,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/items": {
@@ -15028,11 +14406,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys": {
@@ -15125,11 +14499,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names": {
@@ -15222,11 +14592,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names/get": {
@@ -15319,11 +14685,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names/search": {
@@ -15416,11 +14778,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives": {
@@ -15513,11 +14871,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives/get": {
@@ -15610,11 +14964,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options": {
@@ -15707,11 +15057,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options/get": {
@@ -15804,11 +15150,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters/get": {
@@ -15901,11 +15243,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters/search": {
@@ -15997,11 +15335,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/personas/get": {
@@ -16094,11 +15428,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/points": {
@@ -16191,11 +15521,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/pricing": {
@@ -16288,11 +15614,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -16385,11 +15707,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements/get": {
@@ -16482,11 +15800,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/prompts": {
@@ -16579,11 +15893,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/protocols": {
@@ -16676,11 +15986,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions": {
@@ -16773,11 +16079,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions/get": {
@@ -16870,11 +16172,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/request_limits": {
@@ -16967,11 +16265,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/roles/get": {
@@ -17064,11 +16358,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/rubrics/get": {
@@ -17161,11 +16451,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_positions": {
@@ -17258,11 +16544,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/run_rubrics": {
@@ -17355,11 +16637,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_flags/get": {
@@ -17452,11 +16730,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_flags/search": {
@@ -17549,11 +16823,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/setting_role_routes": {
@@ -17646,11 +16916,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -17743,11 +17009,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions/get": {
@@ -17840,11 +17102,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions/search": {
@@ -17937,11 +17195,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics": {
@@ -18034,11 +17288,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics/get": {
@@ -18131,11 +17381,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubrics/search": {
@@ -18228,11 +17474,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits": {
@@ -18325,11 +17567,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits/get": {
@@ -18422,11 +17660,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_time_limits/search": {
@@ -18519,11 +17753,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios/get": {
@@ -18616,11 +17846,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios/search": {
@@ -18713,11 +17939,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/settings/get": {
@@ -18810,11 +18032,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions": {
@@ -18907,11 +18125,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions/get": {
@@ -19004,11 +18218,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_positions/search": {
@@ -19101,11 +18311,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/get": {
@@ -19198,11 +18404,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/batch": {
@@ -19295,11 +18497,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations/search": {
@@ -19392,11 +18590,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/slugs": {
@@ -19489,11 +18683,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -19586,11 +18776,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates": {
@@ -19683,11 +18869,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates/get": {
@@ -19780,11 +18962,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates/html": {
@@ -19877,11 +19055,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates/search": {
@@ -19973,11 +19147,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/values": {
@@ -20070,11 +19240,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos": {
@@ -20167,11 +19333,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos/get": {
@@ -20264,11 +19426,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/voices": {
@@ -20361,11 +19519,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/uploads": {
@@ -20458,11 +19612,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/attempts/get": {
@@ -20560,16 +19710,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/attempts/refresh": {
@@ -20657,16 +19798,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/attempts/recreate": {
@@ -20754,16 +19886,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/chats/get": {
@@ -20861,16 +19984,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/chats/refresh": {
@@ -20958,16 +20072,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/chats/recreate": {
@@ -21055,16 +20160,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/messages/get": {
@@ -21162,16 +20258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/messages/refresh": {
@@ -21259,16 +20346,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/simulation/messages/recreate": {
@@ -21356,16 +20434,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "simulation",
-          "views",
-          "simulation",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/attempts/get": {
@@ -21461,14 +20530,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/chat-facts/get": {
@@ -21564,14 +20626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "chat_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/daily-metrics/get": {
@@ -21667,14 +20722,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "daily_metrics"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/profile-metrics/get": {
@@ -21770,14 +20818,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "profile_metrics"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/health/get": {
@@ -21873,14 +20914,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/pricing/get": {
@@ -21976,14 +21010,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/views/analytics/pricing/list": {
@@ -22079,14 +21106,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "analytics",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/run-facts/get": {
@@ -22182,14 +21202,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "run_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/group-summary/get": {
@@ -22285,14 +21298,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "group_summary"
-        ]
+        }
       }
     },
     "/api/v4/views/pricing/daily/get": {
@@ -22388,14 +21394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "pricing",
-          "daily"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/session-facts/get": {
@@ -22491,14 +21490,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "session_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/daily/get": {
@@ -22594,14 +21586,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "daily"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/logins/logins/get": {
@@ -22700,17 +21685,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "logins",
-          "views",
-          "activity",
-          "logins"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/audits/audits/get": {
@@ -22809,17 +21784,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "audits",
-          "views",
-          "activity",
-          "audits"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/feedbacks/feedbacks/get": {
@@ -22918,17 +21883,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "feedbacks",
-          "views",
-          "activity",
-          "feedbacks"
-        ]
+        }
       }
     },
     "/api/v4/views/activity/summary/get": {
@@ -23014,14 +21969,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "activity",
-          "summary"
-        ]
+        }
       }
     },
     "/api/v4/views/health/service-hourly/get": {
@@ -23117,14 +22065,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "health",
-          "service_hourly"
-        ]
+        }
       }
     },
     "/api/v4/views/health/metrics-hourly/get": {
@@ -23220,14 +22161,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "health",
-          "metrics_hourly"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/tests/get": {
@@ -23325,16 +22259,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "tests"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/tests/refresh": {
@@ -23426,16 +22351,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "tests"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/chats/get": {
@@ -23533,16 +22449,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/chats/refresh": {
@@ -23634,16 +22541,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "chats"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/messages/get": {
@@ -23741,16 +22639,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/messages/refresh": {
@@ -23842,16 +22731,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "views",
-          "benchmark",
-          "messages"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/attempt-facts/get": {
@@ -23947,14 +22827,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "attempt_facts"
-        ]
+        }
       }
     },
     "/api/v4/views/benchmark/eval-summary/get": {
@@ -24050,14 +22923,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "benchmark",
-          "eval_summary"
-        ]
+        }
       }
     },
     "/api/v4/views/drafts/get": {
@@ -24152,13 +23018,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "drafts"
-        ]
+        }
       }
     },
     "/api/v4/views/artifacts/session-list/get": {
@@ -24254,14 +23114,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "artifacts",
-          "session_list"
-        ]
+        }
       }
     },
     "/api/v4/views/artifacts/session-detail/get": {
@@ -24357,14 +23210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "views",
-          "views",
-          "artifacts",
-          "session_detail"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/process": {
@@ -24459,13 +23305,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/search": {
@@ -24560,13 +23400,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/save": {
@@ -24661,13 +23495,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/staff/delete": {
@@ -24762,13 +23590,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/process": {
@@ -24863,13 +23685,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/search": {
@@ -24964,13 +23780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/save": {
@@ -25065,13 +23875,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/bulk/document/delete": {
@@ -25166,13 +23970,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "bulk",
-          "bulk",
-          "document"
-        ]
+        }
       }
     },
     "/api/v4/decrypt/key": {
@@ -25265,11 +24063,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "decrypt"
-        ]
+        }
       }
     },
     "/api/v4/export/certificate": {
@@ -25360,11 +24154,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "export"
-        ]
+        }
       }
     },
     "/api/v4/export/report": {
@@ -25456,12 +24246,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "export",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/uploads/get/{upload_id}": {
@@ -25563,11 +24348,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/save": {
@@ -25648,11 +24429,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -25731,11 +24508,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/save/{upload_id}": {
@@ -25825,11 +24598,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -25917,11 +24686,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -26009,11 +24774,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/save/{upload_id}/finalize": {
@@ -26105,11 +24866,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/auth/login": {
@@ -26202,11 +24959,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/context": {
@@ -26299,11 +25052,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/email": {
@@ -26396,11 +25145,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/upsert": {
@@ -26493,11 +25238,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/simulatable": {
@@ -26590,11 +25331,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/emulate": {
@@ -26687,11 +25424,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/debug/debug": {
@@ -26784,11 +25517,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "debug"
-        ]
+        }
       }
     },
     "/socket/v4/client/connect": {
@@ -26815,11 +25544,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/disconnect": {
@@ -26846,11 +25571,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/training/start": {
@@ -26897,11 +25618,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/message": {
@@ -26948,11 +25665,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/grade": {
@@ -26999,11 +25712,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/join": {
@@ -27050,11 +25759,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/leave": {
@@ -27101,11 +25806,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/stop": {
@@ -27152,11 +25853,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/end": {
@@ -27203,11 +25900,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/end_all": {
@@ -27254,11 +25947,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/audio_start": {
@@ -27305,11 +25994,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/audio_stop": {
@@ -27356,11 +26041,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/audio_frame": {
@@ -27407,11 +26088,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/mic_mute": {
@@ -27458,11 +26135,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/attempt/response_submit": {
@@ -27509,11 +26182,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -27560,11 +26229,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/join": {
@@ -27611,11 +26276,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/leave": {
@@ -27662,11 +26323,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/stop": {
@@ -27713,11 +26370,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/test/send": {
@@ -27764,11 +26417,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -27815,11 +26464,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/started": {
@@ -27866,11 +26511,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/progress": {
@@ -27917,11 +26558,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/complete": {
@@ -27970,11 +26607,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/training/error": {
@@ -28021,11 +26654,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/user_complete": {
@@ -28072,11 +26701,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant_start": {
@@ -28123,11 +26748,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/graded": {
@@ -28174,11 +26795,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/progress": {
@@ -28225,11 +26842,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/complete": {
@@ -28276,11 +26889,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant_complete": {
@@ -28327,11 +26936,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/hint_progress": {
@@ -28378,11 +26983,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/grading_progress": {
@@ -28429,11 +27030,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/error": {
@@ -28480,11 +27077,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/joined": {
@@ -28531,11 +27124,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/stopped": {
@@ -28582,11 +27171,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/chat_ended": {
@@ -28633,11 +27218,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/ended": {
@@ -28684,11 +27265,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/audio_ready": {
@@ -28735,11 +27312,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/audio_ended": {
@@ -28786,11 +27359,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/user_start": {
@@ -28837,11 +27406,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/user_delta": {
@@ -28888,11 +27453,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/assistant_audio": {
@@ -28939,11 +27500,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/attempt/response_result": {
@@ -28990,11 +27547,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/started": {
@@ -29041,11 +27594,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/progress": {
@@ -29092,11 +27641,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/complete": {
@@ -29143,11 +27688,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/error": {
@@ -29194,11 +27735,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/joined": {
@@ -29245,11 +27782,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/stopped": {
@@ -29296,11 +27829,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/progress": {
@@ -29347,11 +27876,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/complete": {
@@ -29398,11 +27923,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/test/error": {
@@ -29449,11 +27970,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/scenario_generation_complete": {
@@ -29500,11 +28017,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_progress": {
@@ -29551,11 +28064,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_complete": {
@@ -29602,11 +28111,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/persona_generation_error": {
@@ -29653,11 +28158,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -29681,10 +28182,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/authorize": {
@@ -29828,10 +28326,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/token": {
@@ -29875,10 +28370,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/userinfo": {
@@ -29930,10 +28422,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/default-idp/jwks": {
@@ -29953,10 +28442,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "default-idp"
-        ]
+        }
       }
     },
     "/.well-known/oauth-authorization-server": {
@@ -34333,6 +32819,20 @@
             "type": "integer",
             "title": "Total Count",
             "default": 0
+          },
+          "eval_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Eval Options"
+          },
+          "rubric_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Rubric Options"
           }
         },
         "type": "object",
@@ -37049,6 +35549,13 @@
                 "type": "null"
               }
             ]
+          },
+          "simulation_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Simulation Options"
           }
         },
         "type": "object",
@@ -40541,30 +39048,6 @@
         "title": "FeedbackItem",
         "description": "Feedback item with standard info."
       },
-      "FilterOption": {
-        "properties": {
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "value",
-          "label"
-        ],
-        "title": "FilterOption",
-        "description": "Filter option for dropdowns."
-      },
       "FinalizeUploadApiResponse": {
         "properties": {
           "upload_id": {
@@ -43463,7 +41946,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__attempts__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -43478,7 +41961,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__attempts__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -43493,7 +41976,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FilterOption"
+                  "$ref": "#/components/schemas/app__api__v4__views__analytics__attempts__types__FilterOption"
                 },
                 "type": "array"
               },
@@ -47765,15 +46248,19 @@
       },
       "GetDocumentResourceApiResponse": {
         "properties": {
-          "item": {
+          "items": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetDocumentResourceV4Item"
+                "items": {
+                  "$ref": "#/components/schemas/QGetDocumentResourceV4Item"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Items"
           }
         },
         "type": "object",
@@ -53856,15 +52343,19 @@
       },
       "GetPersonaResourceApiResponse": {
         "properties": {
-          "item": {
+          "items": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaResourceV4Item"
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaResourceV4Item"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Items"
           }
         },
         "type": "object",
@@ -66084,6 +64575,20 @@
             "type": "integer",
             "title": "Total Count",
             "default": 0
+          },
+          "simulation_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Simulation Options"
+          },
+          "profile_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Profile Options"
           }
         },
         "type": "object",
@@ -73381,6 +71886,20 @@
             "type": "integer",
             "title": "Total Count",
             "default": 0
+          },
+          "model_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Model Options"
+          },
+          "agent_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Agent Options"
           }
         },
         "type": "object",
@@ -91464,6 +89983,27 @@
             "type": "integer",
             "title": "Total Count",
             "default": 0
+          },
+          "simulation_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Simulation Options"
+          },
+          "profile_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Profile Options"
+          },
+          "scenario_options": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v4__artifacts__types__FilterOption"
+            },
+            "type": "array",
+            "title": "Scenario Options"
           }
         },
         "type": "object",
@@ -102877,6 +101417,42 @@
         "title": "GetSimulationApiResponse",
         "description": "Response for getting a single simulation."
       },
+      "app__api__v4__artifacts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FilterOption",
+        "description": "A single filter option for dropdown selectors."
+      },
       "app__api__v4__resources__simulations__get__GetSimulationApiRequest": {
         "properties": {
           "id": {
@@ -102908,6 +101484,30 @@
         "type": "object",
         "title": "GetSimulationApiResponse",
         "description": "Response for getting a simulation."
+      },
+      "app__api__v4__views__analytics__attempts__types__FilterOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FilterOption",
+        "description": "Filter option for dropdowns."
       },
       "app__sql__types___build_missing_type___locals____MissingSqlType__1": {
         "properties": {},

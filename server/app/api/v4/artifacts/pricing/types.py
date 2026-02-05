@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.views.pricing.group_summary.types import PricingGroupSummaryItem
 from app.api.v4.views.pricing.daily.types import PricingDailyItem
 
@@ -42,3 +43,6 @@ class PricingResponse(BaseModel):
     views: PricingViews = Field(default_factory=PricingViews)
     resources: PricingResources = Field(default_factory=PricingResources)
     total_count: int = Field(default=0)
+
+    model_options: list[FilterOption] = Field(default_factory=list)
+    agent_options: list[FilterOption] = Field(default_factory=list)
