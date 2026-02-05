@@ -46,7 +46,8 @@ import {
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
-import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
+import { getSectionRoute } from "@/utils/navigation-utils";
+import Link from "next/link";
 import {
   Activity,
   AlertCircle,
@@ -449,29 +450,30 @@ export function UnifiedSidebar({
     return menu;
   }, [profile, searchTerm, availableSections]);
 
-  const handleSectionChange = createFlexibleSectionChangeHandler(
-    router,
-    onSectionChange,
-    pathname
+  // Resolve the href for any menu item (for use with <Link>)
+  const getItemHref = useCallback(
+    (item: MenuItem): string => {
+      if (item.url && item.url !== "#") {
+        return item.url;
+      }
+      if (item.section) {
+        return getSectionRoute(item.section, pathname);
+      }
+      return "#";
+    },
+    [pathname]
   );
 
-  // Wrapper function that closes mobile sidebar on section change
-  // Unused function - keeping for potential future use
-  // const _handleSectionChangeWithClose = useCallback(
-  //   (section: string) => {
-  //     handleSectionChange(section);
-  //     // Close mobile sidebar after navigation
-  //     if (isMobile) {
-  //       setOpenMobile(false);
-  //     }
-  //   },
-  //   [handleSectionChange, isMobile, setOpenMobile],
-  // );
-
   const handleItemClick = useCallback(
-    (item: MenuItem) => {
+    (e: React.MouseEvent, item: MenuItem) => {
+      // Let browser handle Cmd+Click / Ctrl+Click / middle-click natively (opens in new tab)
+      if (e.metaKey || e.ctrlKey || e.button === 1) return;
+
       // Prevent rapid navigation clicks that could cause freezing
-      if (isNavigating) return;
+      if (isNavigating) {
+        e.preventDefault();
+        return;
+      }
 
       // Store scroll position before navigation to preserve it across re-renders
       const scrollContainer = getScrollContainer();
@@ -485,14 +487,15 @@ export function UnifiedSidebar({
 
       setIsNavigating(true);
 
-      if (item.url && item.url !== "#") {
-        // Navigate to the URL (for attempts)
-        router.push(item.url);
-        // Refresh to trigger server component re-render on route change
+      if (onSectionChange && item.section) {
+        // If parent provided an onSectionChange callback, prevent Link navigation
+        // and use the callback instead
+        e.preventDefault();
+        onSectionChange(item.section);
+      } else {
+        // Let <Link> handle client-side navigation, but also trigger refresh
+        // for server component re-render
         router.refresh();
-      } else if (item.section) {
-        // Handle section changes (handleSectionChange already calls router.refresh())
-        handleSectionChange(item.section);
       }
 
       // Close mobile sidebar after navigation
@@ -503,7 +506,7 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
+    [router, onSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
   // Check if user can emulate (instructional and higher, and must be authenticated)
@@ -684,9 +687,14 @@ export function UnifiedSidebar({
                     asChild
                     className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
                   >
-                    <div
-                      onClick={() =>
-                        handleItemClick({
+                    <Link
+                      href={getItemHref({
+                        title: item.title,
+                        url: item.url,
+                        section: item.section!,
+                      })}
+                      onClick={(e) =>
+                        handleItemClick(e, {
                           title: item.title,
                           url: item.url,
                           section: item.section!,
@@ -696,7 +704,7 @@ export function UnifiedSidebar({
                     >
                       <item.icon className="h-4 w-4" />
                       {item.title}
-                    </div>
+                    </Link>
                   </SidebarGroupLabel>
                 </SidebarGroup>
               );
@@ -727,11 +735,16 @@ export function UnifiedSidebar({
                         {item.items?.map((subItem: MenuItem) => (
                           <SidebarMenuItem key={subItem.title}>
                             <SidebarMenuButton
+                              asChild
                               isActive={activeSection === subItem.section}
-                              onClick={() => handleItemClick(subItem)}
                               className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
                             >
-                              {subItem.title}
+                              <Link
+                                href={getItemHref(subItem)}
+                                onClick={(e) => handleItemClick(e, subItem)}
+                              >
+                                {subItem.title}
+                              </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}

@@ -28999,6 +28999,57 @@
         ]
       }
     },
+    "/socket/v4/server/attempt/content_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Attempt Content Progress Api",
+        "description": "Server-to-client event: Attempt content created with persona info.",
+        "operationId": "attempt_content_progress_api_socket_v4_server_attempt_content_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptContentProgressEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Attempt Content Progress Api Socket V4 Server Attempt Content Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v4/server/attempt/hint_progress": {
       "post": {
         "tags": [
@@ -32316,6 +32367,46 @@
         ],
         "title": "AttemptCompleteEvent",
         "description": "Server-to-client event: attempt_complete.\n\nEmitted when message generation completes and is saved to DB."
+      },
+      "AttemptContentProgressEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "content_id": {
+            "type": "string",
+            "title": "Content Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "message_id",
+          "content_id",
+          "content"
+        ],
+        "title": "AttemptContentProgressEvent",
+        "description": "Server-to-client event: attempt_content_progress.\n\nEmitted when the create_content tool completes, providing the\npersona_id and content so the client can render immediately."
       },
       "AttemptData": {
         "properties": {

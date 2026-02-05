@@ -417,6 +417,20 @@ class AttemptHintProgressEvent(BaseModel):
     hints: list[dict[str, Any]] | None = None
 
 
+class AttemptContentProgressEvent(BaseModel):
+    """Server-to-client event: attempt_content_progress.
+
+    Emitted when the create_content tool completes, providing the
+    persona_id and content so the client can render immediately.
+    """
+
+    chat_id: str
+    message_id: str
+    content_id: str
+    content: str
+    persona_id: str | None = None
+
+
 class AttemptResponseResultEvent(BaseModel):
     """Server-to-client event: attempt_response_result.
 

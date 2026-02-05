@@ -19,6 +19,7 @@ from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.attempt.types import (
     AttemptAssistantCompleteEvent,
     AttemptCompleteEvent,
+    AttemptContentProgressEvent,
     AttemptGradedEvent,
     AttemptGradingProgressEvent,
     AttemptHintProgressEvent,
@@ -67,16 +68,18 @@ async def handle_attempt_complete(data: dict[str, Any]) -> None:
     resource_type = data.get("resource_type")
     event_type = data.get("event_type")
 
-    # Handle based on resource type
-    if resource_type == "grade":
+    # Handle based on event type and resource type.
+    # Tool completions are checked FIRST because they also carry
+    # resource_type="attempt" but need different handling.
+    if event_type in ("tool_call_complete", "tool_result"):
+        # Tool call completion (hints, contents, etc.)
+        await _handle_tool_complete(sid, data)
+    elif resource_type == "grade":
         # Grading completion
         await _handle_grade_complete(sid, data)
     elif resource_type in ("attempt", "voice"):
-        # Message completion
+        # Message completion (only processes run_complete events)
         await _handle_message_complete(sid, data)
-    elif event_type in ("tool_call_complete", "tool_result"):
-        # Tool call completion (hints, contents, etc.)
-        await _handle_tool_complete(sid, data)
 
 
 async def _handle_message_complete(
@@ -145,6 +148,18 @@ async def _handle_message_complete(
                 output_tokens,
             )
 
+            # Fetch persona_id from the content entry (inserted by create_content tool)
+            persona_id = await conn.fetchval(
+                """
+                SELECT persona_id::text
+                FROM simulation_contents_entry
+                WHERE message_id = $1 AND active = true AND persona_id IS NOT NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                message_id,
+            )
+
         assistant_event = AttemptAssistantCompleteEvent(
             chat_id=str(chat_id),
             message_id=str(message_id),
@@ -152,6 +167,7 @@ async def _handle_message_complete(
             created_at=context_row["created_at"].isoformat()
             if context_row.get("created_at")
             else None,
+            persona_id=persona_id,
         )
         await sio.emit(
             "attempt_assistant_complete",
@@ -293,6 +309,30 @@ async def _handle_tool_complete(sid: str, data: dict[str, Any]) -> None:
             return
         return
 
+    # create_content: emit content progress with persona_id
+    if entry_type == "contents":
+        run_id = data.get("run_id")
+        if not run_id:
+            return
+        context = await _get_message_context_by_run_id(run_id)
+        if not context:
+            return
+        content_text = arguments.get("content", "")
+        persona_id = arguments.get("persona_id") or arguments.get("personas_id")
+        content_event = AttemptContentProgressEvent(
+            chat_id=context["chat_id"],
+            message_id=context["message_id"],
+            content_id=entry_id,
+            content=content_text,
+            persona_id=persona_id,
+        )
+        await sio.emit(
+            "attempt_content_progress",
+            content_event.model_dump(mode="json"),
+            room=sid,
+        )
+        return
+
     # create_hint: emit hint completion only
     if entry_type == "hints":
         run_id = data.get("run_id")
@@ -387,6 +427,14 @@ async def attempt_assistant_complete_api(
     request: AttemptAssistantCompleteEvent,
 ) -> dict[str, bool]:
     """Server-to-client event: Attempt assistant message completed."""
+    return {"success": True}
+
+
+@server_router.post("/attempt/content_progress", response_model=dict[str, bool])
+async def attempt_content_progress_api(
+    request: AttemptContentProgressEvent,
+) -> dict[str, bool]:
+    """Server-to-client event: Attempt content created with persona info."""
     return {"success": True}
 
 

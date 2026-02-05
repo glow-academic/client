@@ -6367,6 +6367,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/server/attempt/content_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Content Progress Api
+         * @description Server-to-client event: Attempt content created with persona info.
+         */
+        post: operations["attempt_content_progress_api_socket_v4_server_attempt_content_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/server/attempt/hint_progress": {
         parameters: {
             query?: never;
@@ -7848,6 +7868,25 @@ export interface components {
              * @default true
              */
             completed: boolean;
+        };
+        /**
+         * AttemptContentProgressEvent
+         * @description Server-to-client event: attempt_content_progress.
+         *
+         *     Emitted when the create_content tool completes, providing the
+         *     persona_id and content so the client can render immediately.
+         */
+        AttemptContentProgressEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Content Id */
+            content_id: string;
+            /** Content */
+            content: string;
+            /** Persona Id */
+            persona_id?: string | null;
         };
         /**
          * AttemptData
@@ -37496,6 +37535,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptAssistantCompleteEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_content_progress_api_socket_v4_server_attempt_content_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptContentProgressEvent"];
             };
         };
         responses: {
