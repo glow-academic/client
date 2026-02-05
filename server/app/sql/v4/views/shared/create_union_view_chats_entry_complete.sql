@@ -10,7 +10,7 @@ SELECT
     c.created_at,
     c.updated_at,
     c.title,
-    c.completed,
+    (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed,
     c.generated,
     c.mcp,
     c.active,

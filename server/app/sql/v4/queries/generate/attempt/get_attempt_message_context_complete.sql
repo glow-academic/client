@@ -205,7 +205,7 @@ chat_data AS (
     SELECT
         c.id as chat_id,
         TRUE as chat_exists,
-        COALESCE(c.completed, FALSE) as chat_is_completed,
+        (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) as chat_is_completed,
         c.attempt_id,
         c.hints_enabled
     FROM simulation_chats_entry c

@@ -120,7 +120,7 @@ base_chats AS (
         c.id AS chat_id,
         c.attempt_id,
         c.created_at AS chat_created_at,
-        c.completed AS chat_completed,
+        (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
         csc.scenarios_id AS scenario_id,
         grc.rubrics_id AS rubric_id,
         -- Chat-level flags (directly on simulation_chats_entry)

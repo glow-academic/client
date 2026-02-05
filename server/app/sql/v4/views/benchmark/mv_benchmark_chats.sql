@@ -71,7 +71,7 @@ SELECT
     c.created_at AS chat_created_at,
     c.updated_at AS chat_updated_at,
     c.title AS chat_title,
-    COALESCE(c.completed, false) AS chat_completed,
+    (EXISTS (SELECT 1 FROM benchmark_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS chat_completed,
     lg.grade_score,
     lg.grade_passed,
     lg.grade_time_taken,

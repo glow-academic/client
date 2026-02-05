@@ -49,7 +49,7 @@ chat_counts AS (
     SELECT
         c.attempt_id AS test_id,
         COUNT(*)::bigint AS num_chats,
-        COUNT(*) FILTER (WHERE c.completed = true)::bigint AS num_chats_completed
+        COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM benchmark_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE))::bigint AS num_chats_completed
     FROM benchmark_chats_entry c
     WHERE c.active = true
     GROUP BY c.attempt_id

@@ -441,12 +441,11 @@ new_group AS (
 -- Create chat with attempt_id directly (only for scenarios, not videos)
 new_chat AS (
     INSERT INTO simulation_chats_entry (
-        created_at, title, completed, updated_at, attempt_id
+        created_at, title, updated_at, attempt_id
     )
     SELECT
         ng.created_at,
         COALESCE(sfd.scenario_name, 'New Simulation'),
-        false,
         ng.updated_at,
         na.attempt_id
     FROM new_group ng

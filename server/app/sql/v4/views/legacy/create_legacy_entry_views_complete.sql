@@ -86,7 +86,10 @@ CREATE OR REPLACE VIEW view_simulation_attempts_entry AS
 SELECT * FROM simulation_attempts_entry;
 
 CREATE OR REPLACE VIEW view_simulation_chats_entry AS
-SELECT * FROM simulation_chats_entry;
+SELECT
+    c.*,
+    (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed
+FROM simulation_chats_entry c;
 
 CREATE OR REPLACE VIEW view_simulation_messages_entry AS
 SELECT

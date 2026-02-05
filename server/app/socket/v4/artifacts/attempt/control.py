@@ -205,13 +205,13 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload, profile_id: uuid.
 
             attempt_id = str(chat["attempt_id"])
 
-            # Mark chat as completed
-            update_completed_sql = """
-                UPDATE simulation_chats_entry
-                SET completed = true, completed_at = NOW(), updated_at = NOW()
-                WHERE id = $1
+            # Mark chat as completed by inserting into completions_entry
+            insert_completion_sql = """
+                INSERT INTO simulation_completions_entry (chat_id)
+                VALUES ($1)
+                ON CONFLICT (chat_id) DO NOTHING
             """
-            await conn.execute(update_completed_sql, chat_id_uuid)
+            await conn.execute(insert_completion_sql, chat_id_uuid)
 
             # Check for next incomplete scenario
             sql = load_sql(
@@ -341,7 +341,7 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
 
             # Get all chats for this attempt using inline query
             get_chats_sql = """
-                SELECT c.id, c.completed
+                SELECT c.id
                 FROM simulation_chats_entry c
                 WHERE c.attempt_id = $1 AND c.active = TRUE
             """
@@ -359,15 +359,14 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
                 )
                 return
 
-            # Mark all incomplete chats as completed
-            update_completed_sql = """
-                UPDATE simulation_chats_entry
-                SET completed = true, completed_at = NOW(), updated_at = NOW()
-                WHERE id = $1
+            # Mark all incomplete chats as completed by inserting into completions_entry
+            insert_completion_sql = """
+                INSERT INTO simulation_completions_entry (chat_id)
+                VALUES ($1)
+                ON CONFLICT (chat_id) DO NOTHING
             """
             for chat in chats:
-                if not chat.get("completed"):
-                    await conn.execute(update_completed_sql, chat["id"])
+                await conn.execute(insert_completion_sql, chat["id"])
 
             # Emit attempt_ended event
             event = AttemptEndedEvent(

@@ -133,7 +133,7 @@ SELECT
     CASE WHEN COALESCE(a.practice, FALSE) THEN 'practice' ELSE 'general' END AS attempt_type,
     COALESCE(a.archived, FALSE) AS is_archived,
     COALESCE(a.infinite_mode, FALSE) AS infinite_mode,
-    COALESCE(c.completed, FALSE) AS completed,
+    (EXISTS (SELECT 1 FROM simulation_completions_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) AS completed,
 
     -- Grade data
     lg.score,

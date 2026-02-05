@@ -169,8 +169,8 @@ BEGIN
     END IF;
 
     -- Create chat entry (chat has attempt_id directly)
-    INSERT INTO simulation_chats_entry (attempt_id, created_at, updated_at, title, completed)
-    VALUES (v_attempt_id, NOW(), NOW(), 'Chat', false)
+    INSERT INTO simulation_chats_entry (attempt_id, created_at, updated_at, title)
+    VALUES (v_attempt_id, NOW(), NOW(), 'Chat')
     RETURNING id INTO v_chat_id;
 
     -- Link chat to scenario (using resource ID)
