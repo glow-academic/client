@@ -16456,6 +16456,16 @@ export interface components {
              */
             unique_models: number;
             /**
+             * Total Input Tokens
+             * @default 0
+             */
+            total_input_tokens: number;
+            /**
+             * Total Output Tokens
+             * @default 0
+             */
+            total_output_tokens: number;
+            /**
              * Total Tokens
              * @default 0
              */
@@ -16469,6 +16479,8 @@ export interface components {
             agent_ids?: string[] | null;
             /** Model Ids */
             model_ids?: string[] | null;
+            /** Profile Name */
+            profile_name?: string | null;
             /** Agent Names */
             agent_names?: string[] | null;
             /** Model Names */

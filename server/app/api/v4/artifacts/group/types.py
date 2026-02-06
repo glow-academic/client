@@ -24,6 +24,8 @@ class GroupListItem(BaseModel):
     unique_agents: int = 0
     unique_models: int = 0
 
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
     total_tokens: int = 0
     total_cost: Decimal = Decimal("0")
 
@@ -31,6 +33,7 @@ class GroupListItem(BaseModel):
     model_ids: list[UUID] | None = None
 
     # Hydrated metadata
+    profile_name: str | None = None
     agent_names: list[str] | None = None
     model_names: list[str] | None = None
 

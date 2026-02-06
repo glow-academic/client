@@ -91,6 +91,7 @@ export interface GroupRunRow {
     debugInfo?: DebugInfoItem[];
   }>;
   // Hydrated names from group list endpoint
+  profileName?: string;
   modelNames?: string[];
   agentNames?: string[];
 }
@@ -298,6 +299,50 @@ export function RunsDataTable({
           </div>
         ),
         enableSorting: true,
+      },
+      {
+        accessorKey: "profileName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Profile" />
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm truncate max-w-[120px]" title={row.original.profileName}>
+            {row.original.profileName || "—"}
+          </div>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "agentNames",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Agents" />
+        ),
+        cell: ({ row }) => {
+          const names = row.original.agentNames || [];
+          const display = names.length > 0 ? names.join(", ") : "—";
+          return (
+            <div className="text-sm truncate max-w-[150px]" title={display}>
+              {display}
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+      {
+        accessorKey: "modelNames",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Models" />
+        ),
+        cell: ({ row }) => {
+          const names = row.original.modelNames || [];
+          const display = names.length > 0 ? names.join(", ") : "—";
+          return (
+            <div className="text-sm truncate max-w-[150px]" title={display}>
+              {display}
+            </div>
+          );
+        },
+        enableSorting: false,
       },
       {
         accessorKey: "runCount",

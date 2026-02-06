@@ -59,7 +59,7 @@ async def get_group_list_internal(
 ) -> GetGroupListResponse:
     """Internal function for group list with resource hydration."""
     body = request.model_dump(mode="json")
-    body["profile_id"] = str(profile_id)
+    # Note: profile_id not included in cache key - data is shared across all users
     cache_key_val = cache_key(cache_key_path, body)
 
     if not bypass_cache:
@@ -67,11 +67,10 @@ async def get_group_list_internal(
         if cached:
             return GetGroupListResponse.model_validate(cached["data"])
 
-    # Fetch from views layer
+    # Fetch from views layer (no profile_id filter - show all users for analytics)
     view_result = await get_pricing_group_summary_internal(
         conn=conn,
         session_id=request.session_id,
-        profile_id=profile_id,
         agent_id=request.agent_id,
         model_id=request.model_id,
         date_from=request.date_from,
@@ -83,21 +82,27 @@ async def get_group_list_internal(
         bypass_cache=bypass_cache,
     )
 
-    # Collect all agent and model IDs for hydration
+    # Collect all IDs for hydration
     all_agent_ids: set[UUID] = set()
     all_model_ids: set[UUID] = set()
+    all_profile_ids: set[UUID] = set()
     for item in view_result.items:
         if item.agent_ids:
             all_agent_ids.update(item.agent_ids)
         if item.model_ids:
             all_model_ids.update(item.model_ids)
+        if item.profile_id:
+            all_profile_ids.add(item.profile_id)
 
-    # Fetch agent and model names via junction tables
+    # Fetch names via junction tables
     agent_meta = await _fetch_names_by_ids(
         conn, "agent_artifact", "agent_id", "agent_names_junction", list(all_agent_ids)
     )
     model_meta = await _fetch_names_by_ids(
         conn, "model_artifact", "model_id", "model_names_junction", list(all_model_ids)
+    )
+    profile_meta = await _fetch_names_by_ids(
+        conn, "profile_artifact", "profile_id", "profile_names_junction", list(all_profile_ids)
     )
 
     # Transform view items to artifact items with hydration
@@ -117,6 +122,8 @@ async def get_group_list_internal(
             ]
             model_names = model_names if model_names else None
 
+        profile_name = profile_meta.get(view_item.profile_id) if view_item.profile_id else None
+
         items.append(
             GroupListItem(
                 group_id=view_item.group_id,
@@ -129,10 +136,13 @@ async def get_group_list_internal(
                 run_count=view_item.run_count,
                 unique_agents=view_item.unique_agents,
                 unique_models=view_item.unique_models,
+                total_input_tokens=view_item.total_input_tokens,
+                total_output_tokens=view_item.total_output_tokens,
                 total_tokens=view_item.total_tokens,
                 total_cost=view_item.total_cost,
                 agent_ids=view_item.agent_ids,
                 model_ids=view_item.model_ids,
+                profile_name=profile_name,
                 agent_names=agent_names,
                 model_names=model_names,
             )

@@ -35,17 +35,20 @@ export function PricingRunsClient({
         const row: GroupRunRow = {
           groupId: group.group_id,
           createdAt: group.last_run_at,
-          groupName: group.group_name ?? undefined,
           runCount: group.run_count ?? 0,
           totalInputTokens: group.total_input_tokens ?? 0,
           totalOutputTokens: group.total_output_tokens ?? 0,
           totalCost: Number(group.total_cost ?? 0),
           // No nested runs in group list response
           runs: [],
-          // Include model/agent names if available
+          // Include hydrated names if available
           modelNames: group.model_names ?? [],
           agentNames: group.agent_names ?? [],
         };
+
+        // Add optional properties only when defined
+        if (group.group_name) row.groupName = group.group_name;
+        if (group.profile_name) row.profileName = group.profile_name;
 
         return row;
       });
