@@ -73,6 +73,12 @@ class MessageViewItem(BaseModel):
     created_at: datetime | None = None
     completed: bool = False
 
+    # Run resource ID (one hop to hydrate)
+    runs_id: UUID | None = None
+
+    # History content (for LLM context)
+    history_content: str | None = None
+
     # Contents array with persona_id (metadata fetched via handler)
     contents: list[ContentItem] | None = None
 

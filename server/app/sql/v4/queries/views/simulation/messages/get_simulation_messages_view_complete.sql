@@ -99,6 +99,12 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     created_at timestamptz,
     completed boolean,
 
+    -- Run resource ID (one hop to hydrate)
+    runs_id uuid,
+
+    -- History content (for LLM context)
+    history_content text,
+
     -- Contents array with persona_id (metadata fetched via handler)
     contents types.q_get_simulation_messages_view_v4_content[],
 
@@ -229,6 +235,8 @@ AS $$
             mv.type,
             mv.created_at,
             mv.completed,
+            mv.runs_id,
+            mv.history_content,
             ct.contents,
             st.strengths,
             it.improvements,
@@ -250,6 +258,8 @@ AS $$
                     type,
                     created_at,
                     completed,
+                    runs_id,
+                    history_content,
                     contents,
                     strengths,
                     improvements,

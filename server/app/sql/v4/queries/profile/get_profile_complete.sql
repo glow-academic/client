@@ -275,7 +275,7 @@ roles_data AS (
 group_id_data AS (
     SELECT
         COALESCE(
-            (SELECT d.group_id FROM view_drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
+            (SELECT dde.group_id FROM view_drafts_entry d JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE WHERE d.id = (SELECT draft_id FROM params)),
             (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) LIMIT 1),
             (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_profile_id FROM resolve_current_profile_id) LIMIT 1)
         ) as group_id

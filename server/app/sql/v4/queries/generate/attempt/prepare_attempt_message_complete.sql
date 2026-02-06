@@ -91,6 +91,7 @@ DECLARE
     v_trace_id text;
     v_created_at timestamptz;
     v_session_id uuid;
+    v_binding_id uuid;
 BEGIN
     -- Get or create group
     IF p_group_id IS NOT NULL THEN
@@ -100,17 +101,18 @@ BEGIN
     END IF;
 
     IF v_group_id IS NULL THEN
-        -- Reuse chat's existing group
-        SELECT sce.group_id INTO v_group_id
-        FROM simulation_chats_entry sce
-        WHERE sce.id = p_chat_id AND sce.group_id IS NOT NULL;
+        -- Reuse chat's existing group from junction table
+        SELECT scbe.group_id INTO v_group_id
+        FROM simulation_chats_bindings_entry scbe
+        WHERE scbe.chat_id = p_chat_id AND scbe.active = TRUE
+        LIMIT 1;
         IF v_group_id IS NOT NULL THEN
             SELECT trace_id INTO v_trace_id FROM groups_entry WHERE id = v_group_id;
         END IF;
     END IF;
 
     IF v_group_id IS NULL THEN
-        -- First turn: create group and set on chat
+        -- First turn: create group and link to chat via junction table
         SELECT id INTO v_session_id
         FROM sessions_entry
         WHERE profile_id = p_profile_id AND active = true
@@ -121,7 +123,19 @@ BEGIN
         VALUES (NOW(), NOW(), v_session_id)
         RETURNING groups_entry.id, groups_entry.trace_id INTO v_group_id, v_trace_id;
 
-        UPDATE simulation_chats_entry SET group_id = v_group_id WHERE id = p_chat_id;
+        -- Create bindings_entry for the chat
+        INSERT INTO bindings_entry (created_at, updated_at, generated, mcp, active)
+        VALUES (NOW(), NOW(), false, false, true)
+        RETURNING id INTO v_binding_id;
+
+        -- Link to bindings_resource (use first active one)
+        INSERT INTO bindings_bindings_connection (binding_id, bindings_id, created_at, active)
+        SELECT v_binding_id, br.id, NOW(), true
+        FROM bindings_resource br WHERE br.active = true LIMIT 1;
+
+        -- Create junction entry to link chat to group
+        INSERT INTO simulation_chats_bindings_entry (chat_id, group_id, binding_id, created_at, updated_at, active)
+        VALUES (p_chat_id, v_group_id, v_binding_id, NOW(), NOW(), true);
     END IF;
 
     -- Create run

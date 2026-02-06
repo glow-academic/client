@@ -13197,7 +13197,7 @@ class ColorsSqlRow(BaseModel):
 
 class ColorsApiRequest(BaseModel):
 
-    agent_id: UUID | None = None
+    agent_id: UUID
     group_id: UUID
     name: str
     description: str
@@ -13376,7 +13376,7 @@ class DescriptionsSqlRow(BaseModel):
 
 class DescriptionsApiRequest(BaseModel):
 
-    agent_id: UUID | None = None
+    agent_id: UUID
     group_id: UUID
     description: str
     mcp: bool | None = False
@@ -13662,7 +13662,7 @@ class ExamplesSqlRow(BaseModel):
 
 class ExamplesApiRequest(BaseModel):
 
-    agent_id: UUID | None = None
+    agent_id: UUID
     group_id: UUID
     example: str
     mcp: bool | None = False
@@ -14190,7 +14190,7 @@ class InstructionsSqlRow(BaseModel):
 
 class InstructionsApiRequest(BaseModel):
 
-    agent_id: UUID | None = None
+    agent_id: UUID
     group_id: UUID
     template: str
     mcp: bool | None = False
@@ -14597,7 +14597,7 @@ class ParameterFieldsSqlRow(BaseModel):
 
 class ParameterFieldsApiRequest(BaseModel):
 
-    agent_id: UUID | None = None
+    agent_id: UUID
     group_id: UUID
     parameter_id: UUID
     field_id: UUID
@@ -22779,6 +22779,54 @@ class GetSimulationChatsViewApiResponse(BaseModel):
 
 
 
+# Generated from: get_simulation_groups_view
+
+class GetSimulationGroupsViewSqlParams(BaseModel):
+
+    chat_id_filter: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id_filter,
+        )
+
+class QGetSimulationGroupsViewV4Item(BaseModel):
+
+    group_id: UUID | None
+    groups_id: UUID | None
+    agents_id: UUID | None
+    models_id: UUID | None
+    model_values_id: UUID | None
+    providers_id: UUID | None
+    provider_values_id: UUID | None
+    endpoints_id: UUID | None
+    keys_id: UUID | None
+    prompts_id: UUID | None
+    instructions_ids: list[UUID] | None
+    temperature_levels_id: UUID | None
+    reasoning_levels_id: UUID | None
+    qualities_id: UUID | None
+    voices_id: UUID | None
+    tools_ids: list[UUID] | None
+    custom_model: bool | None
+    group_name: str | None
+    trace_id: str | None
+    created_at: datetime | None
+
+class GetSimulationGroupsViewSqlRow(BaseModel):
+
+    items: list[QGetSimulationGroupsViewV4Item] | None = None
+
+class GetSimulationGroupsViewApiRequest(BaseModel):
+
+    chat_id_filter: UUID
+
+class GetSimulationGroupsViewApiResponse(BaseModel):
+
+    items: list[QGetSimulationGroupsViewV4Item] | None = None
+
+
+
 # Generated from: get_simulation_history_view
 
 class GetSimulationHistoryViewSqlParams(BaseModel):
@@ -22964,6 +23012,8 @@ class QGetSimulationMessagesViewV4Item(BaseModel):
     type: str | None
     created_at: datetime | None
     completed: bool | None
+    runs_id: UUID | None
+    history_content: str | None
     contents: list[QGetSimulationMessagesViewV4Content] | None
     strengths: list[QGetSimulationMessagesViewV4Strength] | None
     improvements: list[QGetSimulationMessagesViewV4Improvement] | None
@@ -25619,6 +25669,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationChatsViewApiRequest",
         "GetSimulationChatsViewApiResponse",
     ),
+    "app/sql/v4/queries/views/simulation/groups/get_simulation_groups_view_complete.sql": (
+        "GetSimulationGroupsViewSqlParams",
+        "GetSimulationGroupsViewSqlRow",
+        "GetSimulationGroupsViewApiRequest",
+        "GetSimulationGroupsViewApiResponse",
+    ),
     "app/sql/v4/queries/views/simulation/history/get_simulation_history_view_complete.sql": (
         "GetSimulationHistoryViewSqlParams",
         "GetSimulationHistoryViewSqlRow",
@@ -27807,6 +27863,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/simulation/chats/get_simulation_chats_view_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/views/simulation/groups/get_simulation_groups_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

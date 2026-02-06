@@ -183,6 +183,14 @@ contents_agg AS (
     WHERE sce.active = TRUE
     GROUP BY sce.message_id
 ),
+-- Get runs_id (resource) for each run_id (entry)
+runs_resource_agg AS (
+    SELECT
+        rrc.run_id,
+        rrc.runs_id
+    FROM runs_runs_connection rrc
+    WHERE rrc.active = TRUE
+),
 -- Base message data (position derived in service layer, practice on attempt level)
 base_messages AS (
     SELECT
@@ -191,11 +199,17 @@ base_messages AS (
         c.attempt_id,
         m.role,
         m.completed,
-        m.created_at
+        m.created_at,
+        -- Run resource ID (one hop to hydrate)
+        rra.runs_id,
+        -- History content (for LLM context)
+        te.content AS history_content
     FROM simulation_messages_entry sm
     JOIN messages_entry m ON m.id = sm.id
     JOIN simulation_chats_entry c ON c.id = sm.chat_id
     JOIN simulation_attempts_entry a ON a.id = c.attempt_id
+    LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
+    LEFT JOIN texts_entry te ON te.id = m.text_id
     WHERE m.active = TRUE
       AND c.active = TRUE
       AND a.active = TRUE
@@ -214,6 +228,12 @@ SELECT
     CASE WHEN bm.role = 'user'::message_type THEN 'query' ELSE 'response' END AS type,
     bm.created_at,
     bm.completed,
+
+    -- Run resource ID (one hop to hydrate)
+    bm.runs_id,
+
+    -- History content (for LLM context)
+    bm.history_content,
 
     -- Contents array with persona_id (metadata fetched via handler)
     COALESCE(ca.contents, ARRAY[]::types.mv_content[]) AS contents,
@@ -264,6 +284,11 @@ CREATE INDEX mv_simulation_messages_type_idx
 -- Created at for ordering (position derived from this)
 CREATE INDEX mv_simulation_messages_created_at_idx
     ON mv_simulation_messages (created_at);
+
+-- Runs ID for filtering by run
+CREATE INDEX mv_simulation_messages_runs_id_idx
+    ON mv_simulation_messages (runs_id)
+    WHERE runs_id IS NOT NULL;
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data

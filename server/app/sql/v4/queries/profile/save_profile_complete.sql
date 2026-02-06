@@ -68,9 +68,10 @@ BEGIN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
-    SELECT pdj.profiles_id, d.group_id
+    SELECT pdj.profiles_id, dde.group_id
     INTO v_draft_profile_id, v_group_id
     FROM view_drafts_entry d
+    LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
     LEFT JOIN profiles_drafts_connection pdj ON pdj.draft_id = d.id
     WHERE d.id = v_draft_id;
 

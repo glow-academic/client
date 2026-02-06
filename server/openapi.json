@@ -21086,6 +21086,280 @@
         }
       }
     },
+    "/api/v4/views/simulation/groups/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "groups"
+        ],
+        "summary": "Get Groups",
+        "description": "Get simulation group data from the materialized view.\n\nThis endpoint fetches group-level inference config data.",
+        "operationId": "get_groups_api_v4_views_simulation_groups_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGroupsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGroupsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/views/simulation/groups/refresh": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "groups"
+        ],
+        "summary": "Refresh Groups View",
+        "description": "Refresh the mv_simulation_groups materialized view concurrently.",
+        "operationId": "refresh_groups_view_api_v4_views_simulation_groups_refresh_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/views/simulation/groups/recreate": {
+      "post": {
+        "tags": [
+          "v4",
+          "views",
+          "views",
+          "simulation",
+          "views",
+          "simulation",
+          "groups"
+        ],
+        "summary": "Recreate Groups View",
+        "description": "Recreate the mv_simulation_groups materialized view.",
+        "operationId": "recreate_groups_view_api_v4_views_simulation_groups_recreate_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/views/simulation/messages/get": {
       "post": {
         "tags": [
@@ -35775,15 +36049,8 @@
       "ColorsApiRequest": {
         "properties": {
           "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Agent Id"
           },
           "group_id": {
@@ -35818,6 +36085,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "group_id",
           "name",
           "description",
@@ -38445,15 +38713,8 @@
       "DescriptionsApiRequest": {
         "properties": {
           "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Agent Id"
           },
           "group_id": {
@@ -38480,6 +38741,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "group_id",
           "description"
         ],
@@ -40013,15 +40275,8 @@
       "ExamplesApiRequest": {
         "properties": {
           "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Agent Id"
           },
           "group_id": {
@@ -40048,6 +40303,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "group_id",
           "example"
         ],
@@ -49443,6 +49699,37 @@
         "type": "object",
         "title": "GetGroupListResponse",
         "description": "Response for group list endpoint."
+      },
+      "GetGroupsRequest": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id",
+            "description": "Chat ID to fetch groups for"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "GetGroupsRequest",
+        "description": "Request for getting group data."
+      },
+      "GetGroupsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GroupViewItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Group data items"
+          }
+        },
+        "type": "object",
+        "title": "GetGroupsResponse",
+        "description": "Response containing group data."
       },
       "GetHealthAnalyticsRequest": {
         "properties": {},
@@ -64369,6 +64656,252 @@
         "type": "object",
         "title": "GroupRubricsApiResponse"
       },
+      "GroupViewItem": {
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "groups_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Id"
+          },
+          "agents_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents Id"
+          },
+          "models_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models Id"
+          },
+          "model_values_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Values Id"
+          },
+          "providers_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers Id"
+          },
+          "provider_values_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Values Id"
+          },
+          "endpoints_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoints Id"
+          },
+          "keys_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keys Id"
+          },
+          "prompts_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompts Id"
+          },
+          "instructions_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Ids"
+          },
+          "temperature_levels_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels Id"
+          },
+          "reasoning_levels_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Id"
+          },
+          "qualities_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Id"
+          },
+          "voices_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Id"
+          },
+          "tools_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools Ids"
+          },
+          "custom_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Model"
+          },
+          "group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Name"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id"
+        ],
+        "title": "GroupViewItem",
+        "description": "Single group from the simulation groups view (inference config)."
+      },
       "GrowthAvailableMetric": {
         "properties": {
           "id": {
@@ -65463,15 +65996,8 @@
       "InstructionsApiRequest": {
         "properties": {
           "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Agent Id"
           },
           "group_id": {
@@ -65498,6 +66024,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "group_id",
           "template"
         ],
@@ -68621,6 +69148,29 @@
             "title": "Completed",
             "default": false
           },
+          "runs_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Id"
+          },
+          "history_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Content"
+          },
           "contents": {
             "anyOf": [
               {
@@ -68957,15 +69507,8 @@
       "ParameterFieldsApiRequest": {
         "properties": {
           "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Agent Id"
           },
           "group_id": {
@@ -68998,6 +69541,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "group_id",
           "parameter_id",
           "field_id"

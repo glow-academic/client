@@ -273,13 +273,14 @@ draft_payload_data AS (
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
 draft_group_data AS (
-    SELECT 
+    SELECT
         COALESCE(
-            d.group_id,
+            dde.group_id,
             (SELECT id FROM view_groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN view_drafts_entry d ON d.id = x.draft_id
+    LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1

@@ -1,14 +1,15 @@
 """Types for benchmark socket events.
 
-Defines payload and event types for benchmark orchestration:
-- BenchmarkStartPayload: client entry point (single call)
-- BenchmarkStartedEvent: emitted when attempt is created
+Defines payload and event types for benchmark start:
+- BenchmarkStartPayload: client entry point
+- BenchmarkStartedEvent: emitted with structure for client to control
 - BenchmarkProgressEvent: emitted during benchmark execution
 - BenchmarkCompleteEvent: emitted when all tests complete
 - BenchmarkErrorEvent: emitted on errors
+
+Test execution is handled by test/ handlers (test_run, test_run_all, test_grade).
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -20,7 +21,11 @@ from pydantic import BaseModel
 
 
 class BenchmarkStartPayload(BaseModel):
-    """Request payload for benchmark_start WebSocket event."""
+    """Request payload for benchmark_start WebSocket event.
+
+    Creates benchmark attempt structure. Client then controls
+    execution via test_run/test_run_all.
+    """
 
     eval_id: UUID
     infinite_mode: bool = False
@@ -31,101 +36,73 @@ class BenchmarkStartPayload(BaseModel):
 # =============================================================================
 
 
+class BenchmarkChatInfo(BaseModel):
+    """Info about a benchmark chat (test instance).
+
+    Each chat represents one run or group to be tested.
+    """
+
+    chat_id: str
+    run_resource_id: str | None = None
+    group_resource_id: str | None = None
+    status: str = "pending"  # pending, running, completed, failed
+    total_runs: int = 1
+    completed_runs: int = 0
+
+
 class BenchmarkStartedEvent(BaseModel):
-    """Server-to-client event: benchmarks_started."""
+    """Server-to-client event: benchmark_started.
+
+    Emitted when benchmark attempt is created with structure.
+    Client uses chat_ids to trigger test_run/test_run_all.
+    """
 
     artifact_type: str = "benchmark"
     success: bool = True
     message: str
     attempt_id: str
     eval_id: str | None = None
-    use_groups: bool | None = None
-    pending_run_ids: list[str] | None = None
-    pending_group_ids: list[str] | None = None
+    use_groups: bool = False
+    chats: list[BenchmarkChatInfo] = []
 
 
 class BenchmarkProgressEvent(BaseModel):
-    """Server-to-client event: benchmarks_progress."""
+    """Server-to-client event: benchmark_progress.
+
+    Emitted during benchmark execution to show overall progress.
+    """
 
     artifact_type: str = "benchmark"
-    attempt_id: str | None = None
-    test_id: str | None = None
-    run_id: str | None = None
-    group_id: str | None = None
+    attempt_id: str
+    total_chats: int | None = None
+    completed_chats: int | None = None
     status: str | None = None
     message: str | None = None
-    success: bool = True
 
 
 class BenchmarkCompleteEvent(BaseModel):
-    """Server-to-client event: benchmarks_complete."""
+    """Server-to-client event: benchmark_complete.
+
+    Emitted when all tests in benchmark are complete.
+    """
 
     artifact_type: str = "benchmark"
     success: bool = True
     message: str
     attempt_id: str
-    test_id: str | None = None
+    total_chats: int | None = None
+    passed_chats: int | None = None
 
 
 class BenchmarkErrorEvent(BaseModel):
-    """Server-to-client event: benchmarks_error."""
+    """Server-to-client event: benchmark_error.
+
+    Emitted on errors.
+    """
 
     artifact_type: str = "benchmark"
     success: bool = False
     message: str
     attempt_id: str | None = None
-    test_id: str | None = None
-    run_id: str | None = None
-    group_id: str | None = None
+    chat_id: str | None = None
     error_type: str | None = None
-
-
-# =============================================================================
-# Internal Event Payloads
-# =============================================================================
-
-
-class BenchmarkNextPayload(BaseModel):
-    """Internal event payload to process next run/group for benchmark attempt."""
-
-    attempt_id: str
-    eval_id: str
-    run_id: str | None = None
-    group_id: str | None = None
-    use_groups: bool = False
-
-
-class BenchmarkAdvancePayload(BaseModel):
-    """Internal event payload to advance benchmark progress."""
-
-    test_id: str
-    attempt_id: str
-    run_id: str | None = None
-    group_id: str | None = None
-
-
-class BenchmarkEndPayload(BaseModel):
-    """Internal event payload to end benchmark test and run grading."""
-
-    test_id: str
-    attempt_id: str
-    eval_id: str
-    run_id: str | None = None
-    group_id: str | None = None
-    use_groups: bool = False
-
-
-class BenchmarkEvalCompletePayload(BaseModel):
-    """Internal event payload for eval completion."""
-
-    success: bool = True
-    message: str | None = None
-    sid: str | None = None
-    attempt_id: str | None = None
-    test_id: str | None = None
-    eval_id: str | None = None
-    run_id: str | None = None
-    group_id: str | None = None
-    agent_id: str | None = None
-    tool_id: str | None = None
-    metadata: dict[str, Any] | None = None

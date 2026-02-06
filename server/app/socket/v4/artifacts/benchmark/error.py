@@ -1,7 +1,6 @@
 """Benchmark error handler.
 
-Listens to AI generation errors (eval_mode=True) and internal benchmark_error events.
-Emits benchmarks_error to clients.
+Emits benchmark_error to clients on errors.
 """
 
 from typing import Any
@@ -20,26 +19,6 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_call_error")  # type: ignore
-@internal_sio.on("generate_text_error")  # type: ignore
-async def handle_benchmark_generation_error(data: dict[str, Any]) -> None:
-    """Handle generate_*_error events for eval runs."""
-    if not data.get("eval_mode", False):
-        return
-
-    await internal_sio.emit(
-        "benchmark_eval_complete",
-        {
-            "success": False,
-            "message": data.get("error_message")
-            or data.get("message", "Benchmark eval failed"),
-            "run_id": data.get("run_id"),
-            "group_id": data.get("group_id"),
-            "sid": data.get("sid", ""),
-        },
-    )
-
-
 @internal_sio.on("benchmark_error")  # type: ignore
 async def handle_benchmark_error(data: dict[str, Any]) -> None:
     """Handle internal benchmark_error events and emit to client."""
@@ -56,28 +35,27 @@ async def handle_benchmark_error(data: dict[str, Any]) -> None:
     event = BenchmarkErrorEvent(
         message=message,
         attempt_id=data.get("attempt_id"),
-        test_id=data.get("test_id"),
-        run_id=data.get("run_id"),
-        group_id=data.get("group_id"),
+        chat_id=data.get("chat_id"),
         error_type=data.get("error_type"),
     )
 
     await sio.emit(
-        "benchmarks_error",
+        "benchmark_error",
         event.model_dump(mode="json"),
         room=sid,
     )
+
     attempt_id = data.get("attempt_id")
     if attempt_id:
         await sio.emit(
-            "benchmarks_error",
+            "benchmark_error",
             event.model_dump(mode="json"),
             room=f"benchmark_{attempt_id}",
         )
 
     logger.error(
-        f"Benchmark error - attempt_id={data.get('attempt_id')}, "
-        f"test_id={data.get('test_id')}, error={message}"
+        f"Benchmark error - attempt_id={attempt_id}, "
+        f"chat_id={data.get('chat_id')}, error={message}"
     )
 
 

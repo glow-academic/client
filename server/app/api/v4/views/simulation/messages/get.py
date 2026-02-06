@@ -140,6 +140,8 @@ async def get_simulation_messages_internal(
                     type=item.type,
                     created_at=item.created_at,
                     completed=item.completed or False,
+                    runs_id=item.runs_id,
+                    history_content=item.history_content,
                     contents=contents,
                     strengths=strengths,
                     improvements=improvements,

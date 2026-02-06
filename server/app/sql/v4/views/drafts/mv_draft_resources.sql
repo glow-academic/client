@@ -136,7 +136,8 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'scenarios'::resource_type), ARRAY[]::uuid[]) AS scenario_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulations'::resource_type), ARRAY[]::uuid[]) AS simulation_ids
 FROM drafts_entry d
-LEFT JOIN groups_groups_connection ggc ON ggc.group_id = d.group_id AND ggc.active = true
+LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = true
+LEFT JOIN groups_groups_connection ggc ON ggc.group_id = dde.group_id AND ggc.active = true
 LEFT JOIN draft_links l ON l.draft_id = d.id
 GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, ggc.groups_id
 WITH NO DATA;

@@ -78,8 +78,9 @@ BEGIN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
-    SELECT d.group_id INTO v_group_id
+    SELECT dde.group_id INTO v_group_id
     FROM view_drafts_entry d
+    JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = TRUE
     WHERE d.id = v_draft_id;
 
     IF v_group_id IS NULL THEN

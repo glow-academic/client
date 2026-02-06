@@ -1,9 +1,13 @@
 """Benchmark start handler.
 
-Single entry point for benchmark orchestration:
-- Creates attempt
-- Emits benchmarks_started
-- Auto-starts all pending runs/groups via internal benchmark_next
+Creates benchmark attempt structure and returns it to client.
+Client controls test execution via test/run.py handlers.
+
+Entry point for benchmark:
+- Creates benchmark_tests_entry (attempt)
+- Creates benchmark_chats_entry for each run/group
+- Returns structure to client
+- Does NOT auto-trigger any test runs
 """
 
 import uuid
@@ -13,15 +17,14 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.benchmark.permissions import (
     BenchmarkGenerationContext,
     validate_benchmark_access,
 )
 from app.socket.v4.artifacts.benchmark.types import (
+    BenchmarkChatInfo,
     BenchmarkErrorEvent,
-    BenchmarkNextPayload,
     BenchmarkStartedEvent,
     BenchmarkStartPayload,
 )
@@ -36,18 +39,25 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_START = "app/sql/v4/queries/benchmark/start_benchmark_attempt_complete.sql"
+SQL_PATH_START = "app/sql/v4/queries/generate/benchmark/start_benchmark_attempt_complete.sql"
 
 
 async def _benchmark_start_impl(
     sid: str, data: BenchmarkStartPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle benchmark_start with internal orchestration."""
+    """Handle benchmark_start - create structure and return to client.
+
+    This function:
+    1. Creates benchmark_tests_entry (attempt)
+    2. Creates benchmark_chats_entry for each run/group
+    3. Returns structure with chat_ids for client to control
+    """
     try:
         async with get_db_connection() as conn:
             params = StartBenchmarkAttemptSqlParams(
-                eval_id=data.eval_id,
-                infinite_mode=data.infinite_mode,
+                p_profile_id=profile_id,
+                p_eval_id=data.eval_id,
+                p_infinite_mode=data.infinite_mode,
             )
             result = cast(
                 StartBenchmarkAttemptSqlRow,
@@ -66,54 +76,54 @@ async def _benchmark_start_impl(
                     else f"Eval not found: {data.eval_id}"
                 )
                 await sio.emit(
-                    "benchmarks_error",
+                    "benchmark_error",
                     BenchmarkErrorEvent(message=message).model_dump(mode="json"),
                     room=sid,
                 )
                 return
 
-            pending_run_ids = [
-                str(run_id) for run_id in (result.pending_run_ids or [])
-            ]
-            pending_group_ids = [
-                str(group_id) for group_id in (result.pending_group_ids or [])
-            ]
+            # Build chat info list from SQL result
+            chats: list[BenchmarkChatInfo] = []
+            if result.chats:
+                for chat_data in result.chats:
+                    chats.append(
+                        BenchmarkChatInfo(
+                            chat_id=str(chat_data.get("chat_id")),
+                            run_resource_id=str(chat_data.get("run_resource_id"))
+                            if chat_data.get("run_resource_id")
+                            else None,
+                            group_resource_id=str(chat_data.get("group_resource_id"))
+                            if chat_data.get("group_resource_id")
+                            else None,
+                            status="pending",
+                            total_runs=chat_data.get("total_runs", 1),
+                            completed_runs=0,
+                        )
+                    )
 
             started_event = BenchmarkStartedEvent(
-                message="Benchmark attempt created successfully",
+                message="Benchmark attempt created",
                 attempt_id=str(result.attempt_id),
-                eval_id=result.eval_id,
+                eval_id=str(result.eval_id),
                 use_groups=result.use_groups or False,
-                pending_run_ids=pending_run_ids,
-                pending_group_ids=pending_group_ids,
+                chats=chats,
             )
 
             await sio.emit(
-                "benchmarks_started",
+                "benchmark_started",
                 started_event.model_dump(mode="json"),
                 room=sid,
             )
 
-            use_groups = result.use_groups or False
-            pending_ids = pending_group_ids if use_groups else pending_run_ids
-
-            for pending_id in pending_ids:
-                await emit_to_internal(
-                    "benchmark_next",
-                    BenchmarkNextPayload(
-                        attempt_id=str(result.attempt_id),
-                        eval_id=str(result.eval_id),
-                        run_id=None if use_groups else pending_id,
-                        group_id=pending_id if use_groups else None,
-                        use_groups=use_groups,
-                    ),
-                    sid=sid,
-                )
+            logger.info(
+                f"Benchmark started - attempt_id={result.attempt_id}, "
+                f"eval_id={result.eval_id}, chats={len(chats)}"
+            )
 
     except Exception as e:
         logger.exception(f"Failed to start benchmark: {str(e)}")
         await sio.emit(
-            "benchmarks_error",
+            "benchmark_error",
             BenchmarkErrorEvent(message=f"Failed to start benchmark: {str(e)}").model_dump(
                 mode="json"
             ),
@@ -123,13 +133,17 @@ async def _benchmark_start_impl(
 
 @sio.event  # type: ignore
 async def benchmark_start(sid: str, data: dict[str, Any]) -> None:
-    """Handle benchmark_start event (client-to-server)."""
+    """Handle benchmark_start event (client-to-server).
+
+    Creates benchmark attempt structure and returns it.
+    Client then controls test execution via test_run/test_run_all.
+    """
     try:
         payload = BenchmarkStartPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await sio.emit(
-                "benchmarks_error",
+                "benchmark_error",
                 BenchmarkErrorEvent(message="Profile not found. Please reconnect.").model_dump(
                     mode="json"
                 ),
@@ -141,7 +155,7 @@ async def benchmark_start(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in benchmark_start: {str(e)}")
         await sio.emit(
-            "benchmarks_error",
+            "benchmark_error",
             BenchmarkErrorEvent(message=f"Invalid request: {str(e)}").model_dump(
                 mode="json"
             ),
@@ -159,7 +173,7 @@ async def benchmark_start_internal(data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await sio.emit(
-                "benchmarks_error",
+                "benchmark_error",
                 BenchmarkErrorEvent(message="Profile not found. Please reconnect.").model_dump(
                     mode="json"
                 ),
@@ -174,7 +188,7 @@ async def benchmark_start_internal(data: dict[str, Any]) -> None:
         sid = data.get("sid", "")
         if sid:
             await sio.emit(
-                "benchmarks_error",
+                "benchmark_error",
                 BenchmarkErrorEvent(message=f"Invalid request: {str(e)}").model_dump(
                     mode="json"
                 ),

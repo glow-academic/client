@@ -1,25 +1,18 @@
 """Benchmark socket handlers.
 
 Handles WebSocket events for benchmark orchestration:
-- benchmark_start: Start benchmark attempt (single entry point)
-- benchmarks_started/progress/complete/error: Client-facing events
+- benchmark_start: Start benchmark attempt, create structure, return to client
 
-Internal orchestration events:
-- benchmark_next, benchmark_advance, benchmark_end, benchmark_eval_complete
-- eval routing via *_eval_start handlers
+Client controls test execution via test/ handlers.
 """
 
 from fastapi import APIRouter
 
-from . import advance, complete, error, eval, eval_complete, next, progress, start
+from . import complete, error, progress, start
 
 __all__ = [
-    "advance",
     "complete",
     "error",
-    "eval",
-    "eval_complete",
-    "next",
     "progress",
     "start",
 ]
