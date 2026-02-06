@@ -77,7 +77,7 @@ async def get_pricing(
                     cohort_ids=request.cohort_ids,
                     department_ids=request.department_ids,
                     roles=request.roles,
-                    page_limit=30,
+                    page_limit=365,  # Get up to a year of daily data for chart
                     bypass_cache=bypass_cache,
                 )
 

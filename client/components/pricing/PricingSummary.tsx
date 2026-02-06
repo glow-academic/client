@@ -128,10 +128,8 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     () => pricingData?.views?.daily || [],
     [pricingData]
   );
-  const groupSummaryItems = useMemo(
-    () => pricingData?.views?.group_summary || [],
-    [pricingData]
-  );
+  // Note: group_summary is available at pricingData?.views?.group_summary
+  // but we use dailyItems for totals since it's not paginated
 
   // Get chart colors from CSS variables
   const chartColors = useChartColors();
@@ -141,12 +139,12 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
 
   // Compute chart data and totals from daily aggregates
   const { chartData, totals, chartConfig } = useMemo(() => {
-    // Calculate totals from group_summary (more accurate than daily)
-    const totalSpend = groupSummaryItems.reduce(
+    // Calculate totals from daily data (aggregated across all dates, not paginated)
+    const totalSpend = dailyItems.reduce(
       (sum, item) => sum + Number(item.total_cost || 0),
       0
     );
-    const runCount = groupSummaryItems.reduce(
+    const runCount = dailyItems.reduce(
       (sum, item) => sum + (item.run_count || 0),
       0
     );
@@ -230,7 +228,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       },
       chartConfig: config,
     };
-  }, [dailyItems, groupSummaryItems, chartColors, mutedColor]);
+  }, [dailyItems, chartColors, mutedColor]);
 
   // Get model IDs for chart rendering
   const modelIds = useMemo(() => {
