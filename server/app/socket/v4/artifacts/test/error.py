@@ -1,6 +1,6 @@
 """Test error handler.
 
-Listens to benchmark_error events and emits test_error to clients.
+Handles test error events and emits test_error to clients.
 """
 
 from typing import Any
@@ -15,16 +15,16 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-@internal_sio.on("benchmark_error")  # type: ignore
+@internal_sio.on("test_error_event")  # type: ignore
 async def handle_test_error(data: dict[str, Any]) -> None:
-    """Handle benchmark_error events and emit test_error."""
-    attempt_id = data.get("attempt_id")
-    test_id = data.get("test_id")
+    """Handle test error events and emit test_error."""
+    chat_id = data.get("chat_id")
+    run_id = data.get("run_id")
     message = data.get("error_message") or data.get("message", "Test error")
 
     event = TestErrorEvent(
-        attempt_id=str(attempt_id) if attempt_id else None,
-        test_id=str(test_id) if test_id else None,
+        chat_id=str(chat_id) if chat_id else None,
+        run_id=str(run_id) if run_id else None,
         message=message,
         error_type=data.get("error_type"),
     )
@@ -33,11 +33,11 @@ async def handle_test_error(data: dict[str, Any]) -> None:
     if sid:
         await sio.emit("test_error", event.model_dump(mode="json"), room=sid)
 
-    if attempt_id:
+    if chat_id:
         await sio.emit(
             "test_error",
             event.model_dump(mode="json"),
-            room=f"benchmark_{attempt_id}",
+            room=f"test_{chat_id}",
         )
 
 

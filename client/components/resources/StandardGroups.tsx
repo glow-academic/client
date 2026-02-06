@@ -77,7 +77,8 @@ export interface StandardGroupsProps {
   searchTerm?: string;
   showSelectedFilter?: boolean;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createStandardGroupsAction?:
     | ((
         input: CreateDraftStandardGroupsIn
@@ -104,7 +105,8 @@ export function StandardGroups({
   searchTerm = "",
   showSelectedFilter = false,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createStandardGroupsAction,
   onGenerate,
   isGenerating = false,
@@ -178,7 +180,7 @@ export function StandardGroups({
       if (
         newlySelected.length > 0 &&
         createStandardGroupsAction &&
-        agent_id &&
+        create_tool_id &&
         group_id
       ) {
         for (const standardGroupId of newlySelected) {
@@ -191,7 +193,6 @@ export function StandardGroups({
             if (standardGroup) {
               await createStandardGroupsAction({
                 body: {
-                  agent_id: agent_id,
                   group_id: group_id,
                   standard_group_id: standardGroupId,
                   mcp: false,
@@ -217,7 +218,7 @@ export function StandardGroups({
       ids,
       onChange,
       createStandardGroupsAction,
-      agent_id,
+      create_tool_id,
       group_id,
       allStandardGroups,
     ]
@@ -282,7 +283,7 @@ export function StandardGroups({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

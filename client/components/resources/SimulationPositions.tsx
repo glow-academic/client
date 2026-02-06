@@ -51,12 +51,13 @@ export interface SimulationPositionsProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
-  agent_id?: string | null;
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: (() => void | Promise<void>) | undefined;
   isGenerating?: boolean;
   createSimulationPositionsAction?:
     | ((input: {
-        body: { agent_id: string; group_id: string; simulation_id: string; value: number; mcp: boolean };
+        body: { group_id: string; simulation_id: string; value: number; mcp: boolean };
       }) => Promise<unknown>)
     | undefined;
 }
@@ -74,7 +75,8 @@ export function SimulationPositions({
   required = false,
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   createSimulationPositionsAction,
@@ -168,11 +170,10 @@ export function SimulationPositions({
       onChange(positionsArray);
 
       // Create resource entries for each position
-      if (createSimulationPositionsAction && agent_id && group_id) {
+      if (createSimulationPositionsAction && create_tool_id && group_id) {
         for (const pos of positionsArray) {
           createSimulationPositionsAction({
             body: {
-              agent_id: agent_id,
               group_id: group_id,
               simulation_id: pos.simulation_id,
               value: pos.value,
@@ -188,7 +189,7 @@ export function SimulationPositions({
         }
       }
     },
-    [onChange, createSimulationPositionsAction, agent_id, group_id]
+    [onChange, createSimulationPositionsAction, create_tool_id, group_id]
   );
 
   const updatePositions = useCallback(
@@ -276,7 +277,7 @@ export function SimulationPositions({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

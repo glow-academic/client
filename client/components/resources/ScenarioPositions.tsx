@@ -74,7 +74,8 @@ export interface ScenarioPositionsProps {
   required?: boolean;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createScenarioPositionsAction?:
     | ((
         input: CreateDraftScenarioPositionsIn
@@ -106,7 +107,8 @@ export function ScenarioPositions({
   required = false,
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createScenarioPositionsAction,
   onPositionIdsChange,
   onGenerate,
@@ -298,7 +300,7 @@ export function ScenarioPositions({
       const shouldCreateResource =
         isAutosaveEnabled &&
         createScenarioPositionsAction &&
-        agent_id &&
+        create_tool_id &&
         group_id &&
         simulation_id;
       if (!shouldCreateResource) {
@@ -312,7 +314,6 @@ export function ScenarioPositions({
         try {
           const result = await createScenarioPositionsAction({
             body: {
-              agent_id: agent_id,
               group_id: group_id,
               simulation_id: simulation_id,
               scenario_id: artifactScenarioId,
@@ -341,7 +342,7 @@ export function ScenarioPositions({
       onChange,
       isAutosaveEnabled,
       createScenarioPositionsAction,
-      agent_id,
+      create_tool_id,
       group_id,
       onPositionIdsChange,
       scenario_ids,
@@ -409,7 +410,7 @@ export function ScenarioPositions({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

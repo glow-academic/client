@@ -50,7 +50,8 @@ export interface PointsProps {
   searchTerm?: string;
   showSelectedFilter?: boolean;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPointsAction?:
     | ((input: CreateDraftPointsIn) => Promise<CreateDraftPointsOut>)
     | undefined;
@@ -82,7 +83,8 @@ export function Points({
   searchTerm = "",
   showSelectedFilter = false,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createPointsAction,
   // Legacy props for backward compatibility
   pointsResource,
@@ -213,7 +215,7 @@ export function Points({
       return;
     }
 
-    if (!createPointsAction || !agent_id || !group_id) {
+    if (!createPointsAction || !create_tool_id || !group_id) {
       return;
     }
 
@@ -221,7 +223,6 @@ export function Points({
       try {
         const result = await createPointsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             value: numericValue,
             mcp: false,
@@ -245,7 +246,7 @@ export function Points({
   }, [
     internalValue,
     createPointsAction,
-    agent_id,
+    create_tool_id,
     group_id,
     onPointsIdChange,
     pointsByValue,
@@ -285,7 +286,7 @@ export function Points({
             {required && <span className="text-destructive">*</span>}
           </Label>
         )}
-        {onGenerate && agent_id && (
+        {onGenerate && create_tool_id && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

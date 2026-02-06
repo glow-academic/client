@@ -54,7 +54,8 @@ export interface ItemsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createItemsAction?:
     | ((input: CreateDraftItemsIn) => Promise<CreateDraftItemsOut>)
     | undefined;
@@ -76,7 +77,8 @@ export function Items({
   placeholder = "Select items...",
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createItemsAction,
   onGenerate,
   isGenerating = false,
@@ -146,7 +148,7 @@ export function Items({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

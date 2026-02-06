@@ -1,5 +1,5 @@
 -- Get fields resources by IDs
--- Simple data fetching - no business logic
+-- CLEAN PATTERN: Query fields_resource directly with denormalized name/description/value
 -- Parameters: ids (uuid[])
 -- Returns: items (array of field resources)
 
@@ -53,10 +53,11 @@ CREATE TYPE types.q_get_fields_v4_item AS (
     field_id uuid,
     name text,
     description text,
+    value text,
     generated boolean
 );
 
--- Create function
+-- Create function - query fields_resource directly
 CREATE OR REPLACE FUNCTION api_get_fields_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -70,8 +71,9 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             f.id,
-            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
-            COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''),
+            f.name,
+            COALESCE(f.description, ''),
+            COALESCE(f.value, ''),
             COALESCE(f.generated, false)
         )::types.q_get_fields_v4_item
         ORDER BY array_position(ids, f.id)
@@ -79,13 +81,8 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_fields_v4_item[]
 ) as items
 FROM fields_resource f
-JOIN field_fields_junction ffj ON ffj.fields_id = f.id
 WHERE f.id = ANY(ids)
-  AND EXISTS (
-      SELECT 1 FROM field_flags_junction ff
-      JOIN flags_resource fl ON ff.flag_id = fl.id
-      WHERE ff.field_id = ffj.field_id
-        AND fl.name = 'field_active'
-        AND ff.value = true
-  );
+  AND f.active = true
+  AND f.name IS NOT NULL
+  AND f.name != '';
 $$;

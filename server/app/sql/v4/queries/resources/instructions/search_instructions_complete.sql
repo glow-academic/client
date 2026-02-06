@@ -1,5 +1,7 @@
 -- Search instructions resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query instructions_resource directly
+-- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
+-- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of instructions resources)
 
 -- Drop function if exists (handles signature variations)
@@ -22,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_instructions_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    group_id uuid DEFAULT NULL,
+    draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -40,52 +42,39 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_instructions_v4_item[]
 ) as items
 FROM (
-    SELECT i.id, i.template, COALESCE(i.generated, false) AS generated, recent.recent_at
+    SELECT i.id, i.template, COALESCE(i.generated, false) AS generated
     FROM instructions_resource i
-    LEFT JOIN LATERAL (
-        SELECT MAX(pi.created_at) AS recent_at
-        FROM persona_instructions_junction pi
-        WHERE pi.instruction_id = i.id
-          AND (
-              pi.generated = false
-              OR (
-                  pi.generated = true
-                  AND i.generated = true
-                  AND group_id IS NOT NULL
-                  AND EXISTS (
-                      SELECT 1 FROM view_calls_entry c
-                      JOIN view_runs_entry r ON r.id = c.run_id
-                      WHERE c.id IN (SELECT call_id FROM instructions_calls_connection WHERE instructions_id = i.id)
-                        AND r.group_id = group_id
-                  )
-              )
-          )
-    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE i.active = true
       AND i.template IS NOT NULL
       AND i.template != ''
+      -- Search filter
       AND (search IS NULL OR search = '' OR LOWER(i.template) LIKE '%' || LOWER(search) || '%')
+      -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (i.id = ANY(exclude_ids)))
+      -- Suggest source filter
       AND (
-          COALESCE(i.generated, false) = false
+          suggest_source = 'all'
+          OR suggest_source IS NULL
           OR (
-              COALESCE(i.generated, false) = true
-              AND group_id IS NOT NULL
+              suggest_source = 'draft'
+              AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1 FROM view_calls_entry c
-                  JOIN view_runs_entry r ON r.id = c.run_id
-                  WHERE c.id IN (SELECT call_id FROM instructions_calls_connection WHERE instructions_id = i.id)
-                    AND r.group_id = group_id
+                  SELECT 1
+                  FROM instructions_drafts_connection dc
+                  WHERE dc.instructions_id = i.id
+                    AND dc.draft_id = api_search_instructions_v4.draft_id
+              )
+          )
+          OR (
+              suggest_source = 'linked'
+              AND EXISTS (
+                  SELECT 1 FROM persona_instructions_junction pi
+                  WHERE pi.instruction_id = i.id
+                    AND pi.active = true
               )
           )
       )
-      AND (
-          suggest_source = 'all'
-          OR recent.recent_at IS NOT NULL
-      )
-    ORDER BY
-        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
-        i.template
+    ORDER BY i.template
     LIMIT limit_count
     OFFSET offset_count
 ) q;

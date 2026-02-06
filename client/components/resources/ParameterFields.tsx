@@ -73,6 +73,8 @@ export interface ParameterFieldsProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createParameterFieldsAction?:
     | ((
@@ -116,6 +118,8 @@ export function ParameterFields({
   required = false,
   description,
   group_id,
+  create_tool_id,
+  link_tool_id,
   showAiGenerate = false,
   createParameterFieldsAction,
   onGenerate,

@@ -49,7 +49,8 @@ export interface ImagesProps {
     generated?: boolean | null;
   }>; // Selected image resources (each includes generated field)
   show_images?: boolean; // Whether to show this resource picker
-  images_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   images_required?: boolean; // Whether this resource is required
   image_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   images?: Array<{
@@ -69,7 +70,6 @@ export interface ImagesProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
   createImagesAction?:
     | ((input: CreateDraftImagesIn) => Promise<CreateDraftImagesOut>)
     | undefined;
@@ -103,7 +103,8 @@ export function Images({
   image_ids,
   image_resources,
   show_images = false,
-  images_agent_id,
+  create_tool_id,
+  link_tool_id,
   images_required,
   image_suggestions,
   images,
@@ -115,7 +116,6 @@ export function Images({
   placeholder = "Select images...",
   description: _description,
   group_id,
-  agent_id,
   createImagesAction,
   onGenerate,
   isGenerating = false,
@@ -258,12 +258,12 @@ export function Images({
       );
 
       // Create resources for newly selected images (only if autosave is enabled)
-      const effectiveAgentId = images_agent_id ?? agent_id;
+      const create_tool_id = create_tool_id;
       if (
         isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createImagesAction &&
-        effectiveAgentId &&
+        create_tool_id &&
         group_id
       ) {
         for (const imageId of newlySelected) {
@@ -271,7 +271,6 @@ export function Images({
             const imageItem = imageMapping[imageId];
             await createImagesAction({
               body: {
-                agent_id: effectiveAgentId,
                 group_id: group_id,
                 name: imageItem?.name ?? "",
                 description: imageItem?.description ?? "",
@@ -293,13 +292,12 @@ export function Images({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createImagesAction, images_agent_id, agent_id, group_id, imageMapping, isAutosaveEnabled]
+    [ids, onChange, createImagesAction, create_tool_id, group_id, imageMapping, isAutosaveEnabled]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ image_ids: string[] } | void> => {
-    const effectiveAgentId = images_agent_id ?? agent_id;
-    if (!createImagesAction || !effectiveAgentId || !group_id) {
+    if (!createImagesAction || !create_tool_id || !group_id) {
       return { image_ids: ids };
     }
 
@@ -312,7 +310,6 @@ export function Images({
           const imageItem = imageMapping[imageId];
           await createImagesAction({
             body: {
-              agent_id: effectiveAgentId,
               group_id: group_id,
               name: imageItem?.name ?? "",
               description: imageItem?.description ?? "",
@@ -340,8 +337,8 @@ export function Images({
   // TUS upload function
   const uploadFile = useCallback(
     async (file: File) => {
-      const effectiveAgentId = images_agent_id ?? agent_id;
-      if (!finalizeUploadAction || !createImagesAction || !group_id || !effectiveAgentId) {
+      const create_tool_id = create_tool_id;
+      if (!finalizeUploadAction || !createImagesAction || !group_id || !create_tool_id) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -437,7 +434,6 @@ export function Images({
               // Create image resource entry
               const createResult = await createImagesAction({
                 body: {
-                  agent_id: effectiveAgentId,
                   group_id: group_id,
                   name: file.name,
                   description: "",
@@ -525,8 +521,7 @@ export function Images({
       finalizeUploadAction,
       createImagesAction,
       group_id,
-      images_agent_id,
-      agent_id,
+      create_tool_id,
       ids,
       onChange,
     ]
@@ -611,7 +606,7 @@ export function Images({
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            {onGenerate && (images_agent_id || agent_id) && (
+            {onGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

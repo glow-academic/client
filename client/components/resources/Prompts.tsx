@@ -67,7 +67,8 @@ export interface PromptsProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPromptsAction?:
     | ((input: CreateDraftPromptsIn) => Promise<CreateDraftPromptsOut>)
     | undefined;
@@ -100,7 +101,8 @@ export function Prompts({
   searchTerm,
   onSearchChange,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createPromptsAction,
   // Legacy props for backward compatibility
   promptResource,
@@ -184,14 +186,13 @@ export function Prompts({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (!agent_id || !group_id) {
+        if (!create_tool_id || !group_id) {
           return;
         }
 
         // If we have a resourceId, update existing prompt; otherwise create new
         const result = await createPromptsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             system_prompt: promptContent,
             name: resource?.name || "Untitled Prompt",
@@ -224,7 +225,7 @@ export function Prompts({
   }, [
     promptContent,
     createPromptsAction,
-    agent_id,
+    create_tool_id,
     group_id,
     resourceId,
     resource?.name,

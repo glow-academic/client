@@ -61,7 +61,8 @@ export interface EmailsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createEmailsAction?:
     | ((input: CreateDraftEmailsIn) => Promise<CreateDraftEmailsOut>)
     | undefined;
@@ -84,7 +85,8 @@ export function Emails({
   placeholder = "Select emails...",
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createEmailsAction,
   onGenerate,
   isGenerating = false,
@@ -170,7 +172,7 @@ export function Emails({
       if (
         newlySelected.length > 0 &&
         createEmailsAction &&
-        agent_id &&
+        create_tool_id &&
         group_id
       ) {
         for (const emailId of newlySelected) {
@@ -180,7 +182,6 @@ export function Emails({
             if (emailObj?.email) {
               await createEmailsAction({
                 body: {
-                  agent_id: agent_id,
                   group_id: group_id,
                   email: emailObj.email,
                   mcp: false,
@@ -212,7 +213,7 @@ export function Emails({
       ids,
       onChange,
       createEmailsAction,
-      agent_id,
+      create_tool_id,
       group_id,
       allEmails,
       primaryIndex,
@@ -230,7 +231,7 @@ export function Emails({
   );
   const createEmailResource = useCallback(
     async (value: string) => {
-      if (!createEmailsAction || !agent_id || !group_id) {
+      if (!createEmailsAction || !create_tool_id || !group_id) {
         return null;
       }
       const trimmed = value.trim();
@@ -239,7 +240,6 @@ export function Emails({
       try {
         const result = await createEmailsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             email: trimmed,
             mcp: false,
@@ -252,7 +252,7 @@ export function Emails({
         return null;
       }
     },
-    [agent_id, group_id, createEmailsAction]
+    [create_tool_id, group_id, createEmailsAction]
   );
   const handleSaveEdit = useCallback(async () => {
     if (!editingEmailId) return;
@@ -358,7 +358,7 @@ export function Emails({
                 </span>
               )}
             </Label>
-            {onGenerate && agent_id && (
+            {onGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

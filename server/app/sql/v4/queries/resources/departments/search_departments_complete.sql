@@ -1,5 +1,7 @@
 -- Search departments resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), suggest_source (text), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query departments_resource directly with denormalized name/description
+-- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
+-- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of department resources)
 
 -- Drop function if exists (handles signature variations)
@@ -23,6 +25,7 @@ CREATE OR REPLACE FUNCTION api_search_departments_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -42,42 +45,51 @@ SELECT COALESCE(
 FROM (
     SELECT
         d.id AS department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) AS name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') AS description,
-        COALESCE(d.generated, false) AS generated,
-        recent.recent_at
+        d.name,
+        COALESCE(d.description, '') AS description,
+        COALESCE(d.generated, false) AS generated
     FROM departments_resource d
-    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
-    JOIN department_artifact da ON da.id = ddj.department_id
-    LEFT JOIN LATERAL (
-        SELECT MAX(pd.created_at) AS recent_at
-        FROM persona_departments_junction pd
-        WHERE pd.department_id = d.id
-          AND (
-              pd.active = true
-              OR (pd.generated = true AND d.generated = true)
-          )
-    ) recent ON (suggest_source IN ('linked', 'recent'))
-    WHERE EXISTS (
-          SELECT 1 FROM department_flags_junction df
-          JOIN flags_resource f ON df.flag_id = f.id
-          WHERE df.department_id = da.id
-            AND f.name = 'department_active'
-            AND df.value = true
-      )
+    WHERE d.active = true
+      AND d.name IS NOT NULL
+      AND d.name != ''
+      -- User department filter
       AND (
           COALESCE(array_length(user_department_ids, 1), 0) = 0
           OR d.id = ANY(user_department_ids)
       )
+      -- Suggest source filter
       AND (
           suggest_source = 'all'
-          OR recent.recent_at IS NOT NULL
+          OR suggest_source IS NULL
+          OR (
+              suggest_source = 'draft'
+              AND draft_id IS NOT NULL
+              AND EXISTS (
+                  SELECT 1
+                  FROM departments_drafts_connection dc
+                  WHERE dc.departments_id = d.id
+                    AND dc.draft_id = api_search_departments_v4.draft_id
+              )
+          )
+          OR (
+              suggest_source = 'linked'
+              AND EXISTS (
+                  SELECT 1 FROM persona_departments_junction pd
+                  WHERE pd.department_id = d.id
+                    AND pd.active = true
+              )
+          )
       )
+      -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
-      AND (search IS NULL OR search = '' OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) LIKE '%' || LOWER(search) || '%')
-    ORDER BY
-        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
-        name
+      -- Search filter
+      AND (
+          search IS NULL
+          OR search = ''
+          OR LOWER(d.name) LIKE '%' || LOWER(search) || '%'
+          OR LOWER(COALESCE(d.description, '')) LIKE '%' || LOWER(search) || '%'
+      )
+    ORDER BY d.name
     LIMIT limit_count
     OFFSET offset_count
 ) q;

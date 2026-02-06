@@ -14,15 +14,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { useMemo } from "react";
-
-type CreateDraftThresholdsIn = InputOf<"/api/v4/resources/thresholds", "post">;
-type CreateDraftThresholdsOut = OutputOf<
-  "/api/v4/resources/thresholds",
-  "post"
->;
 
 export interface ThresholdsProps {
   threshold_ids?: string[];
@@ -39,10 +32,7 @@ export interface ThresholdsProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
-  agent_id?: string | null;
-  createThresholdsAction?:
-    | ((input: CreateDraftThresholdsIn) => Promise<CreateDraftThresholdsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -57,7 +47,7 @@ export function Thresholds({
   id = "thresholds",
   required = false,
   description,
-  agent_id,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: ThresholdsProps) {
@@ -83,7 +73,7 @@ export function Thresholds({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

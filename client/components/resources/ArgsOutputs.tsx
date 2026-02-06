@@ -48,7 +48,8 @@ export interface ArgsOutputsProps {
     | ((input: CreateDraftArgsOutputsIn) => Promise<CreateDraftArgsOutputsOut>)
     | undefined;
   group_id?: string | null; // Group ID for resource creation
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles args_outputs changes internally and calls createArgsOutputsAction
   // No onChange callback needed - component manages its own state like SchemaOutput
 }
@@ -60,7 +61,8 @@ export function ArgsOutputs({
   disabled = false,
   createArgsOutputsAction,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
 }: ArgsOutputsProps) {
   // Get available Jinja variables from input args fields
   const availableVariables = useMemo(() => {
@@ -178,7 +180,7 @@ export function ArgsOutputs({
   // Debounced save function for output name (creates new args_outputs resource)
   const saveOutputName = useCallback(
     async (outputId: string, name: string) => {
-      if (!createArgsOutputsAction || !agent_id || !group_id) return;
+      if (!createArgsOutputsAction || !create_tool_id || !group_id) return;
 
       const output = output_args_outputs.find(
         (o) => o.args_outputs_id === outputId
@@ -189,7 +191,6 @@ export function ArgsOutputs({
         // Create new args_outputs resource with updated name (write-only pattern)
         await createArgsOutputsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             args_id: output.args_id,
             name: name,
@@ -208,7 +209,7 @@ export function ArgsOutputs({
     [
       createArgsOutputsAction,
       output_args_outputs,
-      agent_id,
+      create_tool_id,
       group_id,
       outputTemplates,
     ]
@@ -217,7 +218,7 @@ export function ArgsOutputs({
   // Debounced save function for output template (creates new args_outputs resource)
   const saveOutputTemplate = useCallback(
     async (outputId: string, template: string) => {
-      if (!createArgsOutputsAction || !agent_id || !group_id) return;
+      if (!createArgsOutputsAction || !create_tool_id || !group_id) return;
 
       const output = output_args_outputs.find(
         (o) => o.args_outputs_id === outputId
@@ -228,7 +229,6 @@ export function ArgsOutputs({
         // Create new args_outputs resource with updated template (write-only pattern)
         await createArgsOutputsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             args_id: output.args_id,
             name: outputNames[outputId] ?? output.name,
@@ -245,7 +245,7 @@ export function ArgsOutputs({
     [
       createArgsOutputsAction,
       output_args_outputs,
-      agent_id,
+      create_tool_id,
       group_id,
       outputNames,
     ]

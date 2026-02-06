@@ -1,12 +1,9 @@
 -- Search available fields per parameter via parameter_fields_junction
+-- CLEAN PATTERN: Query via junction with fields_resource for name/description
 -- Gets all AVAILABLE fields for given parameters (what user can select)
--- Note: This queries parameter_fields_junction (available), NOT parameter_fields_resource (already created)
 -- Parameters: parameter_ids (uuid[]) - these are RESOURCE IDs (from parameters_resource)
 --             If empty, returns fields for ALL persona_parameter=true parameters (for upfront loading)
 -- Returns: items (array of available fields with parameter_id for grouping)
---
--- Important: parameter_fields_junction uses artifact IDs, but API passes resource IDs.
--- We join through parameter_parameters_junction to map resource → artifact.
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -36,22 +33,15 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            -- id: Use field_resource_id as the unique identifier for this available field
             pfj.field_resource_id,
-            -- field_id: The underlying field definition
             pfj.field_resource_id,
-            -- parameter_id: Return the RESOURCE ID (not artifact) so frontend can group correctly
             ppj.parameters_id,
-            -- name: Get field name via field_fields_junction
-            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
-            -- description: Get field description via field_fields_junction
-            COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''),
-            -- generated: Available fields are not generated (this refers to base field definition)
+            fr.name,
+            COALESCE(fr.description, ''),
             false,
-            -- conditional_parameter_id: The parameter this field unlocks when selected
             cp_lookup.conditional_parameter_id
         )::types.q_get_parameter_fields_v4_item
-        ORDER BY ppj.parameters_id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1)
+        ORDER BY ppj.parameters_id, fr.name
     ),
     ARRAY[]::types.q_get_parameter_fields_v4_item[]
 ) as items
@@ -60,27 +50,23 @@ FROM parameter_fields_junction pfj
 JOIN parameter_parameters_junction ppj ON ppj.parameter_id = pfj.parameter_id
 -- Join parameters_resource to filter by persona_parameter
 JOIN parameters_resource pr ON pr.id = ppj.parameters_id
+-- Get field name/description directly from fields_resource (denormalized)
 JOIN fields_resource fr ON fr.id = pfj.field_resource_id
-JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
 -- Left join to get conditional_parameter_id if this field triggers a conditional parameter
 LEFT JOIN (
     SELECT fcpj.field_id, cpr.parameter_id as conditional_parameter_id
     FROM field_conditional_parameters_junction fcpj
     JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
     WHERE fcpj.active = true AND cpr.active = true
-) cp_lookup ON cp_lookup.field_id = ffj.field_id
+) cp_lookup ON cp_lookup.field_id = fr.id
 WHERE pfj.active = true
+  AND fr.active = true
+  AND fr.name IS NOT NULL
+  AND fr.name != ''
   -- If parameter_ids is empty, return all fields for persona_parameter=true parameters
   -- If parameter_ids is provided, return fields for those specific parameters (includes conditional params)
   AND (
       (COALESCE(array_length(parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
       OR ppj.parameters_id = ANY(parameter_ids)
-  )
-  AND EXISTS (
-      SELECT 1 FROM field_flags_junction ff
-      JOIN flags_resource fl ON ff.flag_id = fl.id
-      WHERE ff.field_id = ffj.field_id
-        AND fl.name = 'field_active'
-        AND ff.value = true
   );
 $$;

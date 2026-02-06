@@ -32,7 +32,7 @@ async def search_personas_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     user_department_ids: list[UUID] | None = None,
-    group_id: UUID | None = None,
+    draft_id: UUID | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
 ) -> list[QGetPersonasV4Item]:
@@ -47,7 +47,7 @@ async def search_personas_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "user_department_ids": [str(id) for id in (user_department_ids or [])],
-            "group_id": str(group_id) if group_id else None,
+            "draft_id": str(draft_id) if draft_id else None,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
         },
     )
@@ -65,7 +65,7 @@ async def search_personas_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         user_department_ids=user_department_ids or [],
-        group_id=group_id,
+        draft_id=draft_id,
         exclude_ids=exclude_ids or [],
     )
     result = cast(
@@ -105,7 +105,7 @@ async def search_personas(
             request.limit_count,
             request.offset_count,
             request.user_department_ids,
-            request.group_id,
+            request.draft_id,
             request.exclude_ids,
             bypass_cache,
         )

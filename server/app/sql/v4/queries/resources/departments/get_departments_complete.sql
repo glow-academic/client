@@ -1,5 +1,5 @@
 -- Get departments resources by IDs
--- Simple data fetching - no business logic
+-- CLEAN PATTERN: Query departments_resource directly with denormalized name/description
 -- Parameters: ids (uuid[])
 -- Returns: items (array of department resources)
 
@@ -56,7 +56,7 @@ CREATE TYPE types.q_get_departments_v4_item AS (
     generated boolean
 );
 
--- Create function
+-- Create function - query departments_resource directly
 CREATE OR REPLACE FUNCTION api_get_departments_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -70,8 +70,8 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             d.id,
-            (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1),
-            COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), ''),
+            d.name,
+            COALESCE(d.description, ''),
             COALESCE(d.generated, false)
         )::types.q_get_departments_v4_item
         ORDER BY array_position(ids, d.id)
@@ -79,15 +79,8 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_departments_v4_item[]
 ) as items
 FROM departments_resource d
-JOIN department_departments_junction ddj ON ddj.departments_id = d.id
 WHERE d.id = ANY(ids)
-  AND EXISTS (
-      SELECT 1 FROM department_flags_junction df
-      JOIN flags_resource f ON df.flag_id = f.id
-      -- NOTE: Flags are on department_artifact (ddj.department_id), not departments_resource (d.id)
-      WHERE df.department_id = ddj.department_id
-        AND f.name = 'department_active'
-        AND df.value = true
-  )
-;
+  AND d.active = true
+  AND d.name IS NOT NULL
+  AND d.name != '';
 $$;

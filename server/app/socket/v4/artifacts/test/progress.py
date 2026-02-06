@@ -1,6 +1,6 @@
 """Test progress handler.
 
-Listens to benchmark advance events and emits test_progress to clients.
+Handles test progress events and emits test_progress to clients.
 """
 
 from typing import Any
@@ -15,21 +15,22 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-@internal_sio.on("benchmark_advance")  # type: ignore
+@internal_sio.on("test_progress_update")  # type: ignore
 async def handle_test_progress(data: dict[str, Any]) -> None:
-    """Handle benchmark_advance events and emit test_progress."""
-    attempt_id = data.get("attempt_id")
-    test_id = data.get("test_id")
-    if not attempt_id:
+    """Handle test progress update events and emit test_progress."""
+    chat_id = data.get("chat_id")
+    if not chat_id:
         return
 
+    chat_id_str = str(chat_id)
+
     event = TestProgressEvent(
-        attempt_id=str(attempt_id),
-        test_id=str(test_id) if test_id else None,
+        chat_id=chat_id_str,
+        type=data.get("type", "progress"),
         run_id=data.get("run_id"),
-        group_id=data.get("group_id"),
-        status="advanced",
-        message="Test advanced",
+        current_run=data.get("current_run"),
+        total_runs=data.get("total_runs"),
+        message=data.get("message"),
     )
 
     sid = data.get("sid")
@@ -39,7 +40,7 @@ async def handle_test_progress(data: dict[str, Any]) -> None:
     await sio.emit(
         "test_progress",
         event.model_dump(mode="json"),
-        room=f"benchmark_{attempt_id}",
+        room=f"test_{chat_id_str}",
     )
 
 

@@ -95,7 +95,8 @@ export interface ScenarioPersonasProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
-  agent_id?: string | null;
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createScenarioPersonasAction?:
     | ((
         input: CreateDraftScenarioPersonasIn
@@ -127,7 +128,8 @@ export function ScenarioPersonas({
   required = false,
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createScenarioPersonasAction,
   onPersonaIdsChange,
   onGenerate,
@@ -322,7 +324,7 @@ export function ScenarioPersonas({
       const shouldCreateResource =
         isAutosaveEnabled &&
         createScenarioPersonasAction &&
-        agent_id &&
+        create_tool_id &&
         group_id &&
         simulation_id;
       if (!shouldCreateResource) {
@@ -335,7 +337,6 @@ export function ScenarioPersonas({
         try {
           const result = await createScenarioPersonasAction({
             body: {
-              agent_id: agent_id,
               group_id: group_id,
               simulation_id: simulation_id,
               scenario_id: artifactScenarioId,
@@ -364,7 +365,7 @@ export function ScenarioPersonas({
       onChange,
       isAutosaveEnabled,
       createScenarioPersonasAction,
-      agent_id,
+      create_tool_id,
       group_id,
       allPersonas,
       artifactIdMap,
@@ -389,7 +390,7 @@ export function ScenarioPersonas({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

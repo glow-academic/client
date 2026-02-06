@@ -1,5 +1,7 @@
 -- Search descriptions resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query descriptions_resource directly
+-- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
+-- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of description resources)
 
 -- Drop function if exists (handles signature variations)
@@ -22,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_descriptions_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    group_id uuid DEFAULT NULL,
+    draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -40,51 +42,38 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_descriptions_v4_item[]
 ) as items
 FROM (
-    SELECT d.id, d.description, COALESCE(d.generated, false) AS generated, recent.recent_at
+    SELECT d.id, d.description, COALESCE(d.generated, false) AS generated
     FROM descriptions_resource d
-    LEFT JOIN LATERAL (
-        SELECT MAX(pd.created_at) AS recent_at
-        FROM persona_descriptions_junction pd
-        WHERE pd.description_id = d.id
-          AND (
-              pd.generated = false
-              OR (
-                  pd.generated = true
-                  AND d.generated = true
-                  AND group_id IS NOT NULL
-                  AND EXISTS (
-                      SELECT 1 FROM view_calls_entry c
-                      JOIN view_runs_entry r ON r.id = c.run_id
-                      WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                        AND r.group_id = group_id
-                  )
-              )
-          )
-    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE d.description IS NOT NULL
       AND d.description != ''
+      -- Search filter
       AND (search IS NULL OR search = '' OR LOWER(d.description) LIKE '%' || LOWER(search) || '%')
+      -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
+      -- Suggest source filter
       AND (
-          COALESCE(d.generated, false) = false
+          suggest_source = 'all'
+          OR suggest_source IS NULL
           OR (
-              COALESCE(d.generated, false) = true
-              AND group_id IS NOT NULL
+              suggest_source = 'draft'
+              AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1 FROM view_calls_entry c
-                  JOIN view_runs_entry r ON r.id = c.run_id
-                  WHERE c.id IN (SELECT call_id FROM descriptions_calls_connection WHERE descriptions_id = d.id)
-                    AND r.group_id = group_id
+                  SELECT 1
+                  FROM descriptions_drafts_connection dc
+                  WHERE dc.descriptions_id = d.id
+                    AND dc.draft_id = api_search_descriptions_v4.draft_id
+              )
+          )
+          OR (
+              suggest_source = 'linked'
+              AND EXISTS (
+                  SELECT 1 FROM persona_descriptions_junction pd
+                  WHERE pd.description_id = d.id
+                    AND pd.active = true
               )
           )
       )
-      AND (
-          suggest_source = 'all'
-          OR recent.recent_at IS NOT NULL
-      )
-    ORDER BY
-        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
-        d.description
+    ORDER BY d.description
     LIMIT limit_count
     OFFSET offset_count
 ) q;

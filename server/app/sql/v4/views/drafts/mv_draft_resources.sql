@@ -1,9 +1,10 @@
 -- Materialized View: mv_draft_resources
--- One row per draft with denormalized draft-linked resource IDs.
+-- One row per draft with denormalized draft-linked resource IDs and per-resource group IDs.
 --
 -- Notes:
--- - `group_id` is the groups_resource.id resolved from drafts_entry.group_id
---   via groups_groups_connection.
+-- - Each `{resource}_group_id` is the groups_resource.id resolved from draft_domains_entry
+--   via domains_domains_connection -> domains_resource (filtered by resource type) -> groups_groups_connection.
+--   The "latest" group is selected by ordering on draft_domains_entry.created_at DESC.
 -- - `resource_types`/`resource_ids` include all active links from *_drafts_connection tables.
 
 DO $$
@@ -106,8 +107,250 @@ SELECT
     d.generated,
     d.mcp,
     d.active,
-    ggc.groups_id AS group_id,
 
+    -- Per-resource group IDs (latest group that contributed each resource type)
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'names'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS names_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'descriptions'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS descriptions_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'flags'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS flags_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'colors'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS colors_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'icons'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS icons_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'auths'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS auths_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'tools'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS tools_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'instructions'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS instructions_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'documents'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS documents_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'departments'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS departments_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'parameters'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS parameters_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'parameter_fields'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS parameter_fields_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'fields'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS fields_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'examples'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS examples_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'questions'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS questions_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'templates'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS templates_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'texts'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS texts_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'run_rubrics'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS run_rubrics_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'group_rubrics'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS group_rubrics_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'bindings'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS bindings_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'conditional_parameters'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS conditional_parameters_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'personas'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS personas_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'scenarios'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS scenarios_group_id,
+    (
+        SELECT ggc2.groups_id
+        FROM draft_domains_entry dde2
+        JOIN domains_domains_connection ddc2 ON ddc2.domain_id = dde2.domain_id AND ddc2.active = true
+        JOIN domains_resource dr2 ON dr2.id = ddc2.domains_id AND dr2.resource = 'simulations'::resource_type AND dr2.active = true
+        JOIN groups_groups_connection ggc2 ON ggc2.group_id = dde2.group_id AND ggc2.active = true
+        WHERE dde2.draft_id = d.id AND dde2.active = true
+        ORDER BY dde2.created_at DESC
+        LIMIT 1
+    ) AS simulations_group_id,
+
+    -- Aggregated resource arrays
     COALESCE(array_agg(DISTINCT l.resource_type) FILTER (WHERE l.resource_type IS NOT NULL), ARRAY[]::resource_type[]) AS resource_types,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_id IS NOT NULL), ARRAY[]::uuid[]) AS resource_ids,
 
@@ -136,18 +379,12 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'scenarios'::resource_type), ARRAY[]::uuid[]) AS scenario_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulations'::resource_type), ARRAY[]::uuid[]) AS simulation_ids
 FROM drafts_entry d
-LEFT JOIN draft_domains_entry dde ON dde.draft_id = d.id AND dde.active = true
-LEFT JOIN groups_groups_connection ggc ON ggc.group_id = dde.group_id AND ggc.active = true
 LEFT JOIN draft_links l ON l.draft_id = d.id
-GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, ggc.groups_id
+GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active
 WITH NO DATA;
 
 CREATE UNIQUE INDEX mv_draft_resources_pk
     ON mv_draft_resources (draft_id);
-
-CREATE INDEX mv_draft_resources_group_id_idx
-    ON mv_draft_resources (group_id)
-    WHERE group_id IS NOT NULL;
 
 CREATE INDEX mv_draft_resources_resource_types_gin
     ON mv_draft_resources USING gin (resource_types);

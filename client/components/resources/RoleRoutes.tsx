@@ -9,18 +9,8 @@
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateRoleRoutesIn = InputOf<
-  "/api/v4/resources/setting_role_routes",
-  "post"
->;
-type CreateRoleRoutesOut = OutputOf<
-  "/api/v4/resources/setting_role_routes",
-  "post"
->;
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface RoleRoutesProps {
   role_route_ids?: string[];
@@ -59,10 +49,7 @@ export interface RoleRoutesProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
-  agent_id?: string | null;
-  createRoleRoutesAction?:
-    | ((input: CreateRoleRoutesIn) => Promise<CreateRoleRoutesOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
 }
 
 export function RoleRoutes({
@@ -80,8 +67,7 @@ export function RoleRoutes({
   required = false,
   description,
   group_id,
-  agent_id,
-  createRoleRoutesAction,
+  link_tool_id,
 }: RoleRoutesProps) {
   const show = show_role_routes ?? false;
   const currentResources = useMemo(
@@ -108,7 +94,6 @@ export function RoleRoutes({
   const [roleRouteIdMap, setRoleRouteIdMap] = useState<
     Map<string, string>
   >(new Map());
-  const createdKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const nextRoutesByRole = new Map<string, Set<string>>();
@@ -144,45 +129,6 @@ export function RoleRoutes({
     }
   }, [roleRouteIdMap, onChange]);
 
-  const createRoleRoute = useCallback(
-    async (roleId: string, routeId: string) => {
-      if (!createRoleRoutesAction || !agent_id || !group_id) {
-        return;
-      }
-      const key = `${roleId}:${routeId}`;
-      if (createdKeysRef.current.has(key)) {
-        return;
-      }
-      createdKeysRef.current.add(key);
-
-      try {
-        const result = await createRoleRoutesAction({
-          body: {
-            agent_id: agent_id,
-            group_id: group_id,
-            role_id: roleId,
-            route_id: routeId,
-            mcp: false,
-          },
-        });
-
-        if (!result?.role_routes_id) {
-          return;
-        }
-
-        // Update state - useEffect will sync to parent via onChange
-        setRoleRouteIdMap((prev) => {
-          const next = new Map(prev);
-          next.set(key, result.role_routes_id as string);
-          return next;
-        });
-      } catch {
-        // Resource creation errors are handled by API
-      }
-    },
-    [createRoleRoutesAction, agent_id, group_id]
-  );
-
   const handleToggle = useCallback(
     (roleId: string, routeId: string, checked: boolean) => {
       const key = `${roleId}:${routeId}`;
@@ -196,7 +142,6 @@ export function RoleRoutes({
           next.get(roleId)!.add(routeId);
           return next;
         });
-        void createRoleRoute(roleId, routeId);
       } else {
         setRoutesByRole((prev) => {
           const next = new Map(prev);

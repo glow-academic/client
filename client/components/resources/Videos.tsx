@@ -50,7 +50,8 @@ export interface VideosProps {
     generated?: boolean | null;
   }>; // Selected video resources (each includes generated field)
   show_videos?: boolean; // Whether to show this resource picker
-  videos_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   videos_required?: boolean; // Whether this resource is required
   video_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   videos?: Array<{
@@ -72,7 +73,6 @@ export interface VideosProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
   createVideosAction?:
     | ((input: CreateDraftVideosIn) => Promise<CreateDraftVideosOut>)
     | undefined;
@@ -104,7 +104,8 @@ export function Videos({
   video_ids,
   video_resources,
   show_videos = false,
-  videos_agent_id,
+  create_tool_id,
+  link_tool_id,
   videos_required,
   video_suggestions,
   videos,
@@ -116,7 +117,6 @@ export function Videos({
   placeholder = "Select video...",
   description: _description,
   group_id,
-  agent_id,
   createVideosAction,
   onGenerate,
   isGenerating = false,
@@ -239,12 +239,10 @@ export function Videos({
 
         // Create resource for newly selected video (only if autosave is enabled)
         if (isAutosaveEnabled && isNewlySelected) {
-          const effectiveAgentId = videos_agent_id ?? agent_id;
-          if (createVideosAction && effectiveAgentId && group_id) {
+          if (createVideosAction && create_tool_id && group_id) {
             try {
               await createVideosAction({
                 body: {
-                  agent_id: effectiveAgentId,
                   group_id: group_id,
                   name: selectedVideoItem.name ?? "",
                   length_seconds: selectedVideoItem.length_seconds ?? 0,
@@ -271,13 +269,12 @@ export function Videos({
         onChange([]);
       }
     },
-    [ids, onChange, createVideosAction, videos_agent_id, agent_id, group_id, videoMapping, isAutosaveEnabled]
+    [ids, onChange, createVideosAction, create_tool_id, group_id, videoMapping, isAutosaveEnabled]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ video_ids: string[] } | void> => {
-    const effectiveAgentId = videos_agent_id ?? agent_id;
-    if (!createVideosAction || !effectiveAgentId || !group_id) {
+    if (!createVideosAction || !create_tool_id || !group_id) {
       return { video_ids: ids };
     }
 
@@ -290,7 +287,6 @@ export function Videos({
           const videoItem = videoMapping[videoId];
           await createVideosAction({
             body: {
-              agent_id: effectiveAgentId,
               group_id: group_id,
               name: videoItem?.name ?? "",
               length_seconds: videoItem?.length_seconds ?? 0,
@@ -319,8 +315,8 @@ export function Videos({
   // TUS upload function
   const uploadFile = useCallback(
     async (file: File) => {
-      const effectiveAgentId = videos_agent_id ?? agent_id;
-      if (!finalizeUploadAction || !createVideosAction || !group_id || !effectiveAgentId) {
+      const create_tool_id = create_tool_id;
+      if (!finalizeUploadAction || !createVideosAction || !group_id || !create_tool_id) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -416,7 +412,6 @@ export function Videos({
               // Create video resource entry
               const createResult = await createVideosAction({
                 body: {
-                  agent_id: effectiveAgentId,
                   group_id: group_id,
                   name: file.name,
                   length_seconds: 0, // Will be updated after processing
@@ -503,8 +498,7 @@ export function Videos({
       finalizeUploadAction,
       createVideosAction,
       group_id,
-      videos_agent_id,
-      agent_id,
+      create_tool_id,
       onChange,
     ]
   );
@@ -577,7 +571,7 @@ export function Videos({
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            {onGenerate && (videos_agent_id || agent_id) && (
+            {onGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

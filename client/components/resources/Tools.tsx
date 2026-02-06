@@ -47,10 +47,7 @@ export interface ToolsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createToolsAction?:
-    | ((input: CreateDraftToolsIn) => Promise<CreateDraftToolsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering tools
@@ -73,8 +70,7 @@ export function Tools({
   placeholder = "Select tools...",
   description,
   group_id,
-  agent_id,
-  createToolsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   searchTerm = "",

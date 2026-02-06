@@ -32,7 +32,7 @@ router = APIRouter()
 # =============================================================================
 
 
-SuggestSource = Literal["all", "linked", "recent"]
+SuggestSource = Literal["all", "linked", "draft"]
 
 
 class SearchSimulationsApiRequest(BaseModel):
@@ -41,7 +41,7 @@ class SearchSimulationsApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    group_id: UUID | None = None
+    draft_id: UUID | None = None
     suggest_source: SuggestSource | None = "all"
     exclude_ids: list[UUID] | None = Field(default_factory=list)
 
@@ -58,7 +58,7 @@ class SearchSimulationsSqlParams(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    group_id: UUID | None = None
+    draft_id: UUID | None = None
     suggest_source: str | None = "all"
     exclude_ids: list[UUID] | None = Field(default_factory=list)
 
@@ -67,7 +67,7 @@ class SearchSimulationsSqlParams(BaseModel):
             self.search,
             self.limit_count,
             self.offset_count,
-            self.group_id,
+            self.draft_id,
             self.suggest_source,
             self.exclude_ids or [],
         )
@@ -89,7 +89,7 @@ async def search_simulations_internal(
     search: str | None = None,
     limit_count: int | None = 20,
     offset_count: int | None = 0,
-    group_id: UUID | None = None,
+    draft_id: UUID | None = None,
     suggest_source: str | None = "all",
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
@@ -101,8 +101,8 @@ async def search_simulations_internal(
         search: Search term to filter by name/description
         limit_count: Maximum number of results
         offset_count: Offset for pagination
-        group_id: Optional group ID for filtering by recent usage
-        suggest_source: Source for suggestions ('all', 'linked', 'recent')
+        draft_id: Optional draft ID for filtering by draft connection
+        suggest_source: Source for suggestions ('all', 'linked', 'draft')
         exclude_ids: IDs to exclude from results
         bypass_cache: Whether to bypass cache
 
@@ -116,7 +116,7 @@ async def search_simulations_internal(
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "group_id": str(group_id) if group_id else None,
+            "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
         },
@@ -136,7 +136,7 @@ async def search_simulations_internal(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        group_id=group_id,
+        draft_id=draft_id,
         suggest_source=suggest_source,
         exclude_ids=exclude_ids or [],
     )
@@ -208,7 +208,7 @@ async def search_simulations(
             search=request.search,
             limit_count=request.limit_count,
             offset_count=request.offset_count,
-            group_id=request.group_id,
+            draft_id=request.draft_id,
             suggest_source=request.suggest_source,
             exclude_ids=request.exclude_ids,
             bypass_cache=bypass_cache,

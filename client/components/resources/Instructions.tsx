@@ -165,6 +165,8 @@ export interface InstructionsProps {
   "data-testid"?: string;
   helpText?: string;
   group_id?: string | null; // Group ID for linking resources
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   searchTerm?: string; // Search term for filtering instructions
@@ -201,6 +203,8 @@ export function Instructions({
   "data-testid": dataTestId,
   helpText,
   group_id,
+  create_tool_id,
+  link_tool_id,
   showAiGenerate = false,
   createInstructionsAction,
   searchTerm,

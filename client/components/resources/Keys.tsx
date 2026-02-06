@@ -74,7 +74,8 @@ export interface KeysProps {
   required?: boolean;
   placeholder?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createKeysAction?:
     | ((input: CreateDraftKeysIn) => Promise<CreateDraftKeysOut>)
     | undefined;
@@ -99,7 +100,8 @@ export function Keys({
   required = false,
   placeholder = "Select a key...",
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createKeysAction,
 }: KeysProps) {
   const resource = key_resource ?? null;
@@ -167,14 +169,13 @@ export function Keys({
       if (
         newlySelected.length > 0 &&
         createKeysAction &&
-        agent_id &&
+        create_tool_id &&
         group_id
       ) {
         for (const keyId of newlySelected) {
           try {
             await createKeysAction({
               body: {
-                agent_id: agent_id,
                 group_id: group_id,
                 key_id: keyId,
                 mcp: false,
@@ -194,7 +195,7 @@ export function Keys({
         onChange(selectedIds);
       }
     },
-    [ids, onChange, createKeysAction, agent_id, group_id]
+    [ids, onChange, createKeysAction, create_tool_id, group_id]
   );
 
   // Don't render if show_key is false (AFTER all hooks)
@@ -210,7 +211,7 @@ export function Keys({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && multiSelect && (
+          {onGenerate && create_tool_id && multiSelect && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

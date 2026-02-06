@@ -56,7 +56,8 @@ export interface PricingProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPricingAction?:
     | ((input: CreateDraftPricingIn) => Promise<CreateDraftPricingOut>)
     | undefined;
@@ -80,7 +81,8 @@ export function Pricing({
   searchTerm,
   onSearchChange,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createPricingAction,
   onGenerate,
   isGenerating = false,
@@ -161,7 +163,7 @@ export function Pricing({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

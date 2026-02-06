@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftProfilesIn = InputOf<"/api/v4/resources/profiles", "post">;
-type CreateDraftProfilesOut = OutputOf<"/api/v4/resources/profiles", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface ProfilesItem {
   id: string;
@@ -54,10 +50,7 @@ export interface ProfilesProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createProfilesAction?:
-    | ((input: CreateDraftProfilesIn) => Promise<CreateDraftProfilesOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -76,8 +69,7 @@ export function Profiles({
   placeholder = "Select profiles...",
   description,
   group_id,
-  agent_id,
-  createProfilesAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: ProfilesProps) {
@@ -88,14 +80,6 @@ export function Profiles({
     () => profile_suggestions ?? [],
     [profile_suggestions]
   );
-
-  // Track which profiles IDs have already had resources created
-  const createdProfilesIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdProfilesIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdProfilesIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert profiles array to ProfilesItem format for GenericPicker
   const profilesItems = useMemo(() => {
@@ -115,45 +99,11 @@ export function Profiles({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdProfilesIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected profiles
-      if (
-        newlySelected.length > 0 &&
-        createProfilesAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const profilesId of newlySelected) {
-          try {
-            await createProfilesAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                profile_id: profilesId,
-                mcp: false,
-              },
-            });
-            createdProfilesIdsRef.current.add(profilesId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create profiles resource for ${profilesId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createProfilesAction, agent_id, group_id]
+    [onChange]
   );
 
   // Check if any profiles resource is generated (must be before early return)
@@ -179,7 +129,7 @@ export function Profiles({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

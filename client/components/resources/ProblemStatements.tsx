@@ -174,7 +174,8 @@ export interface ProblemStatementsProps {
   defaultProblemStatement?: string; // Default problem statement value (for header style - reverts to this on blur if empty)
   hideDescription?: boolean; // Legacy prop (no-op)
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createProblemStatementsAction?:
     | ((
         input: CreateDraftProblemStatementsIn
@@ -211,7 +212,8 @@ export function ProblemStatements({
   "data-testid": dataTestId,
   defaultProblemStatement,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createProblemStatementsAction,
   searchTerm,
   onSearchChange,
@@ -272,10 +274,9 @@ export function ProblemStatements({
     debounceTimerRef.current = setTimeout(async () => {
       const seq = ++saveSeqRef.current;
       try {
-        if (internalValue.trim() && agent_id && group_id) {
+        if (internalValue.trim() && create_tool_id && group_id) {
           const result = await createProblemStatementsAction({
             body: {
-              agent_id: agent_id,
               group_id: group_id,
               name: "",
               problem_statement: internalValue,
@@ -308,7 +309,7 @@ export function ProblemStatements({
     internalValue,
     createProblemStatementsAction,
     onProblemStatementIdChange,
-    agent_id,
+    create_tool_id,
     group_id,
   ]);
 
@@ -437,7 +438,7 @@ export function ProblemStatements({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

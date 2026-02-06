@@ -51,7 +51,8 @@ export interface ProtocolsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createProtocolsAction?:
     | ((input: CreateDraftProtocolsIn) => Promise<CreateDraftProtocolsOut>)
     | undefined;
@@ -73,7 +74,8 @@ export function Protocols({
   placeholder = "Select protocols...",
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createProtocolsAction,
   onGenerate,
   isGenerating = false,
@@ -121,14 +123,13 @@ export function Protocols({
       if (
         newlySelected.length > 0 &&
         createProtocolsAction &&
-        agent_id &&
+        create_tool_id &&
         group_id
       ) {
         for (const protocolId of newlySelected) {
           try {
             await createProtocolsAction({
               body: {
-                agent_id: agent_id,
                 group_id: group_id,
                 protocol_id: protocolId,
                 mcp: false,
@@ -149,7 +150,7 @@ export function Protocols({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createProtocolsAction, agent_id, group_id]
+    [ids, onChange, createProtocolsAction, create_tool_id, group_id]
   );
 
   // Check if any protocol resource is generated (must be before early return)
@@ -175,7 +176,7 @@ export function Protocols({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -72,7 +72,8 @@ export interface DocumentsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  documents_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createDocumentsAction?:
     | ((input: CreateDraftDocumentsIn) => Promise<CreateDraftDocumentsOut>)
     | undefined;
@@ -106,7 +107,8 @@ export function Documents({
   placeholder: _placeholder = "Select documents...",
   description,
   group_id,
-  documents_agent_id,
+  create_tool_id,
+  link_tool_id,
   createDocumentsAction,
   onGenerate,
   isGenerating = false,
@@ -191,13 +193,11 @@ export function Documents({
         !isCurrentlySelected &&
         !createdDocumentIdsRef.current.has(documentId) &&
         createDocumentsAction &&
-        documents_agent_id &&
         group_id
       ) {
         try {
           await createDocumentsAction({
             body: {
-              agent_id: documents_agent_id,
               group_id: group_id,
               document_id: documentId,
               mcp: false,
@@ -216,12 +216,12 @@ export function Documents({
       // Update parent state
       onChange(newIds);
     },
-    [ids, onChange, createDocumentsAction, documents_agent_id, group_id, isAutosaveEnabled]
+    [ids, onChange, createDocumentsAction, group_id, isAutosaveEnabled]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ document_ids: string[] } | void> => {
-    if (!createDocumentsAction || !documents_agent_id || !group_id) {
+    if (!createDocumentsAction || !group_id) {
       return { document_ids: ids };
     }
 
@@ -231,7 +231,6 @@ export function Documents({
         try {
           await createDocumentsAction({
             body: {
-              agent_id: documents_agent_id,
               group_id: group_id,
               document_id: documentId,
               mcp: false,
@@ -307,7 +306,7 @@ export function Documents({
               </span>
             )}
           </Label>
-          {onGenerate && documents_agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

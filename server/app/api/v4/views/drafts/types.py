@@ -17,8 +17,31 @@ class DraftResourcesViewItem(BaseModel):
     mcp: bool = False
     active: bool = True
 
-    # groups_resource id (as requested by UI contract)
-    group_id: UUID | None = None
+    # Per-resource group IDs (groups_resource.id for each resource type)
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    colors_group_id: UUID | None = None
+    icons_group_id: UUID | None = None
+    auths_group_id: UUID | None = None
+    tools_group_id: UUID | None = None
+    instructions_group_id: UUID | None = None
+    documents_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    fields_group_id: UUID | None = None
+    examples_group_id: UUID | None = None
+    questions_group_id: UUID | None = None
+    templates_group_id: UUID | None = None
+    texts_group_id: UUID | None = None
+    run_rubrics_group_id: UUID | None = None
+    group_rubrics_group_id: UUID | None = None
+    bindings_group_id: UUID | None = None
+    conditional_parameters_group_id: UUID | None = None
+    personas_group_id: UUID | None = None
+    scenarios_group_id: UUID | None = None
+    simulations_group_id: UUID | None = None
 
     resource_types: list[str] = Field(default_factory=list)
     resource_ids: list[UUID] = Field(default_factory=list)

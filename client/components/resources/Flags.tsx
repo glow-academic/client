@@ -42,6 +42,8 @@ interface CommonFlagsProps {
   label?: string; // Section label
   disabled?: boolean;
   group_id?: string | null;
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
@@ -76,6 +78,8 @@ export function Flags(props: FlagsProps) {
     columns = 2,
     label,
     disabled = false,
+    create_tool_id,
+    link_tool_id,
     showAiGenerate = false,
     onChange,
     onGenerate,

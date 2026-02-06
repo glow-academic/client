@@ -1,5 +1,5 @@
 -- Get parameter fields resources by IDs
--- Simple data fetching - no business logic
+-- CLEAN PATTERN: Query parameter_fields_resource with join to fields_resource for name/description
 -- Parameters: ids (uuid[])
 -- Returns: items (array of parameter field resources with parameter_id)
 
@@ -59,7 +59,7 @@ CREATE TYPE types.q_get_parameter_fields_v4_item AS (
     conditional_parameter_id uuid
 );
 
--- Create function
+-- Create function - query parameter_fields_resource with join to fields_resource
 CREATE OR REPLACE FUNCTION api_get_parameter_fields_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -75,8 +75,8 @@ SELECT COALESCE(
             pfr.id,
             pfr.field_id,
             pfr.parameter_id,
-            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
-            COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = ffj.field_id LIMIT 1), ''),
+            f.name,
+            COALESCE(f.description, ''),
             COALESCE(pfr.generated, false),
             cp_lookup.conditional_parameter_id
         )::types.q_get_parameter_fields_v4_item
@@ -85,20 +85,14 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_parameter_fields_v4_item[]
 ) as items
 FROM parameter_fields_resource pfr
-JOIN field_fields_junction ffj ON ffj.fields_id = pfr.field_id
+JOIN fields_resource f ON f.id = pfr.field_id
 LEFT JOIN (
     SELECT fcpj.field_id, cpr.parameter_id as conditional_parameter_id
     FROM field_conditional_parameters_junction fcpj
     JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
     WHERE fcpj.active = true AND cpr.active = true
-) cp_lookup ON cp_lookup.field_id = ffj.field_id
+) cp_lookup ON cp_lookup.field_id = pfr.field_id
 WHERE pfr.id = ANY(ids)
   AND pfr.active = true
-  AND EXISTS (
-      SELECT 1 FROM field_flags_junction ff
-      JOIN flags_resource fl ON ff.flag_id = fl.id
-      WHERE ff.field_id = ffj.field_id
-        AND fl.name = 'field_active'
-        AND ff.value = true
-  );
+  AND f.active = true;
 $$;

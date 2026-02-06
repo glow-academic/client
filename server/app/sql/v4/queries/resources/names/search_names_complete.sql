@@ -1,5 +1,7 @@
 -- Search names resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query names_resource directly
+-- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
+-- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of name resources)
 
 -- Drop function if exists (handles signature variations)
@@ -22,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_names_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    group_id uuid DEFAULT NULL,
+    draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -40,51 +42,38 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_names_v4_item[]
 ) as items
 FROM (
-    SELECT n.id, n.name, COALESCE(n.generated, false) AS generated, recent.recent_at
+    SELECT n.id, n.name, COALESCE(n.generated, false) AS generated
     FROM names_resource n
-    LEFT JOIN LATERAL (
-        SELECT MAX(pn.created_at) AS recent_at
-        FROM persona_names_junction pn
-        WHERE pn.name_id = n.id
-          AND (
-              pn.generated = false
-              OR (
-                  pn.generated = true
-                  AND n.generated = true
-                  AND group_id IS NOT NULL
-                  AND EXISTS (
-                      SELECT 1 FROM view_calls_entry c
-                      JOIN view_runs_entry r ON r.id = c.run_id
-                      WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                        AND r.group_id = group_id
-                  )
-              )
-          )
-    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE n.name IS NOT NULL
       AND n.name != ''
+      -- Search filter
       AND (search IS NULL OR search = '' OR LOWER(n.name) LIKE '%' || LOWER(search) || '%')
+      -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (n.id = ANY(exclude_ids)))
+      -- Suggest source filter
       AND (
-          COALESCE(n.generated, false) = false
+          suggest_source = 'all'
+          OR suggest_source IS NULL
           OR (
-              COALESCE(n.generated, false) = true
-              AND group_id IS NOT NULL
+              suggest_source = 'draft'
+              AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1 FROM view_calls_entry c
-                  JOIN view_runs_entry r ON r.id = c.run_id
-                  WHERE c.id IN (SELECT call_id FROM names_calls_connection WHERE names_id = n.id)
-                    AND r.group_id = group_id
+                  SELECT 1
+                  FROM names_drafts_connection dc
+                  WHERE dc.names_id = n.id
+                    AND dc.draft_id = api_search_names_v4.draft_id
+              )
+          )
+          OR (
+              suggest_source = 'linked'
+              AND EXISTS (
+                  SELECT 1 FROM persona_names_junction pn
+                  WHERE pn.name_id = n.id
+                    AND pn.active = true
               )
           )
       )
-      AND (
-          suggest_source = 'all'
-          OR recent.recent_at IS NOT NULL
-      )
-    ORDER BY
-        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
-        n.name
+    ORDER BY n.name
     LIMIT limit_count
     OFFSET offset_count
 ) q;

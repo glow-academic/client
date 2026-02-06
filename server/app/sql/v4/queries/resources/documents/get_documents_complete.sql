@@ -1,6 +1,6 @@
 -- Get documents resources by IDs (batch)
--- Simple data fetching - no business logic, no active flag check
--- Parameters: p_ids (uuid[]) - using p_ids to avoid shadowing document_id field
+-- CLEAN PATTERN: Query documents_resource directly with denormalized name/description/upload_id
+-- Parameters: p_ids (uuid[])
 -- Returns: items (array of document resources)
 
 -- Drop function if exists (handles signature variations)
@@ -59,7 +59,7 @@ CREATE TYPE types.q_get_documents_v4_item AS (
     upload_id uuid
 );
 
--- Create function
+-- Create function - query documents_resource directly with upload join
 CREATE OR REPLACE FUNCTION api_get_documents_v4(
     p_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -73,23 +73,21 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             d.id,
-            (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = da.id LIMIT 1),
-            COALESCE((SELECT descr.description FROM document_descriptions_junction dd JOIN descriptions_resource descr ON dd.description_id = descr.id WHERE dd.document_id = da.id LIMIT 1), ''),
+            d.name,
+            COALESCE(d.description, ''),
             COALESCE(u.file_path, ''),
             COALESCE(u.mime_type, ''),
             COALESCE(d.generated, false),
-            u.id
+            d.upload_id
         )::types.q_get_documents_v4_item
         ORDER BY array_position(p_ids, d.id)
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
 ) as items
 FROM documents_resource d
-JOIN document_documents_junction ddj ON ddj.documents_id = d.id
-JOIN document_artifact da ON da.id = ddj.document_id
-LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
-LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-LEFT JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
-LEFT JOIN view_uploads_entry u ON u.id = uuc.upload_id
-WHERE d.id = ANY(p_ids);
+LEFT JOIN view_uploads_entry u ON u.id = d.upload_id
+WHERE d.id = ANY(p_ids)
+  AND d.active = true
+  AND d.name IS NOT NULL
+  AND d.name != '';
 $$;

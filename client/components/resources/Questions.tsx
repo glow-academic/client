@@ -50,7 +50,8 @@ export interface QuestionsProps {
     generated?: boolean | null;
   }>; // Selected question resources (each includes generated field)
   show_questions?: boolean; // Whether to show this resource picker
-  questions_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   questions_required?: boolean; // Whether this resource is required
   question_suggestions?: string[]; // Array of suggested question IDs (UUIDs) - consistent with other suggestions
   questions?: Array<{
@@ -69,7 +70,6 @@ export interface QuestionsProps {
   addButtonLabel?: string;
   itemPlaceholder?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
   createQuestionsAction?:
     | ((input: CreateDraftQuestionsIn) => Promise<CreateDraftQuestionsOut>)
     | undefined;
@@ -110,7 +110,8 @@ export function Questions({
   question_ids,
   question_resources: _question_resources,
   show_questions = false,
-  questions_agent_id,
+  create_tool_id,
+  link_tool_id,
   questions_required,
   question_suggestions,
   questions,
@@ -123,7 +124,6 @@ export function Questions({
   addButtonLabel = "Add question",
   itemPlaceholder = "Question",
   group_id,
-  agent_id,
   createQuestionsAction,
   onGenerate,
   isGenerating = false,
@@ -389,8 +389,7 @@ export function Questions({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ question_ids: string[] } | void> => {
-    const effectiveAgentId = questions_agent_id ?? agent_id;
-    if (!createQuestionsAction || !effectiveAgentId || !group_id) return;
+    if (!createQuestionsAction || !create_tool_id || !group_id) return;
 
     // Find questions that need creation (have text but no ID)
     const questionsToCreate = internalQuestions.filter(
@@ -402,7 +401,6 @@ export function Questions({
       try {
         const result = await createQuestionsAction({
           body: {
-            agent_id: effectiveAgentId,
             group_id: group_id,
             question_text: question.question_text,
             allow_multiple: question.allow_multiple,
@@ -756,7 +754,7 @@ export function Questions({
               <span className="text-destructive">*</span>
             )}
           </Label>
-          {onGenerate && (questions_agent_id || agent_id) && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

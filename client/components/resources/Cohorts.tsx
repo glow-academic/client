@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftCohortsIn = InputOf<"/api/v4/resources/cohorts", "post">;
-type CreateDraftCohortsOut = OutputOf<"/api/v4/resources/cohorts", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface CohortItem {
   id: string;
@@ -57,10 +53,7 @@ export interface CohortsProps {
   showSelectedFilter?: boolean;
   emptyMessage?: string;
   group_id?: string | null;
-  agent_id?: string | null;
-  createCohortsAction?:
-    | ((input: CreateDraftCohortsIn) => Promise<CreateDraftCohortsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   cohortIds?: string[];
@@ -83,8 +76,7 @@ export function Cohorts({
   showSelectedFilter = false,
   emptyMessage = "No cohorts found.",
   group_id,
-  agent_id,
-  createCohortsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   cohortIds,
@@ -99,12 +91,6 @@ export function Cohorts({
     () => cohort_suggestions ?? [],
     [cohort_suggestions]
   );
-
-  const createdCohortIdsRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    ids.forEach((id) => createdCohortIdsRef.current.add(id));
-  }, [ids]);
 
   const cohortItems = useMemo(() => {
     return allCohorts
@@ -147,46 +133,15 @@ export function Cohorts({
   );
 
   const handleSelect = useCallback(
-    async (cohortId: string) => {
+    (cohortId: string) => {
       const isSelected = ids.includes(cohortId);
       const newIds = isSelected
         ? ids.filter((id) => id !== cohortId)
         : [...ids, cohortId];
 
-      const newlySelected = newIds.filter(
-        (id) => !ids.includes(id) && !createdCohortIdsRef.current.has(id)
-      );
-
-      if (
-        newlySelected.length > 0 &&
-        createCohortsAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const cId of newlySelected) {
-          try {
-            await createCohortsAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                cohort_id: cId,
-                mcp: false,
-              },
-            });
-            createdCohortIdsRef.current.add(cId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create cohort resource for ${cId}:`,
-              error
-            );
-          }
-        }
-      }
-
       onChange(newIds);
     },
-    [ids, onChange, createCohortsAction, agent_id, group_id]
+    [ids, onChange]
   );
 
   const hasGenerated = useMemo(() => {
@@ -210,7 +165,7 @@ export function Cohorts({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

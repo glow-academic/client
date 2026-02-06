@@ -67,7 +67,8 @@ export interface RequestLimitsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createRequestLimitsAction?:
     | ((
         input: CreateDraftRequestLimitsIn
@@ -102,7 +103,8 @@ export function RequestLimits({
   placeholder = "Select request limit...",
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createRequestLimitsAction,
   onRequestLimitResourceCreated,
   // Legacy props for backward compatibility
@@ -190,7 +192,7 @@ export function RequestLimits({
         selectedId &&
         selectedId !== resourceId &&
         createRequestLimitsAction &&
-        agent_id &&
+        create_tool_id &&
         group_id &&
         !createdRequestLimitIdRef.current
       ) {
@@ -202,7 +204,6 @@ export function RequestLimits({
           if (requestLimitObj?.requests_per_day !== null) {
             await createRequestLimitsAction({
               body: {
-                agent_id: agent_id,
                 group_id: group_id,
                 requests_per_day: requestLimitObj.requests_per_day!,
                 mcp: false,
@@ -227,20 +228,19 @@ export function RequestLimits({
       resourceId,
       onRequestLimitIdChange,
       createRequestLimitsAction,
-      agent_id,
+      create_tool_id,
       group_id,
       allRequestLimits,
     ]
   );
   const createRequestLimit = useCallback(
     async (value: number) => {
-      if (!createRequestLimitsAction || !agent_id || !group_id) {
+      if (!createRequestLimitsAction || !create_tool_id || !group_id) {
         return null;
       }
       try {
         const result = await createRequestLimitsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             requests_per_day: value,
             mcp: false,
@@ -253,7 +253,7 @@ export function RequestLimits({
         return null;
       }
     },
-    [agent_id, group_id, createRequestLimitsAction]
+    [create_tool_id, group_id, createRequestLimitsAction]
   );
   const handleCustomSave = useCallback(async () => {
     const value = Number.parseInt(customValue, 10);
@@ -299,7 +299,7 @@ export function RequestLimits({
                 </span>
               )}
             </Label>
-            {onGenerate && agent_id && (
+            {onGenerate && create_tool_id && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

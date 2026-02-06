@@ -51,7 +51,8 @@ export interface SlugsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createSlugsAction?:
     | ((input: CreateDraftSlugsIn) => Promise<CreateDraftSlugsOut>)
     | undefined;
@@ -73,7 +74,8 @@ export function Slugs({
   placeholder = "Select slugs...",
   description,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createSlugsAction,
   onGenerate,
   isGenerating = false,
@@ -121,14 +123,13 @@ export function Slugs({
       if (
         newlySelected.length > 0 &&
         createSlugsAction &&
-        agent_id &&
+        create_tool_id &&
         group_id
       ) {
         for (const slugId of newlySelected) {
           try {
             await createSlugsAction({
               body: {
-                agent_id: agent_id,
                 group_id: group_id,
                 slug_id: slugId,
                 mcp: false,
@@ -149,7 +150,7 @@ export function Slugs({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createSlugsAction, agent_id, group_id]
+    [ids, onChange, createSlugsAction, create_tool_id, group_id]
   );
 
   // Check if any slug resource is generated (must be before early return)
@@ -175,7 +176,7 @@ export function Slugs({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

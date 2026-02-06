@@ -1,5 +1,7 @@
 -- Search personas resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), group_id (uuid), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query personas_resource directly with denormalized columns
+-- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
+-- Parameters: search (text), limit_count (int), offset_count (int), user_department_ids (uuid[]), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of persona resources)
 
 -- Drop function if exists (handles signature variations)
@@ -23,7 +25,8 @@ CREATE OR REPLACE FUNCTION api_search_personas_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    group_id uuid DEFAULT NULL,
+    draft_id uuid DEFAULT NULL,
+    suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -51,27 +54,42 @@ FROM (
         COALESCE(p.examples, ARRAY[]::text[]) AS examples,
         COALESCE(p.generated, false) AS generated
     FROM personas_resource p
-    -- Join to persona artifact to check active flag
-    LEFT JOIN persona_personas_junction ppj ON ppj.personas_id = p.id
-    LEFT JOIN persona_artifact pa ON pa.id = ppj.persona_id
-    LEFT JOIN persona_flags_junction pf ON pf.persona_id = pa.id
-    LEFT JOIN flags_resource f ON f.id = pf.flag_id AND f.name = 'persona_active'
-    -- Join to departments for filtering
-    LEFT JOIN persona_departments_junction pd ON pd.persona_id = pa.id AND pd.active = true
-    WHERE
-        -- Must be active
-        COALESCE(pf.value, false) = true
-        -- Department access: user can see if persona has matching department OR has no departments
-        AND (
-            COALESCE(array_length(user_department_ids, 1), 0) = 0
-            OR pd.department_id = ANY(user_department_ids)
-            OR NOT EXISTS (SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = pa.id AND pd2.active = true)
-        )
-        -- Exclude already selected
-        AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
-        -- Optional search filter
-        AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, p.instructions, p.examples, p.generated
+    WHERE p.active = true
+      AND p.name IS NOT NULL
+      AND p.name != ''
+      -- Department access: user can see if persona has matching department OR has no departments
+      AND (
+          COALESCE(array_length(user_department_ids, 1), 0) = 0
+          OR p.department_ids && user_department_ids
+          OR COALESCE(array_length(p.department_ids, 1), 0) = 0
+      )
+      -- Suggest source filter
+      AND (
+          suggest_source = 'all'
+          OR suggest_source IS NULL
+          OR (
+              suggest_source = 'draft'
+              AND draft_id IS NOT NULL
+              AND EXISTS (
+                  SELECT 1
+                  FROM personas_drafts_connection dc
+                  WHERE dc.personas_id = p.id
+                    AND dc.draft_id = api_search_personas_v4.draft_id
+              )
+          )
+          OR (
+              suggest_source = 'linked'
+              AND EXISTS (
+                  SELECT 1 FROM scenario_personas_junction sp
+                  WHERE sp.persona_id = p.id
+                    AND sp.active = true
+              )
+          )
+      )
+      -- Exclude already selected
+      AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
+      -- Optional search filter
+      AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

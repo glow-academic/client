@@ -42,7 +42,7 @@ export interface FlagsProps {
   helpText?: string;
   icon?: React.ReactNode;
   group_id?: string | null; // Group ID (for consistency with other components)
-  agent_id?: string | null; // Agent ID (for consistency with other components)
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // Legacy props for backward compatibility

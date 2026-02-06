@@ -16,18 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { useMemo } from "react";
-
-type CreateDraftReasoningLevelsIn = InputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
-type CreateDraftReasoningLevelsOut = OutputOf<
-  "/api/v4/resources/reasoning_levels",
-  "post"
->;
 
 export interface ReasoningLevelItem {
   id: string;
@@ -63,10 +53,7 @@ export interface ReasoningLevelsProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createReasoningLevelsAction?:
-    | ((input: CreateDraftReasoningLevelsIn) => Promise<CreateDraftReasoningLevelsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
 }
 
 export function ReasoningLevels({
@@ -88,8 +75,7 @@ export function ReasoningLevels({
   searchTerm,
   onSearchChange,
   group_id,
-  agent_id,
-  createReasoningLevelsAction,
+  link_tool_id,
 }: ReasoningLevelsProps) {
   const resource = reasoning_level_resource ?? null;
   const resourceId = reasoning_level_id ?? null;
@@ -135,7 +121,7 @@ export function ReasoningLevels({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

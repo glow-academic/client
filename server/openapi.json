@@ -11992,6 +11992,99 @@
         }
       }
     },
+    "/api/v4/resources/args/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Args",
+        "description": "Get args resources by IDs.",
+        "operationId": "get_args_api_v4_resources_args_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetArgsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetArgsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/args_outputs": {
       "post": {
         "tags": [
@@ -12068,6 +12161,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ArgsOutputsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/args_outputs/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Args Outputs",
+        "description": "Get args_outputs resources by IDs.",
+        "operationId": "get_args_outputs_api_v4_resources_args_outputs_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetArgsOutputsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetArgsOutputsApiResponse"
                 }
               }
             }
@@ -13105,6 +13291,99 @@
         }
       }
     },
+    "/api/v4/resources/emails/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Emails",
+        "description": "Get emails resources by IDs.",
+        "operationId": "get_emails_api_v4_resources_emails_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetEmailsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEmailsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/endpoints": {
       "post": {
         "tags": [
@@ -13181,6 +13460,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EndpointsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/endpoints/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Endpoints",
+        "description": "Get endpoints resources by IDs.",
+        "operationId": "get_endpoints_api_v4_resources_endpoints_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetEndpointsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEndpointsApiResponse"
                 }
               }
             }
@@ -14218,6 +14590,99 @@
         }
       }
     },
+    "/api/v4/resources/group_positions/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Group Positions",
+        "description": "Get group_positions resources by IDs.",
+        "operationId": "get_group_positions_api_v4_resources_group_positions_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGroupPositionsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGroupPositionsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/group_rubrics": {
       "post": {
         "tags": [
@@ -14294,6 +14759,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GroupRubricsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/group_rubrics/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Group Rubrics",
+        "description": "Get group_rubrics resources by IDs.",
+        "operationId": "get_group_rubrics_api_v4_resources_group_rubrics_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGroupRubricsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGroupRubricsApiResponse"
                 }
               }
             }
@@ -15053,6 +15611,99 @@
         }
       }
     },
+    "/api/v4/resources/items/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Items",
+        "description": "Get items resources by IDs.",
+        "operationId": "get_items_api_v4_resources_items_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetItemsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetItemsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/keys": {
       "post": {
         "tags": [
@@ -15129,6 +15780,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/KeysApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/keys/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Keys",
+        "description": "Get keys resources by IDs.",
+        "operationId": "get_keys_api_v4_resources_keys_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetKeysApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetKeysApiResponse"
                 }
               }
             }
@@ -16168,6 +16912,99 @@
         }
       }
     },
+    "/api/v4/resources/points/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Points",
+        "description": "Get points resources by IDs.",
+        "operationId": "get_points_api_v4_resources_points_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPointsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPointsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/pricing": {
       "post": {
         "tags": [
@@ -16244,6 +17081,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PricingApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/pricing/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Pricing",
+        "description": "Get pricing resources by IDs.",
+        "operationId": "get_pricing_api_v4_resources_pricing_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPricingApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPricingApiResponse"
                 }
               }
             }
@@ -16540,6 +17470,99 @@
         }
       }
     },
+    "/api/v4/resources/prompts/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Prompts",
+        "description": "Get prompts resources by IDs.",
+        "operationId": "get_prompts_api_v4_resources_prompts_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPromptsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPromptsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/protocols": {
       "post": {
         "tags": [
@@ -16616,6 +17639,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProtocolsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/protocols/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Protocols",
+        "description": "Get protocols resources by IDs.",
+        "operationId": "get_protocols_api_v4_resources_protocols_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetProtocolsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProtocolsApiResponse"
                 }
               }
             }
@@ -16912,6 +18028,99 @@
         }
       }
     },
+    "/api/v4/resources/request_limits/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Request Limits",
+        "description": "Get request_limits resources by IDs.",
+        "operationId": "get_request_limits_api_v4_resources_request_limits_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetRequestLimitsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRequestLimitsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/roles/get": {
       "post": {
         "tags": [
@@ -17191,6 +18400,99 @@
         }
       }
     },
+    "/api/v4/resources/run_positions/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Run Positions",
+        "description": "Get run_positions resources by IDs.",
+        "operationId": "get_run_positions_api_v4_resources_run_positions_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetRunPositionsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRunPositionsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/run_rubrics": {
       "post": {
         "tags": [
@@ -17267,6 +18569,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RunRubricsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/run_rubrics/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Run Rubrics",
+        "description": "Get run_rubrics resources by IDs.",
+        "operationId": "get_run_rubrics_api_v4_resources_run_rubrics_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetRunRubricsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRunRubricsApiResponse"
                 }
               }
             }
@@ -19609,6 +21004,99 @@
         }
       }
     },
+    "/api/v4/resources/slugs/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Slugs",
+        "description": "Get slugs resources by IDs.",
+        "operationId": "get_slugs_api_v4_resources_slugs_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSlugsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSlugsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/standard_groups": {
       "post": {
         "tags": [
@@ -20166,6 +21654,99 @@
         }
       }
     },
+    "/api/v4/resources/values/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Values",
+        "description": "Get values resources by IDs.",
+        "operationId": "get_values_api_v4_resources_values_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetValuesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetValuesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/videos": {
       "post": {
         "tags": [
@@ -20445,6 +22026,99 @@
         }
       }
     },
+    "/api/v4/resources/voices/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Voices",
+        "description": "Get voices resources by IDs.",
+        "operationId": "get_voices_api_v4_resources_voices_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVoicesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetVoicesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v4/resources/uploads": {
       "post": {
         "tags": [
@@ -20521,6 +22195,99 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UploadsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/resources/uploads/get": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Get Uploads",
+        "description": "Get uploads resources by IDs.",
+        "operationId": "get_uploads_api_v4_resources_uploads_get_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetUploadsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUploadsApiResponse"
                 }
               }
             }
@@ -27532,7 +29299,7 @@
           "socket-client"
         ],
         "summary": "Test Join Api",
-        "description": "Client-to-server event: Join a benchmark room for real-time updates.",
+        "description": "Client-to-server event: Join a test room for real-time updates.",
         "operationId": "test_join_api_socket_v4_client_test_join_post",
         "requestBody": {
           "content": {
@@ -27579,7 +29346,7 @@
           "socket-client"
         ],
         "summary": "Test Leave Api",
-        "description": "Client-to-server event: Leave a benchmark room.",
+        "description": "Client-to-server event: Leave a test room.",
         "operationId": "test_leave_api_socket_v4_client_test_leave_post",
         "requestBody": {
           "content": {
@@ -27666,20 +29433,20 @@
         }
       }
     },
-    "/socket/v4/client/test/send": {
+    "/socket/v4/client/test/run": {
       "post": {
         "tags": [
           "socket",
           "socket-client"
         ],
-        "summary": "Test Send Api",
-        "description": "Client-to-server event: Send test input (future).",
-        "operationId": "test_send_api_socket_v4_client_test_send_post",
+        "summary": "Test Run Api",
+        "description": "Client-to-server event: Run one auto-regressive replay.",
+        "operationId": "test_run_api_socket_v4_client_test_run_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TestSendPayload"
+                "$ref": "#/components/schemas/TestRunPayload"
               }
             }
           },
@@ -27695,7 +29462,54 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Test Send Api Socket V4 Client Test Send Post"
+                  "title": "Response Test Run Api Socket V4 Client Test Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/client/test/run_all": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client"
+        ],
+        "summary": "Test Run All Api",
+        "description": "Client-to-server event: Run all remaining auto-regressive replays.",
+        "operationId": "test_run_all_api_socket_v4_client_test_run_all_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRunAllPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Run All Api Socket V4 Client Test Run All Post"
                 }
               }
             }
@@ -28991,13 +30805,13 @@
           "socket-server"
         ],
         "summary": "Benchmark Complete Api",
-        "description": "Internal event: Benchmark eval completed.",
+        "description": "Server-to-client event: Benchmark completed.",
         "operationId": "benchmark_complete_api_socket_v4_server_benchmark_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BenchmarkEvalCompletePayload"
+                "$ref": "#/components/schemas/BenchmarkCompleteEvent"
               }
             }
           },
@@ -29085,7 +30899,7 @@
           "socket-server"
         ],
         "summary": "Test Joined Api",
-        "description": "Server-to-client event: Successfully joined a benchmark room.",
+        "description": "Server-to-client event: Successfully joined a test room.",
         "operationId": "test_joined_api_socket_v4_server_test_joined_post",
         "requestBody": {
           "content": {
@@ -29219,20 +31033,20 @@
         }
       }
     },
-    "/socket/v4/server/test/complete": {
+    "/socket/v4/server/test/run_complete": {
       "post": {
         "tags": [
           "socket",
           "socket-server"
         ],
-        "summary": "Test Complete Api",
-        "description": "Server-to-client event: Test completed.",
-        "operationId": "test_complete_api_socket_v4_server_test_complete_post",
+        "summary": "Test Run Complete Api",
+        "description": "Server-to-client event: Single test run completed.",
+        "operationId": "test_run_complete_api_socket_v4_server_test_run_complete_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TestCompleteEvent"
+                "$ref": "#/components/schemas/TestRunCompleteEvent"
               }
             }
           },
@@ -29248,7 +31062,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Test Complete Api Socket V4 Server Test Complete Post"
+                  "title": "Response Test Run Complete Api Socket V4 Server Test Run Complete Post"
                 }
               }
             }
@@ -29296,6 +31110,100 @@
                   },
                   "type": "object",
                   "title": "Response Test Error Api Socket V4 Server Test Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/test/run_start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test Run Start Api",
+        "description": "Server-to-client event: Test run started.",
+        "operationId": "test_run_start_api_socket_v4_server_test_run_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRunStartEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test Run Start Api Socket V4 Server Test Run Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/test/all_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server"
+        ],
+        "summary": "Test All Complete Api",
+        "description": "Server-to-client event: All test runs completed.",
+        "operationId": "test_all_complete_api_socket_v4_server_test_all_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestAllCompleteEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Test All Complete Api Socket V4 Server Test All Complete Post"
                 }
               }
             }
@@ -33471,6 +35379,57 @@
         "title": "BenchmarkAttemptFactsItem",
         "description": "Single attempt from mv_benchmark_attempt_facts."
       },
+      "BenchmarkChatInfo": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "run_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Resource Id"
+          },
+          "group_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Resource Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "pending"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs",
+            "default": 1
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "BenchmarkChatInfo",
+        "description": "Info about a benchmark chat (test instance).\n\nEach chat represents one run or group to be tested."
+      },
       "BenchmarkChatViewItem": {
         "properties": {
           "chat_id": {
@@ -33598,6 +35557,57 @@
         "title": "BenchmarkChatViewItem",
         "description": "Single benchmark chat row from mv_benchmark_chats."
       },
+      "BenchmarkCompleteEvent": {
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type",
+            "default": "benchmark"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "total_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chats"
+          },
+          "passed_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed Chats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "attempt_id"
+        ],
+        "title": "BenchmarkCompleteEvent",
+        "description": "Server-to-client event: benchmark_complete.\n\nEmitted when all tests in benchmark are complete."
+      },
       "BenchmarkErrorEvent": {
         "properties": {
           "artifact_type": {
@@ -33625,7 +35635,7 @@
             ],
             "title": "Attempt Id"
           },
-          "test_id": {
+          "chat_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -33634,29 +35644,7 @@
                 "type": "null"
               }
             ],
-            "title": "Test Id"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
+            "title": "Chat Id"
           },
           "error_type": {
             "anyOf": [
@@ -33675,130 +35663,7 @@
           "message"
         ],
         "title": "BenchmarkErrorEvent",
-        "description": "Server-to-client event: benchmarks_error."
-      },
-      "BenchmarkEvalCompletePayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": true
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "sid": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sid"
-          },
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
-          },
-          "eval_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Id"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "tool_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tool Id"
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          }
-        },
-        "type": "object",
-        "title": "BenchmarkEvalCompletePayload",
-        "description": "Internal event payload for eval completion."
+        "description": "Server-to-client event: benchmark_error.\n\nEmitted on errors."
       },
       "BenchmarkEvalSummaryItem": {
         "properties": {
@@ -34010,48 +35875,30 @@
             "default": "benchmark"
           },
           "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Attempt Id"
           },
-          "test_id": {
+          "total_chats": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Test Id"
+            "title": "Total Chats"
           },
-          "run_id": {
+          "completed_chats": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Run Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
+            "title": "Completed Chats"
           },
           "status": {
             "anyOf": [
@@ -34074,16 +35921,14 @@
               }
             ],
             "title": "Message"
-          },
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": true
           }
         },
         "type": "object",
+        "required": [
+          "attempt_id"
+        ],
         "title": "BenchmarkProgressEvent",
-        "description": "Server-to-client event: benchmarks_progress."
+        "description": "Server-to-client event: benchmark_progress.\n\nEmitted during benchmark execution to show overall progress."
       },
       "BenchmarkRequest": {
         "properties": {
@@ -34237,7 +36082,7 @@
           "eval_id"
         ],
         "title": "BenchmarkStartPayload",
-        "description": "Request payload for benchmark_start WebSocket event."
+        "description": "Request payload for benchmark_start WebSocket event.\n\nCreates benchmark attempt structure. Client then controls\nexecution via test_run/test_run_all."
       },
       "BenchmarkStartedEvent": {
         "properties": {
@@ -34271,43 +36116,17 @@
             "title": "Eval Id"
           },
           "use_groups": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Groups"
+            "type": "boolean",
+            "title": "Use Groups",
+            "default": false
           },
-          "pending_run_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pending Run Ids"
-          },
-          "pending_group_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pending Group Ids"
+          "chats": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkChatInfo"
+            },
+            "type": "array",
+            "title": "Chats",
+            "default": []
           }
         },
         "type": "object",
@@ -34316,7 +36135,7 @@
           "attempt_id"
         ],
         "title": "BenchmarkStartedEvent",
-        "description": "Server-to-client event: benchmarks_started."
+        "description": "Server-to-client event: benchmark_started.\n\nEmitted when benchmark attempt is created with structure.\nClient uses chat_ids to trigger test_run/test_run_all."
       },
       "BenchmarkTestViewItem": {
         "properties": {
@@ -36048,26 +37867,37 @@
       },
       "ColorsApiRequest": {
         "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Name"
           },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           },
           "hex_code": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Hex Code"
           },
           "mcp": {
@@ -36081,16 +37911,33 @@
             ],
             "title": "Mcp",
             "default": false
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
           }
         },
         "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "name",
-          "description",
-          "hex_code"
-        ],
         "title": "ColorsApiRequest"
       },
       "ColorsApiResponse": {
@@ -38712,18 +40559,15 @@
       },
       "DescriptionsApiRequest": {
         "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           },
           "mcp": {
@@ -38737,14 +40581,33 @@
             ],
             "title": "Mcp",
             "default": false
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
           }
         },
         "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "description"
-        ],
         "title": "DescriptionsApiRequest"
       },
       "DescriptionsApiResponse": {
@@ -38920,7 +40783,7 @@
             "title": "Active",
             "default": true
           },
-          "group_id": {
+          "names_group_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -38930,7 +40793,283 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Names Group Id"
+          },
+          "descriptions_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descriptions Group Id"
+          },
+          "flags_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flags Group Id"
+          },
+          "colors_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Colors Group Id"
+          },
+          "icons_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icons Group Id"
+          },
+          "auths_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auths Group Id"
+          },
+          "tools_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools Group Id"
+          },
+          "instructions_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Group Id"
+          },
+          "documents_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents Group Id"
+          },
+          "departments_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments Group Id"
+          },
+          "parameters_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters Group Id"
+          },
+          "parameter_fields_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Fields Group Id"
+          },
+          "fields_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields Group Id"
+          },
+          "examples_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples Group Id"
+          },
+          "questions_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Group Id"
+          },
+          "templates_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templates Group Id"
+          },
+          "texts_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Texts Group Id"
+          },
+          "run_rubrics_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Rubrics Group Id"
+          },
+          "group_rubrics_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Rubrics Group Id"
+          },
+          "bindings_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bindings Group Id"
+          },
+          "conditional_parameters_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameters Group Id"
+          },
+          "personas_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas Group Id"
+          },
+          "scenarios_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios Group Id"
+          },
+          "simulations_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations Group Id"
           },
           "resource_types": {
             "items": {
@@ -40274,18 +42413,15 @@
       },
       "ExamplesApiRequest": {
         "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "example": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Example"
           },
           "mcp": {
@@ -40299,14 +42435,33 @@
             ],
             "title": "Mcp",
             "default": false
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
           }
         },
         "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "example"
-        ],
         "title": "ExamplesApiRequest"
       },
       "ExamplesApiResponse": {
@@ -42768,6 +44923,88 @@
         },
         "type": "object",
         "title": "GetAgentsListApiResponse"
+      },
+      "GetArgsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetArgsApiRequest"
+      },
+      "GetArgsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetArgsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetArgsApiResponse"
+      },
+      "GetArgsOutputsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetArgsOutputsApiRequest"
+      },
+      "GetArgsOutputsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetArgsOutputsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetArgsOutputsApiResponse"
       },
       "GetArtifactSessionDetailRequest": {
         "properties": {
@@ -47875,6 +50112,88 @@
         "title": "GetDraftResourcesResponse",
         "description": "Response containing draft resources view rows."
       },
+      "GetEmailsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetEmailsApiRequest"
+      },
+      "GetEmailsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEmailsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetEmailsApiResponse"
+      },
+      "GetEndpointsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetEndpointsApiRequest"
+      },
+      "GetEndpointsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEndpointsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetEndpointsApiResponse"
+      },
       "GetEvalApiRequest": {
         "properties": {
           "eval_id": {
@@ -49700,6 +52019,88 @@
         "title": "GetGroupListResponse",
         "description": "Response for group list endpoint."
       },
+      "GetGroupPositionsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetGroupPositionsApiRequest"
+      },
+      "GetGroupPositionsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGroupPositionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetGroupPositionsApiResponse"
+      },
+      "GetGroupRubricsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetGroupRubricsApiRequest"
+      },
+      "GetGroupRubricsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetGroupRubricsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetGroupRubricsApiResponse"
+      },
       "GetGroupsRequest": {
         "properties": {
           "chat_id": {
@@ -50087,6 +52488,47 @@
         "type": "object",
         "title": "GetInstructionsApiResponse"
       },
+      "GetItemsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetItemsApiRequest"
+      },
+      "GetItemsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetItemsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetItemsApiResponse"
+      },
       "GetKeyForDecryptApiRequest": {
         "properties": {
           "key_id": {
@@ -50139,6 +52581,47 @@
         },
         "type": "object",
         "title": "GetKeyForDecryptApiResponse"
+      },
+      "GetKeysApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetKeysApiRequest"
+      },
+      "GetKeysApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetKeysApiResponse"
       },
       "GetLoginDataApiRequest": {
         "properties": {
@@ -54063,6 +56546,47 @@
         "type": "object",
         "title": "GetPersonasListApiRequest"
       },
+      "GetPointsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetPointsApiRequest"
+      },
+      "GetPointsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPointsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetPointsApiResponse"
+      },
       "GetPricingAnalyticsRequest": {
         "properties": {
           "start_date": {
@@ -54169,6 +56693,47 @@
         "type": "object",
         "title": "GetPricingAnalyticsResponse",
         "description": "Response for pricing analytics summary."
+      },
+      "GetPricingApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingApiRequest"
+      },
+      "GetPricingApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPricingV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetPricingApiResponse"
       },
       "GetPricingDailyRequest": {
         "properties": {
@@ -56526,6 +59091,88 @@
         "title": "GetProfileMetricsResponse",
         "description": "Response for profile metrics query."
       },
+      "GetPromptsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetPromptsApiRequest"
+      },
+      "GetPromptsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPromptsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetPromptsApiResponse"
+      },
+      "GetProtocolsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetProtocolsApiRequest"
+      },
+      "GetProtocolsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProtocolsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetProtocolsApiResponse"
+      },
       "GetProviderApiRequest": {
         "properties": {
           "provider_id": {
@@ -57028,6 +59675,47 @@
         "type": "object",
         "title": "GetQuestionV4Item",
         "description": "Question item returned from get endpoint."
+      },
+      "GetRequestLimitsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetRequestLimitsApiRequest"
+      },
+      "GetRequestLimitsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRequestLimitsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetRequestLimitsApiResponse"
       },
       "GetRolesApiRequest": {
         "properties": {},
@@ -58018,6 +60706,88 @@
         },
         "type": "object",
         "title": "GetRubricsListApiResponse"
+      },
+      "GetRunPositionsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetRunPositionsApiRequest"
+      },
+      "GetRunPositionsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRunPositionsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetRunPositionsApiResponse"
+      },
+      "GetRunRubricsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetRunRubricsApiRequest"
+      },
+      "GetRunRubricsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRunRubricsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetRunRubricsApiResponse"
       },
       "GetScenarioApiRequest": {
         "properties": {
@@ -62366,6 +65136,47 @@
         "type": "object",
         "title": "GetSimulationsListApiResponse"
       },
+      "GetSlugsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetSlugsApiRequest"
+      },
+      "GetSlugsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSlugsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetSlugsApiResponse"
+      },
       "GetStaffListApiRequest": {
         "properties": {},
         "type": "object",
@@ -63629,6 +66440,88 @@
         "title": "GetTrainingGetResponse",
         "description": "Client-facing API response for training get (operational).\n\nReturns simulations user can take, scoped by their cohorts."
       },
+      "GetUploadsApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetUploadsApiRequest"
+      },
+      "GetUploadsApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetUploadsV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetUploadsApiResponse"
+      },
+      "GetValuesApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetValuesApiRequest"
+      },
+      "GetValuesApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetValuesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetValuesApiResponse"
+      },
       "GetVideoApiRequest": {
         "properties": {
           "id": {
@@ -63746,6 +66639,47 @@
         "type": "object",
         "title": "GetVideoV4Item",
         "description": "Video item returned from get endpoint."
+      },
+      "GetVoicesApiRequest": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetVoicesApiRequest"
+      },
+      "GetVoicesApiResponse": {
+        "properties": {
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetVoicesV4Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "GetVoicesApiResponse"
       },
       "GradeData": {
         "properties": {
@@ -65995,18 +68929,15 @@
       },
       "InstructionsApiRequest": {
         "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "template": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Template"
           },
           "mcp": {
@@ -66020,14 +68951,33 @@
             ],
             "title": "Mcp",
             "default": false
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
           }
         },
         "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "template"
-        ],
         "title": "InstructionsApiRequest"
       },
       "InstructionsApiResponse": {
@@ -69237,30 +72187,6 @@
       },
       "NamesApiRequest": {
         "properties": {
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "name": {
             "anyOf": [
               {
@@ -69283,6 +72209,30 @@
             ],
             "title": "Mcp",
             "default": false
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
           }
         },
         "type": "object",
@@ -76129,6 +79079,181 @@
         ],
         "title": "QGetAgentV4VoiceResource"
       },
+      "QGetArgsOutputsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "args_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Args Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "args_id",
+          "name",
+          "template",
+          "generated"
+        ],
+        "title": "QGetArgsOutputsV4Item"
+      },
+      "QGetArgsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "field_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Type"
+          },
+          "required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
+          "default_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Value"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "field_type",
+          "required",
+          "default_value",
+          "position",
+          "generated"
+        ],
+        "title": "QGetArgsV4Item"
+      },
       "QGetAuthListV4Auth": {
         "properties": {
           "auth_id": {
@@ -77960,6 +81085,96 @@
         ],
         "title": "QGetDocumentsV4Item"
       },
+      "QGetEmailsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "generated"
+        ],
+        "title": "QGetEmailsV4Item"
+      },
+      "QGetEndpointsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "base_url",
+          "generated"
+        ],
+        "title": "QGetEndpointsV4Item"
+      },
       "QGetEvalV4Agent": {
         "properties": {
           "agent_id": {
@@ -78961,6 +82176,17 @@
             ],
             "title": "Description"
           },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
           "generated": {
             "anyOf": [
               {
@@ -78978,6 +82204,7 @@
           "field_id",
           "name",
           "description",
+          "value",
           "generated"
         ],
         "title": "QGetFieldsV4Item"
@@ -79050,6 +82277,136 @@
           "generated"
         ],
         "title": "QGetFlagsV4Item"
+      },
+      "QGetGroupPositionsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "groups_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Id"
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "groups_id",
+          "eval_id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetGroupPositionsV4Item"
+      },
+      "QGetGroupRubricsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "groups_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "groups_id",
+          "rubric_id",
+          "generated"
+        ],
+        "title": "QGetGroupRubricsV4Item"
       },
       "QGetIconsV4Item": {
         "properties": {
@@ -79234,6 +82591,169 @@
           "generated"
         ],
         "title": "QGetInstructionsV4Item"
+      },
+      "QGetItemsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "encrypted",
+          "position",
+          "generated"
+        ],
+        "title": "QGetItemsV4Item"
+      },
+      "QGetKeysV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "key_id",
+          "key",
+          "name",
+          "description",
+          "generated"
+        ],
+        "title": "QGetKeysV4Item"
       },
       "QGetLoginDataV4Department": {
         "properties": {
@@ -81670,6 +85190,121 @@
         ],
         "title": "QGetPersonasV4Item"
       },
+      "QGetPointsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetPointsV4Item"
+      },
+      "QGetPricingV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "pricing_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Type"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pricing_type",
+          "price",
+          "unit_id",
+          "generated"
+        ],
+        "title": "QGetPricingV4Item"
+      },
       "QGetProblemStatementsV4Item": {
         "properties": {
           "problem_statement_id": {
@@ -83051,6 +86686,120 @@
         ],
         "title": "QGetProfileV4RoleResource"
       },
+      "QGetPromptsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "system_prompt",
+          "generated"
+        ],
+        "title": "QGetPromptsV4Item"
+      },
+      "QGetProtocolsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetProtocolsV4Item"
+      },
       "QGetProviderV4DescriptionResource": {
         "properties": {
           "id": {
@@ -83278,6 +87027,51 @@
           "time"
         ],
         "title": "QGetQuestionsV4Item"
+      },
+      "QGetRequestLimitsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "requests_per_day",
+          "generated"
+        ],
+        "title": "QGetRequestLimitsV4Item"
       },
       "QGetRolesV4Item": {
         "properties": {
@@ -84335,6 +88129,136 @@
           "description"
         ],
         "title": "QGetRubricsV4Item"
+      },
+      "QGetRunPositionsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "runs_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Id"
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "runs_id",
+          "eval_id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetRunPositionsV4Item"
+      },
+      "QGetRunRubricsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "runs_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "runs_id",
+          "rubric_id",
+          "generated"
+        ],
+        "title": "QGetRunRubricsV4Item"
       },
       "QGetScenarioFlagsV4Item": {
         "properties": {
@@ -86361,6 +90285,51 @@
         "title": "QGetSettingsV4Provider",
         "description": "Provider item in settings."
       },
+      "QGetSlugsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetSlugsV4Item"
+      },
       "QGetTemplatesV4Item": {
         "properties": {
           "template_id": {
@@ -87059,6 +91028,84 @@
         ],
         "title": "QGetToolsListV4Tool"
       },
+      "QGetUploadsV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "generated"
+        ],
+        "title": "QGetUploadsV4Item"
+      },
+      "QGetValuesV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetValuesV4Item"
+      },
       "QGetVideosV4Item": {
         "properties": {
           "video_id": {
@@ -87152,6 +91199,51 @@
           "generated"
         ],
         "title": "QGetVideosV4Item"
+      },
+      "QGetVoicesV4Item": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "voice",
+          "generated"
+        ],
+        "title": "QGetVoicesV4Item"
       },
       "QListAgentsV4Agent": {
         "properties": {
@@ -97911,7 +102003,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -97921,7 +102013,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -98025,6 +102117,18 @@
             ],
             "title": "User Department Ids"
           },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
           "suggest_source": {
             "anyOf": [
               {
@@ -98112,7 +102216,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -98122,7 +102226,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -98238,7 +102342,7 @@
             ],
             "title": "User Department Ids"
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -98248,7 +102352,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -98352,7 +102456,7 @@
             ],
             "title": "User Department Ids"
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -98362,7 +102466,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -98538,7 +102642,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -98548,7 +102652,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -98637,7 +102741,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -98647,7 +102751,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -98736,7 +102840,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -98746,7 +102850,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -99484,7 +103588,7 @@
             "title": "Offset Count",
             "default": 0
           },
-          "group_id": {
+          "draft_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -99494,7 +103598,7 @@
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Draft Id"
           },
           "suggest_source": {
             "anyOf": [
@@ -99503,7 +103607,7 @@
                 "enum": [
                   "all",
                   "linked",
-                  "recent"
+                  "draft"
                 ]
               },
               {
@@ -102119,50 +106223,33 @@
         "type": "object",
         "title": "TemplatesApiResponse"
       },
-      "TestCompleteEvent": {
+      "TestAllCompleteEvent": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           },
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
           },
           "success": {
             "type": "boolean",
             "title": "Success",
             "default": true
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id",
+          "total_runs"
         ],
-        "title": "TestCompleteEvent",
-        "description": "Server-to-client event: test_complete."
+        "title": "TestAllCompleteEvent",
+        "description": "Server-to-client event: test_all_complete.\n\nEmitted when all runs are complete."
       },
       "TestErrorEvent": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -102171,9 +106258,9 @@
                 "type": "null"
               }
             ],
-            "title": "Attempt Id"
+            "title": "Chat Id"
           },
-          "test_id": {
+          "run_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -102182,12 +106269,7 @@
                 "type": "null"
               }
             ],
-            "title": "Test Id"
-          },
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": false
+            "title": "Run Id"
           },
           "message": {
             "type": "string",
@@ -102210,28 +106292,28 @@
           "message"
         ],
         "title": "TestErrorEvent",
-        "description": "Server-to-client event: test_error."
+        "description": "Server-to-client event: test_error.\n\nEmitted on errors."
       },
       "TestJoinPayload": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id"
         ],
         "title": "TestJoinPayload",
-        "description": "Request payload for test_join WebSocket event."
+        "description": "Request payload for test_join WebSocket event.\n\nJoins a test room for real-time updates."
       },
       "TestJoinedEvent": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           },
           "success": {
             "type": "boolean",
@@ -102241,25 +106323,25 @@
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id"
         ],
         "title": "TestJoinedEvent",
-        "description": "Server-to-client event: test_joined."
+        "description": "Server-to-client event: test_joined.\n\nEmitted when a client successfully joins a test room."
       },
       "TestLeavePayload": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id"
         ],
         "title": "TestLeavePayload",
-        "description": "Request payload for test_leave WebSocket event."
+        "description": "Request payload for test_leave WebSocket event.\n\nLeaves a test room."
       },
       "TestListFilterOption": {
         "properties": {
@@ -102369,20 +106451,13 @@
       },
       "TestProgressEvent": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           },
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
+          "type": {
+            "type": "string",
+            "title": "Type"
           },
           "run_id": {
             "anyOf": [
@@ -102395,27 +106470,27 @@
             ],
             "title": "Run Id"
           },
-          "group_id": {
+          "current_run": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Group Id"
+            "title": "Current Run"
           },
-          "status": {
+          "total_runs": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Status"
+            "title": "Total Runs"
           },
           "message": {
             "anyOf": [
@@ -102427,28 +106502,42 @@
               }
             ],
             "title": "Message"
-          },
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": true
           }
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id",
+          "type"
         ],
         "title": "TestProgressEvent",
-        "description": "Server-to-client event: test_progress."
+        "description": "Server-to-client event: test_progress.\n\nEmitted during test execution."
       },
-      "TestSendPayload": {
+      "TestRunAllPayload": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Attempt Id"
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "TestRunAllPayload",
+        "description": "Request payload for test_run_all WebSocket event.\n\nRuns ALL remaining auto-regressive replays sequentially."
+      },
+      "TestRunCompleteEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
           },
-          "content": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "original_run_resource_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -102457,36 +106546,127 @@
                 "type": "null"
               }
             ],
-            "title": "Content"
+            "title": "Original Run Resource Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
+          },
+          "current_run": {
+            "type": "integer",
+            "title": "Current Run"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "remaining_runs": {
+            "type": "integer",
+            "title": "Remaining Runs"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id",
+          "run_id",
+          "current_run",
+          "total_runs",
+          "remaining_runs"
         ],
-        "title": "TestSendPayload",
-        "description": "Request payload for test_send WebSocket event."
+        "title": "TestRunCompleteEvent",
+        "description": "Server-to-client event: test_run_complete.\n\nEmitted when a single run replay completes."
+      },
+      "TestRunPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "TestRunPayload",
+        "description": "Request payload for test_run WebSocket event.\n\nRuns ONE auto-regressive replay for the next pending run."
+      },
+      "TestRunStartEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "original_run_resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Run Resource Id"
+          },
+          "current_run": {
+            "type": "integer",
+            "title": "Current Run"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "run_id",
+          "current_run",
+          "total_runs",
+          "created_at"
+        ],
+        "title": "TestRunStartEvent",
+        "description": "Server-to-client event: test_run_start.\n\nEmitted when a run replay starts."
       },
       "TestStopPayload": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id"
         ],
         "title": "TestStopPayload",
-        "description": "Request payload for test_stop WebSocket event."
+        "description": "Request payload for test_stop WebSocket event.\n\nStops the current run generation."
       },
       "TestStoppedEvent": {
         "properties": {
-          "attempt_id": {
+          "chat_id": {
             "type": "string",
-            "title": "Attempt Id"
+            "title": "Chat Id"
           },
           "success": {
             "type": "boolean",
@@ -102507,10 +106687,10 @@
         },
         "type": "object",
         "required": [
-          "attempt_id"
+          "chat_id"
         ],
         "title": "TestStoppedEvent",
-        "description": "Server-to-client event: test_stopped."
+        "description": "Server-to-client event: test_stopped.\n\nEmitted when generation is stopped."
       },
       "TimerData": {
         "properties": {

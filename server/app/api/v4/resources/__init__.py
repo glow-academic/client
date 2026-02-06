@@ -8,11 +8,15 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 # NOTE: agents removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: analyses removed - converted to entry table (migration 305)
 from app.api.v4.resources.args.create import router as args_router
+from app.api.v4.resources.args.get import router as args_get_router
 
 router.include_router(args_router)
+router.include_router(args_get_router)
 from app.api.v4.resources.args_outputs.create import router as args_outputs_router
+from app.api.v4.resources.args_outputs.get import router as args_outputs_get_router
 
 router.include_router(args_outputs_router)
+router.include_router(args_outputs_get_router)
 # NOTE: audios removed - converted to audios_entry (migration 328)
 # NOTE: auths removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
@@ -51,11 +55,15 @@ from app.api.v4.resources.documents.get import router as documents_get_router
 
 router.include_router(documents_get_router)
 from app.api.v4.resources.emails.create import router as emails_router
+from app.api.v4.resources.emails.get import router as emails_get_router
 
 router.include_router(emails_router)
+router.include_router(emails_get_router)
 from app.api.v4.resources.endpoints.create import router as endpoints_router
+from app.api.v4.resources.endpoints.get import router as endpoints_get_router
 
 router.include_router(endpoints_router)
+router.include_router(endpoints_get_router)
 # NOTE: evals removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.examples.create import router as examples_router
 from app.api.v4.resources.examples.get import router as examples_get_router
@@ -96,11 +104,15 @@ from app.api.v4.resources.flags.search import router as flags_search_router
 router.include_router(flags_get_router)
 router.include_router(flags_search_router)
 from app.api.v4.resources.group_positions.create import router as group_positions_router
+from app.api.v4.resources.group_positions.get import router as group_positions_get_router
 
 router.include_router(group_positions_router)
+router.include_router(group_positions_get_router)
 from app.api.v4.resources.group_rubrics.create import router as group_rubrics_router
+from app.api.v4.resources.group_rubrics.get import router as group_rubrics_get_router
 
 router.include_router(group_rubrics_router)
+router.include_router(group_rubrics_get_router)
 # NOTE: groups removed - non-creatable (migration 328)
 # NOTE: hints removed - converted to entry table (migration 305)
 # NOTE: icons removed - non-creatable (migration 328)
@@ -126,11 +138,15 @@ router.include_router(instructions_router)
 router.include_router(instructions_get_router)
 router.include_router(instructions_search_router)
 from app.api.v4.resources.items.create import router as items_router
+from app.api.v4.resources.items.get import router as items_get_router
 
 router.include_router(items_router)
+router.include_router(items_get_router)
 from app.api.v4.resources.keys.create import router as keys_router
+from app.api.v4.resources.keys.get import router as keys_get_router
 
 router.include_router(keys_router)
+router.include_router(keys_get_router)
 # NOTE: modalities removed - non-creatable (migration 328)
 # NOTE: models removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.names.create import router as names_router
@@ -163,11 +179,15 @@ from app.api.v4.resources.personas.get import router as personas_get_router
 
 router.include_router(personas_get_router)
 from app.api.v4.resources.points.create import router as points_router
+from app.api.v4.resources.points.get import router as points_get_router
 
 router.include_router(points_router)
+router.include_router(points_get_router)
 from app.api.v4.resources.pricing.create import router as pricing_router
+from app.api.v4.resources.pricing.get import router as pricing_get_router
 
 router.include_router(pricing_router)
+router.include_router(pricing_get_router)
 from app.api.v4.resources.problem_statements.create import (
     router as problem_statements_router,
 )
@@ -179,11 +199,15 @@ router.include_router(problem_statements_router)
 router.include_router(problem_statements_get_router)
 # NOTE: profiles removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.prompts.create import router as prompts_router
+from app.api.v4.resources.prompts.get import router as prompts_get_router
 
 router.include_router(prompts_router)
+router.include_router(prompts_get_router)
 from app.api.v4.resources.protocols.create import router as protocols_router
+from app.api.v4.resources.protocols.get import router as protocols_get_router
 
 router.include_router(protocols_router)
+router.include_router(protocols_get_router)
 # NOTE: providers removed - non-creatable, sync via artifact save (migration 328)
 # NOTE: qualities removed - non-creatable (migration 328)
 from app.api.v4.resources.questions.create import router as questions_router
@@ -193,8 +217,10 @@ router.include_router(questions_router)
 router.include_router(questions_get_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
 from app.api.v4.resources.request_limits.create import router as request_limits_router
+from app.api.v4.resources.request_limits.get import router as request_limits_get_router
 
 router.include_router(request_limits_router)
+router.include_router(request_limits_get_router)
 # NOTE: responses removed - converted to entry table (migration 305)
 # NOTE: roles removed - non-creatable (migration 328)
 # GET endpoint available for profile context two-pass architecture
@@ -207,11 +233,15 @@ from app.api.v4.resources.rubrics.get import router as rubrics_get_router
 
 router.include_router(rubrics_get_router)
 from app.api.v4.resources.run_positions.create import router as run_positions_router
+from app.api.v4.resources.run_positions.get import router as run_positions_get_router
 
 router.include_router(run_positions_router)
+router.include_router(run_positions_get_router)
 from app.api.v4.resources.run_rubrics.create import router as run_rubrics_router
+from app.api.v4.resources.run_rubrics.get import router as run_rubrics_get_router
 
 router.include_router(run_rubrics_router)
+router.include_router(run_rubrics_get_router)
 # NOTE: runs removed - non-creatable (migration 328)
 # NOTE: scenario_flags removed - non-creatable (migration 328)
 # GET/Search endpoints available for simulations two-pass architecture
@@ -310,8 +340,10 @@ from app.api.v4.resources.simulations.search import router as simulations_search
 router.include_router(simulations_get_router)
 router.include_router(simulations_search_router)
 from app.api.v4.resources.slugs.create import router as slugs_router
+from app.api.v4.resources.slugs.get import router as slugs_get_router
 
 router.include_router(slugs_router)
+router.include_router(slugs_get_router)
 from app.api.v4.resources.standard_groups.create import router as standard_groups_router
 
 router.include_router(standard_groups_router)
@@ -331,16 +363,22 @@ router.include_router(templates_search_router)
 # NOTE: times removed - converted to entry table (migration 305)
 # NOTE: tools removed - non-creatable, sync via artifact save (migration 328)
 from app.api.v4.resources.values.create import router as values_router
+from app.api.v4.resources.values.get import router as values_get_router
 
 router.include_router(values_router)
+router.include_router(values_get_router)
 from app.api.v4.resources.videos.create import router as videos_router
 from app.api.v4.resources.videos.get import router as videos_get_router
 
 router.include_router(videos_router)
 router.include_router(videos_get_router)
 from app.api.v4.resources.voices.create import router as voices_router
+from app.api.v4.resources.voices.get import router as voices_get_router
 
 router.include_router(voices_router)
+router.include_router(voices_get_router)
 from app.api.v4.resources.uploads.create import router as uploads_router
+from app.api.v4.resources.uploads.get import router as uploads_get_router
 
 router.include_router(uploads_router)
+router.include_router(uploads_get_router)

@@ -43,7 +43,8 @@ export interface VoicesProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createVoicesAction?:
     | ((input: CreateDraftVoicesIn) => Promise<CreateDraftVoicesOut>)
     | undefined;
@@ -64,7 +65,8 @@ export function Voices({
   searchTerm,
   onSearchChange,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createVoicesAction,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);

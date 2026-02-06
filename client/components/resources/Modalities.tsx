@@ -16,16 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
-type CreateDraftModalitiesOut = OutputOf<
-  "/api/v4/resources/modalities",
-  "post"
->;
+import { useCallback, useMemo } from "react";
 
 export interface ModalityItem {
   id: string;
@@ -59,10 +52,7 @@ export interface ModalitiesProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createModalitiesAction?:
-    | ((input: CreateDraftModalitiesIn) => Promise<CreateDraftModalitiesOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -83,8 +73,7 @@ export function Modalities({
   searchTerm,
   onSearchChange,
   group_id,
-  agent_id,
-  createModalitiesAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: ModalitiesProps) {
@@ -106,14 +95,6 @@ export function Modalities({
       return name.includes(term) || desc.includes(term);
     });
   }, [allModalities, searchTerm]);
-
-  // Track which modality IDs have already had resources created
-  const createdModalityIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdModalityIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdModalityIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert modalities array to ModalityItem format for GenericPicker
   const modalityItems = useMemo(() => {
@@ -164,7 +145,7 @@ export function Modalities({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

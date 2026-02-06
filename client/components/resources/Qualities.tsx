@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftQualitiesIn = InputOf<"/api/v4/resources/qualities", "post">;
-type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface QualitiesItem {
   id: string;
@@ -56,10 +52,7 @@ export interface QualitiesProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createQualitiesAction?:
-    | ((input: CreateDraftQualitiesIn) => Promise<CreateDraftQualitiesOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -80,8 +73,7 @@ export function Qualities({
   searchTerm,
   onSearchChange,
   group_id,
-  agent_id,
-  createQualitiesAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: QualitiesProps) {
@@ -103,14 +95,6 @@ export function Qualities({
       return name.includes(term) || desc.includes(term);
     });
   }, [allQualities, searchTerm]);
-
-  // Track which qualities IDs have already had resources created
-  const createdQualitiesIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdQualitiesIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdQualitiesIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert qualities array to QualitiesItem format for GenericPicker
   const qualitiesItems = useMemo(() => {
@@ -161,7 +145,7 @@ export function Qualities({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

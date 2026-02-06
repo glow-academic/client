@@ -44,7 +44,8 @@ export interface ArgsProps {
     | ((input: CreateDraftArgsIn) => Promise<CreateDraftArgsOut>)
     | undefined;
   group_id?: string | null; // Group ID for resource creation
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles field changes internally and calls createArgsAction
   // No onChange callback needed - component manages its own state like SchemaInput
 }
@@ -55,7 +56,8 @@ export function Args({
   disabled = false,
   createArgsAction,
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
 }: ArgsProps) {
   // Sort fields by position
   const sortedFields = useMemo(() => {
@@ -130,7 +132,7 @@ export function Args({
   // Debounced save function (creates new args resource with updated values - write-only pattern)
   const saveField = useCallback(
     async (fieldId: string, updates: Partial<ArgsFieldDetail>) => {
-      if (!createArgsAction || !agent_id || !group_id) return;
+      if (!createArgsAction || !create_tool_id || !group_id) return;
 
       const field = input_args_fields.find((f) => f.args_id === fieldId);
       if (!field) return;
@@ -139,7 +141,6 @@ export function Args({
         // Create new args resource with updated values (write-only pattern)
         await createArgsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             name: updates.name ?? field.name,
             description: updates.description ?? field.description,
@@ -167,7 +168,7 @@ export function Args({
         // Could add toast notification here
       }
     },
-    [createArgsAction, input_args_fields, agent_id, group_id]
+    [createArgsAction, input_args_fields, create_tool_id, group_id]
   );
 
   // Handle field value change with debouncing

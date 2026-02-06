@@ -65,10 +65,7 @@ export interface ProvidersProps {
   required?: boolean;
   placeholder?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createProvidersAction?:
-    | ((input: CreateDraftProvidersIn) => Promise<CreateDraftProvidersOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
 }
 
 export function Providers({
@@ -90,8 +87,7 @@ export function Providers({
   required = false,
   placeholder = "Select a provider...",
   group_id,
-  agent_id,
-  createProvidersAction,
+  link_tool_id,
 }: ProvidersProps) {
   const resource = provider_resource ?? null;
   const resourceId = provider_id ?? null;
@@ -146,47 +142,13 @@ export function Providers({
   );
 
   const handleSelectMulti = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdProviderIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected providers
-      if (
-        newlySelected.length > 0 &&
-        createProvidersAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const providerId of newlySelected) {
-          try {
-            await createProvidersAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                provider_id: providerId,
-                mcp: false,
-              },
-            });
-            createdProviderIdsRef.current.add(providerId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create provider resource for ${providerId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       if (onChange) {
         onChange(selectedIds);
       }
     },
-    [ids, onChange, createProvidersAction, agent_id, group_id]
+    [onChange]
   );
 
   // Don't render if show_provider is false (AFTER all hooks)
@@ -202,7 +164,7 @@ export function Providers({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && multiSelect && (
+          {onGenerate && link_tool_id && multiSelect && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

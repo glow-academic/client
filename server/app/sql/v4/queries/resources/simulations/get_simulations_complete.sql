@@ -1,5 +1,6 @@
 -- Get simulation by ID
 -- Returns simulation details for a single ID
+-- CLEAN PATTERN: Query simulations_resource directly with denormalized name/description
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -40,9 +41,8 @@ CREATE TYPE types.q_get_simulations_v4_item AS (
     generated boolean
 );
 
--- Accepts simulation artifact ID and returns simulation details
--- The artifact ID is what cohort_simulations_junction stores
--- Returns item as a proper column containing composite type
+-- Accepts simulation resource ID and returns simulation details
+-- Returns item as array for asyncpg compatibility
 CREATE OR REPLACE FUNCTION api_get_simulations_v4(
     p_simulation_id uuid
 )
@@ -56,17 +56,16 @@ SELECT COALESCE(
     ARRAY_AGG(
         ROW(
             s.id,
-            (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
-            COALESCE(
-                (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1),
-                ''
-            ),
+            s.name,
+            COALESCE(s.description, ''),
+            -- Time limit computed from scenario_time_limits via artifact connection
             COALESCE(
                 (SELECT SUM(stlr.time_limit_seconds)
-                 FROM simulation_scenario_time_limits_junction sstl
+                 FROM simulation_simulations_junction ssj
+                 JOIN simulation_scenario_time_limits_junction sstl ON sstl.simulation_id = ssj.simulation_id
                  JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
                  JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-                 WHERE sstl.simulation_id = s.id
+                 WHERE ssj.simulations_id = s.id
                    AND sstl.active = true
                    AND stlr.active = true
                    AND EXISTS (
@@ -86,13 +85,7 @@ SELECT COALESCE(
     ),
     ARRAY[]::types.q_get_simulations_v4_item[]
 ) as items
-FROM simulation_artifact s
+FROM simulations_resource s
 WHERE s.id = p_simulation_id
-  AND EXISTS (
-    SELECT 1 FROM simulation_flags_junction sf
-    JOIN flags_resource f ON sf.flag_id = f.id
-    WHERE sf.simulation_id = s.id
-      AND f.name = 'simulation_active'
-      AND sf.value = true
-);
+  AND s.active = true;
 $$;

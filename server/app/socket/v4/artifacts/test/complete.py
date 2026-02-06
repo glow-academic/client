@@ -1,44 +1,113 @@
 """Test complete handler.
 
-Listens to benchmark end events and emits test_complete to clients.
+Handles test run completion events and optionally chains to next run.
+Emits test_run_complete to clients.
 """
 
 from typing import Any
 
 from fastapi import APIRouter
 
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.test.types import TestCompleteEvent
+from app.socket.v4.artifacts.test.types import (
+    TestAllCompleteEvent,
+    TestRunCompleteEvent,
+)
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 server_router = APIRouter()
 
+# SQL path for context check
+SQL_PATH_CONTEXT = "app/sql/v4/queries/generate/test/get_test_run_context_complete.sql"
 
-@internal_sio.on("benchmark_end")  # type: ignore
-async def handle_test_complete(data: dict[str, Any]) -> None:
-    """Handle benchmark_end events and emit test_complete."""
-    attempt_id = data.get("attempt_id")
-    test_id = data.get("test_id")
-    if not attempt_id:
+
+@internal_sio.on("test_run_done")  # type: ignore
+async def handle_test_run_complete(data: dict[str, Any]) -> None:
+    """Handle test run completion and optionally chain to next run.
+
+    This handler:
+    1. Emits test_run_complete to clients
+    2. If run_all flag is set and there are more pending runs, triggers next run
+    3. If no more pending runs, emits test_all_complete
+    """
+    sid = data.get("sid")
+    chat_id = data.get("chat_id")
+    run_id = data.get("run_id")
+    run_all = data.get("run_all", False)
+
+    if not chat_id:
         return
 
-    event = TestCompleteEvent(
-        attempt_id=str(attempt_id),
-        test_id=str(test_id) if test_id else None,
-        success=True,
-        message="Test completed",
+    chat_id_str = str(chat_id)
+
+    # Get run completion details from data
+    current_run = data.get("current_run", 1)
+    total_runs = data.get("total_runs", 1)
+    original_run_resource_id = data.get("original_run_resource_id")
+    tool_calls = data.get("tool_calls")
+
+    # Calculate remaining runs
+    remaining_runs = total_runs - current_run
+
+    # Emit test_run_complete
+    event = TestRunCompleteEvent(
+        chat_id=chat_id_str,
+        run_id=str(run_id) if run_id else None,
+        original_run_resource_id=str(original_run_resource_id) if original_run_resource_id else None,
+        tool_calls=tool_calls,
+        current_run=current_run,
+        total_runs=total_runs,
+        remaining_runs=remaining_runs,
     )
 
-    sid = data.get("sid")
     if sid:
-        await sio.emit("test_complete", event.model_dump(mode="json"), room=sid)
+        await sio.emit("test_run_complete", event.model_dump(mode="json"), room=sid)
 
     await sio.emit(
-        "test_complete",
+        "test_run_complete",
         event.model_dump(mode="json"),
-        room=f"benchmark_{attempt_id}",
+        room=f"test_{chat_id_str}",
     )
+
+    # If run_all and there are more runs, trigger next
+    if run_all and remaining_runs > 0:
+        logger.info(
+            f"Chaining to next run - chat_id={chat_id_str}, "
+            f"remaining={remaining_runs}"
+        )
+        await internal_sio.emit(
+            "test_run",
+            {
+                "sid": sid,
+                "chat_id": chat_id_str,
+                "run_all": True,
+            },
+        )
+    elif run_all:
+        # All runs complete
+        all_complete_event = TestAllCompleteEvent(
+            chat_id=chat_id_str,
+            total_runs=total_runs,
+            success=True,
+        )
+        if sid:
+            await sio.emit(
+                "test_all_complete",
+                all_complete_event.model_dump(mode="json"),
+                room=sid,
+            )
+        await sio.emit(
+            "test_all_complete",
+            all_complete_event.model_dump(mode="json"),
+            room=f"test_{chat_id_str}",
+        )
+        logger.info(f"All test runs complete - chat_id={chat_id_str}, total={total_runs}")
 
 
 # =============================================================================
@@ -46,7 +115,7 @@ async def handle_test_complete(data: dict[str, Any]) -> None:
 # =============================================================================
 
 
-@server_router.post("/test/complete", response_model=dict[str, bool])
-async def test_complete_api(request: TestCompleteEvent) -> dict[str, bool]:
-    """Server-to-client event: Test completed."""
+@server_router.post("/test/run_complete", response_model=dict[str, bool])
+async def test_run_complete_api(request: TestRunCompleteEvent) -> dict[str, bool]:
+    """Server-to-client event: Single test run completed."""
     return {"success": True}

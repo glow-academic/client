@@ -59,10 +59,7 @@ export interface ScenariosProps {
   description?: string;
   searchTerm?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createScenariosAction?:
-    | ((input: CreateDraftScenariosIn) => Promise<CreateDraftScenariosOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   showSelectedOnly?: boolean;
@@ -90,8 +87,7 @@ export function Scenarios({
   placeholder = "Select scenarios...",
   description,
   group_id,
-  agent_id,
-  createScenariosAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   searchTerm,
@@ -152,52 +148,11 @@ export function Scenarios({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdScenarioIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected scenarios
-      if (
-        newlySelected.length > 0 &&
-        createScenariosAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const scenarioId of newlySelected) {
-          try {
-            // Find the scenario from the list - handle both id and scenario_id fields
-            const scenarioResource = allScenarios.find(
-              (s) => (s.scenario_id || s.id) === scenarioId
-            );
-            // The scenarioId is already the scenario_id (from scenarioItems mapping)
-            if (scenarioResource) {
-              await createScenariosAction({
-                body: {
-                  agent_id: agent_id,
-                  group_id: group_id,
-                  scenario_id: scenarioId, // Already the scenario_id
-                  mcp: false,
-                },
-              });
-              createdScenarioIdsRef.current.add(scenarioId);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create scenario resource for ${scenarioId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createScenariosAction, agent_id, group_id, allScenarios]
+    [onChange]
   );
 
   const handleGridSelect = useCallback(
@@ -276,7 +231,7 @@ export function Scenarios({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

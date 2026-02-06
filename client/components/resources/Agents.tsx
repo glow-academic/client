@@ -54,10 +54,7 @@ export interface AgentsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createAgentsAction?:
-    | ((input: CreateDraftAgentsIn) => Promise<CreateDraftAgentsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -76,8 +73,7 @@ export function Agents({
   placeholder = "Select agents...",
   description,
   group_id,
-  agent_id,
-  createAgentsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: AgentsProps) {
@@ -115,45 +111,11 @@ export function Agents({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdAgentIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected agents
-      if (
-        newlySelected.length > 0 &&
-        createAgentsAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const agentId of newlySelected) {
-          try {
-            await createAgentsAction({
-              body: {
-                agent_id: agentId,
-                group_id: group_id,
-                artifact_agent_id: agent_id,
-                mcp: false,
-              },
-            });
-            createdAgentIdsRef.current.add(agentId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create agent resource for ${agentId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createAgentsAction, agent_id, group_id]
+    [onChange]
   );
 
   // Check if any agent resource is generated (must be before early return)
@@ -179,7 +141,7 @@ export function Agents({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

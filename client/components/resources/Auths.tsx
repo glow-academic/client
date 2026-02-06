@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftAuthsIn = InputOf<"/api/v4/resources/auths", "post">;
-type CreateDraftAuthsOut = OutputOf<"/api/v4/resources/auths", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface AuthItem {
   id: string;
@@ -72,10 +68,7 @@ export interface AuthsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createAuthsAction?:
-    | ((input: CreateDraftAuthsIn) => Promise<CreateDraftAuthsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -94,8 +87,7 @@ export function Auths({
   placeholder = "Select auths...",
   description,
   group_id,
-  agent_id,
-  createAuthsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: AuthsProps) {
@@ -106,14 +98,6 @@ export function Auths({
     () => auth_suggestions ?? [],
     [auth_suggestions]
   );
-
-  // Track which auth IDs have already had resources created
-  const createdAuthIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdAuthIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdAuthIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert auths array to AuthItem format for GenericPicker
   const authItems = useMemo(() => {
@@ -135,45 +119,11 @@ export function Auths({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdAuthIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected auths
-      if (
-        newlySelected.length > 0 &&
-        createAuthsAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const authId of newlySelected) {
-          try {
-            await createAuthsAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                auth_id: authId,
-                mcp: false,
-              },
-            });
-            createdAuthIdsRef.current.add(authId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create auth resource for ${authId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createAuthsAction, agent_id, group_id]
+    [onChange]
   );
 
   // Check if any auth resource is generated (must be before early return)
@@ -199,7 +149,7 @@ export function Auths({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

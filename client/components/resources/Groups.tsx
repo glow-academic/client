@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftGroupsIn = InputOf<"/api/v4/resources/groups", "post">;
-type CreateDraftGroupsOut = OutputOf<"/api/v4/resources/groups", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface GroupItem {
   id: string;
@@ -54,10 +50,7 @@ export interface GroupsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createGroupsAction?:
-    | ((input: CreateDraftGroupsIn) => Promise<CreateDraftGroupsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -75,8 +68,7 @@ export function Groups({
   required = false,
   description,
   group_id,
-  agent_id,
-  createGroupsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: GroupsProps) {
@@ -87,14 +79,6 @@ export function Groups({
     () => group_suggestions ?? [],
     [group_suggestions]
   );
-
-  // Track which group IDs have already had resources created
-  const createdGroupIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdGroupIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdGroupIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert groups array to GroupItem format for grid rendering
   const groupItems = useMemo(() => {
@@ -114,40 +98,15 @@ export function Groups({
   );
 
   const handleSelect = useCallback(
-    async (selectedId: string) => {
+    (selectedId: string) => {
       const isSelected = ids.includes(selectedId);
       const nextIds = isSelected
         ? ids.filter((id) => id !== selectedId)
         : [...ids, selectedId];
 
-      if (
-        !isSelected &&
-        !createdGroupIdsRef.current.has(selectedId) &&
-        createGroupsAction &&
-        agent_id &&
-        group_id
-      ) {
-        try {
-          await createGroupsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: selectedId,
-              mcp: false,
-            },
-          });
-          createdGroupIdsRef.current.add(selectedId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to create group resource for ${selectedId}:`,
-            error
-          );
-        }
-      }
-
       onChange(nextIds);
     },
-    [ids, onChange, createGroupsAction, agent_id, group_id]
+    [ids, onChange]
   );
 
   // Check if any group resource is generated (must be before early return)
@@ -173,7 +132,7 @@ export function Groups({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

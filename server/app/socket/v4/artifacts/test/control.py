@@ -4,91 +4,54 @@ Handles WebSocket events for stopping benchmark tests:
 - test_stop: Stop current benchmark test
 """
 
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 
-from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import sio
 from app.socket.v4.artifacts.test.types import TestErrorEvent, TestStopPayload, TestStoppedEvent
-from app.sql.types import (
-    GetTestDetailsV4SqlParams,
-    GetTestDetailsV4SqlRow,
-    MarkTestCompleteV4SqlParams,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 
 async def _test_stop_impl(sid: str, data: TestStopPayload) -> None:
-    """Handle test_stop - mark active benchmark test complete."""
+    """Handle test_stop - signal to stop current test execution."""
+    chat_id_str = str(data.chat_id)
+
     try:
-        attempt_id = str(data.attempt_id)
-        if not attempt_id:
-            await sio.emit(
-                "test_error",
-                TestErrorEvent(message="Missing attempt_id", error_type="stop").model_dump(
-                    mode="json"
-                ),
-                room=sid,
-            )
-            return
-
-        async with get_db_connection() as conn:
-            params = GetTestDetailsV4SqlParams(attempt_id=data.attempt_id)
-            result = cast(
-                GetTestDetailsV4SqlRow,
-                await execute_sql_typed(
-                    conn,
-                    "app/sql/v4/queries/benchmark/get_test_details_v4_complete.sql",
-                    params=params,
-                ),
-            )
-
-            if not result or not result.test_id:
-                await sio.emit(
-                    "test_error",
-                    TestErrorEvent(
-                        attempt_id=attempt_id,
-                        message="No active test found",
-                        error_type="stop",
-                    ).model_dump(mode="json"),
-                    room=sid,
-                )
-                return
-
-            mark_params = MarkTestCompleteV4SqlParams(test_id=result.test_id)
-            await execute_sql_typed(
-                conn,
-                "app/sql/v4/queries/benchmark/mark_test_complete_v4_complete.sql",
-                params=mark_params,
-            )
-
+        # For now, just emit stopped event
+        # TODO: Add actual cancellation logic via run cancellation tokens
         await sio.emit(
             "test_stopped",
             TestStoppedEvent(
-                attempt_id=attempt_id,
+                chat_id=chat_id_str,
                 success=True,
-                message="Benchmark test stopped",
+                message="Test execution stopped",
             ).model_dump(mode="json"),
             room=sid,
         )
         await sio.emit(
             "test_stopped",
             TestStoppedEvent(
-                attempt_id=attempt_id,
+                chat_id=chat_id_str,
                 success=True,
-                message="Benchmark test stopped",
+                message="Test execution stopped",
             ).model_dump(mode="json"),
-            room=f"benchmark_{attempt_id}",
+            room=f"test_{chat_id_str}",
         )
+
+        logger.info(f"Test stopped - chat_id={chat_id_str}")
+
     except Exception as e:
+        logger.exception(f"Failed to stop test: {str(e)}")
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                attempt_id=str(data.attempt_id),
+                chat_id=chat_id_str,
                 message=f"Failed to stop test: {str(e)}",
                 error_type="stop",
             ).model_dump(mode="json"),
@@ -106,7 +69,7 @@ async def test_stop(sid: str, data: dict[str, Any]) -> None:
         await sio.emit(
             "test_error",
             TestErrorEvent(
-                attempt_id=data.get("attempt_id"),
+                chat_id=str(data.get("chat_id", "")),
                 message=f"Invalid request: {str(e)}",
                 error_type="stop",
             ).model_dump(mode="json"),

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 export interface SimulationItem {
   id: string;
@@ -53,16 +53,11 @@ export interface SimulationsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation (not used for simulations, but kept for consistency)
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
-  createSimulationsAction?:
-    | ((input: {
-        body: { agent_id: string; group_id: string; simulation_id: string; mcp: boolean };
-      }) => Promise<unknown>)
-    | undefined;
   // Legacy props for backward compatibility
   simulationIds?: string[];
 }
@@ -81,18 +76,14 @@ export function Simulations({
   placeholder = "Select simulations...",
   description,
   group_id,
-  agent_id,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   searchTerm = "",
   showSelectedFilter = false,
-  createSimulationsAction,
   // Legacy props for backward compatibility
   simulationIds,
 }: SimulationsProps) {
-  // Track which simulation IDs have already had resources created (prevent duplicates)
-  const createdSimulationIdsRef = useRef<Set<string>>(new Set());
-
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
     () => simulation_ids ?? simulationIds ?? [],
@@ -165,42 +156,15 @@ export function Simulations({
   );
 
   const handleSelect = useCallback(
-    async (simulationId: string) => {
+    (simulationId: string) => {
       const isSelected = ids.includes(simulationId);
       const newIds = isSelected
         ? ids.filter((id) => id !== simulationId)
         : [...ids, simulationId];
 
-      // Create resource for newly selected simulation
-      if (
-        !isSelected &&
-        createSimulationsAction &&
-        agent_id &&
-        group_id &&
-        !createdSimulationIdsRef.current.has(simulationId)
-      ) {
-        try {
-          await createSimulationsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: group_id,
-              simulation_id: simulationId,
-              mcp: false,
-            },
-          });
-          createdSimulationIdsRef.current.add(simulationId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to create simulation resource for ${simulationId}:`,
-            error
-          );
-        }
-      }
-
       onChange(newIds);
     },
-    [ids, onChange, createSimulationsAction, agent_id, group_id]
+    [ids, onChange]
   );
 
   // Check if any simulation resource is generated (must be before early return)
@@ -226,7 +190,7 @@ export function Simulations({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

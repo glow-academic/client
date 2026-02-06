@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useMemo } from "react";
-
-type CreateDraftStandardsIn = InputOf<"/api/v4/resources/standards", "post">;
-type CreateDraftStandardsOut = OutputOf<"/api/v4/resources/standards", "post">;
 
 export interface StandardItem {
   id: string;
@@ -61,12 +57,7 @@ export interface StandardsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createStandardsAction?:
-    | ((
-        input: CreateDraftStandardsIn
-      ) => Promise<CreateDraftStandardsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -85,8 +76,7 @@ export function Standards({
   placeholder = "Select standards...",
   description,
   group_id: _group_id,
-  agent_id: _agent_id,
-  createStandardsAction: _createStandardsAction,
+  link_tool_id: _link_tool_id,
   onGenerate,
   isGenerating = false,
 }: StandardsProps) {

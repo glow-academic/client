@@ -2709,6 +2709,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/args/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Args
+         * @description Get args resources by IDs.
+         */
+        post: operations["get_args_api_v4_resources_args_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/args_outputs": {
         parameters: {
             query?: never;
@@ -2723,6 +2743,26 @@ export interface paths {
          * @description Create args_outputs resource (always INSERT).
          */
         post: operations["create_args_outputs_api_v4_resources_args_outputs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/args_outputs/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Args Outputs
+         * @description Get args_outputs resources by IDs.
+         */
+        post: operations["get_args_outputs_api_v4_resources_args_outputs_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2948,6 +2988,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/emails/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Emails
+         * @description Get emails resources by IDs.
+         */
+        post: operations["get_emails_api_v4_resources_emails_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/endpoints": {
         parameters: {
             query?: never;
@@ -2962,6 +3022,26 @@ export interface paths {
          * @description Create endpoints resource (always INSERT).
          */
         post: operations["create_endpoints_api_v4_resources_endpoints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/endpoints/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Endpoints
+         * @description Get endpoints resources by IDs.
+         */
+        post: operations["get_endpoints_api_v4_resources_endpoints_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3189,6 +3269,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/group_positions/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Group Positions
+         * @description Get group_positions resources by IDs.
+         */
+        post: operations["get_group_positions_api_v4_resources_group_positions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/group_rubrics": {
         parameters: {
             query?: never;
@@ -3203,6 +3303,26 @@ export interface paths {
          * @description Create group_rubrics resource (always INSERT).
          */
         post: operations["create_group_rubrics_api_v4_resources_group_rubrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/group_rubrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Group Rubrics
+         * @description Get group_rubrics resources by IDs.
+         */
+        post: operations["get_group_rubrics_api_v4_resources_group_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3367,6 +3487,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/items/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Items
+         * @description Get items resources by IDs.
+         */
+        post: operations["get_items_api_v4_resources_items_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/keys": {
         parameters: {
             query?: never;
@@ -3381,6 +3521,26 @@ export interface paths {
          * @description Create keys resource (always INSERT).
          */
         post: operations["create_keys_api_v4_resources_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/keys/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Keys
+         * @description Get keys resources by IDs.
+         */
+        post: operations["get_keys_api_v4_resources_keys_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3608,6 +3768,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/points/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Points
+         * @description Get points resources by IDs.
+         */
+        post: operations["get_points_api_v4_resources_points_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/pricing": {
         parameters: {
             query?: never;
@@ -3622,6 +3802,26 @@ export interface paths {
          * @description Create pricing resource (always INSERT).
          */
         post: operations["create_pricing_api_v4_resources_pricing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/pricing/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing
+         * @description Get pricing resources by IDs.
+         */
+        post: operations["get_pricing_api_v4_resources_pricing_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3688,6 +3888,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/prompts/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Prompts
+         * @description Get prompts resources by IDs.
+         */
+        post: operations["get_prompts_api_v4_resources_prompts_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/protocols": {
         parameters: {
             query?: never;
@@ -3702,6 +3922,26 @@ export interface paths {
          * @description Create protocols resource (always INSERT).
          */
         post: operations["create_protocols_api_v4_resources_protocols_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/protocols/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Protocols
+         * @description Get protocols resources by IDs.
+         */
+        post: operations["get_protocols_api_v4_resources_protocols_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3762,6 +4002,26 @@ export interface paths {
          * @description Create request_limits resource (always INSERT).
          */
         post: operations["create_request_limits_api_v4_resources_request_limits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/request_limits/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Request Limits
+         * @description Get request_limits resources by IDs.
+         */
+        post: operations["get_request_limits_api_v4_resources_request_limits_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3830,6 +4090,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/run_positions/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Run Positions
+         * @description Get run_positions resources by IDs.
+         */
+        post: operations["get_run_positions_api_v4_resources_run_positions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/run_rubrics": {
         parameters: {
             query?: never;
@@ -3844,6 +4124,26 @@ export interface paths {
          * @description Create run_rubrics resource (always INSERT).
          */
         post: operations["create_run_rubrics_api_v4_resources_run_rubrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/run_rubrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Run Rubrics
+         * @description Get run_rubrics resources by IDs.
+         */
+        post: operations["get_run_rubrics_api_v4_resources_run_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4355,6 +4655,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/slugs/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Slugs
+         * @description Get slugs resources by IDs.
+         */
+        post: operations["get_slugs_api_v4_resources_slugs_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/standard_groups": {
         parameters: {
             query?: never;
@@ -4472,6 +4792,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/values/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Values
+         * @description Get values resources by IDs.
+         */
+        post: operations["get_values_api_v4_resources_values_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/videos": {
         parameters: {
             query?: never;
@@ -4532,6 +4872,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/voices/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Voices
+         * @description Get voices resources by IDs.
+         */
+        post: operations["get_voices_api_v4_resources_voices_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/uploads": {
         parameters: {
             query?: never;
@@ -4546,6 +4906,26 @@ export interface paths {
          * @description Create uploads resource (always INSERT).
          */
         post: operations["create_uploads_api_v4_resources_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/uploads/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Uploads
+         * @description Get uploads resources by IDs.
+         */
+        post: operations["get_uploads_api_v4_resources_uploads_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4691,6 +5071,68 @@ export interface paths {
          * @description Recreate the mv_simulation_chats materialized view.
          */
         post: operations["recreate_chats_view_api_v4_views_simulation_chats_recreate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/simulation/groups/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Groups
+         * @description Get simulation group data from the materialized view.
+         *
+         *     This endpoint fetches group-level inference config data.
+         */
+        post: operations["get_groups_api_v4_views_simulation_groups_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/simulation/groups/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Groups View
+         * @description Refresh the mv_simulation_groups materialized view concurrently.
+         */
+        post: operations["refresh_groups_view_api_v4_views_simulation_groups_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/views/simulation/groups/recreate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recreate Groups View
+         * @description Recreate the mv_simulation_groups materialized view.
+         */
+        post: operations["recreate_groups_view_api_v4_views_simulation_groups_recreate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6158,7 +6600,7 @@ export interface paths {
         put?: never;
         /**
          * Test Join Api
-         * @description Client-to-server event: Join a benchmark room for real-time updates.
+         * @description Client-to-server event: Join a test room for real-time updates.
          */
         post: operations["test_join_api_socket_v4_client_test_join_post"];
         delete?: never;
@@ -6178,7 +6620,7 @@ export interface paths {
         put?: never;
         /**
          * Test Leave Api
-         * @description Client-to-server event: Leave a benchmark room.
+         * @description Client-to-server event: Leave a test room.
          */
         post: operations["test_leave_api_socket_v4_client_test_leave_post"];
         delete?: never;
@@ -6207,7 +6649,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/test/send": {
+    "/socket/v4/client/test/run": {
         parameters: {
             query?: never;
             header?: never;
@@ -6217,10 +6659,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Test Send Api
-         * @description Client-to-server event: Send test input (future).
+         * Test Run Api
+         * @description Client-to-server event: Run one auto-regressive replay.
          */
-        post: operations["test_send_api_socket_v4_client_test_send_post"];
+        post: operations["test_run_api_socket_v4_client_test_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/test/run_all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Run All Api
+         * @description Client-to-server event: Run all remaining auto-regressive replays.
+         */
+        post: operations["test_run_all_api_socket_v4_client_test_run_all_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6778,7 +7240,7 @@ export interface paths {
         put?: never;
         /**
          * Benchmark Complete Api
-         * @description Internal event: Benchmark eval completed.
+         * @description Server-to-client event: Benchmark completed.
          */
         post: operations["benchmark_complete_api_socket_v4_server_benchmark_complete_post"];
         delete?: never;
@@ -6818,7 +7280,7 @@ export interface paths {
         put?: never;
         /**
          * Test Joined Api
-         * @description Server-to-client event: Successfully joined a benchmark room.
+         * @description Server-to-client event: Successfully joined a test room.
          */
         post: operations["test_joined_api_socket_v4_server_test_joined_post"];
         delete?: never;
@@ -6867,7 +7329,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/test/complete": {
+    "/socket/v4/server/test/run_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6877,10 +7339,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Test Complete Api
-         * @description Server-to-client event: Test completed.
+         * Test Run Complete Api
+         * @description Server-to-client event: Single test run completed.
          */
-        post: operations["test_complete_api_socket_v4_server_test_complete_post"];
+        post: operations["test_run_complete_api_socket_v4_server_test_run_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6901,6 +7363,46 @@ export interface paths {
          * @description Server-to-client event: Test error occurred.
          */
         post: operations["test_error_api_socket_v4_server_test_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/run_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Run Start Api
+         * @description Server-to-client event: Test run started.
+         */
+        post: operations["test_run_start_api_socket_v4_server_test_run_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/test/all_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test All Complete Api
+         * @description Server-to-client event: All test runs completed.
+         */
+        post: operations["test_all_complete_api_socket_v4_server_test_all_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8689,6 +9191,35 @@ export interface components {
             status: string;
         };
         /**
+         * BenchmarkChatInfo
+         * @description Info about a benchmark chat (test instance).
+         *
+         *     Each chat represents one run or group to be tested.
+         */
+        BenchmarkChatInfo: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Resource Id */
+            run_resource_id?: string | null;
+            /** Group Resource Id */
+            group_resource_id?: string | null;
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
+            /**
+             * Total Runs
+             * @default 1
+             */
+            total_runs: number;
+            /**
+             * Completed Runs
+             * @default 0
+             */
+            completed_runs: number;
+        };
+        /**
          * BenchmarkChatViewItem
          * @description Single benchmark chat row from mv_benchmark_chats.
          */
@@ -8733,8 +9264,36 @@ export interface components {
             num_messages: number;
         };
         /**
+         * BenchmarkCompleteEvent
+         * @description Server-to-client event: benchmark_complete.
+         *
+         *     Emitted when all tests in benchmark are complete.
+         */
+        BenchmarkCompleteEvent: {
+            /**
+             * Artifact Type
+             * @default benchmark
+             */
+            artifact_type: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Total Chats */
+            total_chats?: number | null;
+            /** Passed Chats */
+            passed_chats?: number | null;
+        };
+        /**
          * BenchmarkErrorEvent
-         * @description Server-to-client event: benchmarks_error.
+         * @description Server-to-client event: benchmark_error.
+         *
+         *     Emitted on errors.
          */
         BenchmarkErrorEvent: {
             /**
@@ -8751,47 +9310,10 @@ export interface components {
             message: string;
             /** Attempt Id */
             attempt_id?: string | null;
-            /** Test Id */
-            test_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
             /** Error Type */
             error_type?: string | null;
-        };
-        /**
-         * BenchmarkEvalCompletePayload
-         * @description Internal event payload for eval completion.
-         */
-        BenchmarkEvalCompletePayload: {
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
-            /** Message */
-            message?: string | null;
-            /** Sid */
-            sid?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Test Id */
-            test_id?: string | null;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Tool Id */
-            tool_id?: string | null;
-            /** Metadata */
-            metadata?: {
-                [key: string]: unknown;
-            } | null;
         };
         /**
          * BenchmarkEvalSummaryItem
@@ -8882,7 +9404,9 @@ export interface components {
         };
         /**
          * BenchmarkProgressEvent
-         * @description Server-to-client event: benchmarks_progress.
+         * @description Server-to-client event: benchmark_progress.
+         *
+         *     Emitted during benchmark execution to show overall progress.
          */
         BenchmarkProgressEvent: {
             /**
@@ -8891,22 +9415,15 @@ export interface components {
              */
             artifact_type: string;
             /** Attempt Id */
-            attempt_id?: string | null;
-            /** Test Id */
-            test_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
+            attempt_id: string;
+            /** Total Chats */
+            total_chats?: number | null;
+            /** Completed Chats */
+            completed_chats?: number | null;
             /** Status */
             status?: string | null;
             /** Message */
             message?: string | null;
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
         };
         /**
          * BenchmarkRequest
@@ -8972,6 +9489,9 @@ export interface components {
         /**
          * BenchmarkStartPayload
          * @description Request payload for benchmark_start WebSocket event.
+         *
+         *     Creates benchmark attempt structure. Client then controls
+         *     execution via test_run/test_run_all.
          */
         BenchmarkStartPayload: {
             /**
@@ -8987,7 +9507,10 @@ export interface components {
         };
         /**
          * BenchmarkStartedEvent
-         * @description Server-to-client event: benchmarks_started.
+         * @description Server-to-client event: benchmark_started.
+         *
+         *     Emitted when benchmark attempt is created with structure.
+         *     Client uses chat_ids to trigger test_run/test_run_all.
          */
         BenchmarkStartedEvent: {
             /**
@@ -9006,12 +9529,16 @@ export interface components {
             attempt_id: string;
             /** Eval Id */
             eval_id?: string | null;
-            /** Use Groups */
-            use_groups?: boolean | null;
-            /** Pending Run Ids */
-            pending_run_ids?: string[] | null;
-            /** Pending Group Ids */
-            pending_group_ids?: string[] | null;
+            /**
+             * Use Groups
+             * @default false
+             */
+            use_groups: boolean;
+            /**
+             * Chats
+             * @default []
+             */
+            chats: components["schemas"]["BenchmarkChatInfo"][];
         };
         /**
          * BenchmarkTestViewItem
@@ -9455,24 +9982,21 @@ export interface components {
         };
         /** ColorsApiRequest */
         ColorsApiRequest: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Name */
-            name: string;
+            name?: string | null;
             /** Description */
-            description: string;
+            description?: string | null;
             /** Hex Code */
-            hex_code: string;
+            hex_code?: string | null;
             /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ColorsApiResponse */
         ColorsApiResponse: {
@@ -10246,20 +10770,17 @@ export interface components {
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Description */
-            description: string;
+            description?: string | null;
             /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** DescriptionsApiResponse */
         DescriptionsApiResponse: {
@@ -10343,8 +10864,54 @@ export interface components {
              * @default true
              */
             active: boolean;
-            /** Group Id */
-            group_id?: string | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Colors Group Id */
+            colors_group_id?: string | null;
+            /** Icons Group Id */
+            icons_group_id?: string | null;
+            /** Auths Group Id */
+            auths_group_id?: string | null;
+            /** Tools Group Id */
+            tools_group_id?: string | null;
+            /** Instructions Group Id */
+            instructions_group_id?: string | null;
+            /** Documents Group Id */
+            documents_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Parameters Group Id */
+            parameters_group_id?: string | null;
+            /** Parameter Fields Group Id */
+            parameter_fields_group_id?: string | null;
+            /** Fields Group Id */
+            fields_group_id?: string | null;
+            /** Examples Group Id */
+            examples_group_id?: string | null;
+            /** Questions Group Id */
+            questions_group_id?: string | null;
+            /** Templates Group Id */
+            templates_group_id?: string | null;
+            /** Texts Group Id */
+            texts_group_id?: string | null;
+            /** Run Rubrics Group Id */
+            run_rubrics_group_id?: string | null;
+            /** Group Rubrics Group Id */
+            group_rubrics_group_id?: string | null;
+            /** Bindings Group Id */
+            bindings_group_id?: string | null;
+            /** Conditional Parameters Group Id */
+            conditional_parameters_group_id?: string | null;
+            /** Personas Group Id */
+            personas_group_id?: string | null;
+            /** Scenarios Group Id */
+            scenarios_group_id?: string | null;
+            /** Simulations Group Id */
+            simulations_group_id?: string | null;
             /** Resource Types */
             resource_types?: string[];
             /** Resource Ids */
@@ -10769,20 +11336,17 @@ export interface components {
         };
         /** ExamplesApiRequest */
         ExamplesApiRequest: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Example */
-            example: string;
+            example?: string | null;
             /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** ExamplesApiResponse */
         ExamplesApiResponse: {
@@ -11425,6 +11989,26 @@ export interface components {
             actor_name?: string | null;
             /** Agents */
             agents?: components["schemas"]["QListAgentsV4Agent"][] | null;
+        };
+        /** GetArgsApiRequest */
+        GetArgsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetArgsApiResponse */
+        GetArgsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetArgsV4Item"][] | null;
+        };
+        /** GetArgsOutputsApiRequest */
+        GetArgsOutputsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetArgsOutputsApiResponse */
+        GetArgsOutputsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
         };
         /**
          * GetArtifactSessionDetailRequest
@@ -12764,6 +13348,26 @@ export interface components {
             /** Items */
             items?: components["schemas"]["DraftResourcesViewItem"][];
         };
+        /** GetEmailsApiRequest */
+        GetEmailsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetEmailsApiResponse */
+        GetEmailsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEmailsV4Item"][] | null;
+        };
+        /** GetEndpointsApiRequest */
+        GetEndpointsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetEndpointsApiResponse */
+        GetEndpointsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEndpointsV4Item"][] | null;
+        };
         /** GetEvalApiRequest */
         GetEvalApiRequest: {
             /** Eval Id */
@@ -13119,6 +13723,49 @@ export interface components {
              */
             total_count: number;
         };
+        /** GetGroupPositionsApiRequest */
+        GetGroupPositionsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetGroupPositionsApiResponse */
+        GetGroupPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetGroupPositionsV4Item"][] | null;
+        };
+        /** GetGroupRubricsApiRequest */
+        GetGroupRubricsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetGroupRubricsApiResponse */
+        GetGroupRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetGroupRubricsV4Item"][] | null;
+        };
+        /**
+         * GetGroupsRequest
+         * @description Request for getting group data.
+         */
+        GetGroupsRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             * @description Chat ID to fetch groups for
+             */
+            chat_id: string;
+        };
+        /**
+         * GetGroupsResponse
+         * @description Response containing group data.
+         */
+        GetGroupsResponse: {
+            /**
+             * Items
+             * @description Group data items
+             */
+            items?: components["schemas"]["GroupViewItem"][];
+        };
         /**
          * GetHealthAnalyticsRequest
          * @description Request for health analytics bundle.
@@ -13257,6 +13904,16 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetInstructionsV4Item"][] | null;
         };
+        /** GetItemsApiRequest */
+        GetItemsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetItemsApiResponse */
+        GetItemsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetItemsV4Item"][] | null;
+        };
         /** GetKeyForDecryptApiRequest */
         GetKeyForDecryptApiRequest: {
             /**
@@ -13273,6 +13930,16 @@ export interface components {
             name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** GetKeysApiRequest */
+        GetKeysApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetKeysApiResponse */
+        GetKeysApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetKeysV4Item"][] | null;
         };
         /** GetLoginDataApiRequest */
         GetLoginDataApiRequest: {
@@ -14018,6 +14685,16 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /** GetPointsApiRequest */
+        GetPointsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetPointsApiResponse */
+        GetPointsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
         /**
          * GetPricingAnalyticsRequest
          * @description Request for pricing analytics summary.
@@ -14051,6 +14728,16 @@ export interface components {
             profiles?: components["schemas"]["PricingProfileItem"][];
             /** Agents */
             agents?: components["schemas"]["PricingAgentItem"][];
+        };
+        /** GetPricingApiRequest */
+        GetPricingApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetPricingApiResponse */
+        GetPricingApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPricingV4Item"][] | null;
         };
         /**
          * GetPricingDailyRequest
@@ -14668,6 +15355,26 @@ export interface components {
              */
             total_count: number;
         };
+        /** GetPromptsApiRequest */
+        GetPromptsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetPromptsApiResponse */
+        GetPromptsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetPromptsV4Item"][] | null;
+        };
+        /** GetProtocolsApiRequest */
+        GetProtocolsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetProtocolsApiResponse */
+        GetProtocolsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProtocolsV4Item"][] | null;
+        };
         /** GetProviderApiRequest */
         GetProviderApiRequest: {
             /** Provider Id */
@@ -14776,6 +15483,16 @@ export interface components {
             allow_multiple?: boolean | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** GetRequestLimitsApiRequest */
+        GetRequestLimitsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRequestLimitsApiResponse */
+        GetRequestLimitsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRequestLimitsV4Item"][] | null;
         };
         /**
          * GetRolesApiRequest
@@ -14957,6 +15674,26 @@ export interface components {
             simulations?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
+        };
+        /** GetRunPositionsApiRequest */
+        GetRunPositionsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRunPositionsApiResponse */
+        GetRunPositionsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRunPositionsV4Item"][] | null;
+        };
+        /** GetRunRubricsApiRequest */
+        GetRunRubricsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetRunRubricsApiResponse */
+        GetRunRubricsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetRunRubricsV4Item"][] | null;
         };
         /**
          * GetScenarioApiRequest
@@ -15847,6 +16584,16 @@ export interface components {
             /** General Agent Id */
             general_agent_id?: string | null;
         };
+        /** GetSlugsApiRequest */
+        GetSlugsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetSlugsApiResponse */
+        GetSlugsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetSlugsV4Item"][] | null;
+        };
         /** GetStaffListApiRequest */
         GetStaffListApiRequest: Record<string, never>;
         /** GetStaffListApiResponse */
@@ -16180,6 +16927,26 @@ export interface components {
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
         };
+        /** GetUploadsApiRequest */
+        GetUploadsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetUploadsApiResponse */
+        GetUploadsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetUploadsV4Item"][] | null;
+        };
+        /** GetValuesApiRequest */
+        GetValuesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetValuesApiResponse */
+        GetValuesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetValuesV4Item"][] | null;
+        };
         /**
          * GetVideoApiRequest
          * @description Request for getting a video by ID.
@@ -16217,6 +16984,16 @@ export interface components {
             upload_id?: string | null;
             /** Generated */
             generated?: boolean | null;
+        };
+        /** GetVoicesApiRequest */
+        GetVoicesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetVoicesApiResponse */
+        GetVoicesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetVoicesV4Item"][] | null;
         };
         /**
          * GradeData
@@ -16583,6 +17360,55 @@ export interface components {
         GroupRubricsApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /**
+         * GroupViewItem
+         * @description Single group from the simulation groups view (inference config).
+         */
+        GroupViewItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Groups Id */
+            groups_id?: string | null;
+            /** Agents Id */
+            agents_id?: string | null;
+            /** Models Id */
+            models_id?: string | null;
+            /** Model Values Id */
+            model_values_id?: string | null;
+            /** Providers Id */
+            providers_id?: string | null;
+            /** Provider Values Id */
+            provider_values_id?: string | null;
+            /** Endpoints Id */
+            endpoints_id?: string | null;
+            /** Keys Id */
+            keys_id?: string | null;
+            /** Prompts Id */
+            prompts_id?: string | null;
+            /** Instructions Ids */
+            instructions_ids?: string[] | null;
+            /** Temperature Levels Id */
+            temperature_levels_id?: string | null;
+            /** Reasoning Levels Id */
+            reasoning_levels_id?: string | null;
+            /** Qualities Id */
+            qualities_id?: string | null;
+            /** Voices Id */
+            voices_id?: string | null;
+            /** Tools Ids */
+            tools_ids?: string[] | null;
+            /** Custom Model */
+            custom_model?: boolean | null;
+            /** Group Name */
+            group_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /** GrowthAvailableMetric */
         GrowthAvailableMetric: {
@@ -17029,20 +17855,17 @@ export interface components {
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Template */
-            template: string;
+            template?: string | null;
             /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** InstructionsApiResponse */
         InstructionsApiResponse: {
@@ -17839,6 +18662,10 @@ export interface components {
              * @default false
              */
             completed: boolean;
+            /** Runs Id */
+            runs_id?: string | null;
+            /** History Content */
+            history_content?: string | null;
             /** Contents */
             contents?: components["schemas"]["ContentItem"][] | null;
             /** Strengths */
@@ -17850,10 +18677,6 @@ export interface components {
         };
         /** NamesApiRequest */
         NamesApiRequest: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Name */
             name?: string | null;
             /**
@@ -17861,6 +18684,10 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
         };
         /** NamesApiResponse */
         NamesApiResponse: {
@@ -17945,8 +18772,11 @@ export interface components {
         };
         /** ParameterFieldsApiRequest */
         ParameterFieldsApiRequest: {
-            /** Agent Id */
-            agent_id?: string | null;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /**
              * Group Id
              * Format: uuid
@@ -19762,6 +20592,38 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetArgsOutputsV4Item */
+        QGetArgsOutputsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Args Id */
+            args_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Template */
+            template: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetArgsV4Item */
+        QGetArgsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Field Type */
+            field_type: string | null;
+            /** Required */
+            required: boolean | null;
+            /** Default Value */
+            default_value: string | null;
+            /** Position */
+            position: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetAuthListV4Auth */
         QGetAuthListV4Auth: {
             /** Auth Id */
@@ -20112,6 +20974,24 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
+        /** QGetEmailsV4Item */
+        QGetEmailsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Email */
+            email: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEndpointsV4Item */
+        QGetEndpointsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Base Url */
+            base_url: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetEvalV4Agent */
         QGetEvalV4Agent: {
             /** Agent Id */
@@ -20302,6 +21182,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Value */
+            value: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -20315,6 +21197,30 @@ export interface components {
             description: string | null;
             /** Icon */
             icon: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetGroupPositionsV4Item */
+        QGetGroupPositionsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Groups Id */
+            groups_id: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetGroupRubricsV4Item */
+        QGetGroupRubricsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Groups Id */
+            groups_id: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -20350,6 +21256,36 @@ export interface components {
             id: string | null;
             /** Template */
             template: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetItemsV4Item */
+        QGetItemsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetKeysV4Item */
+        QGetKeysV4Item: {
+            /** Id */
+            id: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Key */
+            key: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -20814,6 +21750,28 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetPointsV4Item */
+        QGetPointsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetPricingV4Item */
+        QGetPricingV4Item: {
+            /** Id */
+            id: string | null;
+            /** Pricing Type */
+            pricing_type: string | null;
+            /** Price */
+            price: number | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetProblemStatementsV4Item */
         QGetProblemStatementsV4Item: {
             /** Problem Statement Id */
@@ -21068,6 +22026,28 @@ export interface components {
             /** Color Hex */
             color_hex: string | null;
         };
+        /** QGetPromptsV4Item */
+        QGetPromptsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProtocolsV4Item */
+        QGetProtocolsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetProviderV4DescriptionResource */
         QGetProviderV4DescriptionResource: {
             /** Id */
@@ -21111,6 +22091,15 @@ export interface components {
             generated: boolean | null;
             /** Time */
             time: number | null;
+        };
+        /** QGetRequestLimitsV4Item */
+        QGetRequestLimitsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /**
          * QGetRolesV4Item
@@ -21311,6 +22300,30 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetRunPositionsV4Item */
+        QGetRunPositionsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Runs Id */
+            runs_id: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRunRubricsV4Item */
+        QGetRunRubricsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Runs Id */
+            runs_id: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetScenarioFlagsV4Item */
         QGetScenarioFlagsV4Item: {
@@ -21701,6 +22714,15 @@ export interface components {
             /** Value */
             value?: string | null;
         };
+        /** QGetSlugsV4Item */
+        QGetSlugsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetTemplatesV4Item */
         QGetTemplatesV4Item: {
             /** Template Id */
@@ -21830,6 +22852,22 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
+        /** QGetUploadsV4Item */
+        QGetUploadsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetValuesV4Item */
+        QGetValuesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetVideosV4Item */
         QGetVideosV4Item: {
             /** Video Id */
@@ -21844,6 +22882,15 @@ export interface components {
             completed: boolean | null;
             /** Upload Id */
             upload_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetVoicesV4Item */
+        QGetVoicesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Voice */
+            voice: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -24613,8 +25660,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24641,6 +25688,8 @@ export interface components {
             offset_count: number | null;
             /** User Department Ids */
             user_department_ids?: string[] | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24665,8 +25714,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24695,8 +25744,8 @@ export interface components {
             persona_id?: string | null;
             /** User Department Ids */
             user_department_ids?: string[] | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24723,8 +25772,8 @@ export interface components {
             offset_count: number | null;
             /** User Department Ids */
             user_department_ids?: string[] | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24773,8 +25822,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24799,8 +25848,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -24825,8 +25874,8 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /** Suggest Source */
             suggest_source?: string | null;
             /** Exclude Ids */
@@ -25045,13 +26094,13 @@ export interface components {
              * @default 0
              */
             offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /**
              * Suggest Source
              * @default all
              */
-            suggest_source: ("all" | "linked" | "recent") | null;
+            suggest_source: ("all" | "linked" | "draft") | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
         };
@@ -25809,36 +26858,33 @@ export interface components {
             template_id?: string | null;
         };
         /**
-         * TestCompleteEvent
-         * @description Server-to-client event: test_complete.
+         * TestAllCompleteEvent
+         * @description Server-to-client event: test_all_complete.
+         *
+         *     Emitted when all runs are complete.
          */
-        TestCompleteEvent: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Test Id */
-            test_id?: string | null;
+        TestAllCompleteEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Total Runs */
+            total_runs: number;
             /**
              * Success
              * @default true
              */
             success: boolean;
-            /** Message */
-            message?: string | null;
         };
         /**
          * TestErrorEvent
          * @description Server-to-client event: test_error.
+         *
+         *     Emitted on errors.
          */
         TestErrorEvent: {
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Test Id */
-            test_id?: string | null;
-            /**
-             * Success
-             * @default false
-             */
-            success: boolean;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
             /** Message */
             message: string;
             /** Error Type */
@@ -25847,21 +26893,25 @@ export interface components {
         /**
          * TestJoinPayload
          * @description Request payload for test_join WebSocket event.
+         *
+         *     Joins a test room for real-time updates.
          */
         TestJoinPayload: {
             /**
-             * Attempt Id
+             * Chat Id
              * Format: uuid
              */
-            attempt_id: string;
+            chat_id: string;
         };
         /**
          * TestJoinedEvent
          * @description Server-to-client event: test_joined.
+         *
+         *     Emitted when a client successfully joins a test room.
          */
         TestJoinedEvent: {
-            /** Attempt Id */
-            attempt_id: string;
+            /** Chat Id */
+            chat_id: string;
             /**
              * Success
              * @default true
@@ -25871,13 +26921,15 @@ export interface components {
         /**
          * TestLeavePayload
          * @description Request payload for test_leave WebSocket event.
+         *
+         *     Leaves a test room.
          */
         TestLeavePayload: {
             /**
-             * Attempt Id
+             * Chat Id
              * Format: uuid
              */
-            attempt_id: string;
+            chat_id: string;
         };
         /**
          * TestListFilterOption
@@ -25939,57 +26991,115 @@ export interface components {
         /**
          * TestProgressEvent
          * @description Server-to-client event: test_progress.
+         *
+         *     Emitted during test execution.
          */
         TestProgressEvent: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Test Id */
-            test_id?: string | null;
+            /** Chat Id */
+            chat_id: string;
+            /** Type */
+            type: string;
             /** Run Id */
             run_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Status */
-            status?: string | null;
+            /** Current Run */
+            current_run?: number | null;
+            /** Total Runs */
+            total_runs?: number | null;
             /** Message */
             message?: string | null;
-            /**
-             * Success
-             * @default true
-             */
-            success: boolean;
         };
         /**
-         * TestSendPayload
-         * @description Request payload for test_send WebSocket event.
+         * TestRunAllPayload
+         * @description Request payload for test_run_all WebSocket event.
+         *
+         *     Runs ALL remaining auto-regressive replays sequentially.
          */
-        TestSendPayload: {
+        TestRunAllPayload: {
             /**
-             * Attempt Id
+             * Chat Id
              * Format: uuid
              */
-            attempt_id: string;
-            /** Content */
-            content?: string | null;
+            chat_id: string;
+        };
+        /**
+         * TestRunCompleteEvent
+         * @description Server-to-client event: test_run_complete.
+         *
+         *     Emitted when a single run replay completes.
+         */
+        TestRunCompleteEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Original Run Resource Id */
+            original_run_resource_id?: string | null;
+            /** Tool Calls */
+            tool_calls?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Current Run */
+            current_run: number;
+            /** Total Runs */
+            total_runs: number;
+            /** Remaining Runs */
+            remaining_runs: number;
+        };
+        /**
+         * TestRunPayload
+         * @description Request payload for test_run WebSocket event.
+         *
+         *     Runs ONE auto-regressive replay for the next pending run.
+         */
+        TestRunPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * TestRunStartEvent
+         * @description Server-to-client event: test_run_start.
+         *
+         *     Emitted when a run replay starts.
+         */
+        TestRunStartEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Original Run Resource Id */
+            original_run_resource_id?: string | null;
+            /** Current Run */
+            current_run: number;
+            /** Total Runs */
+            total_runs: number;
+            /** Created At */
+            created_at: string;
         };
         /**
          * TestStopPayload
          * @description Request payload for test_stop WebSocket event.
+         *
+         *     Stops the current run generation.
          */
         TestStopPayload: {
             /**
-             * Attempt Id
+             * Chat Id
              * Format: uuid
              */
-            attempt_id: string;
+            chat_id: string;
         };
         /**
          * TestStoppedEvent
          * @description Server-to-client event: test_stopped.
+         *
+         *     Emitted when generation is stopped.
          */
         TestStoppedEvent: {
-            /** Attempt Id */
-            attempt_id: string;
+            /** Chat Id */
+            chat_id: string;
             /**
              * Success
              * @default true
@@ -31452,6 +32562,43 @@ export interface operations {
             };
         };
     };
+    get_args_api_v4_resources_args_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetArgsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetArgsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_args_outputs_api_v4_resources_args_outputs_post: {
         parameters: {
             query?: never;
@@ -31476,6 +32623,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArgsOutputsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_args_outputs_api_v4_resources_args_outputs_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetArgsOutputsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetArgsOutputsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -31896,6 +33080,43 @@ export interface operations {
             };
         };
     };
+    get_emails_api_v4_resources_emails_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetEmailsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetEmailsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_endpoints_api_v4_resources_endpoints_post: {
         parameters: {
             query?: never;
@@ -31920,6 +33141,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EndpointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_endpoints_api_v4_resources_endpoints_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetEndpointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetEndpointsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -32340,6 +33598,43 @@ export interface operations {
             };
         };
     };
+    get_group_positions_api_v4_resources_group_positions_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_group_rubrics_api_v4_resources_group_rubrics_post: {
         parameters: {
             query?: never;
@@ -32364,6 +33659,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_group_rubrics_api_v4_resources_group_rubrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupRubricsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -32673,6 +34005,43 @@ export interface operations {
             };
         };
     };
+    get_items_api_v4_resources_items_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetItemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetItemsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_keys_api_v4_resources_keys_post: {
         parameters: {
             query?: never;
@@ -32697,6 +34066,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KeysApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_keys_api_v4_resources_keys_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetKeysApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetKeysApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33117,6 +34523,43 @@ export interface operations {
             };
         };
     };
+    get_points_api_v4_resources_points_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_pricing_api_v4_resources_pricing_post: {
         parameters: {
             query?: never;
@@ -33141,6 +34584,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_api_v4_resources_pricing_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPricingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33265,6 +34745,43 @@ export interface operations {
             };
         };
     };
+    get_prompts_api_v4_resources_prompts_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPromptsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPromptsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_protocols_api_v4_resources_protocols_post: {
         parameters: {
             query?: never;
@@ -33289,6 +34806,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProtocolsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_protocols_api_v4_resources_protocols_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProtocolsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProtocolsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33413,6 +34967,43 @@ export interface operations {
             };
         };
     };
+    get_request_limits_api_v4_resources_request_limits_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRequestLimitsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRequestLimitsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_roles_api_v4_resources_roles_get_post: {
         parameters: {
             query?: never;
@@ -33524,6 +35115,43 @@ export interface operations {
             };
         };
     };
+    get_run_positions_api_v4_resources_run_positions_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRunPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRunPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_run_rubrics_api_v4_resources_run_rubrics_post: {
         parameters: {
             query?: never;
@@ -33548,6 +35176,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_rubrics_api_v4_resources_run_rubrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRunRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRunRubricsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -34486,6 +36151,43 @@ export interface operations {
             };
         };
     };
+    get_slugs_api_v4_resources_slugs_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSlugsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSlugsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_standard_groups_api_v4_resources_standard_groups_post: {
         parameters: {
             query?: never;
@@ -34708,6 +36410,43 @@ export interface operations {
             };
         };
     };
+    get_values_api_v4_resources_values_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetValuesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetValuesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_videos_api_v4_resources_videos_post: {
         parameters: {
             query?: never;
@@ -34819,6 +36558,43 @@ export interface operations {
             };
         };
     };
+    get_voices_api_v4_resources_voices_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetVoicesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetVoicesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_uploads_api_v4_resources_uploads_post: {
         parameters: {
             query?: never;
@@ -34843,6 +36619,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_uploads_api_v4_resources_uploads_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetUploadsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetUploadsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35030,6 +36843,109 @@ export interface operations {
         };
     };
     recreate_chats_view_api_v4_views_simulation_chats_recreate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_groups_api_v4_views_simulation_groups_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_groups_view_api_v4_views_simulation_groups_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recreate_groups_view_api_v4_views_simulation_groups_recreate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -37814,7 +39730,7 @@ export interface operations {
             };
         };
     };
-    test_send_api_socket_v4_client_test_send_post: {
+    test_run_api_socket_v4_client_test_run_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -37823,7 +39739,42 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TestSendPayload"];
+                "application/json": components["schemas"]["TestRunPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_run_all_api_socket_v4_client_test_run_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestRunAllPayload"];
             };
         };
         responses: {
@@ -38805,7 +40756,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkEvalCompletePayload"];
+                "application/json": components["schemas"]["BenchmarkCompleteEvent"];
             };
         };
         responses: {
@@ -38971,7 +40922,7 @@ export interface operations {
             };
         };
     };
-    test_complete_api_socket_v4_server_test_complete_post: {
+    test_run_complete_api_socket_v4_server_test_run_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -38980,7 +40931,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TestCompleteEvent"];
+                "application/json": components["schemas"]["TestRunCompleteEvent"];
             };
         };
         responses: {
@@ -39016,6 +40967,76 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TestErrorEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_run_start_api_socket_v4_server_test_run_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestRunStartEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_all_complete_api_socket_v4_server_test_all_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestAllCompleteEvent"];
             };
         };
         responses: {

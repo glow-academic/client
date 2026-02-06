@@ -17,18 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { useMemo } from "react";
-
-type CreateDraftTemperatureLevelsIn = InputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
-type CreateDraftTemperatureLevelsOut = OutputOf<
-  "/api/v4/resources/temperature_levels",
-  "post"
->;
 
 export interface TemperatureLevelItem {
   id: string;
@@ -70,12 +60,7 @@ export interface TemperatureLevelsProps {
   onSearchChange?: (term: string) => void;
   showSlider?: boolean; // Whether to show slider for visual feedback
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createTemperatureLevelsAction?:
-    | ((
-        input: CreateDraftTemperatureLevelsIn
-      ) => Promise<CreateDraftTemperatureLevelsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
 }
 
 export function TemperatureLevels({
@@ -100,8 +85,7 @@ export function TemperatureLevels({
   onSearchChange,
   showSlider = false,
   group_id,
-  agent_id,
-  createTemperatureLevelsAction,
+  link_tool_id,
 }: TemperatureLevelsProps) {
   const resource = temperature_level_resource ?? null;
   const resourceId = temperature_level_id ?? null;
@@ -175,7 +159,7 @@ export function TemperatureLevels({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

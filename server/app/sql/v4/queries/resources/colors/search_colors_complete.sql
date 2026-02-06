@@ -1,5 +1,7 @@
 -- Search colors resources with optional context
--- Parameters: search (text), limit_count (int), offset_count (int), group_id (uuid, optional), suggest_source (text), exclude_ids (uuid[])
+-- CLEAN PATTERN: Query colors_resource directly
+-- Uses draft_id for suggest_source='draft' (efficient drafts_connection lookup)
+-- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of color resources)
 
 -- Drop function if exists (handles signature variations)
@@ -22,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_colors_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
-    group_id uuid DEFAULT NULL,
+    draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -40,52 +42,41 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_colors_v4_item[]
 ) as items
 FROM (
-    SELECT c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false) AS generated, recent.recent_at
+    SELECT c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false) AS generated
     FROM colors_resource c
-    LEFT JOIN LATERAL (
-        SELECT MAX(pc.created_at) AS recent_at
-        FROM persona_colors_junction pc
-        WHERE pc.color_id = c.id
-          AND (
-              pc.generated = false
-              OR (
-                  pc.generated = true
-                  AND c.generated = true
-                  AND group_id IS NOT NULL
-                  AND EXISTS (
-                      SELECT 1 FROM view_calls_entry c2
-                      JOIN view_runs_entry r ON r.id = c2.run_id
-                      WHERE c2.id IN (SELECT call_id FROM colors_calls_connection WHERE colors_id = c.id)
-                        AND r.group_id = group_id
-                  )
-              )
-          )
-    ) recent ON (suggest_source IN ('linked', 'recent'))
     WHERE c.active = true
+      AND c.name IS NOT NULL
+      AND c.name != ''
+      -- Search filter
       AND (search IS NULL OR search = '' OR
            LOWER(c.name) LIKE '%' || LOWER(search) || '%' OR
            LOWER(c.hex_code) LIKE '%' || LOWER(search) || '%')
+      -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (c.id = ANY(exclude_ids)))
+      -- Suggest source filter
       AND (
-          COALESCE(c.generated, false) = false
+          suggest_source = 'all'
+          OR suggest_source IS NULL
           OR (
-              COALESCE(c.generated, false) = true
-              AND group_id IS NOT NULL
+              suggest_source = 'draft'
+              AND draft_id IS NOT NULL
               AND EXISTS (
-                  SELECT 1 FROM view_calls_entry c2
-                  JOIN view_runs_entry r ON r.id = c2.run_id
-                  WHERE c2.id IN (SELECT call_id FROM colors_calls_connection WHERE colors_id = c.id)
-                    AND r.group_id = group_id
+                  SELECT 1
+                  FROM colors_drafts_connection dc
+                  WHERE dc.colors_id = c.id
+                    AND dc.draft_id = api_search_colors_v4.draft_id
+              )
+          )
+          OR (
+              suggest_source = 'linked'
+              AND EXISTS (
+                  SELECT 1 FROM persona_colors_junction pc
+                  WHERE pc.color_id = c.id
+                    AND pc.active = true
               )
           )
       )
-      AND (
-          suggest_source = 'all'
-          OR recent.recent_at IS NOT NULL
-      )
-    ORDER BY
-        CASE WHEN suggest_source = 'recent' THEN recent.recent_at END DESC NULLS LAST,
-        c.name
+    ORDER BY c.name
     LIMIT limit_count
     OFFSET offset_count
 ) q;

@@ -74,7 +74,8 @@ export interface TemplatesProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  templates_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createTemplatesAction?:
     | ((input: CreateDraftTemplatesIn) => Promise<CreateDraftTemplatesOut>)
     | undefined;
@@ -109,7 +110,8 @@ export function Templates({
   placeholder: _placeholder = "Select templates...",
   description,
   group_id,
-  templates_agent_id,
+  create_tool_id,
+  link_tool_id,
   createTemplatesAction,
   onGenerate,
   isGenerating = false,
@@ -218,7 +220,7 @@ export function Templates({
         isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createTemplatesAction &&
-        templates_agent_id &&
+        create_tool_id &&
         group_id
       ) {
         for (const templateId of newlySelected) {
@@ -226,7 +228,6 @@ export function Templates({
             const templateItem = mergedTemplates.find((t) => t.id === templateId);
             await createTemplatesAction({
               body: {
-                agent_id: templates_agent_id,
                 group_id: group_id,
                 name: templateItem?.name ?? "",
                 mcp: false,
@@ -247,12 +248,12 @@ export function Templates({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createTemplatesAction, templates_agent_id, group_id, mergedTemplates, isAutosaveEnabled]
+    [ids, onChange, createTemplatesAction, create_tool_id, group_id, mergedTemplates, isAutosaveEnabled]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ template_ids: string[] } | void> => {
-    if (!createTemplatesAction || !templates_agent_id || !group_id) {
+    if (!createTemplatesAction || !create_tool_id || !group_id) {
       return { template_ids: ids };
     }
 
@@ -264,7 +265,6 @@ export function Templates({
       try {
         const createResult = await createTemplatesAction({
           body: {
-            agent_id: templates_agent_id,
             group_id: group_id,
             name: pending.name || "Untitled Template",
             html: pending.html || "",
@@ -309,7 +309,6 @@ export function Templates({
           const templateItem = mergedTemplates.find((t) => t.id === templateId);
           await createTemplatesAction({
             body: {
-              agent_id: templates_agent_id,
               group_id: group_id,
               name: templateItem?.name ?? "",
               mcp: false,
@@ -561,7 +560,7 @@ export function Templates({
     }
 
     // Autosave mode: create resource immediately
-    if (!createTemplatesAction || !templates_agent_id || !group_id) {
+    if (!createTemplatesAction || !create_tool_id || !group_id) {
       return;
     }
 
@@ -570,7 +569,6 @@ export function Templates({
       // Always create a new template resource
       const createResult = await createTemplatesAction({
         body: {
-          agent_id: templates_agent_id,
           group_id: group_id,
           name: nextName,
           html: editorValue,
@@ -614,14 +612,14 @@ export function Templates({
     } finally {
       setIsSaving(false);
     }
-  }, [editorTemplateId, editorValue, editorName, editorDescription, isNewTemplate, isAutosaveEnabled, createTemplatesAction, templates_agent_id, group_id, ids, onChange]);
+  }, [editorTemplateId, editorValue, editorName, editorDescription, isNewTemplate, isAutosaveEnabled, createTemplatesAction, create_tool_id, group_id, ids, onChange]);
 
   const handleEditorOpenChange = useCallback((open: boolean) => {
     setEditorOpen(open);
   }, []);
 
   const canCreateTemplate =
-    !!createTemplatesAction && !!templates_agent_id && !!group_id && !disabled;
+    !!createTemplatesAction && !!create_tool_id && !!group_id && !disabled;
 
   // Check if any template resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -675,7 +673,7 @@ export function Templates({
               </span>
             )}
           </Label>
-          {onGenerate && templates_agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

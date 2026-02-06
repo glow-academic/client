@@ -16,19 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftSettingsIn = InputOf<
-  "/api/v4/resources/settings",
-  "post"
->;
-type CreateDraftSettingsOut = OutputOf<
-  "/api/v4/resources/settings",
-  "post"
->;
+import { useCallback, useMemo } from "react";
 
 export interface SettingItem {
   id: string;
@@ -62,10 +52,7 @@ export interface SettingsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createSettingsAction?:
-    | ((input: CreateDraftSettingsIn) => Promise<CreateDraftSettingsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // Legacy props for backward compatibility
@@ -86,8 +73,7 @@ export function Settings({
   placeholder = "Select settings...",
   description,
   group_id,
-  agent_id,
-  createSettingsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   // Legacy props for backward compatibility
@@ -104,14 +90,6 @@ export function Settings({
     () => settings_suggestions ?? [],
     [settings_suggestions]
   );
-
-  // Track which settings IDs have already had resources created
-  const createdSettingsIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdSettingsIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdSettingsIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert settings array to SettingItem format for GenericPicker
   const settingItems = useMemo(() => {
@@ -133,45 +111,11 @@ export function Settings({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdSettingsIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected settings
-      if (
-        newlySelected.length > 0 &&
-        createSettingsAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const settingId of newlySelected) {
-          try {
-            await createSettingsAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                settings_id: settingId,
-                mcp: false,
-              },
-            });
-            createdSettingsIdsRef.current.add(settingId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create settings resource for ${settingId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createSettingsAction, agent_id, group_id]
+    [onChange]
   );
 
   // Check if any settings resource is generated (must be before early return)
@@ -197,7 +141,7 @@ export function Settings({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

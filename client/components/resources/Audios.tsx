@@ -54,10 +54,7 @@ export interface AudiosProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createAudiosAction?:
-    | ((input: CreateDraftAudiosIn) => Promise<CreateDraftAudiosOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -76,8 +73,7 @@ export function Audios({
   placeholder = "Select audios...",
   description,
   group_id,
-  agent_id,
-  createAudiosAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: AudiosProps) {
@@ -146,7 +142,7 @@ export function Audios({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

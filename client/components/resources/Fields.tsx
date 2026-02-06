@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface FieldItem {
   id: string;
@@ -56,10 +52,7 @@ export interface FieldsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createFieldsAction?:
-    | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering fields
@@ -83,8 +76,7 @@ export function Fields({
   placeholder: _placeholder = "Select fields...",
   description,
   group_id,
-  agent_id,
-  createFieldsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
   searchTerm = "",
@@ -100,14 +92,6 @@ export function Fields({
     () => _field_suggestions ?? [],
     [_field_suggestions]
   );
-
-  // Track which field IDs have already had resources created
-  const createdFieldIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdFieldIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdFieldIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert fields array to FieldItem format for SelectableGrid
   const fieldItems = useMemo(() => {
@@ -156,49 +140,16 @@ export function Fields({
   );
 
   const handleSelect = useCallback(
-    async (fieldId: string) => {
+    (fieldId: string) => {
       const isSelected = ids.includes(fieldId);
-      let newIds: string[];
-
-      if (isSelected) {
-        // Remove field
-        newIds = ids.filter((id) => id !== fieldId);
-        createdFieldIdsRef.current.delete(fieldId);
-      } else {
-        // Add field - create resource if not already created
-        newIds = [...ids, fieldId];
-
-        if (
-          !createdFieldIdsRef.current.has(fieldId) &&
-          createFieldsAction &&
-          agent_id &&
-          group_id
-        ) {
-          try {
-            await createFieldsAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                field_id: fieldId,
-                mcp: false,
-              },
-            });
-            createdFieldIdsRef.current.add(fieldId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create field resource for ${fieldId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
+      const newIds = isSelected
+        ? ids.filter((id) => id !== fieldId)
+        : [...ids, fieldId];
 
       // Update parent state
       onChange(newIds);
     },
-    [ids, onChange, createFieldsAction, agent_id, group_id]
+    [ids, onChange]
   );
 
   // Check if any field resource is generated
@@ -224,7 +175,7 @@ export function Fields({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -16,13 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftRunsIn = InputOf<"/api/v4/resources/runs", "post">;
-type CreateDraftRunsOut = OutputOf<"/api/v4/resources/runs", "post">;
+import { useCallback, useMemo } from "react";
 
 export interface RunItem {
   id: string;
@@ -54,10 +50,7 @@ export interface RunsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createRunsAction?:
-    | ((input: CreateDraftRunsIn) => Promise<CreateDraftRunsOut>)
-    | undefined;
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -75,8 +68,7 @@ export function Runs({
   required = false,
   description,
   group_id,
-  agent_id,
-  createRunsAction,
+  link_tool_id,
   onGenerate,
   isGenerating = false,
 }: RunsProps) {
@@ -87,14 +79,6 @@ export function Runs({
     () => run_suggestions ?? [],
     [run_suggestions]
   );
-
-  // Track which run IDs have already had resources created
-  const createdRunIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdRunIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdRunIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert runs array to RunItem format for grid rendering
   const runItems = useMemo(() => {
@@ -114,41 +98,15 @@ export function Runs({
   );
 
   const handleSelect = useCallback(
-    async (selectedId: string) => {
+    (selectedId: string) => {
       const isSelected = ids.includes(selectedId);
       const nextIds = isSelected
         ? ids.filter((id) => id !== selectedId)
         : [...ids, selectedId];
 
-      if (
-        !isSelected &&
-        !createdRunIdsRef.current.has(selectedId) &&
-        createRunsAction &&
-        agent_id &&
-        group_id
-      ) {
-        try {
-          await createRunsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: group_id,
-              run_id: selectedId,
-              mcp: false,
-            },
-          });
-          createdRunIdsRef.current.add(selectedId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to create run resource for ${selectedId}:`,
-            error
-          );
-        }
-      }
-
       onChange(nextIds);
     },
-    [ids, onChange, createRunsAction, agent_id, group_id]
+    [ids, onChange]
   );
 
   // Check if any run resource is generated (must be before early return)
@@ -174,7 +132,7 @@ export function Runs({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && link_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

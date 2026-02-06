@@ -85,7 +85,8 @@ export interface PersonasProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  personas_agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createPersonasAction?:
     | ((input: CreateDraftPersonasIn) => Promise<CreateDraftPersonasOut>)
     | undefined;
@@ -119,7 +120,8 @@ export function Personas({
   placeholder: _placeholder = "Select personas...",
   description,
   group_id,
-  personas_agent_id,
+  create_tool_id,
+  link_tool_id,
   createPersonasAction,
   onGenerate,
   isGenerating = false,
@@ -203,13 +205,11 @@ export function Personas({
         !isCurrentlySelected &&
         !createdPersonaIdsRef.current.has(personaId) &&
         createPersonasAction &&
-        personas_agent_id &&
         group_id
       ) {
         try {
           await createPersonasAction({
             body: {
-              agent_id: personas_agent_id,
               group_id: group_id,
               persona_id: personaId,
               mcp: false,
@@ -228,12 +228,12 @@ export function Personas({
       // Update parent state
       onChange(newIds);
     },
-    [ids, onChange, createPersonasAction, personas_agent_id, group_id, isAutosaveEnabled]
+    [ids, onChange, createPersonasAction, group_id, isAutosaveEnabled]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ persona_ids: string[] } | void> => {
-    if (!createPersonasAction || !personas_agent_id || !group_id) {
+    if (!createPersonasAction || !group_id) {
       return { persona_ids: ids };
     }
 
@@ -243,7 +243,6 @@ export function Personas({
         try {
           await createPersonasAction({
             body: {
-              agent_id: personas_agent_id,
               group_id: group_id,
               persona_id: personaId,
               mcp: false,
@@ -319,7 +318,7 @@ export function Personas({
               </span>
             )}
           </Label>
-          {onGenerate && personas_agent_id && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

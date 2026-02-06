@@ -167,7 +167,6 @@ export interface ObjectivesProps {
     generated?: boolean | null;
   }>; // Selected objective resources (each includes generated field)
   show_objectives?: boolean; // Whether to show this resource picker
-  objectives_agent_id?: string | null; // Agent ID for resource creation
   objectives_required?: boolean; // Whether this resource is required
   objective_suggestions?: string[]; // Array of suggested objective IDs (UUIDs) - consistent with other suggestions
   objectives?: Array<{
@@ -184,7 +183,8 @@ export interface ObjectivesProps {
   addButtonLabel?: string;
   itemPlaceholder?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for AI link suggestions
   createObjectivesAction?:
     | ((input: CreateDraftObjectivesIn) => Promise<CreateDraftObjectivesOut>)
     | undefined;
@@ -209,7 +209,6 @@ export function Objectives({
   objective_ids,
   objective_resources: _objective_resources,
   show_objectives = false,
-  objectives_agent_id,
   objectives_required,
   objective_suggestions,
   objectives,
@@ -222,7 +221,8 @@ export function Objectives({
   addButtonLabel = "Add objective",
   itemPlaceholder = "Learning objective",
   group_id,
-  agent_id,
+  create_tool_id,
+  link_tool_id,
   createObjectivesAction,
   onGenerate,
   isGenerating = false,
@@ -385,8 +385,7 @@ export function Objectives({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ objective_ids: string[] } | void> => {
-    const effectiveAgentId = objectives_agent_id ?? agent_id;
-    if (!createObjectivesAction || !effectiveAgentId || !group_id) return;
+    if (!createObjectivesAction || !create_tool_id || !group_id) return;
 
     // Find texts that need creation (have text but no ID)
     const textsToCreate = internalTexts.filter(
@@ -398,7 +397,6 @@ export function Objectives({
       try {
         const result = await createObjectivesAction({
           body: {
-            agent_id: effectiveAgentId,
             group_id: group_id,
             objective: text,
             mcp: false,
@@ -529,7 +527,7 @@ export function Objectives({
               <span className="text-destructive">*</span>
             )}
           </Label>
-          {onGenerate && (objectives_agent_id || agent_id) && (
+          {onGenerate && create_tool_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
