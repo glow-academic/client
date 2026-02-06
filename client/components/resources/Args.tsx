@@ -57,6 +57,10 @@ export interface ArgsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles field changes internally and calls createArgsAction
   // No onChange callback needed - component manages its own state like SchemaInput
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ args_id: string | null } | void>) => void;
   // AI diff view props
   aiArgsResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
@@ -71,6 +75,8 @@ export function Args({
   group_id,
   create_tool_id,
   link_tool_id,
+  isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiArgsResources,
   onAccept,
@@ -90,6 +96,9 @@ export function Args({
     {}
   );
   const isInitialMountRef = useRef(true);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ args_id: string | null } | void>) | undefined>(undefined);
 
   // Initialize field values from props
   useEffect(() => {
@@ -188,6 +197,33 @@ export function Args({
     [createArgsAction, input_args_fields, create_tool_id, group_id]
   );
 
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ args_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createArgsAction || !group_id) {
+      return;
+    }
+
+    // Flush all pending field changes
+    for (const fieldId of Object.keys(fieldValues)) {
+      const currentValue = fieldValues[fieldId];
+      const lastSaved = lastSavedValuesRef.current[fieldId];
+      if (currentValue && JSON.stringify(currentValue) !== JSON.stringify(lastSaved)) {
+        await saveField(fieldId, currentValue);
+      }
+    }
+
+    // Return null since Args manages multiple fields, not a single resource ID
+    return { args_id: null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Handle field value change with debouncing
   const handleFieldChange = useCallback(
     (
@@ -202,6 +238,11 @@ export function Args({
           [key]: value,
         },
       }));
+
+      // Skip autosave if disabled (manual save mode)
+      if (!isAutosaveEnabled) {
+        return;
+      }
 
       // Clear existing timer for this field
       if (debounceTimerRef.current[fieldId]) {
@@ -222,7 +263,7 @@ export function Args({
         }
       }, 500);
     },
-    [fieldValues, saveField]
+    [fieldValues, saveField, isAutosaveEnabled]
   );
 
   // Cleanup timers on unmount

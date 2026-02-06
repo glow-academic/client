@@ -337,6 +337,17 @@ function PersonaComponent({
       content_show_ai_generate: personaData.content_show_ai_generate,
       parameters_step_show_ai_generate: personaData.parameters_step_show_ai_generate,
       domain_data: personaData.domain_data,
+      // Per-resource group IDs (from draft MV)
+      names_group_id: personaData.names_group_id,
+      descriptions_group_id: personaData.descriptions_group_id,
+      colors_group_id: personaData.colors_group_id,
+      icons_group_id: personaData.icons_group_id,
+      instructions_group_id: personaData.instructions_group_id,
+      flags_group_id: personaData.flags_group_id,
+      departments_group_id: personaData.departments_group_id,
+      parameter_fields_group_id: personaData.parameter_fields_group_id,
+      examples_group_id: personaData.examples_group_id,
+      parameters_group_id: personaData.parameters_group_id,
     };
     // Intentionally depend on individual fields, not whole personaData object
     // to prevent recreation when only object reference changes
@@ -396,6 +407,17 @@ function PersonaComponent({
     personaData?.content_show_ai_generate,
     personaData?.parameters_step_show_ai_generate,
     personaData?.domain_data,
+    // Per-resource group IDs
+    personaData?.names_group_id,
+    personaData?.descriptions_group_id,
+    personaData?.colors_group_id,
+    personaData?.icons_group_id,
+    personaData?.instructions_group_id,
+    personaData?.flags_group_id,
+    personaData?.departments_group_id,
+    personaData?.parameter_fields_group_id,
+    personaData?.examples_group_id,
+    personaData?.parameters_group_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -1904,7 +1926,7 @@ function PersonaComponent({
                   defaultName="New Persona"
                   required={currentPersonaData?.name_required ?? false}
                   hideDescription={true}
-                  group_id={currentPersonaData?.group_id ?? null}
+                  group_id={currentPersonaData?.names_group_id ?? null}
                   showAiGenerate={currentPersonaData?.name_show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
@@ -2006,7 +2028,7 @@ function PersonaComponent({
                   required={currentPersonaData?.description_required ?? false}
                   rows={4}
                   data-testid="input-persona-description"
-                  group_id={currentPersonaData?.group_id ?? null}
+                  group_id={currentPersonaData?.descriptions_group_id ?? null}
                   showAiGenerate={currentPersonaData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -2036,7 +2058,7 @@ function PersonaComponent({
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
                   required={currentPersonaData?.departments_required ?? false}
-                  group_id={currentPersonaData?.group_id ?? null}
+                  group_id={currentPersonaData?.departments_group_id ?? null}
                   showAiGenerate={currentPersonaData?.departments_show_ai_generate ?? false}
                   aiDepartmentResources={
                     aiFormData.department_resources ?? null
@@ -2053,7 +2075,7 @@ function PersonaComponent({
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  group_id={currentPersonaData?.group_id ?? null}
+                  group_id={currentPersonaData?.flags_group_id ?? null}
                   showAiGenerate={currentPersonaData?.flag_show_ai_generate ?? false}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
@@ -2180,7 +2202,7 @@ function PersonaComponent({
                   isGenerating={isGenerating("parameters")}
                   label="Parameters"
                   required={currentPersonaData?.parameters_required ?? false}
-                  group_id={currentPersonaData?.group_id ?? null}
+                  group_id={currentPersonaData?.parameters_group_id ?? null}
                   showAiGenerate={currentPersonaData?.parameters_show_ai_generate ?? false}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
@@ -2212,7 +2234,7 @@ function PersonaComponent({
                   onConditionalParameterToggle={
                     handleConditionalParameterToggle
                   }
-                  group_id={currentPersonaData?.group_id ?? null}
+                  group_id={currentPersonaData?.parameter_fields_group_id ?? null}
                   showAiGenerate={currentPersonaData?.parameter_fields_show_ai_generate ?? false}
                   required={
                     currentPersonaData?.parameter_fields_required ?? false
@@ -2332,7 +2354,7 @@ function PersonaComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
-                group_id={currentPersonaData?.group_id ?? null}
+                group_id={currentPersonaData?.colors_group_id ?? null}
                 showAiGenerate={currentPersonaData?.color_show_ai_generate ?? false}
                 createColorsAction={createColorsAction}
                 required={currentPersonaData?.color_required ?? false}
@@ -2447,7 +2469,7 @@ function PersonaComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
-                group_id={currentPersonaData?.group_id ?? null}
+                group_id={currentPersonaData?.icons_group_id ?? null}
                 showAiGenerate={currentPersonaData?.icon_show_ai_generate ?? false}
                 required={currentPersonaData?.icon_required ?? false}
                 aiResource={aiFormData.icon_resource}
@@ -2558,7 +2580,7 @@ function PersonaComponent({
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
-                group_id={currentPersonaData?.group_id ?? null}
+                group_id={currentPersonaData?.instructions_group_id ?? null}
                 showAiGenerate={currentPersonaData?.instructions_show_ai_generate ?? false}
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -2586,7 +2608,7 @@ function PersonaComponent({
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
-                group_id={currentPersonaData?.group_id ?? null}
+                group_id={currentPersonaData?.examples_group_id ?? null}
                 showAiGenerate={currentPersonaData?.examples_show_ai_generate ?? false}
                 createExamplesAction={
                   createExamplesAction

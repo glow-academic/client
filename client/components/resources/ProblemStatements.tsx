@@ -192,6 +192,10 @@ export interface ProblemStatementsProps {
   } | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ problem_statement_id: string | null } | void>) => void;
 }
 
 export function ProblemStatements({
@@ -221,6 +225,8 @@ export function ProblemStatements({
   aiResource,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;
@@ -246,8 +252,64 @@ export function ProblemStatements({
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(initialValue);
 
-  // Debounced resource creation
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ problem_statement_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ problem_statement_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createProblemStatementsAction || !create_tool_id || !group_id) {
+      return { problem_statement_id: resourceId };
+    }
+
+    // Skip if no change AND we already have a resource for this value
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { problem_statement_id: resourceId };
+    }
+
+    try {
+      if (internalValue.trim()) {
+        const result = await createProblemStatementsAction({
+          body: {
+            group_id: group_id,
+            name: "",
+            problem_statement: internalValue,
+            mcp: false,
+          },
+        });
+        if (result.problem_statement_id) {
+          onProblemStatementIdChange(result.problem_statement_id);
+          lastSavedValueRef.current = internalValue;
+          isDirtyRef.current = false;
+          return { problem_statement_id: result.problem_statement_id };
+        }
+      } else {
+        onProblemStatementIdChange(null);
+        lastSavedValueRef.current = internalValue;
+        isDirtyRef.current = false;
+        return { problem_statement_id: null };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create problem statement resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
   useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
+  // Debounced resource creation - only when autosave is enabled
+  useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -311,6 +373,7 @@ export function ProblemStatements({
     onProblemStatementIdChange,
     create_tool_id,
     group_id,
+    isAutosaveEnabled,
   ]);
 
   const handleChange = useCallback((newValue: string) => {

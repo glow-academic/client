@@ -76,6 +76,10 @@ export interface ParametersProps {
   aiParameterResources?: Array<{ parameter_id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ parameter_id: string | null } | void>) => void;
 }
 
 export function Parameters({
@@ -107,6 +111,8 @@ export function Parameters({
   aiParameterResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: ParametersProps) {
   const ids = useMemo(() => parameter_ids ?? [], [parameter_ids]);
   const show = show_parameters ?? false;
@@ -186,6 +192,44 @@ export function Parameters({
   // Track which parameters IDs have already had resources created
   const createdParametersIdsRef = useRef<Set<string>>(new Set());
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ parameter_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ parameter_id: string | null } | void> => {
+    // Parameters component uses multi-select - flush creates resources for any uncreated selections
+    if (!createParametersAction || !group_id) {
+      return;
+    }
+
+    const uncreatedIds = ids.filter(id => !createdParametersIdsRef.current.has(id));
+    for (const parameterId of uncreatedIds) {
+      try {
+        await createParametersAction({
+          body: {
+            group_id: group_id,
+            parameter_id: parameterId,
+            mcp: false,
+          },
+        });
+        createdParametersIdsRef.current.add(parameterId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create parameters resource for ${parameterId}:`, error);
+      }
+    }
+
+    // Return the first parameter_id or null
+    return { parameter_id: ids.length > 0 ? ids[0] : null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Initialize createdParametersIdsRef with current IDs
   useEffect(() => {
     ids.forEach((id) => createdParametersIdsRef.current.add(id));
@@ -239,7 +283,9 @@ export function Parameters({
       } else {
         newIds = [...ids, parametersId];
 
+        // Only auto-create resources when autosave is enabled
         if (
+          isAutosaveEnabled &&
           !createdParametersIdsRef.current.has(parametersId) &&
           createParametersAction &&
           group_id
@@ -266,7 +312,7 @@ export function Parameters({
 
       onChange(newIds);
     },
-    [ids, onChange, createParametersAction, group_id]
+    [ids, onChange, createParametersAction, group_id, isAutosaveEnabled]
   );
 
   // Check if any parameters resource is generated (must be before early return)

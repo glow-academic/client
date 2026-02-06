@@ -14537,6 +14537,26 @@ export interface components {
             draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
+            /** Names Group Id */
+            names_group_id?: string | null;
+            /** Descriptions Group Id */
+            descriptions_group_id?: string | null;
+            /** Colors Group Id */
+            colors_group_id?: string | null;
+            /** Icons Group Id */
+            icons_group_id?: string | null;
+            /** Instructions Group Id */
+            instructions_group_id?: string | null;
+            /** Flags Group Id */
+            flags_group_id?: string | null;
+            /** Departments Group Id */
+            departments_group_id?: string | null;
+            /** Parameter Fields Group Id */
+            parameter_fields_group_id?: string | null;
+            /** Examples Group Id */
+            examples_group_id?: string | null;
+            /** Parameters Group Id */
+            parameters_group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
             /** Name Domain Id */

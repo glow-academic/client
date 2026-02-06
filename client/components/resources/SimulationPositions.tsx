@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface SimulationPositionItem {
   simulation_id: string;
@@ -69,6 +69,10 @@ export interface SimulationPositionsProps {
   }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created positions */
+  registerFlush?: (flush: () => Promise<{ simulation_position_ids: string[] | null } | void>) => void;
 }
 
 export function SimulationPositions({
@@ -93,6 +97,8 @@ export function SimulationPositions({
   aiSimulationPositionResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(
@@ -162,6 +168,9 @@ export function SimulationPositions({
     }
   );
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ simulation_position_ids: string[] | null } | void>) | undefined>(undefined);
+
   useEffect(() => {
     const newMap = new Map<string, number>();
     selectedSimulationIds.forEach((simulationId, index) => {
@@ -170,6 +179,53 @@ export function SimulationPositions({
     });
     setLocalPositions(newMap);
   }, [selectedSimulationIds, positionMap]);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ simulation_position_ids: string[] | null } | void> => {
+    // Skip if no action available
+    if (!createSimulationPositionsAction || !group_id) {
+      return;
+    }
+
+    const positionsArray: SimulationPositionItem[] = Array.from(
+      localPositions.entries()
+    ).map(([sid, value]) => ({
+      simulation_id: sid,
+      value,
+      generated: false,
+    }));
+
+    if (positionsArray.length === 0) {
+      return { simulation_position_ids: null };
+    }
+
+    try {
+      const createdIds: string[] = [];
+      for (const pos of positionsArray) {
+        await createSimulationPositionsAction({
+          body: {
+            group_id: group_id,
+            simulation_id: pos.simulation_id,
+            value: pos.value,
+            mcp: false,
+          },
+        });
+        createdIds.push(pos.simulation_id);
+      }
+      return { simulation_position_ids: createdIds };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create simulation position resources:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const emitPositions = useCallback(
     (updated: Map<string, number>) => {
@@ -182,8 +238,8 @@ export function SimulationPositions({
       }));
       onChange(positionsArray);
 
-      // Create resource entries for each position
-      if (createSimulationPositionsAction && create_tool_id && group_id) {
+      // Create resource entries for each position - only when autosave is enabled
+      if (isAutosaveEnabled && createSimulationPositionsAction && create_tool_id && group_id) {
         for (const pos of positionsArray) {
           createSimulationPositionsAction({
             body: {
@@ -202,7 +258,7 @@ export function SimulationPositions({
         }
       }
     },
-    [onChange, createSimulationPositionsAction, create_tool_id, group_id]
+    [onChange, createSimulationPositionsAction, create_tool_id, group_id, isAutosaveEnabled]
   );
 
   const updatePositions = useCallback(

@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+type FlushResult = { voice_ids: string[] } | void;
 
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
@@ -56,6 +58,10 @@ export interface VoicesProps {
   createVoicesAction?:
     | ((input: CreateDraftVoicesIn) => Promise<CreateDraftVoicesOut>)
     | undefined;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff view props
   aiVoiceResources?: Array<{ id?: string | null; voice?: string | null }> | null;
   onAccept?: () => void;
@@ -80,6 +86,8 @@ export function Voices({
   create_tool_id,
   link_tool_id,
   createVoicesAction,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiVoiceResources,
   onAccept,
@@ -102,6 +110,26 @@ export function Voices({
       return name.includes(term);
     });
   }, [allVoices, searchTerm]);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    // For Voices, the flush returns the current selection
+    // Resources are selected from existing voices, so just return current IDs
+    if (!group_id) {
+      return;
+    }
+    return { voice_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Convert voices array to VoiceItem format for GenericPicker
   const voiceItems = useMemo(() => {

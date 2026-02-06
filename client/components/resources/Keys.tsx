@@ -83,6 +83,10 @@ export interface KeysProps {
   aiKeyResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ key_id: string | null } | void>) => void;
 }
 
 export function Keys({
@@ -111,6 +115,8 @@ export function Keys({
   aiKeyResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: KeysProps) {
   const resource = key_resource ?? null;
   const resourceId = key_id ?? null;
@@ -123,6 +129,50 @@ export function Keys({
   
   // Track which key IDs have already had resources created (multi-select)
   const createdKeyIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ key_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ key_id: string | null } | void> => {
+    // Keys component uses multi-select - flush creates resources for any newly selected keys
+    // For single-select mode, return the current resourceId
+    if (!multiSelect) {
+      return { key_id: resourceId };
+    }
+
+    // For multi-select, create resources for any IDs not yet created
+    if (!createKeysAction || !group_id) {
+      return;
+    }
+
+    const uncreatedIds = ids.filter(id => !createdKeyIdsRef.current.has(id));
+    for (const keyId of uncreatedIds) {
+      try {
+        await createKeysAction({
+          body: {
+            group_id: group_id,
+            key_id: keyId,
+            mcp: false,
+          },
+        });
+        createdKeyIdsRef.current.add(keyId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create key resource for ${keyId}:`, error);
+      }
+    }
+
+    // Return the first key_id or null
+    return { key_id: ids.length > 0 ? ids[0] : null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
   
   // Initialize createdKeyIdsRef with current IDs
   useEffect(() => {
@@ -173,8 +223,9 @@ export function Keys({
         (id) => !ids.includes(id) && !createdKeyIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected keys
+      // Create resources for newly selected keys (only when autosave is enabled)
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createKeysAction &&
         create_tool_id &&
@@ -203,7 +254,7 @@ export function Keys({
         onChange(selectedIds);
       }
     },
-    [ids, onChange, createKeysAction, create_tool_id, group_id]
+    [ids, onChange, createKeysAction, create_tool_id, group_id, isAutosaveEnabled]
   );
 
   // AI suggestion state

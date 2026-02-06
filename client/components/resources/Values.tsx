@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+type FlushResult = { value_ids: string[] } | void;
+
 type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
 
@@ -63,6 +65,10 @@ export interface ValuesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff view props
   aiValueResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
@@ -90,6 +96,8 @@ export function Values({
   createValuesAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiValueResources,
   onAccept,
@@ -116,6 +124,26 @@ export function Values({
 
   // Track which values IDs have already had resources created
   const createdValuesIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    // For Values, the flush returns the current selection
+    // Resources are selected from existing values, so just return current IDs
+    if (!group_id) {
+      return;
+    }
+    return { value_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Initialize createdValuesIdsRef with current IDs
   useEffect(() => {

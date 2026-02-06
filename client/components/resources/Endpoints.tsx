@@ -63,6 +63,10 @@ export interface EndpointsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ endpoints_id: string | null } | void>) => void;
   // AI diff view props
   aiEndpointResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
@@ -90,6 +94,8 @@ export function Endpoints({
   createEndpointsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiEndpointResources,
   onAccept,
@@ -116,6 +122,9 @@ export function Endpoints({
 
   // Track which endpoint IDs have already had resources created
   const createdEndpointIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ endpoints_id: string | null } | void>) | undefined>(undefined);
 
   // Initialize createdEndpointIdsRef with current IDs
   useEffect(() => {
@@ -153,6 +162,25 @@ export function Endpoints({
     },
     [ids, onChange]
   );
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ endpoints_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createEndpointsAction || !group_id) {
+      return;
+    }
+
+    // Endpoints are typically generated, not manually created
+    // Return null as there's nothing to flush
+    return { endpoints_id: null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Check if any endpoint resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

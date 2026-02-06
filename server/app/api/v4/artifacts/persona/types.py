@@ -22,10 +22,11 @@ from app.sql.types import (
 
 
 class DomainAgent(BaseModel):
-    """Maps a domain to its assigned agent. Used internally by server."""
+    """Maps a domain to its assigned agent and group. Used internally by server."""
 
     domain_id: UUID
     agent_id: UUID | None = None
+    group_id: UUID | None = None  # Per-resource group ID for this domain
 
 
 class DomainData(BaseModel):
@@ -83,6 +84,18 @@ class GetPersonaApiResponse(BaseModel):
 
     # Group ID
     group_id: UUID | None = None
+
+    # Per-resource group IDs (from draft MV)
+    names_group_id: UUID | None = None
+    descriptions_group_id: UUID | None = None
+    colors_group_id: UUID | None = None
+    icons_group_id: UUID | None = None
+    instructions_group_id: UUID | None = None
+    flags_group_id: UUID | None = None
+    departments_group_id: UUID | None = None
+    parameter_fields_group_id: UUID | None = None
+    examples_group_id: UUID | None = None
+    parameters_group_id: UUID | None = None
 
     # Single-select resources: name
     show_name: bool | None = None

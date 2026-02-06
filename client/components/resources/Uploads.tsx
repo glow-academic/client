@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
+type FlushResult = { uploads_id: string | null } | void;
+
 type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 
@@ -69,6 +71,10 @@ export interface UploadsProps {
     message?: string;
   }>;
   searchTerm?: string;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // AI diff view props
   aiUploadResources?: Array<{ id?: string | null; file_path?: string | null }> | null;
   onAccept?: () => void;
@@ -95,6 +101,8 @@ export function Uploads({
   isGenerating = false,
   finalizeUploadAction,
   searchTerm = "",
+  isAutosaveEnabled: _isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiUploadResources,
   onAccept,
@@ -123,6 +131,28 @@ export function Uploads({
 
   // Track which upload IDs have already had resources created
   const createdUploadIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    // For Uploads, the flush returns the last created upload ID
+    // File uploads happen immediately, so just return the latest ID if available
+    if (!group_id) {
+      return;
+    }
+    // Return the most recently added ID, or null if no uploads
+    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+    return { uploads_id: lastId };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Initialize createdUploadIdsRef with current IDs
   useEffect(() => {

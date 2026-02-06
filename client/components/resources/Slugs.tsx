@@ -62,6 +62,10 @@ export interface SlugsProps {
   aiSlugResources?: Array<{ id?: string | null; value?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ slug_ids: string[] | null } | void>) => void;
 }
 
 export function Slugs({
@@ -87,6 +91,8 @@ export function Slugs({
   aiSlugResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: SlugsProps) {
   const ids = useMemo(() => slug_ids ?? [], [slug_ids]);
   const show = show_slugs ?? false;
@@ -103,6 +109,49 @@ export function Slugs({
   useEffect(() => {
     ids.forEach((id) => createdSlugIdsRef.current.add(id));
   }, [ids]);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ slug_ids: string[] | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ slug_ids: string[] | null } | void> => {
+    // Skip if no action available
+    if (!createSlugsAction || !group_id) {
+      return;
+    }
+
+    // Find IDs that haven't been created yet
+    const uncreatedIds = ids.filter((id) => !createdSlugIdsRef.current.has(id));
+
+    if (uncreatedIds.length === 0) {
+      return { slug_ids: ids };
+    }
+
+    try {
+      for (const slugId of uncreatedIds) {
+        await createSlugsAction({
+          body: {
+            group_id: group_id,
+            slug_id: slugId,
+            mcp: false,
+          },
+        });
+        createdSlugIdsRef.current.add(slugId);
+      }
+      return { slug_ids: ids };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create slug resources:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Convert slugs array to SlugItem format for GenericPicker
   const slugItems = useMemo(() => {
@@ -127,8 +176,9 @@ export function Slugs({
         (id) => !ids.includes(id) && !createdSlugIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected slugs
+      // Create resources for newly selected slugs - only when autosave is enabled
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createSlugsAction &&
         create_tool_id &&
@@ -158,7 +208,7 @@ export function Slugs({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createSlugsAction, create_tool_id, group_id]
+    [ids, onChange, createSlugsAction, create_tool_id, group_id, isAutosaveEnabled]
   );
 
   // Check if any slug resource is generated (must be before early return)

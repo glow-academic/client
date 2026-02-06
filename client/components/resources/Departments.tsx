@@ -67,6 +67,10 @@ export interface DepartmentsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<{ department_ids: string[] } | void>) => void;
   // AI diff view props
   aiDepartmentResources?: Array<{
     department_id?: string | null;
@@ -97,6 +101,8 @@ export function Departments({
   createDepartmentsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiDepartmentResources,
   onAccept,
@@ -136,6 +142,43 @@ export function Departments({
     ids.forEach((id) => createdDepartmentIdsRef.current.add(id));
   }, [ids]);
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ department_ids: string[] } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ department_ids: string[] } | void> => {
+    if (!createDepartmentsAction || !group_id) {
+      return { department_ids: ids };
+    }
+
+    // Create resources for any uncreated department IDs
+    const uncreatedIds = ids.filter((id) => !createdDepartmentIdsRef.current.has(id));
+    for (const departmentId of uncreatedIds) {
+      try {
+        await createDepartmentsAction({
+          body: {
+            group_id: group_id,
+            department_id: departmentId,
+            mcp: false,
+          },
+        });
+        createdDepartmentIdsRef.current.add(departmentId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create department resource for ${departmentId}:`, error);
+      }
+    }
+
+    return { department_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Convert departments array to DepartmentItem format for SelectableGrid
   const departmentItems = useMemo(() => {
     return allDepartments
@@ -160,8 +203,9 @@ export function Departments({
         (id) => !ids.includes(id) && !createdDepartmentIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected departments
+      // Create resources for newly selected departments (only if autosave enabled)
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createDepartmentsAction &&
         group_id
@@ -190,7 +234,7 @@ export function Departments({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createDepartmentsAction, group_id]
+    [ids, onChange, createDepartmentsAction, group_id, isAutosaveEnabled]
   );
 
   // Accept AI suggestion - add AI-suggested departments to selection

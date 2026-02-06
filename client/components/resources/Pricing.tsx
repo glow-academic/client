@@ -67,6 +67,10 @@ export interface PricingProps {
   aiPricingResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ pricing_id: string | null } | void>) => void;
 }
 
 export function Pricing({
@@ -94,6 +98,8 @@ export function Pricing({
   aiPricingResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: PricingProps) {
   const ids = useMemo(() => pricing_ids ?? [], [pricing_ids]);
   const show = show_pricing ?? false;
@@ -116,6 +122,44 @@ export function Pricing({
 
   // Track which pricing IDs have already had resources created
   const createdPricingIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ pricing_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ pricing_id: string | null } | void> => {
+    // Pricing component uses multi-select - flush creates resources for any uncreated selections
+    if (!createPricingAction || !group_id) {
+      return;
+    }
+
+    const uncreatedIds = ids.filter(id => !createdPricingIdsRef.current.has(id));
+    for (const pricingId of uncreatedIds) {
+      try {
+        await createPricingAction({
+          body: {
+            group_id: group_id,
+            pricing_id: pricingId,
+            mcp: false,
+          },
+        });
+        createdPricingIdsRef.current.add(pricingId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to create pricing resource for ${pricingId}:`, error);
+      }
+    }
+
+    // Return the first pricing_id or null
+    return { pricing_id: ids.length > 0 ? ids[0] : null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Initialize createdPricingIdsRef with current IDs
   useEffect(() => {

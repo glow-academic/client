@@ -62,6 +62,10 @@ export interface ProtocolsProps {
   aiProtocolResources?: Array<{ id?: string | null; value?: string | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ protocol_ids: string[] | null } | void>) => void;
 }
 
 export function Protocols({
@@ -87,6 +91,8 @@ export function Protocols({
   aiProtocolResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: ProtocolsProps) {
   const ids = useMemo(() => protocol_ids ?? [], [protocol_ids]);
   const show = show_protocols ?? false;
@@ -103,6 +109,49 @@ export function Protocols({
   useEffect(() => {
     ids.forEach((id) => createdProtocolIdsRef.current.add(id));
   }, [ids]);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ protocol_ids: string[] | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ protocol_ids: string[] | null } | void> => {
+    // Skip if no action available
+    if (!createProtocolsAction || !group_id) {
+      return;
+    }
+
+    // Find IDs that haven't been created yet
+    const uncreatedIds = ids.filter((id) => !createdProtocolIdsRef.current.has(id));
+
+    if (uncreatedIds.length === 0) {
+      return { protocol_ids: ids };
+    }
+
+    try {
+      for (const protocolId of uncreatedIds) {
+        await createProtocolsAction({
+          body: {
+            group_id: group_id,
+            protocol_id: protocolId,
+            mcp: false,
+          },
+        });
+        createdProtocolIdsRef.current.add(protocolId);
+      }
+      return { protocol_ids: ids };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create protocol resources:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Convert protocols array to ProtocolItem format for GenericPicker
   const protocolItems = useMemo(() => {
@@ -127,8 +176,9 @@ export function Protocols({
         (id) => !ids.includes(id) && !createdProtocolIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected protocols
+      // Create resources for newly selected protocols - only when autosave is enabled
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createProtocolsAction &&
         create_tool_id &&
@@ -158,7 +208,7 @@ export function Protocols({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createProtocolsAction, create_tool_id, group_id]
+    [ids, onChange, createProtocolsAction, create_tool_id, group_id, isAutosaveEnabled]
   );
 
   // Check if any protocol resource is generated (must be before early return)

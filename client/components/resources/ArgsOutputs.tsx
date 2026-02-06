@@ -61,6 +61,10 @@ export interface ArgsOutputsProps {
   link_tool_id?: string | null; // Tool ID for AI link suggestions
   // Component handles args_outputs changes internally and calls createArgsOutputsAction
   // No onChange callback needed - component manages its own state like SchemaOutput
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ args_outputs_id: string | null } | void>) => void;
   // AI diff view props
   aiArgsOutputsResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
@@ -76,6 +80,8 @@ export function ArgsOutputs({
   group_id,
   create_tool_id,
   link_tool_id,
+  isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiArgsOutputsResources,
   onAccept,
@@ -160,6 +166,9 @@ export function ArgsOutputs({
   const templateDebounceTimerRef = useRef<Record<string, NodeJS.Timeout>>({});
   const lastSavedTemplatesRef = useRef<Record<string, string>>({});
   const isTemplateInitialMountRef = useRef(true);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ args_outputs_id: string | null } | void>) | undefined>(undefined);
 
   // Initialize output templates from props
   useEffect(() => {
@@ -268,6 +277,42 @@ export function ArgsOutputs({
     ]
   );
 
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ args_outputs_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createArgsOutputsAction || !group_id) {
+      return;
+    }
+
+    // Flush all pending name changes
+    for (const outputId of Object.keys(outputNames)) {
+      const currentName = outputNames[outputId];
+      const lastSavedName = lastSavedNamesRef.current[outputId];
+      if (currentName && currentName !== lastSavedName) {
+        await saveOutputName(outputId, currentName);
+      }
+    }
+
+    // Flush all pending template changes
+    for (const outputId of Object.keys(outputTemplates)) {
+      const currentTemplate = outputTemplates[outputId];
+      const lastSavedTemplate = lastSavedTemplatesRef.current[outputId];
+      if (currentTemplate && currentTemplate !== lastSavedTemplate) {
+        await saveOutputTemplate(outputId, currentTemplate);
+      }
+    }
+
+    // Return null since ArgsOutputs manages multiple outputs, not a single resource ID
+    return { args_outputs_id: null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Handle output name change with debouncing
   const handleOutputNameChange = useCallback(
     (outputId: string, name: string) => {
@@ -275,6 +320,11 @@ export function ArgsOutputs({
         ...prev,
         [outputId]: name,
       }));
+
+      // Skip autosave if disabled (manual save mode)
+      if (!isAutosaveEnabled) {
+        return;
+      }
 
       // Clear existing timer for this output
       if (nameDebounceTimerRef.current[outputId]) {
@@ -290,7 +340,7 @@ export function ArgsOutputs({
         }
       }, 500);
     },
-    [saveOutputName]
+    [saveOutputName, isAutosaveEnabled]
   );
 
   // Handle output template change with debouncing
@@ -300,6 +350,11 @@ export function ArgsOutputs({
         ...prev,
         [outputId]: template,
       }));
+
+      // Skip autosave if disabled (manual save mode)
+      if (!isAutosaveEnabled) {
+        return;
+      }
 
       // Clear existing timer for this output
       if (templateDebounceTimerRef.current[outputId]) {
@@ -315,7 +370,7 @@ export function ArgsOutputs({
         }
       }, 500);
     },
-    [saveOutputTemplate]
+    [saveOutputTemplate, isAutosaveEnabled]
   );
 
   // Cleanup timers on unmount

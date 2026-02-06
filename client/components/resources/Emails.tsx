@@ -68,6 +68,10 @@ export interface EmailsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ emails_id: string | null } | void>) => void;
   // AI diff view props
   aiEmailResources?: Array<{
     id?: string | null;
@@ -97,6 +101,8 @@ export function Emails({
   createEmailsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiEmailResources,
   onAccept,
@@ -137,6 +143,9 @@ export function Emails({
 
   // Track which email IDs have already had resources created
   const createdEmailIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ emails_id: string | null } | void>) | undefined>(undefined);
 
   // Initialize createdEmailIdsRef with current IDs
   useEffect(() => {
@@ -179,8 +188,9 @@ export function Emails({
         (id) => !ids.includes(id) && !createdEmailIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected emails
+      // Create resources for newly selected emails (only if autosave is enabled)
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createEmailsAction &&
         create_tool_id &&
@@ -228,6 +238,7 @@ export function Emails({
       group_id,
       allEmails,
       primaryIndex,
+      isAutosaveEnabled,
     ]
   );
 
@@ -265,6 +276,33 @@ export function Emails({
     },
     [create_tool_id, group_id, createEmailsAction]
   );
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ emails_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createEmailsAction || !group_id) {
+      return;
+    }
+
+    // For emails, flush creates a resource if there's a pending new email being added
+    if (isAddingEmail && newEmailValue.trim()) {
+      const newId = await createEmailResource(newEmailValue.trim());
+      if (newId) {
+        return { emails_id: newId };
+      }
+    }
+
+    // Return null if nothing to flush
+    return { emails_id: null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   const handleSaveEdit = useCallback(async () => {
     if (!editingEmailId) return;
     const trimmed = editingEmailValue.trim();

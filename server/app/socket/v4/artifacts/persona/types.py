@@ -44,7 +44,7 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     user_instructions: list[str] | None = None  # Optional: user instructions
 
     # Note: current selections are derived from draft-backed API response.
-    # The server looks up agent_ids from the domains mapping in get_persona_internal().
+    # The server looks up agent_ids and group_ids from the domains mapping in get_persona_internal().
 
 
 # =============================================================================

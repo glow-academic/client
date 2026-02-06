@@ -90,6 +90,10 @@ export interface RequestLimitsProps {
   aiRequestLimitResources?: Array<{ id?: string | null; requests_per_day?: number | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ request_limit_id: string | null } | void>) => void;
 }
 
 export function RequestLimits({
@@ -118,6 +122,8 @@ export function RequestLimits({
   aiRequestLimitResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: RequestLimitsProps) {
   // Use standardized props with fallback to legacy props
   const resource = request_limit_resource ?? requestLimitResource ?? null;
@@ -139,6 +145,55 @@ export function RequestLimits({
       createdRequestLimitIdRef.current = resourceId;
     }
   }, [resourceId]);
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ request_limit_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ request_limit_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createRequestLimitsAction || !group_id) {
+      return;
+    }
+
+    // If unlimited (no resourceId), nothing to create
+    if (!resourceId) {
+      return { request_limit_id: null };
+    }
+
+    // Skip if already created
+    if (createdRequestLimitIdRef.current === resourceId) {
+      return { request_limit_id: resourceId };
+    }
+
+    try {
+      // Find requests_per_day from request_limits array
+      const requestLimitObj = allRequestLimits.find((rl) => rl.id === resourceId);
+      if (requestLimitObj?.requests_per_day !== null && requestLimitObj?.requests_per_day !== undefined) {
+        await createRequestLimitsAction({
+          body: {
+            group_id: group_id,
+            requests_per_day: requestLimitObj.requests_per_day,
+            mcp: false,
+          },
+        });
+        createdRequestLimitIdRef.current = resourceId;
+        return { request_limit_id: resourceId };
+      }
+      return { request_limit_id: null };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create request limit resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   const requestLimitItems = useMemo(() => {
     return allRequestLimits
@@ -195,8 +250,9 @@ export function RequestLimits({
         return;
       }
 
-      // Create resource for newly selected request limit
+      // Create resource for newly selected request limit - only when autosave is enabled
       if (
+        isAutosaveEnabled &&
         selectedId &&
         selectedId !== resourceId &&
         createRequestLimitsAction &&
@@ -239,6 +295,7 @@ export function RequestLimits({
       create_tool_id,
       group_id,
       allRequestLimits,
+      isAutosaveEnabled,
     ]
   );
   const createRequestLimit = useCallback(

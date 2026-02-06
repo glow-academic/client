@@ -20,7 +20,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Dynamically import Monaco to avoid SSR issues
@@ -191,6 +190,10 @@ export interface PromptsProps {
   } | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ prompt_id: string | null } | void>) => void;
 }
 
 export function Prompts({
@@ -224,6 +227,8 @@ export function Prompts({
   aiResource,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: PromptsProps) {
   // Use standardized props with fallback to legacy props
   const resource = prompt_resource ?? promptResource ?? null;
@@ -267,6 +272,62 @@ export function Prompts({
   const lastSavedContentRef = useRef<string>(resource?.system_prompt || "");
   const isInitialMountRef = useRef(true);
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ prompt_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ prompt_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createPromptsAction || !group_id) {
+      return;
+    }
+
+    // Skip if no change AND we already have a resource for this value
+    if (promptContent === lastSavedContentRef.current && resourceId) {
+      return { prompt_id: resourceId };
+    }
+
+    try {
+      if (promptContent.trim()) {
+        const result = await createPromptsAction({
+          body: {
+            group_id: group_id,
+            system_prompt: promptContent,
+            name: resource?.name || "Untitled Prompt",
+            description: resource?.description || "",
+            mcp: false,
+            ...(resourceId ? { prompt_id: resourceId } : {}),
+          },
+        });
+        if (result && typeof result === "object" && "prompt_id" in result) {
+          const newPromptId = (result as { prompt_id?: string | null }).prompt_id;
+          if (newPromptId) {
+            if (newPromptId !== resourceId) {
+              onPromptIdChange(newPromptId);
+            }
+            lastSavedContentRef.current = promptContent;
+            return { prompt_id: newPromptId };
+          }
+        }
+      } else {
+        onPromptIdChange(null);
+        lastSavedContentRef.current = promptContent;
+        return { prompt_id: null };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create prompt resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   // Detect dark mode for Monaco editor
   useEffect(() => {
     if (
@@ -295,8 +356,13 @@ export function Prompts({
     }
   }, [resource?.system_prompt, resourceId, prompts]);
 
-  // Debounced resource creation/update
+  // Debounced resource creation/update - only when autosave is enabled
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -320,37 +386,8 @@ export function Prompts({
     }
 
     // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        if (!create_tool_id || !group_id) {
-          return;
-        }
-
-        // If we have a resourceId, update existing prompt; otherwise create new
-        const result = await createPromptsAction({
-          body: {
-            group_id: group_id,
-            system_prompt: promptContent,
-            name: resource?.name || "Untitled Prompt",
-            description: resource?.description || "",
-            mcp: false,
-            ...(resourceId ? { prompt_id: resourceId } : {}),
-          },
-        });
-
-        if (result && typeof result === "object" && "prompt_id" in result) {
-          const newPromptId = (result as { prompt_id?: string | null })
-            .prompt_id;
-          if (newPromptId && newPromptId !== resourceId) {
-            // New prompt created, update parent
-            onPromptIdChange(newPromptId);
-          }
-        }
-        lastSavedContentRef.current = promptContent;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create/update prompt resource:", error);
-      }
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
     }, 1000);
 
     return () => {
@@ -361,12 +398,7 @@ export function Prompts({
   }, [
     promptContent,
     createPromptsAction,
-    create_tool_id,
-    group_id,
-    resourceId,
-    resource?.name,
-    resource?.description,
-    onPromptIdChange,
+    isAutosaveEnabled,
   ]);
 
   const handlePromptSelect = (selectedPromptId: string | null) => {

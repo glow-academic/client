@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+type FlushResult = { standard_group_ids: string[] } | void;
+
 type CreateDraftStandardGroupsIn = InputOf<
   "/api/v4/resources/standard_groups",
   "post"
@@ -86,6 +88,10 @@ export interface StandardGroupsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created IDs */
+  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   // Legacy props for backward compatibility
   standardGroupIds?: string[];
   // AI diff view props
@@ -114,6 +120,8 @@ export function StandardGroups({
   createStandardGroupsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   standardGroupIds,
   // AI diff view props
@@ -138,6 +146,26 @@ export function StandardGroups({
 
   // Track which standard group IDs have already had resources created
   const createdStandardGroupIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<FlushResult> => {
+    // For StandardGroups, the flush returns the current selection
+    // Resources are created on selection, so just return current IDs
+    if (!group_id) {
+      return;
+    }
+    return { standard_group_ids: ids };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Initialize createdStandardGroupIdsRef with current IDs
   useEffect(() => {
@@ -184,8 +212,9 @@ export function StandardGroups({
         (id) => !ids.includes(id) && !createdStandardGroupIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected standard groups
+      // Create resources for newly selected standard groups (only when autosave is enabled)
       if (
+        isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createStandardGroupsAction &&
         create_tool_id &&
@@ -229,6 +258,7 @@ export function StandardGroups({
       create_tool_id,
       group_id,
       allStandardGroups,
+      isAutosaveEnabled,
     ]
   );
 

@@ -68,6 +68,10 @@ export interface PointsProps {
   aiPointsResources?: Array<{ id?: string | null; value?: number | null }> | null;
   onAccept?: () => void;
   onReject?: () => void;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ points_id: string | null } | void>) => void;
 }
 
 export function Points({
@@ -99,6 +103,8 @@ export function Points({
   aiPointsResources,
   onAccept,
   onReject,
+  isAutosaveEnabled = true,
+  registerFlush,
 }: PointsProps) {
   // Use standardized props with fallback to legacy props
   const resource = points_resource ?? pointsResource ?? null;
@@ -151,6 +157,68 @@ export function Points({
   const lastSavedValueRef = useRef<string>(resolvedValue);
   const isInitialMountRef = useRef(true);
 
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ points_id: string | null } | void>) | undefined>(undefined);
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ points_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createPointsAction || !create_tool_id || !group_id) {
+      return { points_id: resourceId };
+    }
+
+    // Skip if no change AND we already have a resource for this value
+    if (internalValue === lastSavedValueRef.current && resourceId) {
+      return { points_id: resourceId };
+    }
+
+    const trimmed = internalValue.trim();
+    if (!trimmed) {
+      onPointsIdChange(null);
+      lastSavedValueRef.current = "";
+      return { points_id: null };
+    }
+
+    const numericValue = Number(trimmed);
+    if (!Number.isFinite(numericValue)) {
+      return { points_id: resourceId };
+    }
+
+    // Check if there's an existing point with this value
+    const existingId = pointsByValue.get(numericValue);
+    if (existingId) {
+      onPointsIdChange(existingId);
+      lastSavedValueRef.current = trimmed;
+      return { points_id: existingId };
+    }
+
+    try {
+      const result = await createPointsAction({
+        body: {
+          group_id: group_id,
+          value: numericValue,
+          mcp: false,
+        },
+      });
+      if (result.points_id) {
+        onPointsIdChange(result.points_id);
+        lastSavedValueRef.current = trimmed;
+        return { points_id: result.points_id };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to create points resource:", error);
+      throw error;
+    }
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
   useEffect(() => {
     if (resolvedValue !== internalValue) {
       setInternalValue(resolvedValue);
@@ -191,6 +259,11 @@ export function Points({
   }, []);
 
   useEffect(() => {
+    // Skip if autosave is disabled (manual save mode)
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       lastSavedValueRef.current = internalValue;
@@ -254,6 +327,7 @@ export function Points({
     };
   }, [
     internalValue,
+    isAutosaveEnabled,
     createPointsAction,
     create_tool_id,
     group_id,

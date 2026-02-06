@@ -61,6 +61,10 @@ export interface ItemsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save - returns created ID */
+  registerFlush?: (flush: () => Promise<{ items_id: string | null } | void>) => void;
   // AI diff view props
   aiItemResources?: Array<{ id?: string | null; name?: string | null }> | null;
   onAccept?: () => void;
@@ -86,6 +90,8 @@ export function Items({
   createItemsAction,
   onGenerate,
   isGenerating = false,
+  isAutosaveEnabled = true,
+  registerFlush,
   // AI diff view props
   aiItemResources,
   onAccept,
@@ -101,6 +107,9 @@ export function Items({
 
   // Track which items IDs have already had resources created
   const createdItemsIdsRef = useRef<Set<string>>(new Set());
+
+  // Ref for flush function (stable reference for registerFlush)
+  const flushRef = useRef<(() => Promise<{ items_id: string | null } | void>) | undefined>(undefined);
 
   // Initialize createdItemsIdsRef with current IDs
   useEffect(() => {
@@ -132,6 +141,25 @@ export function Items({
     },
     [onChange]
   );
+
+  // Update flush function when dependencies change
+  flushRef.current = async (): Promise<{ items_id: string | null } | void> => {
+    // Skip if no action available
+    if (!createItemsAction || !group_id) {
+      return;
+    }
+
+    // Items are typically generated, not manually created
+    // Return null as there's nothing to flush
+    return { items_id: null };
+  };
+
+  // Register flush callback with parent
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
 
   // Check if any items resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
