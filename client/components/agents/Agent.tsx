@@ -1384,7 +1384,7 @@ export default function Agent({
                           required={agentData?.name_required ?? false}
                           hideDescription={true}
                           group_id={agentData?.group_id ?? null}
-                          agent_id={agentData?.name_agent_id ?? null}
+                          showAiGenerate={!!agentData?.name_agent_id}
                         />
                       }
                       resetFields={[
@@ -1480,7 +1480,7 @@ export default function Agent({
                           rows={4}
                           data-testid="input-agent-description"
                           group_id={agentData?.group_id ?? null}
-                          agent_id={agentData?.description_agent_id ?? null}
+                          showAiGenerate={!!agentData?.description_agent_id}
                         />
 
                         {/* Department Selection */}
@@ -1507,7 +1507,7 @@ export default function Agent({
                           isGenerating={isGenerating("departments")}
                           required={agentData?.departments_required ?? false}
                           group_id={agentData?.group_id ?? null}
-                          agent_id={agentData?.departments_agent_id ?? null}
+                          showAiGenerate={!!agentData?.departments_agent_id}
                         />
 
                         <Flags
@@ -2200,7 +2200,7 @@ export default function Agent({
                           setStepFormData({ instructionsSearch: term || null })
                         }
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.instructions_agent_id ?? null}
+                        showAiGenerate={!!agentData?.instructions_agent_id}
                       />
                     </StepCard>
                   );

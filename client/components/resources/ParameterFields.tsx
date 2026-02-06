@@ -73,7 +73,7 @@ export interface ParameterFieldsProps {
   required?: boolean;
   description?: string;
   group_id?: string | null;
-  agent_id?: string | null;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createParameterFieldsAction?:
     | ((
         input: CreateDraftParameterFieldsIn
@@ -116,7 +116,7 @@ export function ParameterFields({
   required = false,
   description,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createParameterFieldsAction,
   onGenerate,
   isGenerating = false,
@@ -229,7 +229,7 @@ export function ParameterFields({
   // Update flush function when dependencies change (for manual save mode)
   flushRef.current = async (): Promise<{ parameter_field_ids: string[] } | void> => {
     // Skip if no action or missing required params
-    if (!createParameterFieldsAction || !group_id || !agent_id) return;
+    if (!createParameterFieldsAction || !group_id) return;
 
     // If no pending selections, return current IDs
     if (pendingSelections.size === 0) {
@@ -245,7 +245,6 @@ export function ParameterFields({
             try {
               const result = await createParameterFieldsAction({
                 body: {
-                  agent_id: agent_id,
                   group_id: group_id,
                   parameter_id: parameterId,
                   field_id: fieldId,
@@ -382,7 +381,7 @@ export function ParameterFields({
       }
 
       // Autosave mode: create resource immediately
-      if (!createParameterFieldsAction || !agent_id || !group_id) {
+      if (!createParameterFieldsAction || !group_id) {
         return null;
       }
       if (creatingKeysRef.current.has(key)) {
@@ -393,7 +392,6 @@ export function ParameterFields({
       try {
         const result = await createParameterFieldsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             parameter_id: parameterId,
             field_id: fieldId,
@@ -425,7 +423,7 @@ export function ParameterFields({
         return null;
       }
     },
-    [createParameterFieldsAction, agent_id, group_id, isAutosaveEnabled]
+    [createParameterFieldsAction, group_id, isAutosaveEnabled]
   );
 
   const handleToggle = useCallback(
@@ -587,7 +585,7 @@ export function ParameterFields({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

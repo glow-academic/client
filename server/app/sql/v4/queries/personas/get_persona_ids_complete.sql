@@ -77,7 +77,19 @@ RETURNS TABLE (
     departments_has_tools boolean,
     parameter_fields_has_tools boolean,
     examples_has_tools boolean,
-    parameters_has_tools boolean
+    parameters_has_tools boolean,
+
+    -- Domain IDs (for domain-based generation)
+    name_domain_id uuid,
+    description_domain_id uuid,
+    color_domain_id uuid,
+    icon_domain_id uuid,
+    instructions_domain_id uuid,
+    flag_domain_id uuid,
+    departments_domain_id uuid,
+    parameter_fields_domain_id uuid,
+    examples_domain_id uuid,
+    parameters_domain_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -232,6 +244,20 @@ tools_existence_check AS (
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'examples'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as examples_has_tools,
         EXISTS (SELECT 1 FROM resource_tools_relation rt JOIN tool_artifact t ON t.id = rt.tool_id WHERE rt.resource = 'parameters'::resource_type AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)) as parameters_has_tools
     FROM params x
+),
+-- Domain IDs from domains_resource table
+domain_ids_data AS (
+    SELECT
+        (SELECT id FROM domains_resource WHERE resource = 'names'::resource_type AND active = true LIMIT 1) as name_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'descriptions'::resource_type AND active = true LIMIT 1) as description_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'colors'::resource_type AND active = true LIMIT 1) as color_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'icons'::resource_type AND active = true LIMIT 1) as icon_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'instructions'::resource_type AND active = true LIMIT 1) as instructions_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'flags'::resource_type AND active = true LIMIT 1) as flag_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'departments'::resource_type AND active = true LIMIT 1) as departments_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'fields'::resource_type AND active = true LIMIT 1) as parameter_fields_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'examples'::resource_type AND active = true LIMIT 1) as examples_domain_id,
+        (SELECT id FROM domains_resource WHERE resource = 'parameters'::resource_type AND active = true LIMIT 1) as parameters_domain_id
 )
 SELECT
     -- Single-select resource IDs
@@ -273,7 +299,20 @@ SELECT
     tec.departments_has_tools,
     tec.parameter_fields_has_tools,
     tec.examples_has_tools,
-    tec.parameters_has_tools
+    tec.parameters_has_tools,
+
+    -- Domain IDs
+    did.name_domain_id,
+    did.description_domain_id,
+    did.color_domain_id,
+    did.icon_domain_id,
+    did.instructions_domain_id,
+    did.flag_domain_id,
+    did.departments_domain_id,
+    did.parameter_fields_domain_id,
+    did.examples_domain_id,
+    did.parameters_domain_id
 FROM params x
-CROSS JOIN tools_existence_check tec;
+CROSS JOIN tools_existence_check tec
+CROSS JOIN domain_ids_data did;
 $$;

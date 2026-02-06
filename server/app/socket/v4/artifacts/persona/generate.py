@@ -15,9 +15,9 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 
-from app.api.v4.artifacts.persona.get import get_persona_internal
+from app.api.v4.artifacts.persona.get import get_persona_websocket
 from app.api.v4.artifacts.persona.types import (
-    GetPersonaApiResponse,
+    GetPersonaWebsocketResponse,
     PersonaResourceBucket,
 )
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
@@ -106,9 +106,9 @@ def _serialize_resource_list(items: list[Any] | None) -> list[Any]:
 
 
 def _build_persona_jinja_context(
-    response: GetPersonaApiResponse, resource_types: list[str]
+    response: GetPersonaWebsocketResponse, resource_types: list[str]
 ) -> dict[str, Any]:
-    """Build Jinja context from cached persona GET response."""
+    """Build Jinja context from persona websocket response."""
 
     if response.resources and response.resources.resources:
         resources = response.resources.resources.model_dump()
@@ -121,70 +121,6 @@ def _build_persona_jinja_context(
         return resources
     return {"current": PersonaResourceBucket().model_dump()}
 
-    def has_resource(key: str) -> bool:
-        return key in resource_types
-
-    resources: dict[str, Any] = {}
-    current: dict[str, Any] = {}
-
-    if has_resource("names"):
-        resources["names"] = _serialize_resource_list(response.names)
-        current["names"] = _serialize_resource_list(
-            [response.name_resource] if response.name_resource else []
-        )
-
-    if has_resource("descriptions"):
-        resources["descriptions"] = _serialize_resource_list(response.descriptions)
-        current["descriptions"] = _serialize_resource_list(
-            [response.description_resource] if response.description_resource else []
-        )
-
-    if has_resource("colors"):
-        resources["colors"] = _serialize_resource_list(response.colors)
-        current["colors"] = _serialize_resource_list(
-            [response.color_resource] if response.color_resource else []
-        )
-
-    if has_resource("icons"):
-        resources["icons"] = _serialize_resource_list(response.icons)
-        current["icons"] = _serialize_resource_list(
-            [response.icon_resource] if response.icon_resource else []
-        )
-
-    if has_resource("instructions"):
-        resources["instructions"] = _serialize_resource_list(response.instructions)
-        current["instructions"] = _serialize_resource_list(
-            [response.instructions_resource] if response.instructions_resource else []
-        )
-
-    if has_resource("flags"):
-        resources["flags"] = _serialize_resource_list(response.flags)
-        current["flags"] = _serialize_resource_list(
-            [response.flag_resource] if response.flag_resource else []
-        )
-
-    if has_resource("departments"):
-        resources["departments"] = _serialize_resource_list(response.departments)
-        current["departments"] = _serialize_resource_list(response.department_resources)
-
-    if has_resource("parameter_fields"):
-        resources["fields"] = _serialize_resource_list(response.parameter_fields)
-        current["parameter_fields"] = _serialize_resource_list(
-            response.parameter_field_resources
-        )
-
-    if has_resource("examples"):
-        resources["examples"] = _serialize_resource_list(response.examples)
-        current["examples"] = _serialize_resource_list(response.example_resources)
-
-    if has_resource("parameters"):
-        resources["parameters"] = _serialize_resource_list(response.parameters)
-        current["parameters"] = _serialize_resource_list(response.parameter_resources)
-
-    resources["current"] = current
-
-    return resources
-
 
 async def _persona_generate_impl(
     sid: str, data: GeneratePersonaPayload, profile_id: uuid.UUID
@@ -192,7 +128,7 @@ async def _persona_generate_impl(
     """Handle persona generation with all business logic.
 
     This function:
-    1. Validates resource types
+    1. Validates domain_ids and derives resource_types + agent_id
     2. Fetches persona data via internal function for seed nodes
     3. Expands resources via tree traversal
     4. Calls prepare_persona_generation SQL (rate limit, group/run, context)
@@ -201,14 +137,77 @@ async def _persona_generate_impl(
     7. Emits simplified payload to generate_artifact handler
     """
     try:
-        # Validate resource types
-        resource_types = data.resource_types
+        # Validate domain_ids
+        if not data.domain_ids:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="domain_ids must be provided",
+                    artifact_type="persona",
+                    group_id=None,
+                    resource_type="persona",
+                ),
+                sid=sid,
+            )
+            return
+
+        if not data.draft_id:
+            await emit_to_internal(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Draft ID is required for persona generation",
+                    artifact_type="persona",
+                    group_id=None,
+                    resource_type="persona",
+                ),
+                sid=sid,
+            )
+            return
+
+        # Step 1: Fetch persona data for seed nodes using websocket function
+        # This gives us the domains mapping to look up agent_ids
+        result = await get_persona_websocket(
+            profile_id=profile_id,
+            persona_id=data.persona_id,
+            draft_id=data.draft_id,
+        )
+
+        # Build domain_id -> agent_id mapping from result.domains
+        domain_to_agent: dict[uuid.UUID, uuid.UUID | None] = {}
+        if result.domains:
+            for domain in result.domains:
+                domain_to_agent[domain.domain_id] = domain.agent_id
+
+        # Build domain_id -> resource_type mapping from result
+        domain_to_resource: dict[uuid.UUID | None, str] = {
+            result.name_domain_id: "names",
+            result.description_domain_id: "descriptions",
+            result.color_domain_id: "colors",
+            result.icon_domain_id: "icons",
+            result.instructions_domain_id: "instructions",
+            result.flag_domain_id: "flags",
+            result.departments_domain_id: "departments",
+            result.parameter_fields_domain_id: "parameter_fields",
+            result.examples_domain_id: "examples",
+            result.parameters_domain_id: "parameters",
+        }
+        # Remove None key if present
+        domain_to_resource.pop(None, None)
+
+        # Derive resource_types from domain_ids (internal use only)
+        resource_types: list[str] = []
+        for did in data.domain_ids:
+            if did in domain_to_resource:
+                resource_types.append(domain_to_resource[did])
+
         if not resource_types:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="resource_types must be provided",
+                    error_message="No valid domain_ids provided",
                     artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
@@ -234,12 +233,19 @@ async def _persona_generate_impl(
             )
             return
 
-        if not data.draft_id:
+        # Get agent_id from the first valid domain_id
+        agent_id: uuid.UUID | None = None
+        for did in data.domain_ids:
+            if did in domain_to_agent and domain_to_agent[did] is not None:
+                agent_id = domain_to_agent[did]
+                break
+
+        if not agent_id:
             await emit_to_internal(
                 "generate_call_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message="Draft ID is required for persona generation",
+                    error_message="No agent found for the requested domains",
                     artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
@@ -248,15 +254,6 @@ async def _persona_generate_impl(
             )
             return
 
-        # Use agent_id directly from payload (frontend provides it)
-        agent_id = data.agent_id
-
-        # Step 1: Fetch persona data for seed nodes using internal function
-        result = await get_persona_internal(
-            profile_id=profile_id,
-            persona_id=data.persona_id,
-            draft_id=data.draft_id,
-        )
         persona_jinja_context = _build_persona_jinja_context(result, resource_types)
 
         # Step 2: Seed resource nodes from the persona GET result (ONLY requested types)
@@ -272,32 +269,35 @@ async def _persona_generate_impl(
                     )
                 )
 
-        if result.names:
-            for name in result.names:
+        # Access resources from nested structure
+        resources_bucket = result.resources.resources if result.resources else None
+
+        if resources_bucket and resources_bucket.names:
+            for name in resources_bucket.names:
                 add_seed("names", name.id)
-        if result.descriptions:
-            for desc in result.descriptions:
+        if resources_bucket and resources_bucket.descriptions:
+            for desc in resources_bucket.descriptions:
                 add_seed("descriptions", desc.id)
-        if result.colors:
-            for color in result.colors:
+        if resources_bucket and resources_bucket.colors:
+            for color in resources_bucket.colors:
                 add_seed("colors", color.id)
-        if result.icons:
-            for icon in result.icons:
+        if resources_bucket and resources_bucket.icons:
+            for icon in resources_bucket.icons:
                 add_seed("icons", icon.id)
-        if result.instructions:
-            for instruction in result.instructions:
+        if resources_bucket and resources_bucket.instructions:
+            for instruction in resources_bucket.instructions:
                 add_seed("instructions", instruction.id)
-        if result.flags:
-            for flag in result.flags:
+        if resources_bucket and resources_bucket.flags:
+            for flag in resources_bucket.flags:
                 add_seed("flags", flag.flag_option_id)
-        if result.departments:
-            for dept in result.departments:
+        if resources_bucket and resources_bucket.departments:
+            for dept in resources_bucket.departments:
                 add_seed("departments", dept.department_id)
-        if result.parameter_fields:
-            for field in result.parameter_fields:
+        if resources_bucket and resources_bucket.parameter_fields:
+            for field in resources_bucket.parameter_fields:
                 add_seed("parameter_fields", field.field_id)
-        if result.examples:
-            for example in result.examples:
+        if resources_bucket and resources_bucket.examples:
+            for example in resources_bucket.examples:
                 add_seed("examples", example.id)
 
         # Step 3: Expand seed nodes via resource tree traversal

@@ -21,6 +21,25 @@ from app.sql.types import (
 )
 
 
+class DomainAgent(BaseModel):
+    """Maps a domain to its assigned agent. Used internally by server."""
+
+    domain_id: UUID
+    agent_id: UUID | None = None
+
+
+class DomainData(BaseModel):
+    """Rich metadata for a domain, used in generate/regenerate modals."""
+
+    domain_id: UUID
+    name: str  # Display name, e.g., "Name", "Description", "Instructions"
+    description: str  # Description for tooltips/modals
+    resource: str  # Internal resource type (for server use if needed)
+    icon: str | None = None  # Optional display icon
+    required: bool = False
+    show: bool = True
+
+
 class PersonaFlagConfig(BaseModel):
     """Enriched flag config for direct client consumption."""
 
@@ -31,7 +50,7 @@ class PersonaFlagConfig(BaseModel):
     flag_option_id: UUID | None = None  # ID to use when enabling
     show: bool = True
     required: bool = False
-    agent_id: UUID | None = None
+    domain_id: UUID | None = None  # Domain ID for generation
     generated: bool | None = None
 
 
@@ -67,69 +86,113 @@ class GetPersonaApiResponse(BaseModel):
 
     # Single-select resources: name
     show_name: bool | None = None
-    name_agent_id: UUID | None = None
+    name_domain_id: UUID | None = None
     name_required: bool | None = None
     name_suggestions: list[UUID] | None = None
+    name_show_ai_generate: bool | None = None
 
     # Single-select resources: description
     show_description: bool | None = None
-    description_agent_id: UUID | None = None
+    description_domain_id: UUID | None = None
     description_required: bool | None = None
     description_suggestions: list[UUID] | None = None
+    description_show_ai_generate: bool | None = None
 
     # Single-select resources: color
     show_color: bool | None = None
-    color_agent_id: UUID | None = None
+    color_domain_id: UUID | None = None
     color_required: bool | None = None
     color_suggestions: list[UUID] | None = None
+    color_show_ai_generate: bool | None = None
 
     # Single-select resources: icon
     show_icon: bool | None = None
-    icon_agent_id: UUID | None = None
+    icon_domain_id: UUID | None = None
     icon_required: bool | None = None
     icon_suggestions: list[UUID] | None = None
+    icon_show_ai_generate: bool | None = None
 
     # Single-select resources: instructions
     show_instructions: bool | None = None
-    instructions_agent_id: UUID | None = None
+    instructions_domain_id: UUID | None = None
     instructions_required: bool | None = None
     instructions_suggestions: list[UUID] | None = None
+    instructions_show_ai_generate: bool | None = None
 
     # Single-select resources: flag
     show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
+    flag_domain_id: UUID | None = None
     flag_required: bool | None = None
+    flag_show_ai_generate: bool | None = None
 
     # Multi-select resources: departments
     show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
+    departments_domain_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
+    departments_show_ai_generate: bool | None = None
 
     # Multi-select resources: parameter_fields
     show_parameter_fields: bool | None = None
-    parameter_fields_agent_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
     parameter_fields_required: bool | None = None
     parameter_field_suggestions: list[UUID] | None = None
+    parameter_fields_show_ai_generate: bool | None = None
 
     # Multi-select resources: examples
     show_examples: bool | None = None
-    examples_agent_id: UUID | None = None
+    examples_domain_id: UUID | None = None
     examples_required: bool | None = None
     example_suggestions: list[UUID] | None = None
+    examples_show_ai_generate: bool | None = None
 
     # Multi-select resources: parameters
     show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
+    parameters_show_ai_generate: bool | None = None
 
-    # Multi-resource combination agent IDs
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
-    parameters_step_agent_id: UUID | None = None
+    # Step-level AI generation flags (for "Generate All Basic", etc.)
+    basic_show_ai_generate: bool | None = None
+    content_show_ai_generate: bool | None = None
+    parameters_step_show_ai_generate: bool | None = None
+
+    # Rich domain metadata for client display in modals
+    domain_data: list[DomainData] | None = None
 
     # Generic resources payload (full objects + current selections)
+    resources: PersonaResources | None = None
+
+
+class GetPersonaWebsocketResponse(BaseModel):
+    """Minimal response for WebSocket handlers (get_persona_websocket).
+
+    Contains only what's needed for AI generation:
+    - Domain IDs (for domain_to_resource mapping)
+    - Domains list (for agent_id lookup)
+    - Group ID (for existing group context)
+    - Resources (for Jinja template context)
+    """
+
+    group_id: UUID | None = None
+
+    # Domain IDs for domain_to_resource mapping
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    color_domain_id: UUID | None = None
+    icon_domain_id: UUID | None = None
+    instructions_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    examples_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
+
+    # Domains mapping (domain_id -> agent_id) for server-side agent lookup
+    domains: list[DomainAgent] | None = None
+
+    # Resources for Jinja template context
     resources: PersonaResources | None = None
 
 

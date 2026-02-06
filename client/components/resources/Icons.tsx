@@ -56,7 +56,7 @@ export interface IconsProps {
   showSelectedFilter?: boolean; // Whether to filter to show only selected
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // Legacy props for backward compatibility
@@ -93,7 +93,7 @@ export function Icons({
   showSelectedFilter = false,
   onShowSelectedChange,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   onGenerate,
   isGenerating = false,
   // Legacy props for backward compatibility
@@ -229,7 +229,7 @@ export function Icons({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

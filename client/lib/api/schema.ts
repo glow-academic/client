@@ -9455,11 +9455,8 @@ export interface components {
         };
         /** ColorsApiRequest */
         ColorsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
             /**
              * Group Id
              * Format: uuid
@@ -10249,11 +10246,8 @@ export interface components {
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
             /**
              * Group Id
              * Format: uuid
@@ -10285,6 +10279,35 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * DomainData
+         * @description Rich metadata for a domain, used in generate/regenerate modals.
+         */
+        DomainData: {
+            /**
+             * Domain Id
+             * Format: uuid
+             */
+            domain_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Resource */
+            resource: string;
+            /** Icon */
+            icon?: string | null;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
         };
         /**
          * DraftResourcesViewItem
@@ -10746,11 +10769,8 @@ export interface components {
         };
         /** ExamplesApiRequest */
         ExamplesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
             /**
              * Group Id
              * Format: uuid
@@ -13852,88 +13872,110 @@ export interface components {
             group_id?: string | null;
             /** Show Name */
             show_name?: boolean | null;
-            /** Name Agent Id */
-            name_agent_id?: string | null;
+            /** Name Domain Id */
+            name_domain_id?: string | null;
             /** Name Required */
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
+            /** Name Show Ai Generate */
+            name_show_ai_generate?: boolean | null;
             /** Show Description */
             show_description?: boolean | null;
-            /** Description Agent Id */
-            description_agent_id?: string | null;
+            /** Description Domain Id */
+            description_domain_id?: string | null;
             /** Description Required */
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
+            /** Description Show Ai Generate */
+            description_show_ai_generate?: boolean | null;
             /** Show Color */
             show_color?: boolean | null;
-            /** Color Agent Id */
-            color_agent_id?: string | null;
+            /** Color Domain Id */
+            color_domain_id?: string | null;
             /** Color Required */
             color_required?: boolean | null;
             /** Color Suggestions */
             color_suggestions?: string[] | null;
+            /** Color Show Ai Generate */
+            color_show_ai_generate?: boolean | null;
             /** Show Icon */
             show_icon?: boolean | null;
-            /** Icon Agent Id */
-            icon_agent_id?: string | null;
+            /** Icon Domain Id */
+            icon_domain_id?: string | null;
             /** Icon Required */
             icon_required?: boolean | null;
             /** Icon Suggestions */
             icon_suggestions?: string[] | null;
+            /** Icon Show Ai Generate */
+            icon_show_ai_generate?: boolean | null;
             /** Show Instructions */
             show_instructions?: boolean | null;
-            /** Instructions Agent Id */
-            instructions_agent_id?: string | null;
+            /** Instructions Domain Id */
+            instructions_domain_id?: string | null;
             /** Instructions Required */
             instructions_required?: boolean | null;
             /** Instructions Suggestions */
             instructions_suggestions?: string[] | null;
+            /** Instructions Show Ai Generate */
+            instructions_show_ai_generate?: boolean | null;
             /** Show Flag */
             show_flag?: boolean | null;
-            /** Flag Agent Id */
-            flag_agent_id?: string | null;
+            /** Flag Domain Id */
+            flag_domain_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
+            /** Flag Show Ai Generate */
+            flag_show_ai_generate?: boolean | null;
             /** Show Departments */
             show_departments?: boolean | null;
-            /** Departments Agent Id */
-            departments_agent_id?: string | null;
+            /** Departments Domain Id */
+            departments_domain_id?: string | null;
             /** Departments Required */
             departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
+            /** Departments Show Ai Generate */
+            departments_show_ai_generate?: boolean | null;
             /** Show Parameter Fields */
             show_parameter_fields?: boolean | null;
-            /** Parameter Fields Agent Id */
-            parameter_fields_agent_id?: string | null;
+            /** Parameter Fields Domain Id */
+            parameter_fields_domain_id?: string | null;
             /** Parameter Fields Required */
             parameter_fields_required?: boolean | null;
             /** Parameter Field Suggestions */
             parameter_field_suggestions?: string[] | null;
+            /** Parameter Fields Show Ai Generate */
+            parameter_fields_show_ai_generate?: boolean | null;
             /** Show Examples */
             show_examples?: boolean | null;
-            /** Examples Agent Id */
-            examples_agent_id?: string | null;
+            /** Examples Domain Id */
+            examples_domain_id?: string | null;
             /** Examples Required */
             examples_required?: boolean | null;
             /** Example Suggestions */
             example_suggestions?: string[] | null;
+            /** Examples Show Ai Generate */
+            examples_show_ai_generate?: boolean | null;
             /** Show Parameters */
             show_parameters?: boolean | null;
-            /** Parameters Agent Id */
-            parameters_agent_id?: string | null;
+            /** Parameters Domain Id */
+            parameters_domain_id?: string | null;
             /** Parameters Required */
             parameters_required?: boolean | null;
             /** Parameter Suggestions */
             parameter_suggestions?: string[] | null;
-            /** Basic Agent Id */
-            basic_agent_id?: string | null;
-            /** Content Agent Id */
-            content_agent_id?: string | null;
-            /** Parameters Step Agent Id */
-            parameters_step_agent_id?: string | null;
+            /** Parameters Show Ai Generate */
+            parameters_show_ai_generate?: boolean | null;
+            /** Basic Show Ai Generate */
+            basic_show_ai_generate?: boolean | null;
+            /** Content Show Ai Generate */
+            content_show_ai_generate?: boolean | null;
+            /** Parameters Step Show Ai Generate */
+            parameters_step_show_ai_generate?: boolean | null;
+            /** Domain Data */
+            domain_data?: components["schemas"]["DomainData"][] | null;
             resources?: components["schemas"]["PersonaResources"] | null;
         };
         /** GetPersonaResourceApiRequest */
@@ -16987,11 +17029,8 @@ export interface components {
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
             /**
              * Group Id
              * Format: uuid
@@ -17906,11 +17945,8 @@ export interface components {
         };
         /** ParameterFieldsApiRequest */
         ParameterFieldsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
+            /** Agent Id */
+            agent_id?: string | null;
             /**
              * Group Id
              * Format: uuid
@@ -18615,8 +18651,8 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /** Agent Id */
-            agent_id?: string | null;
+            /** Domain Id */
+            domain_id?: string | null;
             /** Generated */
             generated?: boolean | null;
         };

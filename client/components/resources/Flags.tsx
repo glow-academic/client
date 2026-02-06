@@ -31,7 +31,6 @@ export interface FlagConfig {
   flag_option_id?: string | null; // The artifact ID to use when enabling
   show?: boolean; // Whether to display this flag (defaults to true)
   required?: boolean; // Required indicator
-  agent_id?: string | null; // Agent ID for resource creation
   generated?: boolean | null; // Whether AI generated
 }
 
@@ -43,6 +42,7 @@ interface CommonFlagsProps {
   label?: string; // Section label
   disabled?: boolean;
   group_id?: string | null;
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   // AI diff view props
@@ -76,6 +76,7 @@ export function Flags(props: FlagsProps) {
     columns = 2,
     label,
     disabled = false,
+    showAiGenerate = false,
     onChange,
     onGenerate,
     isGenerating = false,
@@ -181,7 +182,7 @@ export function Flags(props: FlagsProps) {
       {(label || onGenerate) && (
         <div className="flex items-center gap-2">
           {label && <Label className="text-sm font-medium">{label}</Label>}
-          {onGenerate && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

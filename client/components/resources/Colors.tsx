@@ -74,7 +74,7 @@ export interface ColorsProps {
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createColorsAction?:
     | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
     | undefined;
@@ -122,7 +122,7 @@ export function Colors({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createColorsAction,
   isAutosaveEnabled = true,
   registerFlush,
@@ -238,13 +238,12 @@ export function Colors({
     }
 
     // Custom color - need to create a resource
-    if (!createColorsAction || !agent_id || !group_id) return;
+    if (!createColorsAction || !group_id) return;
 
     try {
       const colorName = getColorName(hexCode);
       const result = await createColorsAction({
         body: {
-          agent_id: agent_id,
           group_id: group_id,
           name: colorName,
           description: `Color: ${hexCode}`,
@@ -475,7 +474,6 @@ export function Colors({
       if (
         newlySelected.length > 0 &&
         createColorsAction &&
-        agent_id &&
         group_id
       ) {
         for (const colorId of newlySelected) {
@@ -484,7 +482,6 @@ export function Colors({
             if (color?.hex_code) {
               await createColorsAction({
                 body: {
-                  agent_id: agent_id,
                   group_id: group_id,
                   name: color.name || "Color",
                   description: color.description || `Color: ${color.hex_code}`,
@@ -510,7 +507,7 @@ export function Colors({
         onChange(selectedIds);
       }
     },
-    [ids, onChange, createColorsAction, agent_id, group_id, colors]
+    [ids, onChange, createColorsAction, group_id, colors]
   );
 
   // Don't render if show_color is false (AFTER all hooks)
@@ -533,7 +530,7 @@ export function Colors({
                 </span>
               )}
             </Label>
-            {onGenerate && agent_id && (
+            {onGenerate && showAiGenerate && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -621,7 +618,7 @@ export function Colors({
           {label}
           {required && <span className="text-destructive">*</span>}
         </Label>
-        {onGenerate && agent_id && (
+        {onGenerate && showAiGenerate && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

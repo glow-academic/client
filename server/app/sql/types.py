@@ -11132,6 +11132,16 @@ class GetPersonaIdsSqlRow(BaseModel):
     parameter_fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
     parameters_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    color_domain_id: UUID | None = None
+    icon_domain_id: UUID | None = None
+    instructions_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    examples_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
 
 class GetPersonaIdsApiRequest(BaseModel):
 
@@ -11170,6 +11180,16 @@ class GetPersonaIdsApiResponse(BaseModel):
     parameter_fields_has_tools: bool | None = None
     examples_has_tools: bool | None = None
     parameters_has_tools: bool | None = None
+    name_domain_id: UUID | None = None
+    description_domain_id: UUID | None = None
+    color_domain_id: UUID | None = None
+    icon_domain_id: UUID | None = None
+    instructions_domain_id: UUID | None = None
+    flag_domain_id: UUID | None = None
+    departments_domain_id: UUID | None = None
+    parameter_fields_domain_id: UUID | None = None
+    examples_domain_id: UUID | None = None
+    parameters_domain_id: UUID | None = None
 
 
 
@@ -13177,7 +13197,7 @@ class ColorsSqlRow(BaseModel):
 
 class ColorsApiRequest(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     name: str
     description: str
@@ -13356,7 +13376,7 @@ class DescriptionsSqlRow(BaseModel):
 
 class DescriptionsApiRequest(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     description: str
     mcp: bool | None = False
@@ -13642,7 +13662,7 @@ class ExamplesSqlRow(BaseModel):
 
 class ExamplesApiRequest(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     example: str
     mcp: bool | None = False
@@ -14170,7 +14190,7 @@ class InstructionsSqlRow(BaseModel):
 
 class InstructionsApiRequest(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     template: str
     mcp: bool | None = False
@@ -14577,7 +14597,7 @@ class ParameterFieldsSqlRow(BaseModel):
 
 class ParameterFieldsApiRequest(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     parameter_id: UUID
     field_id: UUID

@@ -46,7 +46,7 @@ export interface NamesProps {
   defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
   hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createNamesAction?:
     | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
     | undefined;
@@ -85,7 +85,7 @@ export function Names({
   defaultName,
   hideDescription = false,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createNamesAction,
   isAutosaveEnabled = true,
   registerFlush,
@@ -141,7 +141,6 @@ export function Names({
       if (internalValue.trim()) {
         const result = await createNamesAction({
           body: {
-            agent_id: agent_id ?? null,
             group_id: group_id,
             name: internalValue,
             mcp: false,
@@ -421,7 +420,7 @@ export function Names({
             )}
           </div>
         )}
-        {onGenerate && agent_id && (
+        {onGenerate && showAiGenerate && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

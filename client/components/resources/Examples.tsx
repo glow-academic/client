@@ -42,11 +42,10 @@ export interface ExamplesProps {
   addButtonLabel?: string;
   itemPlaceholder?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createExamplesAction?:
     | ((input: {
         body: {
-          agent_id: string;
           group_id: string;
           example: string;
           mcp?: boolean;
@@ -85,7 +84,7 @@ export function Examples({
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createExamplesAction,
   onGenerate,
   isGenerating = false,
@@ -166,7 +165,7 @@ export function Examples({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ example_ids: string[] } | void> => {
-    if (!createExamplesAction || !agent_id || !group_id) return;
+    if (!createExamplesAction || !group_id) return;
 
     // Find texts that need creation (have text but no ID)
     const textsToCreate = internalTexts.filter(
@@ -178,7 +177,6 @@ export function Examples({
       try {
         const result = await createExamplesAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             example: text,
             mcp: false,
@@ -373,7 +371,7 @@ export function Examples({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -60,7 +60,7 @@ export interface DepartmentsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createDepartmentsAction?:
     | ((input: CreateDraftDepartmentsIn) => Promise<CreateDraftDepartmentsOut>)
     | undefined;
@@ -91,7 +91,7 @@ export function Departments({
   placeholder: _placeholder = "Select departments...",
   description,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createDepartmentsAction,
   onGenerate,
   isGenerating = false,
@@ -162,14 +162,12 @@ export function Departments({
       if (
         newlySelected.length > 0 &&
         createDepartmentsAction &&
-        agent_id &&
         group_id
       ) {
         for (const departmentId of newlySelected) {
           try {
             await createDepartmentsAction({
               body: {
-                agent_id: agent_id,
                 group_id: group_id,
                 department_id: departmentId,
                 mcp: false,
@@ -190,7 +188,7 @@ export function Departments({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createDepartmentsAction, agent_id, group_id]
+    [ids, onChange, createDepartmentsAction, group_id]
   );
 
   // Accept AI suggestion - add AI-suggested departments to selection
@@ -233,7 +231,7 @@ export function Departments({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

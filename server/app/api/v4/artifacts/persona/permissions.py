@@ -381,3 +381,96 @@ PERSONA_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departme
 PERSONA_CONTENT_RESOURCES: set[str] = {"instructions", "examples"}
 PERSONA_PARAMETERS_RESOURCES: set[str] = {"parameters", "parameter_fields"}
 PERSONA_GENERAL_RESOURCES: set[str] = PERSONA_RESOURCES  # All resources
+
+
+# ========== Domain Metadata - for client-side display in modals ==========
+
+# Domain display metadata (business logic - rarely changes)
+PERSONA_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
+    "names": {
+        "name": "Name",
+        "description": "The display name for this persona",
+        "icon": "user",
+    },
+    "descriptions": {
+        "name": "Description",
+        "description": "A brief description of this persona's role",
+        "icon": "file-text",
+    },
+    "colors": {
+        "name": "Color",
+        "description": "The color theme for this persona",
+        "icon": "palette",
+    },
+    "icons": {
+        "name": "Icon",
+        "description": "The icon representing this persona",
+        "icon": "image",
+    },
+    "instructions": {
+        "name": "Instructions",
+        "description": "Detailed instructions for how this persona behaves",
+        "icon": "book-open",
+    },
+    "flags": {
+        "name": "Status",
+        "description": "Active/inactive status",
+        "icon": "flag",
+    },
+    "departments": {
+        "name": "Departments",
+        "description": "Which departments can access this persona",
+        "icon": "building",
+    },
+    "parameter_fields": {
+        "name": "Fields",
+        "description": "Custom fields for this persona",
+        "icon": "form-input",
+    },
+    "examples": {
+        "name": "Examples",
+        "description": "Example interactions for this persona",
+        "icon": "message-square",
+    },
+    "parameters": {
+        "name": "Parameters",
+        "description": "Configuration parameters for this persona",
+        "icon": "settings",
+    },
+}
+
+
+def build_domain_data(
+    domain_ids: dict[str, UUID | None],
+    show_flags: dict[str, bool],
+    required_flags: dict[str, bool],
+) -> list[dict]:
+    """Build rich domain metadata for client display.
+
+    Args:
+        domain_ids: Mapping of resource type to domain_id
+        show_flags: Mapping of resource type to show flag
+        required_flags: Mapping of resource type to required flag
+
+    Returns:
+        List of domain data dicts for client consumption
+    """
+    from app.api.v4.artifacts.persona.types import DomainData
+
+    result: list[DomainData] = []
+    for resource, domain_id in domain_ids.items():
+        if domain_id is None:
+            continue
+        meta = PERSONA_DOMAIN_METADATA.get(resource, {})
+        result.append(
+            DomainData(
+                domain_id=domain_id,
+                name=str(meta.get("name", resource.title())),
+                description=str(meta.get("description", "")),
+                resource=resource,
+                icon=str(meta.get("icon")) if meta.get("icon") else None,
+                required=required_flags.get(resource, False),
+                show=show_flags.get(resource, True),
+            )
+        )
+    return result

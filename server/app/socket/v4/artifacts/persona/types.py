@@ -39,12 +39,12 @@ class GeneratePersonaPayload(GetPersonaApiRequest):
     with generation-specific fields and form state.
     """
 
-    # Generation-specific fields
-    agent_id: UUID  # Required: explicit agent ID from frontend
-    resource_types: list[str]  # Required: which resource types to generate
+    # Generation-specific fields - domain-based API
+    domain_ids: list[UUID]  # Required: which domains to generate (client passes these through)
     user_instructions: list[str] | None = None  # Optional: user instructions
 
     # Note: current selections are derived from draft-backed API response.
+    # The server looks up agent_ids from the domains mapping in get_persona_internal().
 
 
 # =============================================================================

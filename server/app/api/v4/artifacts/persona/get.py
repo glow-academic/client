@@ -1,14 +1,16 @@
-"""Persona get endpoint - Two-pass architecture.
+"""Persona get endpoint - Three-layer architecture.
 
-This implements the refactored two-pass approach:
-1. Query 1: Access check (user context, persona state)
-2. Query 2: ID fetching (resource IDs, suggestions, agents)
-3. Pass 2: Parallel resource fetching (per-resource caching)
+This implements the three-layer BFF pattern:
+1. get_persona_internal() - Core data fetching (cacheable, returns dataclass)
+2. get_persona_websocket() - Minimal data for WebSocket handlers
+3. get_persona_client() - Full BFF response for HTTP endpoint/frontend
 
-Business logic (permissions, UI flags) is computed in Python.
+The internal layer handles SQL queries and resource fetching.
+The presentation layers transform internal data into consumer-specific formats.
 """
 
 import asyncio
+from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import UUID
 
@@ -16,10 +18,8 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import (
-    PERSONA_BASIC_RESOURCES,
-    PERSONA_CONTENT_RESOURCES,
-    PERSONA_PARAMETERS_RESOURCES,
     PERSONA_RESOURCES,
+    build_domain_data,
     compute_can_edit,
     compute_color_required,
     compute_departments_required,
@@ -45,16 +45,15 @@ from app.api.v4.artifacts.persona.permissions import (
     has_access,
 )
 from app.api.v4.artifacts.persona.types import (
+    DomainAgent,
     GetPersonaApiRequest,
     GetPersonaApiResponse,
+    GetPersonaWebsocketResponse,
     PersonaFlagConfig,
     PersonaResourceBucket,
     PersonaResources,
 )
-from app.api.v4.permissions import (
-    select_agents_for_artifact,
-    select_multi_resource_agent,
-)
+from app.api.v4.permissions import select_agents_for_artifact
 from app.api.v4.resources.colors.get import get_colors_internal
 from app.api.v4.resources.colors.search import search_colors_internal
 from app.api.v4.resources.departments.get import get_departments_internal
@@ -101,16 +100,60 @@ QUERY2_SQL_PATH = "app/sql/v4/queries/personas/get_persona_ids_complete.sql"
 router = APIRouter()
 
 
+@dataclass
+class PersonaInternalData:
+    """Internal data from core persona fetching (cacheable layer).
+
+    This dataclass contains all computed data needed by both:
+    - get_persona_websocket() - minimal data for WebSocket handlers
+    - get_persona_client() - full BFF response for HTTP/frontend
+    """
+
+    # Access/context
+    actor_name: str | None
+    persona_exists: bool | None
+    can_edit: bool
+    disabled_reason: str | None
+    draft_version: int | None
+    group_id: UUID | None
+
+    # Domain mappings
+    domain_ids_map: dict[str, UUID | None]
+    agent_ids: dict[str, UUID | None]
+    domains_list: list[DomainAgent]
+
+    # Show/required flags
+    show_flags_map: dict[str, bool]
+    required_flags_map: dict[str, bool]
+
+    # Suggestions (resource -> list of suggestion IDs)
+    suggestions_map: dict[str, list[UUID]]
+
+    # Show AI generate flags (computed: domain_id exists AND agent exists)
+    show_ai_generate_map: dict[str, bool]
+    basic_show_ai_generate: bool
+    content_show_ai_generate: bool
+    parameters_step_show_ai_generate: bool
+
+    # Domain data for modals
+    domain_data_list: list[Any]  # list[DomainData]
+
+    # Resources payload
+    resources_payload: PersonaResources
+
+
 async def get_persona_internal(
     profile_id: UUID,
     persona_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
-) -> GetPersonaApiResponse:
-    """Internal function to fetch persona data using two-pass architecture.
+) -> PersonaInternalData:
+    """Core data fetching layer (cacheable).
 
-    This is the core logic extracted for reuse by both the HTTP endpoint
-    and the WebSocket generate handler.
+    Fetches all persona data using two-pass architecture and returns
+    a dataclass with all computed values. This is the shared layer used by:
+    - get_persona_websocket() - minimal data for WebSocket handlers
+    - get_persona_client() - full BFF response for HTTP/frontend
 
     Args:
         profile_id: The authenticated user's profile ID
@@ -119,7 +162,7 @@ async def get_persona_internal(
         bypass_cache: Whether to bypass resource caching
 
     Returns:
-        GetPersonaApiResponse with all persona data
+        PersonaInternalData with all computed values
 
     Raises:
         HTTPException: For validation errors (404, 403, 400)
@@ -253,34 +296,54 @@ async def get_persona_internal(
         require_mcp=False,
     )
 
-    # Extract agent IDs for each resource
-    name_agent_id = agent_ids.get("names")
-    description_agent_id = agent_ids.get("descriptions")
-    color_agent_id = agent_ids.get("colors")
-    icon_agent_id = agent_ids.get("icons")
-    instructions_agent_id = agent_ids.get("instructions")
-    flag_agent_id = agent_ids.get("flags")
-    departments_agent_id = agent_ids.get("departments")
-    parameter_fields_agent_id = agent_ids.get("parameter_fields")
-    examples_agent_id = agent_ids.get("examples")
-    parameters_agent_id = agent_ids.get("parameters")
+    # === EXTRACT DOMAIN IDS FROM QUERY 2 ===
+    domain_ids_map: dict[str, UUID | None] = {
+        "names": ids_result.name_domain_id,
+        "descriptions": ids_result.description_domain_id,
+        "colors": ids_result.color_domain_id,
+        "icons": ids_result.icon_domain_id,
+        "instructions": ids_result.instructions_domain_id,
+        "flags": ids_result.flag_domain_id,
+        "departments": ids_result.departments_domain_id,
+        "parameter_fields": ids_result.parameter_fields_domain_id,
+        "examples": ids_result.examples_domain_id,
+        "parameters": ids_result.parameters_domain_id,
+    }
 
-    # Multi-resource agent IDs
-    basic_agent_id = select_multi_resource_agent(
-        candidate_agents, PERSONA_BASIC_RESOURCES, PERSONA_RESOURCES, user_dept_set
-    )
-    content_agent_id = select_multi_resource_agent(
-        candidate_agents,
-        PERSONA_CONTENT_RESOURCES,
-        PERSONA_RESOURCES,
-        user_dept_set,
-    )
-    parameters_step_agent_id = select_multi_resource_agent(
-        candidate_agents,
-        PERSONA_PARAMETERS_RESOURCES,
-        PERSONA_RESOURCES,
-        user_dept_set,
-    )
+    # === COMPUTE SHOW_AI_GENERATE FLAGS (BFF pattern - server computes, client consumes) ===
+    def compute_show_ai_generate(resource: str) -> bool:
+        """Returns True if domain_id exists AND agent exists for that resource."""
+        domain_id = domain_ids_map.get(resource)
+        agent_id = agent_ids.get(resource)
+        return domain_id is not None and agent_id is not None
+
+    # Per-resource show_ai_generate flags
+    name_show_ai_generate = compute_show_ai_generate("names")
+    description_show_ai_generate = compute_show_ai_generate("descriptions")
+    color_show_ai_generate = compute_show_ai_generate("colors")
+    icon_show_ai_generate = compute_show_ai_generate("icons")
+    instructions_show_ai_generate = compute_show_ai_generate("instructions")
+    flag_show_ai_generate = compute_show_ai_generate("flags")
+    departments_show_ai_generate = compute_show_ai_generate("departments")
+    parameter_fields_show_ai_generate = compute_show_ai_generate("parameter_fields")
+    examples_show_ai_generate = compute_show_ai_generate("examples")
+    parameters_show_ai_generate = compute_show_ai_generate("parameters")
+
+    # Step-level show_ai_generate flags
+    basic_show_ai_generate = any([
+        name_show_ai_generate,
+        description_show_ai_generate,
+        flag_show_ai_generate,
+        departments_show_ai_generate,
+    ])
+    content_show_ai_generate = any([
+        instructions_show_ai_generate,
+        examples_show_ai_generate,
+    ])
+    parameters_step_show_ai_generate = any([
+        parameters_show_ai_generate,
+        parameter_fields_show_ai_generate,
+    ])
 
     # === PYTHON BUSINESS LOGIC ===
 
@@ -607,6 +670,36 @@ async def get_persona_internal(
     show_examples_flag = compute_show_examples(len(examples))
     show_parameters_flag = compute_show_parameters(len(parameters))
 
+    # Build show and required flags maps for domain_data
+    show_flags_map = {
+        "names": show_name,
+        "descriptions": show_description_flag,
+        "colors": show_color,
+        "icons": show_icon,
+        "instructions": show_instructions_flag,
+        "flags": show_flag,
+        "departments": show_departments_flag,
+        "parameter_fields": show_parameter_fields_flag,
+        "examples": show_examples_flag,
+        "parameters": show_parameters_flag,
+    }
+
+    required_flags_map = {
+        "names": compute_name_required(),
+        "descriptions": compute_description_required(),
+        "colors": compute_color_required(),
+        "icons": compute_icon_required(),
+        "instructions": compute_instructions_required(),
+        "flags": compute_flag_required(),
+        "departments": compute_departments_required(),
+        "parameter_fields": compute_parameter_fields_required(),
+        "examples": compute_examples_required(),
+        "parameters": compute_parameters_required(),
+    }
+
+    # Build rich domain metadata for client display
+    domain_data_list = build_domain_data(domain_ids_map, show_flags_map, required_flags_map)
+
     # Transform flags to enriched format for client
     persona_flags = [
         PersonaFlagConfig(
@@ -617,7 +710,7 @@ async def get_persona_internal(
             flag_option_id=flag.id,
             show=show_flag,
             required=compute_flag_required(),
-            agent_id=flag_agent_id,
+            domain_id=domain_ids_map.get("flags"),
             generated=flag.generated,
         )
         for flag in flags
@@ -667,68 +760,207 @@ async def get_persona_internal(
         ),
     )
 
-    return GetPersonaApiResponse(
-        # Required fields
+    # Build domains list for WebSocket handler
+    domains_list: list[DomainAgent] = []
+    for resource, domain_id in domain_ids_map.items():
+        if domain_id is not None:
+            domains_list.append(
+                DomainAgent(
+                    domain_id=domain_id,
+                    agent_id=agent_ids.get(resource),
+                )
+            )
+
+    # Build show_ai_generate map
+    show_ai_generate_map = {
+        "names": name_show_ai_generate,
+        "descriptions": description_show_ai_generate,
+        "colors": color_show_ai_generate,
+        "icons": icon_show_ai_generate,
+        "instructions": instructions_show_ai_generate,
+        "flags": flag_show_ai_generate,
+        "departments": departments_show_ai_generate,
+        "parameter_fields": parameter_fields_show_ai_generate,
+        "examples": examples_show_ai_generate,
+        "parameters": parameters_show_ai_generate,
+    }
+
+    # Build suggestions map
+    suggestions_map = {
+        "names": name_suggestions,
+        "descriptions": description_suggestions,
+        "colors": color_suggestions,
+        "icons": icon_suggestions,
+        "instructions": instructions_suggestions_ids,
+        "departments": department_suggestions,
+        "parameter_fields": parameter_field_suggestions,
+        "examples": example_suggestions,
+        "parameters": parameter_suggestions,
+    }
+
+    return PersonaInternalData(
+        # Access/context
         actor_name=access_result.actor_name,
         persona_exists=access_result.persona_exists,
         can_edit=can_edit,
         disabled_reason=disabled_reason,
         draft_version=effective_draft_version,
         group_id=effective_group_id,
+        # Domain mappings
+        domain_ids_map=domain_ids_map,
+        agent_ids=agent_ids,
+        domains_list=domains_list,
+        # Show/required flags
+        show_flags_map=show_flags_map,
+        required_flags_map=required_flags_map,
+        # Suggestions
+        suggestions_map=suggestions_map,
+        # Show AI generate
+        show_ai_generate_map=show_ai_generate_map,
+        basic_show_ai_generate=basic_show_ai_generate,
+        content_show_ai_generate=content_show_ai_generate,
+        parameters_step_show_ai_generate=parameters_step_show_ai_generate,
+        # Domain data and resources
+        domain_data_list=domain_data_list,
+        resources_payload=resources_payload,
+    )
+
+
+async def get_persona_websocket(
+    profile_id: UUID,
+    persona_id: UUID | None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetPersonaWebsocketResponse:
+    """Minimal response for WebSocket handlers.
+
+    Returns only what's needed for AI generation:
+    - Domain IDs (for domain_to_resource mapping)
+    - Domains list (for agent_id lookup)
+    - Group ID (for existing group context)
+    - Resources (for Jinja template context)
+    """
+    data = await get_persona_internal(
+        profile_id=profile_id,
+        persona_id=persona_id,
+        draft_id=draft_id,
+        bypass_cache=bypass_cache,
+    )
+
+    return GetPersonaWebsocketResponse(
+        group_id=data.group_id,
+        # Domain IDs for domain_to_resource mapping
+        name_domain_id=data.domain_ids_map.get("names"),
+        description_domain_id=data.domain_ids_map.get("descriptions"),
+        color_domain_id=data.domain_ids_map.get("colors"),
+        icon_domain_id=data.domain_ids_map.get("icons"),
+        instructions_domain_id=data.domain_ids_map.get("instructions"),
+        flag_domain_id=data.domain_ids_map.get("flags"),
+        departments_domain_id=data.domain_ids_map.get("departments"),
+        parameter_fields_domain_id=data.domain_ids_map.get("parameter_fields"),
+        examples_domain_id=data.domain_ids_map.get("examples"),
+        parameters_domain_id=data.domain_ids_map.get("parameters"),
+        # Domains mapping for agent lookup
+        domains=data.domains_list,
+        # Resources for Jinja context
+        resources=data.resources_payload,
+    )
+
+
+async def get_persona_client(
+    profile_id: UUID,
+    persona_id: UUID | None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetPersonaApiResponse:
+    """BFF response for HTTP endpoint/frontend.
+
+    Returns the full response with all UI fields, suggestions, and
+    computed *_show_ai_generate flags. Does NOT include domains
+    (agent lookup is server-side only).
+    """
+    data = await get_persona_internal(
+        profile_id=profile_id,
+        persona_id=persona_id,
+        draft_id=draft_id,
+        bypass_cache=bypass_cache,
+    )
+
+    return GetPersonaApiResponse(
+        # Required fields
+        actor_name=data.actor_name,
+        persona_exists=data.persona_exists,
+        can_edit=data.can_edit,
+        disabled_reason=data.disabled_reason,
+        draft_version=data.draft_version,
+        group_id=data.group_id,
         # Name
-        show_name=show_name,
-        name_agent_id=name_agent_id,  # Python-computed
-        name_required=compute_name_required(),
-        name_suggestions=name_suggestions,
+        show_name=data.show_flags_map.get("names"),
+        name_domain_id=data.domain_ids_map.get("names"),
+        name_required=data.required_flags_map.get("names"),
+        name_suggestions=data.suggestions_map.get("names"),
+        name_show_ai_generate=data.show_ai_generate_map.get("names"),
         # Description
-        show_description=show_description_flag,
-        description_agent_id=description_agent_id,  # Python-computed
-        description_required=compute_description_required(),
-        description_suggestions=description_suggestions,
+        show_description=data.show_flags_map.get("descriptions"),
+        description_domain_id=data.domain_ids_map.get("descriptions"),
+        description_required=data.required_flags_map.get("descriptions"),
+        description_suggestions=data.suggestions_map.get("descriptions"),
+        description_show_ai_generate=data.show_ai_generate_map.get("descriptions"),
         # Color
-        show_color=show_color,
-        color_agent_id=color_agent_id,  # Python-computed
-        color_required=compute_color_required(),
-        color_suggestions=color_suggestions,
+        show_color=data.show_flags_map.get("colors"),
+        color_domain_id=data.domain_ids_map.get("colors"),
+        color_required=data.required_flags_map.get("colors"),
+        color_suggestions=data.suggestions_map.get("colors"),
+        color_show_ai_generate=data.show_ai_generate_map.get("colors"),
         # Icon
-        show_icon=show_icon,
-        icon_agent_id=icon_agent_id,  # Python-computed
-        icon_required=compute_icon_required(),
-        icon_suggestions=icon_suggestions,
+        show_icon=data.show_flags_map.get("icons"),
+        icon_domain_id=data.domain_ids_map.get("icons"),
+        icon_required=data.required_flags_map.get("icons"),
+        icon_suggestions=data.suggestions_map.get("icons"),
+        icon_show_ai_generate=data.show_ai_generate_map.get("icons"),
         # Instructions
-        show_instructions=show_instructions_flag,
-        instructions_agent_id=instructions_agent_id,  # Python-computed
-        instructions_required=compute_instructions_required(),
-        instructions_suggestions=instructions_suggestions_ids,
+        show_instructions=data.show_flags_map.get("instructions"),
+        instructions_domain_id=data.domain_ids_map.get("instructions"),
+        instructions_required=data.required_flags_map.get("instructions"),
+        instructions_suggestions=data.suggestions_map.get("instructions"),
+        instructions_show_ai_generate=data.show_ai_generate_map.get("instructions"),
         # Flag
-        show_flag=show_flag,
-        flag_agent_id=flag_agent_id,  # Python-computed
-        flag_required=compute_flag_required(),
+        show_flag=data.show_flags_map.get("flags"),
+        flag_domain_id=data.domain_ids_map.get("flags"),
+        flag_required=data.required_flags_map.get("flags"),
+        flag_show_ai_generate=data.show_ai_generate_map.get("flags"),
         # Departments
-        show_departments=show_departments_flag,
-        departments_agent_id=departments_agent_id,  # Python-computed
-        departments_required=compute_departments_required(),
-        department_suggestions=department_suggestions,
+        show_departments=data.show_flags_map.get("departments"),
+        departments_domain_id=data.domain_ids_map.get("departments"),
+        departments_required=data.required_flags_map.get("departments"),
+        department_suggestions=data.suggestions_map.get("departments"),
+        departments_show_ai_generate=data.show_ai_generate_map.get("departments"),
         # Parameter Fields
-        show_parameter_fields=show_parameter_fields_flag,
-        parameter_fields_agent_id=parameter_fields_agent_id,  # Python-computed
-        parameter_fields_required=compute_parameter_fields_required(),
-        parameter_field_suggestions=parameter_field_suggestions,
+        show_parameter_fields=data.show_flags_map.get("parameter_fields"),
+        parameter_fields_domain_id=data.domain_ids_map.get("parameter_fields"),
+        parameter_fields_required=data.required_flags_map.get("parameter_fields"),
+        parameter_field_suggestions=data.suggestions_map.get("parameter_fields"),
+        parameter_fields_show_ai_generate=data.show_ai_generate_map.get("parameter_fields"),
         # Examples
-        show_examples=show_examples_flag,
-        examples_agent_id=examples_agent_id,  # Python-computed
-        examples_required=compute_examples_required(),
-        example_suggestions=example_suggestions,
+        show_examples=data.show_flags_map.get("examples"),
+        examples_domain_id=data.domain_ids_map.get("examples"),
+        examples_required=data.required_flags_map.get("examples"),
+        example_suggestions=data.suggestions_map.get("examples"),
+        examples_show_ai_generate=data.show_ai_generate_map.get("examples"),
         # Parameters
-        show_parameters=show_parameters_flag,
-        parameters_agent_id=parameters_agent_id,  # Python-computed
-        parameters_required=compute_parameters_required(),
-        parameter_suggestions=parameter_suggestions,
-        # Multi-resource agent IDs (Python-computed)
-        basic_agent_id=basic_agent_id,
-        content_agent_id=content_agent_id,
-        parameters_step_agent_id=parameters_step_agent_id,
-        resources=resources_payload,
+        show_parameters=data.show_flags_map.get("parameters"),
+        parameters_domain_id=data.domain_ids_map.get("parameters"),
+        parameters_required=data.required_flags_map.get("parameters"),
+        parameter_suggestions=data.suggestions_map.get("parameters"),
+        parameters_show_ai_generate=data.show_ai_generate_map.get("parameters"),
+        # Step-level AI generation flags
+        basic_show_ai_generate=data.basic_show_ai_generate,
+        content_show_ai_generate=data.content_show_ai_generate,
+        parameters_step_show_ai_generate=data.parameters_step_show_ai_generate,
+        # Domain metadata for client display in modals
+        domain_data=data.domain_data_list,
+        # Resources
+        resources=data.resources_payload,
     )
 
 
@@ -791,8 +1023,8 @@ async def get_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Call the internal function
-        response_data = await get_persona_internal(
+        # Call the client (BFF) function
+        response_data = await get_persona_client(
             profile_id=profile_id,
             persona_id=request.persona_id,
             draft_id=request.draft_id,

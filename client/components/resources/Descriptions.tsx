@@ -169,7 +169,7 @@ export interface DescriptionsProps {
   "data-testid"?: string;
   helpText?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createDescriptionsAction?:
     | ((
         input: CreateDraftDescriptionsIn
@@ -213,7 +213,7 @@ export function Descriptions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createDescriptionsAction,
   searchTerm,
   onSearchChange,
@@ -257,7 +257,7 @@ export function Descriptions({
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ description_id: string | null } | void> => {
     // Skip if no action available
-    if (!createDescriptionsAction || !agent_id || !group_id) return;
+    if (!createDescriptionsAction || !group_id) return;
 
     // Skip if no change AND we already have a resource for this value
     // If resourceId is null, we still need to create the resource even if value hasn't changed
@@ -270,7 +270,6 @@ export function Descriptions({
       if (internalValue.trim()) {
         const result = await createDescriptionsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             description: internalValue,
             mcp: false,
@@ -483,7 +482,7 @@ export function Descriptions({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

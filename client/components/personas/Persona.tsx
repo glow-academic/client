@@ -270,60 +270,73 @@ function PersonaComponent({
       name_suggestions: personaData.name_suggestions,
       names: resources?.names ?? [],
       name_required: personaData.name_required,
-      name_agent_id: personaData.name_agent_id,
+      name_domain_id: personaData.name_domain_id,
+      name_show_ai_generate: personaData.name_show_ai_generate,
       description_resource: current?.descriptions?.[0] ?? null,
       show_description: personaData.show_description,
       description_suggestions: personaData.description_suggestions,
       description_required: personaData.description_required,
-      description_agent_id: personaData.description_agent_id,
+      description_domain_id: personaData.description_domain_id,
+      description_show_ai_generate: personaData.description_show_ai_generate,
       descriptions: resources?.descriptions ?? [],
       department_resources: current?.departments ?? [],
       show_departments: personaData.show_departments,
       department_suggestions: personaData.department_suggestions,
       departments_required: personaData.departments_required,
-      departments_agent_id: personaData.departments_agent_id,
+      departments_domain_id: personaData.departments_domain_id,
+      departments_show_ai_generate: personaData.departments_show_ai_generate,
       departments: resources?.departments ?? [],
       flags: resources?.flags ?? [],
       show_flag: personaData.show_flag,
+      flag_domain_id: personaData.flag_domain_id,
+      flag_show_ai_generate: personaData.flag_show_ai_generate,
       parameter_field_resources: current?.parameter_fields ?? [],
       show_parameter_fields: personaData.show_parameter_fields,
       parameter_field_suggestions: personaData.parameter_field_suggestions,
       parameter_fields_required: personaData.parameter_fields_required,
-      parameter_fields_agent_id: personaData.parameter_fields_agent_id,
+      parameter_fields_domain_id: personaData.parameter_fields_domain_id,
+      parameter_fields_show_ai_generate: personaData.parameter_fields_show_ai_generate,
       parameter_fields: resources?.parameter_fields ?? [],
       color_resource: current?.colors?.[0] ?? null,
       show_color: personaData.show_color,
       color_suggestions: personaData.color_suggestions,
       color_required: personaData.color_required,
-      color_agent_id: personaData.color_agent_id,
+      color_domain_id: personaData.color_domain_id,
+      color_show_ai_generate: personaData.color_show_ai_generate,
       colors: resources?.colors ?? [],
       icon_resource: current?.icons?.[0] ?? null,
       show_icon: personaData.show_icon,
       icon_suggestions: personaData.icon_suggestions,
       icon_required: personaData.icon_required,
-      icon_agent_id: personaData.icon_agent_id,
+      icon_domain_id: personaData.icon_domain_id,
+      icon_show_ai_generate: personaData.icon_show_ai_generate,
       icons: resources?.icons ?? [],
       instructions_resource: current?.instructions?.[0] ?? null,
       show_instructions: personaData.show_instructions,
       instructions_suggestions: personaData.instructions_suggestions,
       instructions_required: personaData.instructions_required,
-      instructions_agent_id: personaData.instructions_agent_id,
+      instructions_domain_id: personaData.instructions_domain_id,
+      instructions_show_ai_generate: personaData.instructions_show_ai_generate,
       instructions: resources?.instructions ?? [],
       example_resources: current?.examples ?? [],
       show_examples: personaData.show_examples,
       example_suggestions: personaData.example_suggestions,
       examples_required: personaData.examples_required,
-      examples_agent_id: personaData.examples_agent_id,
+      examples_domain_id: personaData.examples_domain_id,
+      examples_show_ai_generate: personaData.examples_show_ai_generate,
       examples: resources?.examples ?? [],
       parameter_resources: current?.parameters ?? [],
       show_parameters: personaData.show_parameters,
       parameter_suggestions: personaData.parameter_suggestions,
       parameters_required: personaData.parameters_required,
-      parameters_agent_id: personaData.parameters_agent_id,
+      parameters_domain_id: personaData.parameters_domain_id,
+      parameters_show_ai_generate: personaData.parameters_show_ai_generate,
       parameters: resources?.parameters ?? [],
-      basic_agent_id: personaData.basic_agent_id,
-      content_agent_id: personaData.content_agent_id,
-      parameters_step_agent_id: personaData.parameters_step_agent_id,
+      // Step-level AI generation flags
+      basic_show_ai_generate: personaData.basic_show_ai_generate,
+      content_show_ai_generate: personaData.content_show_ai_generate,
+      parameters_step_show_ai_generate: personaData.parameters_step_show_ai_generate,
+      domain_data: personaData.domain_data,
     };
     // Intentionally depend on individual fields, not whole personaData object
     // to prevent recreation when only object reference changes
@@ -334,43 +347,55 @@ function PersonaComponent({
     personaData?.show_name,
     personaData?.name_suggestions,
     personaData?.name_required,
-    personaData?.name_agent_id,
+    personaData?.name_domain_id,
+    personaData?.name_show_ai_generate,
     personaData?.show_description,
     personaData?.description_suggestions,
     personaData?.description_required,
-    personaData?.description_agent_id,
+    personaData?.description_domain_id,
+    personaData?.description_show_ai_generate,
     personaData?.show_departments,
     personaData?.department_suggestions,
     personaData?.departments_required,
-    personaData?.departments_agent_id,
+    personaData?.departments_domain_id,
+    personaData?.departments_show_ai_generate,
     personaData?.show_flag,
+    personaData?.flag_domain_id,
+    personaData?.flag_show_ai_generate,
     personaData?.show_parameter_fields,
     personaData?.parameter_field_suggestions,
     personaData?.parameter_fields_required,
-    personaData?.parameter_fields_agent_id,
+    personaData?.parameter_fields_domain_id,
+    personaData?.parameter_fields_show_ai_generate,
     personaData?.show_color,
     personaData?.color_suggestions,
     personaData?.color_required,
-    personaData?.color_agent_id,
+    personaData?.color_domain_id,
+    personaData?.color_show_ai_generate,
     personaData?.show_icon,
     personaData?.icon_suggestions,
     personaData?.icon_required,
-    personaData?.icon_agent_id,
+    personaData?.icon_domain_id,
+    personaData?.icon_show_ai_generate,
     personaData?.show_instructions,
     personaData?.instructions_suggestions,
     personaData?.instructions_required,
-    personaData?.instructions_agent_id,
+    personaData?.instructions_domain_id,
+    personaData?.instructions_show_ai_generate,
     personaData?.show_examples,
     personaData?.example_suggestions,
     personaData?.examples_required,
-    personaData?.examples_agent_id,
+    personaData?.examples_domain_id,
+    personaData?.examples_show_ai_generate,
     personaData?.show_parameters,
     personaData?.parameter_suggestions,
     personaData?.parameters_required,
-    personaData?.parameters_agent_id,
-    personaData?.basic_agent_id,
-    personaData?.content_agent_id,
-    personaData?.parameters_step_agent_id,
+    personaData?.parameters_domain_id,
+    personaData?.parameters_show_ai_generate,
+    personaData?.basic_show_ai_generate,
+    personaData?.content_show_ai_generate,
+    personaData?.parameters_step_show_ai_generate,
+    personaData?.domain_data,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -1162,69 +1187,29 @@ function PersonaComponent({
     };
   }, [socket, isConnected, personaData?.group_id]);
 
-  // Multi-generation handler - accepts list of resource types and optional user instructions
-  // Helper function to determine agent_id from resource types using personaData
-  const determineAgentId = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      if (!personaData) return null;
+  // Helper function to get domain_ids from resource types using personaData
+  const getDomainIds = useCallback(
+    (resourceTypes: ResourceType[]): string[] => {
+      if (!personaData) return [];
 
-      const basicResources: ResourceType[] = [
-        "names",
-        "descriptions",
-        "flags",
-        "departments",
-      ];
-      const contentResources: ResourceType[] = ["instructions", "examples"];
-      const allResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "colors",
-        "icons",
-        "instructions",
-        "flags",
-        "parameter_fields",
-        "departments",
-        "examples",
-      ];
+      // Map resource types to their domain IDs
+      const domainIdMap: Partial<Record<ResourceType, string | null | undefined>> = {
+        names: personaData.name_domain_id,
+        descriptions: personaData.description_domain_id,
+        colors: personaData.color_domain_id,
+        icons: personaData.icon_domain_id,
+        instructions: personaData.instructions_domain_id,
+        flags: personaData.flag_domain_id,
+        departments: personaData.departments_domain_id,
+        parameter_fields: personaData.parameter_fields_domain_id,
+        examples: personaData.examples_domain_id,
+        parameters: personaData.parameters_domain_id,
+      };
 
-      const isBasicCombo =
-        resourceTypes.length === basicResources.length &&
-        resourceTypes.every((rt) => basicResources.includes(rt));
-      const isContentCombo =
-        resourceTypes.length === contentResources.length &&
-        resourceTypes.every((rt) => contentResources.includes(rt));
-      const isAllResources =
-        resourceTypes.length === allResourceTypes.length &&
-        resourceTypes.every((rt) => allResourceTypes.includes(rt));
-
-      // For multi-resource combos, use the combination agent IDs
-      if (isAllResources) {
-        // Use basic_agent_id for "general/all" since there's no general_agent_id
-        return personaData.basic_agent_id ?? null;
-      } else if (isBasicCombo) {
-        return personaData.basic_agent_id ?? null;
-      } else if (isContentCombo) {
-        return personaData.content_agent_id ?? null;
-      } else if (resourceTypes.length === 1) {
-        // Single resource type - map to specific agent_id
-        const firstType = resourceTypes[0];
-        const agentIdMap: Partial<Record<ResourceType, string | null>> = {
-          names: personaData.name_agent_id ?? null,
-          descriptions: personaData.description_agent_id ?? null,
-          colors: personaData.color_agent_id ?? null,
-          icons: personaData.icon_agent_id ?? null,
-          instructions: personaData.instructions_agent_id ?? null,
-          flags: personaData.flag_agent_id ?? null,
-          departments: personaData.departments_agent_id ?? null,
-          parameter_fields: personaData.parameter_fields_agent_id ?? null,
-          examples: personaData.examples_agent_id ?? null,
-          parameters: personaData.parameters_agent_id ?? null,
-        };
-        if (firstType && firstType in agentIdMap) {
-          return agentIdMap[firstType] ?? null;
-        }
-      }
-      return null;
+      // Return array of domain IDs for the requested resource types
+      return resourceTypes
+        .map((rt) => domainIdMap[rt])
+        .filter((id): id is string => id != null);
     },
     [personaData]
   );
@@ -1232,7 +1217,6 @@ function PersonaComponent({
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
-      agentId: string | null,
       userInstructions?: string
     ) => {
       if (!socket || !isConnected) {
@@ -1240,8 +1224,10 @@ function PersonaComponent({
         return;
       }
 
-      if (!agentId) {
-        toast.error("No agent available for generation");
+      // Get domain IDs for the requested resource types
+      const domainIds = getDomainIds(resourceTypes);
+      if (domainIds.length === 0) {
+        toast.error("No domains available for generation");
         return;
       }
 
@@ -1278,10 +1264,9 @@ function PersonaComponent({
       const iconShowSelected =
         (formData["iconShowSelected"] as boolean | undefined) ?? false;
 
-      // Emit persona_generate event with GetPersonaApiRequest fields
+      // Emit persona_generate event with domain_ids (server looks up agent_ids)
       socket.emit("persona_generate", {
-        resource_types: resourceTypes, // Simple array of strings
-        agent_id: agentId, // Direct agent ID from frontend
+        domain_ids: domainIds, // Domain IDs for generation (server maps to agent_ids)
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetPersonaApiRequest fields from formData
         draft_id: draftId,
@@ -1296,77 +1281,58 @@ function PersonaComponent({
         // Current selections are derived server-side from draft-backed API response
       });
     },
-    [socket, isConnected, personaId, flushAllAndSave]
+    [socket, isConnected, personaId, flushAllAndSave, getDomainIds]
   );
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"], determineAgentId(["names"])),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDescription = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["descriptions"],
-        determineAgentId(["descriptions"])
-      ),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateInstructions = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["instructions"],
-        determineAgentId(["instructions"])
-      ),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["instructions"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["departments"],
-        determineAgentId(["departments"])
-      ),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"], determineAgentId(["flags"])),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateExamples = useCallback(
-    async () =>
-      handleGenerateResources(["examples"], determineAgentId(["examples"])),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["examples"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateColors = useCallback(
-    async () =>
-      handleGenerateResources(["colors"], determineAgentId(["colors"])),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["colors"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateIcons = useCallback(
-    async () => handleGenerateResources(["icons"], determineAgentId(["icons"])),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["icons"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateParameters = useCallback(
-    async () =>
-      handleGenerateResources(["parameters"], determineAgentId(["parameters"])),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["parameters"]),
+    [handleGenerateResources]
   );
 
   const handleGenerateParameterFields = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["parameter_fields"],
-        determineAgentId(["parameter_fields"])
-      ),
-    [handleGenerateResources, determineAgentId]
+    async () => handleGenerateResources(["parameter_fields"]),
+    [handleGenerateResources]
   );
 
   // Handle conditional parameter auto-select/deselect when a field triggers it
@@ -1757,16 +1723,14 @@ function PersonaComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as ResourceType[];
-      const agentId = determineAgentId(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
-        agentId,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [handleGenerateResources, determineAgentId]
+    [handleGenerateResources]
   );
 
   // Listen for full-page-generate event from layout
@@ -1941,7 +1905,7 @@ function PersonaComponent({
                   required={currentPersonaData?.name_required ?? false}
                   hideDescription={true}
                   group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.name_agent_id ?? null}
+                  showAiGenerate={currentPersonaData?.name_show_ai_generate ?? false}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1960,7 +1924,7 @@ function PersonaComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                currentPersonaData?.basic_agent_id ? (
+                (currentPersonaData?.basic_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -2043,7 +2007,7 @@ function PersonaComponent({
                   rows={4}
                   data-testid="input-persona-description"
                   group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.description_agent_id ?? null}
+                  showAiGenerate={currentPersonaData?.description_show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks.descriptions}
@@ -2073,7 +2037,7 @@ function PersonaComponent({
                   isGenerating={isGenerating("departments")}
                   required={currentPersonaData?.departments_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.departments_agent_id ?? null}
+                  showAiGenerate={currentPersonaData?.departments_show_ai_generate ?? false}
                   aiDepartmentResources={
                     aiFormData.department_resources ?? null
                   }
@@ -2090,6 +2054,7 @@ function PersonaComponent({
                   label="Flags"
                   disabled={disabled}
                   group_id={currentPersonaData?.group_id ?? null}
+                  showAiGenerate={currentPersonaData?.flag_show_ai_generate ?? false}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -2151,7 +2116,7 @@ function PersonaComponent({
               actions={
                 stepResources["parameters"] &&
                 stepResources["parameters"].length > 0 &&
-                currentPersonaData?.parameters_step_agent_id ? (
+                (currentPersonaData?.parameters_step_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -2216,7 +2181,7 @@ function PersonaComponent({
                   label="Parameters"
                   required={currentPersonaData?.parameters_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={currentPersonaData?.parameters_agent_id ?? null}
+                  showAiGenerate={currentPersonaData?.parameters_show_ai_generate ?? false}
                   searchTerm={parameterSearchTerm}
                   showSelectedFilter={parameterShowSelected}
                   aiParameterResources={aiFormData.parameter_resources ?? null}
@@ -2248,9 +2213,7 @@ function PersonaComponent({
                     handleConditionalParameterToggle
                   }
                   group_id={currentPersonaData?.group_id ?? null}
-                  agent_id={
-                    currentPersonaData?.parameter_fields_agent_id ?? null
-                  }
+                  showAiGenerate={currentPersonaData?.parameter_fields_show_ai_generate ?? false}
                   required={
                     currentPersonaData?.parameter_fields_required ?? false
                   }
@@ -2370,7 +2333,7 @@ function PersonaComponent({
                   setStepFormData({ colorShowSelected: value || null })
                 }
                 group_id={currentPersonaData?.group_id ?? null}
-                agent_id={currentPersonaData?.color_agent_id ?? null}
+                showAiGenerate={currentPersonaData?.color_show_ai_generate ?? false}
                 createColorsAction={createColorsAction}
                 required={currentPersonaData?.color_required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -2485,7 +2448,7 @@ function PersonaComponent({
                   setStepFormData({ iconShowSelected: value || null })
                 }
                 group_id={currentPersonaData?.group_id ?? null}
-                agent_id={currentPersonaData?.icon_agent_id ?? null}
+                showAiGenerate={currentPersonaData?.icon_show_ai_generate ?? false}
                 required={currentPersonaData?.icon_required ?? false}
                 aiResource={aiFormData.icon_resource}
                 onAccept={() => clearAiResource("icon_resource")}
@@ -2510,7 +2473,7 @@ function PersonaComponent({
               actions={
                 stepResources["content"] &&
                 stepResources["content"].length > 0 &&
-                currentPersonaData?.content_agent_id ? (
+                (currentPersonaData?.content_show_ai_generate ?? false) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -2596,7 +2559,7 @@ function PersonaComponent({
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
                 group_id={currentPersonaData?.group_id ?? null}
-                agent_id={currentPersonaData?.instructions_agent_id ?? null}
+                showAiGenerate={currentPersonaData?.instructions_show_ai_generate ?? false}
                 createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks.instructions}
@@ -2624,12 +2587,11 @@ function PersonaComponent({
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
                 group_id={currentPersonaData?.group_id ?? null}
-                agent_id={currentPersonaData?.examples_agent_id ?? null}
+                showAiGenerate={currentPersonaData?.examples_show_ai_generate ?? false}
                 createExamplesAction={
                   createExamplesAction
                     ? async (input: {
                         body: {
-                          agent_id: string;
                           group_id: string;
                           example: string;
                           mcp?: boolean;

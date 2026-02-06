@@ -165,7 +165,7 @@ export interface InstructionsProps {
   "data-testid"?: string;
   helpText?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   searchTerm?: string; // Search term for filtering instructions
   onSearchChange?: (term: string) => void; // Callback when search term changes
@@ -201,7 +201,7 @@ export function Instructions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createInstructionsAction,
   searchTerm,
   onSearchChange,
@@ -241,7 +241,7 @@ export function Instructions({
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ instructions_id: string | null } | void> => {
     // Skip if no action available
-    if (!createInstructionsAction || !agent_id || !group_id) return;
+    if (!createInstructionsAction || !group_id) return;
 
     // Skip if no change AND we already have a resource for this value
     // If resourceId is null, we still need to create the resource even if value hasn't changed
@@ -254,7 +254,6 @@ export function Instructions({
       if (internalValue.trim()) {
         const result = await createInstructionsAction({
           body: {
-            agent_id: agent_id,
             group_id: group_id,
             template: internalValue,
             mcp: false,
@@ -454,7 +453,7 @@ export function Instructions({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

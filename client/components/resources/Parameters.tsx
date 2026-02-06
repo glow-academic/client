@@ -59,7 +59,7 @@ export interface ParametersProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createParametersAction?:
     | ((input: CreateDraftParametersIn) => Promise<CreateDraftParametersOut>)
     | undefined;
@@ -90,7 +90,7 @@ export function Parameters({
   placeholder: _placeholder = "Select parameters...",
   description,
   group_id,
-  agent_id,
+  showAiGenerate = false,
   createParametersAction,
   onGenerate,
   isGenerating = false,
@@ -238,13 +238,11 @@ export function Parameters({
         if (
           !createdParametersIdsRef.current.has(parametersId) &&
           createParametersAction &&
-          agent_id &&
           group_id
         ) {
           try {
             await createParametersAction({
               body: {
-                agent_id: agent_id,
                 group_id: group_id,
                 parameter_id: parametersId,
                 mcp: false,
@@ -264,7 +262,7 @@ export function Parameters({
 
       onChange(newIds);
     },
-    [ids, onChange, createParametersAction, agent_id, group_id]
+    [ids, onChange, createParametersAction, group_id]
   );
 
   // Check if any parameters resource is generated (must be before early return)
@@ -290,7 +288,7 @@ export function Parameters({
               </span>
             )}
           </Label>
-          {onGenerate && agent_id && (
+          {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
