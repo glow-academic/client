@@ -45,13 +45,8 @@ WITH run_pricing_rollup AS (
             (rpe.count::numeric / aur.value::numeric) * pr.price
         ) FILTER (WHERE rpe.pricing_type = 'cached'), 0)::numeric AS cached_cost
     FROM run_pricing_entry rpe
-    JOIN agent_runs_junction arj2 ON arj2.run_id = rpe.run_id AND arj2.active = TRUE
-    JOIN agent_models_junction amj2 ON amj2.agent_id = arj2.agent_id AND amj2.active = TRUE
-    JOIN model_pricing_junction mpj ON mpj.model_id = amj2.model_id AND mpj.active = TRUE
-    JOIN pricing_resource pr ON pr.id = mpj.pricing_id
-        AND pr.pricing_type = rpe.pricing_type
-        AND pr.unit_id = rpe.unit_id
-        AND pr.active = TRUE
+    JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
+    JOIN pricing_resource pr ON pr.id = rppc.pricing_id AND pr.active = TRUE
     JOIN artifact_units_relation aur ON aur.id = rpe.unit_id AND aur.active = TRUE
     WHERE rpe.active = TRUE
     GROUP BY rpe.run_id

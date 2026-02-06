@@ -123,11 +123,15 @@ interface PricingSummaryProps {
 }
 
 export function PricingSummary({ pricingData }: PricingSummaryProps) {
-  // Chart uses all data from summary endpoint (no filtering)
-  // Extract data from V3 API response
-  const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
-  // Use models array directly (no mapping construction)
-  const models = useMemo(() => pricingData?.models || [], [pricingData]);
+  // Extract data from artifacts/pricing response
+  const dailyItems = useMemo(
+    () => pricingData?.views?.daily || [],
+    [pricingData]
+  );
+  const groupSummaryItems = useMemo(
+    () => pricingData?.views?.group_summary || [],
+    [pricingData]
+  );
 
   // Get chart colors from CSS variables
   const chartColors = useChartColors();
@@ -135,71 +139,64 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
   // Get muted color for "total" line (using neutral status color)
   const mutedColor = useMemo(() => getStatusColor("neutral"), []);
 
-  // Compute spend per run and aggregate by day (chart shows all data, no filtering)
+  // Compute chart data and totals from daily aggregates
   const { chartData, totals, chartConfig } = useMemo(() => {
-    if (!modelRuns?.length || models.length === 0) {
+    // Calculate totals from group_summary (more accurate than daily)
+    const totalSpend = groupSummaryItems.reduce(
+      (sum, item) => sum + Number(item.total_cost || 0),
+      0
+    );
+    const runCount = groupSummaryItems.reduce(
+      (sum, item) => sum + (item.run_count || 0),
+      0
+    );
+
+    if (!dailyItems?.length) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
-        totals: { totalSpend: 0, runCount: 0, avgCost: 0 },
+        totals: {
+          totalSpend: Number(totalSpend.toFixed(2)),
+          runCount,
+          avgCost: runCount ? Number((totalSpend / runCount).toFixed(2)) : 0,
+        },
         chartConfig: {} as Record<string, { label: string; color: string }>,
       };
     }
 
-    // Include all models (chart shows all data)
-    const includeModels = new Set(models.map(m => m.model_id).filter(Boolean));
+    // Collect unique model IDs from daily data
+    const modelIds = new Set<string>();
+    for (const item of dailyItems) {
+      if (item.model_id) {
+        modelIds.add(item.model_id);
+      }
+    }
 
+    // Group daily items by date
     const byDay = new Map<
       string,
       { dateLabel: string; values: Record<string, number> }
     >();
 
-    let totalSpend = 0;
-    let runCount = 0;
-
-    // Process all runs (no filtering for chart)
-    for (const run of modelRuns) {
-      const modelId = run.model_id;
-      if (!modelId || !includeModels.has(modelId)) continue;
-
-      // Find model from array
-      const modelInfo = models.find(m => m.model_id === modelId);
-      if (!modelInfo) continue;
-
-      // Handle null values for tokens and created_at
-      const inputTokens = run.input_tokens ?? 0;
-      const outputTokens = run.output_tokens ?? 0;
-      const createdAt = run.created_at;
-      if (!createdAt) continue;
-
-      // Use run_cost from SQL (calculated from run_pricing_usage) if available, otherwise fall back to token-based calculation
-      const spend = run.run_cost !== undefined && run.run_cost !== null
-        ? Number(run.run_cost)
-        : (inputTokens / 1_000_000) * (Number(modelInfo.input_ppm) || 0) +
-          (outputTokens / 1_000_000) * (Number(modelInfo.output_ppm) || 0);
-
-      const dateKey = format(new Date(createdAt), "yyyy-MM-dd");
-      const dateLabel = format(new Date(createdAt), "MMM dd");
+    for (const item of dailyItems) {
+      const dateKey = item.date_key;
+      const dateLabel = format(new Date(dateKey), "MMM dd");
+      const modelId = item.model_id || "unknown";
+      const cost = Number(item.total_cost || 0);
 
       if (!byDay.has(dateKey)) {
         byDay.set(dateKey, { dateLabel, values: {} });
       }
 
       const bucket = byDay.get(dateKey)!;
-      const seriesKey = modelId;
-      bucket.values[seriesKey] = (bucket.values[seriesKey] || 0) + spend;
-
-      totalSpend += spend;
-      runCount += 1;
+      bucket.values[modelId] = (bucket.values[modelId] || 0) + cost;
     }
 
     const data = Array.from(byDay.entries())
       .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
       .map(([_, { dateLabel, values }]) => {
         const row: Record<string, number | string> = { date: dateLabel };
-        for (const id of includeModels) {
-          if (!id) continue;
+        for (const id of modelIds) {
           const value = Number((values[id] || 0).toFixed(2));
-          // Only include non-zero values to prevent rendering empty areas
           if (value > 0) {
             row[id] = value;
           }
@@ -207,29 +204,20 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2),
+            .toFixed(2)
         );
         return row;
       });
 
-    const modelIdToColor: Record<string, string> = {};
-    let colorIdx = 0;
-    for (const id of includeModels) {
-      if (!id) continue;
-      modelIdToColor[id] =
-        chartColors[colorIdx % chartColors.length] ?? "#999999";
-      colorIdx += 1;
-    }
-
+    // Assign colors to models
     const config: Record<string, { label: string; color: string }> = {};
-    for (const id of includeModels) {
-      if (!id) continue;
-      const model = models.find(m => m.model_id === id);
-      const label = model?.name;
+    let colorIdx = 0;
+    for (const id of modelIds) {
       config[id] = {
-        label: label ?? id,
-        color: modelIdToColor[id] ?? "#999999",
+        label: id, // Model ID as label (could be enhanced with name lookup)
+        color: chartColors[colorIdx % chartColors.length] ?? "#999999",
       };
+      colorIdx += 1;
     }
     config["total"] = { label: "Total", color: mutedColor };
 
@@ -242,7 +230,18 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
       },
       chartConfig: config,
     };
-  }, [modelRuns, models, chartColors, mutedColor]);
+  }, [dailyItems, groupSummaryItems, chartColors, mutedColor]);
+
+  // Get model IDs for chart rendering
+  const modelIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of dailyItems) {
+      if (item.model_id) {
+        ids.add(item.model_id);
+      }
+    }
+    return Array.from(ids);
+  }, [dailyItems]);
 
   return (
     <div className="flex flex-col gap-4" data-testid="pricing-summary">
@@ -321,51 +320,26 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
                 />
                 <ChartLegend content={<ChartLegendContent />} />
 
-                {/* Stacked areas per selected models */}
-                {models.map((model) => {
-                  const id = model.model_id;
-                  if (!id) return null;
-                  return (
-                    <Area
-                      key={id}
-                      type="monotone"
-                      dataKey={id}
-                      stackId="1"
-                      stroke={
-                        (
-                          chartConfig as Record<
-                            string,
-                            { label: string; color: string }
-                          >
-                        )[id]?.color
-                      }
-                      fill={
-                        (
-                          chartConfig as Record<
-                            string,
-                            { label: string; color: string }
-                          >
-                        )[id]?.color
-                      }
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  );
-                })}
+                {/* Stacked areas per model */}
+                {modelIds.map((id) => (
+                  <Area
+                    key={id}
+                    type="monotone"
+                    dataKey={id}
+                    stackId="1"
+                    stroke={chartConfig[id]?.color}
+                    fill={chartConfig[id]?.color}
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                ))}
 
                 {/* Total spend line */}
                 <Line
                   type="monotone"
                   dataKey="total"
-                  stroke={
-                    (
-                      chartConfig as Record<
-                        string,
-                        { label: string; color: string }
-                      >
-                    )["total"]?.color
-                  }
+                  stroke={chartConfig["total"]?.color}
                   strokeWidth={2}
                   dot={false}
                   name="Total"

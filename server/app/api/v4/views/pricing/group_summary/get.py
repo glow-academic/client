@@ -31,6 +31,9 @@ async def get_pricing_group_summary_internal(
     model_id: UUID | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    cohort_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
+    roles: list[str] | None = None,
     sort_by: str = "date",
     sort_order: str = "desc",
     page_limit: int = 50,
@@ -47,6 +50,9 @@ async def get_pricing_group_summary_internal(
             "model_id": str(model_id) if model_id else None,
             "date_from": date_from.isoformat() if date_from else None,
             "date_to": date_to.isoformat() if date_to else None,
+            "cohort_ids": [str(c) for c in cohort_ids] if cohort_ids else None,
+            "department_ids": [str(d) for d in department_ids] if department_ids else None,
+            "roles": roles if roles else None,
             "sort_by": sort_by,
             "sort_order": sort_order,
             "page_limit": page_limit,
@@ -91,6 +97,48 @@ async def get_pricing_group_summary_internal(
     if date_to:
         conditions.append(f"last_run_at < ${param_idx}")
         params.append(date_to)
+        param_idx += 1
+
+    if cohort_ids:
+        conditions.append(
+            f"""
+            EXISTS (
+                SELECT 1 FROM profile_cohorts_junction pc
+                WHERE pc.profile_id = mv_pricing_group_summary.profile_id
+                  AND pc.cohort_id = ANY(${param_idx})
+                  AND pc.active = TRUE
+            )
+            """
+        )
+        params.append(cohort_ids)
+        param_idx += 1
+
+    if department_ids:
+        conditions.append(
+            f"""
+            EXISTS (
+                SELECT 1 FROM profile_departments_junction pd
+                WHERE pd.profile_id = mv_pricing_group_summary.profile_id
+                  AND pd.department_id = ANY(${param_idx})
+            )
+            """
+        )
+        params.append(department_ids)
+        param_idx += 1
+
+    if roles:
+        conditions.append(
+            f"""
+            EXISTS (
+                SELECT 1
+                FROM profile_roles_junction pr
+                JOIN roles_resource rr ON rr.id = pr.role_id
+                WHERE pr.profile_id = mv_pricing_group_summary.profile_id
+                  AND rr.role = ANY(${param_idx})
+            )
+            """
+        )
+        params.append(roles)
         param_idx += 1
 
     where_clause = " AND ".join(conditions) if conditions else "TRUE"

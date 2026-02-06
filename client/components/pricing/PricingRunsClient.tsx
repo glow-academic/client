@@ -20,113 +20,54 @@ export function PricingRunsClient({
   runsData,
   isLoading,
 }: PricingRunsClientProps) {
-  // Use arrays directly (no mapping construction)
-
+  // Transform group list items to GroupRunRow format
   const rows = useMemo<GroupRunRow[]>(() => {
-    return (runsData?.group_runs || [])
-      .filter((group): group is typeof group & { group_id: string; created_at: string } => 
-        group.group_id !== null && group.created_at !== null
+    return (runsData?.items || [])
+      .filter(
+        (
+          group
+        ): group is typeof group & {
+          group_id: string;
+          last_run_at: string;
+        } => group.group_id !== null && group.last_run_at !== null
       )
       .map((group) => {
         const row: GroupRunRow = {
           groupId: group.group_id,
-          createdAt: group.created_at,
+          createdAt: group.last_run_at,
+          groupName: group.group_name ?? undefined,
           runCount: group.run_count ?? 0,
           totalInputTokens: group.total_input_tokens ?? 0,
           totalOutputTokens: group.total_output_tokens ?? 0,
-          totalCost: group.total_cost ?? 0,
-          runs: (group.runs_entry || [])
-            .filter((run): run is typeof run & { run_id: string; created_at: string } =>
-              run.run_id !== null && run.created_at !== null
-            )
-            .map((run) => ({
-              runId: run.run_id,
-              createdAt: run.created_at,
-              modelId: run.model_id ?? null,
-              agentId: run.agent_id ?? null,
-              profileId: run.profile_id ?? null,
-              inputTokens: run.input_tokens ?? 0,
-              outputTokens: run.output_tokens ?? 0,
-              cost: run.cost ?? 0,
-              ...(run.debug_info_entry && run.debug_info_entry.length > 0 ? {
-                debugInfo: run.debug_info_entry
-                  .filter((d): d is typeof d & { id: string; created_at: string; content: string } =>
-                    d.id !== null && d.created_at !== null && d.content !== null
-                  )
-                  .map((d) => ({
-                    id: d.id,
-                    created_at: d.created_at,
-                    content: d.content,
-                  }))
-              } : {}),
-            })),
+          totalCost: Number(group.total_cost ?? 0),
+          // No nested runs in group list response
+          runs: [],
+          // Include model/agent names if available
+          modelNames: group.model_names ?? [],
+          agentNames: group.agent_names ?? [],
         };
 
         return row;
       });
-  }, [runsData?.group_runs]);
+  }, [runsData?.items]);
+
+  // Calculate total pages from total_count
+  const pageSize = 10; // Default page size
+  const totalPages = Math.ceil((runsData?.total_count || 0) / pageSize);
 
   return (
     <div className="mt-6" data-testid="pricing-runs-table">
       <RunsDataTable
         rows={rows}
-        models={(runsData?.models || [])
-          .filter((m): m is typeof m & { model_id: string; name: string } => 
-            m.model_id !== null && m.name !== null
-          )
-          .map((m) => ({
-            model_id: m.model_id!,
-            name: m.name!,
-            description: m.description || "",
-            input_ppm: m.input_ppm ?? 0,
-            output_ppm: m.output_ppm ?? 0,
-          }))}
-        profiles={(runsData?.profiles || [])
-          .filter((p): p is typeof p & { profile_id: string; name: string } => 
-            p.profile_id !== null && p.name !== null
-          )
-          .map((p) => ({
-            profile_id: p.profile_id!,
-            name: p.name!,
-          }))}
-        agents={(runsData?.agents || [])
-          .filter((a): a is typeof a & { agent_id: string; name: string } => 
-            a.agent_id !== null && a.name !== null
-          )
-          .map((a) => ({
-            agent_id: a.agent_id!,
-            name: a.name!,
-          }))}
+        models={[]}
+        profiles={[]}
+        agents={[]}
         isLoading={isLoading}
-        modelOptions={(runsData?.model_options || [])
-          .filter((opt): opt is typeof opt & { value: string; label: string } => 
-            opt.value !== null && opt.label !== null
-          )
-          .map((opt) => ({
-            value: opt.value!,
-            label: opt.label!,
-            ...(opt.count !== null ? { count: opt.count } : {}),
-          }))}
-        profileOptions={(runsData?.profile_options || [])
-          .filter((opt): opt is typeof opt & { value: string; label: string } => 
-            opt.value !== null && opt.label !== null
-          )
-          .map((opt) => ({
-            value: opt.value!,
-            label: opt.label!,
-            ...(opt.count !== null ? { count: opt.count } : {}),
-          }))}
-        actorOptions={(runsData?.actor_options || [])
-          .filter((opt): opt is typeof opt & { value: string; label: string } => 
-            opt.value !== null && opt.label !== null
-          )
-          .map((opt) => ({
-            value: opt.value!,
-            label: opt.label!,
-            ...(opt.count !== null ? { count: opt.count } : {}),
-          }))}
+        modelOptions={[]}
+        profileOptions={[]}
+        actorOptions={[]}
         totalCount={runsData?.total_count || 0}
-        totalPages={runsData?.total_pages || 0}
+        totalPages={totalPages}
       />
     </div>
   );

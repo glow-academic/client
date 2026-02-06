@@ -19140,16 +19140,28 @@ export interface components {
          * @description Request for getting pricing data.
          */
         PricingRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
             /** Profile Id */
             profile_id?: string | null;
             /** Model Id */
             model_id?: string | null;
             /** Agent Id */
             agent_id?: string | null;
-            /** Date From */
-            date_from?: string | null;
-            /** Date To */
-            date_to?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[];
+            /** Department Ids */
+            department_ids?: string[];
+            /** Roles */
+            roles?: string[];
+            /** Simulation Filters */
+            simulation_filters?: string[];
             /**
              * Page Limit
              * @default 50

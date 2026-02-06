@@ -82,50 +82,33 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       department_ids: filters.departmentIds,
       roles: filters.roles,
       simulation_filters: filters.simulationFilters,
+      page_limit: 100,
+      page_offset: 0,
     },
   });
 
   // Pricing-specific params with defaults
   const pricingPage = q.pricingPage ?? 0;
   const pricingPageSize = q.pricingPageSize ?? 10;
-  const pricingSearch = q.pricingSearch ?? undefined;
   const pricingModelIds = q.pricingModelIds ?? undefined;
-  const pricingProfileIds = q.pricingProfileIds ?? undefined;
-  const pricingActorIds = q.pricingActorIds ?? undefined;
-  const pricingSortBy = q.pricingSortBy ?? "createdAt";
+  const pricingSortBy = q.pricingSortBy ?? "date";
   const pricingSortOrder = q.pricingSortOrder ?? "desc";
 
   // Create runsKey for Suspense boundary
   const runsKey = [
     pricingPage,
     pricingPageSize,
-    pricingSearch || "",
     (pricingModelIds || []).join(","),
-    (pricingProfileIds || []).join(","),
-    (pricingActorIds || []).join(","),
     pricingSortBy,
     pricingSortOrder,
     filters.startDate,
     filters.endDate,
-    filters.cohortIds.join(","),
-    filters.departmentIds.join(","),
-    filters.roles.join(","),
-    filters.simulationFilters.join(","),
   ].join("|");
 
   // Create empty runs data for loading state
   const emptyRunsData: PricingRunsOut = {
-    group_runs: [],
+    items: [],
     total_count: 0,
-    page: pricingPage,
-    page_size: pricingPageSize,
-    total_pages: 0,
-    model_options: [],
-    profile_options: [],
-    actor_options: [],
-    models: [],
-    profiles: [],
-    agents: [],
   };
 
   return (
@@ -142,10 +125,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           filters={filters}
           pricingPage={pricingPage}
           pricingPageSize={pricingPageSize}
-          pricingSearch={pricingSearch}
           pricingModelIds={pricingModelIds}
-          pricingProfileIds={pricingProfileIds}
-          pricingActorIds={pricingActorIds}
           pricingSortBy={pricingSortBy}
           pricingSortOrder={pricingSortOrder}
         />
@@ -159,10 +139,7 @@ async function PricingRunsSection({
   filters,
   pricingPage,
   pricingPageSize,
-  pricingSearch,
   pricingModelIds,
-  pricingProfileIds,
-  pricingActorIds,
   pricingSortBy,
   pricingSortOrder,
 }: {
@@ -176,32 +153,26 @@ async function PricingRunsSection({
   };
   pricingPage: number;
   pricingPageSize: number;
-  pricingSearch?: string | undefined;
   pricingModelIds?: string[] | undefined;
-  pricingProfileIds?: string[] | undefined;
-  pricingActorIds?: string[] | undefined;
   pricingSortBy: string;
   pricingSortOrder: string;
 }) {
-  const runsFilters = {
-    start_date: filters.startDate,
-    end_date: filters.endDate,
-    cohort_ids: filters.cohortIds,
-    department_ids: filters.departmentIds,
-    roles: filters.roles,
-    simulation_filters: filters.simulationFilters,
-    search: pricingSearch || "",
-    model_ids: pricingModelIds || [],
-    profile_ids: pricingProfileIds || [],
-    actor_ids: pricingActorIds || [],
-    sort_by: pricingSortBy,
-    sort_order: pricingSortOrder,
-    limit_count: pricingPageSize,
-    offset_count: pricingPage * pricingPageSize,
-  };
+  // Map frontend sort field to backend field name
+  const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
+
+  // Use first model ID if provided (endpoint accepts single model_id)
+  const modelId = pricingModelIds?.[0] ?? null;
 
   const runsData = await getPricingRuns({
-    body: runsFilters,
+    body: {
+      date_from: filters.startDate,
+      date_to: filters.endDate,
+      model_id: modelId,
+      sort_by: sortBy,
+      sort_order: pricingSortOrder,
+      page_limit: pricingPageSize,
+      page_offset: pricingPage * pricingPageSize,
+    },
   });
 
   return <PricingRunsClient runsData={runsData} isLoading={false} />;

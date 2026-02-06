@@ -74,6 +74,7 @@ export interface ModelRunRow {
 export interface GroupRunRow {
   groupId: string;
   createdAt: string;
+  groupName?: string;
   runCount: number;
   totalInputTokens: number;
   totalOutputTokens: number;
@@ -89,6 +90,9 @@ export interface GroupRunRow {
     cost: number;
     debugInfo?: DebugInfoItem[];
   }>;
+  // Hydrated names from group list endpoint
+  modelNames?: string[];
+  agentNames?: string[];
 }
 
 export interface RunsDataTableProps {

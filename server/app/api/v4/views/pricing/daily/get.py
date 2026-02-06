@@ -29,6 +29,9 @@ async def get_pricing_daily_internal(
     agent_id: UUID | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    cohort_ids: list[UUID] | None = None,  # Not used - MV doesn't have profile-level data
+    department_ids: list[UUID] | None = None,  # Not used - MV doesn't have profile-level data
+    roles: list[str] | None = None,  # Not used - MV doesn't have profile-level data
     page_limit: int = 30,
     page_offset: int = 0,
     bypass_cache: bool = False,

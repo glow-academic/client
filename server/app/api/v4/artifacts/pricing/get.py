@@ -44,6 +44,10 @@ async def get_pricing(
     pool = get_pool()
 
     try:
+        # Use effective dates (supports both start_date/end_date and date_from/date_to)
+        effective_date_from = request.effective_date_from
+        effective_date_to = request.effective_date_to
+
         # Parallel fetch from view internals
         async def fetch_group_summary():
             async with pool.acquire() as c:
@@ -52,8 +56,11 @@ async def get_pricing(
                     profile_id=request.profile_id,
                     model_id=request.model_id,
                     agent_id=request.agent_id,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
+                    date_from=effective_date_from,
+                    date_to=effective_date_to,
+                    cohort_ids=request.cohort_ids,
+                    department_ids=request.department_ids,
+                    roles=request.roles,
                     page_limit=request.page_limit,
                     page_offset=request.page_offset,
                     bypass_cache=bypass_cache,
@@ -65,8 +72,11 @@ async def get_pricing(
                     conn=c,
                     model_id=request.model_id,
                     agent_id=request.agent_id,
-                    date_from=request.date_from.date() if request.date_from else None,
-                    date_to=request.date_to.date() if request.date_to else None,
+                    date_from=effective_date_from.date() if effective_date_from else None,
+                    date_to=effective_date_to.date() if effective_date_to else None,
+                    cohort_ids=request.cohort_ids,
+                    department_ids=request.department_ids,
+                    roles=request.roles,
                     page_limit=30,
                     bypass_cache=bypass_cache,
                 )

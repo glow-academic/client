@@ -73383,6 +73383,54 @@
       },
       "PricingRequest": {
         "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
           "profile_id": {
             "anyOf": [
               {
@@ -73419,29 +73467,35 @@
             ],
             "title": "Agent Id"
           },
-          "date_from": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date From"
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
           },
-          "date_to": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date To"
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "simulation_filters": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Filters"
           },
           "page_limit": {
             "type": "integer",
